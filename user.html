@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>User Profile - Viewora</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body { background: #111; color: white; padding-bottom: 80px; }
+        .profile-container { text-align:center; padding:30px 20px; max-width: 600px; margin: 0 auto; }
+        #profilePic { width:130px; height:130px; border-radius:50%; object-fit:cover; border: 5px solid #1b1b1b; }
+        .action-buttons { margin: 25px 0; display: flex; gap: 15px; justify-content: center; flex-wrap: wrap; }
+        button { padding: 12px 32px; border-radius: 30px; font-size: 16px; cursor: pointer; font-weight: 500; }
+        .btn-primary { background: #00aaff; color: white; border: none; }
+        .btn-secondary { background: #333; color: white; border: none; }
+    </style>
+</head>
+<body>
+
+<div class="profile-container">
+    <img id="profilePic" src="non.jpg">
+
+    <h2 id="profileName">Loading...</h2>
+    <p id="profileUsername">@loading</p>
+    <p id="profileBio">Loading bio...</p>
+
+    <div style="margin:20px 0; font-size:18px;">
+        <b id="followersCount">0</b> Followers |
+        <b id="followingCount">0</b> Following
+    </div>
+
+    <div class="action-buttons">
+        <button id="followBtn" class="btn-primary">Follow</button>
+        <button id="messageBtn" class="btn-secondary" onclick="openChat()">💬 Message</button>
+    </div>
+</div>
+
+<hr>
+<h3 style="text-align:center;">Posts</h3>
+<div id="postsList"></div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+
+<script src="firebase.js"></script>
+<script src="user.js"></script>
+
+</body>
+</html>
