@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Edit Profile - Viewora</title>
+
+<style>
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:Arial,sans-serif;
+}
+
+body{
+background:#111;
+color:white;
+padding:20px;
+}
+
+.container{
+max-width:500px;
+margin:auto;
+background:#1b1b1b;
+padding:20px;
+border-radius:15px;
+}
+
+h1{
+text-align:center;
+margin-bottom:20px;
+}
+
+.profile-preview{
+display:flex;
+justify-content:center;
+margin-bottom:20px;
+}
+
+.profile-preview img{
+width:120px;
+height:120px;
+border-radius:50%;
+object-fit:cover;
+border:3px solid #00aaff;
+}
+
+label{
+display:block;
+margin-top:15px;
+margin-bottom:5px;
+}
+
+input,
+textarea,
+select{
+width:100%;
+padding:12px;
+border:none;
+border-radius:10px;
+background:#2a2a2a;
+color:white;
+font-size:16px;
+}
+
+textarea{
+resize:none;
+height:80px;
+}
+
+button{
+width:100%;
+margin-top:20px;
+padding:14px;
+border:none;
+border-radius:12px;
+background:#0095ff;
+color:white;
+font-size:17px;
+cursor:pointer;
+}
+
+.back-btn{
+background:#444;
+margin-top:10px;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>✏️ Edit Profile</h1>
+
+<div class="profile-preview">
+    <img id="previewPhoto" src="non.jpg">
+</div>
+
+<label>Profile Photo URL</label>
+<input
+type="text"
+id="photoInput"
+placeholder="https://example.com/photo.jpg">
+
+<label>Name</label>
+<input
+type="text"
+id="nameInput"
+placeholder="Your Name">
+
+<label>Username</label>
+<input
+type="text"
+id="usernameInput"
+placeholder="@username">
+
+<label>Bio</label>
+<textarea
+id="bioInput"
+placeholder="Tell people about yourself"></textarea>
+
+<label>Gender</label>
+<select id="genderInput">
+    <option value="Male">Male</option>
+    <option value="Female">Female</option>
+    <option value="Other">Other</option>
+</select>
+
+<button onclick="updateProfile()">💾 Save Profile</button>
+
+</div>
+
+<button
+class="back-btn"
+onclick="window.location.href='profile.html'">
+⬅ Back
+</button>
+
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+
+<script src="firebase.js"></script>
+<script src="edit-profile.js"></script>
+</body>
+</html>

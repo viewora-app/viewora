@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Viewora • Profile</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .profile-banner {
+            width: 100%;
+            height: 160px;
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            position: relative;
+            overflow: hidden;
+        }
+        .profile-banner img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            opacity: 0.6;
+        }
+        .top-right-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: rgba(0,0,0,0.6);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 16px;
+            z-index: 10;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Profile Banner -->
+    <div class="profile-banner">
+        <img src="banners.jpg" alt="Channel Banner">
+        <button onclick="goToSettings()" class="top-right-btn">⚙️ Settings</button>
+    </div>
+
+    <!-- Profile Content -->
+    <div class="profile-content" style="margin-top:-60px; padding:0 20px;">
+
+        <div class="profile-main" style="background:#1b1b1b; border-radius:20px; padding:25px 20px;">
+
+            <div class="profile-header" style="text-align:center;">
+                <img id="profilePic" class="profile-pic" src="non.jpg" 
+                     style="width:110px; height:110px; border:5px solid #1b1b1b; border-radius:50%;">
+                
+                <h1 id="profileName" style="font-size:26px; margin:10px 0 5px;">Loading...</h1>
+                <p id="profileUsername" style="color:#aaa; font-size:15px;">@loading</p>
+                <p id="profileBio" style="color:#ccc; margin-top:12px;">Loading profile...</p>
+            </div>
+
+            <!-- Stats -->
+            <div class="stats" style="display:flex; justify-content:space-around; margin:25px 0; padding:15px 0; border-top:1px solid #333; border-bottom:1px solid #333;">
+                <div class="stat-item">
+                    <div id="followersCount" class="stat-number">0</div>
+                    <div class="stat-label">Followers</div>
+                </div>
+                <div class="stat-item">
+                    <div id="followingCount" class="stat-number">0</div>
+                    <div class="stat-label">Following</div>
+                </div>
+                <div class="stat-item">
+                    <div id="videosCount" class="stat-number">0</div>
+                    <div class="stat-label">Videos</div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="action-buttons" style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap; margin-top:20px;">
+                <button id="followBtn" class="btn btn-primary" style="display:none;">Follow</button>
+                <a href="edit-profile.html" id="editProfileBtn" class="btn btn-secondary">Edit Profile</a>
+                <button id="messageBtn" class="btn btn-secondary" onclick="openChat()" style="display:none;">💬 Message</button>
+            </div>
+
+        </div>
+
+        <!-- Videos Section -->
+        <div style="margin-top:30px;">
+            <h2 class="section-title">🎥 Your Videos</h2>
+            <div id="videosList" class="empty-state">
+                No videos uploaded yet.<br>
+                <small>Upload your first video!</small>
+            </div>
+        </div>
+
+        <!-- Posts Section -->
+        <div style="margin-top:20px;">
+            <h2 class="section-title">📝 Posts</h2>
+            <div id="profilePosts"></div>
+        </div>
+
+    </div>
+
+    <!-- Bottom Navigation -->
+    <div class="bottom-nav">
+        <a href="index.html">🏠<br>Home</a>
+        <a href="vieworation.html">🏘️<br>Vieworation</a>
+        <a href="shorts.html">▶️<br>Shorts</a>
+        <a href="upload.html">➕<br>Upload</a>
+        <a href="users.html">👥<br>Users</a>
+        <a href="profile.html">👤<br>Profile</a>
+    </div>
+
+<!-- Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+    
+<script src="firebase.js"></script>
+<script src="profile.js"></script>
+<script src="nav.js"></script>
+
+    <!-- Inline Fix for Settings Button -->
+    <script>
+        function goToSettings() {
+            window.location.href = "settings.html";
+        }
+    </script>
+
+</body>
+</html>

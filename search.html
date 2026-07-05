@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search - Viewora</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body { background: #111; color: white; padding-bottom: 80px; }
+        .search-header {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            background: #1b1b1b;
+            gap: 10px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .search-header input {
+            flex: 1;
+            padding: 14px 20px;
+            border-radius: 30px;
+            background: #2a2a2a;
+            border: none;
+            color: white;
+            font-size: 16px;
+        }
+        .video-card {
+            display: flex;
+            background: #1b1b1b;
+            margin: 12px;
+            border-radius: 12px;
+            overflow: hidden;
+            cursor: pointer;
+        }
+        .thumbnail {
+            width: 140px;
+            height: 80px;
+            object-fit: cover;
+        }
+        .video-info {
+            padding: 12px;
+            flex: 1;
+        }
+        .user-card {
+            background: #1b1b1b;
+            margin: 12px;
+            padding: 18px;
+            border-radius: 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Search Header -->
+    <div class="search-header">
+        <a href="index.html" style="font-size:24px; color:#00aaff;">←</a>
+        <input 
+            type="text" 
+            id="searchInput" 
+            placeholder="Search users, videos..." 
+            onkeyup="if(event.key === 'Enter') search()">
+        <button onclick="search()" style="background:#00aaff; color:white; border:none; padding:12px 20px; border-radius:30px;">🔍</button>
+    </div>
+
+    <h2 style="padding:15px 15px 0;">🔥 Trending</h2>
+    <div style="padding:0 15px;">
+        <div class="setting-card">#VieworaLaunch</div>
+        <div class="setting-card">#Gaming</div>
+        <div class="setting-card">#Cricket</div>
+    </div>
+
+    <h2 style="padding:15px 15px 0;">📺 Recent Videos</h2>
+    <div id="recentVideos"></div>
+
+    <h2 style="padding:15px 15px 0;">🔍 Search Results</h2>
+    <div id="searchResults">
+        <p style="text-align:center; padding:60px; color:#666;">Type something to search...</p>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <div class="bottom-nav">
+        <a href="index.html">🏠<br>Home</a>
+        <a href="vieworation.html">🏘️<br>Vieworation</a>
+        <a href="shorts.html">▶️<br>Shorts</a>
+        <a href="upload.html">➕<br>Upload</a>
+        <a href="users.html">👥<br>Users</a>
+        <a href="profile.html">👤<br>Profile</a>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+    
+<script src="firebase.js"></script>
+<script src="search.js"></script>
+<script src="nav.js"></script>
+
+</body>
+</html>
