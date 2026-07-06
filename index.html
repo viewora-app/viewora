@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Viewora • Home</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body { background: #111; color: white; padding-bottom: 80px; }
+        .header {
+            background: #1b1b1b;
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            border-bottom: 1px solid #333;
+        }
+        .logo { font-size: 22px; font-weight: 700; color: #00aaff; }
+        .post-card {
+            background: #1b1b1b;
+            margin: 15px;
+            border-radius: 16px;
+            padding: 16px;
+            border-left: 4px solid #00aaff;
+        }
+        .post-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+        .post-avatar {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <div class="header">
+        <div class="logo">Viewora</div>
+        <div style="flex:1;">
+            <input type="text" id="searchInput" placeholder="Search posts..." 
+                   style="width:100%; padding:12px 20px; border-radius:30px; background:#2a2a2a; border:none; color:white;">
+        </div>
+        <!-- Message Icon (Top Right) -->
+        <div onclick="window.location.href='messages.html'" style="font-size:26px; cursor:pointer; margin-left:10px;">
+            💬
+        </div>
+    </div>
+
+    <!-- Feed -->
+    <div id="feedContainer">
+        <p style="text-align:center; padding:60px; color:#666;">Loading feed...</p>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <div class="bottom-nav">
+        <a href="index.html" class="active">🏠<br>Home</a>
+        <a href="vieworation.html">🏘️<br>Vieworation</a>
+        <a href="shorts.html">▶️<br>Shorts</a>
+        <a href="upload.html">➕<br>Upload</a>
+        <a href="users.html">👥<br>Users</a>
+        <a href="profile.html">👤<br>Profile</a>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+    
+    <script src="firebase.js"></script>
+    <script src="index.js"></script>
+    <script src="nav.js"></script>
+    <script src="comments.js"></script>
+
+</body>
+</html>

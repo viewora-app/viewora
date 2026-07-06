@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notifications - Viewora</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body { background: #111; color: white; padding-bottom: 80px; }
+        .notif-card {
+            background: #1b1b1b;
+            margin: 12px;
+            padding: 16px;
+            border-radius: 12px;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+        .notif-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+        .notif-content {
+            flex: 1;
+        }
+        .notif-time {
+            font-size: 12px;
+            color: #888;
+        }
+    </style>
+</head>
+<body>
+
+    <div style="padding:15px; background:#1b1b1b; text-align:center;">
+        <h1>🔔 Notifications</h1>
+    </div>
+
+    <div id="notificationsList">
+        <p style="text-align:center; padding:60px; color:#666;">No notifications yet</p>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <div class="bottom-nav">
+        <a href="index.html">🏠<br>Home</a>
+        <a href="vieworation.html">🏘️<br>Vieworation</a>
+        <a href="shorts.html">▶️<br>Shorts</a>
+        <a href="upload.html">➕<br>Upload</a>
+        <a href="users.html">👥<br>Users</a>
+        <a href="profile.html">👤<br>Profile</a>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+    
+<script src="firebase.js"></script>
+<script src="notifications.js"></script>
+<script src="nav.js"></script>
+
+</body>
+</html>

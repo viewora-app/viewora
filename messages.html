@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Messages - Viewora</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body { background: #0a0a0a; color: white; }
+        
+        .header {
+            padding: 16px;
+            background: #111;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            border-bottom: 1px solid #222;
+        }
+
+        .chat-item {
+            padding: 16px 18px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            border-bottom: 1px solid #1a1a1a;
+            cursor: pointer;
+            transition: all 0.25s ease;
+        }
+
+        .chat-item:hover, .chat-item:active {
+            background: #1f1f1f;
+            transform: translateX(6px);
+        }
+
+        .chat-avatar {
+            width: 58px;
+            height: 58px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid #222;
+        }
+
+        .chat-info {
+            flex: 1;
+        }
+
+        .chat-name {
+            font-weight: 700;
+            font-size: 17px;
+        }
+
+        .chat-last {
+            color: #999;
+            font-size: 14.5px;
+            margin-top: 3px;
+        }
+
+        .no-chats {
+            text-align: center;
+            padding: 140px 20px;
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1 style="margin:0; font-size:22px;">Messages</h1>
+        <input type="text" id="searchInput" placeholder="Search messages..." 
+               style="background:#1f1f1f; border:none; padding:10px 18px; border-radius:30px; width:48%; font-size:15px;">
+    </div>
+
+    <div id="messagesList"></div>
+
+    <!-- Bottom Navigation -->
+    <div class="bottom-nav">
+        <a href="index.html" class="active">🏠<br>Home</a>
+        <a href="vieworation.html">🏘️<br>Vieworation</a>
+        <a href="shorts.html">▶️<br>Shorts</a>
+        <a href="upload.html">➕<br>Upload</a>
+        <a href="users.html">👥<br>Users</a>
+        <a href="profile.html">👤<br>Profile</a>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+    
+    <script src="firebase.js"></script>
+    <script src="messages.js"></script>
+    <script src="nav.js"></script>
+
+</body>
+</html>
