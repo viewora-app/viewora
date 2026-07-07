@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Viewora • Profile</title>
+
+<link rel="stylesheet" href="style.css">
+
+<style>
+
+body{
+margin:0;
+background:#111;
+color:white;
+font-family:Arial,sans-serif;
+padding-bottom:90px;
+}
+
+.profile-banner{
+height:180px;
+background:linear-gradient(135deg,#0095ff,#001f3f);
+position:relative;
+overflow:hidden;
+}
+
+.profile-banner img{
+width:100%;
+height:100%;
+object-fit:cover;
+opacity:.45;
+}
+
+.settings-btn{
+position:absolute;
+right:15px;
+top:15px;
+background:#222;
+color:white;
+border:none;
+padding:10px 16px;
+border-radius:20px;
+cursor:pointer;
+}
+
+.profile-card{
+margin-top:-60px;
+padding:20px;
+text-align:center;
+}
+
+#storyRing{
+width:140px;
+height:140px;
+margin:auto;
+padding:4px;
+border-radius:50%;
+border:4px solid #333;
+display:flex;
+align-items:center;
+justify-content:center;
+cursor:pointer;
+}
+
+#profilePic{
+width:120px;
+height:120px;
+border-radius:50%;
+object-fit:cover;
+border:4px solid #1b1b1b;
+}
+
+.add-story{
+width:34px;
+height:34px;
+border-radius:50%;
+background:#00aaff;
+display:flex;
+align-items:center;
+justify-content:center;
+position:absolute;
+right:0;
+bottom:0;
+font-size:22px;
+cursor:pointer;
+}
+
+.profile-name{
+font-size:28px;
+font-weight:bold;
+margin-top:15px;
+}
+
+.profile-username{
+color:#999;
+margin-top:5px;
+}
+
+.profile-bio{
+margin-top:12px;
+color:#ddd;
+line-height:1.5;
+}
+
+.stats{
+display:flex;
+justify-content:space-around;
+margin-top:25px;
+padding:18px 0;
+border-top:1px solid #333;
+border-bottom:1px solid #333;
+}
+
+.stat{
+text-align:center;
+}
+
+.stat-number{
+font-size:22px;
+font-weight:bold;
+}
+
+.stat-text{
+color:#aaa;
+font-size:14px;
+margin-top:4px;
+}
+
+.buttons{
+display:flex;
+gap:10px;
+justify-content:center;
+flex-wrap:wrap;
+margin-top:20px;
+}
+
+.buttons button,
+.buttons a{
+
+padding:12px 20px;
+border:none;
+border-radius:10px;
+background:#00aaff;
+color:white;
+text-decoration:none;
+cursor:pointer;
+font-size:15px;
+}
+
+#editProfileBtn{
+background:#444;
+}
+
+#messageBtn{
+background:#444;
+}
+
+.section-title{
+font-size:20px;
+margin:30px 18px 15px;
+}
+
+#videosList,
+#profilePosts{
+
+padding:0 15px;
+
+}
+
+.post-card{
+
+background:#1b1b1b;
+padding:15px;
+border-radius:14px;
+margin-bottom:18px;
+
+}
+
+.post-card img{
+
+width:100%;
+border-radius:12px;
+margin-top:10px;
+
+}
+
+.bottom-nav{
+
+position:fixed;
+bottom:0;
+left:0;
+right:0;
+height:70px;
+background:#1b1b1b;
+display:flex;
+justify-content:space-around;
+align-items:center;
+border-top:1px solid #333;
+
+}
+
+.bottom-nav a{
+
+color:white;
+text-decoration:none;
+font-size:13px;
+text-align:center;
+
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="profile-banner">
+
+<img src="banners.jpg">
+
+<button class="settings-btn" onclick="goToSettings()">
+⚙️ Settings
+</button>
+
+</div>
+
+<div class="profile-card">
+
+<div style="position:relative;width:140px;margin:auto;">
+
+<div id="storyRing" onclick="viewStories()">
+
+<img
+id="profilePic"
+src="users.jpg">
+
+</div>
+
+<div
+class="add-story"
+onclick="createStory()">
+
++
+
+</div>
+
+</div>
+
+<div
+id="profileName"
+class="profile-name">
+
+Loading...
+
+</div>
+
+<div
+id="profileUsername"
+class="profile-username">
+
+@loading
+
+</div>
+
+<div
+id="profileBio"
+class="profile-bio">
+
+Loading Profile...
+
+</div>
+
+<div class="stats">
+
+<div class="stat">
+
+<div
+id="followersCount"
+class="stat-number">
+
+0
+
+</div>
+
+<div class="stat-text">
+
+Followers
+
+</div>
+
+</div>
+
+<div class="stat">
+
+<div
+id="followingCount"
+class="stat-number">
+
+0
+
+</div>
+
+<div class="stat-text">
+
+Following
+
+</div>
+
+</div>
+
+<div class="stat">
+
+<div
+id="videosCount"
+class="stat-number">
+
+0
+
+</div>
+
+<div class="stat-text">
+
+Videos
+
+</div>
+
+</div>
+
+</div>
+
+<div class="buttons">
+
+<button
+id="followBtn">
+
+Follow
+
+</button>
+
+<a
+href="edit-profile.html"
+id="editProfileBtn">
+
+Edit Profile
+
+</a>
+
+<button
+id="messageBtn"
+onclick="openChat()">
+
+💬 Message
+
+</button>
+
+</div>
+
+<!-- Videos -->
+<h2 class="section-title">🎥 Videos</h2>
+
+<div id="videosList">
+
+<div class="post-card" style="text-align:center;color:#888;">
+No videos uploaded yet.
+</div>
+
+</div>
+
+<!-- Posts -->
+<h2 class="section-title">📝 Posts</h2>
+
+<div id="profilePosts">
+
+<div class="post-card" style="text-align:center;color:#888;">
+Loading Posts...
+</div>
+
+</div>
+
+<!-- Story Viewer -->
+
+<div
+id="storyViewer"
+style="
+display:none;
+position:fixed;
+top:0;
+left:0;
+width:100%;
+height:100%;
+background:#000;
+z-index:9999;">
+
+<div
+id="storyProgress"
+style="
+position:absolute;
+top:0;
+left:0;
+height:4px;
+background:#00aaff;
+width:0%;">
+</div>
+
+<img
+id="storyImage"
+style="
+display:none;
+width:100%;
+height:100%;
+object-fit:contain;">
+
+<video
+id="storyVideo"
+controls
+style="
+display:none;
+width:100%;
+height:100%;
+object-fit:contain;">
+</video>
+
+<button
+onclick="closeStoryViewer()"
+style="
+position:absolute;
+top:15px;
+right:15px;
+background:none;
+border:none;
+color:white;
+font-size:32px;
+cursor:pointer;">
+
+✕
+
+</button>
+
+</div>
+
+<input
+type="file"
+id="storyFile"
+accept="image/*,video/*"
+hidden>
+
+<!-- Bottom Navigation -->
+
+<div class="bottom-nav">
+
+<a href="index.html">
+
+<span class="nav-icon">🏠</span>
+
+Home
+
+</a>
+
+<a href="vieworation.html">
+
+<span class="nav-icon">🌍</span>
+
+Vieworation
+
+</a>
+
+<a href="shorts.html">
+
+<span class="nav-icon">▶️</span>
+
+Shorts
+
+</a>
+
+<a href="upload.html">
+
+<span class="nav-icon">➕</span>
+
+Upload
+
+</a>
+
+<a href="users.html" class="active">
+
+<span class="nav-icon">👥</span>
+
+Userslist
+
+</a>
+
+<a href="profile.html">
+
+<span class="nav-icon">👤</span>
+
+Profile
+
+</a>
+
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+
+<script src="firebase.js"></script>
+<script src="stories.js"></script>
+<script src="profile.js"></script>
+<script src="nav.js"></script>
+
+<script>
+
+function goToSettings(){
+location.href="settings.html";
+}
+
+</script>
+<style>
+  #floatingChat{
+    animation: pulseGlow 2.5s ease-in-out infinite;
+}
+
+@keyframes pulseGlow{
+
+    0%,100%{
+        transform: scale(1);
+        box-shadow:
+            0 8px 25px rgba(0,170,255,.35),
+            0 0 12px rgba(0,170,255,.25);
+    }
+
+    50%{
+        transform: scale(1.05);
+        box-shadow:
+            0 12px 35px rgba(0,170,255,.55),
+            0 0 25px rgba(0,170,255,.45);
+    }
+
+}
+</style>
+
+<button id="floatingChat" onclick="window.location.href='messages.html'">
+    💬
+</button>
+
+</body>
+</html>
+
