@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Users • Viewora</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body { background: #111; color: white; padding-bottom: 80px; }
+        .header { background: #1b1b1b; padding: 20px; text-align: center; position: sticky; top: 0; z-index: 100; }
+        .search-box { padding: 15px 20px; background: #1b1b1b; display: flex; gap: 10px; }
+        #search { flex: 1; padding: 12px 18px; border: none; border-radius: 25px; background: #2a2a2a; color: white; }
+        #search:focus { outline: 2px solid #00aaff; }
+        .search-btn { padding: 12px 24px; background: #00aaff; color: white; border: none; border-radius: 25px; cursor: pointer; }
+        #usersList { padding: 10px; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>👥 All Users</h1>
+    </div>
+
+    <div class="search-box">
+        <input type="text" id="search" placeholder="Search users..." onkeyup="if(event.key === 'Enter') searchUsers()">
+        <button class="search-btn" onclick="searchUsers()">Search</button>
+    </div>
+
+    <div id="usersList">
+        <p style="text-align:center; padding:40px; color:#888;">Loading users...</p>
+    </div>
+
+    <!-- Bottom Navigation -->
+<div class="bottom-nav">
+
+<a href="index.html">
+
+<span class="nav-icon">🏠</span>
+
+Home
+
+</a>
+
+<a href="vieworation.html">
+
+<span class="nav-icon">🌍</span>
+
+Vieworation
+
+</a>
+
+<a href="shorts.html">
+
+<span class="nav-icon">▶️</span>
+
+Shorts
+
+</a>
+
+<a href="upload.html">
+
+<span class="nav-icon">➕</span>
+
+Upload
+
+</a>
+
+<a href="users.html" class="active">
+
+<span class="nav-icon">👥</span>
+
+Userslist
+
+</a>
+
+<a href="profile.html">
+
+<span class="nav-icon">👤</span>
+
+Profile
+
+</a>
+
+</div>
+
+    <!-- Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+    
+    <script src="firebase.js"></script>
+    <script src="users.js"></script>
+    <script src="nav.js"></script>
+    <style>
+      #floatingChat{
+    animation: pulseGlow 2.5s ease-in-out infinite;
+}
+
+@keyframes pulseGlow{
+
+    0%,100%{
+        transform: scale(1);
+        box-shadow:
+            0 8px 25px rgba(0,170,255,.35),
+            0 0 12px rgba(0,170,255,.25);
+    }
+
+    50%{
+        transform: scale(1.05);
+        box-shadow:
+            0 12px 35px rgba(0,170,255,.55),
+            0 0 25px rgba(0,170,255,.45);
+    }
+
+}
+    </style>
+    
+    <button id="floatingChat" onclick="window.location.href='messages.html'">
+    💬
+</button>
+
+</body>
+</html>
