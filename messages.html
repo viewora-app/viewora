@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Viewora • Messages</title>
+
+<link rel="stylesheet" href="style.css">
+
+<style>
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:Arial,sans-serif;
+}
+
+body{
+background:#0f0f0f;
+color:#fff;
+padding-bottom:80px;
+overflow-x:hidden;
+}
+
+/* Animated Background */
+
+body::before{
+content:"";
+position:fixed;
+top:-50%;
+left:-50%;
+width:200%;
+height:200%;
+background:
+radial-gradient(circle,#00aaff22,transparent 40%),
+radial-gradient(circle,#ff00aa22,transparent 35%);
+animation:bgMove 12s linear infinite;
+z-index:-1;
+}
+
+@keyframes bgMove{
+
+0%{transform:rotate(0deg);}
+100%{transform:rotate(360deg);}
+
+}
+
+/* Header */
+
+.header{
+
+position:sticky;
+top:0;
+z-index:100;
+background:#161616;
+padding:18px;
+display:flex;
+justify-content:space-between;
+align-items:center;
+border-bottom:1px solid #333;
+
+}
+
+.logo{
+
+font-size:26px;
+font-weight:bold;
+background:linear-gradient(90deg,#00aaff,#ff00aa);
+-webkit-background-clip:text;
+-webkit-text-fill-color:transparent;
+
+}
+
+.newChat{
+
+background:#00aaff;
+color:white;
+border:none;
+padding:10px 18px;
+border-radius:25px;
+font-size:15px;
+cursor:pointer;
+transition:.3s;
+
+}
+
+.newChat:hover{
+
+transform:scale(1.08);
+
+}
+
+/* Search */
+
+.searchBox{
+
+padding:18px;
+
+}
+
+.searchBox input{
+
+width:100%;
+padding:14px 18px;
+border:none;
+outline:none;
+border-radius:30px;
+background:#1d1d1d;
+color:white;
+font-size:15px;
+transition:.3s;
+
+}
+
+.searchBox input:focus{
+
+box-shadow:0 0 12px #00aaff;
+
+}
+
+/* Chat List */
+
+#messagesList{
+
+padding:10px 15px;
+
+}
+
+/* Chat Card */
+
+.chat-item{
+
+display:flex;
+align-items:center;
+gap:14px;
+background:#181818;
+padding:14px;
+border-radius:18px;
+margin-bottom:12px;
+cursor:pointer;
+transition:.25s;
+
+}
+
+.chat-item:hover{
+
+background:#222;
+transform:translateY(-2px);
+
+}
+
+.chat-avatar{
+
+width:58px;
+height:58px;
+border-radius:50%;
+object-fit:cover;
+border:2px solid #00aaff;
+
+}
+
+.chat-info{
+
+flex:1;
+
+}
+
+.chat-name{
+
+font-size:17px;
+font-weight:bold;
+
+}
+
+.chat-last{
+
+font-size:14px;
+color:#aaa;
+margin-top:4px;
+
+}
+
+.chat-time{
+
+font-size:12px;
+color:#888;
+
+}
+
+.unread-badge{
+
+background:#00aaff;
+width:22px;
+height:22px;
+border-radius:50%;
+display:flex;
+justify-content:center;
+align-items:center;
+font-size:12px;
+font-weight:bold;
+
+}
+
+.online-dot{
+
+width:12px;
+height:12px;
+background:#00ff55;
+border-radius:50%;
+position:absolute;
+bottom:2px;
+right:2px;
+border:2px solid #181818;
+
+}
+
+.empty-chat{
+
+text-align:center;
+padding:60px 20px;
+color:#888;
+
+}
+
+.loading{
+
+text-align:center;
+padding:50px;
+color:#888;
+
+animation:pulse 1.5s infinite;
+
+}
+
+@keyframes pulse{
+
+0%{opacity:.4;}
+50%{opacity:1;}
+100%{opacity:.4;}
+
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="header">
+
+<div class="logo">
+Viewora Chat
+</div>
+
+<button class="newChat"
+onclick="location.href='users.html'">
+New Chat
+</button>
+
+</div>
+
+<div class="searchBox">
+
+<input
+type="text"
+id="searchInput"
+placeholder="Search chats...">
+
+</div>
+
+<div id="messagesList">
+
+<div class="loading">
+
+Loading Chats...
+
+</div>
+
+</div>
+<!-- Floating New Message Button -->
+
+<button id="fabChat"
+onclick="location.href='users.html'">
+
+💬
+
+</button>
+
+<style>
+
+#fabChat{
+
+position:fixed;
+right:20px;
+bottom:90px;
+width:60px;
+height:60px;
+border:none;
+border-radius:50%;
+background:linear-gradient(135deg,#00aaff,#0077ff);
+color:white;
+font-size:26px;
+cursor:pointer;
+box-shadow:0 8px 25px rgba(0,170,255,.45);
+transition:.3s;
+animation:floating 2.5s infinite;
+
+}
+
+#fabChat:hover{
+
+transform:scale(1.08);
+
+}
+
+@keyframes floating{
+
+0%{
+transform:translateY(0);
+}
+
+50%{
+transform:translateY(-8px);
+}
+
+100%{
+transform:translateY(0);
+}
+
+}
+
+/* Bottom Navigation */
+
+.bottom-nav{
+
+position:fixed;
+bottom:0;
+left:0;
+right:0;
+height:70px;
+background:#161616;
+display:flex;
+justify-content:space-around;
+align-items:center;
+border-top:1px solid #333;
+backdrop-filter:blur(12px);
+
+}
+
+.bottom-nav a{
+
+text-decoration:none;
+color:#bbb;
+font-size:12px;
+text-align:center;
+transition:.3s;
+
+}
+
+.bottom-nav a:hover{
+
+color:#00aaff;
+transform:translateY(-3px);
+
+}
+
+.bottom-nav a.active{
+
+color:#00aaff;
+font-weight:bold;
+
+}
+
+.nav-icon{
+
+font-size:22px;
+display:block;
+margin-bottom:4px;
+
+}
+
+</style>
+
+<div class="bottom-nav">
+
+<a href="index.html">
+
+<span class="nav-icon">🏠</span>
+
+Home
+
+</a>
+
+<a href="vieworation.html">
+
+<span class="nav-icon">🌍</span>
+
+Vieworation
+
+</a>
+
+<a href="shorts.html">
+
+<span class="nav-icon">▶️</span>
+
+Shorts
+
+</a>
+
+<a href="upload.html">
+
+<span class="nav-icon">➕</span>
+
+Upload
+
+</a>
+
+<a href="users.html" class="active">
+
+<span class="nav-icon">👥</span>
+
+Userslist
+
+</a>
+
+<a href="profile.html">
+
+<span class="nav-icon">👤</span>
+
+Profile
+
+</a>
+
+</div>
+<!-- Firebase -->
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+
+<!-- Viewora Scripts -->
+
+<script src="firebase.js"></script>
+<script src="messages.js"></script>
+<script src="nav.js"></script>
+
+<script>
+
+// ===============================
+// Loading Animation
+// ===============================
+
+window.addEventListener("load",()=>{
+
+    document.body.style.opacity="0";
+
+    document.body.style.transition="opacity .4s";
+
+    setTimeout(()=>{
+
+        document.body.style.opacity="1";
+
+    },100);
+
+});
+
+// ===============================
+// Page Animation
+// ===============================
+
+document.addEventListener("DOMContentLoaded",()=>{
+
+    const cards=document.querySelectorAll(".chat-item");
+
+    cards.forEach((card,index)=>{
+
+        card.style.opacity="0";
+        card.style.transform="translateY(20px)";
+
+        setTimeout(()=>{
+
+            card.style.transition=".35s";
+            card.style.opacity="1";
+            card.style.transform="translateY(0)";
+
+        },index*70);
+
+    });
+
+});
+
+// ===============================
+// Pull To Refresh
+// ===============================
+
+let startY=0;
+
+window.addEventListener("touchstart",(e)=>{
+
+    startY=e.touches[0].clientY;
+
+});
+
+window.addEventListener("touchend",(e)=>{
+
+    let endY=e.changedTouches[0].clientY;
+
+    if(endY-startY>120){
+
+        location.reload();
+
+    }
+
+});
+
+// ===============================
+// Auto Refresh Chats
+// ===============================
+
+setInterval(()=>{
+
+    if(typeof loadChats==="function"){
+
+        loadChats();
+
+    }
+
+},30000);
+
+// ===============================
+// End
+// ===============================
+
+console.log("✅ Messages Page Loaded");
+
+</script>
+
+</body>
+</html>
