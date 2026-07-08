@@ -24,84 +24,93 @@ auth.onAuthStateChanged((user) => {
 
 });
 
-// ==========================================
-// Signup
-// ==========================================
+// =====================================
+// PREMIUM SIGNUP
+// =====================================
 
 window.signup = async function () {
 
-    const name =
-        document.getElementById("name")?.value.trim();
-
-    const email =
-        document.getElementById("email")?.value.trim();
-
-    const password =
-        document.getElementById("password")?.value;
+    const name = document.getElementById("name").value.trim();
+    const email = document.getElementById("email").value.trim().toLowerCase();
+    const password = document.getElementById("password").value;
 
     if (!name || !email || !password) {
-
         alert("Please fill all fields.");
         return;
-
     }
 
     if (password.length < 6) {
-
         alert("Password must be at least 6 characters.");
         return;
-
     }
 
     try {
 
-        const result =
-            await auth.createUserWithEmailAndPassword(
-                email,
-                password
-            );
+        // Create Account
+        const result = await auth.createUserWithEmailAndPassword(email, password);
 
         const user = result.user;
 
-        await user.sendEmailVerification();
-
+        // Save User Data
         await db.ref("users/" + user.uid).set({
 
             uid: user.uid,
 
             name: name,
 
-            username:
-                "@" +
-                name
-                .toLowerCase()
-                .replace(/\s+/g, ""),
+            username: "@" + name.toLowerCase().replace(/\s+/g, ""),
 
             email: email,
 
-            bio: "Hey! I'm using Viewora.",
+            bio: "Welcome to Viewora 🚀",
 
             profilePhoto: "non.jpg",
 
             verified: false,
 
-            joinedAt: Date.now()
+            joinedAt: firebase.database.ServerValue.TIMESTAMP
 
         });
 
+        // Send Verification Email
+        await user.sendEmailVerification();
+
         alert(
-            "Account created.\n\nVerification email has been sent."
+`🎉 Account created successfully!
+
+A verification email has been sent to:
+
+${email}
+
+Please verify your email before logging in.`
         );
 
+        // Logout
         await auth.signOut();
 
-        location.href = "login.html";
+        // Go to Login
+        window.location.href = "login.html";
 
-    }
+    } catch (error) {
 
-    catch (error) {
+        switch (error.code) {
 
-        alert(error.message);
+            case "auth/email-already-in-use":
+                alert("This email is already registered.");
+                break;
+
+            case "auth/invalid-email":
+                alert("Invalid email address.");
+                break;
+
+            case "auth/weak-password":
+                alert("Password is too weak.");
+                break;
+
+            default:
+                alert(error.message);
+
+        }
 
     }
 
@@ -144,19 +153,6 @@ window.login = async function () {
             );
 
         const user = result.user;
-
-        // Email Verification Check
-        if (!user.emailVerified) {
-
-            alert(
-                "Please verify your email first.\nCheck your inbox."
-            );
-
-            await auth.signOut();
-
-            return;
-
-        }
 
         // Update Database
         await db.ref("users/" + user.uid).update({
