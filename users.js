@@ -1,139 +1,285 @@
-// ==================== USERS.JS V1.2 ====================
+// =====================================
+// Viewora Users.js V2.0 (Premium)
+// Part 1
+// =====================================
 
-let allUsers = [];
 let currentUser = null;
+let allUsers = [];
+let usersListener = null;
 
-document.addEventListener("DOMContentLoaded", () => {
+// =============================
+// Auth Check
+// =============================
 
-    auth.onAuthStateChanged(user => {
-        if (!user) {
-            location.href = "login.html";
-            return;
-        }
+auth.onAuthStateChanged((user) => {
 
-        currentUser = user;
-        loadUsers();
-    });
+    if (!user) {
+        window.location.href = "login.html";
+        return;
+    }
+
+    currentUser = user;
+
+    initializeUsers();
 
 });
 
-// ================= LOAD USERS =================
+// =============================
+// Initialize
+// =============================
 
-function loadUsers() {
+function initializeUsers() {
+
+    showLoading();
+
+    loadUsers();
+
+}
+
+// =============================
+// Premium Loading
+// =============================
+
+function showLoading() {
 
     const container = document.getElementById("usersList");
 
-    container.innerHTML = `
-        <p style="text-align:center;padding:40px;color:#888;">
-            Loading users...
-        </p>
-    `;
+    container.innerHTML = "";
 
-    db.ref("users").on("value", snapshot => {
+    for (let i = 0; i < 6; i++) {
+
+        container.innerHTML += `
+
+        <div class="user-skeleton">
+
+            <div class="skeleton-avatar"></div>
+
+            <div class="skeleton-info">
+
+                <div class="skeleton-line"></div>
+
+                <div class="skeleton-line small"></div>
+
+            </div>
+
+        </div>
+
+        `;
+
+    }
+
+}
+
+// =============================
+// Load Users
+// =============================
+
+function loadUsers() {
+
+    if (usersListener) {
+
+        db.ref("users").off("value", usersListener);
+
+    }
+
+    usersListener = (snapshot) => {
 
         allUsers = [];
 
-        snapshot.forEach(child => {
+        if (!snapshot.exists()) {
+
+            showEmpty();
+
+            return;
+
+        }
+
+        snapshot.forEach((child) => {
+
+            const data = child.val() || {};
+
+            if (child.key === currentUser.uid) return;
 
             allUsers.push({
+
                 uid: child.key,
-                ...child.val()
+
+                name: data.name || "Unknown User",
+
+                username: data.username || "user",
+
+                profilePhoto: data.profilePhoto || "users.jpg",
+
+                verified: data.verified || false,
+
+                bio: data.bio || "",
+
+                online: data.online || false
+
             });
 
         });
 
-        // Alphabetical order
-        allUsers.sort((a,b)=>
-            (a.name || "").localeCompare(b.name || "")
+        allUsers.sort((a, b) =>
+            a.name.localeCompare(b.name)
         );
 
         renderUsers(allUsers);
 
-    });
+    };
+
+    db.ref("users").on(
+
+        "value",
+
+        usersListener,
+
+        (error) => {
+
+            console.error(error);
+
+            showError(error.message);
+
+        }
+
+    );
 
 }
-// ================= RENDER USERS =================
 
-function renderUsers(users){
+// =============================
+// Empty State
+// =============================
+
+function showEmpty() {
+
+    document.getElementById("usersList").innerHTML = `
+
+    <div style="
+        text-align:center;
+        padding:80px;
+        color:#888;
+    ">
+
+        <h2>👥</h2>
+
+        <h3>No Users Found</h3>
+
+        <p>
+            Users will appear here.
+        </p>
+
+    </div>
+
+    `;
+
+}
+
+// =============================
+// Error State
+// =============================
+
+function showError(message) {
+
+    document.getElementById("usersList").innerHTML = `
+
+    <div style="
+        text-align:center;
+        padding:70px;
+        color:#ff6666;
+    ">
+
+        <h2>⚠️</h2>
+
+        <h3>Failed to Load Users</h3>
+
+        <small>${message}</small>
+
+    </div>
+
+    `;
+
+}
+// =====================================
+// Viewora Users.js V2.0
+// Part 2
+// Premium User Cards
+// =====================================
+
+function renderUsers(users) {
 
     const container = document.getElementById("usersList");
 
-    if(users.length===0){
-        container.innerHTML=`
-        <p style="text-align:center;padding:60px;color:#888;">
-            No users found.
-        </p>`;
+    if (!users || users.length === 0) {
+        showEmpty();
         return;
     }
 
-    let html="";
+    let html = "";
 
-    users.forEach(user=>{
+    users.forEach(user => {
 
-        if(currentUser && user.uid===currentUser.uid){
-            return;
-        }
+        html += `
 
-        html+=`
+        <div class="user-card fade-in"
+             onclick="viewProfile('${user.uid}')">
 
-        <div class="user-card"
-        onclick="viewProfile('${user.uid}')"
-        style="
-        display:flex;
-        align-items:center;
-        justify-content:space-between;
-        padding:15px;
-        margin:12px;
-        background:#1b1b1b;
-        border-radius:15px;
-        cursor:pointer;
-        ">
-
-            <div style="display:flex;align-items:center;gap:15px;">
+            <div class="user-left">
 
                 <img
-                src="${user.profilePhoto || 'users.jpg'}"
-                onerror="this.src='non.jpg'"
-                style="
-                width:60px;
-                height:60px;
-                border-radius:50%;
-                object-fit:cover;
-                border:2px solid #00aaff;
-                ">
+                    src="${user.profilePhoto}"
+                    class="user-avatar"
+                    onerror="this.src='non.jpg'">
 
-                <div>
+                <div class="user-info">
 
-                    <h3 style="margin:0;">
-                        ${user.name || "User"}
+                    <h3>
+
+                        ${user.name}
+
+                        ${user.verified
+                            ? `<span class="verified">✔</span>`
+                            : ""}
+
                     </h3>
 
-                    <p style="margin:5px 0;color:#aaa;">
-                        @${user.username || "unknown"}
-                    </p>
+                    <p>@${user.username}</p>
 
-                    <small id="followers-${user.uid}" style="color:#777;">
+                    <small id="followers-${user.uid}">
                         Loading followers...
                     </small>
+
+                    <div class="online-status">
+
+                        ${user.online
+                            ? "🟢 Online"
+                            : "⚫ Offline"}
+
+                    </div>
 
                 </div>
 
             </div>
 
-            <button
-            onclick="event.stopPropagation();toggleFollow('${user.uid}')"
-            id="followBtn-${user.uid}"
-            style="
-            padding:10px 18px;
-            border:none;
-            border-radius:25px;
-            background:#00aaff;
-            color:white;
-            font-weight:bold;
-            cursor:pointer;
-            ">
-            Follow
-            </button>
+            <div class="user-actions">
+
+                <button
+                    id="followBtn-${user.uid}"
+                    class="follow-btn"
+                    onclick="event.stopPropagation();toggleFollow('${user.uid}')">
+
+                    Follow
+
+                </button>
+
+                <button
+                    class="message-btn"
+                    onclick="event.stopPropagation();openChat('${user.uid}')">
+
+                    💬
+
+                </button>
+
+            </div>
 
         </div>
 
@@ -141,118 +287,419 @@ function renderUsers(users){
 
     });
 
-    container.innerHTML=html;
+    container.innerHTML = html;
 
-    users.forEach(user=>{
-        if(currentUser && user.uid!==currentUser.uid){
-            loadFollowers(user.uid);
-            checkFollowing(user.uid);
-        }
+    users.forEach(user => {
+
+        loadFollowers(user.uid);
+
+        checkFollowing(user.uid);
+
     });
 
 }
-// ================= FOLLOW SYSTEM =================
 
-function loadFollowers(uid){
+// =============================
+// Followers Count
+// =============================
 
-    db.ref("followers/" + uid).on("value", snap => {
+function loadFollowers(uid) {
 
-        const count = snap.numChildren();
+    db.ref("followers/" + uid)
+
+    .on("value", snap => {
+
+        const total = snap.numChildren();
 
         const el = document.getElementById("followers-" + uid);
 
-        if(el){
-            el.innerHTML = count + " Followers";
+        if (el) {
+
+            el.innerHTML =
+
+                total + (total === 1
+                    ? " Follower"
+                    : " Followers");
+
         }
 
     });
 
 }
 
-function checkFollowing(uid){
+// =============================
+// Check Following
+// =============================
 
-    if(!currentUser) return;
+function checkFollowing(uid) {
 
-    db.ref("following/" + currentUser.uid + "/" + uid).once("value")
-    .then(snap=>{
+    db.ref(
 
-        const btn=document.getElementById("followBtn-"+uid);
+        "following/" +
 
-        if(!btn) return;
+        currentUser.uid +
 
-        if(snap.exists()){
-            btn.innerHTML="Following";
-            btn.style.background="#555";
-        }else{
-            btn.innerHTML="Follow";
-            btn.style.background="#00aaff";
-        }
+        "/" +
 
-    });
+        uid
 
-}
+    )
 
-window.toggleFollow=function(uid){
+    .once("value")
 
-    if(!currentUser) return;
+    .then(snap => {
 
-    const followingRef=db.ref("following/"+currentUser.uid+"/"+uid);
-    const followerRef=db.ref("followers/"+uid+"/"+currentUser.uid);
+        const btn =
 
-    followingRef.once("value").then(snap=>{
+        document.getElementById(
 
-        if(snap.exists()){
+            "followBtn-" + uid
 
-            followingRef.remove();
-            followerRef.remove();
-
-            checkFollowing(uid);
-
-        }else{
-
-            followingRef.set(true);
-            followerRef.set(true);
-
-            checkFollowing(uid);
-
-        }
-
-    });
-
-};
-
-// ================= SEARCH =================
-
-window.searchUsers=function(){
-
-    const keyword=document
-        .getElementById("search")
-        .value
-        .toLowerCase()
-        .trim();
-
-    if(keyword===""){
-        renderUsers(allUsers);
-        return;
-    }
-
-    const filtered=allUsers.filter(user=>{
-
-        return (
-            (user.name||"").toLowerCase().includes(keyword) ||
-            (user.username||"").toLowerCase().includes(keyword)
         );
 
+        if (!btn) return;
+
+        if (snap.exists()) {
+
+            btn.innerHTML = "Following";
+
+            btn.style.background = "#444";
+
+        } else {
+
+            btn.innerHTML = "Follow";
+
+            btn.style.background = "#00aaff";
+
+        }
+
     });
 
-    renderUsers(filtered);
+}
+
+// =============================
+// Open Chat
+// =============================
+
+function openChat(uid) {
+
+    window.location.href =
+
+    "chat.html?uid=" + uid;
+
+}
+// =====================================
+// Viewora Users.js V2.0
+// Part 3
+// Follow + Search + Refresh
+// =====================================
+
+// =============================
+// Follow / Unfollow
+// =============================
+
+window.toggleFollow = async function(uid){
+
+    if(!currentUser) return;
+
+    const followingRef = db.ref(
+        "following/" + currentUser.uid + "/" + uid
+    );
+
+    const followerRef = db.ref(
+        "followers/" + uid + "/" + currentUser.uid
+    );
+
+    try{
+
+        const snap = await followingRef.once("value");
+
+        if(snap.exists()){
+
+            await followingRef.remove();
+            await followerRef.remove();
+
+            showToast("👋 Unfollowed");
+
+        }else{
+
+            await followingRef.set({
+
+                followedAt:
+                firebase.database.ServerValue.TIMESTAMP
+
+            });
+
+            await followerRef.set({
+
+                followedAt:
+                firebase.database.ServerValue.TIMESTAMP
+
+            });
+
+            showToast("❤️ Following");
+
+        }
+
+        checkFollowing(uid);
+
+    }catch(error){
+
+        console.error(error);
+
+        showToast("❌ Follow Failed");
+
+    }
 
 };
 
-// ================= PROFILE =================
+// =============================
+// Live Search
+// =============================
+
+const searchBox =
+document.getElementById("search");
+
+if(searchBox){
+
+searchBox.addEventListener("input",()=>{
+
+const keyword =
+
+searchBox.value
+.toLowerCase()
+.trim();
+
+if(keyword===""){
+
+renderUsers(allUsers);
+
+return;
+
+}
+
+const filtered =
+
+allUsers.filter(user=>{
+
+return(
+
+(user.name||"")
+.toLowerCase()
+.includes(keyword)
+
+||
+
+(user.username||"")
+.toLowerCase()
+.includes(keyword)
+
+||
+
+(user.bio||"")
+.toLowerCase()
+.includes(keyword)
+
+);
+
+});
+
+renderUsers(filtered);
+
+});
+
+}
+
+// =============================
+// Pull Refresh
+// =============================
+
+window.refreshUsers=function(){
+
+showLoading();
+
+setTimeout(()=>{
+
+loadUsers();
+
+showToast("🔄 Refreshed");
+
+},500);
+
+};
+
+// =============================
+// View Profile
+// =============================
 
 window.viewProfile=function(uid){
 
-    location.href="profile.html?uid="+uid;
+window.location.href=
+
+"profile.html?uid="+uid;
 
 };
+
+// =============================
+// Animation
+// =============================
+
+document.addEventListener("click",(e)=>{
+
+const card=
+
+e.target.closest(".user-card");
+
+if(card){
+
+card.style.transform="scale(.98)";
+
+setTimeout(()=>{
+
+card.style.transform="scale(1)";
+
+},120);
+
+}
+
+});
+// =====================================
+// Viewora Users.js V2.0
+// Part 4 (Final)
+// Premium Finish
+// =====================================
+
+// =============================
+// Toast Notification
+// =============================
+
+function showToast(message){
+
+    let toast=document.getElementById("vieworaToast");
+
+    if(!toast){
+
+        toast=document.createElement("div");
+
+        toast.id="vieworaToast";
+
+        toast.style.cssText=`
+        position:fixed;
+        left:50%;
+        bottom:90px;
+        transform:translateX(-50%);
+        background:linear-gradient(135deg,#00aaff,#0066ff);
+        color:#fff;
+        padding:14px 24px;
+        border-radius:30px;
+        font-size:14px;
+        font-weight:bold;
+        box-shadow:0 8px 30px rgba(0,170,255,.35);
+        z-index:99999;
+        opacity:0;
+        transition:.35s;
+        `;
+
+        document.body.appendChild(toast);
+
+    }
+
+    toast.innerHTML=message;
+
+    toast.style.opacity="1";
+
+    setTimeout(()=>{
+
+        toast.style.opacity="0";
+
+    },2500);
+
+}
+
+// =============================
+// Online Status
+// =============================
+
+function updateOnlineStatus(status){
+
+    if(!currentUser) return;
+
+    db.ref("status/"+currentUser.uid).set({
+
+        online:status,
+
+        lastSeen:firebase.database.ServerValue.TIMESTAMP
+
+    });
+
+}
+
+window.addEventListener("load",()=>{
+
+    updateOnlineStatus(true);
+
+});
+
+window.addEventListener("beforeunload",()=>{
+
+    updateOnlineStatus(false);
+
+});
+
+// =============================
+// Cleanup Firebase Listeners
+// =============================
+
+window.addEventListener("beforeunload",()=>{
+
+    if(usersListener){
+
+        db.ref("users").off("value",usersListener);
+
+    }
+
+});
+
+// =============================
+// Retry Loading
+// =============================
+
+window.retryLoadUsers=function(){
+
+    showLoading();
+
+    loadUsers();
+
+};
+
+// =============================
+// Page Ready
+// =============================
+
+window.addEventListener("load",()=>{
+
+    console.log("✅ Viewora Users V2.0 Loaded");
+
+});
+
+// =============================
+// Internet Status
+// =============================
+
+window.addEventListener("online",()=>{
+
+    showToast("🌐 Internet Connected");
+
+});
+
+window.addEventListener("offline",()=>{
+
+    showToast("📡 Internet Disconnected");
+
+});
+
+// =============================
+// End
+// =============================
+
+console.log("🚀 Users.js Premium Ready");

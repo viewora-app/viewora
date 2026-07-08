@@ -1,8 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
 
 <meta charset="UTF-8">
+
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <title>Viewora • Settings</title>
@@ -12,18 +14,20 @@
 <style>
 
 *{
+
 margin:0;
 padding:0;
 box-sizing:border-box;
 font-family:Arial,sans-serif;
+
 }
 
 body{
 
-background:#0d0d0d;
+background:#0d1117;
 color:#fff;
-padding-bottom:120px;
 overflow-x:hidden;
+padding-bottom:120px;
 
 }
 
@@ -32,28 +36,36 @@ overflow-x:hidden;
 body::before{
 
 content:"";
+
 position:fixed;
-top:-50%;
-left:-50%;
-width:200%;
-height:200%;
+
+width:300%;
+height:300%;
+
+left:-100%;
+top:-100%;
 
 background:
 
 radial-gradient(circle,#00aaff22,transparent 35%),
+
 radial-gradient(circle,#ff008822,transparent 35%),
+
 radial-gradient(circle,#00ff8822,transparent 35%);
 
-animation:bgRotate 20s linear infinite;
+animation:bgMove 25s linear infinite;
 
 z-index:-1;
 
 }
 
-@keyframes bgRotate{
+@keyframes bgMove{
 
-0%{transform:rotate(0deg);}
-100%{transform:rotate(360deg);}
+100%{
+
+transform:rotate(360deg);
+
+}
 
 }
 
@@ -61,46 +73,63 @@ z-index:-1;
 
 .header{
 
-padding:25px;
+padding:35px 20px;
+
 text-align:center;
 
-font-size:30px;
-font-weight:bold;
+background:linear-gradient(135deg,#00aaff,#0066ff);
 
-background:linear-gradient(90deg,#00aaff,#ff00aa);
+border-bottom-left-radius:35px;
 
--webkit-background-clip:text;
--webkit-text-fill-color:transparent;
+border-bottom-right-radius:35px;
+
+box-shadow:0 15px 35px rgba(0,170,255,.25);
 
 }
 
-/* Profile Card */
+.header h1{
 
-.profile-card{
+font-size:30px;
+
+}
+
+.header p{
+
+margin-top:8px;
+
+opacity:.9;
+
+}
+
+/* Profile */
+
+.profile{
 
 width:92%;
-margin:20px auto;
 
-background:rgba(255,255,255,.06);
-
-backdrop-filter:blur(14px);
-
-border-radius:22px;
+margin:25px auto;
 
 padding:25px;
+
+text-align:center;
+
+background:rgba(255,255,255,.05);
+
+backdrop-filter:blur(15px);
+
+border-radius:25px;
 
 border:1px solid rgba(255,255,255,.08);
 
-text-align:center;
-
-box-shadow:0 10px 30px rgba(0,0,0,.25);
+animation:zoom .5s;
 
 }
 
-#userInfo img{
+.profile img{
 
-width:110px;
-height:110px;
+width:100px;
+
+height:100px;
 
 border-radius:50%;
 
@@ -108,46 +137,277 @@ object-fit:cover;
 
 border:4px solid #00aaff;
 
-box-shadow:0 0 25px rgba(0,170,255,.45);
-
-margin-bottom:15px;
+box-shadow:0 0 25px rgba(0,170,255,.4);
 
 }
 
-#userInfo h2{
+.profile h2{
 
-font-size:24px;
-
-margin-bottom:6px;
+margin-top:15px;
 
 }
 
-#userInfo p{
+.profile p{
 
 color:#aaa;
 
+margin-top:5px;
+
 }
 
-/* Section */
+.editBtn{
 
-.section-title{
+margin-top:18px;
 
-width:92%;
-margin:30px auto 15px;
+padding:12px 28px;
 
-font-size:18px;
-color:#00aaff;
+border:none;
+
+border-radius:30px;
+
+background:#00aaff;
+
+color:#fff;
 
 font-weight:bold;
 
+cursor:pointer;
+
+transition:.3s;
+
 }
 
-/* Cards */
+.editBtn:hover{
 
-.settings-container{
+transform:scale(1.05);
+
+}
+
+.section{
 
 width:92%;
+
 margin:auto;
+
+margin-top:25px;
+
+}
+
+.section h3{
+
+margin-bottom:15px;
+
+color:#00aaff;
+
+}
+
+@keyframes zoom{
+
+from{
+
+opacity:0;
+
+transform:scale(.9);
+
+}
+
+to{
+
+opacity:1;
+
+transform:scale(1);
+
+}
+
+}
+
+</style>
+
+
+</head>
+
+<body>
+
+<div class="header">
+
+<h1>⚙️ Settings</h1>
+
+<p>Manage your Viewora account</p>
+
+</div>
+
+<div class="profile">
+
+<img id="profilePhoto" src="non.jpg">
+
+<h2 id="profileName">
+
+Loading...
+
+</h2>
+
+<p id="profileUsername">
+
+@loading
+
+</p>
+
+<button class="editBtn"
+
+onclick="location.href='account-settings.html'">
+
+✏️ Edit Profile
+
+</button>
+
+</div>
+
+<div class="section">
+
+<h3>Settings Categories</h3>
+<!-- ========================= -->
+<!-- Settings Categories -->
+<!-- ========================= -->
+
+<div class="settings-grid">
+
+    <!-- Account -->
+
+    <div class="setting-card"
+    onclick="location.href='account-settings.html'">
+
+        <div class="icon">👤</div>
+
+        <div>
+
+            <h4>Account</h4>
+
+            <small>
+                Profile, Name, Email, Phone
+            </small>
+
+        </div>
+
+        <span>›</span>
+
+    </div>
+
+    <!-- Security -->
+
+    <div class="setting-card"
+    onclick="location.href='security-settings.html'">
+
+        <div class="icon">🔒</div>
+
+        <div>
+
+            <h4>Security</h4>
+
+            <small>
+                Password, Privacy & Verification
+            </small>
+
+        </div>
+
+        <span>›</span>
+
+    </div>
+
+    <!-- Preferences -->
+
+    <div class="setting-card"
+    onclick="location.href='preferences-settings.html'">
+
+        <div class="icon">🎨</div>
+
+        <div>
+
+            <h4>Preferences</h4>
+
+            <small>
+                Theme, Language & Appearance
+            </small>
+
+        </div>
+
+        <span>›</span>
+
+    </div>
+
+    <!-- Notifications -->
+
+    <div class="setting-card"
+    onclick="location.href='notification-settings.html'">
+
+        <div class="icon">🔔</div>
+
+        <div>
+
+            <h4>Notifications</h4>
+
+            <small>
+                Likes, Messages & Stories
+            </small>
+
+        </div>
+
+        <span>›</span>
+
+    </div>
+
+    <!-- Support -->
+
+    <div class="setting-card"
+    onclick="location.href='support-settings.html'">
+
+        <div class="icon">❓</div>
+
+        <div>
+
+            <h4>Help & Support</h4>
+
+            <small>
+                Help Center & Contact
+            </small>
+
+        </div>
+
+        <span>›</span>
+
+    </div>
+
+    <!-- About -->
+
+    <div class="setting-card"
+    onclick="location.href='about-settings.html'">
+
+        <div class="icon">ℹ️</div>
+
+        <div>
+
+            <h4>About Viewora</h4>
+
+            <small>
+                Version, Privacy & Terms
+            </small>
+
+        </div>
+
+        <span>›</span>
+
+    </div>
+
+</div>
+
+<style>
+
+.settings-grid{
+
+display:flex;
+
+flex-direction:column;
+
+gap:15px;
 
 }
 
@@ -157,47 +417,72 @@ display:flex;
 
 align-items:center;
 
-gap:15px;
+gap:18px;
 
 padding:18px;
 
-margin-bottom:14px;
-
 background:rgba(255,255,255,.06);
 
-backdrop-filter:blur(12px);
-
-border-radius:18px;
+backdrop-filter:blur(15px);
 
 border:1px solid rgba(255,255,255,.08);
 
+border-radius:22px;
+
 cursor:pointer;
 
-transition:.3s;
+transition:.35s;
+
+animation:slideUp .5s ease forwards;
+
+opacity:0;
 
 }
+
+.setting-card:nth-child(1){animation-delay:.05s;}
+.setting-card:nth-child(2){animation-delay:.10s;}
+.setting-card:nth-child(3){animation-delay:.15s;}
+.setting-card:nth-child(4){animation-delay:.20s;}
+.setting-card:nth-child(5){animation-delay:.25s;}
+.setting-card:nth-child(6){animation-delay:.30s;}
 
 .setting-card:hover{
 
-transform:translateY(-3px);
+transform:translateY(-4px);
 
 background:rgba(255,255,255,.10);
 
-box-shadow:0 12px 30px rgba(0,170,255,.18);
+box-shadow:0 15px 35px rgba(0,170,255,.18);
 
 }
 
-.setting-card .icon{
+.icon{
 
-font-size:30px;
+font-size:34px;
+
+width:55px;
+
+height:55px;
+
+display:flex;
+
+align-items:center;
+
+justify-content:center;
+
+border-radius:16px;
+
+background:linear-gradient(135deg,#00aaff,#0077ff);
+
+box-shadow:0 8px 20px rgba(0,170,255,.25);
 
 }
 
 .setting-card h4{
 
-margin-bottom:4px;
+font-size:18px;
 
-font-size:17px;
+margin-bottom:5px;
 
 }
 
@@ -205,265 +490,50 @@ font-size:17px;
 
 color:#aaa;
 
+font-size:13px;
+
 }
 
-.arrow{
+.setting-card span{
 
 margin-left:auto;
 
-font-size:25px;
+font-size:28px;
 
 color:#00aaff;
 
 }
 
+@keyframes slideUp{
+
+from{
+
+opacity:0;
+
+transform:translateY(25px);
+
+}
+
+to{
+
+opacity:1;
+
+transform:translateY(0);
+
+}
+
+}
+
 </style>
-
-</head>
-
-<body>
-
-<div class="header">
-
-⚙️ Viewora Settings
-
-</div>
-
-<div class="profile-card">
-
-<div id="userInfo">
-
-<img src="non.jpg">
-
-<h2>Loading...</h2>
-
-<p>@loading</p>
-
-</div>
-
-</div>
-
-<h3 class="section-title">
-
-General
-
-</h3>
-
-<div class="settings-container">
-
-<div class="setting-card"
-
-onclick="editProfile()">
-
-<div class="icon">👤</div>
-
-<div>
-
-<h4>Edit Profile</h4>
-
-<small>Update your information</small>
-
-</div>
-
-<div class="arrow">›</div>
-
-</div>
-
-<div class="setting-card"
-
-onclick="goToNotifications()">
-
-<div class="icon">🔔</div>
-
-<div>
-
-<h4>Notifications</h4>
-
-<small>Manage notification settings</small>
-
-</div>
-
-<div class="arrow">›</div>
-
-</div>
-
-<div class="setting-card"
-
-onclick="toggleDarkMode()">
-
-<div class="icon">🌙</div>
-
-<div>
-
-<h4>Appearance</h4>
-
-<small>Dark / Light Mode</small>
-
-</div>
-
-<div class="arrow">›</div>
-
-</div>
-
-<div class="setting-card"
-
-onclick="window.location.href='profile.html'">
-
-<div class="icon">👤</div>
-
-<div>
-
-<h4>My Profile</h4>
-
-<small>View your profile</small>
-
-</div>
-
-<div class="arrow">›</div>
-
-</div>
-
-</div>
 <!-- ========================= -->
-<!-- Privacy & Security -->
+<!-- Quick Actions -->
 <!-- ========================= -->
 
-<h3 class="section-title">
-Privacy & Security
-</h3>
+<div class="section">
 
-<div class="settings-container">
+<h3>Quick Actions</h3>
 
-<div class="setting-card"
-onclick="window.open('privacy.html','_blank')">
-
-<div class="icon">🔒</div>
-
-<div>
-
-<h4>Privacy Policy</h4>
-
-<small>How we collect and protect your data</small>
-
-</div>
-
-<div class="arrow">›</div>
-
-</div>
-
-<div class="setting-card"
-onclick="window.open('terms.html','_blank')">
-
-<div class="icon">📜</div>
-
-<div>
-
-<h4>Terms & Conditions</h4>
-
-<small>Read Viewora terms of use</small>
-
-</div>
-
-<div class="arrow">›</div>
-
-</div>
-
-<div class="setting-card"
-onclick="window.open('community-guidelines.html','_blank')">
-
-<div class="icon">🛡️</div>
-
-<div>
-
-<h4>Community Guidelines</h4>
-
-<small>Keep Viewora safe for everyone</small>
-
-</div>
-
-<div class="arrow">›</div>
-
-</div>
-
-<div class="setting-card"
-onclick="window.location.href='delete-account.html'">
-
-<div class="icon">🗑️</div>
-
-<div>
-
-<h4>Delete Account</h4>
-
-<small>Permanently delete your account</small>
-
-</div>
-
-<div class="arrow">›</div>
-
-</div>
-
-</div>
-
-<!-- ========================= -->
-<!-- Help & Support -->
-<!-- ========================= -->
-
-<h3 class="section-title">
-Support
-</h3>
-
-<div class="settings-container">
-
-<div class="setting-card"
-onclick="window.location.href='mailto:vieworasupport@gmail.com'">
-
-<div class="icon">📧</div>
-
-<div>
-
-<h4>Contact Support</h4>
-
-<small>vieworasupport@gmail.com</small>
-
-</div>
-
-<div class="arrow">›</div>
-
-</div>
-
-<div class="setting-card"
-onclick="showHelp()">
-
-<div class="icon">❓</div>
-
-<div>
-
-<h4>Help Center</h4>
-
-<small>Frequently asked questions</small>
-
-</div>
-
-<div class="arrow">›</div>
-
-</div>
-
-<div class="setting-card"
-onclick="showAbout()">
-
-<div class="icon">ℹ️</div>
-
-<div>
-
-<h4>About Viewora</h4>
-
-<small>Version, developer and app info</small>
-
-</div>
-
-<div class="arrow">›</div>
-
-</div>
+<div class="settings-grid">
 
 <div class="setting-card"
 onclick="shareApp()">
@@ -478,290 +548,264 @@ onclick="shareApp()">
 
 </div>
 
-<div class="arrow">›</div>
+<span>›</span>
+
+</div>
+
+<div class="setting-card"
+onclick="clearCache()">
+
+<div class="icon">🧹</div>
+
+<div>
+
+<h4>Clear Cache</h4>
+
+<small>Free up storage</small>
+
+</div>
+
+<span>›</span>
+
+</div>
+
+<div class="setting-card"
+onclick="manageDownloads()">
+
+<div class="icon">📥</div>
+
+<div>
+
+<h4>Downloads</h4>
+
+<small>Manage saved files</small>
+
+</div>
+
+<span>›</span>
+
+</div>
 
 </div>
 
 </div>
 
 <!-- ========================= -->
-<!-- Logout -->
+<!-- Account -->
 <!-- ========================= -->
 
-<div style="width:92%;margin:35px auto;">
+<div class="section">
 
-<button
-class="logout-btn"
+<h3>Account</h3>
+
+<div class="settings-grid">
+
+<div class="setting-card logout-card"
 onclick="logout()">
 
-🚪 Logout
+<div class="icon">🚪</div>
 
-</button>
+<div>
 
-<button
-class="back-btn"
-onclick="window.location.href='profile.html'">
+<h4>Logout</h4>
 
-⬅ Back to Profile
-
-</button>
-
-<p style="
-margin-top:25px;
-text-align:center;
-color:#666;
-font-size:13px;">
-
-Viewora v1.0.0<br>
-
-© 2026 Viewora. All Rights Reserved.
-
-</p>
+<small>Sign out from Viewora</small>
 
 </div>
+
+<span>›</span>
+
+</div>
+
+<div class="setting-card delete-card"
+onclick="location.href='delete-account.html'">
+
+<div class="icon">🗑️</div>
+
+<div>
+
+<h4>Delete Account</h4>
+
+<small>Permanently remove your account</small>
+
+</div>
+
+<span>›</span>
+
+</div>
+
+</div>
+
+</div>
+
+<!-- ========================= -->
+<!-- Version Card -->
+<!-- ========================= -->
+
+<div class="version-card">
+
+<h2>🚀 Viewora</h2>
+
+<p>Version 1.0.0</p>
+
+<p>Premium Social Media Platform</p>
+
+</div>
+
 <style>
 
-/* ========================= */
-/* Buttons */
-/* ========================= */
+.logout-card .icon{
 
-.logout-btn,
-.back-btn{
-
-width:100%;
-
-padding:16px;
-
-border:none;
-
-border-radius:35px;
-
-font-size:16px;
-
-font-weight:bold;
-
-cursor:pointer;
-
-transition:.3s;
-
-margin-bottom:15px;
+background:linear-gradient(135deg,#ff9800,#ff5722);
 
 }
 
-.logout-btn{
+.delete-card .icon{
 
-background:linear-gradient(135deg,#ff3b5c,#ff1744);
-
-color:#fff;
-
-box-shadow:0 10px 25px rgba(255,0,80,.30);
+background:linear-gradient(135deg,#ff1744,#d50000);
 
 }
 
-.logout-btn:hover{
+.version-card{
 
-transform:translateY(-3px);
+width:92%;
 
-box-shadow:0 15px 35px rgba(255,0,80,.45);
+margin:35px auto;
 
-}
+padding:25px;
 
-.back-btn{
+text-align:center;
 
-background:#2b2b2b;
+background:rgba(255,255,255,.05);
 
-color:#fff;
+backdrop-filter:blur(15px);
 
-}
+border-radius:25px;
 
-.back-btn:hover{
+border:1px solid rgba(255,255,255,.08);
 
-background:#3a3a3a;
-
-transform:translateY(-2px);
+animation:fadeUp .8s;
 
 }
 
-/* ========================= */
-/* Fade Animation */
-/* ========================= */
+.version-card h2{
 
-.profile-card{
+color:#00aaff;
 
-animation:zoomIn .6s ease;
+margin-bottom:10px;
 
 }
 
-.setting-card{
+.version-card p{
 
-animation:slideUp .5s ease both;
+color:#aaa;
+
+margin:5px 0;
 
 }
 
-.setting-card:nth-child(1){animation-delay:.05s;}
-.setting-card:nth-child(2){animation-delay:.10s;}
-.setting-card:nth-child(3){animation-delay:.15s;}
-.setting-card:nth-child(4){animation-delay:.20s;}
-.setting-card:nth-child(5){animation-delay:.25s;}
-.setting-card:nth-child(6){animation-delay:.30s;}
-
-@keyframes zoomIn{
+@keyframes fadeUp{
 
 from{
 
 opacity:0;
-transform:scale(.92);
+
+transform:translateY(40px);
 
 }
 
 to{
 
 opacity:1;
-transform:scale(1);
 
-}
-
-}
-
-@keyframes slideUp{
-
-from{
-
-opacity:0;
-transform:translateY(30px);
-
-}
-
-to{
-
-opacity:1;
 transform:translateY(0);
 
 }
 
 }
 
-/* ========================= */
-/* Ripple */
-/* ========================= */
+</style>
+<!-- ========================= -->
+<!-- Premium Footer -->
+<!-- ========================= -->
 
-.setting-card{
+<div class="footer">
 
-position:relative;
+    <h2>❤️ Thanks for using Viewora</h2>
 
-overflow:hidden;
+    <p>
+        Stay connected with the world.
+    </p>
 
-}
+    <p class="copyright">
 
-.setting-card::after{
+        © 2026 Viewora
 
-content:"";
+    </p>
 
-position:absolute;
+</div>
 
-left:50%;
-top:50%;
+<!-- Floating Version Badge -->
 
-width:0;
-height:0;
+<div class="version-badge">
 
-background:rgba(255,255,255,.12);
+    v1.0.0
 
-border-radius:50%;
+</div>
 
-transform:translate(-50%,-50%);
+<style>
 
-transition:.45s;
+/* Footer */
 
-}
+.footer{
 
-.setting-card:active::after{
+width:92%;
 
-width:500px;
+margin:50px auto 120px;
 
-height:500px;
+padding:25px;
 
-}
+text-align:center;
 
-/* ========================= */
-/* Scrollbar */
-/* ========================= */
+background:rgba(255,255,255,.05);
 
-::-webkit-scrollbar{
+backdrop-filter:blur(18px);
 
-width:8px;
+border-radius:25px;
 
-}
+border:1px solid rgba(255,255,255,.08);
 
-::-webkit-scrollbar-track{
-
-background:#111;
+animation:fadeIn 1s;
 
 }
 
-::-webkit-scrollbar-thumb{
+.footer h2{
 
-background:#00aaff;
+color:#00aaff;
 
-border-radius:20px;
-
-}
-
-/* ========================= */
-/* Responsive */
-/* ========================= */
-
-@media(max-width:600px){
-
-.header{
-
-font-size:24px;
+margin-bottom:10px;
 
 }
 
-.profile-card{
+.footer p{
 
-padding:20px;
+color:#999;
 
-}
-
-#userInfo img{
-
-width:90px;
-height:90px;
+margin-top:8px;
 
 }
 
-.setting-card{
+.copyright{
 
-padding:16px;
-
-}
-
-.setting-card h4{
-
-font-size:16px;
-
-}
-
-.setting-card small{
+margin-top:18px;
 
 font-size:13px;
 
-}
-
-.logout-btn,
-.back-btn{
-
-font-size:15px;
+color:#666;
 
 }
 
-}
-
-/* ========================= */
-/* Floating Version Badge */
-/* ========================= */
+/* Floating Badge */
 
 .version-badge{
 
@@ -769,99 +813,163 @@ position:fixed;
 
 right:18px;
 
-bottom:18px;
+bottom:95px;
 
-padding:8px 14px;
-
-background:#00aaff;
-
-color:#fff;
-
-font-size:12px;
+padding:10px 18px;
 
 border-radius:30px;
 
-box-shadow:0 8px 20px rgba(0,170,255,.35);
+background:linear-gradient(
+135deg,
+#00aaff,
+#0066ff
+);
+
+color:#fff;
+
+font-weight:bold;
+
+font-size:13px;
+
+box-shadow:0 8px 25px rgba(0,170,255,.35);
+
+animation:pulse 2s infinite;
 
 z-index:999;
 
 }
 
-/* ========================= */
-/* Footer */
-/* ========================= */
+/* Fade */
 
-.footer{
+@keyframes fadeIn{
 
-text-align:center;
+from{
 
-padding:25px;
+opacity:0;
 
-font-size:13px;
-
-color:#666;
+transform:translateY(40px);
 
 }
 
-.footer a{
+to{
 
-color:#00aaff;
+opacity:1;
 
-text-decoration:none;
+transform:translateY(0);
 
 }
 
-.footer a:hover{
+}
 
-text-decoration:underline;
+/* Pulse */
+
+@keyframes pulse{
+
+0%,100%{
+
+transform:scale(1);
+
+}
+
+50%{
+
+transform:scale(1.08);
+
+}
+
+}
+
+/* Floating Glow */
+
+body::after{
+
+content:"";
+
+position:fixed;
+
+width:220px;
+
+height:220px;
+
+background:#00aaff22;
+
+filter:blur(80px);
+
+right:-70px;
+
+bottom:-70px;
+
+border-radius:50%;
+
+pointer-events:none;
+
+animation:floatGlow 6s ease-in-out infinite;
+
+}
+
+@keyframes floatGlow{
+
+0%,100%{
+
+transform:translateY(0);
+
+}
+
+50%{
+
+transform:translateY(-20px);
+
+}
 
 }
 
 </style>
 
-<div class="version-badge">
-v1.0.0
-</div>
+<!-- Firebase -->
 
-<div class="footer">
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 
-Made with ❤️ for the Viewora Community
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 
-</div>
-    <!-- ========================= -->
-    <!-- Firebase SDK -->
-    <!-- ========================= -->
-    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
 
-    <!-- Viewora Scripts -->
-    <script src="firebase.js"></script>
-    <script src="settings.js"></script>
-    <script src="nav.js"></script>
+<script src="firebase.js"></script>
 
-    <script>
-    // Fade animation
-    window.addEventListener("load", () => {
-        document.body.style.opacity = "0";
-        document.body.style.transition = "opacity .35s ease";
+<script src="settings.js"></script>
 
-        requestAnimationFrame(() => {
-            document.body.style.opacity = "1";
-        });
-    });
+<script src="nav.js"></script>
 
-    // Network status
-    window.addEventListener("online", () => {
-        console.log("✅ Internet Connected");
-    });
+<script>
 
-    window.addEventListener("offline", () => {
-        alert("No Internet Connection");
-    });
+// Smooth page load
 
-    console.log("✅ Viewora Settings Loaded");
-    </script>
+document.body.style.opacity="0";
+
+window.onload=()=>{
+
+document.body.style.transition=".4s";
+
+document.body.style.opacity="1";
+
+};
+
+// Internet Status
+
+window.addEventListener("online",()=>{
+
+showToast("🌐 Internet Connected");
+
+});
+
+window.addEventListener("offline",()=>{
+
+showToast("❌ Internet Disconnected");
+
+});
+
+console.log("✅ Viewora Premium Settings Loaded");
+
+</script>
 
 </body>
 </html>

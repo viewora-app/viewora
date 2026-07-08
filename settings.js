@@ -1,170 +1,476 @@
-// ===============================
-// SETTINGS.JS
-// Viewora
-// ===============================
+// ======================================
+// Viewora Settings V2.0
+// Part 1
+// ======================================
 
-let currentUser = null;
+auth.onAuthStateChanged((user) => {
 
-// -------------------------------
-// Check Login
-// -------------------------------
+    if (!user) {
 
-auth.onAuthStateChanged(function(user){
-
-    if(!user){
         window.location.href = "login.html";
         return;
+
     }
 
-    currentUser = user;
-
-    loadUserProfile();
+    loadUser(user.uid);
 
 });
 
-// -------------------------------
-// Load Profile
-// -------------------------------
+function loadUser(uid) {
 
-function loadUserProfile(){
+    db.ref("users/" + uid).once("value")
 
-    db.ref("users/" + currentUser.uid)
-    .once("value")
-    .then(function(snapshot){
+    .then((snapshot) => {
 
-        const data = snapshot.val();
+        if (!snapshot.exists()) return;
 
-        const box = document.getElementById("userInfo");
+        const user = snapshot.val();
 
-        if(!box) return;
+        document.getElementById("profilePhoto").src =
+            user.profilePhoto || "non.jpg";
 
-        if(!data){
+        document.getElementById("profileName").innerText =
+            user.name || "User";
 
-            box.innerHTML = `
-                <img src="non.jpg">
-                <h2>User</h2>
-                <p>@user</p>
-            `;
+        document.getElementById("profileUsername").innerText =
+            user.username || "@user";
 
-            return;
+        document.getElementById("settingName").innerText =
+            user.name || "";
+
+        document.getElementById("settingUsername").innerText =
+            user.username || "";
+
+        document.getElementById("settingEmail").innerText =
+            user.email || "";
+
+        document.getElementById("settingPhone").innerText =
+            user.phone || "Not Added";
+
+        document.getElementById("settingBirthday").innerText =
+            user.birthday || "Not Set";
+
+        document.getElementById("settingGender").innerText =
+            user.gender || "Not Specified";
+
+        const verify = document.getElementById("verifyStatus");
+
+        if (auth.currentUser.emailVerified) {
+
+            verify.innerHTML = "✅ Verified";
+
+        } else {
+
+            verify.innerHTML = "❌ Not Verified";
 
         }
-
-        box.innerHTML = `
-
-            <img
-            src="${data.profilePhoto || 'non.jpg'}"
-            onerror="this.src='non.jpg'">
-
-            <h2>${data.name || "User"}</h2>
-
-            <p>@${data.username || "user"}</p>
-
-        `;
-
-    })
-    .catch(function(error){
-
-        console.log(error);
 
     });
 
 }
 
-// -------------------------------
+// =============================
 // Edit Profile
-// -------------------------------
+// =============================
 
-window.editProfile = function(){
+function editProfile(){
 
-    location.href = "edit-profile.html";
+    window.location.href="edit-profile.html";
 
-};
+}
 
-// -------------------------------
-// Notifications
-// -------------------------------
+// =============================
+// Edit Name
+// =============================
 
-window.goToNotifications = function(){
+function editName(){
 
-    location.href = "notifications.html";
+    const name=prompt("Enter new name");
 
-};
+    if(!name) return;
 
-// -------------------------------
-// Dark Mode
-// -------------------------------
+    const uid=auth.currentUser.uid;
 
-window.toggleDarkMode = function(){
+    db.ref("users/"+uid+"/name").set(name)
 
-    document.body.classList.toggle("light");
+    .then(()=>{
 
-    if(document.body.classList.contains("light")){
+        alert("Name Updated");
+
+        loadUser(uid);
+
+    });
+
+}
+
+// =============================
+// Edit Username
+// =============================
+
+function editUsername(){
+
+    const username=prompt("Enter username");
+
+    if(!username) return;
+
+    const uid=auth.currentUser.uid;
+
+    db.ref("users/"+uid+"/username").set(username)
+
+    .then(()=>{
+
+        alert("Username Updated");
+
+        loadUser(uid);
+
+    });
+
+}
+// ======================================
+// Viewora Settings V2.0
+// Part 2
+// Personal Information + Security
+// ======================================
+
+// =============================
+// Change Email
+// =============================
+
+async function changeEmail() {
+
+    const newEmail = prompt("Enter your new email");
+
+    if (!newEmail) return;
+
+    try {
+
+        await auth.currentUser.updateEmail(newEmail);
+
+        await db.ref("users/" + auth.currentUser.uid + "/email")
+            .set(newEmail);
+
+        alert("✅ Email updated successfully.");
+
+        loadUser(auth.currentUser.uid);
+
+    } catch (error) {
+
+        alert(error.message);
+
+    }
+
+}
+
+// =============================
+// Change Phone Number
+// =============================
+
+function changePhone() {
+
+    const phone = prompt("Enter phone number");
+
+    if (!phone) return;
+
+    db.ref("users/" + auth.currentUser.uid + "/phone")
+        .set(phone)
+        .then(() => {
+
+            alert("✅ Phone number updated.");
+
+            loadUser(auth.currentUser.uid);
+
+        });
+
+}
+
+// =============================
+// Birthday
+// =============================
+
+function changeBirthday() {
+
+    const birthday = prompt("Enter Birthday (DD/MM/YYYY)");
+
+    if (!birthday) return;
+
+    db.ref("users/" + auth.currentUser.uid + "/birthday")
+        .set(birthday)
+        .then(() => {
+
+            alert("✅ Birthday updated.");
+
+            loadUser(auth.currentUser.uid);
+
+        });
+
+}
+
+// =============================
+// Gender
+// =============================
+
+function changeGender() {
+
+    const gender = prompt("Male / Female / Other");
+
+    if (!gender) return;
+
+    db.ref("users/" + auth.currentUser.uid + "/gender")
+        .set(gender)
+        .then(() => {
+
+            alert("✅ Gender updated.");
+
+            loadUser(auth.currentUser.uid);
+
+        });
+
+}
+
+// =============================
+// Change Password
+// =============================
+
+function changePassword() {
+
+    auth.sendPasswordResetEmail(auth.currentUser.email)
+
+        .then(() => {
+
+            alert("✅ Password reset email sent.");
+
+        })
+
+        .catch((error) => {
+
+            alert(error.message);
+
+        });
+
+}
+
+// =============================
+// Forgot Password
+// =============================
+
+function forgotPassword() {
+
+    const email = prompt("Enter your registered email");
+
+    if (!email) return;
+
+    auth.sendPasswordResetEmail(email)
+
+        .then(() => {
+
+            alert("✅ Password reset email sent.");
+
+        })
+
+        .catch((error) => {
+
+            alert(error.message);
+
+        });
+
+}
+
+// =============================
+// Verify Email
+// =============================
+
+function verifyEmail() {
+
+    const user = auth.currentUser;
+
+    if (user.emailVerified) {
+
+        alert("✅ Your email is already verified.");
+
+        return;
+
+    }
+
+    user.sendEmailVerification()
+
+        .then(() => {
+
+            alert("📧 Verification email has been sent.");
+
+        })
+
+        .catch((error) => {
+
+            alert(error.message);
+
+        });
+
+}
+
+// =============================
+// Login Activity
+// =============================
+
+function manageDevices() {
+
+    alert(
+`Login Activity
+
+Current Device:
+✔ This Device
+
+More device management will be available in a future update.`
+    );
+
+}
+// ======================================
+// Viewora Settings V2.0
+// Part 3
+// Notifications • Appearance • Privacy
+// ======================================
+
+// =============================
+// Push Notifications
+// =============================
+
+function notificationSettings(){
+
+    alert(
+`🔔 Notifications
+
+• Likes
+• Comments
+• Followers
+• Messages
+
+Notification settings will be added in the next update.`
+    );
+
+}
+
+// =============================
+// Story Notifications
+// =============================
+
+function storyNotifications(){
+
+    alert("📸 Story notifications are enabled.");
+
+}
+
+// =============================
+// Message Notifications
+// =============================
+
+function messageNotifications(){
+
+    alert("💬 Message notifications are enabled.");
+
+}
+
+// =============================
+// Dark / Light Mode
+// =============================
+
+function toggleDarkMode(){
+
+    const body=document.body;
+
+    body.classList.toggle("light-mode");
+
+    if(body.classList.contains("light-mode")){
 
         localStorage.setItem("theme","light");
+
+        showToast("☀️ Light Mode Enabled");
 
     }else{
 
         localStorage.setItem("theme","dark");
 
+        showToast("🌙 Dark Mode Enabled");
+
     }
 
-};
+}
 
-// Apply Theme
+// Restore Theme
 
-window.addEventListener("load",function(){
+window.addEventListener("load",()=>{
 
-    const theme = localStorage.getItem("theme");
+    const theme=localStorage.getItem("theme");
 
     if(theme==="light"){
 
-        document.body.classList.add("light");
+        document.body.classList.add("light-mode");
 
     }
 
 });
 
-// -------------------------------
-// Help
-// -------------------------------
+// =============================
+// Language
+// =============================
 
-window.showHelp = function(){
-
-    alert(
-`Help Center
-
-Email:
-vieworasupport@gmail.com
-
-Thank you for using Viewora ❤️`
-);
-
-};
-
-// -------------------------------
-// About
-// -------------------------------
-
-window.showAbout = function(){
+function changeLanguage(){
 
     alert(
-`Viewora
+`🌍 Languages
 
-Version : 1.0.0
+English ✅
 
-Developed using Firebase
+Hindi (Coming Soon)
 
-© 2026 Viewora`
-);
+More languages will be available soon.`
+    );
 
-};
+}
 
-// -------------------------------
+// =============================
+// Privacy Settings
+// =============================
+
+function privacySettings(){
+
+    window.location.href="privacy.html";
+
+}
+
+// =============================
+// Blocked Users
+// =============================
+
+function blockedUsers(){
+
+    alert(
+`🚫 Blocked Users
+
+No blocked users found.`
+    );
+
+}
+
+// =============================
+// App Permissions
+// =============================
+
+function managePermissions(){
+
+    alert(
+`📷 Camera
+🎤 Microphone
+💾 Storage
+
+Manage permissions from your device settings.`
+    );
+
+}
+
+// =============================
 // Share App
-// -------------------------------
+// =============================
 
-window.shareApp = function(){
+function shareApp(){
 
     if(navigator.share){
 
@@ -172,54 +478,228 @@ window.shareApp = function(){
 
             title:"Viewora",
 
-            text:"Join me on Viewora!",
+            text:"Join me on Viewora 🚀",
 
-            url:window.location.origin
+            url:location.origin
 
         });
 
     }else{
 
-        alert("Sharing is not supported.");
+        prompt(
+            "Copy this link:",
+            location.origin
+        );
 
     }
 
-};
+}
 
-// -------------------------------
-// Rate App
-// -------------------------------
+// =============================
+// About Viewora
+// =============================
 
-window.rateApp = function(){
+function showAbout(){
 
-    alert("Viewora will be available on Google Play soon.");
+    alert(
+`Viewora
 
-};
+Version : 1.0.0
 
-// -------------------------------
+Made with ❤️
+
+© Viewora
+
+All Rights Reserved.`
+    );
+
+}
+
+// =============================
+// Help Center
+// =============================
+
+function showHelp(){
+
+    alert(
+`Need Help?
+
+Email:
+vieworasupport@gmail.com
+
+Response Time:
+24-48 Hours`
+    );
+
+}
+// ======================================
+// Viewora Settings V2.0
+// Part 4 (Final)
+// Storage • Logout • Delete • Utilities
+// ======================================
+
+// =============================
+// Clear Cache
+// =============================
+
+function clearCache(){
+
+    if(confirm("Clear app cache?")){
+
+        localStorage.clear();
+
+        showToast("🧹 Cache Cleared");
+
+    }
+
+}
+
+// =============================
+// Downloads
+// =============================
+
+function manageDownloads(){
+
+    alert(
+`📥 Downloads
+
+Downloaded media management
+
+Coming Soon 🚀`
+    );
+
+}
+
+// =============================
 // Logout
-// -------------------------------
+// =============================
 
-window.logout = function(){
+async function logout(){
 
-    if(!confirm("Logout from Viewora?")) return;
+    const ok=confirm("Do you want to logout?");
 
-    auth.signOut()
-    .then(function(){
+    if(!ok) return;
 
-        location.href = "login.html";
+    try{
 
-    })
-    .catch(function(error){
+        await auth.signOut();
+
+        showToast("👋 Logged Out");
+
+        setTimeout(()=>{
+
+            window.location.href="login.html";
+
+        },800);
+
+    }
+
+    catch(error){
 
         alert(error.message);
 
-    });
+    }
 
-};
+}
 
-// -------------------------------
-// Version
-// -------------------------------
+// =============================
+// Delete Account
+// =============================
 
-console.log("✅ Settings Loaded");
+function deleteAccount(){
+
+    window.location.href="delete-account.html";
+
+}
+
+// =============================
+// Premium Toast
+// =============================
+
+function showToast(message){
+
+    let toast=document.getElementById("vieworaToast");
+
+    if(!toast){
+
+        toast=document.createElement("div");
+
+        toast.id="vieworaToast";
+
+        toast.style.cssText=`
+
+        position:fixed;
+
+        left:50%;
+
+        bottom:30px;
+
+        transform:translateX(-50%);
+
+        background:#00aaff;
+
+        color:#fff;
+
+        padding:14px 22px;
+
+        border-radius:30px;
+
+        font-size:14px;
+
+        font-weight:bold;
+
+        z-index:99999;
+
+        opacity:0;
+
+        transition:.35s;
+
+        box-shadow:0 8px 25px rgba(0,170,255,.35);
+
+        `;
+
+        document.body.appendChild(toast);
+
+    }
+
+    toast.innerHTML=message;
+
+    toast.style.opacity="1";
+
+    setTimeout(()=>{
+
+        toast.style.opacity="0";
+
+    },2500);
+
+}
+
+// =============================
+// Internet Status
+// =============================
+
+window.addEventListener("online",()=>{
+
+    showToast("🌐 Internet Connected");
+
+});
+
+window.addEventListener("offline",()=>{
+
+    showToast("❌ No Internet");
+
+});
+
+// =============================
+// Page Loaded
+// =============================
+
+window.addEventListener("load",()=>{
+
+    console.log("✅ Viewora Settings Loaded");
+
+});
+
+// ======================================
+// End
+// ======================================

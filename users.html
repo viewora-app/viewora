@@ -1,123 +1,1351 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Users • Viewora</title>
-    <link rel="stylesheet" href="style.css">
-    <style>
-        body { background: #111; color: white; padding-bottom: 80px; }
-        .header { background: #1b1b1b; padding: 20px; text-align: center; position: sticky; top: 0; z-index: 100; }
-        .search-box { padding: 15px 20px; background: #1b1b1b; display: flex; gap: 10px; }
-        #search { flex: 1; padding: 12px 18px; border: none; border-radius: 25px; background: #2a2a2a; color: white; }
-        #search:focus { outline: 2px solid #00aaff; }
-        .search-btn { padding: 12px 24px; background: #00aaff; color: white; border: none; border-radius: 25px; cursor: pointer; }
-        #usersList { padding: 10px; }
-    </style>
+
+<meta charset="UTF-8">
+
+<meta name="viewport"
+content="width=device-width,initial-scale=1.0">
+
+<title>👥 Viewora • Discover Users</title>
+
+<link rel="stylesheet" href="style.css">
+
+<link rel="preconnect"
+href="https://fonts.googleapis.com">
+
+<link rel="preconnect"
+href="https://fonts.gstatic.com"
+crossorigin>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+rel="stylesheet">
+
+<style>
+
+*{
+
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:'Poppins',sans-serif;
+
+}
+
+body{
+
+background:#090909;
+color:#fff;
+overflow-x:hidden;
+padding-bottom:120px;
+
+}
+
+/* Animated Background */
+
+body::before{
+
+content:"";
+
+position:fixed;
+
+top:-40%;
+left:-40%;
+
+width:180%;
+height:180%;
+
+background:
+
+radial-gradient(circle,#00aaff22 0%,transparent 45%),
+
+radial-gradient(circle,#ff008822 0%,transparent 40%),
+
+radial-gradient(circle,#00ff9922 0%,transparent 40%);
+
+animation:bgMove 18s linear infinite;
+
+z-index:-2;
+
+filter:blur(30px);
+
+}
+
+@keyframes bgMove{
+
+0%{
+
+transform:rotate(0deg);
+
+}
+
+100%{
+
+transform:rotate(360deg);
+
+}
+
+}
+
+/* Premium Header */
+
+.header{
+
+position:sticky;
+
+top:0;
+
+z-index:999;
+
+padding:18px 20px;
+
+backdrop-filter:blur(18px);
+
+background:rgba(20,20,20,.72);
+
+border-bottom:1px solid rgba(255,255,255,.08);
+
+display:flex;
+
+justify-content:space-between;
+
+align-items:center;
+
+}
+
+.logo{
+
+font-size:28px;
+
+font-weight:700;
+
+background:linear-gradient(90deg,#00aaff,#00ffee);
+
+-webkit-background-clip:text;
+
+-webkit-text-fill-color:transparent;
+
+}
+
+.online{
+
+display:flex;
+
+align-items:center;
+
+gap:8px;
+
+font-size:14px;
+
+color:#aaa;
+
+}
+
+.online-dot{
+
+width:10px;
+
+height:10px;
+
+border-radius:50%;
+
+background:#00ff66;
+
+box-shadow:0 0 15px #00ff66;
+
+animation:pulse 1.5s infinite;
+
+}
+
+@keyframes pulse{
+
+0%{
+
+transform:scale(.8);
+
+opacity:.6;
+
+}
+
+50%{
+
+transform:scale(1.2);
+
+opacity:1;
+
+}
+
+100%{
+
+transform:scale(.8);
+
+opacity:.6;
+
+}
+
+}
+
+/* Search */
+
+.search-wrapper{
+
+padding:18px;
+
+}
+
+.search-box{
+
+display:flex;
+
+align-items:center;
+
+gap:12px;
+
+background:rgba(255,255,255,.08);
+
+border:1px solid rgba(255,255,255,.08);
+
+backdrop-filter:blur(18px);
+
+padding:14px 18px;
+
+border-radius:18px;
+
+transition:.35s;
+
+}
+
+.search-box:focus-within{
+
+border-color:#00aaff;
+
+box-shadow:0 0 25px rgba(0,170,255,.35);
+
+transform:translateY(-2px);
+
+}
+
+.search-icon{
+
+font-size:22px;
+
+}
+
+#search{
+
+flex:1;
+
+border:none;
+
+outline:none;
+
+background:transparent;
+
+color:#fff;
+
+font-size:15px;
+
+}
+
+#search::placeholder{
+
+color:#888;
+
+}
+
+/* Counter */
+
+.counter{
+
+margin:0 18px;
+
+padding:14px;
+
+border-radius:18px;
+
+background:linear-gradient(135deg,#00aaff,#0066ff);
+
+display:flex;
+
+justify-content:space-between;
+
+align-items:center;
+
+box-shadow:0 10px 25px rgba(0,170,255,.35);
+
+}
+
+.counter h3{
+
+font-size:16px;
+
+font-weight:600;
+
+}
+
+.counter span{
+
+font-size:22px;
+
+font-weight:700;
+
+}
+
+#usersList{
+
+padding:18px;
+
+}
+
+</style>
+
 </head>
+
 <body>
 
-    <div class="header">
-        <h1>👥 All Users</h1>
-    </div>
+<div class="header">
 
-    <div class="search-box">
-        <input type="text" id="search" placeholder="Search users..." onkeyup="if(event.key === 'Enter') searchUsers()">
-        <button class="search-btn" onclick="searchUsers()">Search</button>
-    </div>
+<div class="logo">
 
-    <div id="usersList">
-        <p style="text-align:center; padding:40px; color:#888;">Loading users...</p>
-    </div>
-
-    <!-- Bottom Navigation -->
-<div class="bottom-nav">
-
-<a href="index.html">
-
-<span class="nav-icon">🏠</span>
-
-Home
-
-</a>
-
-<a href="vieworation.html">
-
-<span class="nav-icon">🌍</span>
-
-Vieworation
-
-</a>
-
-<a href="shorts.html">
-
-<span class="nav-icon">▶️</span>
-
-Shorts
-
-</a>
-
-<a href="upload.html">
-
-<span class="nav-icon">➕</span>
-
-Upload
-
-</a>
-
-<a href="users.html" class="active">
-
-<span class="nav-icon">👥</span>
-
-Userslist
-
-</a>
-
-<a href="profile.html">
-
-<span class="nav-icon">👤</span>
-
-Profile
-
-</a>
+Viewora
 
 </div>
 
-    <!-- Scripts -->
-    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
-    
-    <script src="firebase.js"></script>
-    <script src="users.js"></script>
-    <script src="nav.js"></script>
-    <style>
-      #floatingChat{
-    animation: pulseGlow 2.5s ease-in-out infinite;
-}
+<div class="online">
 
-@keyframes pulseGlow{
+<div class="online-dot"></div>
 
-    0%,100%{
-        transform: scale(1);
-        box-shadow:
-            0 8px 25px rgba(0,170,255,.35),
-            0 0 12px rgba(0,170,255,.25);
-    }
+<span>Online</span>
 
-    50%{
-        transform: scale(1.05);
-        box-shadow:
-            0 12px 35px rgba(0,170,255,.55),
-            0 0 25px rgba(0,170,255,.45);
-    }
+</div>
 
-}
-    </style>
-    
-    <button id="floatingChat" onclick="window.location.href='messages.html'">
-    💬
+</div>
+
+<div class="search-wrapper">
+
+<div class="search-box">
+
+<div class="search-icon">
+
+🔍
+
+</div>
+
+<input
+
+type="text"
+
+id="search"
+
+placeholder="Search users...">
+
+</div>
+
+</div>
+
+<div class="counter">
+
+<h3>Total Users</h3>
+
+<span id="userCount">
+
+0
+
+</span>
+
+</div>
+
+<div id="usersList">
+
+<!-- Users.js renders here -->
+
+</div>
+<!-- ===================================== -->
+<!-- Premium Empty State -->
+<!-- ===================================== -->
+
+<div id="emptyState" style="display:none;">
+
+    <div class="empty-box">
+
+        <div class="empty-icon">
+            👥
+        </div>
+
+        <h2>No Users Found</h2>
+
+        <p>
+            Try searching with another name.
+        </p>
+
+    </div>
+
+</div>
+
+<!-- ===================================== -->
+<!-- Premium Loading Skeleton -->
+<!-- ===================================== -->
+
+<div id="loadingUsers" style="display:none;">
+
+    <div class="user-skeleton">
+
+        <div class="sk-avatar"></div>
+
+        <div class="sk-info">
+
+            <div class="sk-line"></div>
+
+            <div class="sk-line small"></div>
+
+        </div>
+
+    </div>
+
+    <div class="user-skeleton">
+
+        <div class="sk-avatar"></div>
+
+        <div class="sk-info">
+
+            <div class="sk-line"></div>
+
+            <div class="sk-line small"></div>
+
+        </div>
+
+    </div>
+
+    <div class="user-skeleton">
+
+        <div class="sk-avatar"></div>
+
+        <div class="sk-info">
+
+            <div class="sk-line"></div>
+
+            <div class="sk-line small"></div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<!-- ===================================== -->
+<!-- Floating Chat Button -->
+<!-- ===================================== -->
+
+<button id="floatingChat"
+onclick="window.location.href='messages.html'">
+
+💬
+
 </button>
+
+<!-- ===================================== -->
+<!-- Firebase -->
+<!-- ===================================== -->
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
+
+<script src="firebase.js"></script>
+
+<script src="users.js"></script>
+
+<script src="nav.js"></script>
+
+<style>
+
+/* ============================= */
+/* Empty State */
+/* ============================= */
+
+.empty-box{
+
+padding:80px 25px;
+
+text-align:center;
+
+opacity:.9;
+
+}
+
+.empty-icon{
+
+font-size:75px;
+
+margin-bottom:20px;
+
+animation:floatUser 3s ease-in-out infinite;
+
+}
+
+.empty-box h2{
+
+font-size:26px;
+
+margin-bottom:12px;
+
+}
+
+.empty-box p{
+
+color:#999;
+
+}
+
+/* ============================= */
+/* Skeleton Loading */
+/* ============================= */
+
+.user-skeleton{
+
+display:flex;
+
+align-items:center;
+
+gap:18px;
+
+padding:18px;
+
+margin-bottom:18px;
+
+border-radius:22px;
+
+background:rgba(255,255,255,.05);
+
+backdrop-filter:blur(16px);
+
+animation:fadeUp .8s ease;
+
+}
+
+.sk-avatar{
+
+width:70px;
+
+height:70px;
+
+border-radius:50%;
+
+background:linear-gradient(
+90deg,
+#333,
+#444,
+#333);
+
+background-size:300%;
+
+animation:shine 1.2s infinite;
+
+}
+
+.sk-info{
+
+flex:1;
+
+}
+
+.sk-line{
+
+height:16px;
+
+border-radius:10px;
+
+margin-bottom:14px;
+
+background:linear-gradient(
+90deg,
+#333,
+#444,
+#333);
+
+background-size:300%;
+
+animation:shine 1.2s infinite;
+
+}
+
+.sk-line.small{
+
+width:55%;
+
+height:12px;
+
+}
+
+/* ============================= */
+/* Floating Chat */
+/* ============================= */
+
+#floatingChat{
+
+position:fixed;
+
+right:22px;
+
+bottom:95px;
+
+width:65px;
+
+height:65px;
+
+border:none;
+
+border-radius:50%;
+
+font-size:28px;
+
+cursor:pointer;
+
+background:linear-gradient(
+135deg,
+#00aaff,
+#0077ff);
+
+color:white;
+
+box-shadow:
+
+0 12px 35px rgba(0,170,255,.45);
+
+z-index:999;
+
+animation:
+
+pulseChat 2.5s infinite;
+
+transition:.3s;
+
+}
+
+#floatingChat:hover{
+
+transform:scale(1.08);
+
+}
+
+/* ============================= */
+/* Animations */
+/* ============================= */
+
+@keyframes shine{
+
+0%{
+
+background-position:-200px;
+
+}
+
+100%{
+
+background-position:200px;
+
+}
+
+}
+
+@keyframes fadeUp{
+
+from{
+
+opacity:0;
+
+transform:translateY(35px);
+
+}
+
+to{
+
+opacity:1;
+
+transform:translateY(0);
+
+}
+
+}
+
+@keyframes floatUser{
+
+0%,100%{
+
+transform:translateY(0);
+
+}
+
+50%{
+
+transform:translateY(-12px);
+
+}
+
+}
+
+@keyframes pulseChat{
+
+0%,100%{
+
+transform:scale(1);
+
+}
+
+50%{
+
+transform:scale(1.08);
+
+}
+
+}
+
+</style>
+<!-- ===================================== -->
+<!-- Premium Bottom Navigation -->
+<!-- ===================================== -->
+
+<div class="bottom-nav">
+
+    <a href="index.html">
+        <span class="nav-icon">🏠</span>
+        <span>Home</span>
+    </a>
+
+    <a href="vieworation.html">
+        <span class="nav-icon">🌍</span>
+        <span>Vieworation</span>
+    </a>
+
+    <a href="shorts.html">
+        <span class="nav-icon">▶️</span>
+        <span>Shorts</span>
+    </a>
+
+    <a href="upload.html">
+        <span class="nav-icon">➕</span>
+        <span>Upload</span>
+    </a>
+
+    <a href="users.html" class="active">
+        <span class="nav-icon">👥</span>
+        <span>Users</span>
+    </a>
+
+    <a href="profile.html">
+        <span class="nav-icon">👤</span>
+        <span>Profile</span>
+    </a>
+
+</div>
+
+<style>
+
+/* ===================================== */
+/* Premium Bottom Navigation */
+/* ===================================== */
+
+.bottom-nav{
+
+position:fixed;
+
+left:0;
+right:0;
+bottom:0;
+
+height:78px;
+
+display:flex;
+
+justify-content:space-around;
+align-items:center;
+
+background:rgba(18,18,18,.92);
+
+backdrop-filter:blur(18px);
+
+border-top:1px solid rgba(255,255,255,.08);
+
+z-index:9999;
+
+}
+
+.bottom-nav a{
+
+display:flex;
+
+flex-direction:column;
+
+align-items:center;
+
+justify-content:center;
+
+text-decoration:none;
+
+color:#888;
+
+font-size:12px;
+
+font-weight:500;
+
+transition:.3s;
+
+flex:1;
+
+height:100%;
+
+}
+
+.nav-icon{
+
+font-size:23px;
+
+margin-bottom:5px;
+
+transition:.3s;
+
+}
+
+.bottom-nav a:hover{
+
+color:#00aaff;
+
+transform:translateY(-4px);
+
+}
+
+.bottom-nav a.active{
+
+color:#00aaff;
+
+}
+
+.bottom-nav a.active .nav-icon{
+
+transform:scale(1.18);
+
+text-shadow:0 0 15px rgba(0,170,255,.7);
+
+}
+
+/* ===================================== */
+/* Page Fade Animation */
+/* ===================================== */
+
+body{
+
+animation:pageFade .5s ease;
+
+}
+
+@keyframes pageFade{
+
+from{
+
+opacity:0;
+
+transform:translateY(20px);
+
+}
+
+to{
+
+opacity:1;
+
+transform:translateY(0);
+
+}
+
+}
+
+/* ===================================== */
+/* User Cards (Rendered by users.js) */
+/* ===================================== */
+
+.user-card{
+
+display:flex;
+
+justify-content:space-between;
+
+align-items:center;
+
+padding:18px;
+
+margin-bottom:18px;
+
+background:rgba(255,255,255,.06);
+
+backdrop-filter:blur(15px);
+
+border:1px solid rgba(255,255,255,.08);
+
+border-radius:22px;
+
+transition:.35s;
+
+cursor:pointer;
+
+}
+
+.user-card:hover{
+
+transform:translateY(-5px);
+
+box-shadow:0 15px 35px rgba(0,170,255,.20);
+
+}
+
+.user-left{
+
+display:flex;
+
+align-items:center;
+
+gap:15px;
+
+}
+
+.user-avatar{
+
+width:70px;
+
+height:70px;
+
+border-radius:50%;
+
+object-fit:cover;
+
+border:3px solid #00aaff;
+
+}
+
+.user-info h3{
+
+font-size:18px;
+
+margin-bottom:5px;
+
+}
+
+.user-info p{
+
+color:#9a9a9a;
+
+font-size:14px;
+
+}
+
+.user-actions{
+
+display:flex;
+
+gap:10px;
+
+}
+
+.follow-btn,
+.message-btn{
+
+border:none;
+
+cursor:pointer;
+
+padding:10px 18px;
+
+border-radius:30px;
+
+font-weight:600;
+
+transition:.3s;
+
+}
+
+.follow-btn{
+
+background:linear-gradient(135deg,#00aaff,#0077ff);
+
+color:#fff;
+
+}
+
+.follow-btn:hover{
+
+transform:scale(1.05);
+
+}
+
+.message-btn{
+
+background:#2a2a2a;
+
+color:#fff;
+
+}
+
+.message-btn:hover{
+
+background:#3a3a3a;
+
+}
+
+/* ===================================== */
+/* Responsive */
+/* ===================================== */
+
+@media(max-width:600px){
+
+.logo{
+
+font-size:24px;
+
+}
+
+.counter{
+
+padding:12px;
+
+}
+
+.user-avatar{
+
+width:60px;
+
+height:60px;
+
+}
+
+.user-info h3{
+
+font-size:16px;
+
+}
+
+.bottom-nav{
+
+height:72px;
+
+}
+
+}
+
+</style>
+
+<script>
+
+// Premium Page Ready Animation
+
+window.addEventListener("load",()=>{
+
+document.body.style.opacity="0";
+
+requestAnimationFrame(()=>{
+
+document.body.style.transition="opacity .4s ease";
+
+document.body.style.opacity="1";
+
+});
+
+});
+
+// User Counter Update
+
+function updateUserCounter(){
+
+const counter=document.getElementById("userCount");
+
+if(counter && typeof allUsers!=="undefined"){
+
+counter.textContent=allUsers.length;
+
+}
+
+}
+
+setInterval(updateUserCounter,1000);
+
+</script>
+<!-- ===================================== -->
+<!-- Premium Internet Banner -->
+<!-- ===================================== -->
+
+<div id="networkBanner">
+
+    🌐 Internet Connected
+
+</div>
+
+<!-- ===================================== -->
+<!-- Premium Welcome Toast -->
+<!-- ===================================== -->
+
+<div id="welcomeToast">
+
+    👋 Welcome to Viewora Users
+
+</div>
+
+<style>
+
+/* ============================= */
+/* Network Banner */
+/* ============================= */
+
+#networkBanner{
+
+position:fixed;
+
+top:-70px;
+
+left:50%;
+
+transform:translateX(-50%);
+
+padding:14px 28px;
+
+border-radius:30px;
+
+background:linear-gradient(135deg,#00d26a,#00a651);
+
+color:#fff;
+
+font-weight:600;
+
+z-index:99999;
+
+transition:.4s;
+
+box-shadow:0 10px 25px rgba(0,0,0,.35);
+
+}
+
+/* ============================= */
+/* Welcome Toast */
+/* ============================= */
+
+#welcomeToast{
+
+position:fixed;
+
+bottom:100px;
+
+left:50%;
+
+transform:translateX(-50%);
+
+background:linear-gradient(135deg,#00aaff,#0066ff);
+
+padding:15px 28px;
+
+border-radius:30px;
+
+font-weight:600;
+
+opacity:0;
+
+transition:.4s;
+
+box-shadow:0 10px 30px rgba(0,170,255,.35);
+
+z-index:99999;
+
+}
+
+/* ============================= */
+/* Floating Background Orbs */
+/* ============================= */
+
+.bg-orb{
+
+position:fixed;
+
+border-radius:50%;
+
+filter:blur(70px);
+
+opacity:.18;
+
+z-index:-3;
+
+animation:floatOrb 16s linear infinite;
+
+}
+
+.orb1{
+
+width:220px;
+
+height:220px;
+
+background:#00aaff;
+
+top:10%;
+
+left:-60px;
+
+}
+
+.orb2{
+
+width:260px;
+
+height:260px;
+
+background:#ff00aa;
+
+bottom:10%;
+
+right:-80px;
+
+animation-duration:20s;
+
+}
+
+@keyframes floatOrb{
+
+0%{
+
+transform:translateY(0) rotate(0deg);
+
+}
+
+50%{
+
+transform:translateY(-40px) rotate(180deg);
+
+}
+
+100%{
+
+transform:translateY(0) rotate(360deg);
+
+}
+
+}
+
+</style>
+
+<div class="bg-orb orb1"></div>
+
+<div class="bg-orb orb2"></div>
+
+<script>
+
+/* ============================= */
+/* Welcome Animation */
+/* ============================= */
+
+window.addEventListener("load",()=>{
+
+const toast=document.getElementById("welcomeToast");
+
+toast.style.opacity="1";
+
+setTimeout(()=>{
+
+toast.style.opacity="0";
+
+},2500);
+
+});
+
+/* ============================= */
+/* Internet Status */
+/* ============================= */
+
+const banner=document.getElementById("networkBanner");
+
+window.addEventListener("online",()=>{
+
+banner.innerHTML="🟢 Internet Connected";
+
+banner.style.background="linear-gradient(135deg,#00d26a,#00a651)";
+
+banner.style.top="20px";
+
+setTimeout(()=>{
+
+banner.style.top="-70px";
+
+},2500);
+
+});
+
+window.addEventListener("offline",()=>{
+
+banner.innerHTML="🔴 No Internet";
+
+banner.style.background="linear-gradient(135deg,#ff3b5c,#d90429)";
+
+banner.style.top="20px";
+
+});
+
+/* ============================= */
+/* Pull To Refresh */
+/* ============================= */
+
+let startY=0;
+
+window.addEventListener("touchstart",e=>{
+
+startY=e.touches[0].clientY;
+
+});
+
+window.addEventListener("touchend",e=>{
+
+let endY=e.changedTouches[0].clientY;
+
+if(endY-startY>130){
+
+location.reload();
+
+}
+
+});
+
+/* ============================= */
+/* Smooth Card Animation */
+/* ============================= */
+
+document.addEventListener("click",e=>{
+
+const card=e.target.closest(".user-card");
+
+if(card){
+
+card.animate([
+
+{transform:"scale(1)"},
+
+{transform:"scale(.96)"},
+
+{transform:"scale(1)"}
+
+],{
+
+duration:180
+
+});
+
+}
+
+});
+
+/* ============================= */
+/* Final */
+/* ============================= */
+
+console.log("🚀 Users.html Premium V3.0 Loaded");
+
+</script>
 
 </body>
 </html>
