@@ -1,16 +1,20 @@
-// ==========================================
-// CHAT.JS V3.0 - PART 1
-// Login + Chat Initialization
-// ==========================================
+// ============================================
+// VIEWORA CHAT V5.0
+// PART 1
+// Authentication + Initialization
+// ============================================
 
 let currentUser = null;
-let otherUserUid = null;
-let chatId = null;
-let otherUser = null;
+let currentUserData = null;
 
-// ===============================
-// Get UID from URL
-// ===============================
+let otherUserUid = null;
+let otherUserData = null;
+
+let chatId = null;
+
+// ============================================
+// Get UID From URL
+// ============================================
 
 function getOtherUserUid() {
 
@@ -20,26 +24,25 @@ function getOtherUserUid() {
 
 }
 
-// ===============================
+// ============================================
 // Generate Chat ID
-// ===============================
+// ============================================
 
-function createChatId(uid1, uid2) {
+function generateChatId(uid1, uid2) {
 
     return [uid1, uid2].sort().join("_");
 
 }
 
-// ===============================
+// ============================================
 // Authentication
-// ===============================
+// ============================================
 
-auth.onAuthStateChanged((user) => {
+auth.onAuthStateChanged(async (user) => {
 
     if (!user) {
 
-        window.location.href = "login.html";
-
+        location.href = "login.html";
         return;
 
     }
@@ -58,431 +61,453 @@ auth.onAuthStateChanged((user) => {
 
     }
 
-    chatId = createChatId(currentUser.uid, otherUserUid);
+    chatId = generateChatId(
+        currentUser.uid,
+        otherUserUid
+    );
 
-    loadChatUser();
+    await loadCurrentUser();
+
+    await loadOtherUser();
+
+    createChatRoom();
+
+    setupPresence();
+
+    listenOtherUserStatus();
+
+    checkIfBlocked();
+
+    loadMessages();
+
+    listenTyping();
 
 });
 
-// ===============================
+// ============================================
+// Load Current User
+// ============================================
+
+async function loadCurrentUser() {
+
+    const snap = await db
+        .ref("users/" + currentUser.uid)
+        .once("value");
+
+    currentUserData = snap.val() || {};
+
+}
+
+// ============================================
 // Load Other User
-// ===============================
+// ============================================
 
-function loadChatUser() {
+async function loadOtherUser() {
 
-    db.ref("users/" + otherUserUid)
-    .on("value",(snapshot)=>{
+    const snap = await db
+        .ref("users/" + otherUserUid)
+        .once("value");
 
-        otherUser = snapshot.val() || {};
+    otherUserData = snap.val() || {};
 
-        const name =
-        document.getElementById("chatUserName");
+    document.getElementById("chatUserPhoto").src =
+        otherUserData.profilePhoto || "non.jpg";
 
-        const photo =
-        document.getElementById("chatUserPhoto");
+    document.getElementById("chatUserName").innerText =
+        otherUserData.name || "User";
 
-        const status =
-        document.getElementById("chatStatus");
+}
 
-        if(name){
+// ============================================
+// Create Chat Room
+// ============================================
 
-            name.innerText =
-            otherUser.name || "User";
+function createChatRoom() {
+
+    db.ref("chats/" + chatId).update({
+
+        participants: {
+
+            [currentUser.uid]: true,
+            [otherUserUid]: true
 
         }
-
-        if(photo){
-
-            photo.src =
-            otherUser.profilePhoto || "non.jpg";
-
-        }
-
-        db.ref("status/" + otherUserUid)
-        .on("value",(snap)=>{
-
-            if(!status) return;
-
-            if(snap.val()){
-
-                status.innerText="🟢 Online";
-                status.style.color="#00ff66";
-
-            }else{
-
-                status.innerText="⚫ Offline";
-                status.style.color="#888";
-
-            }
-
-        });
-
-        loadMessages();
-
-        listenTyping();
 
     });
 
 }
 
-// ===============================
-// Auto Online Status
-// ===============================
+// ============================================
+// Firebase Presence
+// ============================================
 
-function updateMyStatus(value){
+function setupPresence() {
 
-    if(!currentUser) return;
+    const connectedRef =
+        firebase.database().ref(".info/connected");
 
-    db.ref("status/" + currentUser.uid)
-    .set(value);
+    connectedRef.on("value", (snap) => {
+
+        if (!snap.val()) return;
+
+        const myStatus =
+            db.ref("status/" + currentUser.uid);
+
+        myStatus.onDisconnect().set({
+
+            online: false,
+            lastSeen: Date.now()
+
+        });
+
+        myStatus.set({
+
+            online: true,
+            lastSeen: Date.now()
+
+        });
+
+    });
 
 }
 
-window.addEventListener("load",()=>{
+// ============================================
+// Listen Other User Status
+// ============================================
 
-    updateMyStatus(true);
+function listenOtherUserStatus() {
 
-});
+    const status =
+        document.getElementById("chatStatus");
 
-window.addEventListener("beforeunload",()=>{
+    db.ref("status/" + otherUserUid)
 
-    updateMyStatus(false);
+    .on("value", (snap) => {
 
-});
+        if (!snap.exists()) {
 
-// ==========================================
-// END OF PART 1
-// ==========================================
-// ==========================================
-// CHAT.JS V3.0 - PART 2
-// Load Messages + Send Messages
-// ==========================================
+            status.innerHTML = "⚫ Offline";
+            status.style.color = "#999";
+            return;
 
-// Realtime Messages
+        }
+
+        const data = snap.val();
+
+        if (data.online) {
+
+            status.innerHTML = "🟢 Online";
+            status.style.color = "#00ff66";
+
+        }
+
+        else {
+
+            status.innerHTML =
+                "Last seen " +
+                new Date(data.lastSeen)
+                .toLocaleTimeString([], {
+
+                    hour: "2-digit",
+                    minute: "2-digit"
+
+                });
+
+            status.style.color = "#999";
+
+        }
+
+    });
+
+}
+
+// ============================================
+// Open User Profile
+// ============================================
+
+window.openAboutUser = function () {
+
+    location.href =
+        "profile.html?uid=" +
+        otherUserUid;
+
+};
+
+// ============================================
+// Check Block Status
+// ============================================
+
+async function checkIfBlocked() {
+
+    const snap = await db
+
+    .ref("blockedUsers/" +
+         otherUserUid +
+         "/" +
+         currentUser.uid)
+
+    .once("value");
+
+    if (snap.exists()) {
+
+        alert("You are blocked by this user.");
+
+        history.back();
+
+    }
+
+}
+
+// ============================================
+
+console.log("✅ CHAT V5 PART 1 LOADED");
+// ============================================
+// VIEWORA CHAT V5.0
+// PART 2
+// Messages + Send + Seen
+// ============================================
+
+// ============================================
+// Load Messages
+// ============================================
+
 function loadMessages() {
 
     const container =
         document.getElementById("messagesContainer");
 
-    if (!container || !chatId) return;
+    if (!container) return;
 
     db.ref("chats/" + chatId + "/messages")
-        .on("value", (snapshot) => {
 
-            container.innerHTML = "";
+    .on("value", (snapshot) => {
 
-            if (!snapshot.exists()) {
+        container.innerHTML = "";
 
-                container.innerHTML = `
-                <div style="
-                    text-align:center;
-                    color:#888;
-                    margin-top:50px;">
-                    Start your conversation 👋
-                </div>`;
+        if (!snapshot.exists()) {
 
-                return;
+            container.innerHTML = `
+            <div class="empty-chat">
+                👋 Start your conversation
+            </div>`;
+
+            return;
+
+        }
+
+        snapshot.forEach((child) => {
+
+            const messageId = child.key;
+            const msg = child.val();
+
+            const mine =
+                msg.senderUid === currentUser.uid;
+
+            const bubble =
+                document.createElement("div");
+
+            bubble.className =
+                mine
+                ? "message sent"
+                : "message received";
+
+            // ===========================
+            // Text / Image / Video
+            // ===========================
+
+            if (msg.type === "image") {
+
+                bubble.innerHTML += `
+                <img
+                src="${msg.image}"
+                class="chat-image">`;
+
             }
 
-            snapshot.forEach((child) => {
+            else if (msg.type === "video") {
 
-                const msg = child.val();
+                bubble.innerHTML += `
+                <video
+                controls
+                class="chat-video">
+                <source src="${msg.video}">
+                </video>`;
 
-                const isMine =
-                    msg.senderUid === currentUser.uid;
+            }
 
-                const bubble =
-                    document.createElement("div");
+            else {
 
-                bubble.className =
-                    isMine
-                    ? "message sent"
-                    : "message received";
+                bubble.innerHTML += `
+                <div class="message-text">
 
-                bubble.style.margin = "12px";
+                    ${msg.text || ""}
 
-                const text =
-                    document.createElement("div");
+                </div>`;
 
-                text.innerText =
-                    msg.text || "";
+            }
 
-                const time =
-                    document.createElement("small");
+            // Edited
 
-                time.style.opacity = ".7";
+            if (msg.edited) {
 
-                time.innerText =
-                    new Date(msg.timestamp)
-                    .toLocaleTimeString([], {
+                bubble.innerHTML += `
+                <div class="edited-label">
 
-                        hour: "2-digit",
-                        minute: "2-digit"
+                    Edited
 
-                    });
+                </div>`;
 
-                bubble.appendChild(text);
-                bubble.appendChild(time);
+            }
 
-                container.appendChild(bubble);
+            // Time + Seen
 
-            });
+            let ticks = "";
 
-            container.scrollTop =
-                container.scrollHeight;
+            if (mine) {
+
+                ticks =
+                msg.seen
+                ? "✓✓"
+                : "✓";
+
+            }
+
+            bubble.innerHTML += `
+
+            <div class="message-info">
+
+                ${formatTime(msg.timestamp)}
+
+                <span class="ticks">
+
+                    ${ticks}
+
+                </span>
+
+            </div>
+
+            `;
+
+            // Long Press
+
+            bubble.oncontextmenu = (e) => {
+
+                e.preventDefault();
+
+                openMessageMenu(
+                    messageId,
+                    msg
+                );
+
+            };
+
+            container.appendChild(bubble);
 
         });
 
+        scrollMessagesBottom();
+
+        markMessagesSeen();
+
+    });
+
 }
 
-// ==========================================
+// ============================================
 // Send Message
-// ==========================================
+// ============================================
 
-window.sendMessage = function () {
+window.sendMessage = async function () {
 
     const input =
         document.getElementById("messageInput");
 
     if (!input) return;
 
-    const message =
+    const text =
         input.value.trim();
 
-    if (message === "")
+    if (text === "")
         return;
 
-    const data = {
+    const message = {
 
-        text: message,
+        senderUid:
+            currentUser.uid,
 
-        senderUid: currentUser.uid,
+        receiverUid:
+            otherUserUid,
 
-        timestamp: Date.now(),
+        text: text,
+
+        type: "text",
+
+        timestamp:
+            Date.now(),
+
+        edited: false,
 
         seen: false
 
     };
 
-    db.ref("chats/" + chatId)
+    try {
+
+        await db
+        .ref("chats/" + chatId + "/messages")
+        .push(message);
+
+        await db
+        .ref("chats/" + chatId)
         .update({
 
-            participants: [
-                currentUser.uid,
-                otherUserUid
-            ],
-
-            lastMessage: message,
+            lastMessage: text,
 
             lastMessageTime: Date.now()
 
-        })
-
-        .then(() => {
-
-            return db.ref(
-                "chats/" +
-                chatId +
-                "/messages"
-            ).push(data);
-
-        })
-
-        .then(() => {
-
-            return db.ref(
-                "notifications/" +
-                otherUserUid
-            ).push({
-
-                type: "message",
-
-                fromUid:
-                    currentUser.uid,
-
-                fromName:
-                    currentUser.displayName ||
-                    "User",
-
-                message,
-
-                time: Date.now(),
-
-                read: false
-
-            });
-
-        })
-
-        .then(() => {
-
-            input.value = "";
-
-            container =
-                document.getElementById(
-                    "messagesContainer"
-                );
-
-            if (container) {
-
-                container.scrollTop =
-                    container.scrollHeight;
-
-            }
-
-        })
-
-        .catch((err) => {
-
-            console.error(err);
-
-            alert("Message failed.");
-
         });
 
-};
+        input.value = "";
 
-// ==========================================
-// Enter Key Support
-// ==========================================
+    }
 
-document.addEventListener(
-"DOMContentLoaded",
-function(){
+    catch (e) {
 
-    const input =
-        document.getElementById(
-            "messageInput"
-        );
+        console.error(e);
 
-    if(!input) return;
+        alert("Message not sent.");
 
-    input.addEventListener(
-    "keypress",
-    function(e){
-
-        if(e.key==="Enter"){
-
-            e.preventDefault();
-
-            sendMessage();
-
-        }
-
-    });
-
-});
-
-// ==========================================
-// END OF PART 2
-// ==========================================
-// ==========================================
-// CHAT.JS V3.0 - PART 3
-// Typing + Seen + Online
-// ==========================================
-
-// Typing Indicator
-
-function listenTyping() {
-
-    const status =
-        document.getElementById("chatStatus");
-
-    if (!status) return;
-
-    db.ref("typing/" + chatId + "/" + otherUserUid)
-    .on("value",(snap)=>{
-
-        if(snap.val()){
-
-            status.innerText="✍️ Typing...";
-            status.style.color="#00aaff";
-
-        }else{
-
-            db.ref("status/" + otherUserUid)
-            .once("value")
-            .then((online)=>{
-
-                if(online.val()){
-
-                    status.innerText="🟢 Online";
-                    status.style.color="#00ff66";
-
-                }else{
-
-                    status.innerText="⚫ Offline";
-                    status.style.color="#888";
-
-                }
-
-            });
-
-        }
-
-    });
-
-}
-
-// ===============================
-// Send Typing Status
-// ===============================
-
-window.updateTyping=function(){
-
-    if(!currentUser) return;
-
-    db.ref("typing/" + chatId + "/" + currentUser.uid)
-    .set(true);
-
-    clearTimeout(window.typingTimer);
-
-    window.typingTimer=setTimeout(()=>{
-
-        db.ref("typing/" + chatId + "/" + currentUser.uid)
-        .set(false);
-
-    },1200);
+    }
 
 };
 
-// ===============================
-// Attach Input Listener
-// ===============================
+// ============================================
+// Mark Messages Seen
+// ============================================
 
-document.addEventListener("DOMContentLoaded",()=>{
-
-    const input=
-    document.getElementById("messageInput");
-
-    if(!input) return;
-
-    input.addEventListener("input",updateTyping);
-
-});
-
-// ===============================
-// Seen Status
-// ===============================
-
-function markMessagesSeen(){
+function markMessagesSeen() {
 
     db.ref("chats/" + chatId + "/messages")
+
     .once("value")
-    .then((snapshot)=>{
 
-        snapshot.forEach((child)=>{
+    .then((snapshot) => {
 
-            const msg=child.val();
+        snapshot.forEach((child) => {
 
-            if(
-                msg.senderUid!==currentUser.uid &&
+            const msg = child.val();
+
+            if (
+
+                msg.senderUid !== currentUser.uid &&
+
                 !msg.seen
-            ){
+
+            ) {
 
                 child.ref.update({
 
-                    seen:true
+                    seen: true
 
                 });
 
@@ -494,181 +519,220 @@ function markMessagesSeen(){
 
 }
 
-setTimeout(markMessagesSeen,1000);
+// ============================================
+// Format Time
+// ============================================
 
-// ===============================
-// Live Seen Update
-// ===============================
+function formatTime(time) {
 
-db.ref("chats/" + chatId + "/messages")
-.on("child_changed",(snap)=>{
+    return new Date(time)
 
-    const msg=snap.val();
+    .toLocaleTimeString([], {
 
-    if(
-        msg.senderUid===currentUser.uid &&
-        msg.seen
-    ){
+        hour: "2-digit",
 
-        console.log("✅ Seen");
+        minute: "2-digit"
 
-    }
+    });
 
-});
+}
 
-// ===============================
-// Update Presence
-// ===============================
+// ============================================
+// Auto Scroll
+// ============================================
+
+function scrollMessagesBottom() {
+
+    const container =
+        document.getElementById("messagesContainer");
+
+    if (!container) return;
+
+    container.scrollTop =
+        container.scrollHeight;
+
+}
+
+// ============================================
+// Enter Key
+// ============================================
 
 document.addEventListener(
-"visibilitychange",
-()=>{
 
-    if(document.hidden){
+"DOMContentLoaded",
 
-        updateMyStatus(false);
+() => {
 
-    }else{
+const input =
+document.getElementById(
+"messageInput"
+);
 
-        updateMyStatus(true);
+if (!input) return;
 
-        markMessagesSeen();
+input.addEventListener(
+"keydown",
 
-    }
+(e) => {
+
+if (e.key === "Enter") {
+
+e.preventDefault();
+
+sendMessage();
+
+}
 
 });
 
-// ==========================================
-// END OF PART 3
-// ==========================================
-// ==========================================
-// CHAT.JS V3.0 - PART 4
-// Delete + Edit + Reactions + Final
-// ==========================================
+});
 
-// Delete Message
-window.deleteMessage = function(messageId){
+// ============================================
 
-    if(!confirm("Delete this message?"))
-        return;
+console.log("✅ CHAT V5 PART 2 LOADED");
+// ============================================
+// VIEWORA CHAT V5.0
+// PART 3
+// Typing + Message Actions
+// ============================================
 
-    db.ref("chats/" + chatId + "/messages/" + messageId)
-    .remove()
-    .then(()=>{
+// ============================================
+// Typing Indicator
+// ============================================
 
-        showToast("Message Deleted");
+let typingTimer = null;
+
+window.updateTyping = function () {
+
+    db.ref("typing/" + chatId + "/" + currentUser.uid)
+    .set(true);
+
+    clearTimeout(typingTimer);
+
+    typingTimer = setTimeout(() => {
+
+        db.ref("typing/" + chatId + "/" + currentUser.uid)
+        .set(false);
+
+    }, 1200);
+
+};
+
+// Listen Other User Typing
+
+function listenTyping() {
+
+    const status =
+        document.getElementById("chatStatus");
+
+    db.ref("typing/" + chatId + "/" + otherUserUid)
+
+    .on("value", (snap) => {
+
+        if (snap.val()) {
+
+            status.innerHTML = "✍️ Typing...";
+            status.style.color = "#00aaff";
+
+        } else {
+
+            listenOtherUserStatus();
+
+        }
 
     });
 
-};
+}
 
-// ===============================
-// Edit Message
-// ===============================
+// Input Listener
 
-window.editMessage = function(messageId,oldText){
+document.addEventListener("DOMContentLoaded", () => {
 
-    const newText = prompt("Edit Message",oldText);
+    const input =
+        document.getElementById("messageInput");
 
-    if(newText===null) return;
+    if (!input) return;
 
-    if(newText.trim()==="") return;
+    input.addEventListener("input", updateTyping);
 
-    db.ref("chats/" + chatId + "/messages/" + messageId)
-    .update({
+});
 
-        text:newText.trim(),
-        edited:true
+// ============================================
+// Long Press Menu
+// ============================================
 
-    });
+window.openMessageMenu = function(messageId, message){
 
-};
+    let option = prompt(
 
-// ===============================
-// Message Reaction
-// ===============================
+`Message Options
 
-window.reactMessage=function(messageId,reaction){
+1 = Copy
+2 = Edit
+3 = Delete
+4 = Share`
 
-    db.ref("chats/" + chatId +
-    "/messages/" + messageId +
-    "/reaction")
+    );
 
-    .set(reaction);
+    switch(option){
 
-};
+        case "1":
 
-// ===============================
-// Image Message
-// ===============================
+            copyMessage(message.text || "");
 
-window.sendImage=function(url){
+        break;
 
-    if(!url) return;
+        case "2":
 
-    db.ref("chats/" + chatId + "/messages")
-    .push({
+            if(message.senderUid === currentUser.uid){
 
-        senderUid:currentUser.uid,
+                editMessage(messageId, message.text);
 
-        image:url,
+            }
 
-        type:"image",
+        break;
 
-        timestamp:Date.now(),
+        case "3":
 
-        seen:false
+            if(message.senderUid === currentUser.uid){
 
-    });
+                deleteMessage(messageId);
 
-};
+            }
 
-// ===============================
-// Video Message
-// ===============================
+        break;
 
-window.sendVideo=function(url){
+        case "4":
 
-    if(!url) return;
+            shareMessage(message.text || "");
 
-    db.ref("chats/" + chatId + "/messages")
-    .push({
+        break;
 
-        senderUid:currentUser.uid,
-
-        video:url,
-
-        type:"video",
-
-        timestamp:Date.now(),
-
-        seen:false
-
-    });
+    }
 
 };
 
-// ===============================
+// ============================================
 // Copy Message
-// ===============================
+// ============================================
 
-window.copyMessage=function(text){
+function copyMessage(text){
 
-    navigator.clipboard
-    .writeText(text)
+    navigator.clipboard.writeText(text)
+
     .then(()=>{
 
         showToast("Copied");
 
     });
 
-};
+}
 
-// ===============================
+// ============================================
 // Share Message
-// ===============================
+// ============================================
 
-window.shareMessage=function(text){
+function shareMessage(text){
 
     if(navigator.share){
 
@@ -684,32 +748,75 @@ window.shareMessage=function(text){
 
     }
 
-};
+}
 
-// ===============================
-// Notification Sound
-// ===============================
+// ============================================
+// Edit Message
+// ============================================
 
-function playNotification(){
+function editMessage(messageId, oldText){
 
-    const audio=new Audio(
-    "notification.mp3"
+    const newText = prompt(
+
+        "Edit Message",
+
+        oldText
+
     );
 
-    audio.play().catch(()=>{});
+    if(newText === null) return;
+
+    if(newText.trim() === "") return;
+
+    db.ref("chats/" + chatId + "/messages/" + messageId)
+
+    .update({
+
+        text:newText.trim(),
+
+        edited:true
+
+    });
 
 }
 
-// Play sound when new message comes
+// ============================================
+// Delete Message
+// ============================================
+
+function deleteMessage(messageId){
+
+    if(!confirm("Delete this message?"))
+
+        return;
+
+    db.ref("chats/" + chatId + "/messages/" + messageId)
+
+    .remove()
+
+    .then(()=>{
+
+        showToast("Message Deleted");
+
+    });
+
+}
+
+// ============================================
+// Notification Sound
+// ============================================
+
+let firstLoad = true;
 
 db.ref("chats/" + chatId + "/messages")
+
 .on("child_added",(snap)=>{
 
-    const msg=snap.val();
+    if(firstLoad) return;
 
-    if(
-        msg.senderUid!==currentUser.uid
-    ){
+    const msg = snap.val();
+
+    if(msg.senderUid !== currentUser.uid){
 
         playNotification();
 
@@ -717,52 +824,333 @@ db.ref("chats/" + chatId + "/messages")
 
 });
 
-// ===============================
+setTimeout(()=>{
+
+    firstLoad = false;
+
+},1000);
+
+function playNotification(){
+
+    const audio = new Audio("notification.mp3");
+
+    audio.volume = 0.5;
+
+    audio.play().catch(()=>{});
+
+}
+
+// ============================================
 // Toast
-// ===============================
+// ============================================
 
 function showToast(text){
 
-    let t=document.getElementById("toast");
+    let toast = document.getElementById("toast");
 
-    if(!t){
+    if(!toast){
 
-        t=document.createElement("div");
+        toast = document.createElement("div");
 
-        t.id="toast";
+        toast.id = "toast";
 
-        t.style.cssText=`
-        position:fixed;
-        bottom:90px;
-        left:50%;
-        transform:translateX(-50%);
-        background:#222;
-        color:#fff;
-        padding:12px 20px;
-        border-radius:30px;
-        z-index:9999;
-        opacity:0;
-        transition:.3s;
+        toast.style.cssText = `
+            position:fixed;
+            bottom:90px;
+            left:50%;
+            transform:translateX(-50%);
+            background:#222;
+            color:#fff;
+            padding:12px 20px;
+            border-radius:30px;
+            font-size:14px;
+            z-index:9999;
+            opacity:0;
+            transition:.3s;
         `;
 
-        document.body.appendChild(t);
+        document.body.appendChild(toast);
 
     }
 
-    t.innerText=text;
+    toast.innerText = text;
 
-    t.style.opacity="1";
+    toast.style.opacity = "1";
 
     setTimeout(()=>{
 
-        t.style.opacity="0";
+        toast.style.opacity = "0";
 
     },1800);
 
 }
 
-// ==========================================
-// Version
-// ==========================================
+// ============================================
 
-console.log("✅ CHAT V3.0 Loaded Successfully");
+console.log("✅ CHAT V5 PART 3 LOADED");
+// ============================================
+// VIEWORA CHAT V5.0
+// PART 4
+// About + Report + Block + Media
+// ============================================
+
+// ============================================
+// Open About User
+// ============================================
+
+window.openAboutUser = function () {
+
+    location.href = "profile.html?uid=" + otherUserUid;
+
+};
+
+// ============================================
+// Report User
+// ============================================
+
+window.reportUser = async function () {
+
+    const reason = prompt(
+
+`Report User
+
+Spam
+Harassment
+Fake Account
+Abuse
+Other`
+
+    );
+
+    if (!reason) return;
+
+    await db.ref("reports").push({
+
+        reportedUid: otherUserUid,
+        reportedBy: currentUser.uid,
+        reason: reason.trim(),
+        time: Date.now()
+
+    });
+
+    showToast("Report submitted");
+
+};
+
+// ============================================
+// Block User
+// ============================================
+
+window.blockUser = async function () {
+
+    if (!confirm("Block this user?")) return;
+
+    await db.ref(
+        "blockedUsers/" +
+        currentUser.uid +
+        "/" +
+        otherUserUid
+    ).set({
+
+        blockedAt: Date.now()
+
+    });
+
+    showToast("User blocked");
+
+};
+
+// ============================================
+// Unblock User
+// ============================================
+
+window.unblockUser = async function () {
+
+    if (!confirm("Unblock this user?")) return;
+
+    await db.ref(
+        "blockedUsers/" +
+        currentUser.uid +
+        "/" +
+        otherUserUid
+    ).remove();
+
+    showToast("User unblocked");
+
+};
+
+// ============================================
+// Dynamic 3 Dot Menu
+// ============================================
+
+window.showChatMenu = async function () {
+
+    const snap = await db.ref(
+
+        "blockedUsers/" +
+        currentUser.uid +
+        "/" +
+        otherUserUid
+
+    ).once("value");
+
+    if (snap.exists()) {
+
+        const option = prompt(
+
+`Chat Menu
+
+1 = About User
+2 = Report User
+3 = Unblock User`
+
+        );
+
+        switch (option) {
+
+            case "1":
+                openAboutUser();
+                break;
+
+            case "2":
+                reportUser();
+                break;
+
+            case "3":
+                unblockUser();
+                break;
+
+        }
+
+    } else {
+
+        const option = prompt(
+
+`Chat Menu
+
+1 = About User
+2 = Report User
+3 = Block User`
+
+        );
+
+        switch (option) {
+
+            case "1":
+                openAboutUser();
+                break;
+
+            case "2":
+                reportUser();
+                break;
+
+            case "3":
+                blockUser();
+                break;
+
+        }
+
+    }
+
+};
+
+// ============================================
+// Check Block Before Send
+// ============================================
+
+async function canSendMessage() {
+
+    const blocked = await db.ref(
+
+        "blockedUsers/" +
+        otherUserUid +
+        "/" +
+        currentUser.uid
+
+    ).once("value");
+
+    if (blocked.exists()) {
+
+        alert("You are blocked by this user.");
+
+        return false;
+
+    }
+
+    return true;
+
+}
+
+// Replace sendMessage
+
+const originalSendMessage = window.sendMessage;
+
+window.sendMessage = async function () {
+
+    const allow = await canSendMessage();
+
+    if (!allow) return;
+
+    originalSendMessage();
+
+};
+
+// ============================================
+// Send Image
+// ============================================
+
+window.sendImage = function (imageUrl) {
+
+    if (!imageUrl) return;
+
+    db.ref("chats/" + chatId + "/messages")
+
+    .push({
+
+        senderUid: currentUser.uid,
+        receiverUid: otherUserUid,
+
+        image: imageUrl,
+        type: "image",
+
+        timestamp: Date.now(),
+
+        seen: false,
+        edited: false
+
+    });
+
+};
+
+// ============================================
+// Send Video
+// ============================================
+
+window.sendVideo = function (videoUrl) {
+
+    if (!videoUrl) return;
+
+    db.ref("chats/" + chatId + "/messages")
+
+    .push({
+
+        senderUid: currentUser.uid,
+        receiverUid: otherUserUid,
+
+        video: videoUrl,
+        type: "video",
+
+        timestamp: Date.now(),
+
+        seen: false,
+        edited: false
+
+    });
+
+};
+
+// ============================================
+// Version
+// ============================================
+
+console.log("✅ VIEWORA CHAT V5.0 FINAL LOADED");

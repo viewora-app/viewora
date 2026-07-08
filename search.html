@@ -83,14 +83,57 @@
     </div>
 
     <!-- Bottom Navigation -->
-    <div class="bottom-nav">
-        <a href="index.html">🏠<br>Home</a>
-        <a href="vieworation.html">🏘️<br>Vieworation</a>
-        <a href="shorts.html">▶️<br>Shorts</a>
-        <a href="upload.html">➕<br>Upload</a>
-        <a href="users.html">👥<br>Users</a>
-        <a href="profile.html">👤<br>Profile</a>
-    </div>
+<div class="bottom-nav">
+
+<a href="index.html">
+
+<span class="nav-icon">🏠</span>
+
+Home
+
+</a>
+
+<a href="vieworation.html">
+
+<span class="nav-icon">🌍</span>
+
+Vieworation
+
+</a>
+
+<a href="shorts.html">
+
+<span class="nav-icon">▶️</span>
+
+Shorts
+
+</a>
+
+<a href="upload.html">
+
+<span class="nav-icon">➕</span>
+
+Upload
+
+</a>
+
+<a href="users.html" class="active">
+
+<span class="nav-icon">👥</span>
+
+Userslist
+
+</a>
+
+<a href="profile.html">
+
+<span class="nav-icon">👤</span>
+
+Profile
+
+</a>
+
+</div>
 
     <!-- Scripts -->
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
@@ -100,6 +143,29 @@
 <script src="firebase.js"></script>
 <script src="search.js"></script>
 <script src="nav.js"></script>
+<style>
+  #floatingChat{
+    animation: pulseGlow 2.5s ease-in-out infinite;
+}
+
+@keyframes pulseGlow{
+
+    0%,100%{
+        transform: scale(1);
+        box-shadow:
+            0 8px 25px rgba(0,170,255,.35),
+            0 0 12px rgba(0,170,255,.25);
+    }
+
+    50%{
+        transform: scale(1.05);
+        box-shadow:
+            0 12px 35px rgba(0,170,255,.55),
+            0 0 25px rgba(0,170,255,.45);
+    }
+
+}
+</style>
 
 </body>
 </html>

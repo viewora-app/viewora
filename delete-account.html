@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+
+<title>Delete Account • Viewora</title>
+
+<link rel="stylesheet" href="style.css">
+
+<style>
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:Arial,sans-serif;
+}
+
+body{
+
+background:#0f0f0f;
+color:#fff;
+min-height:100vh;
+overflow-x:hidden;
+
+}
+
+/* Animated Background */
+
+body::before{
+
+content:"";
+
+position:fixed;
+
+top:-50%;
+left:-50%;
+
+width:200%;
+height:200%;
+
+background:
+radial-gradient(circle,#ff444422,transparent 35%),
+radial-gradient(circle,#00aaff22,transparent 35%),
+radial-gradient(circle,#ff880022,transparent 35%);
+
+animation:bgRotate 18s linear infinite;
+
+z-index:-1;
+
+}
+
+@keyframes bgRotate{
+
+0%{transform:rotate(0deg);}
+100%{transform:rotate(360deg);}
+
+}
+
+/* Header */
+
+.header{
+
+position:sticky;
+top:0;
+
+background:rgba(20,20,20,.9);
+
+backdrop-filter:blur(15px);
+
+padding:18px;
+
+display:flex;
+align-items:center;
+
+gap:15px;
+
+border-bottom:1px solid rgba(255,255,255,.08);
+
+}
+
+.back{
+
+font-size:28px;
+
+cursor:pointer;
+
+transition:.3s;
+
+}
+
+.back:hover{
+
+transform:translateX(-5px);
+
+}
+
+.title{
+
+font-size:22px;
+
+font-weight:bold;
+
+color:#ff5555;
+
+}
+
+/* Container */
+
+.container{
+
+max-width:850px;
+
+margin:auto;
+
+padding:25px;
+
+}
+
+/* Cards */
+
+.card{
+
+background:rgba(30,30,30,.92);
+
+border:1px solid rgba(255,255,255,.05);
+
+border-radius:18px;
+
+padding:22px;
+
+margin-bottom:20px;
+
+box-shadow:0 10px 30px rgba(0,0,0,.35);
+
+animation:fadeUp .5s ease;
+
+}
+
+@keyframes fadeUp{
+
+from{
+
+opacity:0;
+
+transform:translateY(30px);
+
+}
+
+to{
+
+opacity:1;
+
+transform:translateY(0);
+
+}
+
+}
+
+.card h2{
+
+color:#00aaff;
+
+margin-bottom:15px;
+
+}
+
+.card p{
+
+color:#ccc;
+
+line-height:1.8;
+
+}
+
+.card ul{
+
+padding-left:20px;
+
+margin-top:15px;
+
+}
+
+.card li{
+
+margin:10px 0;
+
+color:#ddd;
+
+}
+
+/* Warning */
+
+.warning{
+
+background:rgba(255,68,68,.08);
+
+border:1px solid rgba(255,68,68,.35);
+
+}
+
+.warning h2{
+
+color:#ff5555;
+
+}
+
+/* Password */
+
+.input-box{
+
+margin-top:25px;
+
+}
+
+.input-box label{
+
+display:block;
+
+margin-bottom:8px;
+
+color:#aaa;
+
+}
+
+.input-box input{
+
+width:100%;
+
+height:50px;
+
+border:none;
+
+outline:none;
+
+padding:0 18px;
+
+border-radius:12px;
+
+background:#222;
+
+color:#fff;
+
+font-size:15px;
+
+}
+
+/* Delete Button */
+
+#deleteBtn{
+
+width:100%;
+
+height:55px;
+
+margin-top:30px;
+
+border:none;
+
+border-radius:14px;
+
+background:linear-gradient(135deg,#ff4444,#cc0000);
+
+color:#fff;
+
+font-size:18px;
+
+font-weight:bold;
+
+cursor:pointer;
+
+transition:.3s;
+
+box-shadow:0 10px 25px rgba(255,68,68,.35);
+
+}
+
+#deleteBtn:hover{
+
+transform:scale(1.02);
+
+}
+
+/* Footer */
+
+.footer{
+
+text-align:center;
+
+padding:30px;
+
+color:#777;
+
+font-size:14px;
+
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="header">
+
+<div class="back" onclick="history.back()">
+
+⬅
+
+</div>
+
+<div class="title">
+
+Delete Account
+
+</div>
+
+</div>
+
+<div class="container">
+
+<div class="card warning">
+
+<h2>⚠ Warning</h2>
+
+<p>
+
+Deleting your Viewora account is permanent.
+
+This action cannot be undone.
+
+</p>
+
+</div>
+
+<div class="card">
+
+<h2>What will be deleted?</h2>
+
+<ul>
+
+<li>✔ Profile</li>
+
+<li>✔ Posts</li>
+
+<li>✔ Shorts</li>
+
+<li>✔ Stories</li>
+
+<li>✔ Followers & Following</li>
+
+<li>✔ Notifications</li>
+
+<li>✔ Messages (where applicable)</li>
+
+<li>✔ Firebase Authentication Account</li>
+
+</ul>
+
+</div>
+
+<div class="card">
+
+<h2>Confirm Password</h2>
+
+<div class="input-box">
+
+<label>
+
+Enter your password
+
+</label>
+
+<input
+
+type="password"
+
+id="deletePassword"
+
+placeholder="Your password">
+
+</div>
+
+<button
+
+id="deleteBtn"
+
+onclick="startDeleteProcess()">
+
+Delete My Account
+
+</button>
+
+</div>
+
+</div>
+
+<div class="footer">
+
+© 2026 Viewora
+
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+
+<script src="firebase.js"></script>
+<script src="delete-account.js"></script>
+
+</body>
+
+</html>

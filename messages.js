@@ -1,93 +1,136 @@
-// ===============================
-// MESSAGES.JS V2.0 - PART 1
-// Login + Load Chats
-// ===============================
+// ==========================================
+// VIEWORA MESSAGES V4.0
+// PART 1
+// Authentication + Load Chats
+// ==========================================
 
 let currentUser = null;
+let currentUserData = null;
 let chatList = [];
 
-auth.onAuthStateChanged((user) => {
+// ==========================================
+// Authentication
+// ==========================================
+
+auth.onAuthStateChanged(async (user) => {
 
     if (!user) {
-        window.location.href = "login.html";
+
+        location.href = "login.html";
         return;
+
     }
 
     currentUser = user;
+
+    await loadCurrentUser();
 
     loadChats();
 
 });
 
-// ===============================
+// ==========================================
+// Load Current User
+// ==========================================
+
+async function loadCurrentUser() {
+
+    const snap = await db
+        .ref("users/" + currentUser.uid)
+        .once("value");
+
+    currentUserData = snap.val() || {};
+
+}
+
+// ==========================================
 // Load Chats
-// ===============================
+// ==========================================
 
 function loadChats() {
 
-    const container = document.getElementById("messagesList");
+    const container =
+        document.getElementById("messagesList");
 
     if (!container) return;
 
     db.ref("chats")
-        .orderByChild("lastMessageTime")
-        .on("value", (snapshot) => {
 
-            chatList = [];
+    .orderByChild("lastMessageTime")
 
-            if (!snapshot.exists()) {
+    .on("value", (snapshot) => {
 
-                container.innerHTML = `
-                <div class="empty-chat">
-                    <h3>No Messages</h3>
-                    <p>Start chatting with your friends.</p>
-                </div>
-                `;
+        chatList = [];
 
-                return;
+        container.innerHTML = "";
+
+        if (!snapshot.exists()) {
+
+            container.innerHTML = `
+
+            <div class="empty-chat">
+
+                <h3>No Chats</h3>
+
+                <p>Start chatting with your friends 👋</p>
+
+            </div>
+
+            `;
+
+            return;
+
+        }
+
+        snapshot.forEach((child) => {
+
+            const chat = child.val();
+
+            if (!chat) return;
+
+            // Compatible with Chat.js V4
+            if (
+                chat.participants &&
+                chat.participants[currentUser.uid]
+            ) {
+
+                chatList.push({
+
+                    id: child.key,
+
+                    ...chat
+
+                });
+
             }
-
-            snapshot.forEach((child) => {
-
-                const chat = child.val();
-
-                if (
-                    chat.participants &&
-                    chat.participants.includes(currentUser.uid)
-                ) {
-
-                    chatList.push({
-
-                        id: child.key,
-
-                        ...chat
-
-                    });
-
-                }
-
-            });
-
-            chatList.sort((a, b) => {
-
-                return (b.lastMessageTime || 0) -
-                       (a.lastMessageTime || 0);
-
-            });
-
-            renderChats();
 
         });
 
+        // Latest Chat First
+        chatList.sort((a, b) => {
+
+            return (b.lastMessageTime || 0) -
+                   (a.lastMessageTime || 0);
+
+        });
+
+        renderChats();
+
+    });
+
 }
 
-// ===============================
-// Render Chats
-// ===============================
+console.log("✅ Messages V4 Part 1 Loaded");
+// ==========================================
+// VIEWORA MESSAGES V4.0
+// PART 2
+// Render Chats + Online Status + Search
+// ==========================================
 
 function renderChats() {
 
-    const container = document.getElementById("messagesList");
+    const container =
+        document.getElementById("messagesList");
 
     if (!container) return;
 
@@ -95,82 +138,86 @@ function renderChats() {
 
     chatList.forEach((chat) => {
 
+        // Get Other User UID
         const otherUid =
-            chat.participants.find(uid => uid !== currentUser.uid);
+            Object.keys(chat.participants)
+            .find(uid => uid !== currentUser.uid);
+
+        if (!otherUid) return;
 
         db.ref("users/" + otherUid)
-            .once("value")
-            .then((snap) => {
 
-                const user = snap.val() || {};
+        .once("value")
 
-                const card = document.createElement("div");
+        .then((snap) => {
 
-                card.className = "chat-item";
+            const user = snap.val() || {};
 
-                card.innerHTML = `
+            const card =
+                document.createElement("div");
 
-                <img
-                src="${user.profilePhoto || "non.jpg"}"
-                class="chat-avatar">
+            card.className = "chat-item";
 
-                <div class="chat-info">
+            card.innerHTML = `
 
-                    <div class="chat-name">
-                        ${user.name || "User"}
-                    </div>
+            <img
+            src="${user.profilePhoto || "non.jpg"}"
+            class="chat-avatar"
+            data-user="${otherUid}">
 
-                    <div class="chat-last">
-                        ${chat.lastMessage || "Say Hi 👋"}
-                    </div>
+            <div class="chat-info">
+
+                <div class="chat-name">
+
+                    ${user.name || "User"}
 
                 </div>
 
-                <div class="chat-time"
-                     id="time-${otherUid}">
+                <div class="chat-last">
+
+                    ${chat.lastMessage || "Say Hi 👋"}
+
                 </div>
 
-                `;
+            </div>
 
-                card.onclick = function () {
+            <div
+            style="text-align:right;">
 
-                    window.location.href =
+                <div
+                class="chat-time"
+                id="time-${otherUid}">
+
+                </div>
+
+                <div
+                class="unread-badge"
+                id="badge-${chat.id}"
+                style="display:none;">
+
+                </div>
+
+            </div>
+
+            `;
+
+            card.onclick = () => {
+
+                location.href =
                     "chat.html?uid=" + otherUid;
 
-                };
+            };
 
-                container.appendChild(card);
+            container.appendChild(card);
 
-            });
+            updateChatTime(
+                otherUid,
+                chat.lastMessageTime
+            );
 
-    });
+            updateOnline(otherUid);
 
-}
-// ===============================
-// MESSAGES.JS V2.0 - PART 2
-// Search + Time + Unread + Online
-// ===============================
-
-// Search Chats
-const searchInput = document.getElementById("searchInput");
-
-if (searchInput) {
-
-    searchInput.addEventListener("input", function () {
-
-        const keyword = this.value.toLowerCase().trim();
-
-        document.querySelectorAll(".chat-item").forEach((item) => {
-
-            const name =
-                item.querySelector(".chat-name")
-                .innerText
-                .toLowerCase();
-
-            item.style.display =
-                name.includes(keyword)
-                    ? "flex"
-                    : "none";
+            updateUnread(chat.id);
 
         });
 
@@ -178,168 +225,212 @@ if (searchInput) {
 
 }
 
-// ===============================
-// Format Time
-// ===============================
-
-function formatTime(time) {
-
-    if (!time) return "";
-
-    const date = new Date(time);
-
-    const now = new Date();
-
-    const diff = now - date;
-
-    if (diff < 60000)
-        return "Now";
-
-    if (diff < 3600000)
-        return Math.floor(diff / 60000) + "m";
-
-    if (diff < 86400000)
-        return date.toLocaleTimeString([], {
-            hour: "2-digit",
-            minute: "2-digit"
-        });
-
-    return date.toLocaleDateString();
-
-}
-
-// ===============================
-// Update Chat Time
-// ===============================
-
-function updateChatTime(uid, time) {
-
-    const el =
-        document.getElementById("time-" + uid);
-
-    if (el) {
-
-        el.innerText = formatTime(time);
-
-    }
-
-}
-
-// ===============================
-// Unread Badge
-// ===============================
-
-function showUnread(uid, count) {
-
-    const card =
-        document.querySelector(
-            `[onclick="window.location.href='chat.html?uid=${uid}'"]`
-        );
-
-    if (!card) return;
-
-    let badge = card.querySelector(".unread-badge");
-
-    if (!badge) {
-
-        badge = document.createElement("div");
-
-        badge.className = "unread-badge";
-
-        badge.style.cssText = `
-            background:#00aaff;
-            color:#fff;
-            width:22px;
-            height:22px;
-            border-radius:50%;
-            display:flex;
-            align-items:center;
-            justify-content:center;
-            font-size:12px;
-            font-weight:bold;
-            margin-left:8px;
-        `;
-
-        card.appendChild(badge);
-
-    }
-
-    badge.innerText = count;
-
-}
-
-// ===============================
+// ==========================================
 // Online Status
-// ===============================
+// ==========================================
 
-function updateOnline(uid) {
+function updateOnline(uid){
 
     db.ref("status/" + uid)
-        .on("value", (snap) => {
 
-            const online = snap.val();
+    .on("value",(snap)=>{
 
-            const avatar =
-                document.querySelector(
-                    `img[data-user="${uid}"]`
-                );
+        const avatar =
+            document.querySelector(
+                `img[data-user="${uid}"]`
+            );
 
-            if (!avatar) return;
+        if(!avatar) return;
 
-            avatar.style.border =
-                online
-                ? "3px solid #00ff66"
-                : "3px solid #555";
+        const data = snap.val() || {};
 
-        });
+        avatar.style.border =
+
+            data.online
+
+            ? "3px solid #00ff66"
+
+            : "3px solid #555";
+
+    });
 
 }
 
-// ===============================
-// Auto Refresh Time
-// ===============================
+// ==========================================
+// Search Chats
+// ==========================================
+
+const searchInput =
+document.getElementById("searchInput");
+
+if(searchInput){
+
+searchInput.addEventListener("input",function(){
+
+const keyword =
+this.value
+.toLowerCase()
+.trim();
+
+document
+.querySelectorAll(".chat-item")
+
+.forEach((card)=>{
+
+const name =
+card.querySelector(".chat-name")
+.innerText
+.toLowerCase();
+
+card.style.display =
+
+name.includes(keyword)
+
+? "flex"
+
+: "none";
+
+});
+
+});
+
+}
+
+console.log("✅ Messages V4 Part 2 Loaded");
+// ======================================
+// MESSAGES.JS V3.0
+// PART 3
+// Realtime + Presence + Notifications
+// ======================================
+
+// Realtime refresh
+db.ref("chats").on("child_changed", () => {
+    loadChats();
+});
+
+// -------------------------
+// User Presence
+// -------------------------
+
+const connectedRef = firebase.database().ref(".info/connected");
+
+connectedRef.on("value", (snap) => {
+
+    if (!currentUser || !snap.val()) return;
+
+    const statusRef = db.ref("status/" + currentUser.uid);
+
+    statusRef.onDisconnect().set({
+        online: false,
+        lastSeen: Date.now()
+    });
+
+    statusRef.set({
+        online: true,
+        lastSeen: Date.now()
+    });
+
+});
+
+// -------------------------
+// Notification Sound
+// -------------------------
+
+let firstLoad = true;
+
+db.ref("chats").on("child_added", (snap) => {
+
+    if (firstLoad) return;
+
+    const chat = snap.val();
+
+    if (!chat || !chat.participants) return;
+
+    const participants = Array.isArray(chat.participants)
+        ? chat.participants
+        : Object.keys(chat.participants);
+
+    if (!participants.includes(currentUser.uid)) return;
+
+    const audio = new Audio("notification.mp3");
+    audio.play().catch(() => {});
+
+});
+
+setTimeout(() => {
+    firstLoad = false;
+}, 1500);
+
+// -------------------------
+// Auto Refresh Every Minute
+// -------------------------
 
 setInterval(() => {
 
-    chatList.forEach((chat) => {
+    chatList.forEach(chat => {
 
-        const uid =
-            chat.participants.find(
-                u => u !== currentUser.uid
-            );
+        const participants = Array.isArray(chat.participants)
+            ? chat.participants
+            : Object.keys(chat.participants);
 
-        updateChatTime(
-            uid,
-            chat.lastMessageTime
+        const otherUid = participants.find(
+            uid => uid !== currentUser.uid
         );
+
+        updateChatTime(otherUid, chat.lastMessageTime);
 
     });
 
-}, 30000);
-// ===============================
-// MESSAGES.JS V2.0 - PART 3
-// Final Features
-// ===============================
+}, 60000);
 
-// Realtime Refresh
-db.ref("chats").on("child_changed", () => {
+// -------------------------
+// Network Status
+// -------------------------
+
+window.addEventListener("offline", () => {
+
+    console.log("Offline");
+
+});
+
+window.addEventListener("online", () => {
+
+    console.log("Online");
 
     loadChats();
 
 });
 
-// ===============================
+// -------------------------
+// Search Refresh
+// -------------------------
+
+window.refreshMessages = function () {
+
+    loadChats();
+
+};
+
+// ======================================
+
+console.log("✅ Messages V3.0 Loaded Successfully");
+// ======================================
+// MESSAGES.JS V3.0
+// PART 4
+// Chat Actions + Final
+// ======================================
+
+// -------------------------
 // Delete Chat
-// ===============================
+// -------------------------
 
-window.deleteChat = function(chatId){
+window.deleteChat = function (chatId) {
 
-    if(!confirm("Delete this chat?"))
-        return;
+    if (!confirm("Delete this chat?")) return;
 
     db.ref("chats/" + chatId)
         .remove()
-        .then(()=>{
+        .then(() => {
 
             alert("Chat Deleted");
 
@@ -347,115 +438,112 @@ window.deleteChat = function(chatId){
 
 };
 
-// ===============================
+// -------------------------
 // Pin Chat
-// ===============================
+// -------------------------
 
-window.pinChat = function(chatId){
+window.pinChat = function (chatId) {
 
     db.ref("chats/" + chatId + "/pinned")
-        .set(true);
-
-    loadChats();
+        .set(true)
+        .then(loadChats);
 
 };
 
-// ===============================
-// Archive Chat
-// ===============================
+// -------------------------
+// Unpin Chat
+// -------------------------
 
-window.archiveChat = function(chatId){
+window.unpinChat = function (chatId) {
+
+    db.ref("chats/" + chatId + "/pinned")
+        .remove()
+        .then(loadChats);
+
+};
+
+// -------------------------
+// Archive Chat
+// -------------------------
+
+window.archiveChat = function (chatId) {
 
     db.ref("chats/" + chatId + "/archived")
-        .set(true);
-
-    loadChats();
-
-};
-
-// ===============================
-// Typing Indicator
-// ===============================
-
-window.setTyping = function(uid,state){
-
-    if(!currentUser) return;
-
-    db.ref("typing/" + uid + "/" + currentUser.uid)
-        .set(state);
+        .set(true)
+        .then(loadChats);
 
 };
 
-window.listenTyping = function(uid){
+// -------------------------
+// Unarchive Chat
+// -------------------------
 
-    db.ref("typing/" + currentUser.uid + "/" + uid)
-        .on("value",(snap)=>{
+window.unarchiveChat = function (chatId) {
 
-            const box =
-                document.getElementById("typingStatus");
-
-            if(!box) return;
-
-            box.innerText =
-                snap.val()
-                ? "Typing..."
-                : "";
-
-        });
+    db.ref("chats/" + chatId + "/archived")
+        .remove()
+        .then(loadChats);
 
 };
 
-// ===============================
-// Mark Messages Read
-// ===============================
+// -------------------------
+// Check Block
+// -------------------------
 
-window.markAsRead = function(chatId){
+async function isBlocked(otherUid) {
 
-    db.ref("chats/" + chatId + "/unread/" + currentUser.uid)
-        .set(0);
+    const snap = await db
+        .ref("blockedUsers/" + currentUser.uid + "/" + otherUid)
+        .once("value");
 
-};
-
-// ===============================
-// User Presence
-// ===============================
-
-window.addEventListener("beforeunload",()=>{
-
-    if(currentUser){
-
-        db.ref("status/" + currentUser.uid)
-            .set(false);
-
-    }
-
-});
-
-if(currentUser){
-
-    db.ref("status/" + currentUser.uid)
-        .set(true);
+    return snap.exists();
 
 }
 
-// ===============================
-// Network Status
-// ===============================
+// -------------------------
+// Logout Presence
+// -------------------------
 
-window.addEventListener("offline",()=>{
+window.addEventListener("beforeunload", () => {
 
-    alert("No Internet Connection");
+    if (!currentUser) return;
+
+    db.ref("status/" + currentUser.uid)
+        .update({
+
+            online: false,
+            lastSeen: Date.now()
+
+        });
 
 });
 
-window.addEventListener("online",()=>{
+// -------------------------
+// Refresh
+// -------------------------
 
-    console.log("Internet Connected");
+window.refreshChats = function () {
 
-});
+    loadChats();
 
-// ===============================
-// End
-// ===============================
+};
 
-console.log("✅ Messages V2.0 Loaded Successfully");
+// -------------------------
+// Utility
+// -------------------------
+
+function getOtherUid(chat) {
+
+    const participants = Array.isArray(chat.participants)
+        ? chat.participants
+        : Object.keys(chat.participants || {});
+
+    return participants.find(uid => uid !== currentUser.uid);
+
+}
+
+// -------------------------
+// Version
+// -------------------------
+
+console.log("✅ Messages.js V3.0 Final Loaded");

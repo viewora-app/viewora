@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Viewora Video</title>
+
+<style>
+body{
+  font-family: Arial;
+  background:#181818;
+  color:white;
+  margin:0;
+}
+
+.actions{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  margin:15px;
+}
+
+.actions button{
+  background:#272727;
+  color:white;
+  border:none;
+  padding:10px 18px;
+  border-radius:25px;
+  cursor:pointer;
+}
+
+.actions button:hover{
+  background:#444;
+}
+
+.description, .channel-info{
+  background:#212121;
+  padding:15px;
+  margin:15px;
+  border-radius:12px;
+}
+
+.channel-info{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+}
+
+.channel-pic{
+  width:50px;
+  height:50px;
+  border-radius:50%;
+}
+
+input{
+  width:80%;
+  padding:12px;
+  border-radius:20px;
+  border:none;
+}
+
+.comment-box{
+  margin:15px;
+}
+</style>
+
+</head>
+
+<body>
+
+<a href="home.html" style="color:white; margin:10px;">← Back</a>
+
+<video width="100%" controls autoplay>
+  <source src="video1.mp4" type="video/mp4">
+</video>
+
+<h2 style="margin:15px;">Viewora Launch 🚀</h2>
+
+<p style="margin:15px;">1.2M Views • 3 Years Ago</p>
+
+<!-- ACTION BUTTONS -->
+<div class="actions">
+
+<button onclick="likeVideo()">👍 Like <span id="likes">0</span></button>
+
+<button onclick="dislikeVideo()">👎 Dislike <span id="dislikes">0</span></button>
+
+<button>📤 Share</button>
+
+</div>
+
+<!-- CHANNEL -->
+<div class="channel-info">
+<img src="profile.jpg" class="channel-pic">
+
+<div>
+<h3>Abhinandan Kumar</h3>
+<p>1.2K Subscribers</p>
+</div>
+
+<button onclick="subscribe()">🔔 Subscribe</button>
+</div>
+
+<!-- DESCRIPTION -->
+<div class="description">
+<h3>Description</h3>
+<p>Welcome to Viewora! First official launch video 🚀</p>
+</div>
+
+<!-- COMMENTS -->
+<div class="comment-box">
+
+<h3>Comments</h3>
+
+<input type="text" id="commentInput" placeholder="Write a comment">
+<button onclick="addComment()">Post</button>
+
+<div id="comments"></div>
+
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+
+<script src="app.js"></script>
+<script src="firebase.js"></script>
+</body>
+</html>>

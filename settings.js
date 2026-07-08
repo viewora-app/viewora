@@ -1,22 +1,19 @@
-// ======================================
-// SETTINGS.JS V2.0 - PART 1
-// Login + User Info + Utilities
-// ======================================
+// ===============================
+// SETTINGS.JS
+// Viewora
+// ===============================
 
 let currentUser = null;
-let currentUserData = null;
 
-// ===============================
-// Authentication
-// ===============================
+// -------------------------------
+// Check Login
+// -------------------------------
 
-auth.onAuthStateChanged((user) => {
+auth.onAuthStateChanged(function(user){
 
-    if (!user) {
-
+    if(!user){
         window.location.href = "login.html";
         return;
-
     }
 
     currentUser = user;
@@ -25,360 +22,204 @@ auth.onAuthStateChanged((user) => {
 
 });
 
-// ===============================
-// Load User Profile
-// ===============================
+// -------------------------------
+// Load Profile
+// -------------------------------
 
-function loadUserProfile() {
-
-    const userInfo = document.getElementById("userInfo");
-
-    if (!userInfo) return;
+function loadUserProfile(){
 
     db.ref("users/" + currentUser.uid)
-        .once("value")
-        .then((snapshot) => {
+    .once("value")
+    .then(function(snapshot){
 
-            currentUserData = snapshot.val() || {};
+        const data = snapshot.val();
 
-            userInfo.innerHTML = `
+        const box = document.getElementById("userInfo");
 
-            <div style="text-align:center;">
+        if(!box) return;
 
-                <img
-                src="${currentUserData.profilePhoto || "non.jpg"}"
-                style="
-                width:90px;
-                height:90px;
-                border-radius:50%;
-                object-fit:cover;
-                border:3px solid #00aaff;
-                margin-bottom:12px;">
+        if(!data){
 
-                <h2 style="margin:5px 0;">
-                    ${currentUserData.name || "User"}
-                </h2>
-
-                <p style="color:#aaa;">
-                    @${currentUserData.username || "unknown"}
-                </p>
-
-            </div>
-
+            box.innerHTML = `
+                <img src="non.jpg">
+                <h2>User</h2>
+                <p>@user</p>
             `;
 
-        })
+            return;
 
-        .catch(() => {
+        }
 
-            userInfo.innerHTML = `
-            <h3>Welcome 👋</h3>
-            `;
+        box.innerHTML = `
 
-        });
+            <img
+            src="${data.profilePhoto || 'non.jpg'}"
+            onerror="this.src='non.jpg'">
 
-}
+            <h2>${data.name || "User"}</h2>
 
-// ===============================
-// Utility Toast
-// ===============================
+            <p>@${data.username || "user"}</p>
 
-function showToast(message) {
-
-    let toast = document.getElementById("toast");
-
-    if (!toast) {
-
-        toast = document.createElement("div");
-
-        toast.id = "toast";
-
-        toast.style.cssText = `
-            position:fixed;
-            bottom:90px;
-            left:50%;
-            transform:translateX(-50%);
-            background:#222;
-            color:#fff;
-            padding:12px 20px;
-            border-radius:30px;
-            font-size:14px;
-            z-index:9999;
-            opacity:0;
-            transition:.3s;
         `;
 
-        document.body.appendChild(toast);
+    })
+    .catch(function(error){
 
-    }
+        console.log(error);
 
-    toast.innerText = message;
-
-    toast.style.opacity = "1";
-
-    setTimeout(() => {
-
-        toast.style.opacity = "0";
-
-    }, 2500);
+    });
 
 }
 
-// ===============================
+// -------------------------------
 // Edit Profile
-// ===============================
+// -------------------------------
 
-window.editProfile = function () {
+window.editProfile = function(){
 
-    window.location.href = "edit-profile.html";
+    location.href = "edit-profile.html";
 
 };
 
-// ======================================
-// END OF PART 1
-// ======================================
-// ======================================
-// SETTINGS.JS V2.0 - PART 2
-// Dark Mode + Settings Actions
-// ======================================
+// -------------------------------
+// Notifications
+// -------------------------------
 
-// ===============================
+window.goToNotifications = function(){
+
+    location.href = "notifications.html";
+
+};
+
+// -------------------------------
 // Dark Mode
-// ===============================
+// -------------------------------
 
-function applyTheme() {
+window.toggleDarkMode = function(){
 
-    const mode = localStorage.getItem("viewora_theme") || "dark";
+    document.body.classList.toggle("light");
 
-    if (mode === "light") {
+    if(document.body.classList.contains("light")){
 
-        document.body.style.background = "#f5f5f5";
-        document.body.style.color = "#111";
+        localStorage.setItem("theme","light");
 
-        document.querySelectorAll(".setting-card").forEach(card => {
-            card.style.background = "#ffffff";
-            card.style.color = "#111";
-        });
+    }else{
 
-        showToast("☀️ Light Mode Enabled");
-
-    } else {
-
-        document.body.style.background = "#111";
-        document.body.style.color = "#fff";
-
-        document.querySelectorAll(".setting-card").forEach(card => {
-            card.style.background = "#1b1b1b";
-            card.style.color = "#fff";
-        });
-
-        showToast("🌙 Dark Mode Enabled");
+        localStorage.setItem("theme","dark");
 
     }
 
-}
-
-window.toggleDarkMode = function () {
-
-    const current =
-        localStorage.getItem("viewora_theme") || "dark";
-
-    const next =
-        current === "dark" ? "light" : "dark";
-
-    localStorage.setItem("viewora_theme", next);
-
-    applyTheme();
-
 };
 
-// Apply theme when page opens
-document.addEventListener("DOMContentLoaded", () => {
+// Apply Theme
 
-    applyTheme();
+window.addEventListener("load",function(){
+
+    const theme = localStorage.getItem("theme");
+
+    if(theme==="light"){
+
+        document.body.classList.add("light");
+
+    }
 
 });
 
-// ===============================
-// Notifications
-// ===============================
-
-window.goToNotifications = function () {
-
-    window.location.href = "notifications.html";
-
-};
-
-// ===============================
-// About
-// ===============================
-
-window.showAbout = function () {
-
-    showToast("Viewora v1.0 ❤️");
-
-    setTimeout(() => {
-
-        alert(
-`Viewora v1.0
-
-A modern social media platform.
-
-Developed with ❤️
-
-© Viewora Team`
-        );
-
-    }, 400);
-
-};
-
-// ===============================
-// Terms
-// ===============================
-
-window.showTerms = function () {
-
-    alert(
-`Terms & Conditions
-
-• Respect all users
-• No spam
-• No harmful content
-• Follow community guidelines`
-    );
-
-};
-
-// ===============================
+// -------------------------------
 // Help
-// ===============================
+// -------------------------------
 
-window.showHelp = function () {
+window.showHelp = function(){
 
     alert(
-`Need Help?
+`Help Center
 
 Email:
 vieworasupport@gmail.com
 
-We'll respond as soon as possible.`
-    );
+Thank you for using Viewora ❤️`
+);
 
 };
 
-// ===============================
-// END OF PART 2
-// ===============================
-// ======================================
-// SETTINGS.JS V2.0 - PART 3
-// Logout + Animations + Final
-// ======================================
+// -------------------------------
+// About
+// -------------------------------
 
+window.showAbout = function(){
+
+    alert(
+`Viewora
+
+Version : 1.0.0
+
+Developed using Firebase
+
+© 2026 Viewora`
+);
+
+};
+
+// -------------------------------
+// Share App
+// -------------------------------
+
+window.shareApp = function(){
+
+    if(navigator.share){
+
+        navigator.share({
+
+            title:"Viewora",
+
+            text:"Join me on Viewora!",
+
+            url:window.location.origin
+
+        });
+
+    }else{
+
+        alert("Sharing is not supported.");
+
+    }
+
+};
+
+// -------------------------------
+// Rate App
+// -------------------------------
+
+window.rateApp = function(){
+
+    alert("Viewora will be available on Google Play soon.");
+
+};
+
+// -------------------------------
 // Logout
-window.logout = function () {
+// -------------------------------
 
-    if (!currentUser) return;
+window.logout = function(){
 
-    const ok = confirm("Are you sure you want to logout?");
-
-    if (!ok) return;
+    if(!confirm("Logout from Viewora?")) return;
 
     auth.signOut()
-    .then(() => {
+    .then(function(){
 
-        showToast("Logged out successfully");
-
-        setTimeout(() => {
-
-            window.location.href = "login.html";
-
-        },800);
+        location.href = "login.html";
 
     })
-    .catch((err) => {
+    .catch(function(error){
 
-        console.error(err);
-
-        alert("Logout Failed!");
+        alert(error.message);
 
     });
 
 };
 
-// ===============================
-// Card Animation
-// ===============================
-
-document.addEventListener("DOMContentLoaded",()=>{
-
-    const cards=document.querySelectorAll(".setting-card");
-
-    cards.forEach((card,index)=>{
-
-        card.style.opacity="0";
-        card.style.transform="translateY(25px)";
-
-        setTimeout(()=>{
-
-            card.style.transition=".4s";
-
-            card.style.opacity="1";
-
-            card.style.transform="translateY(0)";
-
-        },index*100);
-
-    });
-
-});
-
-// ===============================
-// Button Actions
-// ===============================
-
-document.addEventListener("DOMContentLoaded",()=>{
-
-    const cards=document.querySelectorAll(".setting-card");
-
-    if(cards[3]){
-        cards[3].onclick=()=>{
-            window.open("privacy.html","_blank");
-        };
-    }
-
-    if(cards[4]){
-        cards[4].onclick=showAbout;
-    }
-
-    if(cards[5]){
-        cards[5].onclick=showTerms;
-    }
-
-    if(cards[6]){
-        cards[6].onclick=showHelp;
-    }
-
-});
-
-// ===============================
-// Network Status
-// ===============================
-
-window.addEventListener("offline",()=>{
-
-    showToast("📡 No Internet");
-
-});
-
-window.addEventListener("online",()=>{
-
-    showToast("✅ Connected");
-
-});
-
-// ===============================
+// -------------------------------
 // Version
-// ===============================
+// -------------------------------
 
-console.log("✅ Viewora Settings V2.0 Loaded");
+console.log("✅ Settings Loaded");

@@ -4,23 +4,19 @@
 <head>
 
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<meta name="viewport"
-content="width=device-width, initial-scale=1.0">
-
-<title>Viewora Chat</title>
+<title>Viewora • Chat</title>
 
 <link rel="stylesheet" href="style.css">
 
 <style>
 
 *{
-
 margin:0;
 padding:0;
 box-sizing:border-box;
 font-family:Arial,sans-serif;
-
 }
 
 body{
@@ -32,7 +28,7 @@ overflow:hidden;
 
 }
 
-/* Animated Background */
+/* Background */
 
 body::before{
 
@@ -47,7 +43,6 @@ width:200%;
 height:200%;
 
 background:
-
 radial-gradient(circle,#00aaff22,transparent 35%),
 radial-gradient(circle,#ff008822,transparent 35%),
 radial-gradient(circle,#00ff8822,transparent 35%);
@@ -76,11 +71,7 @@ left:0;
 
 width:100%;
 
-height:75px;
-
-background:rgba(20,20,20,.85);
-
-backdrop-filter:blur(12px);
+height:72px;
 
 display:flex;
 
@@ -88,67 +79,67 @@ align-items:center;
 
 padding:12px 15px;
 
+background:rgba(18,18,18,.92);
+
+backdrop-filter:blur(16px);
+
 border-bottom:1px solid rgba(255,255,255,.08);
 
-z-index:100;
-
-animation:slideDown .6s;
+z-index:999;
 
 }
 
-@keyframes slideDown{
-
-from{
-
-opacity:0;
-transform:translateY(-50px);
-
-}
-
-to{
-
-opacity:1;
-transform:translateY(0);
-
-}
-
-}
+/* Back */
 
 .back-btn{
 
-font-size:28px;
+font-size:26px;
 
 cursor:pointer;
 
 margin-right:12px;
 
-transition:.3s;
+transition:.25s;
 
 }
 
 .back-btn:hover{
 
-transform:translateX(-5px);
+transform:translateX(-4px);
+
+}
+
+/* User */
+
+.user-box{
+
+display:flex;
+
+align-items:center;
+
+cursor:pointer;
+
+flex:1;
 
 }
 
 .user-photo{
 
-width:50px;
+width:48px;
 
-height:50px;
+height:48px;
 
 border-radius:50%;
 
 object-fit:cover;
 
-border:3px solid #00aaff;
+border:2px solid #00aaff;
 
-box-shadow:0 0 15px #00aaff55;
+box-shadow:0 0 15px rgba(0,170,255,.4);
 
 }
 
-.user-details{
+.user-info{
 
 margin-left:12px;
 
@@ -156,7 +147,7 @@ margin-left:12px;
 
 #chatUserName{
 
-font-size:18px;
+font-size:17px;
 
 font-weight:bold;
 
@@ -172,13 +163,13 @@ margin-top:2px;
 
 }
 
-/* Right Icons */
+/* Icons */
 
 .header-icons{
 
-margin-left:auto;
-
 display:flex;
+
+align-items:center;
 
 gap:18px;
 
@@ -190,45 +181,67 @@ font-size:22px;
 
 cursor:pointer;
 
-transition:.3s;
+transition:.25s;
 
 }
 
 .header-icons span:hover{
 
-transform:scale(1.2);
-
 color:#00aaff;
 
-}
-
-/* Chat Area */
-
-.chat-area{
-
-margin-top:75px;
-
-height:calc(100vh - 150px);
-
-overflow-y:auto;
-
-padding:15px;
-
-scroll-behavior:smooth;
+transform:scale(1.15);
 
 }
 
-.chat-area::-webkit-scrollbar{
+/* 3 Dot Menu */
 
-width:5px;
+.chat-menu{
+
+display:none;
+
+position:absolute;
+
+top:70px;
+
+right:15px;
+
+width:210px;
+
+background:#1b1b1b;
+
+border-radius:14px;
+
+overflow:hidden;
+
+box-shadow:0 12px 30px rgba(0,0,0,.45);
+
+border:1px solid rgba(255,255,255,.06);
+
+z-index:9999;
 
 }
 
-.chat-area::-webkit-scrollbar-thumb{
+.chat-menu div{
 
-background:#00aaff;
+padding:15px 18px;
 
-border-radius:10px;
+cursor:pointer;
+
+transition:.25s;
+
+font-size:15px;
+
+}
+
+.chat-menu div:hover{
+
+background:#2a2a2a;
+
+}
+
+.chat-menu div:not(:last-child){
+
+border-bottom:1px solid #333;
 
 }
 
@@ -242,19 +255,24 @@ border-radius:10px;
 
 <div class="chat-header">
 
-<div class="back-btn"
+<div
+class="back-btn"
 onclick="history.back()">
 
 ⬅
 
 </div>
 
+<div
+class="user-box"
+onclick="openProfile()">
+
 <img
 id="chatUserPhoto"
 class="user-photo"
 src="non.jpg">
 
-<div class="user-details">
+<div class="user-info">
 
 <div id="chatUserName">
 
@@ -264,7 +282,9 @@ Loading...
 
 <div id="chatStatus">
 
-🟢 Online
+Connecting...
+
+</div>
 
 </div>
 
@@ -272,41 +292,112 @@ Loading...
 
 <div class="header-icons">
 
-<span>📞</span>
+<span onclick="voiceCall()">
+📞
+</span>
 
-<span>🎥</span>
+<span onclick="videoCall()">
+🎥
+</span>
 
-<span>⋮</span>
+<span onclick="toggleChatMenu()">
+⋮
+</span>
 
 </div>
 
 </div>
 
-<!-- Messages -->
+<!-- 3 Dot Menu -->
 
 <div
-id="messagesContainer"
-class="chat-area">
+id="chatMenu"
+class="chat-menu">
+
+<div onclick="openProfile()">
+👤 About User
+</div>
+
+<div onclick="reportUser()">
+🚩 Report User
+</div>
+
+<div onclick="blockUser()">
+🚫 Block User
+</div>
 
 </div>
 <!-- ========================= -->
-<!-- Chat Styles -->
+<!-- Messages Area -->
 <!-- ========================= -->
 
 <style>
 
-/* Message Bubble */
+/* Chat Area */
+
+.chat-area{
+
+margin-top:72px;
+margin-bottom:82px;
+
+height:calc(100vh - 154px);
+
+overflow-y:auto;
+
+padding:15px;
+
+scroll-behavior:smooth;
+
+}
+
+.chat-area::-webkit-scrollbar{
+
+width:6px;
+
+}
+
+.chat-area::-webkit-scrollbar-thumb{
+
+background:#00aaff;
+border-radius:20px;
+
+}
+
+/* Date Divider */
+
+.chat-date{
+
+text-align:center;
+
+margin:18px 0;
+
+font-size:13px;
+
+color:#999;
+
+}
+
+/* Message */
 
 .message{
 
 max-width:78%;
+
 padding:12px 16px;
+
+border-radius:18px;
+
 margin:10px 0;
-border-radius:20px;
+
 word-wrap:break-word;
+
 animation:pop .25s ease;
 
+position:relative;
+
 }
+
+/* Sent */
 
 .sent{
 
@@ -316,11 +407,11 @@ background:linear-gradient(135deg,#00aaff,#0077ff);
 
 color:#fff;
 
-border-bottom-right-radius:8px;
-
-box-shadow:0 5px 15px rgba(0,170,255,.25);
+border-bottom-right-radius:6px;
 
 }
+
+/* Received */
 
 .received{
 
@@ -330,35 +421,99 @@ background:#242424;
 
 color:#fff;
 
-border-bottom-left-radius:8px;
+border-bottom-left-radius:6px;
 
 border:1px solid rgba(255,255,255,.05);
 
 }
 
+/* Images */
+
 .message img{
 
 width:100%;
+
 border-radius:12px;
+
 margin-top:8px;
 
+display:block;
+
 }
+
+/* Videos */
 
 .message video{
 
 width:100%;
+
 border-radius:12px;
+
 margin-top:8px;
+
+display:block;
 
 }
 
+/* Time */
+
 .message-time{
 
-display:block;
-font-size:11px;
-opacity:.7;
+display:flex;
+
+justify-content:flex-end;
+
+align-items:center;
+
+gap:5px;
+
 margin-top:6px;
-text-align:right;
+
+font-size:11px;
+
+opacity:.75;
+
+}
+
+/* Seen Tick */
+
+.message-status{
+
+font-size:12px;
+
+font-weight:bold;
+
+}
+
+.message-status.seen{
+
+color:#5dd6ff;
+
+}
+
+.message-status.delivered{
+
+color:#ddd;
+
+}
+
+/* Reply Preview */
+
+.reply-box{
+
+padding:8px;
+
+margin-bottom:8px;
+
+background:rgba(255,255,255,.08);
+
+border-left:3px solid #00aaff;
+
+border-radius:8px;
+
+font-size:13px;
+
+color:#ddd;
 
 }
 
@@ -372,13 +527,11 @@ width:max-content;
 
 background:#242424;
 
-padding:10px 16px;
+padding:10px 15px;
 
 border-radius:18px;
 
 margin:10px 0;
-
-animation:pulse 1s infinite;
 
 }
 
@@ -387,11 +540,12 @@ animation:pulse 1s infinite;
 display:inline-block;
 
 width:8px;
+
 height:8px;
 
-background:#00aaff;
-
 border-radius:50%;
+
+background:#00aaff;
 
 margin:0 2px;
 
@@ -427,41 +581,21 @@ transform:translateY(-5px);
 
 }
 
-@keyframes pulse{
-
-0%{
-
-opacity:.5;
-
-}
-
-50%{
-
-opacity:1;
-
-}
-
-100%{
-
-opacity:.5;
-
-}
-
-}
-
 @keyframes pop{
 
 from{
 
-transform:scale(.8);
 opacity:0;
+
+transform:scale(.8);
 
 }
 
 to{
 
-transform:scale(1);
 opacity:1;
+
+transform:scale(1);
 
 }
 
@@ -469,9 +603,19 @@ opacity:1;
 
 </style>
 
-<!-- Typing Indicator -->
+<!-- ========================= -->
+<!-- Messages Container -->
+<!-- ========================= -->
 
-<div id="typingIndicator" class="typing-box">
+<div
+id="messagesContainer"
+class="chat-area">
+
+<!-- Messages will load here -->
+
+<div
+id="typingIndicator"
+class="typing-box">
 
 <span class="typing-dot"></span>
 
@@ -480,8 +624,10 @@ opacity:1;
 <span class="typing-dot"></span>
 
 </div>
+
+</div>
 <!-- ========================= -->
-<!-- Chat Input Area -->
+<!-- Chat Input Styles -->
 <!-- ========================= -->
 
 <style>
@@ -489,34 +635,42 @@ opacity:1;
 .chat-input-area{
 
 position:fixed;
+
 left:0;
 bottom:0;
-width:100%;
 
-background:rgba(20,20,20,.9);
-backdrop-filter:blur(15px);
+width:100%;
 
 padding:12px;
 
 display:flex;
+
 align-items:center;
+
 gap:10px;
+
+background:rgba(20,20,20,.92);
+
+backdrop-filter:blur(15px);
 
 border-top:1px solid rgba(255,255,255,.08);
 
-z-index:100;
+z-index:999;
 
 }
 
+/* Icon Buttons */
+
 .icon-btn{
 
-width:42px;
-height:42px;
+width:44px;
+height:44px;
 
 border:none;
+
 border-radius:50%;
 
-background:#252525;
+background:#242424;
 
 color:#fff;
 
@@ -524,35 +678,41 @@ font-size:20px;
 
 cursor:pointer;
 
-transition:.3s;
-
 display:flex;
+
 align-items:center;
+
 justify-content:center;
+
+transition:.25s;
 
 }
 
 .icon-btn:hover{
 
 background:#00aaff;
+
 transform:scale(1.08);
 
 }
+
+/* Message Input */
 
 #messageInput{
 
 flex:1;
 
-height:46px;
-
-border:none;
-outline:none;
+height:48px;
 
 padding:0 18px;
 
+border:none;
+
+outline:none;
+
 border-radius:30px;
 
-background:#1f1f1f;
+background:#1b1b1b;
 
 color:#fff;
 
@@ -566,12 +726,16 @@ color:#888;
 
 }
 
+/* Send Button */
+
 .send-btn{
 
-width:50px;
-height:50px;
+width:52px;
+
+height:52px;
 
 border:none;
+
 border-radius:50%;
 
 background:linear-gradient(135deg,#00aaff,#0077ff);
@@ -582,62 +746,189 @@ font-size:22px;
 
 cursor:pointer;
 
-transition:.3s;
-
 display:flex;
+
 align-items:center;
+
 justify-content:center;
 
-box-shadow:0 0 15px rgba(0,170,255,.35);
+box-shadow:0 0 18px rgba(0,170,255,.35);
+
+transition:.25s;
 
 }
 
 .send-btn:hover{
 
-transform:scale(1.08) rotate(10deg);
+transform:scale(1.08);
+
+}
+
+/* Recording Box */
+
+.record-box{
+
+display:none;
+
+position:fixed;
+
+bottom:82px;
+
+left:50%;
+
+transform:translateX(-50%);
+
+padding:12px 22px;
+
+background:#1b1b1b;
+
+border-radius:30px;
+
+box-shadow:0 8px 25px rgba(0,0,0,.35);
+
+font-size:15px;
+
+z-index:1000;
+
+}
+
+.record-dot{
+
+display:inline-block;
+
+width:10px;
+
+height:10px;
+
+border-radius:50%;
+
+background:red;
+
+margin-right:8px;
+
+animation:blink 1s infinite;
+
+}
+
+@keyframes blink{
+
+0%,100%{opacity:1;}
+
+50%{opacity:.2;}
 
 }
 
 </style>
 
-<!-- Input Bar -->
+<!-- ========================= -->
+<!-- Recording Indicator -->
+<!-- ========================= -->
+
+<div
+id="recordBox"
+class="record-box">
+
+<span class="record-dot"></span>
+
+Recording Voice...
+
+</div>
+
+<!-- ========================= -->
+<!-- Chat Input -->
+<!-- ========================= -->
 
 <div class="chat-input-area">
 
-<button class="icon-btn" title="Emoji">
-😊
-</button>
-
-<button class="icon-btn" title="Attachment">
-📎
-</button>
-
-<button class="icon-btn" title="Camera">
-📷
-</button>
-
-<input
-type="text"
-id="messageInput"
-placeholder="Type a message...">
+<!-- Emoji -->
 
 <button
+class="icon-btn"
+onclick="openEmojiPicker()"
+title="Emoji">
+
+😊
+
+</button>
+
+<!-- Attachment -->
+
+<button
+class="icon-btn"
+onclick="document.getElementById('chatFile').click()"
+title="Attachment">
+
+📎
+
+</button>
+
+<!-- Camera -->
+
+<button
+class="icon-btn"
+onclick="openCamera()"
+title="Camera">
+
+📷
+
+</button>
+
+<!-- Voice -->
+
+<button
+class="icon-btn"
+onclick="startVoiceRecording()"
+title="Voice Message">
+
+🎤
+
+</button>
+
+<!-- Message -->
+
+<input
+
+type="text"
+
+id="messageInput"
+
+placeholder="Type a message..."
+
+autocomplete="off">
+
+<!-- Send -->
+
+<button
+
 class="send-btn"
-onclick="sendMessage()">
+
+onclick="sendMessage()"
+
+title="Send">
+
 ➤
+
 </button>
 
 </div>
 
+<!-- ========================= -->
 <!-- Hidden File Picker -->
+<!-- ========================= -->
 
 <input
+
 type="file"
+
 id="chatFile"
+
+hidden
+
 accept="image/*,video/*"
-hidden>
+
+onchange="uploadChatFile(event)">
 <!-- ========================= -->
-<!-- Firebase -->
+<!-- Firebase SDK -->
 <!-- ========================= -->
 
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
@@ -652,117 +943,215 @@ hidden>
 
 <script>
 
-// ===========================
+// =======================
 // Auto Focus
-// ===========================
+// =======================
 
 window.addEventListener("load",()=>{
 
-    const input=document.getElementById("messageInput");
+const input=document.getElementById("messageInput");
 
-    if(input){
-
-        input.focus();
-
-    }
+if(input) input.focus();
 
 });
 
-// ===========================
-// Ripple Effect
-// ===========================
+// =======================
+// Chat Menu
+// =======================
 
-document.querySelectorAll("button").forEach(btn=>{
+function toggleChatMenu(){
 
-    btn.addEventListener("click",function(e){
+const menu=document.getElementById("chatMenu");
 
-        const ripple=document.createElement("span");
-
-        ripple.style.position="absolute";
-        ripple.style.width="10px";
-        ripple.style.height="10px";
-        ripple.style.borderRadius="50%";
-        ripple.style.background="rgba(255,255,255,.4)";
-        ripple.style.left=e.offsetX+"px";
-        ripple.style.top=e.offsetY+"px";
-        ripple.style.transform="scale(0)";
-        ripple.style.transition=".5s";
-
-        this.style.position="relative";
-        this.style.overflow="hidden";
-
-        this.appendChild(ripple);
-
-        requestAnimationFrame(()=>{
-
-            ripple.style.transform="scale(30)";
-            ripple.style.opacity="0";
-
-        });
-
-        setTimeout(()=>{
-
-            ripple.remove();
-
-        },500);
-
-    });
-
-});
-
-// ===========================
-// Auto Scroll
-// ===========================
-
-function scrollBottom(){
-
-    const box=document.getElementById("messagesContainer");
-
-    if(box){
-
-        box.scrollTop=box.scrollHeight;
-
-    }
+menu.style.display=
+menu.style.display==="block"
+?"none":"block";
 
 }
 
-setInterval(scrollBottom,1000);
+// Close menu
 
-// ===========================
-// Online / Offline
-// ===========================
+document.addEventListener("click",(e)=>{
+
+const menu=document.getElementById("chatMenu");
+
+if(!menu)return;
+
+if(
+!menu.contains(e.target) &&
+!e.target.innerText.includes("⋮")
+){
+
+menu.style.display="none";
+
+}
+
+});
+
+// =======================
+// About User
+// =======================
+
+function openProfile(){
+
+if(typeof otherUserUid==="undefined") return;
+
+location.href=
+"profile.html?uid="+otherUserUid;
+
+}
+
+// =======================
+// Report User
+// =======================
+
+function reportUser(){
+
+if(!confirm("Report this user?")) return;
+
+db.ref("reports").push({
+
+reportedUid:otherUserUid,
+
+reportedBy:currentUser.uid,
+
+time:Date.now(),
+
+reason:"User Report"
+
+});
+
+alert("Report submitted.");
+
+toggleChatMenu();
+
+}
+
+// =======================
+// Block User
+// =======================
+
+function blockUser(){
+
+if(!confirm("Block this user?")) return;
+
+db.ref(
+"blocks/"+currentUser.uid+"/"+otherUserUid
+).set(true);
+
+alert("User Blocked");
+
+history.back();
+
+}
+
+// =======================
+// Voice Call
+// =======================
+
+function voiceCall(){
+
+alert("Voice Calling feature coming soon.");
+
+}
+
+// =======================
+// Video Call
+// =======================
+
+function videoCall(){
+
+alert("Video Calling feature coming soon.");
+
+}
+
+// =======================
+// Emoji
+// =======================
+
+function openEmojiPicker(){
+
+const input=document.getElementById("messageInput");
+
+if(input){
+
+input.value+="😊";
+
+input.focus();
+
+}
+
+}
+
+// =======================
+// Camera
+// =======================
+
+function openCamera(){
+
+document.getElementById("chatFile").click();
+
+}
+
+// =======================
+// Voice Recording
+// =======================
+
+function startVoiceRecording(){
+
+const box=document.getElementById("recordBox");
+
+box.style.display="block";
+
+setTimeout(()=>{
+
+box.style.display="none";
+
+alert("Voice message support coming soon.");
+
+},2500);
+
+}
+
+// =======================
+// Internet Status
+// =======================
 
 window.addEventListener("online",()=>{
 
-    console.log("✅ Connected");
+console.log("✅ Connected");
 
 });
 
 window.addEventListener("offline",()=>{
 
-    alert("No Internet Connection");
+alert("No Internet Connection");
 
 });
 
-// ===========================
-// Page Animation
-// ===========================
+// =======================
+// Fade Animation
+// =======================
+
+window.addEventListener("load",()=>{
 
 document.body.style.opacity="0";
 
-window.onload=()=>{
+document.body.style.transition=".35s";
 
-    document.body.style.transition=".4s";
+requestAnimationFrame(()=>{
 
-    document.body.style.opacity="1";
+document.body.style.opacity="1";
 
-};
+});
 
-// ===========================
+});
+
+// =======================
 // Version
-// ===========================
+// =======================
 
-console.log("✅ Viewora Chat V3.0 Loaded");
+console.log("✅ Viewora Chat V4 Loaded");
 
 </script>
 
