@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Viewora Video</title>
+<link rel="stylesheet" href="style.css">
+<style>
+  .actions{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    margin:15px 0;
+}
+
+.actions button{
+    background:#272727;
+    color:white;
+    border:none;
+    padding:10px 18px;
+    border-radius:25px;
+    font-size:15px;
+}
+input{
+    width:90%;
+    padding:12px;
+    border-radius:20px;
+}
+.actions button:hover{
+    background:#444;
+}
+</style>
+</head>
+
+<body>
+
+<a href="index.html">← Back</a>
+
+<video width="100%" controls autoplay>
+
+<source src="video3.mp4" type="video/mp4">
+
+</video>
+
+<h2>Viewora Launch Coming Soon 🚀</h2>
+
+<p>1.2M Views • 3 Years Ago</p>
+<div class="actions">
+
+<button id="like-btn" onclick="likeVideo()">
+👍 Like (0)
+</button>
+
+<button id="dislike-btn" onclick="likeVideo()">
+dislike 👎 (0)
+</button>
+
+<button>📤 Share</button>
+
+<button id="sub-btn" onclick="subscribe()">
+🔔 Subscribe
+</button>
+
+</div>
+
+<h3>Comments</h3>
+
+<input type="text" id="comment-input" placeholder="Write a comment">
+
+<button onclick="addComment()">Post</button>
+
+<div id="comments"></div>
+</body>
+</html>

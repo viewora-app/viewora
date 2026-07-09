@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Viewora Shorts</title>
+
+  <style>
+    body {
+      margin: 0;
+      background: black;
+      font-family: Arial;
+      overflow: hidden;
+    }
+
+    .container {
+      height: 100vh;
+      overflow-y: scroll;
+      scroll-snap-type: y mandatory;
+      scroll-behavior: smooth;
+    }
+
+    .short {
+      height: 100vh;
+      scroll-snap-align: start;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      color: white;
+      border-bottom: 1px solid #222;
+      padding: 20px;
+    }
+
+    .box {
+      background: rgba(255,255,255,0.05);
+      padding: 20px;
+      border-radius: 15px;
+      text-align: center;
+      width: 80%;
+    }
+
+    button {
+      margin: 5px;
+      padding: 10px;
+      border: none;
+      border-radius: 20px;
+      cursor: pointer;
+    }
+
+    .like {
+      background: red;
+      color: white;
+    }
+
+    .comment {
+      background: #444;
+      color: white;
+    }
+
+    #commentBox {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: #111;
+      padding: 10px;
+      display: none;
+    }
+
+    input {
+      width: 70%;
+      padding: 10px;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="container" id="shortsContainer"></div>
+
+<!-- COMMENT BOX -->
+<div id="commentBox">
+  <input type="text" id="commentInput" placeholder="Write comment...">
+  <button onclick="sendComment()">Send</button>
+</div>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+
+<script>
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_AUTH_DOMAIN",
+  databaseURL: "YOUR_DB_URL",
+  projectId: "YOUR_PROJECT_ID"
+};
+
+firebase.initializeApp(firebaseConfig);
+
+let currentShortId = null;
+let user = null;
+
+firebase.auth().onAuthStateChanged((u) => {
+  user = u;
+});
+
+// LOAD SHORTS
+firebase.database().ref("shorts").on("value", (snapshot) => {
+    let container = document.getElementById("shortsContainer");
+    container.innerHTML = "";
+
+    snapshot.forEach((child) => {
+        let data = child.val();
+        let id = child.key;
+
+        let div = document.createElement("div");
+        div.className = "short";
+
+        div.innerHTML = `
+          <div class="box">
+            <h2>${data.title}</h2>
+            <p>${data.user}</p>
+
+            <p>👍 ${data.likes || 0}</p>
+
+            <button class="like" onclick="likeShort('${id}')">Like</button>
+            <button class="comment" onclick="openComment('${id}')">Comment</button>
+          </div>
+        `;
+
+        container.appendChild(div);
+    });
+});
+
+// LIKE
+function likeShort(id) {
+    let ref = firebase.database().ref("shorts/" + id);
+
+    ref.once("value").then((snap) => {
+        let data = snap.val();
+        ref.update({
+            likes: (data.likes || 0) + 1
+        });
+    });
+}
+
+// OPEN COMMENT BOX
+function openComment(id) {
+    currentShortId = id;
+    document.getElementById("commentBox").style.display = "block";
+}
+
+// SEND COMMENT
+function sendComment() {
+    let text = document.getElementById("commentInput").value;
+
+    if (!text) return;
+
+    firebase.database()
+      .ref("shorts/" + currentShortId + "/comments")
+      .push({
+        text: text,
+        user: user ? user.email : "guest",
+        time: Date.now()
+      });
+
+    document.getElementById("commentInput").value = "";
+    alert("Comment added!");
+}
+</script>
+
+</body>
+</html>>

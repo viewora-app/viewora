@@ -1,0 +1,1105 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>🎨 Appearance Settings • Viewora</title>
+
+<link rel="stylesheet" href="style.css">
+
+<style>
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:Arial,sans-serif;
+}
+
+body{
+
+background:#0d1117;
+color:#fff;
+overflow-x:hidden;
+padding-bottom:120px;
+
+}
+
+/* ========================= */
+/* Animated Background */
+/* ========================= */
+
+body::before{
+
+content:"";
+
+position:fixed;
+
+top:-50%;
+left:-50%;
+
+width:200%;
+height:200%;
+
+background:
+
+radial-gradient(circle,#00aaff22,transparent 35%),
+radial-gradient(circle,#7c3aed22,transparent 35%),
+radial-gradient(circle,#00ff8822,transparent 35%);
+
+animation:bgRotate 18s linear infinite;
+
+z-index:-1;
+
+}
+
+@keyframes bgRotate{
+
+0%{transform:rotate(0deg);}
+100%{transform:rotate(360deg);}
+
+}
+
+/* ========================= */
+/* Header */
+/* ========================= */
+
+.header{
+
+padding:35px 20px;
+
+text-align:center;
+
+background:linear-gradient(135deg,#00aaff,#7c3aed);
+
+border-bottom-left-radius:35px;
+border-bottom-right-radius:35px;
+
+box-shadow:0 10px 30px rgba(0,170,255,.30);
+
+}
+
+.header h1{
+
+font-size:30px;
+
+margin-bottom:8px;
+
+}
+
+.header p{
+
+color:#ddd;
+
+}
+
+/* ========================= */
+/* Preview Card */
+/* ========================= */
+
+.preview-card{
+
+width:92%;
+
+margin:25px auto;
+
+padding:25px;
+
+border-radius:24px;
+
+background:rgba(255,255,255,.06);
+
+backdrop-filter:blur(18px);
+
+border:1px solid rgba(255,255,255,.08);
+
+animation:zoom .5s;
+
+}
+
+@keyframes zoom{
+
+from{
+
+opacity:0;
+
+transform:scale(.92);
+
+}
+
+to{
+
+opacity:1;
+
+transform:scale(1);
+
+}
+
+}
+
+.preview-title{
+
+display:flex;
+
+align-items:center;
+
+gap:10px;
+
+font-size:22px;
+
+margin-bottom:18px;
+
+}
+
+/* Mock Phone */
+
+.phone-preview{
+
+width:230px;
+
+margin:20px auto;
+
+padding:15px;
+
+border-radius:28px;
+
+background:#1b1b1b;
+
+border:2px solid #333;
+
+box-shadow:0 10px 25px rgba(0,0,0,.35);
+
+}
+
+.preview-header{
+
+padding:12px;
+
+border-radius:14px;
+
+background:linear-gradient(135deg,#00aaff,#7c3aed);
+
+text-align:center;
+
+font-weight:bold;
+
+margin-bottom:12px;
+
+}
+
+.preview-post{
+
+padding:15px;
+
+border-radius:15px;
+
+background:#2b2b2b;
+
+margin-bottom:10px;
+
+}
+
+.preview-btn{
+
+margin-top:15px;
+
+padding:12px;
+
+width:100%;
+
+border:none;
+
+border-radius:14px;
+
+background:#00aaff;
+
+color:#fff;
+
+font-weight:bold;
+
+}
+
+/* Status */
+
+.status{
+
+display:inline-block;
+
+margin-top:15px;
+
+padding:10px 18px;
+
+border-radius:30px;
+
+background:#00c853;
+
+font-weight:bold;
+
+}
+
+/* Section */
+
+.section-title{
+
+width:92%;
+
+margin:30px auto 15px;
+
+font-size:20px;
+
+font-weight:bold;
+
+color:#00aaff;
+
+}
+
+/* Container */
+
+.settings-container{
+
+width:92%;
+
+margin:auto;
+
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="header">
+
+<h1>🎨 Appearance</h1>
+
+<p>Customize the look and feel of Viewora</p>
+
+</div>
+
+<div class="preview-card">
+
+<div class="preview-title">
+
+🎨 Live Preview
+
+</div>
+
+<div class="phone-preview">
+
+<div class="preview-header">
+
+Viewora
+
+</div>
+
+<div class="preview-post">
+
+🌄 Beautiful UI Preview
+
+</div>
+
+<button class="preview-btn">
+
+Sample Button
+
+</button>
+
+</div>
+
+<div style="text-align:center;">
+
+<span class="status">
+
+✅ Theme Active
+
+</span>
+
+</div>
+
+</div>
+
+<h2 class="section-title">
+
+Appearance Options
+
+</h2>
+
+<div class="settings-container">
+  <!-- ========================= -->
+<!-- Dark Mode -->
+<!-- ========================= -->
+
+<div class="setting-card">
+
+    <div class="icon">🌙</div>
+
+    <div class="content">
+
+        <h3>Dark Mode</h3>
+
+        <p>Enable dark appearance.</p>
+
+    </div>
+
+    <label class="switch">
+        <input type="checkbox" id="darkMode" checked>
+        <span class="slider"></span>
+    </label>
+
+</div>
+
+<!-- Light Mode -->
+
+<div class="setting-card">
+
+    <div class="icon">☀️</div>
+
+    <div class="content">
+
+        <h3>Light Mode</h3>
+
+        <p>Use a bright interface.</p>
+
+    </div>
+
+    <label class="switch">
+        <input type="checkbox" id="lightMode">
+        <span class="slider"></span>
+    </label>
+
+</div>
+
+<!-- Accent Color -->
+
+<div class="setting-card">
+
+    <div class="icon">🎨</div>
+
+    <div class="content">
+
+        <h3>Accent Color</h3>
+
+        <p>Select your favorite accent color.</p>
+
+    </div>
+
+    <input type="color"
+           id="accentColor"
+           value="#00aaff">
+
+</div>
+
+<!-- Theme Color -->
+
+<div class="setting-card">
+
+    <div class="icon">🌈</div>
+
+    <div class="content">
+
+        <h3>Theme Color</h3>
+
+        <p>Customize the primary theme color.</p>
+
+    </div>
+
+    <input type="color"
+           id="themeColor"
+           value="#7c3aed">
+
+</div>
+
+<!-- Font Size -->
+
+<div class="setting-card">
+
+    <div class="icon">🔤</div>
+
+    <div class="content">
+
+        <h3>Font Size</h3>
+
+        <p>Adjust text size.</p>
+
+    </div>
+
+    <select id="fontSize">
+
+        <option value="small">Small</option>
+
+        <option value="medium" selected>Medium</option>
+
+        <option value="large">Large</option>
+
+        <option value="xlarge">Extra Large</option>
+
+    </select>
+
+</div>
+
+<!-- UI Animations -->
+
+<div class="setting-card">
+
+    <div class="icon">✨</div>
+
+    <div class="content">
+
+        <h3>UI Animations</h3>
+
+        <p>Enable smooth interface animations.</p>
+
+    </div>
+
+    <label class="switch">
+        <input type="checkbox"
+               id="uiAnimations"
+               checked>
+        <span class="slider"></span>
+    </label>
+
+</div>
+
+<style>
+
+/* ========================= */
+/* Cards */
+/* ========================= */
+
+.setting-card{
+
+display:flex;
+
+align-items:center;
+
+gap:16px;
+
+padding:18px;
+
+margin-bottom:16px;
+
+background:rgba(255,255,255,.06);
+
+backdrop-filter:blur(16px);
+
+border:1px solid rgba(255,255,255,.08);
+
+border-radius:20px;
+
+transition:.3s;
+
+animation:fadeUp .5s ease both;
+
+}
+
+.setting-card:hover{
+
+transform:translateY(-4px);
+
+background:rgba(255,255,255,.10);
+
+box-shadow:0 15px 35px rgba(0,170,255,.20);
+
+}
+
+.icon{
+
+width:58px;
+height:58px;
+
+display:flex;
+
+align-items:center;
+
+justify-content:center;
+
+font-size:28px;
+
+border-radius:16px;
+
+background:linear-gradient(135deg,#00aaff,#7c3aed);
+
+flex-shrink:0;
+
+}
+
+.content{
+
+flex:1;
+
+}
+
+.content h3{
+
+font-size:17px;
+
+margin-bottom:5px;
+
+}
+
+.content p{
+
+font-size:13px;
+
+color:#aaa;
+
+}
+
+/* Toggle */
+
+.switch{
+
+position:relative;
+
+display:inline-block;
+
+width:54px;
+
+height:30px;
+
+}
+
+.switch input{
+
+display:none;
+
+}
+
+.slider{
+
+position:absolute;
+
+inset:0;
+
+background:#444;
+
+border-radius:30px;
+
+cursor:pointer;
+
+transition:.3s;
+
+}
+
+.slider:before{
+
+content:"";
+
+position:absolute;
+
+width:22px;
+height:22px;
+
+left:4px;
+bottom:4px;
+
+background:#fff;
+
+border-radius:50%;
+
+transition:.3s;
+
+}
+
+.switch input:checked + .slider{
+
+background:#00aaff;
+
+}
+
+.switch input:checked + .slider:before{
+
+transform:translateX(24px);
+
+}
+
+/* Color Picker */
+
+input[type=color]{
+
+width:48px;
+
+height:48px;
+
+border:none;
+
+background:none;
+
+cursor:pointer;
+
+}
+
+/* Select */
+
+select{
+
+padding:10px 12px;
+
+border-radius:10px;
+
+background:#222;
+
+color:#fff;
+
+border:1px solid #444;
+
+}
+
+/* Animation */
+
+@keyframes fadeUp{
+
+from{
+
+opacity:0;
+
+transform:translateY(25px);
+
+}
+
+to{
+
+opacity:1;
+
+transform:translateY(0);
+
+}
+
+}
+
+</style>
+<!-- ========================= -->
+<!-- Advanced Appearance -->
+<!-- ========================= -->
+
+<h2 class="section-title">
+
+Advanced Appearance
+
+</h2>
+
+<div class="settings-container">
+
+    <!-- Blur Effects -->
+
+    <div class="setting-card">
+
+        <div class="icon">🌫️</div>
+
+        <div class="content">
+
+            <h3>Blur Effects</h3>
+
+            <p>Enable glassmorphism blur effects.</p>
+
+        </div>
+
+        <label class="switch">
+
+            <input type="checkbox"
+                   id="blurEffects"
+                   checked>
+
+            <span class="slider"></span>
+
+        </label>
+
+    </div>
+
+    <!-- Compact Mode -->
+
+    <div class="setting-card">
+
+        <div class="icon">📱</div>
+
+        <div class="content">
+
+            <h3>Compact Mode</h3>
+
+            <p>Reduce spacing for more content.</p>
+
+        </div>
+
+        <label class="switch">
+
+            <input type="checkbox"
+                   id="compactMode">
+
+            <span class="slider"></span>
+
+        </label>
+
+    </div>
+
+    <!-- Chat Background -->
+
+    <div class="setting-card">
+
+        <div class="icon">🖼️</div>
+
+        <div class="content">
+
+            <h3>Chat Background</h3>
+
+            <p>Choose your preferred background.</p>
+
+        </div>
+
+        <select id="chatBackground">
+
+            <option value="default">Default</option>
+            <option value="dark">Dark</option>
+            <option value="blue">Blue</option>
+            <option value="purple">Purple</option>
+            <option value="green">Green</option>
+
+        </select>
+
+    </div>
+
+    <!-- Rounded Corners -->
+
+    <div class="setting-card">
+
+        <div class="icon">⭕</div>
+
+        <div class="content">
+
+            <h3>Rounded Corners</h3>
+
+            <p>Enable rounded UI elements.</p>
+
+        </div>
+
+        <label class="switch">
+
+            <input type="checkbox"
+                   id="roundedCorners"
+                   checked>
+
+            <span class="slider"></span>
+
+        </label>
+
+    </div>
+
+</div>
+
+<!-- ========================= -->
+<!-- Action Buttons -->
+<!-- ========================= -->
+
+<div class="action-buttons">
+
+    <button class="save-btn"
+    onclick="saveAppearanceSettings()">
+
+        💾 Save Appearance
+
+    </button>
+
+    <button class="preview-btn-action"
+    onclick="previewAppearance()">
+
+        👀 Live Preview
+
+    </button>
+
+    <button class="reset-btn"
+    onclick="resetAppearance()">
+
+        🔄 Reset Appearance
+
+    </button>
+
+    <button class="back-btn"
+    onclick="window.location.href='settings.html'">
+
+        ⬅ Back to Settings
+
+    </button>
+
+</div>
+
+<style>
+
+/* Action Buttons */
+
+.action-buttons{
+
+width:92%;
+
+margin:35px auto;
+
+display:flex;
+
+flex-direction:column;
+
+gap:15px;
+
+}
+
+.action-buttons button{
+
+padding:16px;
+
+border:none;
+
+border-radius:18px;
+
+font-size:16px;
+
+font-weight:bold;
+
+cursor:pointer;
+
+transition:.3s;
+
+}
+
+.save-btn{
+
+background:linear-gradient(135deg,#00aaff,#0077ff);
+
+color:#fff;
+
+box-shadow:0 10px 25px rgba(0,170,255,.35);
+
+}
+
+.preview-btn-action{
+
+background:linear-gradient(135deg,#7c3aed,#5b21b6);
+
+color:#fff;
+
+box-shadow:0 10px 25px rgba(124,58,237,.35);
+
+}
+
+.reset-btn{
+
+background:linear-gradient(135deg,#ff9800,#ff5722);
+
+color:#fff;
+
+box-shadow:0 10px 25px rgba(255,87,34,.35);
+
+}
+
+.back-btn{
+
+background:#2b2b2b;
+
+color:#fff;
+
+}
+
+.action-buttons button:hover{
+
+transform:translateY(-3px) scale(1.02);
+
+}
+
+.action-buttons button:active{
+
+transform:scale(.98);
+
+}
+
+</style>
+<!-- ========================= -->
+<!-- Footer -->
+<!-- ========================= -->
+
+<footer class="footer">
+
+    <h3>🎨 Viewora Appearance</h3>
+
+    <p>
+        Personalize your experience with themes, colors and animations.
+    </p>
+
+    <div class="footer-version">
+        Version 1.0.0 • © 2026 Viewora
+    </div>
+
+</footer>
+
+<!-- Floating Badge -->
+
+<div class="floating-theme">
+
+    🎨 Theme Active
+
+</div>
+
+<style>
+
+/* ========================= */
+/* Footer */
+/* ========================= */
+
+.footer{
+
+width:92%;
+margin:40px auto 100px;
+
+padding:25px;
+
+text-align:center;
+
+background:rgba(255,255,255,.06);
+
+backdrop-filter:blur(15px);
+
+border:1px solid rgba(255,255,255,.08);
+
+border-radius:22px;
+
+animation:fadeFooter .8s ease;
+
+}
+
+.footer h3{
+
+color:#00aaff;
+margin-bottom:10px;
+
+}
+
+.footer p{
+
+color:#aaa;
+line-height:1.6;
+
+}
+
+.footer-version{
+
+margin-top:15px;
+font-size:13px;
+color:#666;
+
+}
+
+/* Floating Badge */
+
+.floating-theme{
+
+position:fixed;
+
+right:20px;
+bottom:20px;
+
+padding:10px 18px;
+
+border-radius:30px;
+
+background:linear-gradient(135deg,#00aaff,#7c3aed);
+
+color:#fff;
+
+font-weight:bold;
+
+box-shadow:0 10px 25px rgba(0,170,255,.35);
+
+animation:pulse 2s infinite;
+
+z-index:999;
+
+}
+
+@keyframes fadeFooter{
+
+from{
+
+opacity:0;
+transform:translateY(30px);
+
+}
+
+to{
+
+opacity:1;
+transform:translateY(0);
+
+}
+
+}
+
+@keyframes pulse{
+
+0%,100%{
+
+transform:scale(1);
+
+}
+
+50%{
+
+transform:scale(1.08);
+
+}
+
+}
+
+</style>
+
+<!-- ========================= -->
+<!-- Firebase SDK -->
+<!-- ========================= -->
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+
+<script src="firebase.js"></script>
+<script src="appearance-settings.js"></script>
+
+<script>
+
+// Smooth Fade
+
+document.body.style.opacity="0";
+
+window.addEventListener("load",()=>{
+
+document.body.style.transition="opacity .4s ease";
+
+document.body.style.opacity="1";
+
+});
+
+// Internet Status
+
+window.addEventListener("online",()=>{
+
+if(typeof showToast==="function"){
+
+showToast("🌐 Internet Connected");
+
+}
+
+});
+
+window.addEventListener("offline",()=>{
+
+if(typeof showToast==="function"){
+
+showToast("❌ Internet Disconnected");
+
+}
+
+});
+
+console.log("🎨 Appearance Settings Loaded");
+
+</script>
+
+</body>
+</html>

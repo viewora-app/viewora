@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport"
+content="width=device-width, initial-scale=1.0">
+
+<title>🚫 Blocked Users • Viewora</title>
+
+<link rel="stylesheet" href="style.css">
+
+<style>
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:Arial,sans-serif;
+}
+
+body{
+
+background:#0d1117;
+color:#fff;
+overflow-x:hidden;
+padding-bottom:120px;
+
+}
+
+/* ========================= */
+/* Animated Background */
+/* ========================= */
+
+body::before{
+
+content:"";
+
+position:fixed;
+
+top:-50%;
+left:-50%;
+
+width:200%;
+height:200%;
+
+background:
+radial-gradient(circle,#ff174422,transparent 35%),
+radial-gradient(circle,#00aaff22,transparent 35%),
+radial-gradient(circle,#7c3aed22,transparent 35%);
+
+animation:bgRotate 20s linear infinite;
+
+z-index:-1;
+
+}
+
+@keyframes bgRotate{
+
+0%{transform:rotate(0deg);}
+100%{transform:rotate(360deg);}
+
+}
+
+/* ========================= */
+/* Header */
+/* ========================= */
+
+.header{
+
+padding:35px 20px;
+
+text-align:center;
+
+background:linear-gradient(135deg,#ff1744,#7c3aed);
+
+border-bottom-left-radius:35px;
+border-bottom-right-radius:35px;
+
+box-shadow:0 10px 30px rgba(255,23,68,.35);
+
+animation:slideDown .6s ease;
+
+}
+
+.header h1{
+
+font-size:30px;
+
+margin-bottom:8px;
+
+}
+
+.header p{
+
+color:#eee;
+
+}
+
+@keyframes slideDown{
+
+from{
+
+opacity:0;
+transform:translateY(-35px);
+
+}
+
+to{
+
+opacity:1;
+transform:translateY(0);
+
+}
+
+}
+
+/* ========================= */
+/* Search Card */
+/* ========================= */
+
+.search-card{
+
+width:92%;
+
+margin:25px auto;
+
+padding:20px;
+
+background:rgba(255,255,255,.06);
+
+backdrop-filter:blur(18px);
+
+border:1px solid rgba(255,255,255,.08);
+
+border-radius:22px;
+
+animation:fadeIn .7s ease;
+
+}
+
+.search-box{
+
+display:flex;
+
+align-items:center;
+
+gap:12px;
+
+background:#1c1f26;
+
+padding:14px 18px;
+
+border-radius:15px;
+
+}
+
+.search-box span{
+
+font-size:22px;
+
+}
+
+.search-box input{
+
+flex:1;
+
+border:none;
+
+outline:none;
+
+background:transparent;
+
+color:#fff;
+
+font-size:16px;
+
+}
+
+.search-box input::placeholder{
+
+color:#888;
+
+}
+
+.info-box{
+
+margin-top:18px;
+
+padding:14px;
+
+background:rgba(255,23,68,.12);
+
+border-left:4px solid #ff1744;
+
+border-radius:12px;
+
+color:#ddd;
+
+font-size:14px;
+
+line-height:1.6;
+
+}
+
+@keyframes fadeIn{
+
+from{
+
+opacity:0;
+transform:scale(.95);
+
+}
+
+to{
+
+opacity:1;
+transform:scale(1);
+
+}
+
+}
+
+/* ========================= */
+/* Section */
+/* ========================= */
+
+.section-title{
+
+width:92%;
+
+margin:30px auto 15px;
+
+font-size:20px;
+
+font-weight:bold;
+
+color:#ff4d6d;
+
+}
+
+.users-container{
+
+width:92%;
+
+margin:auto;
+
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="header">
+
+<h1>🚫 Blocked Users</h1>
+
+<p>Manage users you've blocked on Viewora</p>
+
+</div>
+
+<div class="search-card">
+
+<div class="search-box">
+
+<span>🔍</span>
+
+<input
+type="text"
+id="searchUser"
+placeholder="Search blocked users...">
+
+</div>
+
+<div class="info-box">
+
+<strong>Privacy Tip:</strong><br>
+
+Blocked users cannot follow you, send messages,
+comment on your posts, or view your private content.
+
+</div>
+
+</div>
+
+<h2 class="section-title">
+
+Blocked Accounts
+
+</h2>
+
+<div class="users-container">
+  <!-- ========================= -->
+<!-- Blocked Users List -->
+<!-- ========================= -->
+
+<!-- User Card Template -->
+
+<div id="blockedUsersList">
+
+    <!-- Users Firebase se yaha load honge -->
+
+</div>
+
+<!-- ========================= -->
+<!-- Empty State -->
+<!-- ========================= -->
+
+<div id="emptyState" class="empty-state" style="display:none;">
+
+    <div class="empty-icon">
+
+        🚫
+
+    </div>
+
+    <h2>No Blocked Users</h2>
+
+    <p>
+
+        You haven't blocked anyone yet.
+
+    </p>
+
+</div>
+
+<style>
+
+/* ========================= */
+/* User Card */
+/* ========================= */
+
+.user-card{
+
+display:flex;
+
+align-items:center;
+
+gap:16px;
+
+padding:18px;
+
+margin-bottom:16px;
+
+background:rgba(255,255,255,.06);
+
+backdrop-filter:blur(16px);
+
+border:1px solid rgba(255,255,255,.08);
+
+border-radius:22px;
+
+transition:.3s;
+
+animation:cardFade .5s ease both;
+
+}
+
+.user-card:hover{
+
+transform:translateY(-4px);
+
+background:rgba(255,255,255,.10);
+
+box-shadow:0 15px 35px rgba(255,23,68,.20);
+
+}
+
+/* Avatar */
+
+.user-avatar{
+
+width:70px;
+height:70px;
+
+border-radius:50%;
+
+object-fit:cover;
+
+border:3px solid #ff1744;
+
+box-shadow:0 0 20px rgba(255,23,68,.35);
+
+}
+
+/* Info */
+
+.user-info{
+
+flex:1;
+
+}
+
+.user-info h3{
+
+font-size:18px;
+
+margin-bottom:5px;
+
+}
+
+.user-info p{
+
+color:#aaa;
+
+font-size:14px;
+
+}
+
+/* Unblock Button */
+
+.unblock-btn{
+
+padding:12px 20px;
+
+border:none;
+
+border-radius:14px;
+
+cursor:pointer;
+
+font-weight:bold;
+
+background:linear-gradient(135deg,#ff1744,#ff6b81);
+
+color:#fff;
+
+transition:.3s;
+
+}
+
+.unblock-btn:hover{
+
+transform:scale(1.05);
+
+box-shadow:0 10px 25px rgba(255,23,68,.35);
+
+}
+
+/* ========================= */
+/* Empty State */
+/* ========================= */
+
+.empty-state{
+
+width:92%;
+
+margin:60px auto;
+
+text-align:center;
+
+padding:40px 20px;
+
+background:rgba(255,255,255,.05);
+
+border-radius:24px;
+
+border:1px solid rgba(255,255,255,.08);
+
+animation:fadeIn .7s ease;
+
+}
+
+.empty-icon{
+
+font-size:70px;
+
+margin-bottom:20px;
+
+animation:floatIcon 2.5s infinite ease-in-out;
+
+}
+
+.empty-state h2{
+
+margin-bottom:10px;
+
+}
+
+.empty-state p{
+
+color:#999;
+
+line-height:1.6;
+
+}
+
+/* Animations */
+
+@keyframes cardFade{
+
+from{
+
+opacity:0;
+
+transform:translateY(30px);
+
+}
+
+to{
+
+opacity:1;
+
+transform:translateY(0);
+
+}
+
+}
+
+@keyframes floatIcon{
+
+0%,100%{
+
+transform:translateY(0);
+
+}
+
+50%{
+
+transform:translateY(-12px);
+
+}
+
+}
+
+</style>
+<!-- ========================= -->
+<!-- Action Buttons -->
+<!-- ========================= -->
+
+<div class="action-buttons">
+
+    <button class="refresh-btn"
+            onclick="loadBlockedUsers()">
+
+        🔄 Refresh List
+
+    </button>
+
+    <button class="back-btn"
+            onclick="window.location.href='privacy-settings.html'">
+
+        ⬅ Back to Privacy
+
+    </button>
+
+</div>
+
+<!-- ========================= -->
+<!-- Footer -->
+<!-- ========================= -->
+
+<footer class="footer">
+
+    <h3>🚫 Blocked Users</h3>
+
+    <p>
+
+        Manage blocked accounts safely. You can unblock users at any time.
+
+    </p>
+
+    <div class="footer-version">
+
+        Viewora v1.0.0 • © 2026 Viewora
+
+    </div>
+
+</footer>
+
+<!-- Floating Badge -->
+
+<div class="blocked-badge">
+
+    🛡️ Safe Mode
+
+</div>
+
+<style>
+
+/* ========================= */
+/* Action Buttons */
+/* ========================= */
+
+.action-buttons{
+
+width:92%;
+
+margin:35px auto;
+
+display:flex;
+
+flex-direction:column;
+
+gap:15px;
+
+}
+
+.action-buttons button{
+
+padding:16px;
+
+border:none;
+
+border-radius:18px;
+
+font-size:16px;
+
+font-weight:bold;
+
+cursor:pointer;
+
+transition:.3s;
+
+}
+
+.refresh-btn{
+
+background:linear-gradient(135deg,#00aaff,#0077ff);
+
+color:#fff;
+
+box-shadow:0 10px 25px rgba(0,170,255,.30);
+
+}
+
+.back-btn{
+
+background:#2b2b2b;
+
+color:#fff;
+
+}
+
+.action-buttons button:hover{
+
+transform:translateY(-3px);
+
+}
+
+/* ========================= */
+/* Footer */
+/* ========================= */
+
+.footer{
+
+width:92%;
+
+margin:40px auto 100px;
+
+padding:25px;
+
+text-align:center;
+
+background:rgba(255,255,255,.06);
+
+backdrop-filter:blur(18px);
+
+border-radius:22px;
+
+border:1px solid rgba(255,255,255,.08);
+
+}
+
+.footer h3{
+
+color:#ff4d6d;
+
+margin-bottom:10px;
+
+}
+
+.footer p{
+
+color:#aaa;
+
+line-height:1.6;
+
+}
+
+.footer-version{
+
+margin-top:15px;
+
+font-size:13px;
+
+color:#666;
+
+}
+
+/* Floating Badge */
+
+.blocked-badge{
+
+position:fixed;
+
+right:20px;
+
+bottom:20px;
+
+padding:12px 18px;
+
+background:linear-gradient(135deg,#ff1744,#7c3aed);
+
+color:#fff;
+
+border-radius:30px;
+
+font-weight:bold;
+
+box-shadow:0 10px 25px rgba(255,23,68,.35);
+
+animation:pulse 2s infinite;
+
+z-index:999;
+
+}
+
+@keyframes pulse{
+
+0%,100%{
+
+transform:scale(1);
+
+}
+
+50%{
+
+transform:scale(1.08);
+
+}
+
+}
+
+</style>
+
+<!-- Firebase SDK -->
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+
+<script src="firebase.js"></script>
+<script src="blocked-users.js"></script>
+<!-- ========================= -->
+<!-- Page Script -->
+<!-- ========================= -->
+
+<script>
+
+// Smooth Fade Animation
+
+document.body.style.opacity = "0";
+
+window.addEventListener("load", () => {
+
+    document.body.style.transition = "opacity .4s ease";
+
+    document.body.style.opacity = "1";
+
+    console.log("🚫 Blocked Users Page Loaded");
+
+});
+
+// =========================
+// Internet Status
+// =========================
+
+window.addEventListener("online", () => {
+
+    if (typeof showToast === "function") {
+
+        showToast("🌐 Internet Connected");
+
+    }
+
+});
+
+window.addEventListener("offline", () => {
+
+    if (typeof showToast === "function") {
+
+        showToast("📡 No Internet Connection");
+
+    }
+
+});
+
+// =========================
+// Search Box Animation
+// =========================
+
+const searchInput = document.getElementById("searchUser");
+
+if (searchInput) {
+
+    searchInput.addEventListener("focus", () => {
+
+        searchInput.parentElement.style.boxShadow =
+            "0 0 20px rgba(255,23,68,.35)";
+
+    });
+
+    searchInput.addEventListener("blur", () => {
+
+        searchInput.parentElement.style.boxShadow = "none";
+
+    });
+
+}
+
+// =========================
+// Pull To Refresh (Mobile)
+// =========================
+
+let startY = 0;
+
+window.addEventListener("touchstart", (e) => {
+
+    startY = e.touches[0].clientY;
+
+});
+
+window.addEventListener("touchend", (e) => {
+
+    const endY = e.changedTouches[0].clientY;
+
+    if (endY - startY > 120) {
+
+        if (typeof loadBlockedUsers === "function") {
+
+            loadBlockedUsers();
+
+            if (typeof showToast === "function") {
+
+                showToast("🔄 Refreshing...");
+
+            }
+
+        }
+
+    }
+
+});
+
+// =========================
+// Page Ready
+// =========================
+
+console.log("✅ blocked-users.html Ready");
+
+</script>
+
+</body>
+</html>

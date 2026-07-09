@@ -1,0 +1,1053 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>🔔 Notification Settings • Viewora</title>
+
+<link rel="stylesheet" href="style.css">
+
+<style>
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:Arial,sans-serif;
+}
+
+body{
+
+background:#0d1117;
+color:#fff;
+overflow-x:hidden;
+padding-bottom:120px;
+
+}
+
+/* Animated Background */
+
+body::before{
+
+content:"";
+
+position:fixed;
+
+top:-50%;
+left:-50%;
+
+width:200%;
+height:200%;
+
+background:
+
+radial-gradient(circle,#00aaff22,transparent 35%),
+radial-gradient(circle,#ff00aa22,transparent 35%),
+radial-gradient(circle,#00ff8822,transparent 35%);
+
+animation:bgRotate 20s linear infinite;
+
+z-index:-1;
+
+}
+
+@keyframes bgRotate{
+
+0%{
+
+transform:rotate(0deg);
+
+}
+
+100%{
+
+transform:rotate(360deg);
+
+}
+
+}
+
+/* Header */
+
+.header{
+
+padding:35px;
+
+text-align:center;
+
+background:linear-gradient(135deg,#00aaff,#0066ff);
+
+border-bottom-left-radius:35px;
+border-bottom-right-radius:35px;
+
+box-shadow:0 10px 30px rgba(0,170,255,.35);
+
+}
+
+.header h1{
+
+font-size:30px;
+
+margin-bottom:8px;
+
+}
+
+.header p{
+
+color:#ddd;
+
+}
+
+/* Notification Card */
+
+.notify-card{
+
+width:92%;
+
+margin:25px auto;
+
+padding:25px;
+
+border-radius:25px;
+
+background:rgba(255,255,255,.06);
+
+backdrop-filter:blur(18px);
+
+border:1px solid rgba(255,255,255,.08);
+
+text-align:center;
+
+animation:zoom .6s;
+
+}
+
+@keyframes zoom{
+
+from{
+
+opacity:0;
+transform:scale(.92);
+
+}
+
+to{
+
+opacity:1;
+transform:scale(1);
+
+}
+
+}
+
+.notify-icon{
+
+width:95px;
+height:95px;
+
+margin:auto;
+
+border-radius:50%;
+
+background:linear-gradient(135deg,#00aaff,#0077ff);
+
+display:flex;
+
+align-items:center;
+
+justify-content:center;
+
+font-size:45px;
+
+box-shadow:0 0 25px rgba(0,170,255,.45);
+
+}
+
+.notify-card h2{
+
+margin-top:18px;
+
+font-size:24px;
+
+}
+
+.notify-card p{
+
+margin-top:10px;
+
+color:#aaa;
+
+line-height:1.5;
+
+}
+
+.status{
+
+display:inline-block;
+
+margin-top:18px;
+
+padding:10px 20px;
+
+border-radius:30px;
+
+background:#00c853;
+
+font-weight:bold;
+
+}
+
+/* Section */
+
+.section-title{
+
+width:92%;
+
+margin:30px auto 15px;
+
+font-size:20px;
+
+font-weight:bold;
+
+color:#00aaff;
+
+}
+
+/* Container */
+
+.settings-container{
+
+width:92%;
+
+margin:auto;
+
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="header">
+
+<h1>🔔 Notification Settings</h1>
+
+<p>Manage all your Viewora notifications</p>
+
+</div>
+
+<div class="notify-card">
+
+<div class="notify-icon">
+
+🔔
+
+</div>
+
+<h2>
+
+Notifications Enabled
+
+</h2>
+
+<p>
+
+Choose which notifications you want to receive.
+
+</p>
+
+<div class="status">
+
+✅ Active
+
+</div>
+
+</div>
+
+<h2 class="section-title">
+
+Notification Preferences
+
+</h2>
+
+<div class="settings-container">
+  <!-- ========================= -->
+<!-- Likes Notifications -->
+<!-- ========================= -->
+
+<div class="setting-card">
+
+    <div class="icon">❤️</div>
+
+    <div class="content">
+
+        <h3>Likes</h3>
+
+        <p>Notify when someone likes your posts.</p>
+
+    </div>
+
+    <label class="switch">
+        <input type="checkbox" id="likesNotify" checked>
+        <span class="slider"></span>
+    </label>
+
+</div>
+
+<!-- Comments -->
+
+<div class="setting-card">
+
+    <div class="icon">💬</div>
+
+    <div class="content">
+
+        <h3>Comments</h3>
+
+        <p>Receive notifications for comments.</p>
+
+    </div>
+
+    <label class="switch">
+        <input type="checkbox" id="commentsNotify" checked>
+        <span class="slider"></span>
+    </label>
+
+</div>
+
+<!-- Followers -->
+
+<div class="setting-card">
+
+    <div class="icon">👥</div>
+
+    <div class="content">
+
+        <h3>New Followers</h3>
+
+        <p>Notify when someone follows you.</p>
+
+    </div>
+
+    <label class="switch">
+        <input type="checkbox" id="followersNotify" checked>
+        <span class="slider"></span>
+    </label>
+
+</div>
+
+<!-- Messages -->
+
+<div class="setting-card">
+
+    <div class="icon">📩</div>
+
+    <div class="content">
+
+        <h3>Messages</h3>
+
+        <p>Receive new message notifications.</p>
+
+    </div>
+
+    <label class="switch">
+        <input type="checkbox" id="messagesNotify" checked>
+        <span class="slider"></span>
+    </label>
+
+</div>
+
+<!-- Mentions -->
+
+<div class="setting-card">
+
+    <div class="icon">📢</div>
+
+    <div class="content">
+
+        <h3>Mentions & Tags</h3>
+
+        <p>Notify when someone mentions you.</p>
+
+    </div>
+
+    <label class="switch">
+        <input type="checkbox" id="mentionsNotify" checked>
+        <span class="slider"></span>
+    </label>
+
+</div>
+
+<!-- Stories -->
+
+<div class="setting-card">
+
+    <div class="icon">🎥</div>
+
+    <div class="content">
+
+        <h3>Stories</h3>
+
+        <p>Get notified about friends' stories.</p>
+
+    </div>
+
+    <label class="switch">
+        <input type="checkbox" id="storiesNotify" checked>
+        <span class="slider"></span>
+    </label>
+
+</div>
+
+<!-- Live -->
+
+<div class="setting-card">
+
+    <div class="icon">📺</div>
+
+    <div class="content">
+
+        <h3>Live Videos</h3>
+
+        <p>Receive live stream notifications.</p>
+
+    </div>
+
+    <label class="switch">
+        <input type="checkbox" id="liveNotify">
+        <span class="slider"></span>
+    </label>
+
+</div>
+
+<!-- Email -->
+
+<div class="setting-card">
+
+    <div class="icon">📧</div>
+
+    <div class="content">
+
+        <h3>Email Notifications</h3>
+
+        <p>Receive important emails from Viewora.</p>
+
+    </div>
+
+    <label class="switch">
+        <input type="checkbox" id="emailNotify">
+        <span class="slider"></span>
+    </label>
+
+</div>
+
+<style>
+
+/* Cards */
+
+.setting-card{
+
+display:flex;
+align-items:center;
+gap:16px;
+
+padding:18px;
+
+margin-bottom:16px;
+
+background:rgba(255,255,255,.06);
+
+backdrop-filter:blur(15px);
+
+border-radius:20px;
+
+border:1px solid rgba(255,255,255,.08);
+
+transition:.3s;
+
+animation:fadeUp .5s ease both;
+
+}
+
+.setting-card:hover{
+
+transform:translateY(-3px);
+
+background:rgba(255,255,255,.09);
+
+box-shadow:0 12px 25px rgba(0,170,255,.20);
+
+}
+
+.icon{
+
+font-size:30px;
+
+width:55px;
+height:55px;
+
+display:flex;
+
+align-items:center;
+
+justify-content:center;
+
+background:linear-gradient(135deg,#00aaff,#0066ff);
+
+border-radius:15px;
+
+flex-shrink:0;
+
+}
+
+.content{
+
+flex:1;
+
+}
+
+.content h3{
+
+margin-bottom:5px;
+
+font-size:17px;
+
+}
+
+.content p{
+
+font-size:13px;
+
+color:#aaa;
+
+}
+
+/* Toggle Switch */
+
+.switch{
+
+position:relative;
+
+display:inline-block;
+
+width:54px;
+
+height:30px;
+
+}
+
+.switch input{
+
+display:none;
+
+}
+
+.slider{
+
+position:absolute;
+
+cursor:pointer;
+
+top:0;
+left:0;
+right:0;
+bottom:0;
+
+background:#444;
+
+border-radius:30px;
+
+transition:.3s;
+
+}
+
+.slider:before{
+
+content:"";
+
+position:absolute;
+
+width:22px;
+height:22px;
+
+left:4px;
+bottom:4px;
+
+background:white;
+
+border-radius:50%;
+
+transition:.3s;
+
+}
+
+input:checked + .slider{
+
+background:#00aaff;
+
+}
+
+input:checked + .slider:before{
+
+transform:translateX(24px);
+
+}
+
+@keyframes fadeUp{
+
+from{
+
+opacity:0;
+
+transform:translateY(25px);
+
+}
+
+to{
+
+opacity:1;
+
+transform:translateY(0);
+
+}
+
+}
+
+</style>
+<!-- ========================= -->
+<!-- Advanced Notification Settings -->
+<!-- ========================= -->
+
+<h2 class="section-title">
+
+Advanced Settings
+
+</h2>
+
+<div class="settings-container">
+
+    <!-- Sound -->
+
+    <div class="setting-card">
+
+        <div class="icon">🔊</div>
+
+        <div class="content">
+
+            <h3>Notification Sound</h3>
+
+            <p>Play sound for new notifications.</p>
+
+        </div>
+
+        <label class="switch">
+
+            <input type="checkbox" id="soundNotify" checked>
+
+            <span class="slider"></span>
+
+        </label>
+
+    </div>
+
+    <!-- Vibration -->
+
+    <div class="setting-card">
+
+        <div class="icon">📳</div>
+
+        <div class="content">
+
+            <h3>Vibration</h3>
+
+            <p>Vibrate on notification alerts.</p>
+
+        </div>
+
+        <label class="switch">
+
+            <input type="checkbox" id="vibrationNotify" checked>
+
+            <span class="slider"></span>
+
+        </label>
+
+    </div>
+
+    <!-- Do Not Disturb -->
+
+    <div class="setting-card">
+
+        <div class="icon">🌙</div>
+
+        <div class="content">
+
+            <h3>Do Not Disturb</h3>
+
+            <p>Temporarily silence notifications.</p>
+
+        </div>
+
+        <label class="switch">
+
+            <input type="checkbox" id="dndNotify">
+
+            <span class="slider"></span>
+
+        </label>
+
+    </div>
+
+    <!-- Notification Schedule -->
+
+    <div class="setting-card">
+
+        <div class="icon">🕒</div>
+
+        <div class="content">
+
+            <h3>Notification Schedule</h3>
+
+            <p>Receive notifications only during selected hours.</p>
+
+        </div>
+
+        <span style="font-size:26px;color:#00aaff;">›</span>
+
+    </div>
+
+</div>
+
+<!-- ========================= -->
+<!-- Action Buttons -->
+<!-- ========================= -->
+
+<div class="action-buttons">
+
+    <button class="save-btn"
+    onclick="saveNotificationSettings()">
+
+        💾 Save Settings
+
+    </button>
+
+    <button class="reset-btn"
+    onclick="resetNotificationSettings()">
+
+        🔄 Reset Settings
+
+    </button>
+
+    <button class="clear-btn"
+    onclick="clearNotifications()">
+
+        🧹 Clear Notifications
+
+    </button>
+
+    <button class="back-btn"
+    onclick="window.location.href='settings.html'">
+
+        ⬅ Back to Settings
+
+    </button>
+
+</div>
+
+<style>
+
+/* Action Buttons */
+
+.action-buttons{
+
+width:92%;
+
+margin:35px auto;
+
+display:flex;
+
+flex-direction:column;
+
+gap:15px;
+
+}
+
+.action-buttons button{
+
+padding:16px;
+
+border:none;
+
+border-radius:18px;
+
+font-size:16px;
+
+font-weight:bold;
+
+cursor:pointer;
+
+transition:.3s;
+
+}
+
+.save-btn{
+
+background:linear-gradient(135deg,#00aaff,#0066ff);
+
+color:#fff;
+
+box-shadow:0 10px 25px rgba(0,170,255,.30);
+
+}
+
+.save-btn:hover{
+
+transform:translateY(-3px);
+
+}
+
+.reset-btn{
+
+background:#333;
+
+color:#fff;
+
+}
+
+.reset-btn:hover{
+
+background:#444;
+
+}
+
+.clear-btn{
+
+background:linear-gradient(135deg,#ff9800,#ff5722);
+
+color:#fff;
+
+}
+
+.clear-btn:hover{
+
+transform:translateY(-3px);
+
+}
+
+.back-btn{
+
+background:#222;
+
+color:#fff;
+
+}
+
+.back-btn:hover{
+
+background:#333;
+
+}
+
+</style>
+<!-- ========================= -->
+<!-- Footer -->
+<!-- ========================= -->
+
+<footer class="footer">
+
+    <h3>🔔 Viewora Notifications</h3>
+
+    <p>
+        Stay connected without missing anything important.
+    </p>
+
+    <div class="footer-version">
+        Version 1.0.0 • © 2026 Viewora
+    </div>
+
+</footer>
+
+<!-- Floating Badge -->
+
+<div class="floating-badge">
+
+    🔔 Active
+
+</div>
+
+<style>
+
+/* Footer */
+
+.footer{
+
+width:92%;
+
+margin:40px auto 100px;
+
+padding:25px;
+
+text-align:center;
+
+background:rgba(255,255,255,.06);
+
+backdrop-filter:blur(15px);
+
+border:1px solid rgba(255,255,255,.08);
+
+border-radius:22px;
+
+animation:fadeFooter .8s;
+
+}
+
+.footer h3{
+
+color:#00aaff;
+
+margin-bottom:10px;
+
+}
+
+.footer p{
+
+color:#aaa;
+
+line-height:1.6;
+
+}
+
+.footer-version{
+
+margin-top:15px;
+
+font-size:13px;
+
+color:#666;
+
+}
+
+/* Floating Badge */
+
+.floating-badge{
+
+position:fixed;
+
+right:20px;
+
+bottom:20px;
+
+padding:10px 18px;
+
+background:linear-gradient(135deg,#00aaff,#0066ff);
+
+color:#fff;
+
+font-weight:bold;
+
+border-radius:30px;
+
+box-shadow:0 10px 25px rgba(0,170,255,.35);
+
+animation:pulse 2s infinite;
+
+z-index:999;
+
+}
+
+@keyframes fadeFooter{
+
+from{
+
+opacity:0;
+
+transform:translateY(30px);
+
+}
+
+to{
+
+opacity:1;
+
+transform:translateY(0);
+
+}
+
+}
+
+@keyframes pulse{
+
+0%,100%{
+
+transform:scale(1);
+
+}
+
+50%{
+
+transform:scale(1.08);
+
+}
+
+}
+
+</style>
+
+<!-- ========================= -->
+<!-- Firebase SDK -->
+<!-- ========================= -->
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+
+<script src="firebase.js"></script>
+<script src="notification-settings.js"></script>
+
+<script>
+
+// Smooth Page Load
+
+document.body.style.opacity="0";
+
+window.addEventListener("load",()=>{
+
+document.body.style.transition="opacity .4s ease";
+
+document.body.style.opacity="1";
+
+});
+
+// Internet Status
+
+window.addEventListener("online",()=>{
+
+if(typeof showToast==="function"){
+
+showToast("🌐 Internet Connected");
+
+}
+
+});
+
+window.addEventListener("offline",()=>{
+
+if(typeof showToast==="function"){
+
+showToast("❌ Internet Disconnected");
+
+}
+
+});
+
+console.log("🔔 Notification Settings Loaded");
+
+</script>
+
+</body>
+</html>
