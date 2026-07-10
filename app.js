@@ -249,7 +249,7 @@ window.login = async function () {
         // Update user info
         await db.ref("users/" + user.uid).update({
 
-            verified: true,
+            verified: false,
 
             lastLogin: Date.now()
 
