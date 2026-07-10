@@ -1,0 +1,340 @@
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:Arial,sans-serif;
+}
+
+body{
+background:#0f0f0f;
+color:#fff;
+padding-bottom:90px;
+}
+
+/* Banner */
+
+.profile-banner{
+height:220px;
+background:linear-gradient(135deg,#00b7ff,#004c8c);
+position:relative;
+overflow:hidden;
+}
+
+.profile-banner img{
+width:100%;
+height:100%;
+object-fit:cover;
+opacity:.45;
+}
+
+.settings-btn{
+position:absolute;
+right:15px;
+top:15px;
+width:45px;
+height:45px;
+border:none;
+border-radius:50%;
+background:#181818;
+color:#fff;
+font-size:22px;
+cursor:pointer;
+}
+
+/* Profile */
+
+.profile-card{
+margin-top:-70px;
+text-align:center;
+padding:20px;
+}
+
+#storyRing{
+width:150px;
+height:150px;
+margin:auto;
+border-radius:50%;
+padding:5px;
+background:linear-gradient(45deg,#ff0050,#ff9800,#00aaff);
+display:flex;
+justify-content:center;
+align-items:center;
+position:relative;
+}
+
+#profilePic{
+width:138px;
+height:138px;
+border-radius:50%;
+object-fit:cover;
+border:5px solid #111;
+background:#222;
+}
+
+.add-story{
+position:absolute;
+right:5px;
+bottom:5px;
+width:38px;
+height:38px;
+border-radius:50%;
+background:#00aaff;
+display:flex;
+align-items:center;
+justify-content:center;
+font-size:24px;
+font-weight:bold;
+cursor:pointer;
+border:3px solid #111;
+}
+
+.profile-name{
+font-size:32px;
+font-weight:bold;
+margin-top:18px;
+}
+
+.profile-username{
+margin-top:6px;
+font-size:17px;
+color:#999;
+}
+
+.profile-bio{
+margin-top:12px;
+color:#ddd;
+font-size:15px;
+line-height:1.6;
+}
+
+/* Stories */
+
+.story-row{
+display:flex;
+gap:18px;
+overflow-x:auto;
+padding:20px;
+}
+
+.story-item{
+text-align:center;
+flex:none;
+}
+
+.story-item img{
+width:70px;
+height:70px;
+border-radius:50%;
+padding:3px;
+background:linear-gradient(#ff0050,#ff9800,#00aaff);
+}
+
+/* Stats */
+
+.stats{
+display:flex;
+justify-content:space-evenly;
+margin-top:28px;
+padding:18px 0;
+border-top:1px solid #262626;
+border-bottom:1px solid #262626;
+}
+
+.stat{
+flex:1;
+}
+
+.stat-number{
+font-size:26px;
+font-weight:bold;
+}
+
+.stat-text{
+margin-top:5px;
+font-size:14px;
+color:#999;
+}
+
+/* Buttons */
+
+.buttons{
+display:flex;
+justify-content:center;
+gap:12px;
+margin-top:20px;
+flex-wrap:wrap;
+}
+
+.buttons button,
+.buttons a{
+
+padding:12px 24px;
+border:none;
+border-radius:30px;
+background:#00aaff;
+color:#fff;
+text-decoration:none;
+font-size:15px;
+cursor:pointer;
+transition:.25s;
+
+}
+
+.buttons button:hover,
+.buttons a:hover{
+
+transform:scale(1.05);
+
+}
+
+#editProfileBtn{
+background:#2b2b2b;
+}
+
+#messageBtn{
+background:#444;
+}
+
+/* Tabs */
+
+.profile-tabs{
+
+display:flex;
+justify-content:space-around;
+margin-top:30px;
+border-top:1px solid #222;
+border-bottom:1px solid #222;
+
+}
+
+.profile-tabs button{
+
+flex:1;
+padding:15px;
+background:none;
+border:none;
+color:#bbb;
+font-size:15px;
+cursor:pointer;
+
+}
+
+.profile-tabs button.active{
+
+color:#00aaff;
+border-bottom:3px solid #00aaff;
+
+}
+
+/* Cards */
+
+.post-card{
+
+background:#181818;
+margin:15px;
+padding:15px;
+border-radius:18px;
+
+}
+
+.post-card img{
+
+width:100%;
+border-radius:14px;
+margin-top:10px;
+
+}
+
+/* Floating Chat */
+
+#floatingChat{
+
+position:fixed;
+bottom:90px;
+right:18px;
+width:65px;
+height:65px;
+border:none;
+border-radius:50%;
+background:linear-gradient(45deg,#00aaff,#0066ff);
+font-size:30px;
+color:white;
+cursor:pointer;
+
+box-shadow:
+0 0 25px rgba(0,170,255,.5);
+
+animation:pulse 2s infinite;
+
+}
+
+@keyframes pulse{
+
+0%{
+transform:scale(1);
+}
+
+50%{
+transform:scale(1.08);
+}
+
+100%{
+transform:scale(1);
+}
+
+}
+
+/* Bottom Navigation */
+
+.bottom-nav{
+
+position:fixed;
+bottom:0;
+left:0;
+width:100%;
+height:70px;
+background:#181818;
+display:flex;
+justify-content:space-around;
+align-items:center;
+border-top:1px solid #333;
+
+}
+
+.bottom-nav a{
+
+display:flex;
+flex-direction:column;
+align-items:center;
+color:#aaa;
+text-decoration:none;
+font-size:13px;
+
+}
+
+.bottom-nav a.active{
+
+color:#00aaff;
+
+}
+
+.nav-icon{
+
+font-size:23px;
+margin-bottom:4px;
+
+}
+.verified-badge{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    width:18px;
+    height:18px;
+    margin-left:6px;
+    border-radius:50%;
+    background:#1DA1F2;
+    color:#fff;
+    font-size:11px;
+    font-weight:bold;
+    vertical-align:middle;
+}

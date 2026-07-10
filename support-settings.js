@@ -1,557 +1,244 @@
-// =======================================
-// Viewora Support Settings
-// Part 1
-// Firebase + Authentication
-// =======================================
+<!-- ========================================= -->
+<!-- SUPPORT SETTINGS CONTENT -->
+<!-- PART 2 -->
+<!-- ========================================= -->
 
-// Current User
-let currentUser = null;
+<div class="support-container">
 
-// Firebase References
-let supportRef = null;
-let feedbackRef = null;
+<div class="support-card fade">
 
-// =======================================
-// Authentication
-// =======================================
+<h2>❓ Help Center</h2>
 
-auth.onAuthStateChanged((user) => {
+<p>
+Need help using Viewora?
+Read FAQs or contact our support team.
+</p>
 
-    if (!user) {
+<button onclick="openFAQ()">
+📖 Open FAQ
+</button>
 
-        window.location.href = "login.html";
-        return;
+</div>
 
-    }
+<div class="support-card fade">
 
-    currentUser = user;
+<h2>📧 Email Support</h2>
 
-    supportRef = db.ref("support");
-    feedbackRef = db.ref("feedback/" + currentUser.uid);
+<p>
+support@viewora.com
+</p>
 
-    loadSupportProfile();
+<button onclick="sendEmail()">
+Send Email
+</button>
 
-});
+</div>
 
-// =======================================
-// Load User Profile
-// =======================================
+<div class="support-card fade">
 
-function loadSupportProfile() {
+<h2>💬 Live Chat</h2>
 
-    db.ref("users/" + currentUser.uid)
+<p>
+Talk with Viewora Team
+</p>
 
-    .once("value")
+<button onclick="startChat()">
+Start Chat
+</button>
 
-    .then((snapshot) => {
+</div>
 
-        const user = snapshot.val() || {};
+<div class="support-card fade">
 
-        console.log("Support User Loaded");
+<h2>🐞 Report Bug</h2>
 
-        showToast(
-            "👋 Welcome " +
-            (user.name || "User")
-        );
+<textarea
+id="bugText"
+placeholder="Describe your issue..."
+></textarea>
 
-    })
+<button onclick="reportBug()">
+Submit Report
+</button>
 
-    .catch((error) => {
+</div>
 
-        console.error(error);
+<div class="support-card fade">
 
-    });
+<h2>💡 Suggest Feature</h2>
+
+<textarea
+id="featureText"
+placeholder="Write your idea..."
+></textarea>
+
+<button onclick="sendFeature()">
+Send Suggestion
+</button>
+
+</div>
+
+<div class="support-card fade">
+
+<h2>📱 App Version</h2>
+
+<p id="versionText">
+Viewora Premium V5.0
+</p>
+
+</div>
+
+</div>
+
+<script>
+
+// =========================
+// Open FAQ
+// =========================
+
+function openFAQ(){
+
+location.href="faq.html";
 
 }
 
-// =======================================
-// Support Functions
-// =======================================
+// =========================
+// Email
+// =========================
 
-// Contact Support
+function sendEmail(){
 
-function contactSupport() {
-
-    window.location.href =
-    "mailto:vieworasupport@gmail.com?subject=Viewora Support";
+location.href=
+"mailto:support@viewora.com";
 
 }
 
-// Help Center
-
-function openHelpCenter() {
-
-    showToast("📚 Opening Help Center...");
-
-    setTimeout(() => {
-
-        window.open(
-            "help-center.html",
-            "_blank"
-        );
-
-    }, 500);
-
-}
-
+// =========================
 // Live Chat
+// =========================
 
-function openLiveChat() {
+function startChat(){
 
-    showToast("💬 Live Chat Coming Soon");
-
-}
-
-// =======================================
-// Utility
-// =======================================
-
-function getCurrentTime() {
-
-    return new Date().toLocaleString();
+location.href=
+"chat-support.html";
 
 }
 
-console.log("✅ Support Settings Part 1 Loaded");
-// =======================================
-// Viewora Support Settings
-// Part 2
-// Feedback + Bug Report + FAQ
-// =======================================
-
-// =============================
-// Send Feedback
-// =============================
-
-async function sendFeedback() {
-
-    if (!currentUser) return;
-
-    const message = prompt("💡 Enter your feedback:");
-
-    if (!message || message.trim() === "") {
-
-        showToast("⚠️ Feedback cancelled");
-
-        return;
-
-    }
-
-    try {
-
-        await feedbackRef.push({
-
-            message: message.trim(),
-
-            createdAt: firebase.database.ServerValue.TIMESTAMP,
-
-            userId: currentUser.uid,
-
-            email: currentUser.email || ""
-
-        });
-
-        showToast("✅ Feedback Sent Successfully");
-
-    }
-
-    catch (error) {
-
-        console.error(error);
-
-        showToast("❌ Failed to send feedback");
-
-    }
-
-}
-
-// =============================
+// =========================
 // Report Bug
-// =============================
+// =========================
 
-async function reportBug() {
+async function reportBug(){
 
-    if (!currentUser) return;
+const text=
+document.getElementById("bugText").value.trim();
 
-    const bug = prompt("🐞 Describe the bug:");
+if(!text){
 
-    if (!bug || bug.trim() === "") {
+alert("Write your issue.");
 
-        showToast("⚠️ Bug report cancelled");
-
-        return;
-
-    }
-
-    try {
-
-        await supportRef.child("bugReports").push({
-
-            userId: currentUser.uid,
-
-            email: currentUser.email || "",
-
-            message: bug.trim(),
-
-            createdAt: firebase.database.ServerValue.TIMESTAMP,
-
-            status: "Open"
-
-        });
-
-        showToast("🐞 Bug Report Submitted");
-
-    }
-
-    catch (error) {
-
-        console.error(error);
-
-        showToast("❌ Failed to submit bug");
-
-    }
+return;
 
 }
 
-// =============================
-// FAQ
-// =============================
+const user=auth.currentUser;
 
-function openFAQ() {
+if(!user){
 
-    alert(
-`❓ Frequently Asked Questions
+alert("Login Required");
 
-• How do I reset my password?
-→ Open Security Settings.
-
-• How do I delete my account?
-→ Open Account Settings.
-
-• How do I contact support?
-→ Tap Email Support.
-
-• How do I report bugs?
-→ Use the Report Bug option.
-
-• Where are downloads stored?
-→ Downloads section in Settings.`
-    );
+return;
 
 }
 
-// =============================
-// Rate App
-// =============================
+const id=db.ref("support/bugs").push().key;
 
-function rateApp() {
+await db.ref("support/bugs/"+id).set({
 
-    showToast("⭐ Thanks for supporting Viewora!");
+uid:user.uid,
 
-    // Replace with your Play Store/App Store URL
-    window.open(
-        "https://play.google.com/store",
-        "_blank"
-    );
+message:text,
 
-}
+time:Date.now(),
 
-// =============================
-// Visit Website
-// =============================
-
-function visitWebsite() {
-
-    window.open(
-        "https://example.com",
-        "_blank"
-    );
-
-}
-
-// =============================
-
-console.log("✅ Support Settings Part 2 Loaded");
-// =======================================
-// Viewora Support Settings
-// Part 3
-// Analytics + History + Auto Refresh
-// =======================================
-
-// =============================
-// Load Support Analytics
-// =============================
-
-function loadSupportAnalytics() {
-
-    if (!currentUser) return;
-
-    feedbackRef.once("value")
-
-    .then((snapshot) => {
-
-        const total = snapshot.numChildren();
-
-        console.log("📊 Total Feedback:", total);
-
-    })
-
-    .catch((error) => {
-
-        console.error(error);
-
-    });
-
-}
-
-// =============================
-// Load Contact History
-// =============================
-
-function loadContactHistory() {
-
-    if (!currentUser) return;
-
-    supportRef.child("bugReports")
-
-    .orderByChild("userId")
-
-    .equalTo(currentUser.uid)
-
-    .once("value")
-
-    .then((snapshot) => {
-
-        console.log("📩 Contact History Loaded");
-
-        snapshot.forEach((child) => {
-
-            console.log(child.val());
-
-        });
-
-    })
-
-    .catch((error) => {
-
-        console.error(error);
-
-    });
-
-}
-
-// =============================
-// Auto Refresh
-// =============================
-
-let supportRefreshTimer = null;
-
-function startSupportRefresh() {
-
-    stopSupportRefresh();
-
-    supportRefreshTimer = setInterval(() => {
-
-        loadSupportAnalytics();
-
-        loadContactHistory();
-
-    }, 30000);
-
-}
-
-function stopSupportRefresh() {
-
-    if (supportRefreshTimer) {
-
-        clearInterval(supportRefreshTimer);
-
-        supportRefreshTimer = null;
-
-    }
-
-}
-
-startSupportRefresh();
-
-// =============================
-// Internet Status
-// =============================
-
-window.addEventListener("online", () => {
-
-    showToast("🌐 Internet Connected");
+status:"Pending"
 
 });
 
-window.addEventListener("offline", () => {
+alert("✅ Bug Report Sent");
 
-    showToast("📡 No Internet Connection");
-
-});
-
-// =============================
-// Page Visibility
-// =============================
-
-document.addEventListener("visibilitychange", () => {
-
-    if (document.hidden) {
-
-        stopSupportRefresh();
-
-    } else {
-
-        startSupportRefresh();
-
-        loadSupportAnalytics();
-
-        loadContactHistory();
-
-    }
-
-});
-
-// =============================
-// Realtime Feedback Updates
-// =============================
-
-feedbackRef.on("value", () => {
-
-    console.log("🔄 Feedback Updated");
-
-});
-
-// =============================
-
-console.log("✅ Support Settings Part 3 Loaded");
-// =======================================
-// Viewora Support Settings
-// Part 4 (Final)
-// =======================================
-
-// =============================
-// Premium Toast
-// =============================
-
-function showToast(message) {
-
-    let toast = document.getElementById("vieworaToast");
-
-    if (!toast) {
-
-        toast = document.createElement("div");
-
-        toast.id = "vieworaToast";
-
-        toast.style.cssText = `
-            position:fixed;
-            left:50%;
-            bottom:30px;
-            transform:translateX(-50%);
-            background:linear-gradient(135deg,#00aaff,#7c3aed);
-            color:#fff;
-            padding:14px 24px;
-            border-radius:30px;
-            font-size:15px;
-            font-weight:bold;
-            box-shadow:0 12px 30px rgba(0,170,255,.35);
-            z-index:99999;
-            opacity:0;
-            transition:.35s;
-            pointer-events:none;
-        `;
-
-        document.body.appendChild(toast);
-
-    }
-
-    toast.textContent = message;
-    toast.style.opacity = "1";
-
-    clearTimeout(toast.hideTimer);
-
-    toast.hideTimer = setTimeout(() => {
-
-        toast.style.opacity = "0";
-
-    }, 2500);
+document.getElementById("bugText").value="";
 
 }
 
-// =============================
-// Logout Helper
-// =============================
+// =========================
+// Feature Request
+// =========================
 
-async function logout() {
+async function sendFeature(){
 
-    if (!confirm("Logout from Viewora?")) return;
+const text=
+document.getElementById("featureText").value.trim();
 
-    try {
+if(!text){
 
-        await auth.signOut();
+alert("Write suggestion.");
 
-        showToast("👋 Logged Out");
-
-        setTimeout(() => {
-
-            window.location.href = "login.html";
-
-        }, 800);
-
-    }
-
-    catch (error) {
-
-        console.error(error);
-
-        alert(error.message);
-
-    }
+return;
 
 }
 
-// =============================
-// Cleanup
-// =============================
+const user=auth.currentUser;
 
-window.addEventListener("beforeunload", () => {
+if(!user){
 
-    stopSupportRefresh();
+alert("Login Required");
 
-    if (feedbackRef) {
+return;
 
-        feedbackRef.off();
+}
 
-    }
+const id=
+db.ref("support/features").push().key;
 
-});
+await db.ref("support/features/"+id).set({
 
-// =============================
-// Startup
-// =============================
+uid:user.uid,
 
-window.addEventListener("load", () => {
+message:text,
 
-    startSupportRefresh();
+time:Date.now(),
 
-    loadSupportAnalytics();
-
-    loadContactHistory();
-
-    showToast("🛟 Support Center Ready");
+status:"Pending"
 
 });
 
-// =============================
-// Final Debug Logs
-// =============================
+alert("💙 Suggestion Sent");
 
-console.log("==================================");
-console.log("🛟 Viewora Support Center Loaded");
-console.log("✅ Firebase Connected");
-console.log("✅ Support Ready");
-console.log("✅ Feedback System Ready");
-console.log("✅ Bug Reporting Ready");
-console.log("✅ Auto Refresh Enabled");
-console.log("==================================");
+document.getElementById("featureText").value="";
+
+}
+
+// =========================
+// Fade Animation
+// =========================
+
+const observer=new IntersectionObserver(entries=>{
+
+entries.forEach(entry=>{
+
+if(entry.isIntersecting){
+
+entry.target.classList.add("show");
+
+}
+
+});
+
+});
+
+document.querySelectorAll(".fade")
+
+.forEach(card=>observer.observe(card));
+
+</script>

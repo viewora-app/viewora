@@ -1,182 +1,862 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Viewora • Upload</title>
-    <link rel="stylesheet" href="style.css">
-    <style>
-        body { background: #111; color: white; padding-bottom: 80px; }
-        .upload-container {
-            max-width: 700px;
-            margin: 30px auto;
-            padding: 30px;
-            background: #1b1b1b;
-            border-radius: 20px;
-        }
-        .form-group {
-            margin-bottom: 20px;
-        }
-        label {
-            display: block;
-            margin-bottom: 8px;
-            color: #ccc;
-            font-size: 15px;
-        }
-        input, textarea {
-            width: 100%;
-            padding: 14px 18px;
-            border: none;
-            border-radius: 12px;
-            background: #2a2a2a;
-            color: white;
-            font-size: 16px;
-        }
-        textarea {
-            min-height: 120px;
-            resize: vertical;
-        }
-        .btn-upload {
-            width: 100%;
-            padding: 16px;
-            background: linear-gradient(135deg, #00aaff, #0088cc);
-            color: white;
-            border: none;
-            border-radius: 12px;
-            font-size: 17px;
-            font-weight: 600;
-            cursor: pointer;
-            margin-top: 10px;
-        }
-        #mediaPreview {
-            margin-top: 15px;
-            text-align: center;
-        }
-        #mediaPreview img {
-            max-width: 100%;
-            border-radius: 12px;
-            border: 1px solid #333;
-        }
-    </style>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+
+<title>Create • Viewora</title>
+
+<link rel="stylesheet" href="style.css">
+
+<style>
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:Arial,sans-serif;
+}
+
+body{
+
+background:#0f0f0f;
+color:#fff;
+
+}
+
+.header{
+
+padding:35px 20px;
+
+text-align:center;
+
+background:#202020;
+
+border-bottom:1px solid #333;
+
+}
+
+.header h1{
+
+font-size:30px;
+
+margin-bottom:8px;
+
+}
+
+.header p{
+
+color:#aaa;
+
+}
+
+.container{
+
+width:95%;
+
+max-width:900px;
+
+margin:25px auto;
+
+}
+
+/* Create Cards */
+
+.create-grid{
+
+display:grid;
+
+grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+
+gap:20px;
+
+}
+
+.create-card{
+
+background:#1c1c1c;
+
+border:1px solid #2d2d2d;
+
+border-radius:18px;
+
+padding:25px;
+
+cursor:pointer;
+
+transition:.3s;
+
+text-align:center;
+
+}
+
+.create-card:hover{
+
+transform:translateY(-5px);
+
+border-color:#ff1744;
+
+}
+
+.create-card .icon{
+
+font-size:55px;
+
+margin-bottom:15px;
+
+}
+
+.create-card h2{
+
+margin-bottom:10px;
+
+}
+
+.create-card p{
+
+color:#aaa;
+
+font-size:14px;
+
+line-height:1.6;
+
+}
+
+/* Hidden Sections */
+
+.upload-section{
+
+display:none;
+
+margin-top:35px;
+
+background:#1b1b1b;
+
+padding:25px;
+
+border-radius:20px;
+
+border:1px solid #2d2d2d;
+
+}
+
+.upload-section h2{
+
+margin-bottom:20px;
+
+}
+
+.preview{
+
+width:220px;
+
+height:390px;
+
+background:#000;
+
+margin:auto;
+
+border-radius:18px;
+
+overflow:hidden;
+
+}
+
+.preview video{
+
+width:100%;
+
+height:100%;
+
+object-fit:cover;
+
+}
+
+input,
+textarea,
+select{
+
+width:100%;
+
+margin-top:15px;
+
+padding:15px;
+
+border:none;
+
+border-radius:12px;
+
+background:#2b2b2b;
+
+color:white;
+
+}
+
+button{
+
+margin-top:20px;
+
+width:100%;
+
+padding:16px;
+
+border:none;
+
+border-radius:14px;
+
+background:#ff1744;
+
+color:white;
+
+font-size:16px;
+
+cursor:pointer;
+
+}
+
+button:hover{
+
+background:#ff355d;
+
+}
+
+</style>
+
 </head>
+
 <body>
-
-    <div class="upload-container">
-        <h1 style="text-align:center; margin-bottom:25px;">🚀 Upload Content</h1>
-
-        <div class="form-group">
-            <label>Title / Caption *</label>
-            <input type="text" id="title" placeholder="Enter a catchy title" required>
-        </div>
-
-        <div class="form-group">
-            <label>Description (Optional)</label>
-            <textarea id="description" placeholder="Write something about your post..."></textarea>
-        </div>
-
-        <div class="form-group">
-            <label>Image / Video URL (Optional)</label>
-            <input type="text" id="mediaUrl" placeholder="https://example.com/image.jpg or video.mp4">
-        </div>
-
-        <div id="mediaPreview"></div>
-
-        <button onclick="uploadContent()" class="btn-upload">🚀 Upload Now</button>
-
-        <p style="text-align:center; margin-top:25px; color:#777; font-size:14px;">
-            Full video upload with Firebase Storage coming soon...
-        </p>
+  
+      <!-- Top Bar -->
+    <div class="top-bar">
+        <a href="index.html">← Back</a>
     </div>
+    
+<div class="header">
 
-    <!-- Bottom Navigation -->
-<div class="bottom-nav">
+<h1>Create</h1>
 
-<a href="index.html">
-
-<span class="nav-icon">🏠</span>
-
-Home
-
-</a>
-
-<a href="vieworation.html">
-
-<span class="nav-icon">🌍</span>
-
-Vieworation
-
-</a>
-
-<a href="shorts.html">
-
-<span class="nav-icon">▶️</span>
-
-Shorts
-
-</a>
-
-<a href="upload.html">
-
-<span class="nav-icon">➕</span>
-
-Upload
-
-</a>
-
-<a href="users.html" class="active">
-
-<span class="nav-icon">👥</span>
-
-Userslist
-
-</a>
-
-<a href="profile.html">
-
-<span class="nav-icon">👤</span>
-
-Profile
-
-</a>
+<p>Upload Videos, Shorts, Live Streams and Posts</p>
 
 </div>
 
-    <!-- Scripts -->
-    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
-    
-    <script src="firebase.js"></script>
-    <script src="upload.js"></script>
-    <script src="nav.js"></script>
-    
-    <style>
-      #floatingChat{
-    animation: pulseGlow 2.5s ease-in-out infinite;
-}
+<div class="container">
 
-@keyframes pulseGlow{
+<div class="create-grid">
 
-    0%,100%{
-        transform: scale(1);
-        box-shadow:
-            0 8px 25px rgba(0,170,255,.35),
-            0 0 12px rgba(0,170,255,.25);
-    }
+<!-- Upload Video -->
 
-    50%{
-        transform: scale(1.05);
-        box-shadow:
-            0 12px 35px rgba(0,170,255,.55),
-            0 0 25px rgba(0,170,255,.45);
-    }
+<div class="create-card"
 
-}
-    </style>
-    
-    <button id="floatingChat" onclick="window.location.href='messages.html'">
-    💬
+onclick="selectVideoFile('video')">
+
+<div class="icon">
+
+📹
+
+</div>
+
+<h2>Upload Video</h2>
+
+<p>
+
+Upload long-form videos up to
+12 hours.
+
+</p>
+
+</div>
+
+<!-- Upload Short -->
+
+<div class="create-card"
+
+onclick="selectVideoFile('short')">
+
+<div class="icon">
+
+🎬
+
+</div>
+
+<h2>Create Short</h2>
+
+<p>
+
+Upload vertical videos up to
+60 seconds.
+
+</p>
+
+</div>
+
+<!-- Go Live -->
+
+<div class="create-card"
+
+onclick="openLiveSection()">
+
+<div class="icon">
+
+🔴
+
+</div>
+
+<h2>Go Live</h2>
+
+<p>
+
+Start or schedule a live stream.
+
+</p>
+
+</div>
+
+<!-- Create Post -->
+
+<div class="create-card"
+
+onclick="openPostSection()">
+
+<div class="icon">
+
+📝
+
+</div>
+
+<h2>Create Post</h2>
+
+<p>
+
+Share text, images and polls.
+
+</p>
+
+</div>
+
+</div>
+
+<!-- Hidden File Picker -->
+
+<input
+
+type="file"
+
+id="videoPicker"
+
+accept="video/*"
+
+hidden>
+<!-- ===================================== -->
+<!-- Video Upload Section (Hidden) -->
+<!-- ===================================== -->
+
+<div id="videoSection" class="upload-section">
+
+<h2>📹 Upload Video</h2>
+
+<div class="preview">
+
+<video
+id="videoPreview"
+controls
+playsinline>
+
+</video>
+
+</div>
+
+<input
+type="file"
+id="thumbnailPicker"
+accept="image/*">
+
+<input
+type="text"
+id="videoTitle"
+placeholder="Video title">
+
+<textarea
+id="videoDescription"
+rows="5"
+placeholder="Video description"></textarea>
+
+<input
+type="text"
+id="videoTags"
+placeholder="Tags (comma separated)">
+
+<select id="videoCategory">
+
+<option value="Entertainment">Entertainment</option>
+<option value="Gaming">Gaming</option>
+<option value="Education">Education</option>
+<option value="Music">Music</option>
+<option value="Technology">Technology</option>
+<option value="Sports">Sports</option>
+<option value="News">News</option>
+<option value="People & Blogs">People & Blogs</option>
+
+</select>
+
+<select id="videoVisibility">
+
+<option value="public">🌍 Public</option>
+<option value="unlisted">🔗 Unlisted</option>
+<option value="private">🔒 Private</option>
+
+</select>
+
+<select id="videoAudience">
+
+<option value="not_for_kids">Not Made for Kids</option>
+<option value="made_for_kids">Made for Kids</option>
+
+</select>
+
+<div style="margin-top:20px;">
+
+<div style="
+width:100%;
+height:10px;
+background:#2f2f2f;
+border-radius:20px;
+overflow:hidden;">
+
+<div
+id="videoProgressBar"
+style="
+width:0%;
+height:100%;
+background:#ff1744;
+transition:.3s;">
+
+</div>
+
+</div>
+
+<p
+id="videoProgressText"
+style="
+margin-top:10px;
+text-align:center;
+color:#bbb;">
+
+0%
+
+</p>
+
+</div>
+
+<button
+onclick="publishVideo()">
+
+🚀 Publish Video
+
 </button>
-    
+
+</div>
+
+<!-- ===================================== -->
+<!-- Shorts Upload Section (Hidden) -->
+<!-- ===================================== -->
+
+<div id="shortSection" class="upload-section">
+
+<h2>🎬 Create Short</h2>
+
+<div class="preview">
+
+<video
+id="shortPreview"
+controls
+playsinline>
+
+</video>
+
+</div>
+
+<input
+type="text"
+id="shortCaption"
+placeholder="Write a caption">
+
+<input
+type="text"
+id="shortTags"
+placeholder="#shorts #viral">
+
+<select id="shortVisibility">
+
+<option value="public">🌍 Public</option>
+<option value="unlisted">🔗 Unlisted</option>
+<option value="private">🔒 Private</option>
+
+</select>
+
+<div style="margin-top:20px;">
+
+<div style="
+width:100%;
+height:10px;
+background:#2f2f2f;
+border-radius:20px;
+overflow:hidden;">
+
+<div
+id="shortProgressBar"
+style="
+width:0%;
+height:100%;
+background:#7c3aed;
+transition:.3s;">
+
+</div>
+
+</div>
+
+<p
+id="shortProgressText"
+style="
+margin-top:10px;
+text-align:center;
+color:#bbb;">
+
+0%
+
+</p>
+
+</div>
+
+<button
+onclick="publishShort()">
+
+🚀 Publish Short
+
+</button>
+
+</div>
+<!-- ===================================== -->
+<!-- Go Live Section (Hidden) -->
+<!-- ===================================== -->
+
+<div id="liveSection" class="upload-section">
+
+<h2>🔴 Go Live</h2>
+
+<input
+type="text"
+id="liveTitle"
+placeholder="Live stream title">
+
+<textarea
+id="liveDescription"
+rows="5"
+placeholder="Describe your live stream"></textarea>
+
+<select id="liveVisibility">
+
+<option value="public">🌍 Public</option>
+<option value="unlisted">🔗 Unlisted</option>
+<option value="private">🔒 Private</option>
+
+</select>
+
+<input
+type="datetime-local"
+id="liveSchedule">
+
+<button onclick="startLive()">
+
+🔴 Start / Schedule Live
+
+</button>
+
+</div>
+
+<!-- ===================================== -->
+<!-- Community Post Section (Hidden) -->
+<!-- ===================================== -->
+
+<div id="postSection" class="upload-section">
+
+<h2>📝 Create Community Post</h2>
+
+<textarea
+id="postContent"
+rows="6"
+placeholder="Share something with your community..."></textarea>
+
+<input
+type="file"
+id="postImage"
+accept="image/*">
+
+<div style="margin-top:20px;">
+
+<label style="display:flex;align-items:center;gap:10px;">
+
+<input
+type="checkbox"
+id="allowComments"
+checked>
+
+<span>Allow comments</span>
+
+</label>
+
+</div>
+
+<button onclick="publishPost()">
+
+🚀 Publish Post
+
+</button>
+
+</div>
+
+<!-- ===================================== -->
+<!-- Upload Status -->
+<!-- ===================================== -->
+
+<div id="statusCard"
+class="upload-section"
+style="display:block;">
+
+<h2>📊 Upload Status</h2>
+
+<p id="uploadStatus">
+
+Ready to create your next content.
+
+</p>
+
+</div>
+
+<!-- ===================================== -->
+<!-- Footer -->
+<!-- ===================================== -->
+
+<footer
+style="
+margin:40px 0;
+padding:20px;
+text-align:center;
+color:#888;
+border-top:1px solid #2d2d2d;">
+
+<p>
+
+Viewora Creator Studio © 2026
+
+</p>
+
+</footer>
+
+<!-- Firebase -->
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
+
+<script src="firebase.js"></script>
+<script src="upload.js"></script>
+<!-- ===================================== -->
+<!-- Floating Create Button -->
+<!-- ===================================== -->
+
+<button id="floatingCreateBtn" class="floating-create-btn">
+  ➕
+</button>
+
+<style>
+
+/* Floating Create Button */
+
+.floating-create-btn{
+
+position:fixed;
+
+right:20px;
+
+bottom:20px;
+
+width:60px;
+
+height:60px;
+
+border:none;
+
+border-radius:50%;
+
+background:linear-gradient(135deg,#ff1744,#7c3aed);
+
+color:#fff;
+
+font-size:28px;
+
+font-weight:bold;
+
+cursor:pointer;
+
+box-shadow:0 8px 25px rgba(255,23,68,.4);
+
+z-index:9999;
+
+transition:.3s;
+
+}
+
+.floating-create-btn:hover{
+
+transform:scale(1.08);
+
+}
+
+@media(max-width:600px){
+
+.header h1{
+
+font-size:26px;
+
+}
+
+.create-grid{
+
+grid-template-columns:1fr;
+
+}
+
+.preview{
+
+width:180px;
+
+height:320px;
+
+}
+
+.upload-section{
+
+padding:18px;
+
+}
+
+}
+
+</style>
+
+<script>
+
+// ============================
+// Fade Animation
+// ============================
+
+window.addEventListener("load",()=>{
+
+document.body.animate([
+
+{
+opacity:0,
+transform:"translateY(20px)"
+},
+
+{
+opacity:1,
+transform:"translateY(0)"
+}
+
+],{
+
+duration:400,
+
+fill:"forwards"
+
+});
+
+});
+
+// ============================
+// Floating Button
+// ============================
+
+document
+.getElementById("floatingCreateBtn")
+.addEventListener("click",()=>{
+
+window.scrollTo({
+
+top:0,
+
+behavior:"smooth"
+
+});
+
+});
+
+// ============================
+// Internet Status
+// ============================
+
+window.addEventListener("online",()=>{
+
+if(typeof showToast==="function"){
+
+showToast("🌐 Internet Connected");
+
+}
+
+});
+
+window.addEventListener("offline",()=>{
+
+if(typeof showToast==="function"){
+
+showToast("📡 No Internet Connection");
+
+}
+
+});
+
+// ============================
+// Pull To Refresh
+// ============================
+
+let startY=0;
+
+window.addEventListener("touchstart",(e)=>{
+
+startY=e.touches[0].clientY;
+
+});
+
+window.addEventListener("touchend",(e)=>{
+
+const endY=e.changedTouches[0].clientY;
+
+if(endY-startY>120){
+
+location.reload();
+
+}
+
+});
+
+// ============================
+// Console
+// ============================
+
+console.log("================================");
+console.log("🚀 Viewora Upload Page Loaded");
+console.log("📹 Long Videos Supported (≤12h)");
+console.log("🎬 Shorts Supported (≤60 sec)");
+console.log("🔴 Live Creator Ready");
+console.log("📝 Community Posts Ready");
+console.log("================================");
+
+</script>
+
+
 </body>
 </html>

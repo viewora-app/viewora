@@ -1,9 +1,30 @@
-// ==================== PROFILE.JS ====================
+// ======================================
+// Viewora Profile V4.0
+// profile.js - Part 1
+// Auth + Profile + Stats
+// ======================================
 
+// Firebase
 let currentUser = null;
 let profileUid = null;
 
-auth.onAuthStateChanged((user) => {
+// DOM
+const profileName = document.getElementById("profileName");
+const profileUsername = document.getElementById("profileUsername");
+const profileBio = document.getElementById("profileBio");
+const profilePic = document.getElementById("profilePic");
+const coverPhoto = document.getElementById("coverPhoto");
+
+const followersCount = document.getElementById("followersCount");
+const followingCount = document.getElementById("followingCount");
+const postsCount = document.getElementById("postsCount");
+const videosCount = document.getElementById("videosCount");
+
+// ======================================
+// Authentication
+// ======================================
+
+auth.onAuthStateChanged(user => {
 
     if (!user) {
         location.href = "login.html";
@@ -13,140 +34,273 @@ auth.onAuthStateChanged((user) => {
     currentUser = user;
 
     const params = new URLSearchParams(window.location.search);
+
     profileUid = params.get("uid") || user.uid;
 
     loadProfile();
     loadStats();
-    loadPosts();
-    loadStories();
     setupButtons();
+
+    // Next Parts
+    loadPosts();
+    loadVideos();
+    loadShorts();
+    loadSavedPosts();
+    loadStories();
 
 });
 
-// ==================== PROFILE ====================
+// ======================================
+// Load Profile
+// ======================================
 
-function loadProfile() {
+function loadProfile(){
 
-    db.ref("users/" + profileUid).on("value", (snap) => {
+    db.ref("users/" + profileUid)
 
-        if (!snap.exists()) return;
+    .on("value", snap => {
 
-        const data = snap.val();
+        if(!snap.exists()){
 
-        document.getElementById("profileName").innerText =
-            data.name || "User";
+            if(profileName){
+                profileName.innerText = "User";
+            }
 
-        document.getElementById("profileUsername").innerText =
-            data.username || "@unknown";
+            return;
 
-        document.getElementById("profileBio").innerText =
-            data.bio || "";
+        }
 
-        const img = document.getElementById("profilePic");
+        const user = snap.val();
 
-        if (img) {
-            img.src = data.profilePhoto || "non.jpg";
+        // Name + Verified Badge
+        if(profileName){
+
+            profileName.innerHTML = `
+                ${user.name || "User"}
+                ${user.verified ? '<span class="verified-badge">✔</span>' : ''}
+            `;
+
+        }
+
+        // Username
+        if(profileUsername){
+
+            profileUsername.innerText =
+            "@" + (user.username || "user");
+
+        }
+
+        // Bio
+        if(profileBio){
+
+            profileBio.innerText =
+            user.bio || "No bio added.";
+
+        }
+
+        // Profile Photo
+        if(profilePic){
+
+            profilePic.src =
+            user.profilePhoto || "users.jpg";
+
+        }
+
+        // Cover Photo
+        if(coverPhoto){
+
+            coverPhoto.src =
+            user.coverPhoto || "banner.jpg";
+
         }
 
     });
 
 }
 
-// ==================== STATS ====================
+// ======================================
+// Live Stats
+// ======================================
 
-function loadStats() {
+function loadStats(){
 
-    db.ref("followers/" + profileUid).on("value", (snap) => {
+    // Followers
 
-        document.getElementById("followersCount").innerText =
+    db.ref("followers/" + profileUid)
+
+    .on("value", snap => {
+
+        if(followersCount){
+
+            followersCount.innerText =
             snap.numChildren();
+
+        }
 
     });
 
-    db.ref("following/" + profileUid).on("value", (snap) => {
+    // Following
 
-        document.getElementById("followingCount").innerText =
+    db.ref("following/" + profileUid)
+
+    .on("value", snap => {
+
+        if(followingCount){
+
+            followingCount.innerText =
             snap.numChildren();
+
+        }
 
     });
 
-    db.ref("posts").orderByChild("uid").equalTo(profileUid).on("value", (snap) => {
+    // Posts
 
-        document.getElementById("postsCount").innerText =
+    db.ref("posts")
+
+    .orderByChild("uid")
+
+    .equalTo(profileUid)
+
+    .on("value", snap => {
+
+        if(postsCount){
+
+            postsCount.innerText =
             snap.numChildren();
+
+        }
+
+    });
+
+    // Videos
+
+    db.ref("videos")
+
+    .orderByChild("uid")
+
+    .equalTo(profileUid)
+
+    .on("value", snap => {
+
+        if(videosCount){
+
+            videosCount.innerText =
+            snap.numChildren();
+
+        }
 
     });
 
 }
 
-// ==================== BUTTONS ====================
+// ======================================
+// Buttons
+// ======================================
 
-function setupButtons() {
+function setupButtons(){
 
-    const own = currentUser.uid === profileUid;
+    const own =
+    currentUser.uid === profileUid;
 
-    const followBtn = document.getElementById("followBtn");
-    const editBtn = document.getElementById("editProfileBtn");
-    const msgBtn = document.getElementById("messageBtn");
+    const followBtn =
+    document.getElementById("followBtn");
 
-    if (followBtn)
-        followBtn.style.display = own ? "none" : "inline-block";
+    const editBtn =
+    document.getElementById("editProfileBtn");
 
-    if (editBtn)
-        editBtn.style.display = own ? "inline-block" : "none";
+    const messageBtn =
+    document.getElementById("messageBtn");
 
-    if (msgBtn)
-        msgBtn.style.display = own ? "none" : "inline-block";
+    if(followBtn)
+        followBtn.style.display =
+        own ? "none" : "inline-flex";
+
+    if(editBtn)
+        editBtn.style.display =
+        own ? "inline-flex" : "none";
+
+    if(messageBtn)
+        messageBtn.style.display =
+        own ? "none" : "inline-flex";
 
 }
 
-// ==================== POSTS ====================
+console.log("✅ Profile Part 1 Loaded");
+// ======================================
+// Viewora Profile V4.0
+// profile.js - Part 2
+// Posts • Videos • Shorts • Saved
+// ======================================
 
-function loadPosts() {
+// ===========================
+// Load Posts
+// ===========================
 
-    const container = document.getElementById("profilePosts");
+function loadPosts(){
 
-    if (!container) return;
+    const container =
+    document.getElementById("profilePosts");
 
-    db.ref("posts").orderByChild("createdAt").on("value", (snapshot) => {
+    if(!container) return;
 
-        let html = "";
-        let found = false;
+    db.ref("posts")
+    .orderByChild("uid")
+    .equalTo(profileUid)
 
-        let posts = [];
+    .on("value",(snapshot)=>{
 
-        snapshot.forEach((child) => {
+        container.innerHTML="";
 
-            posts.push({
-                id: child.key,
-                ...child.val()
-            });
+        if(!snapshot.exists()){
+
+            container.innerHTML=`
+
+            <div class="emptyBox">
+
+                📝 No Posts Yet
+
+            </div>
+
+            `;
+
+            return;
+
+        }
+
+        const posts=[];
+
+        snapshot.forEach(child=>{
+
+            posts.unshift(child.val());
 
         });
 
-        posts.reverse();
+        posts.forEach(post=>{
 
-        posts.forEach((post) => {
-
-            if (post.uid !== profileUid) return;
-
-            found = true;
-
-            html += `
+            container.innerHTML+=`
 
             <div class="post-card">
 
-                <p>${post.text || ""}</p>
-
                 ${
-                    post.mediaUrl
-                    ? `<img src="${post.mediaUrl}" style="width:100%;border-radius:12px;margin-top:10px;">`
-                    : ""
+                post.mediaUrl ?
+
+                `<img
+                src="${post.mediaUrl}"
+                class="post-image">`
+
+                :""
                 }
 
-                <small>
-                    ${new Date(post.createdAt).toLocaleString()}
-                </small>
+                <div class="post-content">
+
+                    <p>
+
+                    ${post.text || post.caption || ""}
+
+                    </p>
+
+                </div>
 
             </div>
 
@@ -154,80 +308,621 @@ function loadPosts() {
 
         });
 
-        container.innerHTML = found
-            ? html
-            : "<p style='text-align:center;padding:40px;'>No Posts Yet</p>";
-
     });
 
 }
 
-// ==================== STORIES ====================
+// ===========================
+// Load Videos
+// ===========================
 
-function loadStories() {
+function loadVideos(){
 
-    const ring = document.getElementById("storyRing");
+    const container=
+    document.getElementById("videosList");
 
-    if (!ring) return;
+    if(!container) return;
 
-    db.ref("stories").orderByChild("createdAt").on("value", (snapshot) => {
+    db.ref("videos")
+    .orderByChild("uid")
+    .equalTo(profileUid)
 
-        let active = false;
-        const now = Date.now();
+    .on("value",(snapshot)=>{
 
-        snapshot.forEach((child) => {
+        container.innerHTML="";
 
-            const story = child.val();
+        if(!snapshot.exists()){
 
-            if (
-                story.uid === profileUid &&
-                story.expiresAt > now
-            ) {
+            container.innerHTML=`
 
-                active = true;
+            <div class="emptyBox">
 
-            }
+                🎥 No Videos Uploaded
+
+            </div>
+
+            `;
+
+            return;
+
+        }
+
+        snapshot.forEach(child=>{
+
+            const video=child.val();
+
+            container.innerHTML+=`
+
+            <div class="video-card">
+
+                <video
+
+                controls
+
+                playsinline
+
+                preload="metadata"
+
+                class="profile-video"
+
+                src="${video.videoUrl}">
+
+                </video>
+
+                <h3>
+
+                ${video.title || "Untitled"}
+
+                </h3>
+
+                <p>
+
+                ${video.description || ""}
+
+                </p>
+
+            </div>
+
+            `;
 
         });
 
-        ring.style.border = active
-            ? "4px solid #ff0066"
-            : "4px solid #333";
+    });
+
+}
+
+// ===========================
+// Load Shorts
+// ===========================
+
+function loadShorts(){
+
+    const container=
+    document.getElementById("shortsList");
+
+    if(!container) return;
+
+    db.ref("shorts")
+    .orderByChild("uid")
+    .equalTo(profileUid)
+
+    .on("value",(snapshot)=>{
+
+        container.innerHTML="";
+
+        if(!snapshot.exists()){
+
+            container.innerHTML=`
+
+            <div class="emptyBox">
+
+                ▶ No Shorts Uploaded
+
+            </div>
+
+            `;
+
+            return;
+
+        }
+
+        snapshot.forEach(child=>{
+
+            const short=child.val();
+
+            container.innerHTML+=`
+
+            <div class="short-card">
+
+                <video
+
+                controls
+
+                playsinline
+
+                preload="metadata"
+
+                class="profile-short"
+
+                src="${short.videoUrl}">
+
+                </video>
+
+                <p>
+
+                ${short.caption || ""}
+
+                </p>
+
+            </div>
+
+            `;
+
+        });
 
     });
 
 }
 
-// ==================== CHAT ====================
+// ===========================
+// Saved Posts
+// ===========================
 
-function openChat() {
+function loadSavedPosts(){
 
-    location.href = "chat.html?uid=" + profileUid;
+    const container=
+    document.getElementById("savedPosts");
+
+    if(!container) return;
+
+    if(!currentUser) return;
+
+    db.ref("savedPosts/"+currentUser.uid)
+
+    .on("value",(snapshot)=>{
+
+        if(!snapshot.exists()){
+
+            container.innerHTML=`
+
+            <div class="emptyBox">
+
+                ❤️ No Saved Posts
+
+            </div>
+
+            `;
+
+            return;
+
+        }
+
+        container.innerHTML=`
+
+        <div class="successBox">
+
+            ✅ Saved Posts Loaded
+
+        </div>
+
+        `;
+
+    });
 
 }
 
-// ==================== FOLLOW BUTTON ====================
+console.log("✅ Profile Part 2 Loaded");
+// ======================================
+// Viewora Profile V4.0
+// profile.js - Part 3
+// Stories System
+// ======================================
 
-function followUser() {
+// Story Elements
 
-    if (currentUser.uid === profileUid) return;
+const storyRing = document.getElementById("storyRing");
+const storyViewer = document.getElementById("storyViewer");
+const storyImage = document.getElementById("storyImage");
+const storyVideo = document.getElementById("storyVideo");
+const storyProgress = document.getElementById("storyProgress");
+const storyFile = document.getElementById("storyFile");
+const storiesContainer = document.getElementById("storiesContainer");
 
-    db.ref("followers/" + profileUid + "/" + currentUser.uid).set(true);
+// ======================================
+// Load Stories
+// ======================================
 
-    db.ref("following/" + currentUser.uid + "/" + profileUid).set(true);
+function loadStories(){
 
-    alert("Followed");
+    if(!storiesContainer) return;
+
+    db.ref("stories")
+
+    .orderByChild("createdAt")
+
+    .on("value",(snapshot)=>{
+
+        storiesContainer.innerHTML="";
+
+        const now = Date.now();
+
+        snapshot.forEach(child=>{
+
+            const story = child.val();
+
+            if(!story) return;
+
+            if(story.expiresAt < now) return;
+
+            const div = document.createElement("div");
+
+            div.className = "storyItem";
+
+            div.innerHTML = `
+
+                <div class="storyRingMini">
+
+                    <img src="${story.profilePhoto || "users.jpg"}">
+
+                </div>
+
+                <small>
+
+                    ${story.username || "User"}
+
+                </small>
+
+            `;
+
+            div.onclick = ()=>{
+
+                openStory(child.key);
+
+            };
+
+            storiesContainer.appendChild(div);
+
+        });
+
+    });
 
 }
 
-// ==================== UNFOLLOW ====================
+// ======================================
+// Story Ring Animation
+// ======================================
 
-function unfollowUser() {
+db.ref("stories")
 
-    db.ref("followers/" + profileUid + "/" + currentUser.uid).remove();
+.orderByChild("uid")
 
-    db.ref("following/" + currentUser.uid + "/" + profileUid).remove();
+.equalTo(profileUid)
+
+.on("value",(snapshot)=>{
+
+    let active = false;
+
+    const now = Date.now();
+
+    snapshot.forEach(child=>{
+
+        const story = child.val();
+
+        if(story.expiresAt > now){
+
+            active = true;
+
+        }
+
+    });
+
+    if(storyRing){
+
+        storyRing.style.border = active
+
+        ? "4px solid #ff0077"
+
+        : "4px solid #444";
+
+    }
+
+});
+
+// ======================================
+// Open Story
+// ======================================
+
+function openStory(id){
+
+    if(!storyViewer) return;
+
+    db.ref("stories/"+id)
+
+    .once("value")
+
+    .then(snap=>{
+
+        if(!snap.exists()) return;
+
+        const story = snap.val();
+
+        storyViewer.style.display="flex";
+
+        storyProgress.style.width="0%";
+
+        if(story.type==="video"){
+
+            storyImage.style.display="none";
+
+            storyVideo.style.display="block";
+
+            storyVideo.src = story.url;
+
+            storyVideo.play();
+
+        }else{
+
+            storyVideo.pause();
+
+            storyVideo.style.display="none";
+
+            storyImage.style.display="block";
+
+            storyImage.src = story.url;
+
+        }
+
+        animateStory();
+
+    });
+
+}
+
+// ======================================
+// Close Story
+// ======================================
+
+window.closeStoryViewer=function(){
+
+    if(storyViewer)
+
+        storyViewer.style.display="none";
+
+    if(storyVideo){
+
+        storyVideo.pause();
+
+        storyVideo.currentTime=0;
+
+    }
+
+};
+
+// ======================================
+// Progress Animation
+// ======================================
+
+function animateStory(){
+
+    if(!storyProgress) return;
+
+    storyProgress.style.width="0%";
+
+    let progress=0;
+
+    const timer=setInterval(()=>{
+
+        progress++;
+
+        storyProgress.style.width=progress+"%";
+
+        if(progress>=100){
+
+            clearInterval(timer);
+
+            closeStoryViewer();
+
+        }
+
+    },70);
+
+}
+
+// ======================================
+// Story Upload
+// ======================================
+
+window.createStory=function(){
+
+    if(storyFile)
+
+        storyFile.click();
+
+};
+
+if(storyFile){
+
+    storyFile.addEventListener("change",()=>{
+
+        if(!storyFile.files.length) return;
+
+        uploadStory(storyFile.files[0]);
+
+    });
+
+}
+
+console.log("✅ Profile Part 3 Loaded");
+// ======================================
+// Viewora Profile V4.0
+// profile.js - Part 4 (Final)
+// Story Upload • Follow • Chat
+// ======================================
+
+// ===========================
+// Upload Story
+// ===========================
+
+async function uploadStory(file){
+
+    if(!file || !currentUser) return;
+
+    try{
+
+        const storyId = db.ref("stories").push().key;
+
+        const ext = file.name.split(".").pop();
+
+        const storageRef = storage
+        .ref("stories/"+currentUser.uid+"/"+storyId+"."+ext);
+
+        await storageRef.put(file);
+
+        const downloadURL =
+        await storageRef.getDownloadURL();
+
+        const userSnap =
+        await db.ref("users/"+currentUser.uid).once("value");
+
+        const user = userSnap.val() || {};
+
+        await db.ref("stories/"+storyId).set({
+
+            storyId:storyId,
+
+            uid:currentUser.uid,
+
+            username:user.username || "User",
+
+            name:user.name || "User",
+
+            profilePhoto:user.profilePhoto || "users.jpg",
+
+            url:downloadURL,
+
+            type:file.type.startsWith("video")
+            ? "video"
+            : "image",
+
+            createdAt:Date.now(),
+
+            expiresAt:Date.now()+86400000
+
+        });
+
+        alert("✅ Story Uploaded");
+
+    }catch(err){
+
+        console.error(err);
+
+        alert("Story Upload Failed");
+
+    }
+
+}
+
+// ===========================
+// Follow User
+// ===========================
+
+window.followUser=function(){
+
+    if(currentUser.uid===profileUid) return;
+
+    db.ref("followers/"+profileUid+"/"+currentUser.uid)
+
+    .set(true);
+
+    db.ref("following/"+currentUser.uid+"/"+profileUid)
+
+    .set(true);
+
+    alert("Followed Successfully");
+
+};
+
+// ===========================
+// Unfollow
+// ===========================
+
+window.unfollowUser=function(){
+
+    db.ref("followers/"+profileUid+"/"+currentUser.uid)
+
+    .remove();
+
+    db.ref("following/"+currentUser.uid+"/"+profileUid)
+
+    .remove();
 
     alert("Unfollowed");
 
-}
+};
+
+// ===========================
+// Message
+// ===========================
+
+window.openChat=function(){
+
+    location.href="chat.html?uid="+profileUid;
+
+};
+
+// ===========================
+// Settings
+// ===========================
+
+window.goToSettings=function(){
+
+    location.href="settings.html";
+
+};
+
+// ===========================
+// Auto Refresh Story Ring
+// ===========================
+
+setInterval(()=>{
+
+    if(currentUser){
+
+        loadStories();
+
+    }
+
+},60000);
+
+// ===========================
+// Floating Animation
+// ===========================
+
+setInterval(()=>{
+
+    if(profilePic){
+
+        profilePic.style.transform="scale(1.03)";
+
+        setTimeout(()=>{
+
+            profilePic.style.transform="scale(1)";
+
+        },300);
+
+    }
+
+},5000);
+
+// ===========================
+// Finish
+// ===========================
+
+console.log("================================");
+console.log("👤 Viewora Profile Loaded");
+console.log("📖 Stories Ready");
+console.log("🎥 Videos Ready");
+console.log("▶ Shorts Ready");
+console.log("📝 Posts Ready");
+console.log("❤️ Follow System Ready");
+console.log("================================");

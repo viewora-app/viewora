@@ -4,976 +4,309 @@
 <head>
 
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport"
+content="width=device-width,initial-scale=1.0">
 
-<title>🛟 Support • Viewora</title>
+<title>Support Settings • Viewora</title>
 
-<link rel="stylesheet" href="style.css">
+<link rel="stylesheet"
+href="support-settings.css">
 
-<style>
-
-*{
-margin:0;
-padding:0;
-box-sizing:border-box;
-font-family:Arial,sans-serif;
-}
-
-body{
-
-background:#0d1117;
-color:#fff;
-overflow-x:hidden;
-padding-bottom:120px;
-
-}
-
-/* ========================= */
-/* Animated Background */
-/* ========================= */
-
-body::before{
-
-content:"";
-
-position:fixed;
-
-top:-50%;
-left:-50%;
-
-width:200%;
-height:200%;
-
-background:
-radial-gradient(circle,#00aaff22,transparent 35%),
-radial-gradient(circle,#7c3aed22,transparent 35%),
-radial-gradient(circle,#00ff8822,transparent 35%);
-
-animation:bgRotate 20s linear infinite;
-
-z-index:-1;
-
-}
-
-@keyframes bgRotate{
-
-0%{transform:rotate(0deg);}
-100%{transform:rotate(360deg);}
-
-}
-
-/* ========================= */
-/* Header */
-/* ========================= */
-
-.header{
-
-padding:35px 20px;
-
-text-align:center;
-
-background:linear-gradient(135deg,#00aaff,#7c3aed);
-
-border-bottom-left-radius:35px;
-border-bottom-right-radius:35px;
-
-box-shadow:0 10px 30px rgba(0,170,255,.35);
-
-animation:slideDown .6s ease;
-
-}
-
-.header h1{
-
-font-size:30px;
-
-margin-bottom:8px;
-
-}
-
-.header p{
-
-color:#eee;
-
-}
-
-@keyframes slideDown{
-
-from{
-
-opacity:0;
-transform:translateY(-35px);
-
-}
-
-to{
-
-opacity:1;
-transform:translateY(0);
-
-}
-
-}
-
-/* ========================= */
-/* Contact Card */
-/* ========================= */
-
-.contact-card{
-
-width:92%;
-
-margin:25px auto;
-
-padding:22px;
-
-background:rgba(255,255,255,.06);
-
-backdrop-filter:blur(18px);
-
-border:1px solid rgba(255,255,255,.08);
-
-border-radius:22px;
-
-animation:fadeIn .7s ease;
-
-text-align:center;
-
-}
-
-.contact-card h2{
-
-margin-bottom:12px;
-
-color:#00aaff;
-
-}
-
-.contact-card p{
-
-color:#bbb;
-
-line-height:1.6;
-
-margin-bottom:20px;
-
-}
-
-.email-btn{
-
-display:inline-block;
-
-padding:14px 25px;
-
-background:linear-gradient(135deg,#00aaff,#0077ff);
-
-color:#fff;
-
-text-decoration:none;
-
-border-radius:30px;
-
-font-weight:bold;
-
-transition:.3s;
-
-}
-
-.email-btn:hover{
-
-transform:translateY(-3px);
-
-box-shadow:0 10px 25px rgba(0,170,255,.35);
-
-}
-
-@keyframes fadeIn{
-
-from{
-
-opacity:0;
-transform:scale(.95);
-
-}
-
-to{
-
-opacity:1;
-transform:scale(1);
-
-}
-
-}
-
-/* ========================= */
-/* Section */
-/* ========================= */
-
-.section-title{
-
-width:92%;
-
-margin:30px auto 15px;
-
-font-size:20px;
-
-font-weight:bold;
-
-color:#00aaff;
-
-}
-
-.support-container{
-
-width:92%;
-
-margin:auto;
-
-}
-
-.support-card{
-
-display:flex;
-
-align-items:center;
-
-gap:15px;
-
-padding:18px;
-
-margin-bottom:15px;
-
-background:rgba(255,255,255,.06);
-
-backdrop-filter:blur(18px);
-
-border:1px solid rgba(255,255,255,.08);
-
-border-radius:20px;
-
-cursor:pointer;
-
-transition:.3s;
-
-}
-
-.support-card:hover{
-
-transform:translateY(-4px);
-
-background:rgba(255,255,255,.10);
-
-box-shadow:0 15px 35px rgba(0,170,255,.20);
-
-}
-
-.icon{
-
-font-size:30px;
-
-}
-
-.info{
-
-flex:1;
-
-}
-
-.info h3{
-
-margin-bottom:5px;
-
-}
-
-.info p{
-
-color:#999;
-
-font-size:14px;
-
-}
-
-.arrow{
-
-font-size:24px;
-
-color:#00aaff;
-
-}
-
-</style>
+<link rel="stylesheet"
+href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 
 </head>
 
 <body>
 
-<div class="header">
+<!-- Floating Background -->
 
-<h1>🛟 Support Center</h1>
+<div class="bg1"></div>
+<div class="bg2"></div>
+<div class="bg3"></div>
 
-<p>We're here to help you anytime</p>
+<!-- Header -->
 
-</div>
+<header class="topBar">
 
-<div class="contact-card">
+<button onclick="history.back()"
+class="backBtn">
 
-<h2>Need Assistance?</h2>
+<i class="fas fa-arrow-left"></i>
 
-<p>
+</button>
 
-Contact the Viewora Support Team for account,
-technical or privacy related issues.
+<h2>
 
-</p>
-
-<a
-href="mailto:vieworasupport@gmail.com"
-class="email-btn">
-
-📧 Email Support
-
-</a>
-
-</div>
-
-<h2 class="section-title">
-
-Support Options
+Support Center
 
 </h2>
 
-<div class="support-container">
+</header>
 
-<div class="support-card"
-onclick="window.location.href='mailto:vieworasupport@gmail.com'">
+<!-- Banner -->
 
-<div class="icon">📧</div>
+<section class="hero">
 
-<div class="info">
+<div class="heroIcon">
 
-<h3>Contact Support</h3>
-
-<p>Email our support team</p>
+🎧
 
 </div>
 
-<div class="arrow">›</div>
+<h1>
 
-</div>
+How can we help you?
 
-<div class="support-card"
-onclick="openLiveChat()">
+</h1>
 
-<div class="icon">💬</div>
+<p>
 
-<div class="info">
+We're always here to help you with Viewora.
 
-<h3>Live Chat</h3>
+</p>
 
-<p>Coming Soon</p>
+</section>
 
-</div>
+<!-- Contact Card -->
 
-<div class="arrow">›</div>
+<section class="glassCard">
 
-</div>
+<h3>
 
-<div class="support-card"
-onclick="openHelpCenter()">
+📧 Contact Support
 
-<div class="icon">📚</div>
+</h3>
 
-<div class="info">
+<input
+id="supportSubject"
+type="text"
+placeholder="Subject">
 
-<h3>Help Center</h3>
+<textarea
+id="supportMessage"
+placeholder="Describe your problem..."></textarea>
 
-<p>Browse help articles</p>
+<button
+onclick="sendSupport()">
 
-</div>
+Send Message
 
-<div class="arrow">›</div>
+</button>
 
-</div>
-<div class="support-card"
-onclick="openFAQ()">
+</section>
 
-    <div class="icon">❓</div>
+<!-- Report Bug -->
 
-    <div class="info">
+<section class="glassCard">
 
-        <h3>Frequently Asked Questions</h3>
+<h3>
 
-        <p>Find answers to common questions</p>
+🐞 Report a Bug
 
-    </div>
+</h3>
 
-    <div class="arrow">›</div>
+<p>
 
-</div>
+Found something broken?
 
-<div class="support-card"
+Report it to our team.
+
+</p>
+
+<button
 onclick="reportBug()">
 
-    <div class="icon">🐞</div>
+Report Bug
 
-    <div class="info">
+</button>
 
-        <h3>Report a Bug</h3>
+</section>
 
-        <p>Help us improve Viewora</p>
+<!-- Suggest Feature -->
 
-    </div>
+<section class="glassCard">
 
-    <div class="arrow">›</div>
+<h3>
 
-</div>
+💡 Suggest Feature
 
-<div class="support-card"
-onclick="sendFeedback()">
+</h3>
 
-    <div class="icon">💡</div>
+<p>
 
-    <div class="info">
+Help improve Viewora by sharing your ideas.
 
-        <h3>Send Feedback</h3>
+</p>
 
-        <p>Share your ideas and suggestions</p>
+<button
+onclick="suggestFeature()">
 
-    </div>
+Suggest
 
-    <div class="arrow">›</div>
+</button>
 
-</div>
+</section>
 
-<div class="support-card"
-onclick="rateApp()">
+<!-- FAQ -->
 
-    <div class="icon">⭐</div>
+<section class="glassCard">
 
-    <div class="info">
+<h3>
 
-        <h3>Rate Viewora</h3>
+❓ Frequently Asked Questions
 
-        <p>Support us with your rating</p>
+</h3>
 
-    </div>
+<div class="faq">
 
-    <div class="arrow">›</div>
+<div class="faqItem">
 
-</div>
+<div class="faqTitle">
 
-<div class="support-card"
-onclick="visitWebsite()">
+How do I verify my account?
 
-    <div class="icon">🌐</div>
-
-    <div class="info">
-
-        <h3>Official Website</h3>
-
-        <p>Visit the Viewora website</p>
-
-    </div>
-
-    <div class="arrow">›</div>
+<i class="fas fa-chevron-down"></i>
 
 </div>
 
-<div class="support-card"
-onclick="window.open('privacy.html','_blank')">
+<div class="faqContent">
 
-    <div class="icon">🔒</div>
-
-    <div class="info">
-
-        <h3>Privacy Policy</h3>
-
-        <p>Read our privacy policy</p>
-
-    </div>
-
-    <div class="arrow">›</div>
-
-</div>
-
-<div class="support-card"
-onclick="window.open('terms.html','_blank')">
-
-    <div class="icon">📜</div>
-
-    <div class="info">
-
-        <h3>Terms & Conditions</h3>
-
-        <p>Read terms of service</p>
-
-    </div>
-
-    <div class="arrow">›</div>
+Purchase Viewora Premium and your account
+will receive the verified badge.
 
 </div>
 
 </div>
 
-<style>
+<div class="faqItem">
 
-/* ========================= */
-/* Card Animation */
-/* ========================= */
+<div class="faqTitle">
 
-.support-card{
+How do I recover my account?
 
-position:relative;
-
-overflow:hidden;
-
-}
-
-.support-card::after{
-
-content:"";
-
-position:absolute;
-
-left:50%;
-top:50%;
-
-width:0;
-height:0;
-
-background:rgba(255,255,255,.10);
-
-border-radius:50%;
-
-transform:translate(-50%,-50%);
-
-transition:.45s;
-
-}
-
-.support-card:active::after{
-
-width:450px;
-
-height:450px;
-
-}
-
-/* ========================= */
-/* Responsive */
-/* ========================= */
-
-@media(max-width:600px){
-
-.header h1{
-
-font-size:24px;
-
-}
-
-.contact-card{
-
-padding:18px;
-
-}
-
-.email-btn{
-
-width:100%;
-
-display:block;
-
-}
-
-.support-card{
-
-padding:16px;
-
-}
-
-.icon{
-
-font-size:26px;
-
-}
-
-.info h3{
-
-font-size:16px;
-
-}
-
-.info p{
-
-font-size:13px;
-
-}
-
-}
-
-</style>
-<!-- ========================= -->
-<!-- About Viewora -->
-<!-- ========================= -->
-
-<div class="section-title">
-
-    About Viewora
+<i class="fas fa-chevron-down"></i>
 
 </div>
 
-<div class="support-container">
+<div class="faqContent">
 
-    <div class="support-card">
-
-        <div class="icon">ℹ️</div>
-
-        <div class="info">
-
-            <h3>App Version</h3>
-
-            <p>Viewora v1.0.0 Stable Release</p>
-
-        </div>
-
-    </div>
-
-    <div class="support-card">
-
-        <div class="icon">🚀</div>
-
-        <div class="info">
-
-            <h3>Latest Features</h3>
-
-            <p>Reels, Stories, Chat, AI & Premium UI</p>
-
-        </div>
-
-    </div>
-
-    <div class="support-card">
-
-        <div class="icon">🛡️</div>
-
-        <div class="info">
-
-            <h3>Security</h3>
-
-            <p>Your data is protected with Firebase Security.</p>
-
-        </div>
-
-    </div>
+Use Forgot Password from Login page.
 
 </div>
 
-<!-- ========================= -->
-<!-- Action Buttons -->
-<!-- ========================= -->
+</div>
 
-<div class="action-buttons">
+<div class="faqItem">
 
-    <button class="contact-btn"
-            onclick="window.location.href='mailto:vieworasupport@gmail.com'">
+<div class="faqTitle">
 
-        📧 Contact Support
+How long do stories stay?
 
-    </button>
-
-    <button class="back-btn"
-            onclick="window.location.href='settings.html'">
-
-        ⬅ Back to Settings
-
-    </button>
+<i class="fas fa-chevron-down"></i>
 
 </div>
 
-<!-- ========================= -->
+<div class="faqContent">
+
+Stories automatically disappear after 24 hours.
+
+</div>
+
+</div>
+
+</div>
+
+</section>
+
+<!-- Links -->
+
+<section class="glassCard">
+
+<h3>
+
+Quick Links
+
+</h3>
+
+<button onclick="openPrivacy()">
+
+🔒 Privacy Policy
+
+</button>
+
+<button onclick="openTerms()">
+
+📜 Terms & Conditions
+
+</button>
+
+<button onclick="rateViewora()">
+
+⭐ Rate Viewora
+
+</button>
+
+</section>
+
+<!-- Contact -->
+
+<section class="glassCard">
+
+<h3>
+
+Contact Information
+
+</h3>
+
+<p>
+
+📧 support@viewora.app
+
+</p>
+
+<p>
+
+🌐 www.viewora.app
+
+</p>
+
+<p>
+
+🕒 Available 24×7
+
+</p>
+
+</section>
+
 <!-- Footer -->
-<!-- ========================= -->
 
-<footer class="footer">
+<footer>
 
-    <h3>🛟 Viewora Support Center</h3>
+<div class="footerLogo">
 
-    <p>
+Viewora
 
-        Need help? Our support team is available to
-        assist you with technical, account and privacy issues.
+</div>
 
-    </p>
+<p>
 
-    <div class="footer-version">
+Version 5.0 Premium
 
-        Viewora v1.0.0 • © 2026 Viewora
+</p>
 
-    </div>
+<p>
+
+Made with ❤️ for creators.
+
+</p>
 
 </footer>
 
-<style>
-
-/* ========================= */
-/* Action Buttons */
-/* ========================= */
-
-.action-buttons{
-
-width:92%;
-
-margin:35px auto;
-
-display:flex;
-
-flex-direction:column;
-
-gap:15px;
-
-}
-
-.action-buttons button{
-
-padding:16px;
-
-border:none;
-
-border-radius:18px;
-
-font-size:16px;
-
-font-weight:bold;
-
-cursor:pointer;
-
-transition:.3s;
-
-}
-
-.contact-btn{
-
-background:linear-gradient(135deg,#00aaff,#7c3aed);
-
-color:#fff;
-
-box-shadow:0 10px 25px rgba(0,170,255,.30);
-
-}
-
-.back-btn{
-
-background:#2b2b2b;
-
-color:#fff;
-
-}
-
-.action-buttons button:hover{
-
-transform:translateY(-3px);
-
-}
-
-/* ========================= */
-/* Footer */
-/* ========================= */
-
-.footer{
-
-width:92%;
-
-margin:40px auto 100px;
-
-padding:25px;
-
-text-align:center;
-
-background:rgba(255,255,255,.06);
-
-backdrop-filter:blur(18px);
-
-border:1px solid rgba(255,255,255,.08);
-
-border-radius:22px;
-
-}
-
-.footer h3{
-
-color:#00aaff;
-
-margin-bottom:10px;
-
-}
-
-.footer p{
-
-color:#aaa;
-
-line-height:1.6;
-
-}
-
-.footer-version{
-
-margin-top:15px;
-
-font-size:13px;
-
-color:#777;
-
-}
-
-</style>
-
-<!-- ========================= -->
-<!-- Firebase SDK -->
-<!-- ========================= -->
-
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
-
 <script src="firebase.js"></script>
+
 <script src="support-settings.js"></script>
-<!-- ========================= -->
-<!-- Floating Support Badge -->
-<!-- ========================= -->
-
-<div class="support-badge">
-
-    🛟 24/7 Support
-
-</div>
-
-<style>
-
-/* ========================= */
-/* Floating Badge */
-/* ========================= */
-
-.support-badge{
-
-position:fixed;
-
-right:20px;
-
-bottom:20px;
-
-padding:12px 18px;
-
-background:linear-gradient(135deg,#00aaff,#7c3aed);
-
-color:#fff;
-
-font-weight:bold;
-
-border-radius:30px;
-
-box-shadow:0 10px 25px rgba(0,170,255,.35);
-
-animation:pulse 2s infinite;
-
-z-index:999;
-
-}
-
-@keyframes pulse{
-
-0%,100%{
-
-transform:scale(1);
-
-}
-
-50%{
-
-transform:scale(1.08);
-
-}
-
-}
-
-</style>
-
-<!-- ========================= -->
-<!-- Page Script -->
-<!-- ========================= -->
-
-<script>
-
-// =========================
-// Smooth Fade Animation
-// =========================
-
-document.body.style.opacity = "0";
-
-window.addEventListener("load",()=>{
-
-    document.body.style.transition="opacity .4s ease";
-
-    document.body.style.opacity="1";
-
-    console.log("🛟 Support Center Loaded");
-
-});
-
-// =========================
-// Internet Status
-// =========================
-
-window.addEventListener("online",()=>{
-
-    if(typeof showToast==="function"){
-
-        showToast("🌐 Internet Connected");
-
-    }
-
-});
-
-window.addEventListener("offline",()=>{
-
-    if(typeof showToast==="function"){
-
-        showToast("📡 No Internet Connection");
-
-    }
-
-});
-
-// =========================
-// Touch Animation
-// =========================
-
-document.querySelectorAll(".support-card").forEach(card=>{
-
-    card.addEventListener("touchstart",()=>{
-
-        card.style.transform="scale(.98)";
-
-    });
-
-    card.addEventListener("touchend",()=>{
-
-        card.style.transform="scale(1)";
-
-    });
-
-});
-
-// =========================
-// Ready
-// =========================
-
-console.log("================================");
-console.log("🛟 Viewora Support Ready");
-console.log("✅ Support UI Loaded");
-console.log("✅ Firebase Ready");
-console.log("================================");
-
-</script>
 
 </body>
+
 </html>

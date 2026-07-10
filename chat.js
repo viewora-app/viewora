@@ -1,34 +1,23 @@
 // ============================================
-// VIEWORA CHAT V5.1 - FIXED & CLEAN
+// VIEWORA CHAT - FINAL FIXED
 // ============================================
 
 let currentUser = null;
 let otherUserUid = null;
 let chatId = null;
-let currentUserData = null;
-let otherUserData = null;
 
-// ============================================
 // Get UID from URL
-// ============================================
-
 function getOtherUserUid() {
     const params = new URLSearchParams(window.location.search);
     return params.get("uid");
 }
 
-// ============================================
 // Generate Chat ID
-// ============================================
-
 function generateChatId(uid1, uid2) {
     return [uid1, uid2].sort().join("_");
 }
 
-// ============================================
-// PART 1: Authentication + Load Users
-// ============================================
-
+// Auth + Load
 auth.onAuthStateChanged(async (user) => {
     if (!user) {
         location.href = "login.html";
@@ -55,22 +44,16 @@ auth.onAuthStateChanged(async (user) => {
     loadMessages();
     listenTyping();
 
-    console.log("✅ Chat Initialized | Chat ID:", chatId);
+    console.log("✅ Chat Ready | ID:", chatId);
 });
 
-// ============================================
 // Load Current User
-// ============================================
-
 async function loadCurrentUser() {
     const snap = await db.ref("users/" + currentUser.uid).once("value");
     currentUserData = snap.val() || {};
 }
 
-// ============================================
 // Load Other User
-// ============================================
-
 async function loadOtherUser() {
     const snap = await db.ref("users/" + otherUserUid).once("value");
     otherUserData = snap.val() || {};
@@ -79,10 +62,7 @@ async function loadOtherUser() {
     document.getElementById("chatUserName").innerText = otherUserData.name || "User";
 }
 
-// ============================================
 // Create Chat Room
-// ============================================
-
 function createChatRoom() {
     db.ref("chats/" + chatId).update({
         participants: {
@@ -92,10 +72,7 @@ function createChatRoom() {
     });
 }
 
-// ============================================
-// PART 2: Messages + Send
-// ============================================
-
+// Load Messages
 function loadMessages() {
     const container = document.getElementById("messagesContainer");
     if (!container) return;
@@ -106,7 +83,7 @@ function loadMessages() {
         container.innerHTML = "";
 
         if (!snapshot.exists()) {
-            container.innerHTML = `<div class="empty-chat" style="text-align:center;padding:60px;color:#777;">Say Hi 👋</div>`;
+            container.innerHTML = `<div style="text-align:center;padding:60px;color:#777;">Say Hi 👋</div>`;
             return;
         }
 
@@ -117,14 +94,12 @@ function loadMessages() {
             const bubble = document.createElement("div");
             bubble.className = isMine ? "message sent" : "message received";
 
-            if (msg.type === "image") {
-                bubble.innerHTML = `<img src="${msg.image}" class="chat-image" style="max-width:100%;border-radius:12px;">`;
-            } else {
-                bubble.innerHTML = `<div class="message-text">${msg.text || ""}</div>`;
-            }
+            bubble.innerHTML = msg.type === "image" 
+                ? `<img src="${msg.image}" style="max-width:100%;border-radius:12px;">`
+                : `<div class="message-text">${msg.text || ""}</div>`;
 
             bubble.innerHTML += `
-                <div class="message-info" style="font-size:11px;opacity:0.8;margin-top:5px;">
+                <div style="font-size:11px;opacity:0.8;margin-top:5px;">
                     ${formatTime(msg.timestamp)}
                     ${isMine ? (msg.seen ? "✓✓" : "✓") : ""}
                 </div>
@@ -138,10 +113,7 @@ function loadMessages() {
     });
 }
 
-// ============================================
-// Send Message (Fixed)
-// ============================================
-
+// Send Message
 window.sendMessage = async function () {
     const input = document.getElementById("messageInput");
     if (!input) return;
@@ -172,10 +144,7 @@ window.sendMessage = async function () {
     }
 };
 
-// ============================================
 // Helper Functions
-// ============================================
-
 function formatTime(timestamp) {
     return new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
@@ -196,10 +165,7 @@ function markMessagesAsSeen() {
     });
 }
 
-// ============================================
 // Typing Indicator
-// ============================================
-
 let typingTimeout;
 window.updateTyping = function () {
     db.ref(`typing/\( {chatId}/ \){currentUser.uid}`).set(true);
@@ -212,29 +178,11 @@ window.updateTyping = function () {
 function listenTyping() {
     const statusEl = document.getElementById("chatStatus");
     db.ref(`typing/\( {chatId}/ \){otherUserUid}`).on("value", (snap) => {
-        if (snap.val()) {
-            statusEl.innerHTML = "✍️ Typing...";
-        }
+        statusEl.innerHTML = snap.val() ? "✍️ Typing..." : "Online";
     });
 }
 
-// Enter Key Support
-document.addEventListener("DOMContentLoaded", () => {
-    const input = document.getElementById("messageInput");
-    if (input) {
-        input.addEventListener("keypress", (e) => {
-            if (e.key === "Enter") {
-                sendMessage();
-            }
-        });
-        input.addEventListener("input", updateTyping);
-    }
-});
-
-// ============================================
-// Presence (Online Status)
-// ============================================
-
+// Presence
 function setupPresence() {
     const connectedRef = firebase.database().ref(".info/connected");
     connectedRef.on("value", (snap) => {
@@ -258,8 +206,15 @@ function listenOtherUserStatus() {
     });
 }
 
-// ============================================
-// Final Log
-// ============================================
+// Enter Key
+document.addEventListener("DOMContentLoaded", () => {
+    const input = document.getElementById("messageInput");
+    if (input) {
+        input.addEventListener("keypress", (e) => {
+            if (e.key === "Enter") sendMessage();
+        });
+        input.addEventListener("input", updateTyping);
+    }
+});
 
-console.log("✅ Viewora Chat V5.1 FIXED & LOADED Successfully");
+console.log("✅ Chat System Fixed & Ready");

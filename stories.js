@@ -1,107 +1,98 @@
-// =====================================
-// Viewora Stories V2.0
-// Part 1
-// =====================================
+/* ==========================================
+   VIEWORA STORIES.JS
+   PART 1
+   Auth + Story Ring + Load Stories
+========================================== */
 
+// ==========================================
+// Globals
+// ==========================================
+
+// Use currentUser from index.js
 let stories = [];
-let currentStory = 0;
+let currentStoryIndex = 0;
 let storyTimer = null;
 
-// ----------------------
-// Login Check
-// ----------------------
+// DOM
 
-auth.onAuthStateChanged(user=>{
+const storiesContainer =
+document.getElementById("storiesContainer");
 
-    if(!user){
+const storyViewer =
+document.getElementById("storyViewer");
 
-        location.href="login.html";
-        return;
+const storyImage =
+document.getElementById("storyImage");
 
-    }
+const storyVideo =
+document.getElementById("storyVideo");
 
-    loadStories();
+const storyProgress =
+document.getElementById("storyProgress");
 
-});
-
-// ----------------------
-// Upload Story
-// ----------------------
-
-window.createStory=function(){
-
-    const url=prompt("Enter Image / Video URL");
-
-    if(!url) return;
-
-    const user=auth.currentUser;
-
-    db.ref("users/"+user.uid).once("value")
-
-    .then(snap=>{
-
-        const u=snap.val()||{};
-
-        const id=db.ref("stories").push().key;
-
-        db.ref("stories/"+id).set({
-
-            storyId:id,
-
-            uid:user.uid,
-
-            name:u.name||"User",
-
-            username:u.username||"user",
-
-            profilePhoto:u.profilePhoto||"non.jpg",
-
-            media:url,
-
-            type:url.toLowerCase().includes(".mp4")?
-            "video":"image",
-
-            createdAt:Date.now(),
-
-            expiresAt:Date.now()+86400000
-
-        }).then(()=>{
-
-            showToast("✅ Story Uploaded");
-
-            loadStories();
-
-        });
-
-    });
-
-};
-
-// ----------------------
+// ==========================================
 // Load Stories
-// ----------------------
+// ==========================================
 
 function loadStories(){
+
+    if(!storiesContainer) return;
 
     db.ref("stories")
 
     .orderByChild("createdAt")
 
-    .once("value")
-
-    .then(snapshot=>{
+    .on("value",snapshot=>{
 
         stories=[];
 
+        storiesContainer.innerHTML="";
+
+        const now=Date.now();
+
+        // Your Story Button
+
+        storiesContainer.innerHTML+=`
+
+        <div class="story" onclick="openStoryGallery()">
+
+            <div class="storyRing">
+
+                <img src="users.jpg">
+
+            </div>
+
+            <p>Your Story</p>
+
+        </div>
+
+        `;
+
+        if(!snapshot.exists()) return;
+
         snapshot.forEach(child=>{
 
-            const s=child.val();
+            const story=child.val();
 
-            if(s.expiresAt>Date.now()){
+            if(!story) return;
 
-                stories.push(s);
+            // Expired
+
+            if(story.expiresAt<=now){
+
+                db.ref("stories/"+child.key).remove();
+
+                return;
 
             }
+
+            stories.push({
+
+                id:child.key,
+
+                ...story
+
+            });
 
         });
 
@@ -111,348 +102,367 @@ function loadStories(){
 
 }
 
-// ----------------------
-// Story Strip
-// ----------------------
+// ==========================================
+// Render Story Ring
+// ==========================================
 
 function renderStories(){
 
-    const box=document.getElementById("storiesContainer");
-
-    if(!box) return;
-
-    box.innerHTML="";
-
-    // Your Story
-
-    const mine=document.createElement("div");
-
-    mine.className="storyItem";
-
-    mine.innerHTML=`
-
-    <div class="storyRing own"
-
-    onclick="createStory()">
-
-        <img src="${
-        auth.currentUser.photoURL||'non.jpg'
-        }">
-
-        <span class="plus">+</span>
-
-    </div>
-
-    <small>Your Story</small>
-
-    `;
-
-    box.appendChild(mine);
-
-    // Friends Stories
-
     stories.forEach((story,index)=>{
 
-        const item=document.createElement("div");
+        storiesContainer.innerHTML+=`
 
-        item.className="storyItem";
+        <div
 
-        item.innerHTML=`
-
-        <div class="storyRing"
+        class="story"
 
         onclick="openStory(${index})">
 
-            <img src="${
-            story.profilePhoto||"non.jpg"
-            }">
+            <div class="storyRing">
+
+                <img
+
+                src="${
+                story.profilePhoto ||
+                'users.jpg'
+                }"
+
+                onerror="this.src='users.jpg'">
+
+            </div>
+
+            <p>
+
+            ${
+            story.username ||
+            "User"
+            }
+
+            </p>
 
         </div>
 
-        <small>
-
-        ${story.name}
-
-        </small>
-
         `;
-
-        box.appendChild(item);
 
     });
 
 }
 
-console.log("✅ Stories Part 1 Loaded");
-// =====================================
-// Viewora Stories V2.0
-// Part 2
-// Story Viewer + Progress
-// =====================================
+// ==========================================
+// Refresh Ring
+// ==========================================
 
+window.refreshStoryRing=function(){
+
+    loadStories();
+
+};
+
+// ==========================================
+// User Stories
+// ==========================================
+
+window.loadUserStories=function(uid){
+
+    db.ref("stories")
+
+    .orderByChild("uid")
+
+    .equalTo(uid)
+
+    .once("value")
+
+    .then(snap=>{
+
+        console.log(
+
+            "Stories :",
+
+            snap.numChildren()
+
+        );
+
+    });
+
+};
+
+// ==========================================
+
+console.log("✅ STORIES PART 1 LOADED");
+/* ==========================================
+   VIEWORA STORIES.JS
+   PART 2A
+   Story Viewer
+========================================== */
+
+// ==========================================
 // Open Story
+// ==========================================
+
 window.openStory = function(index){
 
-    currentStory = index;
+    if(!stories.length) return;
 
-    const viewer = document.getElementById("storyViewer");
-    const img = document.getElementById("storyImage");
-    const video = document.getElementById("storyVideo");
+    currentStoryIndex = index;
 
-    const profile = document.getElementById("storyProfile");
-    const name = document.getElementById("storyName");
-    const time = document.getElementById("storyTime");
+    showStory();
 
-    const progress = document.getElementById("storyProgress");
+};
 
-    const story = stories[index];
+// ==========================================
+// Show Story
+// ==========================================
 
-    viewer.style.display = "block";
+function showStory(){
 
-    // Header
+    if(!storyViewer) return;
 
-    profile.src = story.profilePhoto || "non.jpg";
-    name.innerText = story.name || "User";
+    const story = stories[currentStoryIndex];
 
-    time.innerText = getTimeAgo(story.createdAt);
+    if(!story) return;
 
-    // Progress Bars
+    clearStoryTimer();
 
-    progress.innerHTML = "";
+    storyViewer.style.display = "flex";
 
-    for(let i=0;i<stories.length;i++){
+    resetProgress();
 
-        progress.innerHTML += `
-        <div class="progressBar">
-            <div class="progressFill"
-            id="fill${i}">
-            </div>
-        </div>
-        `;
+    // Hide Both
 
-    }
+    if(storyImage)
+        storyImage.style.display="none";
 
-    // Previous Completed
+    if(storyVideo){
 
-    for(let i=0;i<index;i++){
+        storyVideo.pause();
 
-        document.getElementById("fill"+i).style.width="100%";
+        storyVideo.style.display="none";
 
     }
 
-    // Image Story
+    // ==========================
+    // IMAGE
+    // ==========================
 
     if(story.type==="image"){
 
-        video.pause();
+        storyImage.style.display="block";
 
-        video.style.display="none";
+        storyImage.src =
+        story.mediaUrl || story.url;
 
-        img.style.display="block";
-
-        img.src=story.media;
+        startStoryProgress(5000);
 
     }
 
-    // Video Story
+    // ==========================
+    // VIDEO
+    // ==========================
 
     else{
 
-        img.style.display="none";
+        storyVideo.style.display="block";
 
-        video.style.display="block";
+        storyVideo.src =
+        story.mediaUrl || story.url;
 
-        video.src=story.media;
+        storyVideo.load();
 
-        video.play();
+        storyVideo.onloadedmetadata=function(){
+
+            const duration =
+            (storyVideo.duration || 5) * 1000;
+
+            startStoryProgress(duration);
+
+        };
+
+        storyVideo.play();
 
     }
 
-    animateProgress(index);
+    // Mark Seen
+
+    markStorySeen(story.id);
 
 }
 
-// -----------------------
+// ==========================================
+// Reset Progress
+// ==========================================
+
+function resetProgress(){
+
+    if(storyProgress){
+
+        storyProgress.style.width="0%";
+
+    }
+
+}
+
+// ==========================================
 // Progress Animation
-// -----------------------
+// ==========================================
 
-function animateProgress(index){
+function startStoryProgress(duration){
 
-    clearTimeout(storyTimer);
+    let progress = 0;
 
-    const fill=document.getElementById("fill"+index);
+    clearStoryTimer();
 
-    fill.style.transition="none";
+    const step = 100 / (duration / 50);
 
-    fill.style.width="0%";
+    storyTimer = setInterval(()=>{
 
-    setTimeout(()=>{
+        progress += step;
 
-        fill.style.transition="width 5s linear";
+        if(storyProgress){
 
-        fill.style.width="100%";
+            storyProgress.style.width =
+            progress + "%";
+
+        }
+
+        if(progress >= 100){
+
+            clearStoryTimer();
+
+            nextStory();
+
+        }
 
     },50);
 
-    storyTimer=setTimeout(()=>{
+}
 
-        nextStory();
+// ==========================================
+// Clear Timer
+// ==========================================
 
-    },5000);
+function clearStoryTimer(){
+
+    if(storyTimer){
+
+        clearInterval(storyTimer);
+
+        storyTimer = null;
+
+    }
 
 }
 
-// -----------------------
-// Time Ago
-// -----------------------
+// ==========================================
+// Mark Seen
+// ==========================================
 
-function getTimeAgo(time){
+function markStorySeen(storyId){
 
-    const sec=Math.floor((Date.now()-time)/1000);
+    if(!currentUser) return;
 
-    if(sec<60)
-        return sec+" sec ago";
+    const ref=db.ref(
+        "storyViews/"+storyId+"/"+currentUser.uid
+    );
 
-    const min=Math.floor(sec/60);
+    ref.once("value").then(snap=>{
 
-    if(min<60)
-        return min+" min ago";
+        if(snap.exists()) return;
 
-    const hr=Math.floor(min/60);
+        ref.set(true);
 
-    if(hr<24)
-        return hr+" hr ago";
+        db.ref("stories/"+storyId+"/views")
+        .transaction(v=>(v||0)+1);
 
-    const day=Math.floor(hr/24);
-
-    return day+" day ago";
+    });
 
 }
 
-console.log("✅ Stories Part 2 Loaded");
-// =====================================
-// Viewora Stories V2.0
-// Part 3
-// Navigation + Seen Status
-// =====================================
+console.log("✅ STORIES PART 2A LOADED");
+/* ==========================================
+   VIEWORA STORIES.JS
+   PART 2B
+   Next • Previous • Swipe • Close
+========================================== */
 
-// ----------------------
+// ==========================================
 // Next Story
-// ----------------------
+// ==========================================
 
-window.nextStory = function () {
+window.nextStory = function(){
 
-    clearTimeout(storyTimer);
+    if(currentStoryIndex < stories.length - 1){
 
-    const video = document.getElementById("storyVideo");
+        currentStoryIndex++;
 
-    if (video) {
+        showStory();
 
-        video.pause();
+    }else{
 
-        video.currentTime = 0;
-
-    }
-
-    currentStory++;
-
-    if (currentStory >= stories.length) {
-
-        closeStoryViewer();
-        return;
+        closeStory();
 
     }
-
-    openStory(currentStory);
 
 };
 
-// ----------------------
+// ==========================================
 // Previous Story
-// ----------------------
+// ==========================================
 
-window.prevStory = function () {
+window.previousStory = function(){
 
-    clearTimeout(storyTimer);
+    if(currentStoryIndex > 0){
 
-    if (currentStory <= 0) {
+        currentStoryIndex--;
 
-        currentStory = 0;
-        return;
-
-    }
-
-    currentStory--;
-
-    openStory(currentStory);
-
-};
-
-// ----------------------
-// Close Viewer
-// ----------------------
-
-window.closeStoryViewer = function () {
-
-    clearTimeout(storyTimer);
-
-    const viewer = document.getElementById("storyViewer");
-    const video = document.getElementById("storyVideo");
-
-    if (video) {
-
-        video.pause();
-        video.currentTime = 0;
+        showStory();
 
     }
 
-    viewer.style.display = "none";
+};
+
+// ==========================================
+// Close Story
+// ==========================================
+
+window.closeStory = function(){
+
+    clearStoryTimer();
+
+    if(storyViewer){
+
+        storyViewer.style.display="none";
+
+    }
+
+    if(storyVideo){
+
+        storyVideo.pause();
+
+        storyVideo.currentTime=0;
+
+        storyVideo.removeAttribute("src");
+
+        storyVideo.load();
+
+    }
+
+    if(storyImage){
+
+        storyImage.removeAttribute("src");
+
+    }
+
+    resetProgress();
 
 };
 
-// ----------------------
-// Seen Status
-// ----------------------
+// ==========================================
+// Video Finished
+// ==========================================
 
-function markSeen(story) {
+if(storyVideo){
 
-    const user = auth.currentUser;
-
-    if (!user) return;
-
-    db.ref("storySeen/" + story.storyId + "/" + user.uid).set({
-
-        uid: user.uid,
-
-        seenAt: firebase.database.ServerValue.TIMESTAMP
-
-    });
-
-}
-
-// ----------------------
-// Override Open Story
-// ----------------------
-
-const oldOpenStory = openStory;
-
-openStory = function(index){
-
-    oldOpenStory(index);
-
-    markSeen(stories[index]);
-
-};
-
-// ----------------------
-// Video End
-// ----------------------
-
-const video = document.getElementById("storyVideo");
-
-if(video){
-
-    video.addEventListener("ended",()=>{
+    storyVideo.addEventListener("ended",()=>{
 
         nextStory();
 
@@ -460,184 +470,857 @@ if(video){
 
 }
 
-// ----------------------
-// Keyboard Navigation
-// ----------------------
+// ==========================================
+// Tap Navigation
+// ==========================================
+
+if(storyViewer){
+
+    storyViewer.addEventListener("click",(e)=>{
+
+        const width=window.innerWidth;
+
+        if(e.clientX < width/2){
+
+            previousStory();
+
+        }
+
+        else{
+
+            nextStory();
+
+        }
+
+    });
+
+}
+
+// ==========================================
+// Keyboard Support
+// ==========================================
 
 document.addEventListener("keydown",(e)=>{
 
-    if(document.getElementById("storyViewer").style.display!="block")
-        return;
+    if(!storyViewer) return;
 
-    if(e.key==="ArrowRight"){
+    if(storyViewer.style.display!=="flex") return;
 
-        nextStory();
+    switch(e.key){
 
-    }
+        case "ArrowRight":
 
-    if(e.key==="ArrowLeft"){
+            nextStory();
 
-        prevStory();
+            break;
 
-    }
+        case "ArrowLeft":
 
-    if(e.key==="Escape"){
+            previousStory();
 
-        closeStoryViewer();
+            break;
 
-    }
+        case "Escape":
 
-});
+            closeStory();
 
-// ----------------------
-// Touch Navigation
-// ----------------------
-
-let touchStartX = 0;
-
-document.addEventListener("touchstart",(e)=>{
-
-    touchStartX = e.changedTouches[0].clientX;
-
-});
-
-document.addEventListener("touchend",(e)=>{
-
-    if(document.getElementById("storyViewer").style.display!="block")
-        return;
-
-    const endX = e.changedTouches[0].clientX;
-
-    const diff = touchStartX - endX;
-
-    if(diff > 60){
-
-        nextStory();
-
-    }
-
-    if(diff < -60){
-
-        prevStory();
+            break;
 
     }
 
 });
 
-console.log("✅ Stories Part 3 Loaded");
-// =====================================
-// Viewora Stories V2.0
-// Part 4 (Final)
-// Replies • Likes • Cleanup
-// =====================================
+// ==========================================
+// Swipe Support
+// ==========================================
 
-// ----------------------
-// Reply Story
-// ----------------------
+let touchStartX=0;
+let touchEndX=0;
 
-window.replyStory = function(){
+if(storyViewer){
 
-    const input = document.getElementById("storyReply");
+    storyViewer.addEventListener("touchstart",(e)=>{
 
-    const text = input.value.trim();
-
-    if(!text) return;
-
-    const user = auth.currentUser;
-
-    const story = stories[currentStory];
-
-    const id = db.ref("storyReplies").push().key;
-
-    db.ref("storyReplies/"+story.storyId+"/"+id).set({
-
-        uid:user.uid,
-
-        message:text,
-
-        time:firebase.database.ServerValue.TIMESTAMP
+        touchStartX=e.changedTouches[0].screenX;
 
     });
 
-    // Notification to Story Owner
+    storyViewer.addEventListener("touchend",(e)=>{
 
-    if(user.uid!==story.uid){
+        touchEndX=e.changedTouches[0].screenX;
 
-        const nid=db.ref("notifications/"+story.uid).push().key;
+        handleSwipe();
 
-        db.ref("notifications/"+story.uid+"/"+nid).set({
+    });
 
-            fromUid:user.uid,
+}
 
-            fromName:user.displayName||"Someone",
+function handleSwipe(){
 
-            message:"replied to your story 💬",
+    const distance=touchEndX-touchStartX;
 
-            time:firebase.database.ServerValue.TIMESTAMP
+    if(distance>70){
 
-        });
+        previousStory();
 
     }
 
-    input.value="";
+    else if(distance<-70){
 
-    showToast("💬 Reply Sent");
+        nextStory();
+
+    }
+
+}
+
+// ==========================================
+// Pause / Resume Video
+// ==========================================
+
+window.pauseStory=function(){
+
+    clearStoryTimer();
+
+    if(storyVideo &&
+       storyVideo.style.display==="block"){
+
+        storyVideo.pause();
+
+    }
 
 };
 
-// ----------------------
+window.resumeStory=function(){
+
+    const story=stories[currentStoryIndex];
+
+    if(!story) return;
+
+    if(storyVideo &&
+       storyVideo.style.display==="block"){
+
+        storyVideo.play();
+
+        startStoryProgress(
+            storyVideo.duration*1000
+        );
+
+    }else{
+
+        startStoryProgress(5000);
+
+    }
+
+};
+
+// ==========================================
+// Visibility API
+// ==========================================
+
+document.addEventListener("visibilitychange",()=>{
+
+    if(document.hidden){
+
+        pauseStory();
+
+    }else{
+
+        if(storyViewer &&
+           storyViewer.style.display==="flex"){
+
+            resumeStory();
+
+        }
+
+    }
+
+});
+
+// ==========================================
+
+console.log("✅ STORIES PART 2B LOADED");
+/* ==========================================
+   VIEWORA STORIES.JS
+   PART 3A
+   Story Upload
+========================================== */
+
+// ==========================================
+// Globals
+// ==========================================
+
+let selectedStoryFile = null;
+let uploadTask = null;
+
+// ==========================================
+// Open Gallery
+// ==========================================
+
+window.openStoryGallery = function(){
+
+    const input =
+    document.getElementById("storyFile");
+
+    if(input){
+
+        input.click();
+
+    }
+
+};
+
+// ==========================================
+// File Selected
+// ==========================================
+
+document.addEventListener("DOMContentLoaded",()=>{
+
+    const input =
+    document.getElementById("storyFile");
+
+    if(!input) return;
+
+    input.addEventListener(
+
+        "change",
+
+        selectStoryFile
+
+    );
+
+});
+
+// ==========================================
+// Select File
+// ==========================================
+
+function selectStoryFile(e){
+
+    const file=e.target.files[0];
+
+    if(!file) return;
+
+    if(file.size > 100*1024*1024){
+
+        showToast("Maximum size 100MB","error");
+
+        return;
+
+    }
+
+    selectedStoryFile=file;
+
+    previewStory(file);
+
+}
+
+// ==========================================
+// Preview
+// ==========================================
+
+function previewStory(file){
+
+    const preview=
+    document.getElementById("storyPreview");
+
+    if(!preview) return;
+
+    preview.innerHTML="";
+
+    const url=
+    URL.createObjectURL(file);
+
+    if(file.type.startsWith("image")){
+
+        preview.innerHTML=`
+
+        <img
+
+        src="${url}"
+
+        style="
+
+        width:100%;
+
+        border-radius:18px;
+
+        max-height:420px;
+
+        object-fit:cover;
+
+        ">
+
+        `;
+
+    }
+
+    else{
+
+        preview.innerHTML=`
+
+        <video
+
+        controls
+
+        autoplay
+
+        muted
+
+        style="
+
+        width:100%;
+
+        border-radius:18px;
+
+        max-height:420px;
+
+        ">
+
+        <source src="${url}">
+
+        </video>
+
+        `;
+
+    }
+
+}
+
+// ==========================================
+// Upload Story
+// ==========================================
+
+window.uploadStory = async function(){
+
+    if(!selectedStoryFile){
+
+        showToast(
+
+        "Select a story first",
+
+        "warning"
+
+        );
+
+        return;
+
+    }
+
+    if(!currentUser){
+
+        return;
+
+    }
+
+    const ext=
+    selectedStoryFile.name
+    .split(".")
+    .pop();
+
+    const fileName=
+
+    Date.now()+"_"+
+
+    currentUser.uid+
+
+    "."+ext;
+
+    const ref=
+
+    storage.ref(
+
+    "stories/"+fileName
+
+    );
+
+    uploadTask=
+
+    ref.put(selectedStoryFile);
+
+    uploadTask.on(
+
+    "state_changed",
+
+    snapshot=>{
+
+        const percent=Math.floor(
+
+        snapshot.bytesTransferred/
+
+        snapshot.totalBytes*100
+
+        );
+
+        updateUploadProgress(percent);
+
+    },
+
+    error=>{
+
+        console.error(error);
+
+        showToast(
+
+        error.message,
+
+        "error"
+
+        );
+
+    },
+
+    async()=>{
+
+        const url=
+
+        await ref.getDownloadURL();
+
+        saveStory(url);
+
+    });
+
+};
+
+// ==========================================
+// Progress
+// ==========================================
+
+function updateUploadProgress(percent){
+
+    const bar=
+
+    document.getElementById(
+
+    "storyUploadBar"
+
+    );
+
+    if(bar){
+
+        bar.style.width=
+
+        percent+"%";
+
+    }
+
+}
+
+// ==========================================
+
+console.log("✅ STORIES PART 3A LOADED");
+/* ==========================================
+   VIEWORA STORIES.JS
+   PART 3B
+   Save Story + Success + Cancel
+========================================== */
+
+// ==========================================
+// Save Story
+// ==========================================
+
+async function saveStory(downloadURL){
+
+    try{
+
+        const userSnap =
+        await db.ref("users/"+currentUser.uid)
+        .once("value");
+
+        const user =
+        userSnap.val() || {};
+
+        const storyId =
+        db.ref("stories").push().key;
+
+        await db.ref("stories/"+storyId).set({
+
+            storyId:storyId,
+
+            uid:currentUser.uid,
+
+            name:user.name || "User",
+
+            username:user.username || "user",
+
+            profilePhoto:
+            user.profilePhoto || "users.jpg",
+
+            mediaUrl:downloadURL,
+
+            type:selectedStoryFile.type.startsWith("video")
+            ? "video"
+            : "image",
+
+            createdAt:Date.now(),
+
+            expiresAt:
+            Date.now()+86400000,
+
+            likes:0,
+
+            replies:0,
+
+            views:0
+
+        });
+
+        uploadSuccess();
+
+    }
+
+    catch(error){
+
+        console.error(error);
+
+        showToast(
+
+            "Upload Failed",
+
+            "error"
+
+        );
+
+    }
+
+}
+
+// ==========================================
+// Upload Success
+// ==========================================
+
+function uploadSuccess(){
+
+    updateUploadProgress(100);
+
+    clearStoryPreview();
+
+    refreshStoryRing();
+
+    showToast(
+
+        "Story Uploaded ✅",
+
+        "success"
+
+    );
+
+}
+
+// ==========================================
+// Cancel Upload
+// ==========================================
+
+window.cancelStoryUpload=function(){
+
+    if(uploadTask){
+
+        uploadTask.cancel();
+
+        uploadTask=null;
+
+    }
+
+    clearStoryPreview();
+
+    showToast(
+
+        "Upload Cancelled",
+
+        "warning"
+
+    );
+
+};
+
+// ==========================================
+// Retry Upload
+// ==========================================
+
+window.retryStoryUpload=function(){
+
+    if(selectedStoryFile){
+
+        uploadStory();
+
+    }
+
+};
+
+// ==========================================
+// Clear Preview
+// ==========================================
+
+function clearStoryPreview(){
+
+    selectedStoryFile=null;
+
+    const input=
+    document.getElementById("storyFile");
+
+    if(input){
+
+        input.value="";
+
+    }
+
+    const preview=
+    document.getElementById("storyPreview");
+
+    if(preview){
+
+        preview.innerHTML="";
+
+    }
+
+    updateUploadProgress(0);
+
+}
+
+// ==========================================
+// Success Animation
+// ==========================================
+
+function storySuccessAnimation(){
+
+    const preview=
+    document.getElementById("storyPreview");
+
+    if(!preview) return;
+
+    preview.animate(
+
+    [
+
+        {
+
+            transform:"scale(.85)",
+
+            opacity:.3
+
+        },
+
+        {
+
+            transform:"scale(1.08)",
+
+            opacity:1
+
+        },
+
+        {
+
+            transform:"scale(1)"
+
+        }
+
+    ],
+
+    {
+
+        duration:600,
+
+        easing:"ease"
+
+    });
+
+}
+
+// ==========================================
+// Refresh Stories
+// ==========================================
+
+setInterval(()=>{
+
+    loadStories();
+
+},60000);
+
+// ==========================================
+
+console.log("✅ STORIES PART 3B LOADED");
+/* ==========================================
+   VIEWORA STORIES.JS
+   PART 4 (FINAL)
+   Likes • Replies • Views • Auto Delete
+========================================== */
+
+// ==========================================
 // Like Story
-// ----------------------
+// ==========================================
 
-window.likeStory=function(){
+window.likeStory = async function(){
 
-    const user=auth.currentUser;
+    if(!currentUser) return;
 
-    const story=stories[currentStory];
+    const story = stories[currentStoryIndex];
 
-    db.ref("storyLikes/"+story.storyId+"/"+user.uid)
+    if(!story) return;
 
-    .set(true);
+    const likeRef =
+    db.ref(
+        "storyLikes/" +
+        story.id +
+        "/" +
+        currentUser.uid
+    );
 
-    if(user.uid!==story.uid){
+    const snap =
+    await likeRef.once("value");
 
-        const id=db.ref("notifications/"+story.uid).push().key;
+    if(snap.exists()){
 
-        db.ref("notifications/"+story.uid+"/"+id).set({
+        await likeRef.remove();
 
-            fromUid:user.uid,
+        db.ref("stories/"+story.id+"/likes")
+        .transaction(v=>(v||1)-1);
 
-            fromName:user.displayName||"Someone",
+    }else{
 
-            message:"liked your story ❤️",
+        await likeRef.set(true);
 
-            time:firebase.database.ServerValue.TIMESTAMP
-
-        });
+        db.ref("stories/"+story.id+"/likes")
+        .transaction(v=>(v||0)+1);
 
     }
 
-    showToast("❤️ Liked");
+};
+
+// ==========================================
+// Reply Story
+// ==========================================
+
+window.replyStory = function(){
+
+    const story =
+    stories[currentStoryIndex];
+
+    if(!story) return;
+
+    const message =
+    prompt("Reply to story");
+
+    if(!message) return;
+
+    const id =
+    db.ref("storyReplies")
+    .push().key;
+
+    db.ref(
+        "storyReplies/" +
+        story.id +
+        "/" +
+        id
+
+    ).set({
+
+        uid:currentUser.uid,
+
+        text:message,
+
+        createdAt:Date.now()
+
+    });
+
+    db.ref(
+        "stories/" +
+        story.id +
+        "/replies"
+
+    ).transaction(v=>(v||0)+1);
+
+    showToast(
+        "Reply Sent",
+        "success"
+    );
 
 };
 
-// ----------------------
-// Auto Delete Expired
-// ----------------------
+// ==========================================
+// View Counter
+// ==========================================
 
-function cleanStories(){
+function addStoryView(storyId){
 
-    db.ref("stories").once("value")
+    if(!currentUser) return;
+
+    const ref=
+    db.ref(
+
+    "storyViews/"+
+
+    storyId+"/"+
+    currentUser.uid
+
+    );
+
+    ref.once("value")
+
+    .then(snap=>{
+
+        if(snap.exists()) return;
+
+        ref.set(true);
+
+        db.ref(
+            "stories/"+storyId+"/views"
+        ).transaction(
+
+            v=>(v||0)+1
+
+        );
+
+    });
+
+}
+
+// ==========================================
+// Override Seen
+// ==========================================
+
+const oldSeen =
+markStorySeen;
+
+markStorySeen=function(id){
+
+    oldSeen(id);
+
+    addStoryView(id);
+
+};
+
+// ==========================================
+// Auto Delete
+// ==========================================
+
+function cleanExpiredStories(){
+
+    db.ref("stories")
+
+    .once("value")
 
     .then(snapshot=>{
+
+        if(!snapshot.exists()) return;
+
+        const now=Date.now();
 
         snapshot.forEach(child=>{
 
             const story=child.val();
 
-            if(story.expiresAt<Date.now()){
+            if(
 
-                child.ref.remove();
+                story.expiresAt
+
+                <
+
+                now
+
+            ){
+
+                db.ref(
+                "stories/"+child.key
+                ).remove();
 
             }
 
@@ -647,78 +1330,178 @@ function cleanStories(){
 
 }
 
-setInterval(cleanStories,60000);
+cleanExpiredStories();
 
-// ----------------------
-// Story Count
-// ----------------------
+setInterval(
 
-function updateStoryCount(){
+cleanExpiredStories,
 
-    const badge=document.getElementById("storyCount");
+300000
 
-    if(!badge) return;
+);
 
-    badge.innerText=stories.length;
+// ==========================================
+// Long Press Pause
+// ==========================================
+
+let hold=false;
+
+if(storyViewer){
+
+storyViewer.addEventListener(
+
+"touchstart",
+
+()=>{
+
+hold=true;
+
+pauseStory();
 
 }
 
-// ----------------------
+);
+
+storyViewer.addEventListener(
+
+"touchend",
+
+()=>{
+
+if(hold){
+
+resumeStory();
+
+hold=false;
+
+}
+
+}
+
+);
+
+}
+
+// ==========================================
 // Refresh
-// ----------------------
+// ==========================================
 
-const oldLoadStories=loadStories;
+window.refreshStories=function(){
 
-loadStories=function(){
-
-    oldLoadStories();
-
-    setTimeout(updateStoryCount,500);
+loadStories();
 
 };
 
-// ----------------------
-// Preload Next Story
-// ----------------------
+// ==========================================
+// Story Count
+// ==========================================
 
-function preloadStory(){
+window.getStoryCount=function(){
 
-    if(currentStory+1>=stories.length) return;
+return stories.length;
 
-    const s=stories[currentStory+1];
+};
 
-    if(s.type==="image"){
+// ==========================================
+// Current Story
+// ==========================================
 
-        const img=new Image();
+window.getCurrentStory=function(){
 
-        img.src=s.media;
+return stories[currentStoryIndex];
 
-    }
+};
+
+// ==========================================
+// Preload Next
+// ==========================================
+
+function preloadNextStory(){
+
+const next=
+
+stories[currentStoryIndex+1];
+
+if(!next) return;
+
+if(next.type==="image"){
+
+const img=new Image();
+
+img.src=
+
+next.mediaUrl||
+
+next.url;
 
 }
 
-const oldNext=nextStory;
+}
 
-nextStory=function(){
+const oldShow=
 
-    preloadStory();
+showStory;
 
-    oldNext();
+showStory=function(){
+
+oldShow();
+
+preloadNextStory();
 
 };
 
-// ----------------------
-// Auto Refresh Stories
-// ----------------------
+// ==========================================
+// Network
+// ==========================================
 
-setInterval(()=>{
+window.addEventListener(
 
-    loadStories();
+"offline",
 
-},30000);
+()=>{
 
-// ----------------------
-// Finish
-// ----------------------
+showToast(
 
-console.log("✅ Viewora Stories V2.0 Loaded");
+"Offline Mode",
+
+"warning"
+
+);
+
+}
+
+);
+
+window.addEventListener(
+
+"online",
+
+()=>{
+
+showToast(
+
+"Back Online",
+
+"success"
+
+);
+
+refreshStories();
+
+}
+
+);
+
+// ==========================================
+// Final
+// ==========================================
+
+console.log("=================================");
+console.log("📖 Viewora Stories Loaded");
+console.log("🖼 Image Stories Ready");
+console.log("🎥 Video Stories Ready");
+console.log("❤️ Story Likes Ready");
+console.log("💬 Story Replies Ready");
+console.log("👀 Story Views Ready");
+console.log("🔥 Premium Version Active");
+console.log("=================================");

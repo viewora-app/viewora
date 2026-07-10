@@ -1,0 +1,467 @@
+/* ==========================================
+   VIEWORA STORIES.CSS
+   Stories + Story Viewer
+========================================== */
+
+/* ==========================
+   Stories Section
+========================== */
+
+.storiesSection{
+
+padding:15px 12px;
+
+overflow-x:auto;
+
+scrollbar-width:none;
+
+}
+
+.storiesSection::-webkit-scrollbar{
+
+display:none;
+
+}
+
+#storiesContainer{
+
+display:flex;
+
+gap:15px;
+
+align-items:flex-start;
+
+}
+
+/* ==========================
+   Story Item
+========================== */
+
+.storyItem{
+
+min-width:78px;
+
+display:flex;
+
+flex-direction:column;
+
+align-items:center;
+
+cursor:pointer;
+
+transition:.25s;
+
+}
+
+.storyItem:hover{
+
+transform:translateY(-4px);
+
+}
+
+.storyItem small{
+
+margin-top:8px;
+
+font-size:12px;
+
+color:#ddd;
+
+max-width:75px;
+
+overflow:hidden;
+
+white-space:nowrap;
+
+text-overflow:ellipsis;
+
+text-align:center;
+
+}
+
+/* ==========================
+   Story Ring
+========================== */
+
+.storyRing,
+.storyRingMini{
+
+width:72px;
+
+height:72px;
+
+padding:3px;
+
+border-radius:50%;
+
+display:flex;
+
+align-items:center;
+
+justify-content:center;
+
+background:linear-gradient(
+45deg,
+#ff0066,
+#ff8c00,
+#00aaff,
+#7b2cff
+);
+
+background-size:300% 300%;
+
+animation:ringAnimation 4s linear infinite;
+
+}
+
+.storyRing img,
+.storyRingMini img{
+
+width:100%;
+
+height:100%;
+
+border-radius:50%;
+
+object-fit:cover;
+
+border:3px solid #111;
+
+background:#222;
+
+}
+
+@keyframes ringAnimation{
+
+0%{
+
+background-position:0% 50%;
+
+}
+
+100%{
+
+background-position:100% 50%;
+
+}
+
+}
+
+/* Own Story */
+
+.storyRing.own{
+
+position:relative;
+
+}
+
+.storyRing .plus{
+
+position:absolute;
+
+right:0;
+
+bottom:0;
+
+width:22px;
+
+height:22px;
+
+border-radius:50%;
+
+background:#00aaff;
+
+display:flex;
+
+justify-content:center;
+
+align-items:center;
+
+font-size:16px;
+
+font-weight:bold;
+
+color:#fff;
+
+border:2px solid #111;
+
+}
+
+/* ==========================
+   Story Viewer
+========================== */
+
+#storyViewer{
+
+position:fixed;
+
+inset:0;
+
+display:none;
+
+justify-content:center;
+
+align-items:center;
+
+flex-direction:column;
+
+background:#000;
+
+z-index:99999;
+
+animation:storyFade .25s ease;
+
+}
+
+@keyframes storyFade{
+
+from{
+
+opacity:0;
+
+}
+
+to{
+
+opacity:1;
+
+}
+
+}
+
+/* ==========================
+   Progress
+========================== */
+
+#storyProgressContainer{
+
+position:absolute;
+
+top:15px;
+
+left:15px;
+
+right:15px;
+
+height:4px;
+
+border-radius:20px;
+
+background:rgba(255,255,255,.18);
+
+overflow:hidden;
+
+}
+
+#storyProgress{
+
+width:0%;
+
+height:100%;
+
+background:#fff;
+
+}
+
+/* ==========================
+   Media
+========================== */
+
+#storyImage,
+#storyVideo{
+
+width:100%;
+
+height:100%;
+
+object-fit:contain;
+
+background:#000;
+
+}
+
+/* ==========================
+   Close Button
+========================== */
+
+#closeStory{
+
+position:absolute;
+
+top:20px;
+
+right:18px;
+
+width:42px;
+
+height:42px;
+
+border:none;
+
+border-radius:50%;
+
+background:rgba(0,0,0,.45);
+
+color:#fff;
+
+font-size:20px;
+
+cursor:pointer;
+
+backdrop-filter:blur(10px);
+
+transition:.25s;
+
+}
+
+#closeStory:hover{
+
+background:#ff3b6b;
+
+}
+
+/* ==========================
+   Reply Box
+========================== */
+
+#storyBottom{
+
+position:absolute;
+
+left:15px;
+
+right:15px;
+
+bottom:20px;
+
+display:flex;
+
+gap:10px;
+
+}
+
+#storyBottom input{
+
+flex:1;
+
+height:46px;
+
+padding:0 15px;
+
+border:none;
+
+outline:none;
+
+border-radius:30px;
+
+background:rgba(255,255,255,.12);
+
+color:#fff;
+
+backdrop-filter:blur(10px);
+
+}
+
+#storyBottom button{
+
+padding:0 20px;
+
+border:none;
+
+border-radius:30px;
+
+background:#00aaff;
+
+color:#fff;
+
+font-weight:600;
+
+cursor:pointer;
+
+transition:.25s;
+
+}
+
+#storyBottom button:hover{
+
+background:#0088ff;
+
+}
+
+/* ==========================
+   Upload Progress
+========================== */
+
+.progressBar{
+
+width:100%;
+
+height:8px;
+
+background:#333;
+
+border-radius:20px;
+
+overflow:hidden;
+
+margin-top:10px;
+
+}
+
+.progressFill{
+
+width:0%;
+
+height:100%;
+
+background:linear-gradient(
+90deg,
+#00aaff,
+#00ffb7
+);
+
+transition:.25s;
+
+}
+
+/* ==========================
+   Mobile
+========================== */
+
+@media(max-width:768px){
+
+.storyRing,
+.storyRingMini{
+
+width:65px;
+
+height:65px;
+
+}
+
+.storyItem{
+
+min-width:72px;
+
+}
+
+}
+
+@media(max-width:480px){
+
+.storyRing,
+.storyRingMini{
+
+width:60px;
+
+height:60px;
+
+}
+
+.storyItem small{
+
+font-size:11px;
+
+}
+
+}
