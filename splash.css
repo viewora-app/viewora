@@ -1,0 +1,729 @@
+/*=========================================
+      SPLASH.CSS PART 2
+      Logo • Text • Loader
+=========================================*/
+
+/*==========================
+      Splash Container
+==========================*/
+
+.splash{
+
+position:absolute;
+
+top:50%;
+left:50%;
+
+transform:translate(-50%,-50%);
+
+width:100%;
+max-width:420px;
+
+padding:40px 30px;
+
+display:flex;
+
+flex-direction:column;
+
+align-items:center;
+
+justify-content:center;
+
+text-align:center;
+
+z-index:10;
+
+}
+
+/*==========================
+      Logo Box
+==========================*/
+
+.logoBox{
+
+position:relative;
+
+width:170px;
+height:170px;
+
+display:flex;
+
+justify-content:center;
+align-items:center;
+
+margin-bottom:30px;
+
+animation:logoFloat 3s ease-in-out infinite;
+
+}
+
+.logo{
+
+width:120px;
+height:120px;
+
+object-fit:contain;
+
+position:relative;
+
+z-index:2;
+
+filter:drop-shadow(0 0 25px rgba(99,102,241,.6));
+
+animation:logoPop 1.2s ease;
+
+}
+
+.logoGlow{
+
+position:absolute;
+
+width:160px;
+height:160px;
+
+border-radius:50%;
+
+background:radial-gradient(
+circle,
+rgba(99,102,241,.45),
+transparent 70%
+);
+
+animation:glowPulse 2s infinite;
+
+}
+
+@keyframes logoFloat{
+
+0%,100%{
+
+transform:translateY(0);
+
+}
+
+50%{
+
+transform:translateY(-12px);
+
+}
+
+}
+
+@keyframes glowPulse{
+
+0%,100%{
+
+transform:scale(1);
+
+opacity:.7;
+
+}
+
+50%{
+
+transform:scale(1.2);
+
+opacity:1;
+
+}
+
+}
+
+@keyframes logoPop{
+
+0%{
+
+transform:scale(.3) rotate(-30deg);
+
+opacity:0;
+
+}
+
+70%{
+
+transform:scale(1.08);
+
+}
+
+100%{
+
+transform:scale(1);
+
+opacity:1;
+
+}
+
+}
+
+/*==========================
+      Brand Name
+==========================*/
+
+.brand{
+
+font-size:48px;
+
+font-weight:800;
+
+background:linear-gradient(
+90deg,
+#ffffff,
+#a5b4fc,
+#38bdf8
+);
+
+-webkit-background-clip:text;
+-webkit-text-fill-color:transparent;
+
+letter-spacing:2px;
+
+margin-bottom:10px;
+
+animation:fadeUp 1s ease;
+
+}
+
+.tagline{
+
+ -size:16px;
+
+color:#cbd5e1;
+
+letter-spacing:1px;
+
+margin-bottom:40px;
+
+animation:fadeUp 1.2s ease;
+
+}
+
+/*==========================
+      Loader
+==========================*/
+
+.loader{
+
+width:260px;
+height:8px;
+
+background:rgba(255,255,255,.08);
+
+border-radius:50px;
+
+overflow:hidden;
+
+margin-bottom:18px;
+
+border:1px solid rgba(255,255,255,.08);
+
+}
+
+.loaderFill{
+
+width:0%;
+
+height:100%;
+
+border-radius:50px;
+
+background:linear-gradient(
+90deg,
+#6366f1,
+#8b5cf6,
+#06b6d4
+);
+
+animation:loadingBar 3s linear forwards;
+
+}
+
+@keyframes loadingBar{
+
+0%{
+
+width:0;
+
+}
+
+100%{
+
+width:100%;
+
+}
+
+}
+
+#loadingText{
+
+font-size:14px;
+
+color:#94a3b8;
+
+letter-spacing:.5px;
+
+animation:blink 1.2s infinite;
+
+}
+
+@keyframes blink{
+
+0%,100%{
+
+opacity:1;
+
+}
+
+50%{
+
+opacity:.45;
+
+}
+
+}
+
+/*==========================
+      Version
+==========================*/
+
+.version{
+
+margin-top:35px;
+
+padding:8px 18px;
+
+border-radius:30px;
+
+background:rgba(255,255,255,.06);
+
+border:1px solid rgba(255,255,255,.08);
+
+font-size:13px;
+
+color:#cbd5e1;
+
+backdrop-filter:blur(15px);
+
+}
+
+/*==========================
+      Fade Animation
+==========================*/
+
+@keyframes fadeUp{
+
+from{
+
+opacity:0;
+
+transform:translateY(30px);
+
+}
+
+to{
+
+opacity:1;
+
+transform:translateY(0);
+
+}
+
+}
+/*=========================================
+      SPLASH.CSS PART 3
+ Responsive • Utilities • Premium Effects
+=========================================*/
+
+/*==========================
+ Floating Particles
+==========================*/
+
+.particles span{
+
+position:absolute;
+
+width:8px;
+height:8px;
+
+border-radius:50%;
+
+background:rgba(255,255,255,.25);
+
+animation:particleFloat linear infinite;
+
+}
+
+.particles span:nth-child(1){left:8%;animation:12s particleFloat infinite;}
+.particles span:nth-child(2){left:22%;animation:16s particleFloat infinite;}
+.particles span:nth-child(3){left:36%;animation:13s particleFloat infinite;}
+.particles span:nth-child(4){left:50%;animation:18s particleFloat infinite;}
+.particles span:nth-child(5){left:65%;animation:14s particleFloat infinite;}
+.particles span:nth-child(6){left:80%;animation:17s particleFloat infinite;}
+.particles span:nth-child(7){left:90%;animation:15s particleFloat infinite;}
+.particles span:nth-child(8){left:45%;animation:20s particleFloat infinite;}
+
+@keyframes particleFloat{
+
+0%{
+
+transform:
+translateY(100vh)
+scale(.3);
+
+opacity:0;
+
+}
+
+20%{
+
+opacity:1;
+
+}
+
+100%{
+
+transform:
+translateY(-120px)
+scale(1.5);
+
+opacity:0;
+
+}
+
+}
+
+/*==========================
+ Glass Shine
+==========================*/
+
+.logoBox::after{
+
+content:"";
+
+position:absolute;
+
+top:-30%;
+
+left:-120%;
+
+width:60%;
+
+height:180%;
+
+background:linear-gradient(
+90deg,
+transparent,
+rgba(255,255,255,.4),
+transparent
+);
+
+transform:rotate(25deg);
+
+animation:shine 4s infinite;
+
+}
+
+@keyframes shine{
+
+100%{
+
+left:180%;
+
+}
+
+}
+
+/*==========================
+ Fade Out Animation
+==========================*/
+
+.fadeOut{
+
+animation:splashFade .8s forwards;
+
+}
+
+@keyframes splashFade{
+
+to{
+
+opacity:0;
+
+visibility:hidden;
+
+transform:scale(1.05);
+
+}
+
+}
+
+/*==========================
+ Utility Classes
+==========================*/
+
+.hidden{
+
+display:none !important;
+
+}
+
+.center{
+
+display:flex;
+
+justify-content:center;
+
+align-items:center;
+
+}
+
+/*==========================
+ Responsive
+==========================*/
+
+@media(max-width:768px){
+
+.logo{
+
+width:105px;
+height:105px;
+
+}
+
+.logoBox{
+
+width:150px;
+height:150px;
+
+}
+
+.brand{
+
+font-size:40px;
+
+}
+
+.loader{
+
+width:220px;
+
+}
+
+}
+
+@media(max-width:480px){
+
+.splash{
+
+padding:20px;
+
+}
+
+.logo{
+
+width:90px;
+height:90px;
+
+}
+
+.logoBox{
+
+width:130px;
+height:130px;
+
+}
+
+.brand{
+
+font-size:34px;
+
+}
+
+.tagline{
+
+font-size:14px;
+
+}
+
+.loader{
+
+width:180px;
+
+}
+
+.version{
+
+font-size:12px;
+
+padding:6px 14px;
+
+}
+
+}
+
+/*==========================
+ End
+==========================*/
+
+body{
+
+overflow:hidden;
+
+}
+/*=========================================
+        SPLASH.JS
+        Viewora Premium Splash
+=========================================*/
+
+//==============================
+// Loading Text Animation
+//==============================
+
+const loadingText =
+document.getElementById("loadingText");
+
+const texts = [
+
+"Initializing...",
+
+"Loading Assets...",
+
+"Connecting Firebase...",
+
+"Preparing Viewora...",
+
+"Almost Ready..."
+
+];
+
+let index = 0;
+
+setInterval(()=>{
+
+index++;
+
+if(index>=texts.length){
+
+index=0;
+
+}
+
+loadingText.textContent=texts[index];
+
+},700);
+
+//==============================
+// Logo Click Animation
+//==============================
+
+const logo=
+
+document.querySelector(".logo");
+
+logo.addEventListener("click",()=>{
+
+logo.style.transform="scale(1.15) rotate(12deg)";
+
+setTimeout(()=>{
+
+logo.style.transform="";
+
+},350);
+
+});
+
+//==============================
+// Splash Fade
+//==============================
+
+function hideSplash(){
+
+document
+.querySelector(".splash")
+.classList.add("fadeOut");
+
+setTimeout(()=>{
+
+// Redirect
+
+location.href="index.html";
+
+},900);
+
+}
+
+//==============================
+// Firebase Auth Check
+//==============================
+
+if(window.firebase){
+
+firebase.auth().onAuthStateChanged(user=>{
+
+setTimeout(()=>{
+
+if(user){
+
+location.href="index.html";
+
+}else{
+
+location.href="login.html";
+
+}
+
+},3000);
+
+});
+
+}else{
+
+setTimeout(hideSplash,3000);
+
+}
+
+//==============================
+// Keyboard Skip
+//==============================
+
+document.addEventListener("keydown",e=>{
+
+if(e.key==="Enter"){
+
+hideSplash();
+
+}
+
+});
+
+//==============================
+// Double Tap Skip
+//==============================
+
+let tap=0;
+
+document.body.addEventListener("click",()=>{
+
+tap++;
+
+if(tap>=2){
+
+hideSplash();
+
+}
+
+setTimeout(()=>{
+
+tap=0;
+
+},500);
+
+});
+
+//==============================
+// Console
+//==============================
+
+console.log(
+"%cViewora V1.0 Started 🚀",
+"color:#6366f1;font-size:18px;font-weight:bold;"
+);

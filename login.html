@@ -1,163 +1,394 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Viewora • Login</title>
-    <link rel="stylesheet" href="style.css">
-    <style>
-        body {
-            background: linear-gradient(135deg, #0f0f23, #1a1a2e);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            margin: 0;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        }
 
-        .login-box {
-            background: #1b1b1b;
-            padding: 40px 35px;
-            border-radius: 20px;
-            width: 100%;
-            max-width: 380px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
-            text-align: center;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-        .logo {
-            font-size: 32px;
-            font-weight: 800;
-            background: linear-gradient(90deg, #00aaff, #ffffff);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            margin-bottom: 10px;
-        }
+<title>Viewora • Login</title>
 
-        .tagline {
-            color: #888;
-            margin-bottom: 30px;
-            font-size: 15px;
-        }
+<meta name="theme-color" content="#00AAFF">
+<meta name="description" content="Login to your Viewora account">
 
-        .form-group {
-            margin-bottom: 18px;
-            text-align: left;
-        }
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 
-        .form-group label {
-            display: block;
-            margin-bottom: 6px;
-            color: #ccc;
-            font-size: 14px;
-        }
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
-        input {
-            width: 100%;
-            padding: 14px 18px;
-            border: 1px solid #333;
-            border-radius: 12px;
-            background: #222;
-            color: white;
-            font-size: 16px;
-            box-sizing: border-box;
-            
-        }
+<link rel="stylesheet"
+href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
 
-        input:focus {
-            outline: none;
-            border-color: #00aaff;
-            box-shadow: 0 0 0 3px rgba(0, 170, 255, 0.2);
-        }
+<link rel="stylesheet" href="login.css">
 
-        .btn-login {
-            width: 100%;
-            padding: 15px;
-            background: linear-gradient(135deg, #00aaff, #0088cc);
-            color: white;
-            border: none;
-            border-radius: 12px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            margin-top: 10px;
-            transition: all 0.3s ease;
-        }
-
-        .btn-login:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(0, 170, 255, 0.4);
-        }
-
-        .signup-link {
-            margin-top: 25px;
-            color: #888;
-            font-size: 14px;
-        }
-
-        .signup-link a {
-            color: #00aaff;
-            text-decoration: none;
-            font-weight: 500;
-        }
-
-        .signup-link a:hover {
-            text-decoration: underline;
-        }
-
-        .forgot-password {
-            text-align: right;
-            margin-top: 8px;
-        }
-
-        .forgot-password a {
-            color: #888;
-            font-size: 13px;
-            text-decoration: none;
-        }
-
-        .forgot-password a:hover {
-            color: #00aaff;
-        }
-    </style>
 </head>
+
 <body>
 
-    <div class="login-box">
-        <div class="logo">Viewora</div>
-        <p class="tagline">Welcome back, Creator!</p>
+<!-- =========================
+Animated Aurora Background
+========================= -->
 
-        <div class="form-group">
-            <label for="email">Email Address</label>
-            <input type="email" id="email" placeholder="you@example.com" required>
-        </div>
+<div class="aurora">
 
-        <div class="form-group">
-            <label for="password">Password</label>
-            <input type="password" id="password" placeholder="Enter your password" required>
-            <p style="text-align:right;margin-top:8px;">
-    <a href="#" onclick="forgotPassword()">
-        Forgot Password?
-    </a>
+<div class="light light1"></div>
+<div class="light light2"></div>
+<div class="light light3"></div>
+
+</div>
+
+<!-- Floating Particles -->
+
+<div id="particles"></div>
+
+<!-- =========================
+Premium Loader
+========================= -->
+
+<div id="pageLoader">
+
+<div class="loaderLogo">
+
+<img src="assets/logo.png"
+alt="Viewora">
+
+</div>
+
+<h1>Viewora</h1>
+
+<p>Welcome Back</p>
+
+<div class="loaderBar">
+<div class="loaderFill"></div>
+</div>
+
+</div>
+
+<!-- =========================
+Main App
+========================= -->
+
+<div id="app" class="hidden">
+
+<div class="loginCard glass">
+
+<!-- Logo -->
+
+<div class="logoBox">
+
+<img
+src="assets/logo.png"
+class="logo"
+alt="Viewora">
+
+<h1>Welcome Back</h1>
+
+<p>Login to continue your journey</p>
+
+</div>
+
+<!-- Login Form -->
+
+<form id="loginForm"
+autocomplete="on">
+
+<!-- Email -->
+
+<div class="inputGroup">
+
+<label>Email or Username</label>
+
+<div class="inputBox">
+
+<i class="fa-solid fa-user"></i>
+
+<input
+type="text"
+id="email"
+placeholder="Enter email or username"
+autocomplete="username"
+required>
+
+</div>
+
+</div>
+
+<!-- Password -->
+
+<div class="inputGroup">
+
+<label>Password</label>
+
+<div class="inputBox">
+
+<i class="fa-solid fa-lock"></i>
+
+<input
+type="password"
+id="password"
+placeholder="Enter your password"
+autocomplete="current-password"
+required>
+
+<button
+type="button"
+id="togglePassword"
+class="togglePassword">
+
+<i class="fa-solid fa-eye"></i>
+
+</button>
+
+</div>
+
+</div>
+
+<!-- Remember + Forgot -->
+
+<div class="optionsRow">
+
+<label class="rememberBox">
+
+<input
+type="checkbox"
+id="rememberMe">
+
+<span>Remember Me</span>
+
+</label>
+
+<button
+type="button"
+id="forgotPassword"
+class="forgotBtn">
+
+Forgot Password?
+
+</button>
+
+</div>
+
+<!-- Login Button -->
+
+<button
+type="submit"
+id="loginBtn"
+class="loginBtn">
+
+<i class="fa-solid fa-right-to-bracket"></i>
+
+<span>Login</span>
+
+</button>
+
+<!-- Divider -->
+
+<div class="divider">
+
+<span>OR</span>
+
+</div>
+
+<!-- Google Login -->
+
+<button
+type="button"
+id="googleLogin"
+class="googleBtn">
+
+<img
+src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
+width="22"
+height="22"
+alt="Google">
+
+<span>Continue with Google</span>
+
+</button>
+
+<!-- Signup -->
+
+<div class="signupBox">
+
+<p>
+
+Don't have an account?
+
+<a href="signup.html">
+
+Create Account
+
+</a>
+
 </p>
-        </div>
 
-        <button class="btn-login" onclick="login()">Login</button>
+</div>
+<!-- Footer -->
 
-        <p class="signup-link">
-            Don't have an account? 
-            <a href="signup.html">Sign up here</a>
-        </p>
-    </div>
+<div class="footer">
 
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
+<p>
+
+© 2026 Viewora • Connect • Create • Inspire
+
+</p>
+
+</div>
+
+</form>
+
+</div>
+
+</div>
+
+<!-- =========================
+Loading Overlay
+========================= -->
+
+<div id="loadingOverlay" class="hidden">
+
+<div class="premiumLoader">
+
+<div class="loaderRing"></div>
+
+<div class="loaderRing delay1"></div>
+
+<div class="loaderRing delay2"></div>
+
+</div>
+
+<p>Signing you in...</p>
+
+</div>
+
+<!-- =========================
+Premium Toast
+========================= -->
+
+<div id="toast" class="hidden">
+
+<i id="toastIcon"
+class="fa-solid fa-circle-check"></i>
+
+<span id="toastText">
+
+Login Successful
+
+</span>
+
+</div>
+
+<!-- =========================
+Forgot Password Modal
+========================= -->
+
+<div
+id="forgotModal"
+class="modal hidden">
+
+<div class="modalCard glass">
+
+<div class="popupIcon">
+
+<i class="fa-solid fa-envelope-circle-check"></i>
+
+</div>
+
+<h2>Reset Password</h2>
+
+<p>
+
+Enter your registered email address.<br>
+We'll send you a password reset link.
+
+</p>
+
+<div class="inputGroup">
+
+<div class="inputBox">
+
+<i class="fa-solid fa-envelope"></i>
+
+<input
+type="email"
+id="resetEmail"
+placeholder="Enter your email">
+
+</div>
+
+</div>
+
+<div class="modalButtons">
+
+<button
+type="button"
+id="sendResetBtn"
+class="primaryBtn">
+
+Send Link
+
+</button>
+
+<button
+type="button"
+id="closeForgot"
+class="secondaryBtn">
+
+Cancel
+
+</button>
+
+</div>
+
+</div>
+
+</div>
+
+<!-- =========================
+Firebase SDK
+========================= -->
+
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
+
+<!-- Firebase Config -->
 
 <script src="firebase.js"></script>
-<script src="app.js"></script>
+
+<!-- Login Script -->
+
+<script src="login.js"></script>
+
+<!-- Page Animation -->
+
+<script>
+
+window.addEventListener("load",()=>{
+
+setTimeout(()=>{
+
+const loader=document.getElementById("pageLoader");
+const app=document.getElementById("app");
+
+loader.style.opacity="0";
+
+setTimeout(()=>{
+
+loader.style.display="none";
+
+app.classList.remove("hidden");
+
+app.classList.add("fadeIn");
+
+},500);
+
+},1400);
+
+});
+
+</script>
 
 </body>
+
 </html>

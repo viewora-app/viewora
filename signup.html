@@ -1,147 +1,518 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Viewora • Sign Up</title>
-    <link rel="stylesheet" href="style.css">
-    <style>
-        body {
-            background: linear-gradient(135deg, #0f0f23, #1a1a2e);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            margin: 0;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        }
 
-        .signup-box {
-            background: #1b1b1b;
-            padding: 40px 35px;
-            border-radius: 20px;
-            width: 100%;
-            max-width: 380px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
-            text-align: center;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-        .logo {
-            font-size: 32px;
-            font-weight: 800;
-            background: linear-gradient(90deg, #00aaff, #ffffff);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            margin-bottom: 10px;
-        }
+<title>Viewora • Create Account</title>
 
-        .tagline {
-            color: #888;
-            margin-bottom: 30px;
-            font-size: 15px;
-        }
+<meta name="theme-color" content="#00AAFF">
+<meta name="description" content="Create your Viewora account">
 
-        .form-group {
-            margin-bottom: 18px;
-            text-align: left;
-        }
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 
-        .form-group label {
-            display: block;
-            margin-bottom: 6px;
-            color: #ccc;
-            font-size: 14px;
-        }
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
-        input {
-            width: 100%;
-            padding: 14px 18px;
-            border: 1px solid #333;
-            border-radius: 12px;
-            background: #222;
-            color: white;
-            font-size: 16px;
-            box-sizing: border-box;
-        }
+<link rel="stylesheet"
+href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
 
-        input:focus {
-            outline: none;
-            border-color: #00aaff;
-            box-shadow: 0 0 0 3px rgba(0, 170, 255, 0.2);
-        }
+<link rel="stylesheet" href="signup.css">
 
-        .btn-signup {
-            width: 100%;
-            padding: 15px;
-            background: linear-gradient(135deg, #00aaff, #0088cc);
-            color: white;
-            border: none;
-            border-radius: 12px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            margin-top: 10px;
-            transition: all 0.3s ease;
-        }
-
-        .btn-signup:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(0, 170, 255, 0.4);
-        }
-
-        .login-link {
-            margin-top: 25px;
-            color: #888;
-            font-size: 14px;
-        }
-
-        .login-link a {
-            color: #00aaff;
-            text-decoration: none;
-            font-weight: 500;
-        }
-
-        .login-link a:hover {
-            text-decoration: underline;
-        }
-    </style>
 </head>
+
 <body>
 
-    <div class="signup-box">
-        <div class="logo">Viewora</div>
-        <p class="tagline">Join the creator community</p>
+<!-- =========================
+Animated Aurora Background
+========================= -->
 
-        <div class="form-group">
-            <label for="name">Full Name</label>
-            <input type="text" id="name" placeholder="Enter your full name" required>
-        </div>
+<div class="aurora">
 
-        <div class="form-group">
-            <label for="email">Email Address</label>
-            <input type="email" id="email" placeholder="you@example.com" required>
-        </div>
+<div class="light light1"></div>
+<div class="light light2"></div>
+<div class="light light3"></div>
 
-        <div class="form-group">
-            <label for="password">Password</label>
-            <input type="password" id="password" placeholder="Create a strong password" required minlength="6">
-        </div>
+</div>
 
-        <button class="btn-signup" onclick="signup()">Create Account</button>
+<!-- Floating Particles -->
 
-        <p class="login-link">
-            Already have an account? 
-            <a href="login.html">Login here</a>
-        </p>
-    </div>
+<div id="particles"></div>
 
-    <!-- Scripts -->
-    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
-    
-    <script src="firebase.js"></script>
-    <script src="app.js"></script>
+<!-- =========================
+Premium Loader
+========================= -->
+
+<div id="pageLoader">
+
+<div class="loaderLogo">
+
+<img src="assets/logo.png" alt="Viewora">
+
+</div>
+
+<h1>Viewora</h1>
+
+<p>Create Your Account</p>
+
+<div class="loaderBar">
+
+<div class="loaderFill"></div>
+
+</div>
+
+</div>
+
+<!-- =========================
+Main App
+========================= -->
+
+<div id="app" class="hidden">
+
+<div class="signupCard glass">
+
+<!-- Logo -->
+
+<div class="logoBox">
+
+<img src="assets/logo.png"
+class="logo"
+alt="Viewora">
+
+<h1>Create Account</h1>
+
+<p>Join millions of creators on Viewora</p>
+
+</div>
+
+<!-- Signup Form -->
+
+<form id="signupForm" autocomplete="off">
+
+<!-- Full Name -->
+
+<div class="inputGroup">
+
+<label>Full Name</label>
+
+<div class="inputBox">
+
+<i class="fa-solid fa-user"></i>
+
+<input
+type="text"
+id="name"
+placeholder="Enter your full name"
+maxlength="40"
+required>
+
+</div>
+
+</div>
+
+<!-- Username -->
+
+<div class="inputGroup">
+
+<label>Username</label>
+
+<div class="inputBox">
+
+<i class="fa-solid fa-at"></i>
+
+<input
+type="text"
+id="username"
+placeholder="Choose a username"
+maxlength="20"
+autocomplete="username"
+required>
+
+</div>
+
+<small id="usernameStatus" class="statusText">
+
+Username must be unique
+
+</small>
+
+</div>
+
+<!-- Email -->
+
+<div class="inputGroup">
+
+<label>Email Address</label>
+
+<div class="inputBox">
+
+<i class="fa-solid fa-envelope"></i>
+
+<input
+type="email"
+id="email"
+placeholder="Enter your email"
+autocomplete="email"
+required>
+
+</div>
+
+</div>
+<!-- Password -->
+
+<div class="inputGroup">
+
+<label>Password</label>
+
+<div class="inputBox">
+
+<i class="fa-solid fa-lock"></i>
+
+<input
+type="password"
+id="password"
+placeholder="Create a strong password"
+autocomplete="new-password"
+required>
+
+<button
+type="button"
+id="togglePassword"
+class="togglePassword">
+
+<i class="fa-solid fa-eye"></i>
+
+</button>
+
+</div>
+
+<!-- Password Strength -->
+
+<div class="strengthContainer">
+
+<div class="strengthBar">
+
+<div id="strengthFill"></div>
+
+</div>
+
+<p id="strengthText">
+
+Password Strength: Weak
+
+</p>
+
+</div>
+
+</div>
+
+<!-- Confirm Password -->
+
+<div class="inputGroup">
+
+<label>Confirm Password</label>
+
+<div class="inputBox">
+
+<i class="fa-solid fa-lock"></i>
+
+<input
+type="password"
+id="confirmPassword"
+placeholder="Confirm your password"
+autocomplete="new-password"
+required>
+
+<button
+type="button"
+id="toggleConfirmPassword"
+class="togglePassword">
+
+<i class="fa-solid fa-eye"></i>
+
+</button>
+
+</div>
+
+</div>
+
+<!-- Terms & Conditions -->
+
+<div class="termsBox">
+
+<label>
+
+<input
+type="checkbox"
+id="acceptTerms"
+required>
+
+<span>
+
+I agree to the
+<a href="terms.html">Terms &amp; Conditions</a>
+and
+<a href="privacy.html">Privacy Policy</a>
+
+</span>
+
+</label>
+
+</div>
+
+<!-- Create Account Button -->
+
+<button
+type="submit"
+id="signupBtn"
+class="signupBtn">
+
+<i class="fa-solid fa-user-plus"></i>
+
+<span>Create Account</span>
+
+</button>
+
+<!-- Divider -->
+
+<div class="divider">
+
+<span>OR</span>
+
+</div>
+
+<!-- Google Signup -->
+
+<button
+type="button"
+id="googleSignup"
+class="googleBtn">
+
+<img
+src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
+width="22"
+height="22"
+alt="Google">
+
+<span>Continue with Google</span>
+
+</button>
+
+<!-- Login Link -->
+
+<div class="loginBox">
+
+<p>
+
+Already have an account?
+
+<a href="login.html">
+
+Login
+
+</a>
+
+</p>
+
+</div>
+
+<!-- Footer -->
+
+<div class="footer">
+
+<p>
+
+© 2026 Viewora • Connect • Create • Inspire
+
+</p>
+
+</div>
+
+</form>
+
+</div>
+
+</div>
+<!-- =========================
+Loading Overlay
+========================= -->
+
+<div id="loadingOverlay" class="hidden">
+
+<div class="premiumLoader">
+
+<div class="loaderRing"></div>
+
+<div class="loaderRing delay1"></div>
+
+<div class="loaderRing delay2"></div>
+
+</div>
+
+<p>Creating your account...</p>
+
+</div>
+
+<!-- =========================
+Premium Toast
+========================= -->
+
+<div id="toast" class="hidden">
+
+<i id="toastIcon"
+class="fa-solid fa-circle-check"></i>
+
+<span id="toastText">
+
+Success
+
+</span>
+
+</div>
+
+<!-- =========================
+Verify Email Modal
+========================= -->
+
+<div
+id="verifyModal"
+class="modal hidden">
+
+<div class="modalCard glass">
+
+<div class="popupIcon">
+
+<i class="fa-solid fa-envelope-circle-check"></i>
+
+</div>
+
+<h2>Verify Your Email</h2>
+
+<p>
+
+Your account has been created successfully.<br>
+We've sent a verification email to your inbox.<br><br>
+
+Please verify your email before logging in.
+
+</p>
+
+<div class="modalButtons">
+
+<button
+type="button"
+id="openMailBtn"
+class="primaryBtn">
+
+<i class="fa-solid fa-envelope-open"></i>
+
+&nbsp;Open Email
+
+</button>
+
+<button
+type="button"
+id="continueBtn"
+class="secondaryBtn">
+
+Continue to Login
+
+</button>
+
+</div>
+
+</div>
+
+</div>
+
+<!-- =========================
+Firebase SDK
+========================= -->
+
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
+
+<!-- Firebase Config -->
+
+<script src="firebase.js"></script>
+
+<!-- Signup Script -->
+
+<script src="signup.js"></script>
+
+<!-- =========================
+Premium Page Loader
+========================= -->
+
+<script>
+
+window.addEventListener("load",()=>{
+
+setTimeout(()=>{
+
+const loader=
+document.getElementById("pageLoader");
+
+const app=
+document.getElementById("app");
+
+loader.style.opacity="0";
+
+loader.style.transform="scale(1.05)";
+
+setTimeout(()=>{
+
+loader.style.display="none";
+
+app.classList.remove("hidden");
+
+app.classList.add("fadeIn");
+
+},500);
+
+},1400);
+
+});
+
+// Open Mail Button
+
+const openMailBtn =
+document.getElementById("openMailBtn");
+
+if(openMailBtn){
+
+openMailBtn.onclick=()=>{
+
+window.open(
+"https://mail.google.com",
+"_blank"
+);
+
+};
+
+}
+
+// Continue Button
+
+const continueBtn =
+document.getElementById("continueBtn");
+
+if(continueBtn){
+
+continueBtn.onclick=()=>{
+
+location.replace("login.html");
+
+};
+
+}
+
+</script>
 
 </body>
+
 </html>
