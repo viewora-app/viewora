@@ -1,150 +1,107 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Viewora • Welcome</title>
-    <link rel="stylesheet" href="style.css">
-    <style>
-        body.splash-body {
-            margin: 0;
-            padding: 0;
-            background: linear-gradient(135deg, #0f0f23, #1a1a2e);
-            height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
-            position: relative;
-        }
 
-        .splash-container {
-            text-align: center;
-            z-index: 2;
-            animation: fadeInScale 1.2s ease forwards;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-        .logo-img {
-            width: 120px;
-            height: 120px;
-            border-radius: 24px;
-            box-shadow: 0 10px 40px rgba(0, 170, 255, 0.3);
-            margin-bottom: 20px;
-            animation: logoPop 1.5s ease;
-        }
+<title>Viewora Splash</title>
 
-        .logos {
-            font-size: 42px;
-            font-weight: 800;
-            background: linear-gradient(90deg, #00aaff, #ffffff);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            margin: 0 0 12px 0;
-            letter-spacing: -1px;
-        }
+<link rel="stylesheet" href="splash.css">
 
-        .tagline {
-            font-size: 18px;
-            color: #aaa;
-            margin: 0;
-            line-height: 1.5;
-            opacity: 0.9;
-        }
+<link rel="preconnect" href="https://fonts.googleapis.com">
 
-        .loading-dots {
-            margin-top: 40px;
-            display: flex;
-            justify-content: center;
-            gap: 8px;
-        }
+<link rel="preconnect"
+href="https://fonts.gstatic.com"
+crossorigin>
 
-        .loading-dots span {
-            width: 10px;
-            height: 10px;
-            background: #00aaff;
-            border-radius: 50%;
-            animation: bounce 1.4s infinite ease-in-out both;
-        }
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+rel="stylesheet">
 
-        .loading-dots span:nth-child(1) { animation-delay: -0.32s; }
-        .loading-dots span:nth-child(2) { animation-delay: -0.16s; }
+<link rel="stylesheet"
+href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
 
-        @keyframes fadeInScale {
-            from { opacity: 0; transform: scale(0.9); }
-            to { opacity: 1; transform: scale(1); }
-        }
-
-        @keyframes logoPop {
-            0% { transform: scale(0.6) rotate(-8deg); opacity: 0; }
-            60% { transform: scale(1.1) rotate(4deg); }
-            100% { transform: scale(1) rotate(0deg); opacity: 1; }
-        }
-
-        @keyframes bounce {
-            0%, 80%, 100% { transform: scale(0); }
-            40% { transform: scale(1.0); }
-        }
-
-        .splash-body::before {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 400px;
-            height: 400px;
-            background: radial-gradient(circle, rgba(0,170,255,0.15) 0%, transparent 70%);
-            z-index: 1;
-            animation: pulse 4s ease-in-out infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% { transform: translate(-50%, -50%) scale(1); }
-            50% { transform: translate(-50%, -50%) scale(1.3); }
-        }
-    </style>
 </head>
-<body class="splash-body">
 
-    <div class="splash-container">
-        <img src="file.jpg" alt="Viewora Logo" class="logo-img">
-        <h1 class="logos">Viewora</h1>
-        <p class="tagline">
-            Connecting Creators<br>
-            with the World
-        </p>
+<body>
 
-        <div class="loading-dots">
-            <span></span>
-            <span></span>
-            <span></span>
-        </div>
-    </div>
+<!-- Animated Background -->
 
-    <!-- Firebase SDKs -->
-    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
-    <script src="firebase.js"></script>
+<div class="gradient"></div>
 
-    <script>
-        // Check login status and decide where to go
-        setTimeout(() => {
-            const auth = firebase.auth();
+<div class="blob blob1"></div>
+<div class="blob blob2"></div>
+<div class="blob blob3"></div>
 
-            auth.onAuthStateChanged((user) => {
-                if (user) {
-                    // User already logged in → Show splash for 2.5 sec then go Home
-                    setTimeout(() => {
-                        window.location.replace("index.html");
-                    }, 2500);
-                } else {
-                    // Not logged in → Go to Login page
-                    window.location.replace("login.html");
-                }
-            });
-        }, 600);
-    </script>
+<div class="particles">
+
+<span></span>
+<span></span>
+<span></span>
+<span></span>
+<span></span>
+<span></span>
+<span></span>
+<span></span>
+
+</div>
+
+<!-- Splash Container -->
+
+<div class="splash">
+
+<!-- Logo -->
+
+<div class="logoBox">
+
+<div class="logoGlow"></div>
+
+<img
+src="assets/logo.png"
+class="logo"
+alt="Viewora">
+
+</div>
+
+<!-- Brand -->
+
+<h1 class="brand">
+
+Viewora
+
+</h1>
+
+<p class="tagline">
+
+Connect • Create • Earn
+
+</p>
+
+<!-- Loader -->
+
+<div class="loader">
+
+<div class="loaderFill"></div>
+
+</div>
+
+<p id="loadingText">
+
+Initializing...
+
+</p>
+
+<!-- Version -->
+
+<div class="version">
+
+Version 1.0
+
+</div>
+
+</div>
+
+<script src="splash.js"></script>
 
 </body>
 </html>
-
