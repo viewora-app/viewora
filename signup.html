@@ -2,55 +2,59 @@
 <html lang="en">
 
 <head>
-
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport"
+content="width=device-width,initial-scale=1.0">
 
 <title>Viewora • Create Account</title>
 
 <meta name="theme-color" content="#00AAFF">
-<meta name="description" content="Create your Viewora account">
+<meta name="description"
+content="Create your Viewora account">
 
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="icon" href="assets/logo.png">
 
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="preconnect"
+href="https://fonts.googleapis.com">
+
+<link rel="preconnect"
+href="https://fonts.gstatic.com"
+crossorigin>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+rel="stylesheet">
 
 <link rel="stylesheet"
 href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
 
-<link rel="stylesheet" href="signup.css">
+<link rel="stylesheet"
+href="signup.css">
 
 </head>
 
 <body>
 
-<!-- =========================
-Animated Aurora Background
-========================= -->
+<!-- Aurora Background -->
 
 <div class="aurora">
 
 <div class="light light1"></div>
+
 <div class="light light2"></div>
+
 <div class="light light3"></div>
 
 </div>
 
-<!-- Floating Particles -->
-
 <div id="particles"></div>
 
-<!-- =========================
-Premium Loader
-========================= -->
+<!-- Premium Loader -->
 
 <div id="pageLoader">
 
 <div class="loaderLogo">
-
-<img src="assets/logo.png" alt="Viewora">
-
+<img src="assets/logo.png"
+alt="Viewora">
 </div>
 
 <h1>Viewora</h1>
@@ -58,16 +62,12 @@ Premium Loader
 <p>Create Your Account</p>
 
 <div class="loaderBar">
-
 <div class="loaderFill"></div>
-
 </div>
 
 </div>
 
-<!-- =========================
-Main App
-========================= -->
+<!-- Main App -->
 
 <div id="app" class="hidden">
 
@@ -77,25 +77,30 @@ Main App
 
 <div class="logoBox">
 
-<img src="assets/logo.png"
+<img
+src="assets/logo.png"
 class="logo"
 alt="Viewora">
 
 <h1>Create Account</h1>
 
-<p>Join millions of creators on Viewora</p>
+<p>
+Join millions of creators on Viewora
+</p>
 
 </div>
 
-<!-- Signup Form -->
-
-<form id="signupForm" autocomplete="off">
+<form
+id="signupForm"
+autocomplete="off">
 
 <!-- Full Name -->
 
 <div class="inputGroup">
 
-<label>Full Name</label>
+<label>
+Full Name
+</label>
 
 <div class="inputBox">
 
@@ -116,7 +121,9 @@ required>
 
 <div class="inputGroup">
 
-<label>Username</label>
+<label>
+Username
+</label>
 
 <div class="inputBox">
 
@@ -125,14 +132,16 @@ required>
 <input
 type="text"
 id="username"
-placeholder="Choose a username"
+placeholder="Choose username"
 maxlength="20"
 autocomplete="username"
 required>
 
 </div>
 
-<small id="usernameStatus" class="statusText">
+<small
+id="usernameStatus"
+class="statusText">
 
 Username must be unique
 
@@ -144,7 +153,9 @@ Username must be unique
 
 <div class="inputGroup">
 
-<label>Email Address</label>
+<label>
+Email Address
+</label>
 
 <div class="inputBox">
 
@@ -188,8 +199,6 @@ class="togglePassword">
 
 </div>
 
-<!-- Password Strength -->
-
 <div class="strengthContainer">
 
 <div class="strengthBar">
@@ -200,7 +209,7 @@ class="togglePassword">
 
 <p id="strengthText">
 
-Password Strength: Weak
+Password Strength : Weak
 
 </p>
 
@@ -238,7 +247,7 @@ class="togglePassword">
 
 </div>
 
-<!-- Terms & Conditions -->
+<!-- Terms -->
 
 <div class="termsBox">
 
@@ -252,9 +261,17 @@ required>
 <span>
 
 I agree to the
-<a href="terms.html">Terms &amp; Conditions</a>
+
+<a href="terms.html">
+Terms &
+Conditions
+</a>
+
 and
-<a href="privacy.html">Privacy Policy</a>
+
+<a href="privacy.html">
+Privacy Policy
+</a>
 
 </span>
 
@@ -262,7 +279,7 @@ and
 
 </div>
 
-<!-- Create Account Button -->
+<!-- Signup Button -->
 
 <button
 type="submit"
@@ -296,11 +313,15 @@ width="22"
 height="22"
 alt="Google">
 
-<span>Continue with Google</span>
+<span>
+
+Continue with Google
+
+</span>
 
 </button>
 
-<!-- Login Link -->
+<!-- Login -->
 
 <div class="loginBox">
 
@@ -317,8 +338,6 @@ Login
 </p>
 
 </div>
-
-<!-- Footer -->
 
 <div class="footer">
 
@@ -356,7 +375,7 @@ Loading Overlay
 </div>
 
 <!-- =========================
-Premium Toast
+Toast
 ========================= -->
 
 <div id="toast" class="hidden">
@@ -366,7 +385,7 @@ class="fa-solid fa-circle-check"></i>
 
 <span id="toastText">
 
-Success
+Account Created
 
 </span>
 
@@ -376,8 +395,7 @@ Success
 Verify Email Modal
 ========================= -->
 
-<div
-id="verifyModal"
+<div id="verifyModal"
 class="modal hidden">
 
 <div class="modalCard glass">
@@ -392,8 +410,7 @@ class="modal hidden">
 
 <p>
 
-Your account has been created successfully.<br>
-We've sent a verification email to your inbox.<br><br>
+We've sent a verification link to your email address.
 
 Please verify your email before logging in.
 
@@ -402,22 +419,20 @@ Please verify your email before logging in.
 <div class="modalButtons">
 
 <button
-type="button"
 id="openMailBtn"
+type="button"
 class="primaryBtn">
 
-<i class="fa-solid fa-envelope-open"></i>
-
-&nbsp;Open Email
+Open Mail
 
 </button>
 
 <button
-type="button"
 id="continueBtn"
+type="button"
 class="secondaryBtn">
 
-Continue to Login
+I've Verified
 
 </button>
 
@@ -427,13 +442,14 @@ Continue to Login
 
 </div>
 
-<!-- =========================
-Firebase SDK
-========================= -->
+<!-- Firebase SDK -->
 
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
 
 <!-- Firebase Config -->
@@ -444,9 +460,7 @@ Firebase SDK
 
 <script src="signup.js"></script>
 
-<!-- =========================
-Premium Page Loader
-========================= -->
+<!-- Premium Loader -->
 
 <script>
 
@@ -454,62 +468,26 @@ window.addEventListener("load",()=>{
 
 setTimeout(()=>{
 
-const loader=
-document.getElementById("pageLoader");
+const loader=document.getElementById("pageLoader");
+const app=document.getElementById("app");
 
-const app=
-document.getElementById("app");
-
+if(loader){
 loader.style.opacity="0";
-
-loader.style.transform="scale(1.05)";
+loader.style.pointerEvents="none";
 
 setTimeout(()=>{
-
 loader.style.display="none";
-
-app.classList.remove("hidden");
-
-app.classList.add("fadeIn");
-
 },500);
+}
 
-},1400);
+if(app){
+app.classList.remove("hidden");
+app.classList.add("fadeIn");
+}
+
+},1200);
 
 });
-
-// Open Mail Button
-
-const openMailBtn =
-document.getElementById("openMailBtn");
-
-if(openMailBtn){
-
-openMailBtn.onclick=()=>{
-
-window.open(
-"https://mail.google.com",
-"_blank"
-);
-
-};
-
-}
-
-// Continue Button
-
-const continueBtn =
-document.getElementById("continueBtn");
-
-if(continueBtn){
-
-continueBtn.onclick=()=>{
-
-location.replace("login.html");
-
-};
-
-}
 
 </script>
 
