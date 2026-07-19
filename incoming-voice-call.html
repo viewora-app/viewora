@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Incoming Voice Call • Viewora</title>
+
+<style>
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:Arial,sans-serif;
+}
+
+body{
+
+height:100vh;
+
+overflow:hidden;
+
+display:flex;
+
+justify-content:center;
+
+align-items:center;
+
+background:
+linear-gradient(135deg,#0f172a,#1e293b,#020617);
+
+color:white;
+
+}
+
+/* Animated Background */
+
+body::before{
+
+content:"";
+
+position:absolute;
+
+width:200%;
+
+height:200%;
+
+background:
+radial-gradient(circle,#00e5ff22 10%,transparent 40%),
+radial-gradient(circle,#00ff9955 8%,transparent 35%);
+
+animation:bgMove 10s linear infinite;
+
+}
+
+@keyframes bgMove{
+
+0%{transform:translate(-15%,-15%) rotate(0deg);}
+
+100%{transform:translate(15%,15%) rotate(360deg);}
+
+}
+
+/* Glass Card */
+
+.card{
+
+position:relative;
+
+z-index:5;
+
+width:360px;
+
+padding:40px;
+
+text-align:center;
+
+border-radius:35px;
+
+background:rgba(255,255,255,.08);
+
+backdrop-filter:blur(20px);
+
+border:1px solid rgba(255,255,255,.15);
+
+box-shadow:0 25px 60px rgba(0,0,0,.45);
+
+}
+
+/* Avatar */
+
+.avatar{
+
+width:150px;
+
+height:150px;
+
+border-radius:50%;
+
+object-fit:cover;
+
+border:5px solid white;
+
+animation:pulse 1.8s infinite;
+
+}
+
+@keyframes pulse{
+
+0%{
+
+transform:scale(1);
+
+box-shadow:0 0 0 0 rgba(0,255,150,.8);
+
+}
+
+70%{
+
+box-shadow:0 0 0 35px rgba(0,255,150,0);
+
+}
+
+100%{
+
+transform:scale(1);
+
+}
+
+}
+
+h2{
+
+margin-top:20px;
+
+font-size:28px;
+
+}
+
+p{
+
+margin-top:10px;
+
+color:#ddd;
+
+font-size:18px;
+
+}
+
+.wave{
+
+margin-top:30px;
+
+display:flex;
+
+justify-content:center;
+
+align-items:flex-end;
+
+gap:6px;
+
+height:45px;
+
+}
+
+.wave span{
+
+width:7px;
+
+border-radius:10px;
+
+background:#00ff99;
+
+animation:wave 1s infinite ease-in-out;
+
+}
+
+.wave span:nth-child(2){animation-delay:.1s;}
+.wave span:nth-child(3){animation-delay:.2s;}
+.wave span:nth-child(4){animation-delay:.3s;}
+.wave span:nth-child(5){animation-delay:.4s;}
+
+@keyframes wave{
+
+0%,100%{height:10px;}
+
+50%{height:40px;}
+
+}
+
+/* Buttons */
+
+.controls{
+
+margin-top:40px;
+
+display:flex;
+
+justify-content:center;
+
+gap:50px;
+
+}
+
+button{
+
+width:85px;
+
+height:85px;
+
+border:none;
+
+border-radius:50%;
+
+font-size:34px;
+
+cursor:pointer;
+
+transition:.25s;
+
+color:white;
+
+}
+
+button:hover{
+
+transform:scale(1.12);
+
+}
+
+.accept{
+
+background:#00c853;
+
+box-shadow:0 0 30px #00c853;
+
+}
+
+.reject{
+
+background:#ff1744;
+
+box-shadow:0 0 30px #ff1744;
+
+}
+
+.status{
+
+margin-top:25px;
+
+font-size:16px;
+
+color:#7CFC00;
+
+animation:blink 1s infinite;
+
+}
+
+@keyframes blink{
+
+50%{
+
+opacity:.3;
+
+}
+
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="card">
+
+<img
+id="callerPhoto"
+class="avatar"
+src="assets/avatar.png">
+
+<h2 id="callerName">
+Viewora User
+</h2>
+
+<p>
+Incoming Voice Call
+</p>
+
+<div class="wave">
+
+<span></span>
+<span></span>
+<span></span>
+<span></span>
+<span></span>
+
+</div>
+
+<div class="status">
+Ringing...
+</div>
+
+<div class="controls">
+
+<button
+id="rejectCall"
+class="reject">
+✖
+</button>
+
+<button
+id="acceptCall"
+class="accept">
+📞
+</button>
+
+</div>
+
+</div>
+
+<audio
+id="ringtone"
+loop
+autoplay>
+
+<source
+src="assets/ringtone.mp3"
+type="audio/mpeg">
+
+</audio>
+
+<script src="incoming-voice-call.js"></script>
+
+</body>
+</html>
