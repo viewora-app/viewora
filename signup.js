@@ -421,9 +421,66 @@ console.log("✅ Signup Part 2 Loaded");
 /*=========================================
         VIEWORA SIGNUP
         signup.js - PART 3 (FIXED)
-Create Account • Email Verification
-=========================================*/
+        
+/* Send verification email */
 
+try {
+
+    await user.sendEmailVerification();
+
+    console.log("✅ Verification email sent successfully");
+
+    hideLoading();
+
+    showToast("Verification email sent.");
+
+    if (verifyModal) {
+        verifyModal.classList.remove("hidden");
+    }
+
+    await auth.signOut();
+
+} catch (error) {
+
+    console.error("Verification Error:", error);
+
+    hideLoading();
+
+    showToast(error.message, "error");
+
+}
+    } catch (error) {
+
+        console.error(error);
+
+        hideLoading();
+
+        switch (error.code) {
+
+            case "auth/email-already-in-use":
+                showToast("Email already exists", "error");
+                break;
+
+            case "auth/invalid-email":
+                showToast("Invalid email address", "error");
+                break;
+
+            case "auth/weak-password":
+                showToast("Weak password", "error");
+                break;
+
+            case "auth/network-request-failed":
+                showToast("Check your internet connection", "error");
+                break;
+
+            default:
+                showToast(error.message, "error");
+
+        }
+
+    }
+
+}
 /*=========================================
 Form Validation
 =========================================*/
