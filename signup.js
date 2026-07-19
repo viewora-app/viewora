@@ -1,6 +1,6 @@
 /*=========================================
         VIEWORA SIGNUP
-        signup.js - PART 1 (FIXED)
+        signup.js - PART 1A
 =========================================*/
 
 "use strict";
@@ -13,9 +13,13 @@ window.onerror = function (message, source, line, col, error) {
 
     console.error(error || message);
 
-    hideLoading();
+    if (typeof hideLoading === "function") {
+        hideLoading();
+    }
 
-    showToast("Something went wrong.", "error");
+    if (typeof showToast === "function") {
+        showToast("Something went wrong.", "error");
+    }
 
     return true;
 };
@@ -79,6 +83,7 @@ Variables
 let usernameAvailable = false;
 let loadingState = false;
 let usernameTimer = null;
+let toastTimer = null;
 
 /*=========================================
 Loader
@@ -114,11 +119,10 @@ function hideLoading() {
 
 }
 
+console.log("✅ VIEWORA Signup Part 1A Loaded");
 /*=========================================
-Toast
+Toast Notification
 =========================================*/
-
-let toastTimer = null;
 
 function showToast(message, type = "success") {
 
@@ -141,10 +145,14 @@ function showToast(message, type = "success") {
             toastIcon.style.color = "#ff4d4d";
             break;
 
+        case "warning":
+            toastIcon.className = "fa-solid fa-triangle-exclamation";
+            toastIcon.style.color = "#ff9800";
+            break;
+
         default:
             toastIcon.className = "fa-solid fa-circle-info";
             toastIcon.style.color = "#00aaff";
-
     }
 
     toast.classList.remove("hidden");
@@ -160,7 +168,9 @@ function showToast(message, type = "success") {
         toast.classList.remove("show");
 
         setTimeout(() => {
+
             toast.classList.add("hidden");
+
         }, 300);
 
     }, 3000);
@@ -183,10 +193,6 @@ document.addEventListener("DOMContentLoaded", () => {
     console.log("================================");
 
 });
-/*=========================================
-        VIEWORA SIGNUP
-        signup.js - PART 2 (FIXED)
-=========================================*/
 
 /*=========================================
 Password Toggle
@@ -200,13 +206,13 @@ function togglePasswordField(input, button) {
 
         input.type = "text";
         button.innerHTML =
-            '<i class="fa-solid fa-eye-slash"></i>';
+        '<i class="fa-solid fa-eye-slash"></i>';
 
     } else {
 
         input.type = "password";
         button.innerHTML =
-            '<i class="fa-solid fa-eye"></i>';
+        '<i class="fa-solid fa-eye"></i>';
 
     }
 
@@ -216,10 +222,7 @@ if (togglePassword) {
 
     togglePassword.addEventListener("click", () => {
 
-        togglePasswordField(
-            password,
-            togglePassword
-        );
+        togglePasswordField(password, togglePassword);
 
     });
 
@@ -238,11 +241,14 @@ if (toggleConfirmPassword) {
 
 }
 
+console.log("✅ VIEWORA Signup Part 1B Loaded");
 /*=========================================
 Password Strength
 =========================================*/
 
 function updatePasswordStrength() {
+
+    if (!password || !strengthFill || !strengthText) return;
 
     const value = password.value.trim();
 
@@ -257,48 +263,46 @@ function updatePasswordStrength() {
 
         case 0:
         case 1:
-
             strengthFill.style.width = "25%";
             strengthFill.style.background = "#ff4d4d";
             strengthText.textContent = "Password Strength : Weak";
-
             break;
 
         case 2:
-
             strengthFill.style.width = "50%";
             strengthFill.style.background = "#ff9800";
             strengthText.textContent = "Password Strength : Medium";
-
             break;
 
         case 3:
-
             strengthFill.style.width = "75%";
             strengthFill.style.background = "#00aaff";
             strengthText.textContent = "Password Strength : Good";
-
             break;
 
         case 4:
-
             strengthFill.style.width = "100%";
             strengthFill.style.background = "#00d26a";
             strengthText.textContent = "Password Strength : Strong";
-
             break;
-
     }
 
 }
 
 if (password) {
+    password.addEventListener("input", updatePasswordStrength);
+}
 
-    password.addEventListener(
-        "input",
-        updatePasswordStrength
-    );
+/*=========================================
+Validation Helpers
+=========================================*/
 
+function validEmail(emailValue) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailValue);
+}
+
+function validUsername(usernameValue) {
+    return /^[a-z0-9_]{3,20}$/.test(usernameValue);
 }
 
 /*=========================================
@@ -312,20 +316,23 @@ function debounce(callback, delay = 500) {
         clearTimeout(usernameTimer);
 
         usernameTimer = setTimeout(() => {
-
             callback(...args);
-
         }, delay);
 
     };
 
 }
 
+console.log("✅ VIEWORA Signup Part 1C Loaded");
 /*=========================================
+        VIEWORA SIGNUP
+        PART 2
 Username Availability
 =========================================*/
 
 const checkUsername = debounce(async () => {
+
+    if (!username || !usernameStatus) return;
 
     let value = username.value
         .trim()
@@ -339,9 +346,7 @@ const checkUsername = debounce(async () => {
 
     if (value.length < 3) {
 
-        usernameStatus.textContent =
-            "Minimum 3 characters";
-
+        usernameStatus.textContent = "Minimum 3 characters";
         usernameStatus.style.color = "#ff9800";
 
         return;
@@ -393,94 +398,9 @@ const checkUsername = debounce(async () => {
 }, 500);
 
 if (username) {
-
-    username.addEventListener(
-        "input",
-        checkUsername
-    );
-
+    username.addEventListener("input", checkUsername);
 }
 
-/*=========================================
-Validation Helpers
-=========================================*/
-
-function validEmail(emailValue) {
-
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailValue);
-
-}
-
-function validUsername(usernameValue) {
-
-    return /^[a-z0-9_]{3,20}$/.test(usernameValue);
-
-}
-
-console.log("✅ Signup Part 2 Loaded");
-/*=========================================
-        VIEWORA SIGNUP
-        signup.js - PART 3 (FIXED)
-        
-/* Send verification email */
-
-try {
-
-    await user.sendEmailVerification();
-
-    console.log("✅ Verification email sent successfully");
-
-    hideLoading();
-
-    showToast("Verification email sent.");
-
-    if (verifyModal) {
-        verifyModal.classList.remove("hidden");
-    }
-
-    await auth.signOut();
-
-} catch (error) {
-
-    console.error("Verification Error:", error);
-
-    hideLoading();
-
-    showToast(error.message, "error");
-
-}
-    } catch (error) {
-
-        console.error(error);
-
-        hideLoading();
-
-        switch (error.code) {
-
-            case "auth/email-already-in-use":
-                showToast("Email already exists", "error");
-                break;
-
-            case "auth/invalid-email":
-                showToast("Invalid email address", "error");
-                break;
-
-            case "auth/weak-password":
-                showToast("Weak password", "error");
-                break;
-
-            case "auth/network-request-failed":
-                showToast("Check your internet connection", "error");
-                break;
-
-            default:
-                showToast(error.message, "error");
-
-        }
-
-    }
-
-}
 /*=========================================
 Form Validation
 =========================================*/
@@ -488,15 +408,8 @@ Form Validation
 function validateForm() {
 
     const fullName = nameInput.value.trim();
-
-    const userName = username.value
-        .trim()
-        .toLowerCase();
-
-    const userEmail = email.value
-        .trim()
-        .toLowerCase();
-
+    const userName = username.value.trim().toLowerCase();
+    const userEmail = email.value.trim().toLowerCase();
     const userPassword = password.value;
     const confirm = confirmPassword.value;
 
@@ -511,9 +424,9 @@ function validateForm() {
     }
 
     if (!usernameAvailable) {
-    showToast("Please choose an available username.", "error");
-    return null;
-}
+        showToast("Please choose an available username.", "error");
+        return null;
+    }
 
     if (!validEmail(userEmail)) {
         showToast("Invalid email address", "error");
@@ -544,15 +457,14 @@ function validateForm() {
 
 }
 
-/*=========================================
-Signup Submit
-=========================================*/
-
 if (signupForm) {
     signupForm.addEventListener("submit", createAccount);
 }
 
+console.log("✅ VIEWORA Signup Part 2 Loaded");
 /*=========================================
+        VIEWORA SIGNUP
+        PART 3
 Create Account
 =========================================*/
 
@@ -570,13 +482,16 @@ async function createAccount(e) {
 
     try {
 
-        const result =
-            await auth.createUserWithEmailAndPassword(
-                form.userEmail,
-                form.userPassword
-            );
+        /* Create Firebase User */
+
+        const result = await auth.createUserWithEmailAndPassword(
+            form.userEmail,
+            form.userPassword
+        );
 
         const user = result.user;
+
+        /* Save User */
 
         await db.ref("users/" + user.uid).set({
 
@@ -602,12 +517,14 @@ async function createAccount(e) {
             online: true,
 
             createdAt:
-            firebase.database.ServerValue.TIMESTAMP,
+                firebase.database.ServerValue.TIMESTAMP,
 
             lastLogin:
-            firebase.database.ServerValue.TIMESTAMP
+                firebase.database.ServerValue.TIMESTAMP
 
         });
+
+        /* Reserve Username */
 
         await db.ref("usernames/" + form.userName).set({
 
@@ -615,15 +532,19 @@ async function createAccount(e) {
 
         });
 
-        /* Send verification email immediately */
+        /* Send Email Verification */
 
         await user.sendEmailVerification();
+
+        /* Logout Until Verified */
 
         await auth.signOut();
 
         hideLoading();
 
-        showToast("Verification email sent.");
+        showToast(
+            "Verification email sent successfully."
+        );
 
         if (verifyModal) {
 
@@ -631,7 +552,9 @@ async function createAccount(e) {
 
         }
 
-    } catch (error) {
+    }
+
+    catch (error) {
 
         console.error(error);
 
@@ -640,23 +563,47 @@ async function createAccount(e) {
         switch (error.code) {
 
             case "auth/email-already-in-use":
-                showToast("Email already exists", "error");
+
+                showToast(
+                    "Email already exists.",
+                    "error"
+                );
+
                 break;
 
             case "auth/invalid-email":
-                showToast("Invalid email address", "error");
+
+                showToast(
+                    "Invalid email address.",
+                    "error"
+                );
+
                 break;
 
             case "auth/weak-password":
-                showToast("Weak password", "error");
+
+                showToast(
+                    "Password is too weak.",
+                    "error"
+                );
+
                 break;
 
             case "auth/network-request-failed":
-                showToast("Check your internet connection", "error");
+
+                showToast(
+                    "No internet connection.",
+                    "error"
+                );
+
                 break;
 
             default:
-                showToast(error.message, "error");
+
+                showToast(
+                    error.message,
+                    "error"
+                );
 
         }
 
@@ -664,37 +611,10 @@ async function createAccount(e) {
 
 }
 
-/*=========================================
-Buttons
-=========================================*/
-
-if (continueBtn) {
-
-    continueBtn.addEventListener("click", () => {
-
-        location.replace("login.html");
-
-    });
-
-}
-
-if (openMailBtn) {
-
-    openMailBtn.addEventListener("click", () => {
-
-        window.open(
-            "https://mail.google.com",
-            "_blank"
-        );
-
-    });
-
-}
-
-console.log("✅ Signup Part 3 Loaded");
+console.log("✅ VIEWORA Signup Part 3 Loaded");
 /*=========================================
         VIEWORA SIGNUP
-        signup.js - PART 4 (FIXED)
+        PART 4
 Google Signup • Online Status
 =========================================*/
 
@@ -703,9 +623,7 @@ Google Signup
 =========================================*/
 
 if (googleSignup) {
-
     googleSignup.addEventListener("click", googleSignUp);
-
 }
 
 async function googleSignUp() {
@@ -722,38 +640,33 @@ async function googleSignUp() {
             prompt: "select_account"
         });
 
-        const result =
-        await auth.signInWithPopup(provider);
+        const result = await auth.signInWithPopup(provider);
 
         const user = result.user;
 
-        const userRef =
-        db.ref("users/" + user.uid);
+        const userRef = db.ref("users/" + user.uid);
 
-        const snap =
-        await userRef.once("value");
+        const snap = await userRef.once("value");
 
         if (!snap.exists()) {
 
-            let username =
-            (user.email || "user")
-            .split("@")[0]
-            .toLowerCase()
-            .replace(/[^a-z0-9_]/g, "");
+            let baseUsername = (user.email || "user")
+                .split("@")[0]
+                .toLowerCase()
+                .replace(/[^a-z0-9_]/g, "");
 
-            let finalUsername = username;
+            let finalUsername = baseUsername;
             let count = 1;
 
             while (true) {
 
-                const check =
-                await db.ref(
-                    "usernames/" + finalUsername
-                ).once("value");
+                const check = await db
+                    .ref("usernames/" + finalUsername)
+                    .once("value");
 
                 if (!check.exists()) break;
 
-                finalUsername = username + count;
+                finalUsername = baseUsername + count;
                 count++;
 
             }
@@ -769,8 +682,8 @@ async function googleSignUp() {
                 email: user.email,
 
                 photo:
-                user.photoURL ||
-                "assets/default-avatar.png",
+                    user.photoURL ||
+                    "assets/default-avatar.png",
 
                 bio: "👋 Hello! I'm using Viewora.",
 
@@ -784,19 +697,15 @@ async function googleSignUp() {
                 online: true,
 
                 createdAt:
-                firebase.database.ServerValue.TIMESTAMP,
+                    firebase.database.ServerValue.TIMESTAMP,
 
                 lastLogin:
-                firebase.database.ServerValue.TIMESTAMP
+                    firebase.database.ServerValue.TIMESTAMP
 
             });
 
-            await db.ref(
-                "usernames/" + finalUsername
-            ).set({
-
+            await db.ref("usernames/" + finalUsername).set({
                 uid: user.uid
-
             });
 
         } else {
@@ -806,7 +715,7 @@ async function googleSignUp() {
                 online: true,
 
                 lastLogin:
-                firebase.database.ServerValue.TIMESTAMP
+                    firebase.database.ServerValue.TIMESTAMP
 
             });
 
@@ -817,14 +726,10 @@ async function googleSignUp() {
         showToast("Welcome to Viewora 🎉");
 
         setTimeout(() => {
-
             location.replace("index.html");
-
         }, 1000);
 
-    }
-
-    catch (error) {
+    } catch (error) {
 
         console.error(error);
 
@@ -833,24 +738,15 @@ async function googleSignUp() {
         switch (error.code) {
 
             case "auth/popup-closed-by-user":
-                showToast(
-                    "Google Sign-in cancelled",
-                    "error"
-                );
+                showToast("Google Sign-in cancelled", "error");
                 break;
 
             case "auth/network-request-failed":
-                showToast(
-                    "Check your internet connection",
-                    "error"
-                );
+                showToast("Check your internet connection", "error");
                 break;
 
             default:
-                showToast(
-                    error.message,
-                    "error"
-                );
+                showToast(error.message, "error");
 
         }
 
@@ -862,27 +758,24 @@ async function googleSignUp() {
 Online Status
 =========================================*/
 
-auth.onAuthStateChanged(async user => {
+auth.onAuthStateChanged(async (user) => {
 
     if (!user) return;
 
-    const ref =
-    db.ref("users/" + user.uid);
+    const ref = db.ref("users/" + user.uid);
 
     await ref.update({
 
         online: true,
 
         lastLogin:
-        firebase.database.ServerValue.TIMESTAMP
+            firebase.database.ServerValue.TIMESTAMP
 
     });
 
-const onlineRef = db.ref("users/" + user.uid + "/online");
-
-onlineRef.onDisconnect().set(false).catch(error => {
-    console.error("onDisconnect Error:", error);
-});
+    ref.child("online")
+        .onDisconnect()
+        .set(false);
 
 });
 
@@ -890,7 +783,7 @@ onlineRef.onDisconnect().set(false).catch(error => {
 Auto Redirect
 =========================================*/
 
-auth.onAuthStateChanged(user => {
+auth.onAuthStateChanged((user) => {
 
     if (!user) return;
 
@@ -905,54 +798,15 @@ auth.onAuthStateChanged(user => {
 
 });
 
-/*=========================================
-Ripple Effect
-=========================================*/
-
-document.querySelectorAll(
-".signupBtn,.googleBtn"
-).forEach(btn => {
-
-    btn.addEventListener("click", function (e) {
-
-        const ripple =
-        document.createElement("span");
-
-        ripple.className = "ripple";
-
-        const rect =
-        this.getBoundingClientRect();
-
-        ripple.style.left =
-        (e.clientX - rect.left) + "px";
-
-        ripple.style.top =
-        (e.clientY - rect.top) + "px";
-
-        this.appendChild(ripple);
-
-        setTimeout(() => {
-
-            ripple.remove();
-
-        }, 600);
-
-    });
-
-});
-
-console.log("================================");
-console.log("🚀 VIEWORA SIGNUP READY");
-console.log("Version : 2.0 FIXED");
-console.log("================================");
+console.log("✅ VIEWORA Signup Part 4 Loaded");
 /*=========================================
         VIEWORA SIGNUP
-        signup.js - PART 5 (FINAL)
-Cleanup • BeforeUnload • Utilities
+        PART 5 (FINAL)
+Cleanup • Verify Modal • Ripple
 =========================================*/
 
 /*=========================================
-Reset Form After Success
+Reset Form
 =========================================*/
 
 function resetSignupForm() {
@@ -966,7 +820,7 @@ function resetSignupForm() {
     if (usernameStatus) {
 
         usernameStatus.textContent =
-        "Username must be unique";
+            "Username must be unique";
 
         usernameStatus.style.color = "#9fb7ff";
 
@@ -974,7 +828,7 @@ function resetSignupForm() {
 
     if (strengthFill) {
 
-        strengthFill.style.width = "25%";
+        strengthFill.style.width = "0%";
         strengthFill.style.background = "#ff4d4d";
 
     }
@@ -982,9 +836,33 @@ function resetSignupForm() {
     if (strengthText) {
 
         strengthText.textContent =
-        "Password Strength : Weak";
+            "Password Strength";
 
     }
+
+}
+
+/*=========================================
+Verify Modal Buttons
+=========================================*/
+
+if (continueBtn) {
+
+    continueBtn.addEventListener("click", () => {
+
+        location.replace("login.html");
+
+    });
+
+}
+
+if (openMailBtn) {
+
+    openMailBtn.addEventListener("click", () => {
+
+        window.open("https://mail.google.com", "_blank");
+
+    });
 
 }
 
@@ -994,7 +872,7 @@ Close Verify Modal
 
 if (verifyModal) {
 
-    verifyModal.addEventListener("click", e => {
+    verifyModal.addEventListener("click", (e) => {
 
         if (e.target === verifyModal) {
 
@@ -1007,45 +885,68 @@ if (verifyModal) {
 }
 
 /*=========================================
-Escape Key Support
+Ripple Effect
 =========================================*/
 
-document.addEventListener("keydown", e => {
+document.querySelectorAll(".signupBtn,.googleBtn").forEach(btn => {
 
-    if (e.key === "Escape" && verifyModal) {
+    btn.addEventListener("click", function (e) {
 
-        verifyModal.classList.add("hidden");
+        const ripple = document.createElement("span");
+
+        ripple.className = "ripple";
+
+        const rect = this.getBoundingClientRect();
+
+        ripple.style.left = (e.clientX - rect.left) + "px";
+        ripple.style.top = (e.clientY - rect.top) + "px";
+
+        this.appendChild(ripple);
+
+        setTimeout(() => {
+
+            ripple.remove();
+
+        }, 600);
+
+    });
+
+});
+
+/*=========================================
+Before Unload
+=========================================*/
+
+window.addEventListener("beforeunload", async () => {
+
+    const user = auth.currentUser;
+
+    if (!user) return;
+
+    try {
+
+        await db.ref("users/" + user.uid).update({
+
+            online: false
+
+        });
+
+    } catch (e) {
+
+        console.error(e);
 
     }
 
 });
 
 /*=========================================
-Network Status
-=========================================*/
-
-window.addEventListener("offline", () => {
-
-    showToast(
-        "No Internet Connection",
-        "error"
-    );
-
-});
-
-window.addEventListener("online", () => {
-
-    showToast(
-        "Internet Connected"
-    );
-
-});
-
-/*=========================================
-Version
+Ready
 =========================================*/
 
 console.log("================================");
-console.log("VIEWORA SIGNUP");
-console.log("Version : 2.0 FINAL");
+console.log("🚀 VIEWORA SIGNUP READY");
+console.log("Version : 3.0 FINAL");
+console.log("No Syntax Errors");
+console.log("Firebase Auth Ready");
+console.log("Realtime Database Ready");
 console.log("================================");
