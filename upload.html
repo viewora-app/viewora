@@ -4,859 +4,406 @@
 <head>
 
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
 
-<title>Create • Viewora</title>
+<meta name="viewport"
+content="width=device-width, initial-scale=1.0">
 
-<link rel="stylesheet" href="style.css">
+<title>Viewora • Upload</title>
 
-<style>
+<meta name="theme-color"
+content="#6366f1">
 
-*{
-margin:0;
-padding:0;
-box-sizing:border-box;
-font-family:Arial,sans-serif;
-}
+<link rel="stylesheet"
+href="upload.css">
 
-body{
+<link rel="preconnect"
+href="https://fonts.googleapis.com">
 
-background:#0f0f0f;
-color:#fff;
+<link rel="preconnect"
+href="https://fonts.gstatic.com"
+crossorigin>
 
-}
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+rel="stylesheet">
 
-.header{
-
-padding:35px 20px;
-
-text-align:center;
-
-background:#202020;
-
-border-bottom:1px solid #333;
-
-}
-
-.header h1{
-
-font-size:30px;
-
-margin-bottom:8px;
-
-}
-
-.header p{
-
-color:#aaa;
-
-}
-
-.container{
-
-width:95%;
-
-max-width:900px;
-
-margin:25px auto;
-
-}
-
-/* Create Cards */
-
-.create-grid{
-
-display:grid;
-
-grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
-
-gap:20px;
-
-}
-
-.create-card{
-
-background:#1c1c1c;
-
-border:1px solid #2d2d2d;
-
-border-radius:18px;
-
-padding:25px;
-
-cursor:pointer;
-
-transition:.3s;
-
-text-align:center;
-
-}
-
-.create-card:hover{
-
-transform:translateY(-5px);
-
-border-color:#ff1744;
-
-}
-
-.create-card .icon{
-
-font-size:55px;
-
-margin-bottom:15px;
-
-}
-
-.create-card h2{
-
-margin-bottom:10px;
-
-}
-
-.create-card p{
-
-color:#aaa;
-
-font-size:14px;
-
-line-height:1.6;
-
-}
-
-/* Hidden Sections */
-
-.upload-section{
-
-display:none;
-
-margin-top:35px;
-
-background:#1b1b1b;
-
-padding:25px;
-
-border-radius:20px;
-
-border:1px solid #2d2d2d;
-
-}
-
-.upload-section h2{
-
-margin-bottom:20px;
-
-}
-
-.preview{
-
-width:220px;
-
-height:390px;
-
-background:#000;
-
-margin:auto;
-
-border-radius:18px;
-
-overflow:hidden;
-
-}
-
-.preview video{
-
-width:100%;
-
-height:100%;
-
-object-fit:cover;
-
-}
-
-input,
-textarea,
-select{
-
-width:100%;
-
-margin-top:15px;
-
-padding:15px;
-
-border:none;
-
-border-radius:12px;
-
-background:#2b2b2b;
-
-color:white;
-
-}
-
-button{
-
-margin-top:20px;
-
-width:100%;
-
-padding:16px;
-
-border:none;
-
-border-radius:14px;
-
-background:#ff1744;
-
-color:white;
-
-font-size:16px;
-
-cursor:pointer;
-
-}
-
-button:hover{
-
-background:#ff355d;
-
-}
-
-</style>
+<link rel="stylesheet"
+href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
 
 </head>
 
 <body>
-  
-      <!-- Top Bar -->
-    <div class="top-bar">
-        <a href="index.html">← Back</a>
-    </div>
-    
-<div class="header">
 
-<h1>Create</h1>
+<!-- =========================
+Animated Background
+========================= -->
 
-<p>Upload Videos, Shorts, Live Streams and Posts</p>
+<div class="bgGradient"></div>
 
-</div>
+<div class="blob blob1"></div>
 
-<div class="container">
+<div class="blob blob2"></div>
 
-<div class="create-grid">
+<div class="blob blob3"></div>
 
-<!-- Upload Video -->
+<!-- =========================
+Header
+========================= -->
 
-<div class="create-card"
+<header class="header glass">
 
-onclick="selectVideoFile('video')">
+<button
+id="backBtn">
 
-<div class="icon">
+<i class="fa-solid fa-arrow-left"></i>
 
-📹
+</button>
 
-</div>
+<h2>
 
-<h2>Upload Video</h2>
+Create Post
 
-<p>
+</h2>
 
-Upload long-form videos up to
-12 hours.
+<button
+id="draftBtn">
 
-</p>
+Draft
 
-</div>
+</button>
 
-<!-- Upload Short -->
+</header>
 
-<div class="create-card"
+<!-- =========================
+Upload Container
+========================= -->
 
-onclick="selectVideoFile('short')">
+<main class="uploadContainer">
 
-<div class="icon">
+<!-- Upload Card -->
 
-🎬
+<div class="uploadCard glass">
 
-</div>
+<h2>
 
-<h2>Create Short</h2>
+Create Amazing Post
 
-<p>
-
-Upload vertical videos up to
-60 seconds.
-
-</p>
-
-</div>
-
-<!-- Go Live -->
-
-<div class="create-card"
-
-onclick="openLiveSection()">
-
-<div class="icon">
-
-🔴
-
-</div>
-
-<h2>Go Live</h2>
+</h2>
 
 <p>
 
-Start or schedule a live stream.
+Share photos & videos with your followers.
 
 </p>
 
-</div>
+<!-- Drag & Drop -->
 
-<!-- Create Post -->
+<div id="dropArea">
 
-<div class="create-card"
+<i class="fa-solid fa-cloud-arrow-up"></i>
 
-onclick="openPostSection()">
+<h3>
 
-<div class="icon">
+Drag & Drop Files
 
-📝
-
-</div>
-
-<h2>Create Post</h2>
+</h3>
 
 <p>
 
-Share text, images and polls.
+or
 
 </p>
 
-</div>
+<button
+id="chooseFileBtn">
 
-</div>
+Choose File
 
-<!-- Hidden File Picker -->
+</button>
 
 <input
-
 type="file"
-
-id="videoPicker"
-
-accept="video/*"
-
+id="mediaInput"
+accept="image/*,video/*"
 hidden>
-<!-- ===================================== -->
-<!-- Video Upload Section (Hidden) -->
-<!-- ===================================== -->
-
-<div id="videoSection" class="upload-section">
-
-<h2>📹 Upload Video</h2>
-
-<div class="preview">
-
-<video
-id="videoPreview"
-controls
-playsinline>
-
-</video>
 
 </div>
 
-<input
-type="file"
-id="thumbnailPicker"
-accept="image/*">
-
-<input
-type="text"
-id="videoTitle"
-placeholder="Video title">
-
-<textarea
-id="videoDescription"
-rows="5"
-placeholder="Video description"></textarea>
-
-<input
-type="text"
-id="videoTags"
-placeholder="Tags (comma separated)">
-
-<select id="videoCategory">
-
-<option value="Entertainment">Entertainment</option>
-<option value="Gaming">Gaming</option>
-<option value="Education">Education</option>
-<option value="Music">Music</option>
-<option value="Technology">Technology</option>
-<option value="Sports">Sports</option>
-<option value="News">News</option>
-<option value="People & Blogs">People & Blogs</option>
-
-</select>
-
-<select id="videoVisibility">
-
-<option value="public">🌍 Public</option>
-<option value="unlisted">🔗 Unlisted</option>
-<option value="private">🔒 Private</option>
-
-</select>
-
-<select id="videoAudience">
-
-<option value="not_for_kids">Not Made for Kids</option>
-<option value="made_for_kids">Made for Kids</option>
-
-</select>
-
-<div style="margin-top:20px;">
-
-<div style="
-width:100%;
-height:10px;
-background:#2f2f2f;
-border-radius:20px;
-overflow:hidden;">
+<!-- Preview -->
 
 <div
-id="videoProgressBar"
-style="
-width:0%;
-height:100%;
-background:#ff1744;
-transition:.3s;">
+id="previewContainer"
+class="hidden">
+
+<img
+id="previewImage"
+hidden>
+
+<video
+id="previewVideo"
+controls
+playsinline
+hidden>
+
+</video>
+
+<button
+id="removeMedia">
+
+<i class="fa-solid fa-trash"></i>
+
+Remove
+
+</button>
+
+</div>
+
+<!-- Progress -->
+
+<div
+id="progressBox"
+class="hidden">
+
+<div class="progressBar">
+
+<div
+id="progressFill">
 
 </div>
 
 </div>
 
 <p
-id="videoProgressText"
-style="
-margin-top:10px;
-text-align:center;
-color:#bbb;">
+id="progressText">
 
 0%
 
 </p>
 
 </div>
+<!-- =========================
+Caption
+========================= -->
 
-<button
-onclick="publishVideo()">
+<div class="formGroup">
 
-🚀 Publish Video
+<label>
 
-</button>
-
-</div>
-
-<!-- ===================================== -->
-<!-- Shorts Upload Section (Hidden) -->
-<!-- ===================================== -->
-
-<div id="shortSection" class="upload-section">
-
-<h2>🎬 Create Short</h2>
-
-<div class="preview">
-
-<video
-id="shortPreview"
-controls
-playsinline>
-
-</video>
-
-</div>
-
-<input
-type="text"
-id="shortCaption"
-placeholder="Write a caption">
-
-<input
-type="text"
-id="shortTags"
-placeholder="#shorts #viral">
-
-<select id="shortVisibility">
-
-<option value="public">🌍 Public</option>
-<option value="unlisted">🔗 Unlisted</option>
-<option value="private">🔒 Private</option>
-
-</select>
-
-<div style="margin-top:20px;">
-
-<div style="
-width:100%;
-height:10px;
-background:#2f2f2f;
-border-radius:20px;
-overflow:hidden;">
-
-<div
-id="shortProgressBar"
-style="
-width:0%;
-height:100%;
-background:#7c3aed;
-transition:.3s;">
-
-</div>
-
-</div>
-
-<p
-id="shortProgressText"
-style="
-margin-top:10px;
-text-align:center;
-color:#bbb;">
-
-0%
-
-</p>
-
-</div>
-
-<button
-onclick="publishShort()">
-
-🚀 Publish Short
-
-</button>
-
-</div>
-<!-- ===================================== -->
-<!-- Go Live Section (Hidden) -->
-<!-- ===================================== -->
-
-<div id="liveSection" class="upload-section">
-
-<h2>🔴 Go Live</h2>
-
-<input
-type="text"
-id="liveTitle"
-placeholder="Live stream title">
-
-<textarea
-id="liveDescription"
-rows="5"
-placeholder="Describe your live stream"></textarea>
-
-<select id="liveVisibility">
-
-<option value="public">🌍 Public</option>
-<option value="unlisted">🔗 Unlisted</option>
-<option value="private">🔒 Private</option>
-
-</select>
-
-<input
-type="datetime-local"
-id="liveSchedule">
-
-<button onclick="startLive()">
-
-🔴 Start / Schedule Live
-
-</button>
-
-</div>
-
-<!-- ===================================== -->
-<!-- Community Post Section (Hidden) -->
-<!-- ===================================== -->
-
-<div id="postSection" class="upload-section">
-
-<h2>📝 Create Community Post</h2>
-
-<textarea
-id="postContent"
-rows="6"
-placeholder="Share something with your community..."></textarea>
-
-<input
-type="file"
-id="postImage"
-accept="image/*">
-
-<div style="margin-top:20px;">
-
-<label style="display:flex;align-items:center;gap:10px;">
-
-<input
-type="checkbox"
-id="allowComments"
-checked>
-
-<span>Allow comments</span>
+Caption
 
 </label>
 
+<textarea
+
+id="caption"
+
+maxlength="500"
+
+placeholder="Write an awesome caption...">
+
+</textarea>
+
+<div class="counter">
+
+<span id="captionCount">
+
+0
+
+</span>
+
+/500
+
 </div>
 
-<button onclick="publishPost()">
+</div>
 
-🚀 Publish Post
+<!-- =========================
+Hashtags
+========================= -->
+
+<div class="formGroup">
+
+<label>
+
+Hashtags
+
+</label>
+
+<input
+
+type="text"
+
+id="hashtags"
+
+placeholder="#travel #gaming #music">
+
+</div>
+
+<!-- =========================
+Location
+========================= -->
+
+<div class="formGroup">
+
+<label>
+
+Location
+
+</label>
+
+<input
+
+type="text"
+
+id="location"
+
+placeholder="Add location">
+
+</div>
+
+<!-- =========================
+Visibility
+========================= -->
+
+<div class="formGroup">
+
+<label>
+
+Who can see this?
+
+</label>
+
+<select id="visibility">
+
+<option value="public">
+
+🌍 Public
+
+</option>
+
+<option value="followers">
+
+👥 Followers
+
+</option>
+
+<option value="private">
+
+🔒 Private
+
+</option>
+
+</select>
+
+</div>
+
+<!-- =========================
+Options
+========================= -->
+
+<div class="optionRow">
+
+<label>
+
+Allow Comments
+
+</label>
+
+<input
+
+type="checkbox"
+
+id="allowComments"
+
+checked>
+
+</div>
+
+<div class="optionRow">
+
+<label>
+
+Allow Downloads
+
+</label>
+
+<input
+
+type="checkbox"
+
+id="allowDownload">
+
+</div>
+
+<!-- =========================
+Buttons
+========================= -->
+
+<div class="buttonGroup">
+
+<button
+id="uploadPostBtn">
+
+<i class="fa-solid fa-cloud-arrow-up"></i>
+
+Upload Post
+
+</button>
+
+<button
+id="cancelBtn">
+
+Cancel
 
 </button>
 
 </div>
 
-<!-- ===================================== -->
-<!-- Upload Status -->
-<!-- ===================================== -->
+</div>
 
-<div id="statusCard"
-class="upload-section"
-style="display:block;">
+</main>
 
-<h2>📊 Upload Status</h2>
+<!-- =========================
+Toast
+========================= -->
 
-<p id="uploadStatus">
+<div
+id="toast"
+class="hidden">
 
-Ready to create your next content.
+<i
+id="toastIcon"
+class="fa-solid fa-circle-check">
 
-</p>
+</i>
+
+<span
+id="toastText">
+
+Success
+
+</span>
 
 </div>
 
-<!-- ===================================== -->
-<!-- Footer -->
-<!-- ===================================== -->
-
-<footer
-style="
-margin:40px 0;
-padding:20px;
-text-align:center;
-color:#888;
-border-top:1px solid #2d2d2d;">
-
-<p>
-
-Viewora Creator Studio © 2026
-
-</p>
-
-</footer>
-
-<!-- Firebase -->
+<!-- =========================
+Firebase
+========================= -->
 
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
 
+<!-- =========================
+App Files
+========================= -->
+
 <script src="firebase.js"></script>
+
 <script src="upload.js"></script>
-<!-- ===================================== -->
-<!-- Floating Create Button -->
-<!-- ===================================== -->
-
-<button id="floatingCreateBtn" class="floating-create-btn">
-  ➕
-</button>
-
-<style>
-
-/* Floating Create Button */
-
-.floating-create-btn{
-
-position:fixed;
-
-right:20px;
-
-bottom:20px;
-
-width:60px;
-
-height:60px;
-
-border:none;
-
-border-radius:50%;
-
-background:linear-gradient(135deg,#ff1744,#7c3aed);
-
-color:#fff;
-
-font-size:28px;
-
-font-weight:bold;
-
-cursor:pointer;
-
-box-shadow:0 8px 25px rgba(255,23,68,.4);
-
-z-index:9999;
-
-transition:.3s;
-
-}
-
-.floating-create-btn:hover{
-
-transform:scale(1.08);
-
-}
-
-@media(max-width:600px){
-
-.header h1{
-
-font-size:26px;
-
-}
-
-.create-grid{
-
-grid-template-columns:1fr;
-
-}
-
-.preview{
-
-width:180px;
-
-height:320px;
-
-}
-
-.upload-section{
-
-padding:18px;
-
-}
-
-}
-
-</style>
-
-<script>
-
-// ============================
-// Fade Animation
-// ============================
-
-window.addEventListener("load",()=>{
-
-document.body.animate([
-
-{
-opacity:0,
-transform:"translateY(20px)"
-},
-
-{
-opacity:1,
-transform:"translateY(0)"
-}
-
-],{
-
-duration:400,
-
-fill:"forwards"
-
-});
-
-});
-
-// ============================
-// Floating Button
-// ============================
-
-document
-.getElementById("floatingCreateBtn")
-.addEventListener("click",()=>{
-
-window.scrollTo({
-
-top:0,
-
-behavior:"smooth"
-
-});
-
-});
-
-// ============================
-// Internet Status
-// ============================
-
-window.addEventListener("online",()=>{
-
-if(typeof showToast==="function"){
-
-showToast("🌐 Internet Connected");
-
-}
-
-});
-
-window.addEventListener("offline",()=>{
-
-if(typeof showToast==="function"){
-
-showToast("📡 No Internet Connection");
-
-}
-
-});
-
-// ============================
-// Pull To Refresh
-// ============================
-
-let startY=0;
-
-window.addEventListener("touchstart",(e)=>{
-
-startY=e.touches[0].clientY;
-
-});
-
-window.addEventListener("touchend",(e)=>{
-
-const endY=e.changedTouches[0].clientY;
-
-if(endY-startY>120){
-
-location.reload();
-
-}
-
-});
-
-// ============================
-// Console
-// ============================
-
-console.log("================================");
-console.log("🚀 Viewora Upload Page Loaded");
-console.log("📹 Long Videos Supported (≤12h)");
-console.log("🎬 Shorts Supported (≤60 sec)");
-console.log("🔴 Live Creator Ready");
-console.log("📝 Community Posts Ready");
-console.log("================================");
-
-</script>
-
 
 </body>
 </html>

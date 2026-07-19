@@ -1,609 +1,704 @@
-// =======================================
-// Viewora Privacy Settings
-// Part 1
-// =======================================
+// =====================================
+// Viewora Privacy Settings JS
+// =====================================
 
-// Current User
+
 let currentUser = null;
 
-// Default Privacy Settings
+
+
 const defaultPrivacy = {
 
-    privateAccount: false,
-    profileVisibility: "everyone",
-    onlineStatus: true,
-    readReceipts: true,
-    lastSeen: "everyone",
-    locationSharing: false,
-    storyPrivacy: "everyone",
-    messagePrivacy: "everyone",
-    commentPrivacy: "everyone"
+    privateAccount:false,
+
+    profileVisibility:"everyone",
+
+    onlineStatus:true,
+
+    readReceipts:true,
+
+    lastSeen:"everyone",
+
+    locationSharing:false,
+
+    storyPrivacy:"everyone",
+
+    messagePrivacy:"everyone",
+
+    commentPrivacy:"everyone"
 
 };
 
-// =======================================
-// Authentication
-// =======================================
 
-auth.onAuthStateChanged((user) => {
 
-    if (!user) {
 
-        window.location.href = "login.html";
-        return;
 
-    }
 
-    currentUser = user;
 
-    loadPrivacySettings();
+
+// =====================================
+// Firebase Auth Check
+// =====================================
+
+
+firebase.auth().onAuthStateChanged((user)=>{
+
+
+if(user){
+
+
+currentUser = user;
+
+
+loadProfile(user);
+
+
+loadPrivacySettings(user.uid);
+
+
+}
+
+else{
+
+
+window.location.href="login.html";
+
+
+}
+
 
 });
 
-// =======================================
+
+
+
+
+
+
+
+
+// =====================================
+// Load Profile
+// =====================================
+
+
+function loadProfile(user){
+
+
+
+if(user.photoURL){
+
+
+document.getElementById("profilePhoto").src=user.photoURL;
+
+
+}
+
+
+
+document.getElementById("profileName").innerText =
+
+user.displayName || "Viewora User";
+
+
+
+document.getElementById("profileUsername").innerText =
+
+"@"+(
+user.email
+?
+user.email.split("@")[0]
+:
+"username"
+);
+
+
+
+}
+
+
+
+
+
+
+
+
+
+// =====================================
 // Load Privacy Settings
-// =======================================
+// =====================================
 
-function loadPrivacySettings() {
 
-    if (!currentUser) return;
+function loadPrivacySettings(uid){
 
-    db.ref("privacySettings/" + currentUser.uid)
 
-    .once("value")
 
-    .then((snapshot) => {
+firebase.database()
 
-        const data = snapshot.val() || defaultPrivacy;
+.ref("users/"+uid+"/privacy")
 
-        setToggle("privateAccount", data.privateAccount);
+.once("value")
 
-        document.getElementById("profileVisibility").value =
-            data.profileVisibility;
+.then(snapshot=>{
 
-        setToggle("onlineStatus", data.onlineStatus);
 
-        setToggle("readReceipts", data.readReceipts);
+let data=snapshot.val();
 
-        document.getElementById("lastSeen").value =
-            data.lastSeen;
 
-        setToggle("locationSharing", data.locationSharing);
 
-        document.getElementById("storyPrivacy").value =
-            data.storyPrivacy;
+if(!data){
 
-        document.getElementById("messagePrivacy").value =
-            data.messagePrivacy;
 
-        document.getElementById("commentPrivacy").value =
-            data.commentPrivacy;
+data=defaultPrivacy;
 
-        showToast("🔒 Privacy Settings Loaded");
-
-    })
-
-    .catch((error)=>{
-
-        console.error(error);
-
-    });
 
 }
 
-// =======================================
-// Helper Functions
-// =======================================
 
-function setToggle(id,value){
 
-    const el=document.getElementById(id);
+applySettings(data);
 
-    if(el){
 
-        el.checked=value;
-
-    }
-
-}
-
-function getToggle(id){
-
-    const el=document.getElementById(id);
-
-    return el ? el.checked : false;
-
-}
-
-// =======================================
-// Apply Privacy UI
-// =======================================
-
-function applyPrivacyUI(data){
-
-    // Private Account Badge
-    const badge=document.querySelector(".privacy-status");
-
-    if(badge){
-
-        badge.innerHTML=data.privateAccount
-        ? "🔒 Private Account Enabled"
-        : "🌍 Public Account";
-
-    }
-
-}
-
-// =======================================
-
-console.log("✅ Privacy Settings Part 1 Loaded");
-// =======================================
-// Viewora Privacy Settings
-// Part 2
-// Save + Live Update
-// =======================================
-
-// Save Privacy Settings
-
-async function savePrivacySettings() {
-
-    if (!currentUser) return;
-
-    const settings = {
-
-        privateAccount: getToggle("privateAccount"),
-
-        profileVisibility:
-        document.getElementById("profileVisibility").value,
-
-        onlineStatus:
-        getToggle("onlineStatus"),
-
-        readReceipts:
-        getToggle("readReceipts"),
-
-        lastSeen:
-        document.getElementById("lastSeen").value,
-
-        locationSharing:
-        getToggle("locationSharing"),
-
-        storyPrivacy:
-        document.getElementById("storyPrivacy").value,
-
-        messagePrivacy:
-        document.getElementById("messagePrivacy").value,
-
-        commentPrivacy:
-        document.getElementById("commentPrivacy").value,
-
-        updatedAt:
-        firebase.database.ServerValue.TIMESTAMP
-
-    };
-
-    try{
-
-        await db.ref("privacySettings/" + currentUser.uid)
-        .set(settings);
-
-        applyPrivacyUI(settings);
-
-        document.title = "🔒 Privacy • Viewora";
-
-        showToast("✅ Privacy Settings Saved");
-
-    }
-
-    catch(error){
-
-        console.error(error);
-
-        alert(error.message);
-
-    }
-
-}
-
-// =======================================
-// Live Update
-// =======================================
-
-function previewPrivacySettings(){
-
-    const data={
-
-        privateAccount:
-        getToggle("privateAccount"),
-
-        profileVisibility:
-        document.getElementById("profileVisibility").value,
-
-        onlineStatus:
-        getToggle("onlineStatus"),
-
-        readReceipts:
-        getToggle("readReceipts"),
-
-        lastSeen:
-        document.getElementById("lastSeen").value,
-
-        locationSharing:
-        getToggle("locationSharing"),
-
-        storyPrivacy:
-        document.getElementById("storyPrivacy").value,
-
-        messagePrivacy:
-        document.getElementById("messagePrivacy").value,
-
-        commentPrivacy:
-        document.getElementById("commentPrivacy").value
-
-    };
-
-    applyPrivacyUI(data);
-
-    showToast("👀 Live Preview Updated");
-
-}
-
-// =======================================
-// Unsaved Changes
-// =======================================
-
-const privacyControls=[
-
-"privateAccount",
-"profileVisibility",
-"onlineStatus",
-"readReceipts",
-"lastSeen",
-"locationSharing",
-"storyPrivacy",
-"messagePrivacy",
-"commentPrivacy"
-
-];
-
-privacyControls.forEach(id=>{
-
-    const el=document.getElementById(id);
-
-    if(!el) return;
-
-    el.addEventListener("change",()=>{
-
-        document.title="● Unsaved Privacy";
-
-        previewPrivacySettings();
-
-    });
 
 });
 
-// =======================================
-// Ctrl + S Shortcut
-// =======================================
 
-document.addEventListener("keydown",(e)=>{
+}
 
-    if(e.ctrlKey && e.key.toLowerCase()==="s"){
 
-        e.preventDefault();
 
-        savePrivacySettings();
 
-    }
+
+
+
+
+// =====================================
+// Apply Settings To UI
+// =====================================
+
+
+function applySettings(data){
+
+
+
+document.getElementById("privateAccount").checked =
+data.privateAccount;
+
+
+
+document.getElementById("onlineStatus").checked =
+data.onlineStatus;
+
+
+
+document.getElementById("readReceipts").checked =
+data.readReceipts;
+
+
+
+document.getElementById("locationSharing").checked =
+data.locationSharing;
+
+
+
+
+
+document.getElementById("profileVisibility").value =
+data.profileVisibility;
+
+
+
+document.getElementById("lastSeen").value =
+data.lastSeen;
+
+
+
+document.getElementById("storyPrivacy").value =
+data.storyPrivacy;
+
+
+
+document.getElementById("messagePrivacy").value =
+data.messagePrivacy;
+
+
+
+document.getElementById("commentPrivacy").value =
+data.commentPrivacy;
+
+
+
+}
+
+
+
+
+
+
+
+
+
+// =====================================
+// Save Privacy
+// =====================================
+
+
+function savePrivacySettings(){
+
+
+
+if(!currentUser){
+
+return;
+
+}
+
+
+
+let privacyData = {
+
+
+privateAccount:
+
+document.getElementById("privateAccount").checked,
+
+
+
+profileVisibility:
+
+document.getElementById("profileVisibility").value,
+
+
+
+onlineStatus:
+
+document.getElementById("onlineStatus").checked,
+
+
+
+readReceipts:
+
+document.getElementById("readReceipts").checked,
+
+
+
+lastSeen:
+
+document.getElementById("lastSeen").value,
+
+
+
+locationSharing:
+
+document.getElementById("locationSharing").checked,
+
+
+
+storyPrivacy:
+
+document.getElementById("storyPrivacy").value,
+
+
+
+messagePrivacy:
+
+document.getElementById("messagePrivacy").value,
+
+
+
+commentPrivacy:
+
+document.getElementById("commentPrivacy").value
+
+
+
+};
+
+
+
+
+
+firebase.database()
+
+.ref(
+"users/"+currentUser.uid+"/privacy"
+)
+
+.set(privacyData)
+
+.then(()=>{
+
+
+showToast(
+"✅ Privacy settings saved"
+);
+
+
+
+})
+
+.catch(error=>{
+
+
+showToast(
+"❌ "+error.message
+);
+
+
 
 });
 
-console.log("✅ Privacy Settings Part 2 Loaded");
-// =======================================
-// Viewora Privacy Settings
-// Part 3
-// Reset + Auto Save + Firebase Sync
-// =======================================
 
-// =============================
-// Reset Privacy Settings
-// =============================
-
-function resetPrivacySettings() {
-
-    if (!confirm("Reset all privacy settings to default?")) return;
-
-    setToggle("privateAccount", defaultPrivacy.privateAccount);
-
-    document.getElementById("profileVisibility").value =
-        defaultPrivacy.profileVisibility;
-
-    setToggle("onlineStatus", defaultPrivacy.onlineStatus);
-
-    setToggle("readReceipts", defaultPrivacy.readReceipts);
-
-    document.getElementById("lastSeen").value =
-        defaultPrivacy.lastSeen;
-
-    setToggle("locationSharing", defaultPrivacy.locationSharing);
-
-    document.getElementById("storyPrivacy").value =
-        defaultPrivacy.storyPrivacy;
-
-    document.getElementById("messagePrivacy").value =
-        defaultPrivacy.messagePrivacy;
-
-    document.getElementById("commentPrivacy").value =
-        defaultPrivacy.commentPrivacy;
-
-    applyPrivacyUI(defaultPrivacy);
-
-    document.title = "● Unsaved Privacy";
-
-    showToast("🔄 Privacy Reset");
 
 }
 
-// =============================
-// Auto Save
-// =============================
 
-let privacyAutoSaveTimer;
 
-privacyControls.forEach(id => {
 
-    const element = document.getElementById(id);
 
-    if (!element) return;
 
-    element.addEventListener("change", () => {
 
-        clearTimeout(privacyAutoSaveTimer);
 
-        privacyAutoSaveTimer = setTimeout(() => {
 
-            savePrivacySettings();
+// =====================================
+// Reset Privacy
+// =====================================
 
-        }, 1500);
 
-    });
+function resetPrivacySettings(){
+
+
+
+if(confirm(
+"Reset all privacy settings?"
+)){
+
+
+
+applySettings(defaultPrivacy);
+
+
+
+showToast(
+"🔄 Privacy reset"
+);
+
+
+
+}
+
+
+
+}
+
+
+
+
+
+
+
+
+
+// =====================================
+// Blocked Users
+// =====================================
+
+
+function openBlockedUsers(){
+
+
+window.location.href="blocked-users.html";
+
+
+}
+
+
+
+
+
+
+
+
+
+// =====================================
+// Download User Data
+// =====================================
+
+
+function downloadMyData(){
+
+
+
+if(!currentUser){
+
+return;
+
+}
+
+
+
+firebase.database()
+
+.ref("users/"+currentUser.uid)
+
+.once("value")
+
+.then(snapshot=>{
+
+
+let data=snapshot.val();
+
+
+
+let file = new Blob(
+
+[
+JSON.stringify(data,null,2)
+],
+
+{
+type:"application/json"
+}
+
+);
+
+
+
+let url =
+URL.createObjectURL(file);
+
+
+
+let a =
+document.createElement("a");
+
+
+
+a.href=url;
+
+
+a.download="Viewora-Data.json";
+
+
+a.click();
+
+
+
+URL.revokeObjectURL(url);
+
+
+
+showToast(
+"📥 Data downloaded"
+);
+
+
 
 });
 
-// =============================
-// Download My Data
-// =============================
 
-function downloadMyData() {
-
-    if (!currentUser) return;
-
-    db.ref("users/" + currentUser.uid)
-    .once("value")
-    .then((snapshot) => {
-
-        const data = snapshot.val() || {};
-
-        const file = new Blob(
-            [JSON.stringify(data, null, 2)],
-            { type: "application/json" }
-        );
-
-        const link = document.createElement("a");
-
-        link.href = URL.createObjectURL(file);
-
-        link.download = "viewora-data.json";
-
-        link.click();
-
-        showToast("📥 Data Downloaded");
-
-    });
 
 }
 
-// =============================
-// Delete My Data
-// =============================
 
-async function deleteMyData() {
 
-    if (!currentUser) return;
 
-    const confirmDelete = confirm(
-        "Delete all your Viewora data? This action cannot be undone."
-    );
 
-    if (!confirmDelete) return;
 
-    try {
 
-        await db.ref("users/" + currentUser.uid).remove();
 
-        await db.ref("privacySettings/" + currentUser.uid).remove();
 
-        showToast("🗑️ Data Deleted");
+// =====================================
+// Delete Data
+// =====================================
 
-    }
 
-    catch (error) {
+function deleteMyData(){
 
-        console.error(error);
 
-        alert(error.message);
 
-    }
+if(!currentUser){
+
+return;
 
 }
 
-// =============================
-// Live Firebase Sync
-// =============================
 
-function enablePrivacySync() {
 
-    if (!currentUser) return;
+let confirmDelete = confirm(
 
-    db.ref("privacySettings/" + currentUser.uid)
+"Delete all Viewora data permanently?"
 
-    .on("value", (snapshot) => {
+);
 
-        if (!snapshot.exists()) return;
 
-        applyPrivacyUI(snapshot.val());
 
-    });
+if(confirmDelete){
+
+
+
+firebase.database()
+
+.ref("users/"+currentUser.uid)
+
+.remove()
+
+.then(()=>{
+
+
+showToast(
+"🗑 Data deleted"
+);
+
+
+
+});
+
+
 
 }
 
-enablePrivacySync();
 
-console.log("✅ Privacy Settings Part 3 Loaded");
-// =======================================
-// Viewora Privacy Settings
-// Part 4 (Final)
-// =======================================
 
-// =============================
-// Premium Toast
-// =============================
+}
+
+
+
+
+
+
+
+
+
+// =====================================
+// Back Button
+// =====================================
+
+
+function goBackSettings(){
+
+
+window.location.href="settings.html";
+
+
+}
+
+
+
+
+
+
+
+
+
+// =====================================
+// Toast
+// =====================================
+
 
 function showToast(message){
 
-    let toast=document.getElementById("vieworaToast");
 
-    if(!toast){
 
-        toast=document.createElement("div");
+let toast=document.createElement("div");
 
-        toast.id="vieworaToast";
 
-        toast.style.cssText=`
-        position:fixed;
-        left:50%;
-        bottom:30px;
-        transform:translateX(-50%);
-        background:linear-gradient(135deg,#00aaff,#7c3aed);
-        color:#fff;
-        padding:14px 24px;
-        border-radius:30px;
-        font-size:15px;
-        font-weight:bold;
-        box-shadow:0 12px 30px rgba(0,170,255,.35);
-        z-index:99999;
-        opacity:0;
-        transition:.35s;
-        `;
 
-        document.body.appendChild(toast);
+toast.innerText=message;
 
-    }
 
-    toast.textContent=message;
 
-    toast.style.opacity="1";
+toast.style.position="fixed";
 
-    clearTimeout(toast.hideTimer);
 
-    toast.hideTimer=setTimeout(()=>{
+toast.style.bottom="30px";
 
-        toast.style.opacity="0";
 
-    },2500);
+toast.style.left="50%";
+
+
+toast.style.transform="translateX(-50%)";
+
+
+toast.style.background="#00aaff";
+
+
+toast.style.color="#fff";
+
+
+toast.style.padding="12px 25px";
+
+
+toast.style.borderRadius="30px";
+
+
+toast.style.fontWeight="bold";
+
+
+toast.style.zIndex="9999";
+
+
+toast.style.boxShadow=
+
+"0 10px 25px rgba(0,170,255,.35)";
+
+
+
+document.body.appendChild(toast);
+
+
+
+setTimeout(()=>{
+
+
+toast.remove();
+
+
+},2500);
+
+
 
 }
 
-// =============================
-// Refresh Settings
-// =============================
 
-function refreshPrivacySettings(){
 
-    loadPrivacySettings();
 
-    showToast("🔄 Privacy Settings Refreshed");
 
-}
 
-// =============================
+
+
+// =====================================
 // Internet Status
-// =============================
+// =====================================
+
 
 window.addEventListener("online",()=>{
 
-    showToast("🌐 Internet Connected");
+
+showToast(
+"🌐 Internet Connected"
+);
+
 
 });
+
+
 
 window.addEventListener("offline",()=>{
 
-    showToast("📡 No Internet Connection");
+
+showToast(
+"📡 No Internet Connection"
+);
+
 
 });
 
-// =============================
-// Unsaved Changes Warning
-// =============================
 
-window.addEventListener("beforeunload",(e)=>{
 
-    if(document.title==="● Unsaved Privacy"){
 
-        e.preventDefault();
 
-        e.returnValue="";
 
-    }
-
-});
-
-// =============================
-// Logout Helper
-// =============================
-
-async function logout(){
-
-    if(!confirm("Logout from Viewora?")) return;
-
-    try{
-
-        await auth.signOut();
-
-        showToast("👋 Logged Out");
-
-        setTimeout(()=>{
-
-            window.location.href="login.html";
-
-        },800);
-
-    }
-
-    catch(error){
-
-        console.error(error);
-
-        alert(error.message);
-
-    }
-
-}
-
-// =============================
-// Startup
-// =============================
-
-window.addEventListener("load",()=>{
-
-    refreshPrivacySettings();
-
-    console.log("🔒 Privacy Settings Ready");
-
-});
-
-// =============================
-// Final
-// =============================
-
-console.log("✅ privacy-settings.js Loaded Successfully");
+console.log(
+"🔒 Viewora Privacy Settings Loaded"
+);

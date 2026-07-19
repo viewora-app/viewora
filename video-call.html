@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Viewora Video Call</title>
+
+<style>
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:Arial,sans-serif;
+}
+
+body{
+
+background:#000;
+overflow:hidden;
+height:100vh;
+
+}
+
+/* Remote Video */
+
+#remoteVideo{
+
+position:fixed;
+inset:0;
+
+width:100%;
+height:100%;
+
+object-fit:cover;
+
+background:#000;
+
+}
+
+/* Local Video */
+
+#localVideo{
+
+position:absolute;
+
+top:20px;
+right:20px;
+
+width:130px;
+height:180px;
+
+border-radius:18px;
+
+object-fit:cover;
+
+border:3px solid rgba(255,255,255,.25);
+
+background:#111;
+
+box-shadow:0 10px 25px rgba(0,0,0,.4);
+
+z-index:20;
+
+}
+
+/* Top Info */
+
+.top{
+
+position:absolute;
+
+top:25px;
+left:25px;
+
+z-index:20;
+
+color:#fff;
+
+text-shadow:0 2px 8px rgba(0,0,0,.5);
+
+}
+
+#callerName{
+
+font-size:28px;
+font-weight:bold;
+
+}
+
+#callTimer{
+
+margin-top:6px;
+
+font-size:17px;
+
+opacity:.9;
+
+}
+
+/* Bottom Controls */
+
+.controls{
+
+position:absolute;
+
+bottom:35px;
+
+left:50%;
+
+transform:translateX(-50%);
+
+display:flex;
+
+gap:20px;
+
+z-index:30;
+
+}
+
+.controls button{
+
+width:68px;
+height:68px;
+
+border:none;
+
+border-radius:50%;
+
+font-size:26px;
+
+cursor:pointer;
+
+transition:.25s;
+
+backdrop-filter:blur(12px);
+
+}
+
+#micBtn{
+
+background:#1E88E5;
+color:#fff;
+
+}
+
+#cameraBtn{
+
+background:#43A047;
+color:#fff;
+
+}
+
+#switchBtn{
+
+background:#8E24AA;
+color:#fff;
+
+}
+
+#endBtn{
+
+background:#E53935;
+color:#fff;
+
+}
+
+.controls button:active{
+
+transform:scale(.92);
+
+}
+
+</style>
+
+</head>
+
+<body>
+
+<video
+id="remoteVideo"
+autoplay
+playsinline>
+
+</video>
+
+<video
+id="localVideo"
+autoplay
+playsinline
+muted>
+
+</video>
+
+<div class="top">
+
+<div id="callerName">
+
+Connecting...
+
+</div>
+
+<div id="callTimer">
+
+00:00
+
+</div>
+
+</div>
+
+<div class="controls">
+
+<button id="micBtn">
+
+🎤
+
+</button>
+
+<button id="cameraBtn">
+
+📷
+
+</button>
+
+<button id="switchBtn">
+
+🔄
+
+</button>
+
+<button id="endBtn">
+
+📞
+
+</button>
+
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
+
+<script src="firebase.js"></script>
+
+<script src="video-call.js"></script>
+
+</body>
+</html>

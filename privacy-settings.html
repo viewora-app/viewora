@@ -4,278 +4,69 @@
 <head>
 
 <meta charset="UTF-8">
+
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <title>🔒 Privacy Settings • Viewora</title>
 
 <link rel="stylesheet" href="style.css">
 
-<style>
-
-*{
-margin:0;
-padding:0;
-box-sizing:border-box;
-font-family:Arial,sans-serif;
-}
-
-body{
-
-background:#0d1117;
-color:#fff;
-overflow-x:hidden;
-padding-bottom:120px;
-
-}
-
-/* ========================= */
-/* Animated Background */
-/* ========================= */
-
-body::before{
-
-content:"";
-
-position:fixed;
-
-top:-50%;
-left:-50%;
-
-width:200%;
-height:200%;
-
-background:
-radial-gradient(circle,#00aaff22,transparent 35%),
-radial-gradient(circle,#7c3aed22,transparent 35%),
-radial-gradient(circle,#00ff8822,transparent 35%);
-
-animation:bgRotate 18s linear infinite;
-
-z-index:-1;
-
-}
-
-@keyframes bgRotate{
-
-0%{transform:rotate(0deg);}
-100%{transform:rotate(360deg);}
-
-}
-
-/* ========================= */
-/* Header */
-/* ========================= */
-
-.header{
-
-padding:35px 20px;
-
-text-align:center;
-
-background:linear-gradient(135deg,#00aaff,#7c3aed);
-
-border-bottom-left-radius:35px;
-border-bottom-right-radius:35px;
-
-box-shadow:0 10px 30px rgba(0,170,255,.30);
-
-animation:slideDown .6s ease;
-
-}
-
-.header h1{
-
-font-size:30px;
-margin-bottom:8px;
-
-}
-
-.header p{
-
-color:#ddd;
-
-}
-
-@keyframes slideDown{
-
-from{
-
-opacity:0;
-transform:translateY(-40px);
-
-}
-
-to{
-
-opacity:1;
-transform:translateY(0);
-
-}
-
-}
-
-/* ========================= */
-/* Privacy Card */
-/* ========================= */
-
-.privacy-card{
-
-width:92%;
-
-margin:25px auto;
-
-padding:25px;
-
-border-radius:24px;
-
-background:rgba(255,255,255,.06);
-
-backdrop-filter:blur(18px);
-
-border:1px solid rgba(255,255,255,.08);
-
-animation:zoomIn .6s ease;
-
-}
-
-@keyframes zoomIn{
-
-from{
-
-opacity:0;
-transform:scale(.92);
-
-}
-
-to{
-
-opacity:1;
-transform:scale(1);
-
-}
-
-}
-
-.profile-row{
-
-display:flex;
-
-align-items:center;
-
-gap:18px;
-
-}
-
-.profile-row img{
-
-width:90px;
-height:90px;
-
-border-radius:50%;
-
-object-fit:cover;
-
-border:3px solid #00aaff;
-
-box-shadow:0 0 20px rgba(0,170,255,.35);
-
-}
-
-.profile-info h2{
-
-font-size:22px;
-margin-bottom:5px;
-
-}
-
-.profile-info p{
-
-color:#aaa;
-
-}
-
-.privacy-status{
-
-margin-top:20px;
-
-padding:12px;
-
-border-radius:15px;
-
-text-align:center;
-
-background:linear-gradient(135deg,#00c853,#00a152);
-
-font-weight:bold;
-
-box-shadow:0 8px 20px rgba(0,200,83,.25);
-
-}
-
-/* ========================= */
-/* Section */
-/* ========================= */
-
-.section-title{
-
-width:92%;
-
-margin:30px auto 15px;
-
-font-size:20px;
-
-font-weight:bold;
-
-color:#00aaff;
-
-}
-
-.settings-container{
-
-width:92%;
-
-margin:auto;
-
-}
-
-</style>
+<link rel="stylesheet" href="privacy-settings.css">
 
 </head>
 
+
 <body>
 
-<div class="header">
+
+<!-- Header -->
+
+<header class="header">
 
 <h1>🔒 Privacy Settings</h1>
 
-<p>Control your privacy and security on Viewora</p>
+<p>
+Control your privacy and security on Viewora
+</p>
 
-</div>
+</header>
 
-<div class="privacy-card">
+
+
+
+
+<!-- Profile Privacy Card -->
+
+
+<section class="privacy-card">
+
 
 <div class="profile-row">
 
-<img id="profilePhoto"
-src="https://via.placeholder.com/150">
+
+<img 
+id="profilePhoto"
+src="non.jpg"
+alt="Profile">
+
 
 <div class="profile-info">
 
 <h2 id="profileName">
-
 Loading...
-
 </h2>
 
 <p id="profileUsername">
-
 @loading
-
 </p>
 
-</div>
 
 </div>
+
+
+</div>
+
+
 
 <div class="privacy-status">
 
@@ -283,7 +74,18 @@ Loading...
 
 </div>
 
-</div>
+
+
+</section>
+
+
+
+
+
+
+
+<!-- Privacy Controls -->
+
 
 <h2 class="section-title">
 
@@ -291,351 +93,279 @@ Privacy Controls
 
 </h2>
 
+
+
 <div class="settings-container">
-  <!-- ========================= -->
-<!-- Private Account -->
-<!-- ========================= -->
+
+
 
 <div class="setting-card">
 
-    <div class="icon">🔒</div>
 
-    <div class="content">
+<div class="icon">
+🔒
+</div>
 
-        <h3>Private Account</h3>
 
-        <p>Only approved followers can see your posts.</p>
+<div class="content">
 
-    </div>
+<h3>
+Private Account
+</h3>
 
-    <label class="switch">
-
-        <input type="checkbox" id="privateAccount">
-
-        <span class="slider"></span>
-
-    </label>
+<p>
+Only approved followers can see your posts.
+</p>
 
 </div>
 
-<!-- ========================= -->
-<!-- Profile Visibility -->
-<!-- ========================= -->
+
+<label class="switch">
+
+<input 
+type="checkbox"
+id="privateAccount">
+
+<span class="slider"></span>
+
+</label>
+
+
+</div>
+
+
+
+
+
+
 
 <div class="setting-card">
 
-    <div class="icon">👀</div>
 
-    <div class="content">
+<div class="icon">
+👀
+</div>
 
-        <h3>Profile Visibility</h3>
 
-        <p>Choose who can view your profile.</p>
+<div class="content">
 
-    </div>
+<h3>
+Profile Visibility
+</h3>
 
-    <select id="profileVisibility">
-
-        <option value="everyone">Everyone</option>
-        <option value="followers">Followers Only</option>
-        <option value="nobody">Nobody</option>
-
-    </select>
+<p>
+Choose who can view your profile.
+</p>
 
 </div>
 
-<!-- ========================= -->
-<!-- Online Status -->
-<!-- ========================= -->
+
+<select id="profileVisibility">
+
+<option value="everyone">
+Everyone
+</option>
+
+<option value="followers">
+Followers Only
+</option>
+
+<option value="nobody">
+Nobody
+</option>
+
+</select>
+
+
+</div>
+
+
+
+
+
+
 
 <div class="setting-card">
 
-    <div class="icon">🟢</div>
 
-    <div class="content">
+<div class="icon">
+🟢
+</div>
 
-        <h3>Show Online Status</h3>
 
-        <p>Let others know when you're online.</p>
+<div class="content">
 
-    </div>
+<h3>
+Show Online Status
+</h3>
 
-    <label class="switch">
-
-        <input type="checkbox"
-               id="onlineStatus"
-               checked>
-
-        <span class="slider"></span>
-
-    </label>
+<p>
+Let others know when you're online.
+</p>
 
 </div>
 
-<!-- ========================= -->
-<!-- Read Receipts -->
-<!-- ========================= -->
+
+
+<label class="switch">
+
+<input 
+type="checkbox"
+id="onlineStatus">
+
+<span class="slider"></span>
+
+</label>
+
+
+</div>
+
+
+
+
+
+
 
 <div class="setting-card">
 
-    <div class="icon">✔️</div>
 
-    <div class="content">
+<div class="icon">
+✔️
+</div>
 
-        <h3>Read Receipts</h3>
 
-        <p>Allow others to know when you've read messages.</p>
+<div class="content">
 
-    </div>
+<h3>
+Read Receipts
+</h3>
 
-    <label class="switch">
-
-        <input type="checkbox"
-               id="readReceipts"
-               checked>
-
-        <span class="slider"></span>
-
-    </label>
+<p>
+Allow others to know when messages are read.
+</p>
 
 </div>
 
-<!-- ========================= -->
-<!-- Last Seen -->
-<!-- ========================= -->
+
+
+<label class="switch">
+
+<input 
+type="checkbox"
+id="readReceipts">
+
+<span class="slider"></span>
+
+</label>
+
+
+</div>
+
+
+
+
+
+
 
 <div class="setting-card">
 
-    <div class="icon">🕒</div>
 
-    <div class="content">
+<div class="icon">
+🕒
+</div>
 
-        <h3>Last Seen</h3>
 
-        <p>Choose who can see your last active time.</p>
+<div class="content">
 
-    </div>
+<h3>
+Last Seen
+</h3>
 
-    <select id="lastSeen">
-
-        <option value="everyone">Everyone</option>
-        <option value="followers">Followers Only</option>
-        <option value="nobody">Nobody</option>
-
-    </select>
+<p>
+Choose who can see your active time.
+</p>
 
 </div>
 
-<!-- ========================= -->
-<!-- Location Sharing -->
-<!-- ========================= -->
+
+<select id="lastSeen">
+
+
+<option value="everyone">
+Everyone
+</option>
+
+
+<option value="followers">
+Followers Only
+</option>
+
+
+<option value="nobody">
+Nobody
+</option>
+
+
+</select>
+
+
+</div>
+
+
+
+
+
+
 
 <div class="setting-card">
 
-    <div class="icon">📍</div>
 
-    <div class="content">
+<div class="icon">
+📍
+</div>
 
-        <h3>Location Sharing</h3>
 
-        <p>Allow Viewora to share your location.</p>
+<div class="content">
 
-    </div>
+<h3>
+Location Sharing
+</h3>
 
-    <label class="switch">
-
-        <input type="checkbox"
-               id="locationSharing">
-
-        <span class="slider"></span>
-
-    </label>
+<p>
+Allow location sharing features.
+</p>
 
 </div>
 
-<style>
 
-/* ========================= */
-/* Setting Card */
-/* ========================= */
 
-.setting-card{
+<label class="switch">
 
-display:flex;
-align-items:center;
-gap:16px;
+<input 
+type="checkbox"
+id="locationSharing">
 
-padding:18px;
-margin-bottom:16px;
+<span class="slider"></span>
 
-background:rgba(255,255,255,.06);
+</label>
 
-backdrop-filter:blur(15px);
 
-border:1px solid rgba(255,255,255,.08);
+</div>
 
-border-radius:20px;
 
-transition:.3s;
 
-animation:fadeUp .5s ease both;
+</div>
 
-}
 
-.setting-card:hover{
 
-transform:translateY(-4px);
 
-background:rgba(255,255,255,.10);
 
-box-shadow:0 15px 35px rgba(0,170,255,.20);
 
-}
 
-.icon{
 
-width:58px;
-height:58px;
 
-display:flex;
-align-items:center;
-justify-content:center;
-
-font-size:28px;
-
-border-radius:16px;
-
-background:linear-gradient(135deg,#00aaff,#7c3aed);
-
-flex-shrink:0;
-
-}
-
-.content{
-
-flex:1;
-
-}
-
-.content h3{
-
-margin-bottom:5px;
-font-size:17px;
-
-}
-
-.content p{
-
-font-size:13px;
-color:#aaa;
-
-}
-
-/* Switch */
-
-.switch{
-
-position:relative;
-display:inline-block;
-
-width:54px;
-height:30px;
-
-}
-
-.switch input{
-
-display:none;
-
-}
-
-.slider{
-
-position:absolute;
-inset:0;
-
-background:#444;
-
-border-radius:30px;
-
-cursor:pointer;
-
-transition:.3s;
-
-}
-
-.slider::before{
-
-content:"";
-
-position:absolute;
-
-left:4px;
-bottom:4px;
-
-width:22px;
-height:22px;
-
-background:#fff;
-
-border-radius:50%;
-
-transition:.3s;
-
-}
-
-.switch input:checked + .slider{
-
-background:#00aaff;
-
-}
-
-.switch input:checked + .slider::before{
-
-transform:translateX(24px);
-
-}
-
-/* Select */
-
-select{
-
-padding:10px 12px;
-
-border-radius:10px;
-
-background:#222;
-
-color:#fff;
-
-border:1px solid #444;
-
-}
-
-/* Animation */
-
-@keyframes fadeUp{
-
-from{
-
-opacity:0;
-transform:translateY(25px);
-
-}
-
-to{
-
-opacity:1;
-transform:translateY(0);
-
-}
-
-}
-
-</style>
-<!-- ========================= -->
 <!-- Advanced Privacy -->
-<!-- ========================= -->
+
 
 <h2 class="section-title">
 
@@ -643,444 +373,387 @@ Advanced Privacy
 
 </h2>
 
+
+
+
 <div class="settings-container">
 
-    <!-- Story Privacy -->
 
-    <div class="setting-card">
 
-        <div class="icon">📷</div>
 
-        <div class="content">
 
-            <h3>Story Privacy</h3>
+<div class="setting-card">
 
-            <p>Choose who can view your stories.</p>
 
-        </div>
+<div class="icon">
+📷
+</div>
 
-        <select id="storyPrivacy">
 
-            <option value="everyone">Everyone</option>
-            <option value="followers">Followers Only</option>
-            <option value="closefriends">Close Friends</option>
-            <option value="nobody">Nobody</option>
+<div class="content">
 
-        </select>
+<h3>
+Story Privacy
+</h3>
 
-    </div>
-
-    <!-- Message Requests -->
-
-    <div class="setting-card">
-
-        <div class="icon">💬</div>
-
-        <div class="content">
-
-            <h3>Who Can Message Me</h3>
-
-            <p>Control incoming message requests.</p>
-
-        </div>
-
-        <select id="messagePrivacy">
-
-            <option value="everyone">Everyone</option>
-            <option value="followers">Followers Only</option>
-            <option value="nobody">Nobody</option>
-
-        </select>
-
-    </div>
-
-    <!-- Comment Privacy -->
-
-    <div class="setting-card">
-
-        <div class="icon">❤️</div>
-
-        <div class="content">
-
-            <h3>Who Can Comment</h3>
-
-            <p>Choose who can comment on your posts.</p>
-
-        </div>
-
-        <select id="commentPrivacy">
-
-            <option value="everyone">Everyone</option>
-            <option value="followers">Followers Only</option>
-            <option value="nobody">Nobody</option>
-
-        </select>
-
-    </div>
-
-    <!-- Blocked Users -->
-
-    <div class="setting-card"
-         onclick="window.location.href='blocked-users.html'">
-
-        <div class="icon">🚫</div>
-
-        <div class="content">
-
-            <h3>Blocked Users</h3>
-
-            <p>Manage blocked accounts.</p>
-
-        </div>
-
-        <div style="font-size:24px;color:#00aaff;">›</div>
-
-    </div>
-
-    <!-- Download Data -->
-
-    <div class="setting-card"
-         onclick="downloadMyData()">
-
-        <div class="icon">📥</div>
-
-        <div class="content">
-
-            <h3>Download My Data</h3>
-
-            <p>Download your Viewora account data.</p>
-
-        </div>
-
-        <div style="font-size:24px;color:#00aaff;">›</div>
-
-    </div>
-
-    <!-- Delete Data -->
-
-    <div class="setting-card"
-         onclick="deleteMyData()">
-
-        <div class="icon">🗑️</div>
-
-        <div class="content">
-
-            <h3>Delete My Data</h3>
-
-            <p>Remove all saved app data permanently.</p>
-
-        </div>
-
-        <div style="font-size:24px;color:#ff4444;">›</div>
-
-    </div>
+<p>
+Choose who can view your stories.
+</p>
 
 </div>
 
-<!-- ========================= -->
-<!-- Action Buttons -->
-<!-- ========================= -->
+
+<select id="storyPrivacy">
+
+
+<option value="everyone">
+Everyone
+</option>
+
+
+<option value="followers">
+Followers Only
+</option>
+
+
+<option value="closefriends">
+Close Friends
+</option>
+
+
+<option value="nobody">
+Nobody
+</option>
+
+
+</select>
+
+
+</div>
+
+
+
+
+
+
+
+<div class="setting-card">
+
+
+<div class="icon">
+💬
+</div>
+
+
+<div class="content">
+
+<h3>
+Who Can Message Me
+</h3>
+
+<p>
+Control incoming message requests.
+</p>
+
+</div>
+
+
+<select id="messagePrivacy">
+
+
+<option value="everyone">
+Everyone
+</option>
+
+
+<option value="followers">
+Followers Only
+</option>
+
+
+<option value="nobody">
+Nobody
+</option>
+
+
+</select>
+
+
+</div>
+
+
+
+
+
+
+
+<div class="setting-card">
+
+
+<div class="icon">
+❤️
+</div>
+
+
+<div class="content">
+
+<h3>
+Who Can Comment
+</h3>
+
+<p>
+Control comments on your posts.
+</p>
+
+</div>
+
+
+<select id="commentPrivacy">
+
+
+<option value="everyone">
+Everyone
+</option>
+
+
+<option value="followers">
+Followers Only
+</option>
+
+
+<option value="nobody">
+Nobody
+</option>
+
+
+</select>
+
+
+</div>
+
+
+
+
+
+
+
+<div class="setting-card action-card"
+onclick="openBlockedUsers()">
+
+
+
+<div class="icon">
+🚫
+</div>
+
+
+<div class="content">
+
+<h3>
+Blocked Users
+</h3>
+
+<p>
+Manage blocked accounts.
+</p>
+
+</div>
+
+
+<span>
+›
+</span>
+
+
+</div>
+
+
+
+
+
+
+
+<div class="setting-card action-card"
+onclick="downloadMyData()">
+
+
+
+<div class="icon">
+📥
+</div>
+
+
+<div class="content">
+
+<h3>
+Download My Data
+</h3>
+
+<p>
+Download your Viewora data.
+</p>
+
+</div>
+
+
+<span>
+›
+</span>
+
+
+</div>
+
+
+
+
+
+
+
+<div class="setting-card action-card delete-card"
+onclick="deleteMyData()">
+
+
+
+<div class="icon">
+🗑️
+</div>
+
+
+<div class="content">
+
+<h3>
+Delete My Data
+</h3>
+
+<p>
+Remove saved account data.
+</p>
+
+</div>
+
+
+<span>
+›
+</span>
+
+
+</div>
+
+
+
+
+</div>
+
+
+
+
+
+
+
+
+
+<!-- Buttons -->
+
 
 <div class="action-buttons">
 
-    <button class="save-btn"
-            onclick="savePrivacySettings()">
 
-        💾 Save Privacy
+<button class="save-btn"
+onclick="savePrivacySettings()">
 
-    </button>
+💾 Save Privacy
 
-    <button class="reset-btn"
-            onclick="resetPrivacySettings()">
+</button>
 
-        🔄 Reset Privacy
 
-    </button>
 
-    <button class="back-btn"
-            onclick="window.location.href='settings.html'">
 
-        ⬅ Back to Settings
+<button class="reset-btn"
+onclick="resetPrivacySettings()">
 
-    </button>
+🔄 Reset
+
+</button>
+
+
+
+
+<button class="back-btn"
+onclick="goBackSettings()">
+
+⬅ Back To Settings
+
+</button>
+
+
 
 </div>
 
-<style>
 
-/* ========================= */
-/* Action Buttons */
-/* ========================= */
 
-.action-buttons{
 
-width:92%;
-margin:35px auto;
 
-display:flex;
-flex-direction:column;
 
-gap:15px;
 
-}
 
-.action-buttons button{
 
-padding:16px;
-
-border:none;
-
-border-radius:18px;
-
-font-size:16px;
-
-font-weight:bold;
-
-cursor:pointer;
-
-transition:.3s;
-
-}
-
-.save-btn{
-
-background:linear-gradient(135deg,#00aaff,#0066ff);
-
-color:#fff;
-
-box-shadow:0 10px 25px rgba(0,170,255,.35);
-
-}
-
-.reset-btn{
-
-background:linear-gradient(135deg,#ff9800,#ff5722);
-
-color:#fff;
-
-box-shadow:0 10px 25px rgba(255,87,34,.35);
-
-}
-
-.back-btn{
-
-background:#2b2b2b;
-
-color:#fff;
-
-}
-
-.action-buttons button:hover{
-
-transform:translateY(-3px) scale(1.02);
-
-}
-
-.action-buttons button:active{
-
-transform:scale(.98);
-
-}
-
-</style>
-<!-- ========================= -->
 <!-- Footer -->
-<!-- ========================= -->
+
 
 <footer class="footer">
 
-    <h3>🔒 Viewora Privacy</h3>
 
-    <p>
-        Your privacy is important to us. Manage your privacy settings anytime.
-    </p>
+<h3>
+🔒 Viewora Privacy
+</h3>
 
-    <div class="footer-version">
 
-        Version 1.0.0 • © 2026 Viewora
+<p>
+Your privacy, your control.
+</p>
 
-    </div>
+
+<div>
+Version 1.0.0 • © 2026 Viewora
+</div>
+
 
 </footer>
 
-<!-- Floating Badge -->
+
+
+
 
 <div class="privacy-badge">
 
-    🛡️ Privacy Protected
+🛡️ Protected
 
 </div>
 
-<style>
 
-/* ========================= */
-/* Footer */
-/* ========================= */
 
-.footer{
 
-width:92%;
 
-margin:40px auto 100px;
 
-padding:25px;
 
-text-align:center;
 
-background:rgba(255,255,255,.06);
 
-backdrop-filter:blur(18px);
+<!-- Firebase -->
 
-border:1px solid rgba(255,255,255,.08);
-
-border-radius:22px;
-
-animation:fadeFooter .8s ease;
-
-}
-
-.footer h3{
-
-color:#00aaff;
-
-margin-bottom:10px;
-
-}
-
-.footer p{
-
-color:#aaa;
-
-line-height:1.6;
-
-}
-
-.footer-version{
-
-margin-top:15px;
-
-font-size:13px;
-
-color:#666;
-
-}
-
-/* Floating Badge */
-
-.privacy-badge{
-
-position:fixed;
-
-right:20px;
-
-bottom:20px;
-
-padding:12px 18px;
-
-border-radius:30px;
-
-background:linear-gradient(135deg,#00aaff,#7c3aed);
-
-color:#fff;
-
-font-weight:bold;
-
-box-shadow:0 12px 30px rgba(0,170,255,.35);
-
-animation:pulse 2s infinite;
-
-z-index:999;
-
-}
-
-@keyframes fadeFooter{
-
-from{
-
-opacity:0;
-
-transform:translateY(30px);
-
-}
-
-to{
-
-opacity:1;
-
-transform:translateY(0);
-
-}
-
-}
-
-@keyframes pulse{
-
-0%,100%{
-
-transform:scale(1);
-
-}
-
-50%{
-
-transform:scale(1.08);
-
-}
-
-}
-
-</style>
-
-<!-- ========================= -->
-<!-- Firebase SDK -->
-<!-- ========================= -->
 
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
 
+
 <script src="firebase.js"></script>
+
 <script src="privacy-settings.js"></script>
 
-<script>
 
-// Smooth Fade Animation
-
-document.body.style.opacity="0";
-
-window.addEventListener("load",()=>{
-
-document.body.style.transition="opacity .4s ease";
-
-document.body.style.opacity="1";
-
-});
-
-// Internet Status
-
-window.addEventListener("online",()=>{
-
-if(typeof showToast==="function"){
-
-showToast("🌐 Internet Connected");
-
-}
-
-});
-
-window.addEventListener("offline",()=>{
-
-if(typeof showToast==="function"){
-
-showToast("📡 No Internet Connection");
-
-}
-
-});
-
-console.log("🔒 Privacy Settings Loaded");
-
-</script>
 
 </body>
+
 </html>

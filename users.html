@@ -1,218 +1,475 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
 
 <meta charset="UTF-8">
-<meta name="viewport"
-content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <title>Viewora • Users</title>
 
+<!-- CSS -->
 <link rel="stylesheet" href="users.css">
 
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<!-- Font Awesome -->
+<link rel="stylesheet"
+href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"/>
 
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
+<!-- Google Font -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
 </head>
 
 <body>
 
-<!-- =========================
-HEADER
-========================= -->
+<!-- ===========================
+     Animated Background
+=========================== -->
 
-<header class="topHeader">
+<div class="bg-gradient"></div>
 
-<button
-class="backBtn"
-onclick="history.back()">
+<div class="blur blur1"></div>
+<div class="blur blur2"></div>
+<div class="blur blur3"></div>
 
-←
+<!-- Floating Particles -->
+
+<div class="particles">
+
+<span></span>
+<span></span>
+<span></span>
+<span></span>
+<span></span>
+<span></span>
+<span></span>
+<span></span>
+
+</div>
+
+<!-- ===========================
+      Loading Screen
+=========================== -->
+
+<div id="pageLoader">
+
+<div class="loaderCircle"></div>
+
+<h2>Loading Users</h2>
+
+<p>Please wait...</p>
+
+</div>
+
+<!-- ===========================
+        Main App
+=========================== -->
+
+<div id="app" class="hidden">
+
+<!-- ===========================
+          Header
+=========================== -->
+
+<header class="topBar">
+
+<button id="backBtn" class="iconBtn">
+
+<i class="fa-solid fa-arrow-left"></i>
 
 </button>
+
+<div class="titleArea">
 
 <h2>
 
-Users
+
+Viewora Users
 
 </h2>
 
-</header>
-
-<!-- =========================
-SEARCH
-========================= -->
-
-<div class="searchBox">
-
-<input
-
-type="text"
-
-id="searchInput"
-
-placeholder="Search users..."
-
-onkeyup="searchUsers()"
-
->
+<p>Discover Amazing People</p>
 
 </div>
 
-<!-- =========================
-USERS LIST
-========================= -->
+<button id="refreshBtn" class="iconBtn">
 
-<div
-
-id="usersList"
-
-class="usersList"
-
->
-
-<div class="loading">
-
-Loading Users...
-
-</div>
-
-</div>
-<!-- =========================
-Suggested Users
-========================= -->
-
-<section class="section">
-
-<div class="sectionTitle">
-
-⭐ Suggested For You
-
-</div>
-
-<div id="suggestedUsers">
-
-</div>
-
-</section>
-
-<!-- =========================
-All Users
-========================= -->
-
-<section class="section">
-
-<div class="sectionTitle">
-
-👥 All Users
-
-</div>
-
-<div id="allUsers">
-
-</div>
-
-</section>
-
-<!-- =========================
-Floating Search Button
-========================= -->
-
-<button
-
-id="scrollTopBtn"
-
-onclick="scrollTo({
-
-top:0,
-
-behavior:'smooth'
-
-})"
-
->
-
-↑
+<i class="fa-solid fa-rotate"></i>
 
 </button>
 
-<!-- =========================
-Bottom Navigation
-========================= -->
+</header>
+
+<!-- ===========================
+          Search
+=========================== -->
+
+<section class="searchSection">
+
+<div class="searchBox">
+
+<i class="fa-solid fa-magnifying-glass"></i>
+
+<input
+type="text"
+id="searchInput"
+placeholder="Search users...">
+
+<button id="clearSearch">
+
+<i class="fa-solid fa-xmark"></i>
+
+</button>
+
+</div>
+
+</section>
+
+<!-- ===========================
+      Suggested Users
+=========================== -->
+
+<section class="section">
+
+<div class="sectionHeader">
+
+<h3>
+
+⭐ Suggested For You
+
+</h3>
+
+<button class="seeAllBtn">
+
+See All
+
+</button>
+
+</div>
+
+<div
+id="suggestedUsers"
+class="suggestedContainer">
+
+<!-- JS -->
+
+</div>
+
+</section>
+
+<!-- ===========================
+      Online Users
+=========================== -->
+
+<section class="section">
+
+<div class="sectionHeader">
+
+<h3>
+
+🟢 Online Now
+
+</h3>
+
+<span id="onlineCount">
+
+0 Online
+
+</span>
+
+</div>
+
+<div
+id="onlineUsers"
+class="onlineContainer">
+
+<!-- JS -->
+
+</div>
+
+</section>
+
+<!-- ===========================
+      All Users
+=========================== -->
+
+<section class="section">
+
+<div class="sectionHeader">
+
+<h3>
+
+👥 All Users
+
+</h3>
+
+<span id="totalUsers">
+
+0 Users
+
+</span>
+
+</div>
+
+<div
+id="usersList"
+class="usersList">
+
+<!-- JS -->
+
+</div>
+
+</section>
+<!-- ===========================
+        Empty State
+=========================== -->
+
+<div id="emptyState" class="hidden">
+
+<div class="emptyIcon">
+
+<i class="fa-solid fa-user-slash"></i>
+
+</div>
+
+<h2>No Users Found</h2>
+
+<p>Try searching with another username.</p>
+
+</div>
+
+<!-- ===========================
+      Profile Preview Modal
+=========================== -->
+
+<div id="profileModal" class="modal hidden">
+
+<div class="modalOverlay"></div>
+
+<div class="modalContent">
+
+<button
+id="closeModal"
+class="closeBtn">
+
+<i class="fa-solid fa-xmark"></i>
+
+</button>
+
+<img
+id="modalAvatar"
+class="modalAvatar"
+src="assets/default-avatar.png">
+
+<h2 id="modalName">
+
+User Name
+
+</h2>
+
+<p id="modalUsername">
+
+@username
+
+</p>
+
+<p id="modalBio">
+
+No Bio
+
+</p>
+
+<div class="profileStats">
+
+<div>
+
+<h3 id="modalPosts">
+
+0
+
+</h3>
+
+<span>Posts</span>
+
+</div>
+
+<div>
+
+<h3 id="modalFollowers">
+
+0
+
+</h3>
+
+<span>Followers</span>
+
+</div>
+
+<div>
+
+<h3 id="modalFollowing">
+
+0
+
+</h3>
+
+<span>Following</span>
+
+</div>
+
+</div>
+
+<div class="modalButtons">
+
+<button
+id="followBtn"
+class="primaryBtn">
+
+<i class="fa-solid fa-user-plus"></i>
+
+Follow
+
+</button>
+
+<button
+id="messageBtn"
+class="secondaryBtn">
+
+<i class="fa-solid fa-paper-plane"></i>
+
+Message
+
+</button>
+
+</div>
+
+</div>
+
+</div>
+
+<!-- ===========================
+      Skeleton Loading
+=========================== -->
+
+<div
+id="usersSkeleton"
+class="hidden">
+
+<div class="skeletonCard"></div>
+<div class="skeletonCard"></div>
+<div class="skeletonCard"></div>
+<div class="skeletonCard"></div>
+<div class="skeletonCard"></div>
+
+</div>
+
+<!-- ===========================
+      Floating Buttons
+=========================== -->
+
+<button
+id="scrollTopBtn"
+class="floatingBtn hidden">
+
+<i class="fa-solid fa-arrow-up"></i>
+
+</button>
+
+<button
+id="addFriendBtn"
+class="floatingBtn addBtn">
+
+<i class="fa-solid fa-user-plus"></i>
+
+</button>
+
+<!-- ===========================
+      Premium Toast
+=========================== -->
+
+<div
+id="toast"
+class="toast hidden">
+
+<i
+id="toastIcon"
+class="fa-solid fa-circle-check"></i>
+
+<span id="toastText">
+
+Success
+
+</span>
+
+</div>
+
+<!-- ===========================
+      Bottom Navigation
+=========================== -->
 
 <nav class="bottomNav">
 
 <a href="index.html">
 
-<span>🏠</span>
+<i class="fa-solid fa-house"></i>
 
-<small>Home</small>
+<span>Home</span>
+
+</a>
 
 <a href="shorts.html">
 
-<span>▶</span>
+<i class="fa-solid fa-play"></i>
 
-<small>Shorts</small>
+<span>Shorts</span>
 
 </a>
 
-<a href="users.html"
+<a href="upload.html"
+class="uploadNav">
 
+<i class="fa-solid fa-plus"></i>
+
+</a>
+
+<a href="users.html">
+
+<i class="fa-solid fa-users"></i>
+
+<span>usersList</span>
+
+</a>
+
+<a
+href="profile.html"
 class="active">
 
-<span>👥</span>
+<i class="fa-solid fa-user"></i>
 
-<small>Users</small>
-
-</a>
-
-<a href="profile.html">
-
-<span>👤</span>
-
-<small>Profile</small>
+<span>Profile</span>
 
 </a>
 
 </nav>
 
-<!-- =========================
-Loading Overlay
-========================= -->
-
-<div
-
-id="loadingUsers"
-
-class="loadingOverlay"
-
-style="display:none;"
-
->
-
-<div class="loader"></div>
-
-<p>
-
-Loading Users...
-
-</p>
-
 </div>
 
-<!-- =========================
-Scripts
-========================= -->
+<!-- ===========================
+      Firebase
+=========================== -->
+
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
 
 <script src="firebase.js"></script>
+
+<!-- Users JS -->
 
 <script src="users.js"></script>
 
 </body>
-
 </html>

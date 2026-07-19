@@ -1,151 +1,447 @@
-// ==========================================
-// VIEWORA USERS.JS
-// Premium Users Page
-// ==========================================
+/*=========================================
+        VIEWORA USERS V7
+        users.js (PART 1)
+        Firebase Initialization
+=========================================*/
+
+//==============================
+// Firebase References
+//==========
+
+//==============================
+// DOM Elements
+//==============================
+
+const pageLoader = document.getElementById("pageLoader");
+const app = document.getElementById("app");
+
+const usersList = document.getElementById("usersList");
+const suggestedUsers = document.getElementById("suggestedUsers");
+const onlineUsers = document.getElementById("onlineUsers");
+
+const searchInput = document.getElementById("searchInput");
+const clearSearch = document.getElementById("clearSearch");
+
+const totalUsers = document.getElementById("totalUsers");
+const onlineCount = document.getElementById("onlineCount");
+
+const toast = document.getElementById("toast");
+const toastText = document.getElementById("toastText");
+const toastIcon = document.getElementById("toastIcon");
+
+const emptyState = document.getElementById("emptyState");
+
+const skeleton = document.getElementById("usersSkeleton");
+
+const scrollTopBtn = document.getElementById("scrollTopBtn");
+
+const profileModal = document.getElementById("profileModal");
+
+//==============================
+// Variables
+//==============================
 
 let currentUser = null;
+
 let users = [];
 
-const list = document.getElementById("allUsers");
-const suggested = document.getElementById("suggestedUsers");
+let filteredUsers = [];
 
-// ==========================================
-// Auth
-// ==========================================
+let following = [];
+
+let onlineUsersList = [];
+
+//==============================
+// Authentication
+//==============================
 
 auth.onAuthStateChanged(user=>{
 
-    if(!user){
+if(!user){
 
-        location.href="login.html";
-        return;
+location.href="login.html";
 
-    }
+return;
 
-    currentUser=user;
+}
 
-    loadUsers();
+currentUser=user;
+
+loadCurrentUser();
+
+loadUsers();
+
+listenOnlineUsers();
 
 });
 
-// ==========================================
-// Load Users
-// ==========================================
+//==============================
+// Current User
+//==============================
+
+function loadCurrentUser(){
+
+db.ref("users/"+currentUser.uid)
+
+.once("value")
+
+.then(snapshot=>{
+
+const data=snapshot.val();
+
+if(!data)return;
+
+following=data.following || [];
+
+});
+
+}
+
+//==============================
+// Show Loader
+//==============================
+
+function showLoader(){
+
+pageLoader.classList.remove("hidden");
+
+app.classList.add("hidden");
+
+}
+
+//==============================
+// Hide Loader
+//==============================
+
+function hideLoader(){
+
+setTimeout(()=>{
+
+pageLoader.classList.add("hidden");
+
+app.classList.remove("hidden");
+
+app.classList.add("fadeIn");
+
+},700);
+
+}
+
+//==============================
+// Toast
+//==============================
+
+function showToast(text,success=true){
+
+toastText.textContent=text;
+
+toastIcon.className=success
+?
+"fa-solid fa-circle-check"
+:
+"fa-solid fa-circle-xmark";
+
+toast.style.background=
+success
+?
+"#16a34a"
+:
+"#dc2626";
+
+toast.classList.remove("hidden");
+
+setTimeout(()=>{
+
+toast.classList.add("hidden");
+
+},2500);
+
+}
+
+//==============================
+// Number Formatter
+//==============================
+
+function formatNumber(num){
+
+if(num>=1000000){
+
+return (num/1000000).toFixed(1)+"M";
+
+}
+
+if(num>=1000){
+
+return (num/1000).toFixed(1)+"K";
+
+}
+
+return num;
+
+}
+
+//==============================
+// Avatar
+//==============================
+
+function avatar(url){
+
+return url || "assets/default-avatar.png";
+
+}
+
+//==============================
+// Random Suggestions
+//==============================
+
+function shuffle(array){
+
+return [...array]
+
+.sort(()=>Math.random()-0.5);
+
+}
+/*=========================================
+        USERS.JS PART 2
+        Load Users + Search + Render
+=========================================*/
+
+//==============================
+// Load All Users
+//==============================
 
 function loadUsers(){
 
-    db.ref("users")
+showLoader();
 
-    .on("value",snapshot=>{
+db.ref("users").on("value",snapshot=>{
 
-        users=[];
+users=[];
 
-        list.innerHTML="";
-        suggested.innerHTML="";
+snapshot.forEach(child=>{
 
-        snapshot.forEach(child=>{
+const user=child.val();
 
-            if(child.key===currentUser.uid)
-            return;
+user.uid=child.key;
 
-            users.push({
+// Skip current user
+if(user.uid===currentUser.uid) return;
 
-                uid:child.key,
+users.push(user);
 
-                ...child.val()
+});
 
-            });
+filteredUsers=[...users];
 
-        });
+renderSuggestedUsers();
 
-        users.sort(()=>Math.random()-.5);
+renderUsers(filteredUsers);
 
-        renderUsers();
+updateCounters();
 
-    });
+hideLoader();
 
-}
-
-// ==========================================
-// Render Users
-// ==========================================
-
-function renderUsers(){
-
-    list.innerHTML="";
-    suggested.innerHTML="";
-
-    users.forEach((user,index)=>{
-
-        const card=createUserCard(user);
-
-        list.appendChild(card);
-
-        if(index<5){
-
-            suggested.appendChild(
-                createUserCard(user)
-            );
-
-        }
-
-    });
+});
 
 }
 
-// ==========================================
-// Create Card
-// ==========================================
+//==============================
+// Update Counters
+//==============================
 
-function createUserCard(user){
+function updateCounters(){
 
-    const div=document.createElement("div");
+totalUsers.textContent=
+users.length+" Users";
 
-    div.className="userCard";
-
-    div.innerHTML=`
-
-<div class="userLeft">
-
-<div class="userPhoto">
-
-<img src="${
-user.profilePhoto||'users.jpg'
-}">
-
-${
-user.online?
-
-'<div class="onlineDot"></div>'
-
-:''
+onlineCount.textContent=
+onlineUsersList.length+" Online";
 
 }
 
-</div>
+//==============================
+// Live Search
+//==============================
 
-<div class="userInfo">
+searchInput.addEventListener("input",()=>{
 
-<h3>
+const keyword=
+searchInput.value
+.trim()
+.toLowerCase();
 
-${user.name||"User"}
+if(keyword===""){
 
-${
-user.verified?
+filteredUsers=[...users];
 
-'<span class="verified">✔</span>'
+}else{
 
-:''
+filteredUsers=users.filter(user=>{
+
+const name=
+(user.name||"")
+.toLowerCase();
+
+const username=
+(user.username||"")
+.toLowerCase();
+
+const bio=
+(user.bio||"")
+.toLowerCase();
+
+return(
+
+name.includes(keyword) ||
+
+username.includes(keyword) ||
+
+bio.includes(keyword)
+
+);
+
+});
 
 }
 
-</h3>
+renderUsers(filteredUsers);
+
+});
+
+//==============================
+// Clear Search
+//==============================
+
+clearSearch.onclick=()=>{
+
+searchInput.value="";
+
+filteredUsers=[...users];
+
+renderUsers(filteredUsers);
+
+};
+
+//==============================
+// Suggested Users
+//==============================
+
+function renderSuggestedUsers(){
+
+suggestedUsers.innerHTML="";
+
+const randomUsers=
+shuffle(users)
+.slice(0,8);
+
+randomUsers.forEach(user=>{
+
+suggestedUsers.innerHTML+=`
+
+<div class="suggestCard fadeIn">
+
+<img src="${avatar(user.photoURL)}">
+
+<h4>
+
+${user.name||"Unknown"}
+
+${user.verified?'<i class="fa-solid fa-circle-check"></i>':''}
+
+</h4>
 
 <p>
 
-${user.username||""}
+@${user.username||"user"}
 
 </p>
+
+<button
+
+onclick="followUser('${user.uid}')">
+
+Follow
+
+</button>
+
+</div>
+
+`;
+
+});
+
+}
+
+//==============================
+// Render Users
+//==============================
+
+function renderUsers(data){
+
+usersList.innerHTML="";
+
+if(data.length===0){
+
+emptyState.classList.remove("hidden");
+
+return;
+
+}
+
+emptyState.classList.add("hidden");
+
+data.forEach(user=>{
+
+const isFollowing=
+following.includes(user.uid);
+
+usersList.innerHTML+=`
+
+<div
+
+class="userCard"
+
+onclick="openProfile('${user.uid}')">
+
+<img src="${avatar(user.photoURL)}">
+
+<div class="userInfo">
+
+<h4>
+
+${user.name||"Unknown"}
+
+${user.verified?
+
+'<i class="fa-solid fa-circle-check"></i>'
+
+:''}
+
+</h4>
+
+<p>
+
+@${user.username||"user"}
+
+</p>
+
+<div class="userStats">
+
+<span>
+
+${formatNumber(user.followers||0)}
+
+Followers
+
+</span>
+
+<span>
+
+${formatNumber(user.posts||0)}
+
+Posts
+
+</span>
 
 </div>
 
@@ -155,125 +451,673 @@ ${user.username||""}
 
 class="followBtn"
 
-onclick="event.stopPropagation();followUser('${user.uid}',this)"
+onclick="event.stopPropagation();
 
->
+followUser('${user.uid}')">
 
-Follow
+${isFollowing
 
-</button>
+?
 
-`;
+"Following"
 
-    div.onclick=()=>{
+:
 
-        location.href=
-
-        "profile.html?uid="+user.uid;
-
-    };
-
-    return div;
+"Follow"
 
 }
 
-// ==========================================
-// Search
-// ==========================================
+</button>
 
-window.searchUsers=function(){
+</div>
 
-    const value=
+`;
 
-    document
+});
 
-    .getElementById("searchInput")
+}
+/*=========================================
+        USERS.JS PART 3
+  Online Users • Follow System • Modal
+=========================================*/
 
-    .value
+//==============================
+// Listen Online Users
+//==============================
 
-    .toLowerCase();
+function listenOnlineUsers(){
 
-    document
+db.ref("users").on("value",snapshot=>{
 
-    .querySelectorAll(".userCard")
+onlineUsers.innerHTML="";
 
-    .forEach(card=>{
+onlineUsersList=[];
 
-        card.style.display=
+snapshot.forEach(child=>{
 
-        card.innerText
+const user=child.val();
+user.uid=child.key;
 
-        .toLowerCase()
+if(user.uid===currentUser.uid) return;
 
-        .includes(value)
+if(user.online){
 
-        ?"flex"
+onlineUsersList.push(user);
 
-        :"none";
+onlineUsers.innerHTML+=`
 
-    });
+<div
+class="onlineUser"
+onclick="openProfile('${user.uid}')">
 
-};
+<img src="${avatar(user.photoURL)}">
 
-// ==========================================
-// Follow
-// ==========================================
+<div class="onlineDot"></div>
 
-window.followUser=async function(uid,btn){
+<h5>
 
-if(!currentUser) return;
+${user.name||"User"}
 
-await db.ref(
+</h5>
 
-"following/"+
+</div>
 
-currentUser.uid+
-
-"/"+uid
-
-).set(true);
-
-await db.ref(
-
-"followers/"+
-
-uid+
-
-"/"+currentUser.uid
-
-).set(true);
-
-btn.innerHTML="Following";
-
-btn.classList.add("following");
-
-};
-
-// ==========================================
-// Scroll Button
-// ==========================================
-
-window.addEventListener("scroll",()=>{
-
-const btn=
-
-document.getElementById("scrollTopBtn");
-
-if(window.scrollY>300){
-
-btn.style.display="block";
-
-}else{
-
-btn.style.display="none";
+`;
 
 }
 
 });
 
-console.log("=================================");
-console.log("👥 Viewora Users Loaded");
-console.log("🔍 Search Ready");
-console.log("➕ Follow Ready");
-console.log("⭐ Suggested Users Ready");
-console.log("=================================");
+updateCounters();
+
+});
+
+}
+
+//==============================
+// Follow User
+//==============================
+
+async function followUser(uid){
+
+if(uid===currentUser.uid) return;
+
+const ref=db.ref("users/"+currentUser.uid);
+
+const target=db.ref("users/"+uid);
+
+const snap=await ref.once("value");
+
+const me=snap.val();
+
+let list=me.following||[];
+
+if(list.includes(uid)){
+
+list=list.filter(id=>id!==uid);
+
+await ref.update({
+
+following:list
+
+});
+
+const targetSnap=
+await target.once("value");
+
+const targetUser=
+targetSnap.val();
+
+await target.update({
+
+followers:
+Math.max(
+0,
+(targetUser.followers||1)-1
+)
+
+});
+
+showToast("Unfollowed");
+
+}else{
+
+list.push(uid);
+
+await ref.update({
+
+following:list
+
+});
+
+const targetSnap=
+await target.once("value");
+
+const targetUser=
+targetSnap.val();
+
+await target.update({
+
+followers:
+(targetUser.followers||0)+1
+
+});
+
+showToast("Following");
+
+}
+
+following=list;
+
+renderUsers(filteredUsers);
+
+renderSuggestedUsers();
+
+}
+
+//==============================
+// Open Profile Modal
+//==============================
+
+function openProfile(uid){
+
+const user=
+
+users.find(u=>u.uid===uid);
+
+if(!user) return;
+
+profileModal.classList.remove("hidden");
+
+document.getElementById("modalAvatar").src=
+avatar(user.photoURL);
+
+document.getElementById("modalName").textContent=
+user.name||"Unknown";
+
+document.getElementById("modalUsername").textContent=
+"@"+(user.username||"user");
+
+document.getElementById("modalBio").textContent=
+user.bio||"No bio yet.";
+
+document.getElementById("modalPosts").textContent=
+formatNumber(user.posts||0);
+
+document.getElementById("modalFollowers").textContent=
+formatNumber(user.followers||0);
+
+document.getElementById("modalFollowing").textContent=
+formatNumber(user.followingCount||0);
+
+const btn=
+document.getElementById("followBtn");
+
+btn.innerHTML=
+following.includes(uid)
+
+?
+
+'<i class="fa-solid fa-user-check"></i> Following'
+
+:
+
+'<i class="fa-solid fa-user-plus"></i> Follow';
+
+btn.onclick=()=>{
+
+followUser(uid);
+
+};
+
+document.getElementById("messageBtn").onclick=()=>{
+
+location.href=
+
+"chat.html?uid="+uid;
+
+};
+
+}
+
+//==============================
+// Close Modal
+//==============================
+
+document
+.getElementById("closeModal")
+.onclick=()=>{
+
+profileModal.classList.add("hidden");
+
+};
+
+document
+.querySelector(".modalOverlay")
+.onclick=()=>{
+
+profileModal.classList.add("hidden");
+
+};
+
+//==============================
+// Scroll To Top
+//==============================
+
+window.addEventListener("scroll",()=>{
+
+if(window.scrollY>350){
+
+scrollTopBtn.classList.remove("hidden");
+
+}else{
+
+scrollTopBtn.classList.add("hidden");
+
+}
+
+});
+
+scrollTopBtn.onclick=()=>{
+
+window.scrollTo({
+
+top:0,
+
+behavior:"smooth"
+
+});
+
+};
+
+//==============================
+// Refresh Button
+//==============================
+
+document
+.getElementById("refreshBtn")
+.onclick=()=>{
+
+showToast("Refreshing...");
+
+loadUsers();
+
+};
+
+//==============================
+// Add Friend Button
+//==============================
+
+document
+.getElementById("addFriendBtn")
+.onclick=()=>{
+
+showToast("Feature Coming Soon",false);
+
+};
+
+//==============================
+// Back Button
+//==============================
+
+document
+.getElementById("backBtn")
+.onclick=()=>{
+
+history.back();
+
+};
+
+//==============================
+// Update Online Status
+//==============================
+
+window.addEventListener("load",()=>{
+
+if(currentUser){
+
+db.ref("users/"+currentUser.uid)
+.update({
+
+online:true,
+
+lastSeen:Date.now()
+
+});
+
+}
+
+});
+
+window.addEventListener("beforeunload",()=>{
+
+if(currentUser){
+
+db.ref("users/"+currentUser.uid)
+.update({
+
+online:false,
+
+lastSeen:Date.now()
+
+});
+
+}
+
+});
+/*=========================================
+        USERS.JS PART 4 (FINAL)
+ Premium Effects • Optimization • Init
+=========================================*/
+
+//==============================
+// Ripple Animation
+//==============================
+
+document.addEventListener("click",e=>{
+
+const target=e.target.closest("button");
+
+if(!target) return;
+
+const ripple=document.createElement("span");
+
+const size=Math.max(
+target.clientWidth,
+target.clientHeight
+);
+
+const rect=target.getBoundingClientRect();
+
+ripple.style.width=size+"px";
+ripple.style.height=size+"px";
+
+ripple.style.left=
+(e.clientX-rect.left-size/2)+"px";
+
+ripple.style.top=
+(e.clientY-rect.top-size/2)+"px";
+
+ripple.className="ripple";
+
+target.appendChild(ripple);
+
+setTimeout(()=>{
+
+ripple.remove();
+
+},600);
+
+});
+
+//==============================
+// Pull To Refresh
+//==============================
+
+let startY=0;
+let distance=0;
+
+window.addEventListener("touchstart",e=>{
+
+if(window.scrollY===0){
+
+startY=e.touches[0].clientY;
+
+}
+
+});
+
+window.addEventListener("touchmove",e=>{
+
+distance=e.touches[0].clientY-startY;
+
+});
+
+window.addEventListener("touchend",()=>{
+
+if(distance>140){
+
+showToast("Refreshing Users");
+
+loadUsers();
+
+}
+
+distance=0;
+
+});
+
+//==============================
+// Skeleton Control
+//==============================
+
+function showSkeleton(){
+
+skeleton.classList.remove("hidden");
+
+usersList.classList.add("hidden");
+
+}
+
+function hideSkeleton(){
+
+skeleton.classList.add("hidden");
+
+usersList.classList.remove("hidden");
+
+}
+
+//==============================
+// Lazy Images
+//==============================
+
+function lazyLoadImages(){
+
+const imgs=document.querySelectorAll("img");
+
+const observer=new IntersectionObserver(entries=>{
+
+entries.forEach(entry=>{
+
+if(entry.isIntersecting){
+
+const img=entry.target;
+
+if(img.dataset.src){
+
+img.src=img.dataset.src;
+
+img.removeAttribute("data-src");
+
+}
+
+observer.unobserve(img);
+
+}
+
+});
+
+});
+
+imgs.forEach(img=>observer.observe(img));
+
+}
+
+//==============================
+// Keyboard Shortcuts
+//==============================
+
+document.addEventListener("keydown",e=>{
+
+// Search
+if(e.key==="/"){
+
+e.preventDefault();
+
+searchInput.focus();
+
+}
+
+// ESC close modal
+if(e.key==="Escape"){
+
+profileModal.classList.add("hidden");
+
+}
+
+// Refresh
+if(e.key==="F5"){
+
+e.preventDefault();
+
+loadUsers();
+
+showToast("Refreshing");
+
+}
+
+});
+
+//==============================
+// Auto Reconnect
+//==============================
+
+window.addEventListener("online",()=>{
+
+showToast("Back Online");
+
+loadUsers();
+
+});
+
+window.addEventListener("offline",()=>{
+
+showToast("No Internet",false);
+
+});
+
+//==============================
+// Auto Hide Loader
+//==============================
+
+setTimeout(()=>{
+
+hideLoader();
+
+},2000);
+
+//==============================
+// Scroll Animation
+//==============================
+
+const observer=
+
+new IntersectionObserver(entries=>{
+
+entries.forEach(entry=>{
+
+if(entry.isIntersecting){
+
+entry.target.classList.add("fadeIn");
+
+}
+
+});
+
+},{
+threshold:.15
+});
+
+function observeCards(){
+
+document
+.querySelectorAll(
+".userCard,.suggestCard,.onlineUser"
+)
+.forEach(card=>{
+
+observer.observe(card);
+
+});
+
+}
+
+//==============================
+// Search Focus Animation
+//==============================
+
+searchInput.addEventListener("focus",()=>{
+
+document
+.querySelector(".searchBox")
+.style.transform="scale(1.02)";
+
+});
+
+searchInput.addEventListener("blur",()=>{
+
+document
+.querySelector(".searchBox")
+.style.transform="scale(1)";
+
+});
+
+//==============================
+// Vibration
+//==============================
+
+document.addEventListener("click",e=>{
+
+if(
+
+navigator.vibrate &&
+
+e.target.closest("button")
+
+){
+
+navigator.vibrate(10);
+
+}
+
+});
+
+//==============================
+// Initialize
+//==============================
+
+function initializeUsersPage(){
+
+showSkeleton();
+
+loadUsers();
+
+listenOnlineUsers();
+
+lazyLoadImages();
+
+observeCards();
+
+hideSkeleton();
+
+console.log(
+
+"%cViewora Users V7 Loaded",
+
+"color:#6366f1;font-size:18px;font-weight:bold"
+
+);
+
+}
+
+window.onload=()=>{
+
+initializeUsersPage();
+
+};
+
+//==============================
+// End
+//==============================
+
+console.log("Users.js Loaded Successfully");

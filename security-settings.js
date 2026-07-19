@@ -1,619 +1,610 @@
-// ======================================
-// Viewora Security Settings
-// Part 1
-// ======================================
+// =====================================
+// Viewora Security Settings JS
+// =====================================
 
-// Current User
+
+
 let currentUser = null;
 
-// =============================
-// Authentication Check
-// =============================
 
-auth.onAuthStateChanged((user) => {
 
-    if (!user) {
 
-        window.location.href = "login.html";
-        return;
 
-    }
+// Firebase Auth Check
 
-    currentUser = user;
 
-    loadSecurityInfo();
+firebase.auth().onAuthStateChanged((user)=>{
+
+
+if(user){
+
+
+currentUser = user;
+
+
+checkSecurityStatus(user);
+
+
+
+saveLoginActivity(user);
+
+
+
+}
+
+else{
+
+
+location.href="login.html";
+
+
+}
+
+
 
 });
 
-// =============================
-// Load Security Information
-// =============================
 
-function loadSecurityInfo() {
 
-    if (!currentUser) return;
 
-    console.log("✅ Security Page Loaded");
 
-    // Email Verification Status
 
-    if (currentUser.emailVerified) {
 
-        showToast("✅ Email Verified");
-
-    } else {
-
-        showToast("⚠️ Email Not Verified");
-
-    }
-
-}
-
-// =============================
-// Refresh User
-// =============================
-
-async function refreshUser() {
-
-    try {
-
-        await currentUser.reload();
-
-        currentUser = auth.currentUser;
-
-        loadSecurityInfo();
-
-        showToast("🔄 Account Refreshed");
-
-    }
-
-    catch (error) {
-
-        console.error(error);
-
-        showToast("❌ Refresh Failed");
-
-    }
-
-}
-
-// =============================
-// Verify Email
-// =============================
-
-async function verifyEmail() {
-
-    if (!currentUser) return;
-
-    if (currentUser.emailVerified) {
-
-        showToast("✅ Email already verified");
-
-        return;
-
-    }
-
-    try {
-
-        await currentUser.sendEmailVerification();
-
-        showToast("📧 Verification Email Sent");
-
-    }
-
-    catch (error) {
-
-        console.error(error);
-
-        alert(error.message);
-
-    }
-
-}
-
-// =============================
+// =====================================
 // Security Status
-// =============================
+// =====================================
 
-function checkSecurityStatus() {
 
-    if (!currentUser) return;
+function checkSecurityStatus(user){
 
-    let score = 0;
 
-    if (currentUser.emailVerified) score++;
 
-    db.ref("users/" + currentUser.uid)
-        .once("value")
-        .then((snapshot) => {
+if(user.emailVerified){
 
-            const user = snapshot.val() || {};
 
-            if (user.phone) score++;
+console.log("Email Verified");
 
-            if (user.profilePhoto) score++;
-
-            console.log("Security Score:", score + "/3");
-
-        });
 
 }
 
-checkSecurityStatus();
-// ======================================
-// Viewora Security Settings
-// Part 2
-// Password + Phone + 2FA
-// ======================================
 
-// =============================
-// Password Reset
-// =============================
-
-async function resetPassword() {
-
-    if (!currentUser) return;
-
-    try {
-
-        await auth.sendPasswordResetEmail(currentUser.email);
-
-        showToast("🔑 Password reset email sent.");
-
-    }
-
-    catch (error) {
-
-        console.error(error);
-
-        alert(error.message);
-
-    }
 
 }
 
-// =============================
+
+
+
+
+
+
+
+
+// =====================================
+// Change Password
+// =====================================
+
+
+function resetPassword(){
+
+
+
+if(!currentUser){
+
+return;
+
+}
+
+
+
+let email = currentUser.email;
+
+
+
+if(confirm(
+"Password reset link will be sent to your email."
+)){
+
+
+
+firebase.auth()
+.sendPasswordResetEmail(email)
+
+.then(()=>{
+
+
+showToast(
+"📧 Password reset email sent"
+);
+
+
+})
+
+.catch(error=>{
+
+
+showToast(
+"❌ "+error.message
+);
+
+
+});
+
+
+
+}
+
+
+
+}
+
+
+
+
+
+
+
+
+
+// =====================================
+// Email Verification
+// =====================================
+
+
+function verifyEmail(){
+
+
+
+if(!currentUser){
+
+return;
+
+}
+
+
+
+if(currentUser.emailVerified){
+
+
+showToast(
+"✅ Email already verified"
+);
+
+
+return;
+
+
+}
+
+
+
+
+currentUser.sendEmailVerification()
+
+.then(()=>{
+
+
+showToast(
+"📧 Verification email sent"
+);
+
+
+})
+
+.catch(error=>{
+
+
+showToast(
+"❌ "+error.message
+);
+
+
+});
+
+
+}
+
+
+
+
+
+
+
+
+
+// =====================================
 // Phone Verification
-// (Future Ready)
-// =============================
+// =====================================
 
-function verifyPhone() {
 
-    db.ref("users/" + currentUser.uid + "/phone")
-    .once("value")
-    .then((snapshot)=>{
+function verifyPhone(){
 
-        const phone = snapshot.val();
 
-        if(phone){
 
-            showToast("📱 Phone: " + phone);
+showToast(
+"📱 Phone verification coming soon"
+);
 
-        }else{
-
-            showToast("⚠️ Add phone number first.");
-
-        }
-
-    });
 
 }
 
-// =============================
+
+
+
+
+
+
+
+
+// =====================================
 // Two Factor Authentication
-// (Coming Soon)
-// =============================
+// =====================================
+
 
 function twoFactorAuth(){
 
-    showToast("🔐 Two-Factor Authentication coming soon.");
+
+
+showToast(
+"🔐 2FA setup will be available soon"
+);
+
 
 }
 
-// =============================
-// Security Tips
-// =============================
 
-function showSecurityTips(){
 
-    alert(
-`🛡️ Security Tips
 
-• Use a strong password.
-• Verify your email.
-• Add your phone number.
-• Never share your password.
-• Logout from shared devices.`
-    );
+
+
+
+
+
+// =====================================
+// Login Activity
+// =====================================
+
+
+function saveLoginActivity(user){
+
+
+
+let uid=user.uid;
+
+
+
+let activity={
+
+
+device:navigator.userAgent,
+
+
+time:Date.now(),
+
+
+email:user.email
+
+
+
+};
+
+
+
+firebase.database()
+
+.ref(
+"users/"+uid+"/loginActivity"
+)
+
+.push(activity);
+
+
 
 }
 
-// =============================
-// Premium Toast
-// =============================
+
+
+
+
+
+function loginActivity(){
+
+
+
+if(!currentUser){
+
+return;
+
+}
+
+
+
+firebase.database()
+
+.ref(
+"users/"+currentUser.uid+"/loginActivity"
+)
+
+.limitToLast(5)
+
+.once("value")
+
+.then(snapshot=>{
+
+
+let data=snapshot.val();
+
+
+
+if(data){
+
+
+
+let message =
+Object.keys(data).length+
+" recent login records found";
+
+
+
+showToast(
+"💻 "+message
+);
+
+
+}
+
+else{
+
+
+showToast(
+"No login activity found"
+);
+
+
+}
+
+
+
+});
+
+
+}
+
+
+
+
+
+
+
+
+
+// =====================================
+// Trusted Devices
+// =====================================
+
+
+function trustedDevices(){
+
+
+
+showToast(
+"📲 Trusted devices management coming soon"
+);
+
+
+}
+
+
+
+
+
+
+
+
+
+// =====================================
+// Blocked Users
+// =====================================
+
+
+function blockedUsers(){
+
+
+
+location.href="blocked-users.html";
+
+
+}
+
+
+
+
+
+
+
+
+
+// =====================================
+// Logout
+// =====================================
+
+
+function logout(){
+
+
+
+if(confirm(
+"Logout from this device?"
+)){
+
+
+
+firebase.auth()
+
+.signOut()
+
+.then(()=>{
+
+
+showToast(
+"👋 Logged out"
+);
+
+
+
+setTimeout(()=>{
+
+
+location.href="login.html";
+
+
+},1000);
+
+
+
+});
+
+
+
+}
+
+
+
+}
+
+
+
+
+
+
+
+
+
+// =====================================
+// Logout All Devices
+// =====================================
+
+
+function logoutAllDevices(){
+
+
+
+if(confirm(
+"Logout from all devices?"
+)){
+
+
+
+if(currentUser){
+
+
+
+firebase.auth()
+
+.signOut()
+
+.then(()=>{
+
+
+showToast(
+"📱 All devices logged out"
+);
+
+
+
+setTimeout(()=>{
+
+
+location.href="login.html";
+
+
+},1000);
+
+
+
+});
+
+
+}
+
+
+
+}
+
+
+
+}
+
+
+
+
+
+
+
+
+
+// =====================================
+// Toast
+// =====================================
+
 
 function showToast(message){
 
-    let toast=document.getElementById("securityToast");
 
-    if(!toast){
 
-        toast=document.createElement("div");
+let toast=document.createElement("div");
 
-        toast.id="securityToast";
 
-        toast.style.cssText=`
-        position:fixed;
-        left:50%;
-        bottom:30px;
-        transform:translateX(-50%);
-        background:#00aaff;
-        color:#fff;
-        padding:14px 24px;
-        border-radius:30px;
-        font-weight:bold;
-        box-shadow:0 8px 25px rgba(0,170,255,.35);
-        z-index:99999;
-        opacity:0;
-        transition:.35s;
-        `;
 
-        document.body.appendChild(toast);
+toast.innerText=message;
 
-    }
 
-    toast.innerHTML=message;
 
-    toast.style.opacity="1";
+toast.style.position="fixed";
 
-    setTimeout(()=>{
+toast.style.bottom="30px";
 
-        toast.style.opacity="0";
+toast.style.left="50%";
 
-    },2500);
+toast.style.transform="translateX(-50%)";
 
-}
+toast.style.background="#00aaff";
 
-// =============================
-// Auto Refresh Status
-// =============================
+toast.style.color="#fff";
 
-setInterval(()=>{
+toast.style.padding="12px 25px";
 
-    if(currentUser){
+toast.style.borderRadius="30px";
 
-        refreshUser();
+toast.style.fontWeight="bold";
 
-    }
+toast.style.zIndex="9999";
 
-},300000); // Every 5 minutes
-// ======================================
-// Viewora Security Settings
-// Part 3
-// Devices & Security
-// ======================================
+toast.style.boxShadow=
+"0 10px 25px rgba(0,170,255,.3)";
 
-// =============================
-// Login Activity
-// =============================
 
-function loginActivity() {
 
-    if (!currentUser) return;
+document.body.appendChild(toast);
 
-    const lastLogin = new Date(
-        currentUser.metadata.lastSignInTime
-    ).toLocaleString();
 
-    const created = new Date(
-        currentUser.metadata.creationTime
-    ).toLocaleString();
 
-    alert(
+setTimeout(()=>{
 
-`🔐 Login Activity
 
-📅 Account Created:
-${created}
+toast.remove();
 
-🕒 Last Login:
-${lastLogin}
 
-📧 Email:
-${currentUser.email}
+},2500);
 
-🆔 UID:
-${currentUser.uid}`
 
-    );
 
 }
 
-// =============================
-// Trusted Devices
-// =============================
 
-function trustedDevices() {
 
-    if (!currentUser) return;
 
-    showToast("📱 Current device is trusted.");
 
-}
 
-// =============================
-// Blocked Users
-// =============================
-
-function blockedUsers() {
-
-    db.ref("blockedUsers/" + currentUser.uid)
-    .once("value")
-    .then((snapshot)=>{
-
-        let total = 0;
-
-        snapshot.forEach(()=>{
-
-            total++;
-
-        });
-
-        if(total===0){
-
-            showToast("✅ No blocked users");
-
-        }else{
-
-            alert("🚫 Blocked Users : " + total);
-
-        }
-
-    });
-
-}
-
-// =============================
-// Logout All Devices
-// =============================
-
-async function logoutAllDevices() {
-
-    if(!confirm(
-        "Logout from all devices?"
-    )) return;
-
-    try{
-
-        await currentUser.getIdToken(true);
-
-        await auth.signOut();
-
-        showToast("🌍 Logged out successfully");
-
-        setTimeout(()=>{
-
-            window.location.href="login.html";
-
-        },1200);
-
-    }
-
-    catch(error){
-
-        console.error(error);
-
-        alert(error.message);
-
-    }
-
-}
-
-// =============================
-// Security Report
-// =============================
-
-function securityReport(){
-
-    let report=[];
-
-    if(currentUser.emailVerified){
-
-        report.push("✅ Email Verified");
-
-    }else{
-
-        report.push("❌ Email Not Verified");
-
-    }
-
-    db.ref("users/"+currentUser.uid)
-    .once("value")
-    .then((snap)=>{
-
-        const user=snap.val()||{};
-
-        if(user.phone){
-
-            report.push("✅ Phone Added");
-
-        }else{
-
-            report.push("❌ Phone Missing");
-
-        }
-
-        if(user.profilePhoto){
-
-            report.push("✅ Profile Photo");
-
-        }else{
-
-            report.push("❌ No Profile Photo");
-
-        }
-
-        alert(
-"🛡️ Security Report\n\n"+
-report.join("\n")
-        );
-
-    });
-
-}
-
-// =============================
-// Auto Refresh Every 10 Minutes
-// =============================
-
-setInterval(()=>{
-
-    if(currentUser){
-
-        refreshUser();
-
-    }
-
-},600000);
-// ======================================
-// Viewora Security Settings
-// Part 4 (Final)
-// ======================================
-
-// =============================
-// Logout
-// =============================
-
-async function logout() {
-
-    if (!confirm("Logout from this device?")) return;
-
-    try {
-
-        await auth.signOut();
-
-        showToast("👋 Logged Out");
-
-        setTimeout(() => {
-
-            window.location.href = "login.html";
-
-        }, 1000);
-
-    } catch (error) {
-
-        console.error(error);
-
-        alert(error.message);
-
-    }
-
-}
-
-// =============================
-// Delete Account
-// =============================
-
-function deleteAccount() {
-
-    window.location.href = "delete-account.html";
-
-}
-
-// =============================
-// Internet Status
-// =============================
-
-window.addEventListener("online", () => {
-
-    showToast("🌐 Internet Connected");
-
-});
-
-window.addEventListener("offline", () => {
-
-    showToast("❌ Internet Disconnected");
-
-});
-
-// =============================
-// Keyboard Shortcuts
-// =============================
-
-document.addEventListener("keydown", (e) => {
-
-    // Ctrl + R = Refresh
-
-    if (e.ctrlKey && e.key.toLowerCase() === "r") {
-
-        e.preventDefault();
-
-        refreshUser();
-
-    }
-
-    // Ctrl + L = Logout
-
-    if (e.ctrlKey && e.key.toLowerCase() === "l") {
-
-        e.preventDefault();
-
-        logout();
-
-    }
-
-});
-
-// =============================
-// Before Leaving Page
-// =============================
-
-window.addEventListener("beforeunload", () => {
-
-    console.log("Leaving Security Settings...");
-
-});
-
-// =============================
-// Startup
-// =============================
-
-window.addEventListener("load", () => {
-
-    console.log("🔒 Viewora Security Ready");
-
-    if (currentUser) {
-
-        checkSecurityStatus();
-
-    }
-
-});
-
-// =============================
-// Helper Functions
-// =============================
-
-function openPrivacy() {
-
-    window.location.href = "privacy.html";
-
-}
-
-function openDeleteAccount() {
-
-    window.location.href = "delete-account.html";
-
-}
-
-function contactSupport() {
-
-    window.location.href = "mailto:vieworasupport@gmail.com";
-
-}
-
-// ======================================
-// End
-// ======================================
-
-console.log("✅ security-settings.js Loaded Successfully");
+console.log(
+"✅ Viewora Security Settings Loaded"
+);

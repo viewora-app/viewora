@@ -4,75 +4,530 @@
 <head>
 
 <meta charset="UTF-8">
-
 <meta name="viewport"
-content="width=device-width,initial-scale=1.0">
+content="width=device-width, initial-scale=1.0">
 
-<title>Viewora Shorts</title>
+<title>Viewora • Shorts</title>
 
-<link rel="stylesheet" href="shorts.css">
+<meta name="theme-color" content="#000000">
 
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
+<link rel="preconnect"
+href="https://fonts.googleapis.com">
 
-<script src="firebase.js"></script>
+<link rel="preconnect"
+href="https://fonts.gstatic.com"
+crossorigin>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+rel="stylesheet">
+
+<link rel="stylesheet"
+href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+
+<link rel="stylesheet"
+href="shorts.css">
 
 </head>
 
 <body>
 
-<div id="shortsContainer">
+<!-- Background -->
 
-<!-- Videos Load Here -->
+<div class="bgGlow"></div>
+
+<!-- Loader -->
+
+<div id="pageLoader">
+
+<div class="loader">
+
+<div class="ring"></div>
+
+<div class="ring delay"></div>
 
 </div>
 
-<button id="uploadShortBtn"
-onclick="location.href='uploadshort.html'">
+<h2>Loading Shorts...</h2>
 
-＋
+</div>
+
+<!-- Main App -->
+
+<div id="app" class="hidden">
+
+<!-- Header -->
+
+<header class="shortsHeader">
+
+<div class="logoArea">
+
+<img src="assets/logo.png"
+class="logo">
+
+<h2>Viewora Shorts</h2>
+
+</div>
+
+<div class="headerActions">
+
+<button id="cameraBtn">
+
+<i class="fa-solid fa-camera"></i>
 
 </button>
 
-<nav class="bottomNav">
+<button id="searchBtn">
+
+<i class="fa-solid fa-magnifying-glass"></i>
+
+</button>
+
+</div>
+
+</header>
+
+<!-- Shorts Feed -->
+
+<main id="shortsContainer">
+
+<!-- Firebase shorts load here -->
+
+</main>
+
+<!-- Loading Skeleton -->
+
+<div id="shortsSkeleton">
+
+<div class="shortSkeleton"></div>
+
+</div>
+
+<!-- Scroll Top -->
+
+<button id="scrollTopBtn">
+
+<i class="fa-solid fa-arrow-up"></i>
+
+</button>
+
+<!-- Upload -->
+
+<button id="uploadShortBtn">
+
+<i class="fa-solid fa-plus"></i>
+
+</button>
+
+<!-- Toast -->
+
+<div id="toast"
+class="hidden">
+
+<span id="toastText">
+
+Success
+
+</span>
+
+</div>
+<!-- =========================================
+        VIEWORA SHORTS
+              PART 2
+========================================= -->
+
+<!-- =========================
+Bottom Navigation
+========================= -->
+
+<nav class="bottomNav glass">
 
 <a href="index.html">
 
-<span>🏠</span>
+<i class="fa-solid fa-house"></i>
 
-<small>Home</small>
-
-</a>
-
-<a class="active">
-
-<span>▶</span>
-
-<small>Shorts</small>
+<span>Home</span>
 
 </a>
 
-<a href="users.html">
+<a href="shorts.html" class="active">
 
-<span>👥</span>
+<i class="fa-solid fa-play"></i>
 
-<small>Users</small>
+<span>Shorts</span>
+
+</a>
+
+<a href="upload.html">
+
+<i class="fa-solid fa-square-plus"></i>
+
+<span>Create</span>
+
+</a>
+
+<a href="chatlist.html">
+
+<i class="fa-solid fa-comments"></i>
+
+<span>Chats</span>
 
 </a>
 
 <a href="profile.html">
 
-<span>👤</span>
+<i class="fa-solid fa-user"></i>
 
-<small>Profile</small>
+<span>Profile</span>
 
 </a>
 
 </nav>
 
+<!-- =========================
+Comments Modal
+========================= -->
+
+<div id="commentsModal" class="modal hidden">
+
+<div class="modalCard glass">
+
+<div class="modalHeader">
+
+<h2>💬 Comments</h2>
+
+<button id="closeComments">
+
+<i class="fa-solid fa-xmark"></i>
+
+</button>
+
+</div>
+
+<div id="commentsContainer">
+
+<!-- Firebase Comments -->
+
+</div>
+
+<div class="commentInput">
+
+<input
+type="text"
+id="commentText"
+placeholder="Write a comment...">
+
+<button id="sendComment">
+
+<i class="fa-solid fa-paper-plane"></i>
+
+</button>
+
+</div>
+
+</div>
+
+</div>
+
+<!-- =========================
+Share Modal
+========================= -->
+
+<div id="shareModal" class="modal hidden">
+
+<div class="modalCard glass">
+
+<div class="modalHeader">
+
+<h2>📤 Share</h2>
+
+<button id="closeShare">
+
+<i class="fa-solid fa-xmark"></i>
+
+</button>
+
+</div>
+
+<div class="shareGrid">
+
+<button class="shareItem">
+<i class="fa-brands fa-whatsapp"></i>
+<span>WhatsApp</span>
+</button>
+
+<button class="shareItem">
+<i class="fa-brands fa-facebook"></i>
+<span>Facebook</span>
+</button>
+
+<button class="shareItem">
+<i class="fa-brands fa-instagram"></i>
+<span>Instagram</span>
+</button>
+
+<button class="shareItem">
+<i class="fa-brands fa-x-twitter"></i>
+<span>X</span>
+</button>
+
+<button class="shareItem">
+<i class="fa-solid fa-link"></i>
+<span>Copy Link</span>
+</button>
+
+<button class="shareItem">
+<i class="fa-solid fa-user"></i>
+<span>Send Chat</span>
+</button>
+
+</div>
+
+</div>
+
+</div>
+
+<!-- =========================
+Report Modal
+========================= -->
+
+<div id="reportModal" class="modal hidden">
+
+<div class="modalCard glass">
+
+<h2>⚠ Report Short</h2>
+
+<button class="reportBtn">Spam</button>
+
+<button class="reportBtn">Violence</button>
+
+<button class="reportBtn">Harassment</button>
+
+<button class="reportBtn">Copyright</button>
+
+<button class="reportBtn">Other</button>
+
+<button id="closeReport">
+
+Cancel
+
+</button>
+
+</div>
+
+</div>
+
+<!-- =========================
+Loading Overlay
+========================= -->
+
+<div id="loadingOverlay" class="hidden">
+
+<div class="premiumLoader">
+
+<div class="loaderRing"></div>
+
+<div class="loaderRing delay1"></div>
+
+<div class="loaderRing delay2"></div>
+
+</div>
+
+<p>Loading...</p>
+
+</div>
+<!-- =========================================
+        VIEWORA SHORTS
+             PART 3 FINAL
+========================================= -->
+
+<!-- =========================
+Network Status
+========================= -->
+
+<div id="networkStatus" class="hidden">
+
+<i class="fa-solid fa-wifi"></i>
+
+<span>No Internet Connection</span>
+
+</div>
+
+<!-- =========================
+Update Banner
+========================= -->
+
+<div id="updateBanner" class="hidden">
+
+🔥 New Version Available
+
+<button id="updateBtn">
+
+Update
+
+</button>
+
+</div>
+
+<!-- =========================
+Like Animation
+========================= -->
+
+<div id="heartAnimation" class="hidden">
+
+<i class="fa-solid fa-heart"></i>
+
+</div>
+
+<!-- =========================
+Music Animation
+========================= -->
+
+<div id="musicAnimation">
+
+<i class="fa-solid fa-music"></i>
+
+</div>
+
+<!-- =========================
+Hidden Inputs
+========================= -->
+
+<input
+type="file"
+id="videoInput"
+accept="video/*"
+hidden>
+
+<input
+type="file"
+id="thumbnailInput"
+accept="image/*"
+hidden>
+
+<!-- =========================
+Firebase SDK
+========================= -->
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
+
+<!-- =========================
+Viewora Scripts
+========================= -->
+
+<script src="firebase.js"></script>
+
 <script src="shorts.js"></script>
 
+<script src="nav.js"></script>
+
+<!-- =========================
+Premium Script
+========================= -->
+
+<script>
+
+// Loader
+
+window.addEventListener("load",()=>{
+
+const loader=document.getElementById("pageLoader");
+
+const app=document.getElementById("app");
+
+setTimeout(()=>{
+
+loader.style.opacity="0";
+
+loader.style.pointerEvents="none";
+
+setTimeout(()=>{
+
+loader.remove();
+
+app.classList.remove("hidden");
+
+app.classList.add("fadeIn");
+
+},500);
+
+},1200);
+
+});
+
+// Network
+
+window.addEventListener("offline",()=>{
+
+document
+
+.getElementById("networkStatus")
+
+.classList.remove("hidden");
+
+});
+
+window.addEventListener("online",()=>{
+
+document
+
+.getElementById("networkStatus")
+
+.classList.add("hidden");
+
+});
+
+// Scroll Top
+
+const topBtn=document.getElementById("scrollTopBtn");
+
+window.addEventListener("scroll",()=>{
+
+if(window.scrollY>500){
+
+topBtn.classList.add("show");
+
+}else{
+
+topBtn.classList.remove("show");
+
+}
+
+});
+
+topBtn.onclick=()=>{
+
+window.scrollTo({
+
+top:0,
+
+behavior:"smooth"
+
+});
+
+};
+
+// Upload Button
+
+document
+
+.getElementById("uploadShortBtn")
+
+.onclick=()=>{
+
+location.href="short_upload.html";
+
+};
+
+console.log("✅ Viewora Shorts Loaded");
+
+</script>
+
 </body>
+
 </html>

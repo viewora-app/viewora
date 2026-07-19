@@ -5,241 +5,40 @@
 
 <meta charset="UTF-8">
 
-<meta name="viewport"
-content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <title>🔒 Security Settings • Viewora</title>
 
-<link rel="stylesheet" href="style.css">
-
-<style>
-
-*{
-margin:0;
-padding:0;
-box-sizing:border-box;
-font-family:Arial,sans-serif;
-}
-
-body{
-
-background:#0d1117;
-color:#fff;
-overflow-x:hidden;
-padding-bottom:120px;
-
-}
-
-/* Animated Background */
-
-body::before{
-
-content:"";
-
-position:fixed;
-
-top:-50%;
-left:-50%;
-
-width:200%;
-height:200%;
-
-background:
-
-radial-gradient(circle,#00aaff22,transparent 35%),
-radial-gradient(circle,#8a2be222,transparent 35%),
-radial-gradient(circle,#00ff8822,transparent 35%);
-
-animation:bgRotate 22s linear infinite;
-
-z-index:-1;
-
-}
-
-@keyframes bgRotate{
-
-0%{transform:rotate(0deg);}
-100%{transform:rotate(360deg);}
-
-}
-
-/* Header */
-
-.header{
-
-padding:35px 20px;
-
-text-align:center;
-
-background:linear-gradient(135deg,#00aaff,#005eff);
-
-border-bottom-left-radius:35px;
-border-bottom-right-radius:35px;
-
-box-shadow:0 12px 30px rgba(0,170,255,.30);
-
-}
-
-.header h1{
-
-font-size:30px;
-
-margin-bottom:8px;
-
-}
-
-.header p{
-
-color:#e8f6ff;
-
-}
-
-/* Security Card */
-
-.security-card{
-
-width:92%;
-
-margin:25px auto;
-
-padding:25px;
-
-border-radius:25px;
-
-background:rgba(255,255,255,.06);
-
-backdrop-filter:blur(18px);
-
-border:1px solid rgba(255,255,255,.08);
-
-text-align:center;
-
-animation:zoom .5s ease;
-
-}
-
-@keyframes zoom{
-
-from{
-
-opacity:0;
-
-transform:scale(.9);
-
-}
-
-to{
-
-opacity:1;
-
-transform:scale(1);
-
-}
-
-}
-
-.security-icon{
-
-width:90px;
-height:90px;
-
-margin:auto;
-
-border-radius:50%;
-
-background:linear-gradient(135deg,#00aaff,#0066ff);
-
-display:flex;
-
-align-items:center;
-
-justify-content:center;
-
-font-size:42px;
-
-box-shadow:0 0 30px rgba(0,170,255,.45);
-
-}
-
-.security-card h2{
-
-margin-top:18px;
-
-font-size:24px;
-
-}
-
-.security-card p{
-
-margin-top:8px;
-
-color:#bbb;
-
-line-height:1.5;
-
-}
-
-.status{
-
-margin-top:20px;
-
-display:inline-block;
-
-padding:10px 20px;
-
-border-radius:30px;
-
-background:#0f9d58;
-
-font-weight:bold;
-
-color:#fff;
-
-box-shadow:0 5px 15px rgba(15,157,88,.35);
-
-}
-
-/* Section */
-
-.section-title{
-
-width:92%;
-
-margin:30px auto 18px;
-
-font-size:20px;
-
-font-weight:bold;
-
-color:#00aaff;
-
-}
-
-/* Container */
-
-.settings-container{
-
-width:92%;
-
-margin:auto;
-
-}
-
-</style>
+<link rel="stylesheet" href="security-settings.css">
 
 </head>
 
+
 <body>
 
-<div class="header">
+
+
+<!-- Header -->
+
+<header class="header">
 
 <h1>🔒 Security Settings</h1>
 
 <p>Protect your Viewora account</p>
 
-</div>
+</header>
 
-<div class="security-card">
+
+
+
+
+
+
+<!-- Security Overview -->
+
+
+<section class="security-card">
+
 
 <div class="security-icon">
 
@@ -247,14 +46,18 @@ margin:auto;
 
 </div>
 
-<h2>Account Protection</h2>
+
+<h2>
+Account Protection
+</h2>
+
 
 <p>
-
-Manage your password, email verification,
+Manage your password, verification,
 privacy and account security.
-
 </p>
+
+
 
 <div class="status">
 
@@ -262,7 +65,20 @@ privacy and account security.
 
 </div>
 
-</div>
+
+
+</section>
+
+
+
+
+
+
+
+
+
+<!-- Security Options -->
+
 
 <h2 class="section-title">
 
@@ -270,271 +86,302 @@ Security Options
 
 </h2>
 
+
+
 <div class="settings-container">
-  <!-- ========================= -->
-<!-- Change Password -->
-<!-- ========================= -->
+
+
+
+
 
 <div class="setting-card"
 onclick="resetPassword()">
 
-    <div class="icon">🔑</div>
 
-    <div class="content">
+<div class="icon">
 
-        <h3>Change Password</h3>
-
-        <p>Reset your account password securely.</p>
-
-    </div>
-
-    <span>›</span>
+🔑
 
 </div>
 
-<!-- Email Verification -->
+
+<div class="content">
+
+
+<h3>
+Change Password
+</h3>
+
+
+<p>
+Reset your account password securely.
+</p>
+
+
+</div>
+
+
+<span>
+›
+</span>
+
+
+</div>
+
+
+
+
+
+
 
 <div class="setting-card"
 onclick="verifyEmail()">
 
-    <div class="icon">📧</div>
 
-    <div class="content">
+<div class="icon">
 
-        <h3>Email Verification</h3>
-
-        <p>Verify your email address.</p>
-
-    </div>
-
-    <span>›</span>
+📧
 
 </div>
 
-<!-- Phone Verification -->
+
+<div class="content">
+
+
+<h3>
+Email Verification
+</h3>
+
+
+<p>
+Verify your email address.
+</p>
+
+
+</div>
+
+
+<span>
+›
+</span>
+
+
+</div>
+
+
+
+
+
+
 
 <div class="setting-card"
 onclick="verifyPhone()">
 
-    <div class="icon">📱</div>
 
-    <div class="content">
+<div class="icon">
 
-        <h3>Phone Verification</h3>
-
-        <p>Add an extra recovery option.</p>
-
-    </div>
-
-    <span>›</span>
+📱
 
 </div>
 
-<!-- Two Factor Authentication -->
+
+<div class="content">
+
+
+<h3>
+Phone Verification
+</h3>
+
+
+<p>
+Add recovery phone number.
+</p>
+
+
+</div>
+
+
+<span>
+›
+</span>
+
+
+</div>
+
+
+
+
+
+
 
 <div class="setting-card"
 onclick="twoFactorAuth()">
 
-    <div class="icon">🔐</div>
 
-    <div class="content">
+<div class="icon">
 
-        <h3>Two-Factor Authentication</h3>
-
-        <p>Protect your account with 2FA.</p>
-
-    </div>
-
-    <span>›</span>
+🔐
 
 </div>
 
-<!-- Login Activity -->
+
+<div class="content">
+
+
+<h3>
+Two-Factor Authentication
+</h3>
+
+
+<p>
+Add extra account protection.
+</p>
+
+
+</div>
+
+
+<span>
+›
+</span>
+
+
+</div>
+
+
+
+
+
+
 
 <div class="setting-card"
 onclick="loginActivity()">
 
-    <div class="icon">💻</div>
 
-    <div class="content">
+<div class="icon">
 
-        <h3>Login Activity</h3>
-
-        <p>See recent sign-in activity.</p>
-
-    </div>
-
-    <span>›</span>
+💻
 
 </div>
 
-<!-- Trusted Devices -->
+
+<div class="content">
+
+
+<h3>
+Login Activity
+</h3>
+
+
+<p>
+View recent login sessions.
+</p>
+
+
+</div>
+
+
+<span>
+›
+</span>
+
+
+</div>
+
+
+
+
+
+
 
 <div class="setting-card"
 onclick="trustedDevices()">
 
-    <div class="icon">📲</div>
 
-    <div class="content">
+<div class="icon">
 
-        <h3>Trusted Devices</h3>
-
-        <p>Manage devices linked to your account.</p>
-
-    </div>
-
-    <span>›</span>
+📲
 
 </div>
 
-<!-- Blocked Users -->
+
+<div class="content">
+
+
+<h3>
+Trusted Devices
+</h3>
+
+
+<p>
+Manage connected devices.
+</p>
+
+
+</div>
+
+
+<span>
+›
+</span>
+
+
+</div>
+
+
+
+
+
+
 
 <div class="setting-card"
 onclick="blockedUsers()">
 
-    <div class="icon">🚫</div>
 
-    <div class="content">
+<div class="icon">
 
-        <h3>Blocked Users</h3>
-
-        <p>View and manage blocked accounts.</p>
-
-    </div>
-
-    <span>›</span>
+🚫
 
 </div>
 
-<style>
 
-.setting-card{
+<div class="content">
 
-display:flex;
 
-align-items:center;
+<h3>
+Blocked Users
+</h3>
 
-gap:16px;
 
-padding:18px;
+<p>
+Manage blocked accounts.
+</p>
 
-margin-bottom:16px;
 
-background:rgba(255,255,255,.06);
+</div>
 
-backdrop-filter:blur(16px);
 
-border:1px solid rgba(255,255,255,.08);
+<span>
+›
+</span>
 
-border-radius:20px;
 
-cursor:pointer;
+</div>
 
-transition:.35s;
 
-animation:slideUp .5s ease forwards;
 
-opacity:0;
+</div>
 
-}
 
-.setting-card:nth-child(1){animation-delay:.05s;}
-.setting-card:nth-child(2){animation-delay:.10s;}
-.setting-card:nth-child(3){animation-delay:.15s;}
-.setting-card:nth-child(4){animation-delay:.20s;}
-.setting-card:nth-child(5){animation-delay:.25s;}
-.setting-card:nth-child(6){animation-delay:.30s;}
-.setting-card:nth-child(7){animation-delay:.35s;}
 
-.setting-card:hover{
 
-transform:translateY(-4px);
 
-background:rgba(255,255,255,.10);
 
-box-shadow:0 15px 35px rgba(0,170,255,.20);
 
-}
 
-.icon{
 
-width:58px;
-height:58px;
-
-display:flex;
-
-align-items:center;
-
-justify-content:center;
-
-font-size:28px;
-
-border-radius:16px;
-
-background:linear-gradient(135deg,#00aaff,#0066ff);
-
-box-shadow:0 8px 20px rgba(0,170,255,.30);
-
-flex-shrink:0;
-
-}
-
-.content{
-
-flex:1;
-
-}
-
-.content h3{
-
-font-size:17px;
-
-margin-bottom:5px;
-
-}
-
-.content p{
-
-font-size:13px;
-
-color:#aaa;
-
-line-height:1.4;
-
-}
-
-.setting-card span{
-
-font-size:28px;
-
-color:#00aaff;
-
-}
-
-@keyframes slideUp{
-
-from{
-
-opacity:0;
-
-transform:translateY(25px);
-
-}
-
-to{
-
-opacity:1;
-
-transform:translateY(0);
-
-}
-
-}
-
-</style>
-<!-- ========================= -->
 <!-- Danger Zone -->
-<!-- ========================= -->
+
 
 <h2 class="section-title">
 
@@ -542,411 +389,293 @@ Danger Zone
 
 </h2>
 
+
+
+
 <div class="settings-container">
 
-    <!-- Privacy -->
 
-    <div class="setting-card"
-    onclick="window.location.href='privacy.html'">
 
-        <div class="icon privacy-icon">🔒</div>
 
-        <div class="content">
 
-            <h3>Privacy Settings</h3>
+<div class="setting-card"
+onclick="location.href='privacy.html'">
 
-            <p>Control who can see your profile and posts.</p>
 
-        </div>
+<div class="icon privacy-icon">
 
-        <span>›</span>
-
-    </div>
-
-    <!-- Logout -->
-
-    <div class="setting-card"
-    onclick="logout()">
-
-        <div class="icon logout-icon">🚪</div>
-
-        <div class="content">
-
-            <h3>Logout</h3>
-
-            <p>Sign out from this device.</p>
-
-        </div>
-
-        <span>›</span>
-
-    </div>
-
-    <!-- Logout All Devices -->
-
-    <div class="setting-card"
-    onclick="logoutAllDevices()">
-
-        <div class="icon logoutall-icon">📱</div>
-
-        <div class="content">
-
-            <h3>Logout All Devices</h3>
-
-            <p>Sign out from every device.</p>
-
-        </div>
-
-        <span>›</span>
-
-    </div>
-
-    <!-- Delete Account -->
-
-    <div class="setting-card delete-card"
-    onclick="window.location.href='delete-account.html'">
-
-        <div class="icon delete-icon">🗑️</div>
-
-        <div class="content">
-
-            <h3>Delete Account</h3>
-
-            <p>Permanently delete your Viewora account.</p>
-
-        </div>
-
-        <span>›</span>
-
-    </div>
+🔒
 
 </div>
 
-<!-- ========================= -->
+
+<div class="content">
+
+
+<h3>
+Privacy Settings
+</h3>
+
+
+<p>
+Control profile visibility.
+</p>
+
+
+</div>
+
+
+<span>
+›
+</span>
+
+
+</div>
+
+
+
+
+
+
+
+<div class="setting-card"
+onclick="logout()">
+
+
+<div class="icon logout-icon">
+
+🚪
+
+</div>
+
+
+<div class="content">
+
+
+<h3>
+Logout
+</h3>
+
+
+<p>
+Sign out from this device.
+</p>
+
+
+</div>
+
+
+<span>
+›
+</span>
+
+
+</div>
+
+
+
+
+
+
+
+<div class="setting-card"
+onclick="logoutAllDevices()">
+
+
+<div class="icon logoutall-icon">
+
+📱
+
+</div>
+
+
+<div class="content">
+
+
+<h3>
+Logout All Devices
+</h3>
+
+
+<p>
+Sign out from every device.
+</p>
+
+
+</div>
+
+
+<span>
+›
+</span>
+
+
+</div>
+
+
+
+
+
+
+
+<div class="setting-card delete-card"
+onclick="location.href='delete-account.html'">
+
+
+<div class="icon delete-icon">
+
+🗑️
+
+</div>
+
+
+<div class="content">
+
+
+<h3>
+Delete Account
+</h3>
+
+
+<p>
+Permanently remove Viewora account.
+</p>
+
+
+</div>
+
+
+<span>
+›
+</span>
+
+
+</div>
+
+
+
+</div>
+
+
+
+
+
+
+
+
+
 <!-- Security Tips -->
-<!-- ========================= -->
 
-<div class="tips-card">
 
-    <h3>🛡️ Security Tips</h3>
+<section class="tips-card">
 
-    <ul>
 
-        <li>✅ Use a strong password.</li>
+<h3>
+🛡️ Security Tips
+</h3>
 
-        <li>📧 Verify your email address.</li>
 
-        <li>📱 Add your phone number.</li>
 
-        <li>🔐 Enable Two-Factor Authentication.</li>
+<ul>
 
-        <li>🚫 Don't share your password.</li>
 
-    </ul>
+<li>
+✅ Use a strong password.
+</li>
 
-</div>
 
-<style>
+<li>
+📧 Verify your email address.
+</li>
 
-/* Danger Icons */
 
-.privacy-icon{
+<li>
+📱 Add recovery phone number.
+</li>
 
-background:linear-gradient(135deg,#00c853,#00a152);
 
-}
+<li>
+🔐 Enable Two-Factor Authentication.
+</li>
 
-.logout-icon{
 
-background:linear-gradient(135deg,#ff9800,#ff6f00);
+<li>
+🚫 Never share your password.
+</li>
 
-}
 
-.logoutall-icon{
+</ul>
 
-background:linear-gradient(135deg,#9c27b0,#673ab7);
 
-}
 
-.delete-icon{
+</section>
 
-background:linear-gradient(135deg,#ff1744,#d50000);
 
-}
 
-.delete-card{
 
-border:1px solid rgba(255,50,50,.35);
 
-}
 
-/* Security Tips */
 
-.tips-card{
 
-width:92%;
 
-margin:35px auto;
+<!-- Footer -->
 
-padding:22px;
 
-border-radius:22px;
+<footer class="footer">
 
-background:rgba(255,255,255,.06);
 
-backdrop-filter:blur(16px);
+<h2>
+🛡️ Viewora Security
+</h2>
 
-border:1px solid rgba(255,255,255,.08);
 
-animation:fadeUp .7s ease;
+<p>
+Your account security is our priority.
+</p>
 
-}
 
-.tips-card h3{
+<span>
+Version 1.0.0
+</span>
 
-color:#00aaff;
 
-margin-bottom:15px;
 
-}
+</footer>
 
-.tips-card ul{
 
-padding-left:20px;
 
-}
 
-.tips-card li{
-
-margin-bottom:10px;
-
-color:#ddd;
-
-line-height:1.6;
-
-}
-
-@keyframes fadeUp{
-
-from{
-
-opacity:0;
-
-transform:translateY(30px);
-
-}
-
-to{
-
-opacity:1;
-
-transform:translateY(0);
-
-}
-
-}
-
-</style>
-<!-- ========================= -->
-<!-- Premium Footer -->
-<!-- ========================= -->
-
-<div class="footer">
-
-    <h2>🛡️ Viewora Security</h2>
-
-    <p>
-        Your account security is our priority.
-    </p>
-
-    <p class="footer-version">
-
-        Version 1.0.0
-
-    </p>
-
-</div>
-
-<!-- Floating Version Badge -->
 
 <div class="version-badge">
 
-    🔒 Secure
+🔒 Secure
 
 </div>
 
-<style>
 
-/* Footer */
 
-.footer{
 
-width:92%;
 
-margin:40px auto 120px;
 
-padding:25px;
 
-text-align:center;
 
-background:rgba(255,255,255,.05);
 
-backdrop-filter:blur(16px);
+<!-- Firebase -->
 
-border-radius:22px;
-
-border:1px solid rgba(255,255,255,.08);
-
-animation:fadeFooter .8s;
-
-}
-
-.footer h2{
-
-color:#00aaff;
-
-margin-bottom:10px;
-
-}
-
-.footer p{
-
-color:#aaa;
-
-margin-top:8px;
-
-}
-
-.footer-version{
-
-margin-top:15px;
-
-font-size:13px;
-
-color:#666;
-
-}
-
-/* Floating Badge */
-
-.version-badge{
-
-position:fixed;
-
-bottom:25px;
-
-right:20px;
-
-padding:10px 18px;
-
-border-radius:30px;
-
-background:linear-gradient(135deg,#00aaff,#0066ff);
-
-color:#fff;
-
-font-weight:bold;
-
-box-shadow:0 10px 25px rgba(0,170,255,.35);
-
-animation:pulse 2s infinite;
-
-z-index:999;
-
-}
-
-/* Footer Animation */
-
-@keyframes fadeFooter{
-
-from{
-
-opacity:0;
-
-transform:translateY(30px);
-
-}
-
-to{
-
-opacity:1;
-
-transform:translateY(0);
-
-}
-
-}
-
-/* Badge Animation */
-
-@keyframes pulse{
-
-0%,100%{
-
-transform:scale(1);
-
-}
-
-50%{
-
-transform:scale(1.08);
-
-}
-
-}
-
-</style>
-
-<!-- ========================= -->
-<!-- Firebase SDK -->
-<!-- ========================= -->
 
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
 
+
 <script src="firebase.js"></script>
+
 <script src="security-settings.js"></script>
 
-<script>
 
-// Smooth Page Load
-
-document.body.style.opacity="0";
-
-window.addEventListener("load",()=>{
-
-document.body.style.transition=".4s";
-
-document.body.style.opacity="1";
-
-});
-
-// Internet Status
-
-window.addEventListener("online",()=>{
-
-if(typeof showToast==="function"){
-
-showToast("🌐 Internet Connected");
-
-}
-
-});
-
-window.addEventListener("offline",()=>{
-
-if(typeof showToast==="function"){
-
-showToast("❌ Internet Disconnected");
-
-}
-
-});
-
-console.log("✅ Security Settings Loaded");
-
-</script>
 
 </body>
+
 </html>

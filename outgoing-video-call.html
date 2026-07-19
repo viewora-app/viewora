@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport"
+content="width=device-width, initial-scale=1.0">
+
+<title>Viewora Video Calling</title>
+
+<style>
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:Arial,sans-serif;
+}
+
+body{
+
+height:100vh;
+
+overflow:hidden;
+
+display:flex;
+
+justify-content:center;
+
+align-items:center;
+
+background:
+linear-gradient(135deg,#0f172a,#111827,#020617);
+
+color:white;
+
+}
+
+/* Animated Background */
+
+body::before{
+
+content:"";
+
+position:absolute;
+
+width:220%;
+
+height:220%;
+
+background:
+
+radial-gradient(circle,#00e5ff55 8%,transparent 35%),
+
+radial-gradient(circle,#00ff9955 8%,transparent 35%);
+
+animation:bg 10s linear infinite;
+
+}
+
+@keyframes bg{
+
+0%{
+
+transform:rotate(0deg);
+
+}
+
+100%{
+
+transform:rotate(360deg);
+
+}
+
+}
+
+/* Glass Card */
+
+.card{
+
+position:relative;
+
+z-index:10;
+
+width:370px;
+
+padding:35px;
+
+border-radius:35px;
+
+text-align:center;
+
+background:rgba(255,255,255,.08);
+
+backdrop-filter:blur(18px);
+
+border:1px solid rgba(255,255,255,.12);
+
+box-shadow:0 20px 60px rgba(0,0,0,.45);
+
+}
+
+/* Avatar */
+
+.avatar{
+
+width:170px;
+
+height:170px;
+
+border-radius:50%;
+
+object-fit:cover;
+
+border:5px solid white;
+
+animation:pulse 2s infinite;
+
+}
+
+@keyframes pulse{
+
+0%{
+
+transform:scale(1);
+
+box-shadow:0 0 0 0 rgba(0,255,153,.8);
+
+}
+
+70%{
+
+box-shadow:0 0 0 35px rgba(0,255,153,0);
+
+}
+
+100%{
+
+transform:scale(1);
+
+}
+
+}
+
+h2{
+
+margin-top:18px;
+
+font-size:28px;
+
+}
+
+.status{
+
+margin-top:10px;
+
+font-size:18px;
+
+color:#7CFC00;
+
+animation:blink 1s infinite;
+
+}
+
+@keyframes blink{
+
+50%{
+
+opacity:.3;
+
+}
+
+}
+
+/* Camera Animation */
+
+.camera{
+
+font-size:60px;
+
+margin-top:25px;
+
+animation:camera 1.2s infinite;
+
+}
+
+@keyframes camera{
+
+0%{
+
+transform:scale(.9);
+
+}
+
+50%{
+
+transform:scale(1.1);
+
+}
+
+100%{
+
+transform:scale(.9);
+
+}
+
+}
+
+/* Buttons */
+
+.controls{
+
+margin-top:35px;
+
+display:flex;
+
+justify-content:center;
+
+gap:25px;
+
+}
+
+button{
+
+width:80px;
+
+height:80px;
+
+border:none;
+
+border-radius:50%;
+
+font-size:30px;
+
+cursor:pointer;
+
+color:white;
+
+transition:.25s;
+
+}
+
+button:hover{
+
+transform:scale(1.1);
+
+}
+
+#cameraBtn{
+
+background:#2563eb;
+
+}
+
+#cancelCall{
+
+background:#ef4444;
+
+box-shadow:0 0 25px #ef4444;
+
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="card">
+
+<img
+
+id="receiverPhoto"
+
+class="avatar"
+
+src="assets/avatar.png">
+
+<h2 id="receiverName">
+
+Viewora User
+
+</h2>
+
+<div class="status">
+
+Starting Video Call...
+
+</div>
+
+<div class="camera">
+
+🎥
+
+</div>
+
+<div class="controls">
+
+<button id="cameraBtn">
+
+📷
+
+</button>
+
+<button id="cancelCall">
+
+📞
+
+</button>
+
+</div>
+
+</div>
+
+<script src="outgoing-video-call.js"></script>
+
+</body>
+
+</html>

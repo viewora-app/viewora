@@ -1,344 +1,728 @@
-// ===========================================
-// VIEWORA NOTIFICATIONS V4.0
-// PART 1
-// Authentication + Load Notifications
-// ===========================================
+/*======================================================
+            VIEWORA STUDIO V2.0
+              notifications.js
+                  PART 1
+      Authentication + Initialization
+======================================================*/
+
+// ==========================================
+// Current User
+// ==========================================
 
 let currentUser = null;
 
-auth.onAuthStateChanged((user) => {
+// ==========================================
+// DOM Elements
+// ==========================================
 
-    if (!user) {
+const notificationContainer =
+document.getElementById("notificationsList");
 
-        location.href = "login.html";
+const notificationBadge =
+document.getElementById("notificationBadge");
+
+// ==========================================
+// Firebase Auth
+// ==========================================
+
+auth.onAuthStateChanged((user)=>{
+
+    if(!user){
+
+        location.href="login.html";
         return;
 
     }
 
     currentUser = user;
 
-    loadNotifications();
+    initializeNotifications();
 
 });
 
-// ===========================================
-// Load Notifications
-// ===========================================
+// ==========================================
+// Initialize
+// ==========================================
 
-function loadNotifications() {
+function initializeNotifications(){
 
-    const container =
-        document.getElementById("notificationsList");
+    loadNotifications();
 
-    if (!container) return;
+    listenNotificationCount();
 
-    db.ref("notifications/" + currentUser.uid)
-
-    .orderByChild("time")
-
-    .limitToLast(50)
-
-    .on("value", (snapshot) => {
-
-        container.innerHTML = "";
-
-        if (!snapshot.exists()) {
-
-            container.innerHTML = `
-
-            <div class="empty-box">
-
-                <div class="empty-icon">🔔</div>
-
-                <h2>No Notifications</h2>
-
-                <p>
-                Likes, comments, follows and
-                messages will appear here.
-                </p>
-
-            </div>
-
-            `;
-
-            return;
-
-        }
-
-        const notifications = [];
-
-        snapshot.forEach((child) => {
-
-            notifications.unshift({
-
-                id: child.key,
-
-                ...child.val()
-
-            });
-
-        });
-
-        notifications.forEach((notif) => {
-
-            renderNotification(notif);
-
-        });
-
-    });
+    startNotificationListener();
 
 }
 
-console.log("✅ Notifications Part 1 Loaded");
-// ===========================================
-// VIEWORA NOTIFICATIONS V4.0
-// PART 2
-// Render Notification
-// ===========================================
+// ==========================================
+// Check Login
+// ==========================================
 
-function renderNotification(notif) {
+function isLoggedIn(){
 
-    const container =
-        document.getElementById("notificationsList");
+    return currentUser !== null;
 
-    let icon = "🔔";
+}
 
-    switch (notif.type) {
+// ==========================================
+// Safe UID
+// ==========================================
 
-        case "like":
-            icon = "❤️";
-            break;
+function getUID(){
 
-        case "comment":
-            icon = "💬";
-            break;
+    if(!currentUser){
 
-        case "follow":
-            icon = "👤";
-            break;
-
-        case "message":
-            icon = "📩";
-            break;
-
-        case "mention":
-            icon = "📢";
-            break;
+        return null;
 
     }
 
-    const card = document.createElement("div");
+    return currentUser.uid;
 
-    card.className =
-        "notif-card " +
-        (notif.read ? "" : "unread");
+}
 
-    card.innerHTML = `
+// ==========================================
+// Notification Reference
+// ==========================================
 
-    <img
-    src="${notif.photo || 'non.jpg'}"
-    class="notif-avatar">
+function notificationRef(){
 
-    <div class="notif-content">
+    return db.ref(
+        "notifications/" + getUID()
+    );
 
-        <div class="notif-title">
+}
 
-            <strong>
-            ${notif.fromName || "Someone"}
-            </strong>
+// ==========================================
+// Loading Screen
+// ==========================================
 
-            ${notif.message || ""}
+function showLoading(){
 
-        </div>
+    const loading =
+    document.getElementById("loading");
 
-        <div class="notif-time">
+    if(loading){
 
-            ${icon}
-            ${formatTime(notif.time)}
+        loading.style.display="flex";
 
-        </div>
+    }
+
+}
+
+function hideLoading(){
+
+    const loading =
+    document.getElementById("loading");
+
+    if(loading){
+
+        loading.style.display="none";
+
+    }
+
+}
+
+// ==========================================
+// Empty State
+// ==========================================
+
+function showEmpty(){
+
+    if(!notificationContainer) return;
+
+    notificationContainer.innerHTML = `
+
+    <div class="empty-box">
+
+        <div class="empty-icon">🔔</div>
+
+        <h2>No Notifications</h2>
+
+        <p>
+
+        Likes, comments,
+        follows and messages
+        will appear here.
+
+        </p>
 
     </div>
 
     `;
 
-    card.onclick = function () {
+}
+
+// ==========================================
+// Error State
+// ==========================================
+
+function showError(message){
+
+    if(!notificationContainer) return;
+
+    notificationContainer.innerHTML = `
+
+    <div class="empty-box">
+
+        <div class="empty-icon">⚠️</div>
+
+        <h2>Something Went Wrong</h2>
+
+        <p>${message}</p>
+
+    </div>
+
+    `;
+
+}
+
+// ==========================================
+// Clear Container
+// ==========================================
+
+function clearNotifications(){
+
+    if(notificationContainer){
+
+        notificationContainer.innerHTML="";
+
+    }
+
+}
+
+// ==========================================
+// Console
+// ==========================================
+
+console.log(
+"✅ Notifications Part 1 Loaded"
+);
+/*======================================================
+            VIEWORA STUDIO V2.0
+              notifications.js
+                  PART 2
+          Load Notifications
+======================================================*/
+
+// ==========================================
+// Load Notifications
+// ==========================================
+
+function loadNotifications(){
+
+    if(!isLoggedIn()) return;
+
+    showLoading();
+
+    notificationRef()
+
+    .orderByChild("time")
+
+    .limitToLast(50)
+
+    .on(
+
+        "value",
+
+        snapshot=>{
+
+            hideLoading();
+
+            clearNotifications();
+
+            if(!snapshot.exists()){
+
+                showEmpty();
+
+                return;
+
+            }
+
+            const list=[];
+
+            snapshot.forEach(child=>{
+
+                list.unshift({
+
+                    id:child.key,
+
+                    ...child.val()
+
+                });
+
+            });
+
+            list.forEach(item=>{
+
+                renderNotification(item);
+
+            });
+
+        },
+
+        error=>{
+
+            hideLoading();
+
+            console.error(error);
+
+            showError("Unable to load notifications.");
+
+        }
+
+    );
+
+}
+
+// ==========================================
+// Refresh Notifications
+// ==========================================
+
+function refreshNotifications(){
+
+    if(!isLoggedIn()) return;
+
+    loadNotifications();
+
+}
+
+// ==========================================
+// Total Notifications
+// ==========================================
+
+async function getNotificationCount(){
+
+    if(!isLoggedIn()) return 0;
+
+    const snap=
+
+    await notificationRef()
+
+    .once("value");
+
+    return snap.numChildren();
+
+}
+
+// ==========================================
+// Latest Notification
+// ==========================================
+
+async function getLatestNotification(){
+
+    if(!isLoggedIn()) return null;
+
+    const snap=
+
+    await notificationRef()
+
+    .orderByChild("time")
+
+    .limitToLast(1)
+
+    .once("value");
+
+    let latest=null;
+
+    snap.forEach(child=>{
+
+        latest={
+
+            id:child.key,
+
+            ...child.val()
+
+        };
+
+    });
+
+    return latest;
+
+}
+
+// ==========================================
+// Reload Button
+// ==========================================
+
+const reloadBtn=
+
+document.getElementById("reloadNotifications");
+
+if(reloadBtn){
+
+    reloadBtn.onclick=()=>{
+
+        refreshNotifications();
+
+    };
+
+}
+
+// ==========================================
+// Console
+// ==========================================
+
+console.log(
+"✅ Notifications Part 2 Loaded"
+);
+/*======================================================
+            VIEWORA STUDIO V2.0
+              notifications.js
+                  PART 3
+     Render Notification Cards + Smart Time
+======================================================*/
+
+// ==========================================
+// Render Notification
+// ==========================================
+
+function renderNotification(notif){
+
+    if(!notificationContainer) return;
+
+    let icon="🔔";
+    let color="#5B8CFF";
+
+    switch(notif.type){
+
+        case "like":
+            icon="❤️";
+            color="#ff3b5c";
+            break;
+
+        case "comment":
+            icon="💬";
+            color="#00b894";
+            break;
+
+        case "follow":
+            icon="👤";
+            color="#6c5ce7";
+            break;
+
+        case "message":
+            icon="📩";
+            color="#0984e3";
+            break;
+
+        case "mention":
+            icon="📢";
+            color="#f39c12";
+            break;
+
+        case "story":
+            icon="📸";
+            color="#ff006e";
+            break;
+
+    }
+
+    const card=document.createElement("div");
+
+    card.className=
+    "notif-card "+(notif.read?"":"unread");
+
+    card.dataset.id=notif.id;
+
+    card.innerHTML=`
+
+        <div
+        class="notif-left"
+        style="background:${color};">
+
+            <img
+            src="${notif.photo || 'non.jpg'}"
+            class="notif-avatar">
+
+        </div>
+
+        <div class="notif-center">
+
+            <div class="notif-title">
+
+                <strong>
+
+                    ${notif.fromName || "Unknown User"}
+
+                </strong>
+
+                ${notif.message || ""}
+
+            </div>
+
+            <div
+            class="notif-time"
+            data-time="${notif.time}">
+
+                ${icon}
+                ${formatTime(notif.time)}
+
+            </div>
+
+        </div>
+
+        <div class="notif-right">
+
+            ${!notif.read
+                ?'<span class="unread-dot"></span>'
+                :''}
+
+        </div>
+
+    `;
+
+    card.onclick=()=>{
 
         openNotification(notif);
 
     };
 
-    container.appendChild(card);
+    notificationContainer.appendChild(card);
+
+    animateCard(card);
 
 }
 
-// ===========================================
+// ==========================================
+// Card Animation
+// ==========================================
+
+function animateCard(card){
+
+    card.animate(
+
+    [
+
+        {
+
+            opacity:0,
+
+            transform:
+            "translateY(25px)"
+
+        },
+
+        {
+
+            opacity:1,
+
+            transform:
+            "translateY(0)"
+
+        }
+
+    ],
+
+    {
+
+        duration:350,
+
+        easing:"ease-out"
+
+    });
+
+}
+
+// ==========================================
 // Smart Time
-// ===========================================
+// ==========================================
 
-function formatTime(time) {
+function formatTime(time){
 
-    if (!time) return "";
+    if(!time) return "";
 
-    const diff = Date.now() - time;
+    const diff=
+    Date.now()-time;
 
-    if (diff < 60000)
+    const sec=
+    Math.floor(diff/1000);
+
+    if(sec<60)
         return "Just now";
 
-    if (diff < 3600000)
-        return Math.floor(diff / 60000) + "m ago";
+    if(sec<3600)
+        return Math.floor(sec/60)+" min ago";
 
-    if (diff < 86400000)
-        return Math.floor(diff / 3600000) + "h ago";
+    if(sec<86400)
+        return Math.floor(sec/3600)+" hr ago";
 
-    if (diff < 172800000)
+    if(sec<172800)
         return "Yesterday";
 
-    return new Date(time).toLocaleDateString();
+    if(sec<604800)
+        return Math.floor(sec/86400)+" days ago";
+
+    return new Date(time)
+    .toLocaleDateString();
 
 }
 
-console.log("✅ Notifications Part 2 Loaded");
-// ===========================================
-// VIEWORA NOTIFICATIONS V4.0
-// PART 3
-// Click Action + Read Status
-// ===========================================
+// ==========================================
+// Auto Update Time
+// ==========================================
 
+setInterval(()=>{
+
+    document
+
+    .querySelectorAll(".notif-time")
+
+    .forEach(el=>{
+
+        const time=
+        Number(el.dataset.time);
+
+        el.innerHTML=
+
+        "🕒 "+formatTime(time);
+
+    });
+
+},60000);
+
+// ==========================================
+// Console
+// ==========================================
+
+console.log(
+"✅ Notifications Part 3 Loaded"
+);
+/*======================================================
+            VIEWORA STUDIO V2.0
+              notifications.js
+                  PART 4
+    Open • Read • Counter • Live Listener
+======================================================*/
+
+// ==========================================
 // Open Notification
-function openNotification(notif) {
+// ==========================================
 
-    // Mark as Read
-    db.ref(
-        "notifications/" +
-        currentUser.uid +
-        "/" +
-        notif.id
-    ).update({
-        read: true
+function openNotification(notif){
+
+    if(!currentUser) return;
+
+    // Mark Read
+
+    notificationRef()
+
+    .child(notif.id)
+
+    .update({
+
+        read:true
+
     });
 
-    // Like / Comment
-    if (
-        notif.type === "like" ||
-        notif.type === "comment"
-    ) {
+    // Open Page
 
-        if (notif.postId) {
+    switch(notif.type){
 
-            location.href =
-                "post.html?id=" +
+        case "like":
+
+        case "comment":
+
+        case "mention":
+
+            if(notif.postId){
+
+                location.href=
+
+                "post.html?id="+
+
                 notif.postId;
 
-        }
+            }
 
-        return;
-    }
+        break;
 
-    // Follow
-    if (notif.type === "follow") {
+        case "follow":
 
-        if (notif.fromUid) {
+            if(notif.fromUid){
 
-            location.href =
-                "profile.html?uid=" +
+                location.href=
+
+                "profile.html?uid="+
+
                 notif.fromUid;
 
-        }
+            }
 
-        return;
-    }
+        break;
 
-    // Message
-    if (notif.type === "message") {
+        case "message":
 
-        if (notif.fromUid) {
+            if(notif.fromUid){
 
-            location.href =
-                "chat.html?uid=" +
+                location.href=
+
+                "chat.html?uid="+
+
                 notif.fromUid;
 
-        }
+            }
 
-        return;
-    }
+        break;
 
-    // Mention
-    if (notif.type === "mention") {
+        case "story":
 
-        if (notif.postId) {
+            if(notif.storyId){
 
-            location.href =
-                "post.html?id=" +
-                notif.postId;
+                location.href=
 
-        }
+                "story.html?id="+
+
+                notif.storyId;
+
+            }
+
+        break;
 
     }
 
 }
 
-// ===========================================
-// Mark All Read
-// ===========================================
-
-window.markAllNotificationsRead = function () {
-
-    db.ref("notifications/" + currentUser.uid)
-
-    .once("value")
-
-    .then((snapshot) => {
-
-        if (!snapshot.exists()) return;
-
-        snapshot.forEach((child) => {
-
-            child.ref.update({
-                read: true
-            });
-
-        });
-
-    });
-
-};
-
-// ===========================================
+// ==========================================
 // Notification Counter
-// ===========================================
+// ==========================================
 
-function listenNotificationCount() {
+function listenNotificationCount(){
 
-    db.ref("notifications/" + currentUser.uid)
+    if(!currentUser) return;
 
-    .on("value", (snapshot) => {
+    notificationRef()
 
-        let unread = 0;
+    .on("value",snapshot=>{
 
-        snapshot.forEach((child) => {
+        let unread=0;
 
-            const n = child.val();
+        snapshot.forEach(child=>{
 
-            if (!n.read) unread++;
+            if(!child.val().read){
+
+                unread++;
+
+            }
 
         });
 
-        const badge =
-            document.getElementById(
-                "notificationBadge"
-            );
+        if(!notificationBadge) return;
 
-        if (!badge) return;
+        if(unread>0){
 
-        if (unread > 0) {
+            notificationBadge.style.display="flex";
 
-            badge.style.display = "flex";
-            badge.innerText = unread;
+            notificationBadge.innerText=
 
-        } else {
+            unread>99
 
-            badge.style.display = "none";
+            ?"99+"
+
+            :unread;
+
+        }else{
+
+            notificationBadge.style.display="none";
 
         }
 
@@ -346,106 +730,68 @@ function listenNotificationCount() {
 
 }
 
-// Start Counter
-listenNotificationCount();
-
-console.log("✅ Notifications Part 3 Loaded");
-// ===========================================
-// VIEWORA NOTIFICATIONS V4.0
-// PART 4
-// Sound + Clear + Delete + Animation
-// ===========================================
-
-// ===============================
+// ==========================================
 // Notification Sound
-// ===============================
+// ==========================================
 
 function playNotificationSound(){
 
-    const audio = new Audio("notification.mp3");
+    const audio=
 
-    audio.volume = 0.5;
+    new Audio("notification.mp3");
+
+    audio.volume=.5;
 
     audio.play().catch(()=>{});
 
 }
 
-// Play sound for new notification
+// ==========================================
+// Live Notification Listener
+// ==========================================
 
-let firstLoad = true;
+function startNotificationListener(){
 
-db.ref("notifications/" + currentUser.uid)
+    if(!currentUser) return;
 
-.on("child_added",(snap)=>{
+    let firstLoad=true;
 
-    if(firstLoad) return;
+    notificationRef()
 
-    playNotificationSound();
+    .limitToLast(1)
 
-    animateLatestCard();
+    .on("child_added",snap=>{
 
-});
+        if(firstLoad){
 
-setTimeout(()=>{
+            return;
 
-    firstLoad = false;
+        }
 
-},1500);
+        playNotificationSound();
 
-// ===============================
-// Delete Notification
-// ===============================
+        animateLatestCard();
 
-window.deleteNotification = function(id){
-
-    if(!confirm("Delete this notification?"))
-        return;
-
-    db.ref(
-        "notifications/" +
-        currentUser.uid +
-        "/" +
-        id
-    )
-
-    .remove()
-
-    .then(()=>{
-
-        showToast("Notification Deleted");
+        showToast("🔔 New Notification");
 
     });
 
-};
+    setTimeout(()=>{
 
-// ===============================
-// Clear All Notifications
-// ===============================
+        firstLoad=false;
 
-window.clearAllNotifications = function(){
+    },1500);
 
-    if(!confirm("Clear all notifications?"))
-        return;
+}
 
-    db.ref("notifications/" + currentUser.uid)
-
-    .remove()
-
-    .then(()=>{
-
-        showToast("All Notifications Cleared");
-
-    });
-
-};
-
-// ===============================
-// Latest Card Animation
-// ===============================
+// ==========================================
+// Animate Latest Card
+// ==========================================
 
 function animateLatestCard(){
 
-    const card =
+    const card=
+
     document.querySelector(".notif-card");
 
     if(!card) return;
@@ -453,35 +799,225 @@ function animateLatestCard(){
     card.animate([
 
         {
+
             transform:"scale(.92)",
+
             opacity:.3
+
         },
 
         {
+
             transform:"scale(1)",
+
             opacity:1
+
         }
 
     ],{
 
-        duration:350
+        duration:350,
+
+        easing:"ease-out"
 
     });
 
 }
 
-// ===============================
-// Toast Message
-// ===============================
+// ==========================================
+
+console.log(
+"✅ Notifications Part 4 Loaded"
+);
+/*======================================================
+            VIEWORA STUDIO V2.0
+              notifications.js
+                  PART 5
+ Delete • Clear • Search • Filter • Toast
+======================================================*/
+
+// ==========================================
+// Delete Notification
+// ==========================================
+
+window.deleteNotification = function(id){
+
+    if(!currentUser) return;
+
+    if(!confirm("Delete this notification?"))
+        return;
+
+    notificationRef()
+
+    .child(id)
+
+    .remove()
+
+    .then(()=>{
+
+        showToast("🗑 Notification Deleted");
+
+    })
+
+    .catch(()=>{
+
+        showToast("❌ Delete Failed");
+
+    });
+
+};
+
+// ==========================================
+// Clear All Notifications
+// ==========================================
+
+window.clearAllNotifications = function(){
+
+    if(!currentUser) return;
+
+    if(!confirm("Clear all notifications?"))
+        return;
+
+    notificationRef()
+
+    .remove()
+
+    .then(()=>{
+
+        showToast("🧹 All Notifications Cleared");
+
+        showEmpty();
+
+    })
+
+    .catch(()=>{
+
+        showToast("❌ Failed");
+
+    });
+
+};
+
+// ==========================================
+// Mark All Read
+// ==========================================
+
+window.markAllNotificationsRead = async function(){
+
+    if(!currentUser) return;
+
+    const snap = await notificationRef().once("value");
+
+    if(!snap.exists()) return;
+
+    const updates={};
+
+    snap.forEach(child=>{
+
+        updates[child.key+"/read"]=true;
+
+    });
+
+    await notificationRef().update(updates);
+
+    showToast("✅ All Marked Read");
+
+};
+
+// ==========================================
+// Search Notification
+// ==========================================
+
+function searchNotifications(text){
+
+    text=text.toLowerCase();
+
+    document
+
+    .querySelectorAll(".notif-card")
+
+    .forEach(card=>{
+
+        const value=
+
+        card.innerText.toLowerCase();
+
+        card.style.display=
+
+        value.includes(text)
+
+        ?"flex"
+
+        :"none";
+
+    });
+
+}
+
+const searchBox=
+
+document.getElementById("notificationSearch");
+
+if(searchBox){
+
+    searchBox.oninput=(e)=>{
+
+        searchNotifications(e.target.value);
+
+    };
+
+}
+
+// ==========================================
+// Filter Notification
+// ==========================================
+
+function filterNotifications(type){
+
+    document
+
+    .querySelectorAll(".notif-card")
+
+    .forEach(card=>{
+
+        if(type==="all"){
+
+            card.style.display="flex";
+
+            return;
+
+        }
+
+        card.style.display=
+
+        card.innerHTML
+
+        .toLowerCase()
+
+        .includes(type)
+
+        ?"flex"
+
+        :"none";
+
+    });
+
+}
+
+// ==========================================
+// Premium Toast
+// ==========================================
 
 function showToast(text){
 
-    let toast =
+    let toast=
+
     document.getElementById("toast");
 
     if(!toast){
 
-        toast =
+        toast=
+
         document.createElement("div");
 
         toast.id="toast";
@@ -489,18 +1025,19 @@ function showToast(text){
         toast.style.cssText=`
 
         position:fixed;
-        bottom:90px;
         left:50%;
+        bottom:90px;
         transform:translateX(-50%);
-        background:#111;
+        background:rgba(25,25,25,.95);
         color:#fff;
-        padding:12px 22px;
-        border-radius:30px;
-        font-size:14px;
-        box-shadow:0 0 20px rgba(0,170,255,.35);
+        padding:14px 24px;
+        border-radius:40px;
+        font-size:15px;
+        backdrop-filter:blur(20px);
+        box-shadow:0 10px 40px rgba(0,0,0,.35);
         opacity:0;
-        transition:.3s;
-        z-index:99999;
+        transition:.35s;
+        z-index:999999;
 
         `;
 
@@ -508,43 +1045,228 @@ function showToast(text){
 
     }
 
-    toast.innerText=text;
+    toast.innerHTML=text;
 
     toast.style.opacity="1";
+
+    toast.style.bottom="100px";
 
     setTimeout(()=>{
 
         toast.style.opacity="0";
 
-    },1800);
+        toast.style.bottom="90px";
+
+    },2200);
 
 }
 
-// ===============================
-// Auto Refresh Time
-// ===============================
+// ==========================================
+// Keyboard Shortcut
+// Ctrl + R = Mark Read
+// ==========================================
 
-setInterval(()=>{
+document.addEventListener(
 
-    document
-    .querySelectorAll(".notif-time")
+"keydown",
 
-    .forEach(el=>{
+e=>{
 
-        const time =
-        el.dataset.time;
+    if(e.ctrlKey && e.key==="r"){
 
-        if(time){
+        e.preventDefault();
 
-            el.innerText =
-            formatTime(Number(time));
+        markAllNotificationsRead();
 
-        }
+    }
+
+});
+
+// ==========================================
+
+console.log(
+"✅ Notifications Part 5 Loaded"
+);
+/*======================================================
+            VIEWORA STUDIO V2.0
+              notifications.js
+                  PART 6 FINAL
+    Offline • Pull Refresh • Pin • Cleanup
+======================================================*/
+
+// ==========================================
+// Offline Status
+// ==========================================
+
+window.addEventListener("offline",()=>{
+
+    showToast("📡 You are Offline");
+
+});
+
+window.addEventListener("online",()=>{
+
+    showToast("🌐 Back Online");
+
+    refreshNotifications();
+
+});
+
+// ==========================================
+// Pull To Refresh
+// ==========================================
+
+let startY = 0;
+
+window.addEventListener("touchstart",(e)=>{
+
+    startY = e.touches[0].clientY;
+
+});
+
+window.addEventListener("touchend",(e)=>{
+
+    const endY = e.changedTouches[0].clientY;
+
+    if(endY-startY>150){
+
+        refreshNotifications();
+
+        showToast("🔄 Notifications Updated");
+
+    }
+
+});
+
+// ==========================================
+// Pin Notification
+// ==========================================
+
+window.pinNotification = async function(id){
+
+    if(!currentUser) return;
+
+    await notificationRef()
+
+    .child(id)
+
+    .update({
+
+        pinned:true
 
     });
 
+    showToast("📌 Notification Pinned");
+
+};
+
+// ==========================================
+// Remove Pin
+// ==========================================
+
+window.unpinNotification = async function(id){
+
+    if(!currentUser) return;
+
+    await notificationRef()
+
+    .child(id)
+
+    .update({
+
+        pinned:false
+
+    });
+
+    showToast("✅ Pin Removed");
+
+};
+
+// ==========================================
+// Auto Scroll Top Button
+// ==========================================
+
+const topBtn =
+document.getElementById("scrollTopBtn");
+
+if(topBtn){
+
+window.addEventListener("scroll",()=>{
+
+    topBtn.style.display=
+
+    window.scrollY>500
+
+    ?"flex"
+
+    :"none";
+
+});
+
+topBtn.onclick=()=>{
+
+    window.scrollTo({
+
+        top:0,
+
+        behavior:"smooth"
+
+    });
+
+};
+
+}
+
+// ==========================================
+// Page Visibility
+// ==========================================
+
+document.addEventListener(
+
+"visibilitychange",
+
+()=>{
+
+    if(!document.hidden){
+
+        refreshNotifications();
+
+    }
+
+});
+
+// ==========================================
+// Auto Refresh
+// ==========================================
+
+setInterval(()=>{
+
+    if(currentUser){
+
+        refreshNotifications();
+
+    }
+
 },60000);
 
-// ===============================
+// ==========================================
+// Performance
+// ==========================================
 
-console.log("✅ Viewora Notifications V4 Loaded Successfully");
+window.addEventListener("beforeunload",()=>{
+
+    notificationRef().off();
+
+});
+
+// ==========================================
+// Version
+// ==========================================
+
+console.log("==================================");
+console.log(" Viewora Notifications V2.0");
+console.log(" Status : Production Ready");
+console.log(" Realtime : Enabled");
+console.log(" Offline : Enabled");
+console.log(" Refresh : Enabled");
+console.log("==================================");
