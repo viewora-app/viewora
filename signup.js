@@ -454,9 +454,9 @@ function validateForm() {
     }
 
     if (!usernameAvailable) {
-        showToast("Username already taken", "error");
-        return null;
-    }
+    showToast("Please choose an available username.", "error");
+    return null;
+}
 
     if (!validEmail(userEmail)) {
         showToast("Invalid email address", "error");
@@ -560,11 +560,7 @@ async function createAccount(e) {
 
         /* Send verification email immediately */
 
-        await user.sendEmailVerification({
-
-            url: window.location.origin + "/login.html"
-
-        });
+        await user.sendEmailVerification();
 
         await auth.signOut();
 
@@ -825,9 +821,11 @@ auth.onAuthStateChanged(async user => {
 
     });
 
-db.ref("users/" + user.uid + "/online")
-  .onDisconnect()
-  .set(false);
+const onlineRef = db.ref("users/" + user.uid + "/online");
+
+onlineRef.onDisconnect().set(false).catch(error => {
+    console.error("onDisconnect Error:", error);
+});
 
 });
 
@@ -993,5 +991,4 @@ Version
 console.log("================================");
 console.log("VIEWORA SIGNUP");
 console.log("Version : 2.0 FINAL");
-console.log("Signup Ready ✅");
 console.log("================================");

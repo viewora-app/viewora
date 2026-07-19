@@ -9,7 +9,7 @@ const firebaseConfig = {
     authDomain: "viewora-cc4ac.firebaseapp.com",
     databaseURL: "https://viewora-cc4ac-default-rtdb.firebaseio.com",
     projectId: "viewora-cc4ac",
-    storageBucket: "viewora-cc4ac.firebasestorage.app",
+    storageBucket: "viewora-cc4ac.appspot.com",
     messagingSenderId: "988622911735",
     appId: "1:988622911735:web:e30c97dd88d5ac87c93bf2"
 };
@@ -87,7 +87,6 @@ window.addEventListener("error", e => {
     console.error("JS Error:", e.message);
 });
 
-// Finished
 console.log("=================================");
 console.log("🚀 VIEWORA V1.0 PREMIUM");
 console.log("✅ Firebase Ready");
