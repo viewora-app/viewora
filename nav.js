@@ -1,182 +1,91 @@
-// =======================================
-// Viewora V3 Navigation
-// nav.js
-// =======================================
+document.addEventListener("DOMContentLoaded",()=>{
 
-"use strict";
+const links=document.querySelectorAll(".bottomNav a");
 
-document.addEventListener("DOMContentLoaded", () => {
+const page=location.pathname.split("/").pop()||"index.html";
 
-    initNavigation();
-    initRipple();
-    initNetworkStatus();
+links.forEach(link=>{
+
+const href=link.getAttribute("href");
+
+if(href===page){
+
+link.classList.add("active");
+
+}
+
+link.addEventListener("click",function(e){
+
+links.forEach(l=>l.classList.remove("active"));
+
+this.classList.add("active");
+
+const ripple=document.createElement("span");
+
+ripple.className="navRipple";
+
+const rect=this.getBoundingClientRect();
+
+ripple.style.left=(e.clientX-rect.left)+"px";
+
+ripple.style.top=(e.clientY-rect.top)+"px";
+
+this.appendChild(ripple);
+
+setTimeout(()=>{
+
+ripple.remove();
+
+},600);
+
+this.animate([
+
+{transform:"scale(.88)"},
+
+{transform:"scale(1)"}
+
+],{
+
+duration:180
 
 });
 
-// =======================================
-// Navigation
-// =======================================
+if(navigator.vibrate){
 
-function initNavigation() {
-
-    const nav = document.querySelector(".bottomNav");
-
-    if (!nav) return;
-
-    const links = nav.querySelectorAll("a");
-
-    const current =
-        location.pathname.split("/").pop() || "index.html";
-
-    links.forEach(link => {
-
-        const href = link.getAttribute("href");
-
-        link.classList.remove("active");
-
-        if (href === current) {
-
-            link.classList.add("active");
-
-        }
-
-        link.addEventListener("click", function () {
-
-            links.forEach(l => l.classList.remove("active"));
-
-            this.classList.add("active");
-
-            this.animate([
-                { transform: "scale(1)" },
-                { transform: "scale(.90)" },
-                { transform: "scale(1)" }
-            ], {
-                duration: 180
-            });
-
-            if ("vibrate" in navigator) {
-                navigator.vibrate(15);
-            }
-
-        });
-
-    });
+navigator.vibrate(15);
 
 }
-
-// =======================================
-// Ripple Effect
-// =======================================
-
-function initRipple() {
-
-    const buttons =
-        document.querySelectorAll(".bottomNav a");
-
-    buttons.forEach(btn => {
-
-        btn.addEventListener("click", function (e) {
-
-            const ripple =
-                document.createElement("span");
-
-            ripple.className = "navRipple";
-
-            const rect =
-                this.getBoundingClientRect();
-
-            ripple.style.left =
-                (e.clientX - rect.left) + "px";
-
-            ripple.style.top =
-                (e.clientY - rect.top) + "px";
-
-            this.appendChild(ripple);
-
-            setTimeout(() => {
-
-                ripple.remove();
-
-            }, 600);
-
-        });
-
-    });
-
-}
-
-// =======================================
-// Double Tap Home
-// =======================================
-
-let lastTap = 0;
-
-document.addEventListener("click", e => {
-
-    const home =
-        e.target.closest('a[href="index.html"]');
-
-    if (!home) return;
-
-    const now = Date.now();
-
-    if (now - lastTap < 300) {
-
-        window.scrollTo({
-
-            top: 0,
-            behavior: "smooth"
-
-        });
-
-    }
-
-    lastTap = now;
 
 });
 
-// =======================================
-// Network Status
-// =======================================
+});
 
-function initNetworkStatus() {
+let lastTap=0;
 
-    window.addEventListener("offline", () => {
+const home=document.querySelector('a[href="index.html"]');
 
-        console.log("📴 Offline");
+if(home){
 
-        const box =
-            document.getElementById("networkStatus");
+home.addEventListener("click",()=>{
 
-        if (box)
-            box.classList.remove("hidden");
+const now=Date.now();
 
-    });
+if(now-lastTap<300){
 
-    window.addEventListener("online", () => {
+window.scrollTo({
 
-        console.log("🌐 Online");
+top:0,
 
-        const box =
-            document.getElementById("networkStatus");
+behavior:"smooth"
 
-        if (box)
-            box.classList.add("hidden");
-
-    });
+});
 
 }
 
-// =======================================
-// Helper
-// =======================================
+lastTap=now;
 
-window.go = function (page) {
+});
 
-    location.href = page;
+}
 
-};
-
-// =======================================
-
-console.log("✅ Viewora Navigation Loaded");
+});
