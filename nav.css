@@ -1,196 +1,300 @@
-.bottomNav{
-position:fixed;
-left:0;
-bottom:0;
-width:100%;
-height:72px;
-display:flex;
-justify-content:space-around;
-align-items:center;
+/*=========================================
+        VIEWORA V10 PREMIUM
+              nav.css
+=========================================*/
 
-background:rgba(20,20,20,.72);
-backdrop-filter:blur(22px);
--webkit-backdrop-filter:blur(22px);
-
-border-top:1px solid rgba(255,255,255,.08);
-
-z-index:99999;
+:root{
+    --nav-bg:rgba(18,18,22,.82);
+    --nav-border:rgba(255,255,255,.08);
+    --primary:#00AAFF;
+    --secondary:#6366f1;
+    --text:#ffffff;
+    --text2:#9ca3af;
 }
+
+/* Bottom Navigation */
+
+.bottomNav{
+
+    position:fixed;
+
+    left:50%;
+    bottom:0;
+
+    transform:translateX(-50%);
+
+    width:100%;
+    max-width:650px;
+
+    height:74px;
+
+    display:grid;
+    grid-template-columns:repeat(5,1fr);
+
+    align-items:center;
+
+    background:var(--nav-bg);
+
+    backdrop-filter:blur(22px);
+    -webkit-backdrop-filter:blur(22px);
+
+    border-top:1px solid var(--nav-border);
+
+    z-index:99999;
+
+    padding-bottom:env(safe-area-inset-bottom);
+}
+
+/* Navigation Links */
 
 .bottomNav a{
 
-flex:1;
-height:100%;
+    width:100%;
+    height:100%;
 
-display:flex;
-flex-direction:column;
-justify-content:center;
-align-items:center;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    align-items:center;
 
-gap:4px;
+    gap:4px;
 
-position:relative;
+    text-decoration:none;
 
-text-decoration:none;
-color:#9e9e9e;
+    color:var(--text2);
 
-font-size:11px;
-font-weight:600;
+    font-size:11px;
+    font-weight:600;
 
-overflow:hidden;
+    position:relative;
 
-transition:.3s;
--webkit-tap-highlight-color:transparent;
+    overflow:hidden;
+
+    transition:.25s;
+
+    -webkit-tap-highlight-color:transparent;
+
 }
 
 .bottomNav a i{
 
-font-size:22px;
-transition:.3s;
+    font-size:22px;
+
+    transition:.25s;
 
 }
 
+.bottomNav a span{
+
+    transition:.25s;
+
+}
+
+/* Active */
+
 .bottomNav a.active{
 
-color:#00aaff;
+    color:var(--primary);
 
 }
 
 .bottomNav a.active i{
 
-transform:translateY(-4px) scale(1.15);
+    transform:translateY(-4px) scale(1.12);
 
 }
 
 .bottomNav a.active span{
 
-color:#fff;
+    color:var(--text);
 
 }
 
+/* Active Indicator */
+
 .activeIndicator{
 
-position:absolute;
+    position:absolute;
 
-top:0;
+    top:0;
 
-width:38px;
-height:4px;
+    left:50%;
 
-background:#00aaff;
+    transform:translateX(-50%);
 
-border-radius:20px;
+    width:36px;
+    height:4px;
 
-opacity:0;
+    border-radius:20px;
 
-transition:.3s;
+    background:var(--primary);
 
-box-shadow:0 0 15px #00aaff;
+    box-shadow:0 0 15px var(--primary);
+
+    opacity:0;
+
+    transition:.25s;
 
 }
 
 .bottomNav a.active .activeIndicator{
 
-opacity:1;
+    opacity:1;
 
 }
+
+/* Upload Button */
 
 .uploadNav{
 
-flex:none !important;
+    width:60px !important;
+    height:60px !important;
 
-width:60px !important;
-height:60px !important;
+    justify-self:center;
+    align-self:flex-start;
 
-margin-top:-28px;
+    margin-top:-20px;
 
-border-radius:50%;
+    border-radius:50%;
 
-background:linear-gradient(135deg,#00AAFF,#6366f1);
+    display:flex;
+    justify-content:center;
+    align-items:center;
 
-box-shadow:
-0 8px 25px rgba(0,170,255,.45);
+    background:linear-gradient(135deg,var(--primary),var(--secondary));
 
-color:white !important;
+    color:#fff !important;
 
-}
-
-.uploadNav i{
-
-font-size:28px;
+    box-shadow:
+    0 10px 28px rgba(0,170,255,.45);
 
 }
 
 .uploadNav span{
 
-display:none;
+    display:none;
+
+}
+
+.uploadNav i{
+
+    font-size:28px !important;
 
 }
 
 .uploadNav:hover{
 
-transform:translateY(-4px) rotate(90deg);
+    transform:translateY(-4px);
 
 }
+
+/* Ripple */
 
 .navRipple{
 
-position:absolute;
+    position:absolute;
 
-width:10px;
-height:10px;
+    width:12px;
+    height:12px;
 
-border-radius:50%;
+    border-radius:50%;
 
-background:rgba(255,255,255,.35);
+    background:rgba(255,255,255,.35);
 
-pointer-events:none;
+    transform:translate(-50%,-50%) scale(0);
 
-transform:translate(-50%,-50%) scale(0);
+    pointer-events:none;
 
-animation:ripple .6s linear;
-
-}
-
-@keyframes ripple{
-
-0%{
-
-transform:translate(-50%,-50%) scale(0);
-
-opacity:1;
+    animation:navRipple .6s linear;
 
 }
 
-100%{
+@keyframes navRipple{
 
-transform:translate(-50%,-50%) scale(18);
+    to{
 
-opacity:0;
+        transform:translate(-50%,-50%) scale(18);
+
+        opacity:0;
+
+    }
 
 }
 
+/* Hover */
+
+.bottomNav a:hover{
+
+    color:#fff;
+
 }
+
+/* Mobile */
+
+@media(max-width:650px){
+
+    .bottomNav{
+
+        max-width:100%;
+
+    }
+
+}
+
+/* Small Phones */
 
 @media(max-width:480px){
 
-.bottomNav{
+    .bottomNav{
 
-height:66px;
+        height:68px;
+
+    }
+
+    .bottomNav a i{
+
+        font-size:20px;
+
+    }
+
+    .bottomNav a{
+
+        font-size:10px;
+
+    }
+
+    .uploadNav{
+
+        width:56px !important;
+        height:56px !important;
+
+        margin-top:-18px;
+
+    }
 
 }
 
-.uploadNav{
+/* Extra Small */
 
-width:55px !important;
-height:55px !important;
+@media(max-width:360px){
 
-}
+    .bottomNav{
 
-.bottomNav a i{
+        height:66px;
 
-font-size:20px;
+    }
 
-}
+    .bottomNav a i{
+
+        font-size:18px;
+
+    }
+
+    .uploadNav{
+
+        width:52px !important;
+        height:52px !important;
+
+    }
 
 }

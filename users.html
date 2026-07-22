@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
 
 <meta charset="UTF-8">
@@ -9,23 +10,42 @@
 
 <meta name="theme-color" content="#08111f">
 
-<!-- Premium Font -->
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<meta
+name="description"
+content="Discover creators on Viewora">
+
+<link
+rel="icon"
+href="assets/logo.png">
+
+<!-- Google Font -->
+
+<link
+href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+rel="stylesheet">
 
 <!-- Font Awesome -->
-<link rel="stylesheet"
-href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"/>
+
+<link
+rel="stylesheet"
+href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
 
 <!-- CSS -->
-<link rel="stylesheet" href="users.css">
-<link rel="stylesheet" href="nav.css">
+
+<link
+rel="stylesheet"
+href="users.css">
+
+<link
+rel="stylesheet"
+href="nav.css">
 
 </head>
 
 <body>
 
 <!-- =====================================
-        Animated Premium Background
+        Premium Animated Background
 ====================================== -->
 
 <div class="bg-gradient"></div>
@@ -33,8 +53,6 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
 <div class="blur blur1"></div>
 <div class="blur blur2"></div>
 <div class="blur blur3"></div>
-
-<!-- Floating Particles -->
 
 <div class="particles">
 
@@ -50,7 +68,7 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
 </div>
 
 <!-- =====================================
-          Premium Page Loader
+            Page Loader
 ====================================== -->
 
 <div id="pageLoader">
@@ -64,7 +82,7 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
 </div>
 
 <!-- =====================================
-            Main Application
+            Main App
 ====================================== -->
 
 <div id="app" class="hidden">
@@ -112,7 +130,7 @@ class="iconBtn">
 </header>
 
 <!-- =====================================
-            Search Section
+            Search
 ====================================== -->
 
 <section class="searchSection">
@@ -124,10 +142,9 @@ class="iconBtn">
 <input
 type="text"
 id="searchInput"
-placeholder="Search by name, username or bio...">
+placeholder="Search creators...">
 
-<button
-id="clearSearch">
+<button id="clearSearch">
 
 <i class="fa-solid fa-xmark"></i>
 
@@ -142,93 +159,75 @@ id="clearSearch">
 
 <section class="section">
 
-<div class="sectionHeader">
+    <div class="sectionHeader">
 
-<h3>
+        <h3>⭐ Suggested For You</h3>
 
-⭐ Suggested For You
+        <button class="seeAllBtn">
+            See All
+        </button>
 
-</h3>
+    </div>
 
-<button class="seeAllBtn">
+    <div
+        id="suggestedUsers"
+        class="suggestedContainer">
 
-See All
+        <!-- Rendered by users.js -->
 
-</button>
-
-</div>
-
-<div
-id="suggestedUsers"
-class="suggestedContainer">
-
-<!-- JS -->
-
-</div>
+    </div>
 
 </section>
 
 <!-- =====================================
-          Online Users
+            Online Users
 ====================================== -->
 
 <section class="section">
 
-<div class="sectionHeader">
+    <div class="sectionHeader">
 
-<h3>
+        <h3>🟢 Online Now</h3>
 
-🟢 Online Now
+        <span id="onlineCount">
+            0 Online
+        </span>
 
-</h3>
+    </div>
 
-<span id="onlineCount">
+    <div
+        id="onlineUsers"
+        class="onlineContainer">
 
-0 Online
+        <!-- Rendered by users.js -->
 
-</span>
-
-</div>
-
-<div
-id="onlineUsers"
-class="onlineContainer">
-
-<!-- JS -->
-
-</div>
+    </div>
 
 </section>
 
 <!-- =====================================
-            All Users
+              All Users
 ====================================== -->
 
 <section class="section">
 
-<div class="sectionHeader">
+    <div class="sectionHeader">
 
-<h3>
+        <h3>👥 All Users</h3>
 
-👥 All Users
+        <span id="totalUsers">
+            0 Users
+        </span>
 
-</h3>
+    </div>
 
-<span id="totalUsers">
+    <div
+        id="usersList"
+        class="usersList">
 
-0 Users
+        <!-- Rendered by users.js -->
 
-</span>
-
-</div>
-
-<div
-id="usersList"
-class="usersList">
-
-<!-- JS Render -->
-
-</div>
+    </div>
 
 </section>
 
@@ -237,26 +236,20 @@ class="usersList">
 ====================================== -->
 
 <div
-id="emptyState"
-class="hidden">
+    id="emptyState"
+    class="hidden">
 
-<div class="emptyIcon">
+    <div class="emptyIcon">
 
-<i class="fa-solid fa-user-slash"></i>
+        <i class="fa-solid fa-user-slash"></i>
 
-</div>
+    </div>
 
-<h2>
+    <h2>No Users Found</h2>
 
-No Users Found
-
-</h2>
-
-<p>
-
-Try searching with another username.
-
-</p>
+    <p>
+        Try searching with another username.
+    </p>
 
 </div>
 
@@ -265,18 +258,18 @@ Try searching with another username.
 ====================================== -->
 
 <div
-id="usersSkeleton"
-class="hidden">
+    id="usersSkeleton"
+    class="hidden">
 
-<div class="skeletonCard"></div>
-<div class="skeletonCard"></div>
-<div class="skeletonCard"></div>
-<div class="skeletonCard"></div>
-<div class="skeletonCard"></div>
+    <div class="skeletonCard"></div>
+    <div class="skeletonCard"></div>
+    <div class="skeletonCard"></div>
+    <div class="skeletonCard"></div>
+    <div class="skeletonCard"></div>
 
 </div>
 <!-- =====================================
-          Profile Preview Modal
+        Profile Preview Modal
 ====================================== -->
 
 <div id="profileModal" class="modal hidden">
@@ -374,7 +367,7 @@ class="hidden">
 </div>
 
 <!-- =====================================
-            Floating Buttons
+        Floating Action Buttons
 ====================================== -->
 
 <button
@@ -394,7 +387,7 @@ class="hidden">
 </button>
 
 <!-- =====================================
-              Premium Toast
+        Premium Toast
 ====================================== -->
 
 <div
@@ -438,13 +431,17 @@ class="hidden">
 
     </a>
 
-    <a href="upload.html" class="uploadNav">
+    <a
+        href="upload.html"
+        class="uploadNav">
 
         <i class="fa-solid fa-plus"></i>
 
     </a>
 
-    <a href="users.html" class="active">
+    <a
+        href="users.html"
+        class="active">
 
         <span class="activeIndicator"></span>
 
@@ -471,22 +468,54 @@ class="hidden">
 ====================================== -->
 
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
 
 <!-- =====================================
-          Viewora Scripts
+            Viewora Scripts
 ====================================== -->
 
 <script src="firebase.js"></script>
-
 <script src="nav.js"></script>
-
 <script src="users.js"></script>
 
+<!-- =====================================
+            Premium Startup
+====================================== -->
+
+<script>
+
+window.addEventListener("load",()=>{
+
+const loader=document.getElementById("pageLoader");
+const app=document.getElementById("app");
+
+setTimeout(()=>{
+
+if(loader){
+
+loader.style.opacity="0";
+loader.style.visibility="hidden";
+loader.style.pointerEvents="none";
+
+}
+
+if(app){
+
+app.classList.remove("hidden");
+app.classList.add("fadeIn");
+
+}
+
+},1000);
+
+});
+
+</script>
+
+</div>
+
 </body>
+
 </html>
