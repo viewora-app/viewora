@@ -1,268 +1,612 @@
+/*==========================================
+        VIEWORA V9 PREMIUM
+        profile.css (PART 1)
+==========================================*/
+
+/* Reset */
+
 *{
 margin:0;
 padding:0;
 box-sizing:border-box;
-font-family:Arial,sans-serif;
+font-family:"Inter",sans-serif;
+-webkit-tap-highlight-color:transparent;
+}
+
+:root{
+
+--primary:#00aaff;
+--secondary:#6366f1;
+--accent:#8b5cf6;
+
+--success:#22c55e;
+--danger:#ef4444;
+
+--bg:#08111f;
+--card:#111c2f;
+
+--glass:rgba(255,255,255,.08);
+--border:rgba(255,255,255,.08);
+
+--text:#ffffff;
+--text2:#b8c2d6;
+
+--radius:24px;
+
+--shadow:
+0 15px 45px rgba(0,0,0,.45);
+
+}
+
+/* Scroll */
+
+html{
+
+scroll-behavior:smooth;
+color-scheme:dark;
+
 }
 
 body{
-background:#0f0f0f;
-color:#fff;
-padding-bottom:90px;
+
+background:var(--bg);
+color:var(--text);
+
+overflow-x:hidden;
+min-height:100vh;
+
+padding-bottom:110px;
+
+position:relative;
+
 }
 
-/* Banner */
+/* Scrollbar */
+
+::-webkit-scrollbar{
+
+width:6px;
+
+}
+
+::-webkit-scrollbar-thumb{
+
+background:var(--primary);
+border-radius:50px;
+
+}
+
+/* Selection */
+
+::selection{
+
+background:var(--primary);
+color:#fff;
+
+}
+
+/*==================================
+      Animated Background
+==================================*/
+
+.bg-gradient{
+
+position:fixed;
+inset:0;
+
+background:
+linear-gradient(
+135deg,
+#020617,
+#08111f,
+#111827,
+#1e293b
+);
+
+z-index:-10;
+
+}
+
+/* Blur */
+
+.blur{
+
+position:fixed;
+
+border-radius:50%;
+
+filter:blur(90px);
+
+opacity:.35;
+
+pointer-events:none;
+
+animation:blobMove 10s ease-in-out infinite;
+
+z-index:-5;
+
+}
+
+.blur1{
+
+width:320px;
+height:320px;
+
+background:#00aaff;
+
+top:-120px;
+left:-120px;
+
+}
+
+.blur2{
+
+width:280px;
+height:280px;
+
+background:#6366f1;
+
+right:-100px;
+bottom:-100px;
+
+animation-delay:2s;
+
+}
+
+.blur3{
+
+width:250px;
+height:250px;
+
+background:#8b5cf6;
+
+top:45%;
+left:45%;
+
+animation-delay:4s;
+
+}
+
+@keyframes blobMove{
+
+0%,100%{
+
+transform:
+translateY(0)
+scale(1);
+
+}
+
+50%{
+
+transform:
+translateY(-40px)
+scale(1.15);
+
+}
+
+}
+
+/*==================================
+      Floating Particles
+==================================*/
+
+.particles{
+
+position:fixed;
+
+inset:0;
+
+pointer-events:none;
+
+overflow:hidden;
+
+z-index:-2;
+
+}
+
+.particles span{
+
+position:absolute;
+
+width:8px;
+height:8px;
+
+border-radius:50%;
+
+background:rgba(255,255,255,.25);
+
+animation:floatParticle linear infinite;
+
+}
+
+.particles span:nth-child(1){left:8%;animation-duration:12s;}
+.particles span:nth-child(2){left:20%;animation-duration:15s;}
+.particles span:nth-child(3){left:34%;animation-duration:13s;}
+.particles span:nth-child(4){left:48%;animation-duration:17s;}
+.particles span:nth-child(5){left:60%;animation-duration:11s;}
+.particles span:nth-child(6){left:72%;animation-duration:18s;}
+.particles span:nth-child(7){left:84%;animation-duration:14s;}
+.particles span:nth-child(8){left:94%;animation-duration:20s;}
+
+@keyframes floatParticle{
+
+0%{
+
+transform:
+translateY(110vh)
+scale(.4);
+
+opacity:0;
+
+}
+
+20%{
+
+opacity:1;
+
+}
+
+100%{
+
+transform:
+translateY(-120px)
+scale(1.4);
+
+opacity:0;
+
+}
+
+}
+
+/*==================================
+        Page Loader
+==================================*/
+
+#pageLoader{
+
+position:fixed;
+
+inset:0;
+
+display:flex;
+flex-direction:column;
+
+justify-content:center;
+align-items:center;
+
+gap:20px;
+
+background:#08111f;
+
+z-index:999999;
+
+transition:.4s;
+
+}
+
+.loaderLogo{
+
+width:90px;
+height:90px;
+
+border-radius:50%;
+
+display:flex;
+justify-content:center;
+align-items:center;
+
+font-size:42px;
+
+background:
+linear-gradient(
+135deg,
+var(--primary),
+var(--secondary)
+);
+
+animation:spinLogo 2s linear infinite;
+
+box-shadow:
+0 0 30px rgba(0,170,255,.4);
+
+}
+
+@keyframes spinLogo{
+
+100%{
+
+transform:rotate(360deg);
+
+}
+
+}
+
+.loaderText{
+
+font-size:28px;
+
+font-weight:700;
+
+color:#fff;
+
+letter-spacing:1px;
+
+}
+/*==========================================
+        PROFILE.CSS (PART 2)
+ Banner • Profile Card • Story Ring
+==========================================*/
+
+/* ==========================
+        Banner
+========================== */
 
 .profile-banner{
-height:220px;
-background:linear-gradient(135deg,#00b7ff,#004c8c);
+
 position:relative;
+
+width:100%;
+height:230px;
+
 overflow:hidden;
+
+background:
+linear-gradient(
+135deg,
+#00aaff,
+#6366f1,
+#8b5cf6
+);
+
+background-size:300% 300%;
+
+animation:bannerMove 8s ease infinite;
+
+}
+
+@keyframes bannerMove{
+
+0%{background-position:0% 50%;}
+50%{background-position:100% 50%;}
+100%{background-position:0% 50%;}
+
 }
 
 .profile-banner img{
+
 width:100%;
 height:100%;
+
 object-fit:cover;
-opacity:.45;
+
+opacity:.28;
+
 }
+
+.profile-banner::after{
+
+content:"";
+
+position:absolute;
+inset:0;
+
+background:
+
+linear-gradient(
+
+transparent,
+
+rgba(0,0,0,.35),
+
+#08111f
+
+);
+
+}
+
+/* ==========================
+      Settings Button
+========================== */
 
 .settings-btn{
+
 position:absolute;
-right:15px;
-top:15px;
-width:45px;
-height:45px;
+
+top:18px;
+right:18px;
+
+width:50px;
+height:50px;
+
 border:none;
+
 border-radius:50%;
-background:#181818;
+
+background:rgba(0,0,0,.35);
+
+backdrop-filter:blur(12px);
+
 color:#fff;
+
 font-size:22px;
+
 cursor:pointer;
+
+transition:.35s;
+
+z-index:10;
+
 }
 
-/* Profile */
+.settings-btn:hover{
+
+background:var(--primary);
+
+transform:rotate(90deg);
+
+}
+
+/* ==========================
+      Profile Card
+========================== */
 
 .profile-card{
-margin-top:-70px;
+
+position:relative;
+
+margin-top:-78px;
+
+z-index:20;
+
 text-align:center;
-padding:20px;
+
+padding:0 18px;
+
+animation:fadeUp .7s ease;
+
 }
+
+@keyframes fadeUp{
+
+from{
+
+opacity:0;
+
+transform:
+translateY(30px);
+
+}
+
+to{
+
+opacity:1;
+
+transform:none;
+
+}
+
+}
+
+/* ==========================
+      Story Ring
+========================== */
 
 #storyRing{
-width:150px;
-height:150px;
+
+width:160px;
+height:160px;
+
 margin:auto;
-border-radius:50%;
+
 padding:5px;
-background:linear-gradient(45deg,#ff0050,#ff9800,#00aaff);
+
+border-radius:50%;
+
+background:
+
+linear-gradient(
+
+45deg,
+
+#ff0066,
+#ff9800,
+#00aaff,
+#6366f1
+
+);
+
+background-size:300%;
+
+animation:ringMove 4s linear infinite;
+
 display:flex;
 justify-content:center;
 align-items:center;
+
 position:relative;
+
+box-shadow:
+0 0 35px rgba(0,170,255,.35);
+
+cursor:pointer;
+
 }
+
+@keyframes ringMove{
+
+0%{
+
+background-position:0%;
+
+}
+
+100%{
+
+background-position:300%;
+
+}
+
+}
+
+/* ==========================
+      Profile Photo
+========================== */
 
 #profilePic{
-width:138px;
-height:138px;
+
+width:148px;
+height:148px;
+
 border-radius:50%;
+
+border:5px solid #111827;
+
 object-fit:cover;
-border:5px solid #111;
+
 background:#222;
-}
 
-.add-story{
-position:absolute;
-right:5px;
-bottom:5px;
-width:38px;
-height:38px;
-border-radius:50%;
-background:#00aaff;
-display:flex;
-align-items:center;
-justify-content:center;
-font-size:24px;
-font-weight:bold;
-cursor:pointer;
-border:3px solid #111;
-}
-
-.profile-name{
-font-size:32px;
-font-weight:bold;
-margin-top:18px;
-}
-
-.profile-username{
-margin-top:6px;
-font-size:17px;
-color:#999;
-}
-
-.profile-bio{
-margin-top:12px;
-color:#ddd;
-font-size:15px;
-line-height:1.6;
-}
-
-/* Stories */
-
-.story-row{
-display:flex;
-gap:18px;
-overflow-x:auto;
-padding:20px;
-}
-
-.story-item{
-text-align:center;
-flex:none;
-}
-
-.story-item img{
-width:70px;
-height:70px;
-border-radius:50%;
-padding:3px;
-background:linear-gradient(#ff0050,#ff9800,#00aaff);
-}
-
-/* Stats */
-
-.stats{
-display:flex;
-justify-content:space-evenly;
-margin-top:28px;
-padding:18px 0;
-border-top:1px solid #262626;
-border-bottom:1px solid #262626;
-}
-
-.stat{
-flex:1;
-}
-
-.stat-number{
-font-size:26px;
-font-weight:bold;
-}
-
-.stat-text{
-margin-top:5px;
-font-size:14px;
-color:#999;
-}
-
-/* Buttons */
-
-.buttons{
-display:flex;
-justify-content:center;
-gap:12px;
-margin-top:20px;
-flex-wrap:wrap;
-}
-
-.buttons button,
-.buttons a{
-
-padding:12px 24px;
-border:none;
-border-radius:30px;
-background:#00aaff;
-color:#fff;
-text-decoration:none;
-font-size:15px;
-cursor:pointer;
-transition:.25s;
+transition:.35s;
 
 }
 
-.buttons button:hover,
-.buttons a:hover{
+#profilePic:hover{
 
 transform:scale(1.05);
 
 }
 
-#editProfileBtn{
-background:#2b2b2b;
-}
+/* ==========================
+      Add Story Button
+========================== */
 
-#messageBtn{
-background:#444;
-}
+.add-story{
 
-/* Tabs */
+position:absolute;
 
-.profile-tabs{
+right:8px;
+bottom:8px;
+
+width:42px;
+height:42px;
 
 display:flex;
-justify-content:space-around;
-margin-top:30px;
-border-top:1px solid #222;
-border-bottom:1px solid #222;
+justify-content:center;
+align-items:center;
 
-}
-
-.profile-tabs button{
-
-flex:1;
-padding:15px;
-background:none;
-border:none;
-color:#bbb;
-font-size:15px;
-cursor:pointer;
-
-}
-
-.profile-tabs button.active{
-
-color:#00aaff;
-border-bottom:3px solid #00aaff;
-
-}
-
-/* Cards */
-
-.post-card{
-
-background:#181818;
-margin:15px;
-padding:15px;
-border-radius:18px;
-
-}
-
-.post-card img{
-
-width:100%;
-border-radius:14px;
-margin-top:10px;
-
-}
-
-/* Floating Chat */
-
-#floatingChat{
-
-position:fixed;
-bottom:90px;
-right:18px;
-width:65px;
-height:65px;
-border:none;
 border-radius:50%;
-background:linear-gradient(45deg,#00aaff,#0066ff);
-font-size:30px;
-color:white;
-cursor:pointer;
 
-box-shadow:
-0 0 25px rgba(0,170,255,.5);
+background:var(--primary);
+
+color:#fff;
+
+font-size:28px;
+
+font-weight:700;
+
+border:3px solid #111827;
+
+cursor:pointer;
 
 animation:pulse 2s infinite;
 
@@ -271,70 +615,683 @@ animation:pulse 2s infinite;
 @keyframes pulse{
 
 0%{
+
+transform:scale(1);
+
+box-shadow:0 0 0 0 rgba(0,170,255,.6);
+
+}
+
+70%{
+
+box-shadow:0 0 0 18px transparent;
+
+}
+
+100%{
+
+transform:scale(1);
+
+}
+
+}
+
+/* ==========================
+      Profile Name
+========================== */
+
+.profile-name{
+
+margin-top:18px;
+
+font-size:34px;
+
+font-weight:800;
+
+letter-spacing:.5px;
+
+}
+
+/* Verified Badge */
+
+.verified{
+
+margin-left:8px;
+
+font-size:24px;
+
+color:#00aaff;
+
+animation:verifyGlow 2s infinite;
+
+}
+
+@keyframes verifyGlow{
+
+0%,100%{
+
+text-shadow:0 0 8px #00aaff;
+
+}
+
+50%{
+
+text-shadow:0 0 18px #00aaff;
+
+}
+
+}
+
+.profile-username{
+
+margin-top:8px;
+
+font-size:17px;
+
+color:var(--text2);
+
+}
+
+.profile-bio{
+
+margin:16px auto 0;
+
+max-width:560px;
+
+line-height:1.7;
+
+font-size:15px;
+
+color:#d1d5db;
+
+}
+/*=========================================
+      VIEWORA PROFILE V9
+      PART 3
+ Stats • Buttons • Stories • Tabs
+=========================================*/
+
+/* ==========================
+         STATS
+========================== */
+
+.stats{
+display:grid;
+grid-template-columns:repeat(4,1fr);
+gap:14px;
+margin-top:30px;
+}
+
+.stat{
+background:rgba(255,255,255,.06);
+backdrop-filter:blur(18px);
+border:1px solid rgba(255,255,255,.08);
+border-radius:20px;
+padding:18px 10px;
+text-align:center;
+transition:.35s;
+}
+
+.stat:hover{
+transform:translateY(-5px);
+border-color:#00aaff;
+box-shadow:0 10px 25px rgba(0,170,255,.22);
+}
+
+.stat-number{
+font-size:28px;
+font-weight:700;
+color:#fff;
+}
+
+.stat-text{
+margin-top:6px;
+font-size:13px;
+color:#9ea4b7;
+}
+
+/* ==========================
+         BUTTONS
+========================== */
+
+.buttons{
+display:flex;
+gap:12px;
+margin-top:28px;
+flex-wrap:wrap;
+}
+
+.buttons button,
+.buttons a{
+flex:1;
+min-width:120px;
+padding:14px;
+border:none;
+border-radius:16px;
+font-size:15px;
+font-weight:700;
+cursor:pointer;
+text-decoration:none;
+display:flex;
+justify-content:center;
+align-items:center;
+transition:.3s;
+}
+
+#followBtn{
+background:linear-gradient(135deg,#00aaff,#0066ff);
+color:#fff;
+}
+
+#editProfileBtn{
+background:#202020;
+color:#fff;
+}
+
+#messageBtn{
+background:#2b2b2b;
+color:#fff;
+}
+
+.buttons button:hover,
+.buttons a:hover{
+transform:translateY(-3px);
+box-shadow:0 12px 30px rgba(0,170,255,.25);
+}
+
+/* ==========================
+         STORIES
+========================== */
+
+.stories-wrapper{
+display:flex;
+gap:16px;
+overflow-x:auto;
+padding:22px 2px 10px;
+scrollbar-width:none;
+}
+
+.stories-wrapper::-webkit-scrollbar{
+display:none;
+}
+
+.story-item{
+min-width:82px;
+text-align:center;
+cursor:pointer;
+}
+
+.story-circle{
+width:72px;
+height:72px;
+padding:3px;
+margin:auto;
+border-radius:50%;
+background:linear-gradient(
+45deg,
+#ff0066,
+#ff9800,
+#00aaff
+);
+display:flex;
+justify-content:center;
+align-items:center;
+}
+
+.story-circle img{
+width:64px;
+height:64px;
+border-radius:50%;
+object-fit:cover;
+border:3px solid #111;
+}
+
+.story-name{
+margin-top:8px;
+font-size:12px;
+white-space:nowrap;
+overflow:hidden;
+text-overflow:ellipsis;
+}
+
+/* ==========================
+      SECTION TITLE
+========================== */
+
+.section-title{
+margin:30px 0 18px;
+font-size:22px;
+font-weight:700;
+}
+
+/* ==========================
+         PROFILE TABS
+========================== */
+
+.profile-tabs{
+display:flex;
+gap:12px;
+overflow-x:auto;
+padding-bottom:10px;
+scrollbar-width:none;
+}
+
+.profile-tabs::-webkit-scrollbar{
+display:none;
+}
+
+.profile-tab{
+min-width:100px;
+padding:12px 18px;
+text-align:center;
+border-radius:14px;
+background:#181818;
+color:#aaa;
+font-weight:600;
+cursor:pointer;
+transition:.3s;
+}
+
+.profile-tab:hover{
+background:#242424;
+}
+
+.profile-tab.active{
+background:linear-gradient(135deg,#00aaff,#0066ff);
+color:#fff;
+box-shadow:0 0 20px rgba(0,170,255,.35);
+}
+
+/* ==========================
+       CONTENT AREA
+========================== */
+
+.tab-content{
+margin-top:24px;
+animation:fadeContent .4s ease;
+}
+
+@keyframes fadeContent{
+from{
+opacity:0;
+transform:translateY(20px);
+}
+to{
+opacity:1;
+transform:none;
+}
+}
+
+/* ==========================
+      VIDEO / POSTS
+========================== */
+
+.post-card{
+background:rgba(255,255,255,.05);
+border:1px solid rgba(255,255,255,.08);
+border-radius:20px;
+overflow:hidden;
+margin-bottom:22px;
+transition:.35s;
+}
+
+.post-card:hover{
+transform:translateY(-6px);
+border-color:#00aaff;
+}
+
+.post-card img,
+.post-card video{
+width:100%;
+display:block;
+}
+
+.post-info{
+padding:16px;
+}
+
+.post-title{
+font-size:18px;
+font-weight:700;
+margin-bottom:8px;
+}
+
+.post-desc{
+font-size:14px;
+color:#bdbdbd;
+line-height:1.6;
+}
+
+/* ==========================
+        SHORTS GRID
+========================== */
+
+.shorts-grid{
+display:grid;
+grid-template-columns:repeat(2,1fr);
+gap:14px;
+}
+
+.short-card{
+background:#181818;
+border-radius:18px;
+overflow:hidden;
+transition:.3s;
+}
+
+.short-card:hover{
+transform:scale(1.03);
+}
+
+.short-card video{
+width:100%;
+height:250px;
+object-fit:cover;
+}
+
+.short-title{
+padding:10px;
+font-size:13px;
+font-weight:600;
+}
+
+/* ==========================
+       SAVED POSTS
+========================== */
+
+.saved-grid{
+display:grid;
+grid-template-columns:repeat(2,1fr);
+gap:14px;
+}
+
+.saved-card{
+overflow:hidden;
+border-radius:18px;
+transition:.3s;
+}
+
+.saved-card img{
+width:100%;
+height:170px;
+object-fit:cover;
+}
+
+.saved-card:hover{
+transform:translateY(-4px);
+}
+/*=========================================
+      VIEWORA PROFILE V9
+      PART 4
+ Floating Chat • Loader • Responsive
+=========================================*/
+
+/* ==========================
+      FLOATING CHAT
+========================== */
+
+#floatingChat{
+position:fixed;
+right:20px;
+bottom:95px;
+width:65px;
+height:65px;
+border:none;
+border-radius:50%;
+background:linear-gradient(135deg,#00aaff,#0066ff);
+color:#fff;
+font-size:28px;
+display:flex;
+align-items:center;
+justify-content:center;
+cursor:pointer;
+z-index:999;
+box-shadow:0 10px 30px rgba(0,170,255,.45);
+transition:.35s;
+animation:chatPulse 2s infinite;
+}
+
+#floatingChat:hover{
+transform:scale(1.08);
+box-shadow:0 0 30px rgba(0,170,255,.65);
+}
+
+#floatingChat:active{
+transform:scale(.94);
+}
+
+@keyframes chatPulse{
+
+0%,100%{
 transform:scale(1);
 }
 
 50%{
 transform:scale(1.08);
-}
-
-100%{
-transform:scale(1);
+box-shadow:0 0 35px rgba(0,170,255,.75);
 }
 
 }
 
-/* Bottom Navigation */
+/* ==========================
+        LOADER
+========================== */
 
-.bottom-nav{
-
+#pageLoader{
 position:fixed;
-bottom:0;
-left:0;
-width:100%;
-height:70px;
-background:#181818;
-display:flex;
-justify-content:space-around;
-align-items:center;
-border-top:1px solid #333;
-
-}
-
-.bottom-nav a{
-
+inset:0;
+background:#080b14;
 display:flex;
 flex-direction:column;
+justify-content:center;
 align-items:center;
-color:#aaa;
-text-decoration:none;
+z-index:99999;
+transition:.5s;
+}
+
+.loaderLogo{
+width:90px;
+height:90px;
+border-radius:50%;
+display:flex;
+justify-content:center;
+align-items:center;
+background:linear-gradient(135deg,#00aaff,#0066ff);
+font-size:40px;
+font-weight:bold;
+color:#fff;
+animation:loaderSpin 2s linear infinite;
+box-shadow:0 0 35px rgba(0,170,255,.45);
+}
+
+.loaderText{
+margin-top:18px;
+font-size:26px;
+font-weight:700;
+color:#fff;
+letter-spacing:1px;
+}
+
+.loaderSub{
+margin-top:8px;
+font-size:14px;
+color:#9aa4b5;
+}
+
+@keyframes loaderSpin{
+
+100%{
+transform:rotate(360deg);
+}
+
+}
+
+/* ==========================
+      SCROLLBAR
+========================== */
+
+::-webkit-scrollbar{
+width:6px;
+}
+
+::-webkit-scrollbar-thumb{
+background:#00aaff;
+border-radius:20px;
+}
+
+/* ==========================
+      SELECTION
+========================== */
+
+::selection{
+background:#00aaff;
+color:#fff;
+}
+
+/* ==========================
+      RESPONSIVE
+========================== */
+
+@media(max-width:768px){
+
+.stats{
+grid-template-columns:repeat(2,1fr);
+}
+
+.profile-name{
+font-size:28px;
+}
+
+.buttons{
+flex-direction:column;
+}
+
+.buttons button,
+.buttons a{
+width:100%;
+}
+
+.shorts-grid,
+.saved-grid{
+grid-template-columns:1fr 1fr;
+}
+
+.profile-banner{
+height:180px;
+}
+
+#storyRing{
+width:130px;
+height:130px;
+}
+
+#profilePic{
+width:118px;
+height:118px;
+}
+
+}
+
+@media(max-width:480px){
+
+.profile-card{
+padding:0 14px;
+}
+
+.profile-name{
+font-size:24px;
+}
+
+.profile-username{
+font-size:15px;
+}
+
+.profile-bio{
+font-size:14px;
+}
+
+.stats{
+grid-template-columns:repeat(2,1fr);
+gap:10px;
+}
+
+.stat-number{
+font-size:22px;
+}
+
+.profile-tabs{
+gap:8px;
+}
+
+.profile-tab{
+min-width:85px;
+padding:10px;
 font-size:13px;
+}
+
+.short-card video{
+height:200px;
+}
+
+.saved-card img{
+height:140px;
+}
+
+#floatingChat{
+width:58px;
+height:58px;
+font-size:24px;
+right:16px;
+bottom:90px;
+}
 
 }
 
-.bottom-nav a.active{
+/* ==========================
+      SAFE AREA
+========================== */
 
-color:#00aaff;
-
+body{
+padding-bottom:calc(100px + env(safe-area-inset-bottom));
 }
 
-.nav-icon{
-
-font-size:23px;
-margin-bottom:4px;
-
+.bottomNav{
+padding-bottom:env(safe-area-inset-bottom);
 }
-.verified-badge{
-    display:inline-flex;
-    align-items:center;
-    justify-content:center;
-    width:18px;
-    height:18px;
-    margin-left:6px;
-    border-radius:50%;
-    background:#1DA1F2;
-    color:#fff;
-    font-size:11px;
-    font-weight:bold;
-    vertical-align:middle;
+
+/* ==========================
+      UTILITIES
+========================== */
+
+.hidden{
+display:none !important;
+}
+
+.fadeIn{
+animation:fadeIn .4s ease;
+}
+
+@keyframes fadeIn{
+from{
+opacity:0;
+transform:translateY(20px);
+}
+to{
+opacity:1;
+transform:none;
+}
+}
+
+/* ==========================
+      END
+========================== */
+
+html{
+scroll-behavior:smooth;
+color-scheme:dark;
+}
+
+*{
+-webkit-tap-highlight-color:transparent;
+box-sizing:border-box;
 }

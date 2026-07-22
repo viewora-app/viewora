@@ -1,1326 +1,530 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
 
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport"
+content="width=device-width, initial-scale=1.0">
 
 <title>Viewora • Profile</title>
 
-<link rel="stylesheet" href="style.css">
+<meta name="theme-color" content="#08111f">
+
+<!-- Google Font -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+<!-- Font Awesome -->
+<link rel="stylesheet"
+href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"/>
+
+<!-- CSS -->
+<link rel="stylesheet" href="profile.css">
 <link rel="stylesheet" href="nav.css">
-
-<style>
-
-*{
-margin:0;
-padding:0;
-box-sizing:border-box;
-font-family:Arial,Helvetica,sans-serif;
-}
-
-body{
-
-background:#0b0b0b;
-color:#fff;
-overflow-x:hidden;
-padding-bottom:90px;
-
-}
-
-/* Animated Background */
-
-body::before{
-
-content:"";
-position:fixed;
-left:-30%;
-top:-30%;
-width:160%;
-height:160%;
-
-background:
-radial-gradient(circle,#00aaff22,transparent 45%),
-radial-gradient(circle at bottom,#ff006622,transparent 45%);
-
-animation:bgMove 18s linear infinite;
-z-index:-2;
-
-}
-
-@keyframes bgMove{
-
-0%{transform:rotate(0deg);}
-100%{transform:rotate(360deg);}
-
-}
-
-/* Banner */
-
-.profile-banner{
-
-height:220px;
-position:relative;
-overflow:hidden;
-
-background:
-linear-gradient(135deg,
-#00aaff,
-#0055ff,
-#7b2cff);
-
-background-size:300% 300%;
-
-animation:bannerMove 8s ease infinite;
-
-}
-
-@keyframes bannerMove{
-
-0%{background-position:0% 50%;}
-50%{background-position:100% 50%;}
-100%{background-position:0% 50%;}
-
-}
-
-.profile-banner img{
-
-width:100%;
-height:100%;
-object-fit:cover;
-opacity:.28;
-
-}
-
-/* Dark Overlay */
-
-.profile-banner::after{
-
-content:"";
-position:absolute;
-left:0;
-right:0;
-top:0;
-bottom:0;
-
-background:
-
-linear-gradient(
-
-transparent,
-
-rgba(0,0,0,.45),
-
-#0b0b0b
-
-);
-
-}
-
-/* Settings */
-
-.settings-btn{
-
-position:absolute;
-right:18px;
-top:18px;
-
-width:48px;
-height:48px;
-
-border:none;
-border-radius:50%;
-
-background:rgba(0,0,0,.45);
-
-backdrop-filter:blur(10px);
-
-color:white;
-font-size:22px;
-
-cursor:pointer;
-
-transition:.35s;
-
-z-index:5;
-
-}
-
-.settings-btn:hover{
-
-transform:rotate(90deg);
-
-background:#00aaff;
-
-}
-
-/* Main Card */
-
-.profile-card{
-
-margin-top:-72px;
-
-position:relative;
-
-z-index:10;
-
-text-align:center;
-
-padding:0 18px;
-
-animation:fadeUp .8s ease;
-
-}
-
-@keyframes fadeUp{
-
-from{
-
-opacity:0;
-transform:translateY(30px);
-
-}
-
-to{
-
-opacity:1;
-transform:none;
-
-}
-
-}
-
-/* Story Ring */
-
-#storyRing{
-
-width:156px;
-height:156px;
-
-margin:auto;
-
-border-radius:50%;
-
-padding:5px;
-
-background:
-
-linear-gradient(
-45deg,
-#ff0066,
-#ff9800,
-#00aaff,
-#6a5cff
-);
-
-background-size:300%;
-
-animation:ringMove 4s linear infinite;
-
-display:flex;
-align-items:center;
-justify-content:center;
-
-position:relative;
-
-cursor:pointer;
-
-box-shadow:
-
-0 0 25px #00aaff66;
-
-}
-
-@keyframes ringMove{
-
-0%{background-position:0%;}
-100%{background-position:300%;}
-
-}
-
-#profilePic{
-
-width:142px;
-height:142px;
-
-border-radius:50%;
-
-border:5px solid #111;
-
-object-fit:cover;
-
-background:#222;
-
-transition:.4s;
-
-}
-
-#profilePic:hover{
-
-transform:scale(1.05);
-
-}
-
-/* Story Plus */
-
-.add-story{
-
-position:absolute;
-
-right:6px;
-bottom:8px;
-
-width:40px;
-height:40px;
-
-border-radius:50%;
-
-background:#00aaff;
-
-display:flex;
-align-items:center;
-justify-content:center;
-
-font-size:28px;
-
-font-weight:bold;
-
-border:3px solid #111;
-
-cursor:pointer;
-
-animation:pulse 2s infinite;
-
-}
-
-@keyframes pulse{
-
-0%{
-
-transform:scale(1);
-
-box-shadow:0 0 0 0 #00aaff88;
-
-}
-
-70%{
-
-box-shadow:0 0 0 16px transparent;
-
-}
-
-100%{
-
-transform:scale(1);
-
-}
-
-}
-
-.profile-name{
-
-font-size:34px;
-font-weight:bold;
-
-margin-top:18px;
-
-letter-spacing:.5px;
-
-}
-
-.verified{
-
-color:#00aaff;
-
-font-size:28px;
-
-margin-left:6px;
-
-animation:verifyGlow 2s infinite;
-
-}
-
-@keyframes verifyGlow{
-
-0%,100%{
-
-text-shadow:0 0 8px #00aaff;
-
-}
-
-50%{
-
-text-shadow:0 0 18px #00aaff;
-
-}
-
-}
-
-.profile-username{
-
-margin-top:8px;
-
-font-size:18px;
-
-color:#aaa;
-
-}
-
-.profile-bio{
-
-margin-top:14px;
-
-font-size:15px;
-
-line-height:1.8;
-
-color:#ddd;
-
-max-width:520px;
-
-margin-left:auto;
-margin-right:auto;
-
-}
-/* ===========================
-   STATS
-=========================== */
-
-.stats{
-
-display:flex;
-justify-content:space-between;
-align-items:center;
-
-margin-top:30px;
-padding:18px 12px;
-
-background:rgba(255,255,255,.05);
-backdrop-filter:blur(14px);
-
-border:1px solid rgba(255,255,255,.08);
-
-border-radius:20px;
-
-box-shadow:
-0 0 20px rgba(0,170,255,.12);
-
-}
-
-.stat{
-
-flex:1;
-text-align:center;
-
-}
-
-.stat-number{
-
-font-size:28px;
-font-weight:bold;
-color:#fff;
-
-}
-
-.stat-text{
-
-margin-top:6px;
-font-size:14px;
-color:#9e9e9e;
-
-}
-
-/* ===========================
-   BUTTONS
-=========================== */
-
-.buttons{
-
-display:flex;
-gap:12px;
-
-justify-content:center;
-flex-wrap:wrap;
-
-margin-top:25px;
-
-}
-
-.buttons button,
-.buttons a{
-
-padding:13px 22px;
-
-border:none;
-outline:none;
-
-border-radius:14px;
-
-background:linear-gradient(
-135deg,
-#00aaff,
-#0066ff
-);
-
-color:#fff;
-font-weight:bold;
-font-size:15px;
-
-text-decoration:none;
-
-cursor:pointer;
-
-transition:.35s;
-
-box-shadow:
-0 8px 20px rgba(0,170,255,.25);
-
-}
-
-.buttons button:hover,
-.buttons a:hover{
-
-transform:translateY(-3px);
-
-box-shadow:
-0 14px 30px rgba(0,170,255,.45);
-
-}
-
-#editProfileBtn{
-
-background:linear-gradient(
-135deg,
-#444,
-#222
-);
-
-}
-
-#messageBtn{
-
-background:linear-gradient(
-135deg,
-#444,
-#222
-);
-
-}
-
-/* ===========================
-   STORIES ROW
-=========================== */
-
-.stories-wrapper{
-
-margin-top:28px;
-
-display:flex;
-gap:16px;
-
-overflow-x:auto;
-
-padding:5px 4px 15px;
-
-scrollbar-width:none;
-
-}
-
-.stories-wrapper::-webkit-scrollbar{
-
-display:none;
-
-}
-
-.story-item{
-
-min-width:82px;
-
-text-align:center;
-
-animation:fadeStory .5s ease;
-
-}
-
-@keyframes fadeStory{
-
-from{
-
-opacity:0;
-transform:translateY(15px);
-
-}
-
-to{
-
-opacity:1;
-transform:none;
-
-}
-
-}
-
-.story-circle{
-
-width:74px;
-height:74px;
-
-margin:auto;
-
-padding:3px;
-
-border-radius:50%;
-
-background:linear-gradient(
-45deg,
-#ff0066,
-#ff9800,
-#00aaff
-);
-
-display:flex;
-align-items:center;
-justify-content:center;
-
-}
-
-.story-circle img{
-
-width:66px;
-height:66px;
-
-border-radius:50%;
-
-border:3px solid #111;
-
-object-fit:cover;
-
-}
-
-.story-name{
-
-margin-top:7px;
-
-font-size:13px;
-
-white-space:nowrap;
-overflow:hidden;
-text-overflow:ellipsis;
-
-}
-
-/* ===========================
-   SECTION TITLE
-=========================== */
-
-.section-title{
-
-margin-top:28px;
-margin-bottom:14px;
-
-font-size:22px;
-font-weight:bold;
-
-}
-
-/* ===========================
-   TABS
-=========================== */
-
-.profile-tabs{
-
-display:flex;
-
-justify-content:space-between;
-
-gap:10px;
-
-margin-top:18px;
-
-overflow-x:auto;
-
-padding-bottom:10px;
-
-scrollbar-width:none;
-
-}
-
-.profile-tabs::-webkit-scrollbar{
-
-display:none;
-
-}
-
-.profile-tab{
-
-min-width:95px;
-
-padding:12px;
-
-text-align:center;
-
-border-radius:12px;
-
-background:#1b1b1b;
-
-color:#bbb;
-
-font-size:15px;
-font-weight:bold;
-
-cursor:pointer;
-
-transition:.3s;
-
-}
-
-.profile-tab.active{
-
-background:linear-gradient(
-135deg,
-#00aaff,
-#0066ff
-);
-
-color:#fff;
-
-box-shadow:
-0 0 18px rgba(0,170,255,.35);
-
-}
-
-.profile-tab:hover{
-
-transform:translateY(-2px);
-
-}
-
-/* ===========================
-   CONTENT AREA
-=========================== */
-
-.tab-content{
-
-margin-top:22px;
-
-animation:fadeContent .45s ease;
-
-}
-
-@keyframes fadeContent{
-
-from{
-
-opacity:0;
-transform:translateY(15px);
-
-}
-
-to{
-
-opacity:1;
-transform:none;
-
-}
-/* ===========================
-   VIDEO / POST CARDS
-=========================== */
-
-.post-card{
-
-background:rgba(255,255,255,.05);
-
-backdrop-filter:blur(15px);
-
-border:1px solid rgba(255,255,255,.08);
-
-border-radius:20px;
-
-overflow:hidden;
-
-margin-bottom:20px;
-
-box-shadow:
-0 8px 25px rgba(0,0,0,.35);
-
-transition:.35s;
-
-animation:cardFade .5s ease;
-
-}
-
-.post-card:hover{
-
-transform:translateY(-6px);
-
-box-shadow:
-0 15px 35px rgba(0,170,255,.18);
-
-}
-
-@keyframes cardFade{
-
-from{
-
-opacity:0;
-transform:translateY(25px);
-
-}
-
-to{
-
-opacity:1;
-transform:none;
-
-}
-
-}
-
-.post-card img,
-.post-card video{
-
-width:100%;
-display:block;
-border-radius:18px;
-
-}
-
-.post-info{
-
-padding:16px;
-
-}
-
-.post-title{
-
-font-size:18px;
-font-weight:bold;
-
-margin-bottom:8px;
-
-}
-
-.post-desc{
-
-color:#bbb;
-
-line-height:1.6;
-
-font-size:14px;
-
-}
-
-/* ===========================
-   SHORTS GRID
-=========================== */
-
-.shorts-grid{
-
-display:grid;
-
-grid-template-columns:
-repeat(2,1fr);
-
-gap:14px;
-
-}
-
-.short-card{
-
-background:#181818;
-
-border-radius:18px;
-
-overflow:hidden;
-
-transition:.3s;
-
-}
-
-.short-card:hover{
-
-transform:scale(1.03);
-
-}
-
-.short-card video{
-
-width:100%;
-height:250px;
-
-object-fit:cover;
-
-}
-
-.short-title{
-
-padding:10px;
-
-font-size:14px;
-
-}
-
-/* ===========================
-   SAVED POSTS
-=========================== */
-
-.saved-grid{
-
-display:grid;
-
-grid-template-columns:
-repeat(2,1fr);
-
-gap:14px;
-
-}
-
-.saved-card{
-
-background:#181818;
-
-border-radius:18px;
-
-overflow:hidden;
-
-transition:.3s;
-
-}
-
-.saved-card:hover{
-
-transform:translateY(-5px);
-
-}
-
-.saved-card img{
-
-width:100%;
-
-height:170px;
-
-object-fit:cover;
-
-}
-
-/* ===========================
-   FLOATING CHAT
-=========================== */
-
-#floatingChat{
-
-position:fixed;
-
-right:20px;
-bottom:95px;
-
-width:68px;
-height:68px;
-
-border:none;
-
-border-radius:50%;
-
-background:
-
-linear-gradient(
-135deg,
-#00aaff,
-#0066ff
-);
-
-font-size:30px;
-
-color:#fff;
-
-cursor:pointer;
-
-z-index:999;
-
-box-shadow:
-
-0 0 25px rgba(0,170,255,.45);
-
-animation:chatPulse 2s infinite;
-
-}
-
-@keyframes chatPulse{
-
-0%{
-
-transform:scale(1);
-
-}
-
-50%{
-
-transform:scale(1.08);
-
-box-shadow:
-
-0 0 40px rgba(0,170,255,.7);
-
-}
-
-100%{
-
-transform:scale(1);
-
-}
-
-}
-
-/* ===========================
-   LOADER
-=========================== */
-
-#pageLoader{
-
-position:fixed;
-
-top:0;
-left:0;
-
-width:100%;
-height:100%;
-
-background:#0b0b0b;
-
-display:flex;
-
-justify-content:center;
-align-items:center;
-flex-direction:column;
-
-z-index:99999;
-
-}
-
-.loaderLogo{
-
-width:90px;
-height:90px;
-
-border-radius:50%;
-
-background:
-
-linear-gradient(
-135deg,
-#00aaff,
-#0066ff
-);
-
-display:flex;
-
-justify-content:center;
-align-items:center;
-
-font-size:42px;
-
-animation:spinLogo 2s linear infinite;
-
-}
-
-@keyframes spinLogo{
-
-100%{
-
-transform:rotate(360deg);
-
-}
-
-}
-
-.loaderText{
-
-margin-top:20px;
-
-font-size:28px;
-
-font-weight:bold;
-
-color:#00aaff;
-
-}
-
-
-</style>
 
 </head>
 
 <body>
 
-<!-- Loading Screen -->
+<!-- =========================
+Animated Background
+========================= -->
+
+<div class="bg-gradient"></div>
+
+<div class="blur blur1"></div>
+<div class="blur blur2"></div>
+<div class="blur blur3"></div>
+
+<div class="particles">
+<span></span>
+<span></span>
+<span></span>
+<span></span>
+<span></span>
+<span></span>
+<span></span>
+<span></span>
+</div>
+
+<!-- =========================
+Premium Loader
+========================= -->
 
 <div id="pageLoader">
 
-<div class="loaderLogo">
+<div class="loaderCircle"></div>
 
+<h2>Viewora</h2>
 
-
-</div>
-
-<div class="loaderText">
-
-
+<p>Loading your profile...</p>
 
 </div>
 
-</div>
+<!-- =========================
+Main App
+========================= -->
 
-<!-- Banner -->
+<div id="app" class="hidden">
 
-<div class="profile-banner">
+<!-- =========================
+Profile Banner
+========================= -->
 
-<img id="coverPhoto" src="banner.jpg">
+<section class="profileBanner">
 
-<button class="settings-btn"
+<img
+id="coverPhoto"
+src="assets/default-banner.jpg"
+alt="Banner">
+
+<div class="bannerOverlay"></div>
+
+<button
+class="settingsBtn"
 onclick="location.href='settings.html'">
 
-⚙️
+<i class="fa-solid fa-gear"></i>
 
 </button>
 
-</div>
+<button
+class="shareBtn">
 
-<!-- Profile -->
+<i class="fa-solid fa-share-nodes"></i>
 
-<div class="profile-card">
+</button>
+
+</section>
+
+<!-- =========================
+Profile Card
+========================= -->
+
+<section class="profileCard">
 
 <div id="storyRing">
 
-<img id="profilePic" src="users.jpg">
+<img
+id="profilePic"
+src="assets/default-avatar.png"
+alt="Profile">
 
-<div class="add-story"
+<div
+class="storyPlus"
 onclick="createStory()">
 
-+
+<i class="fa-solid fa-plus"></i>
 
 </div>
 
 </div>
 
-<h1 class="profile-name">
+<h1 id="profileName">
 
-<span id="profileName">
 Loading...
-</span>
 
-<span id="verifiedBadge" class="verified" style="display:none;">
-✔️
+<span
+id="verifiedBadge"
+class="verified hidden">
+
+<i class="fa-solid fa-circle-check"></i>
+
 </span>
 
 </h1>
 
-<div
+<p
 id="profileUsername"
-class="profile-username">
+class="username">
 
 @loading
 
-</div>
+</p>
 
 <p
 id="profileBio"
-class="profile-bio">
+class="bio">
 
-Loading profile...
+Welcome to Viewora 🚀
 
 </p>
 
-<!-- Stats -->
+<div class="profileMeta">
 
-<div class="stats">
+<span id="joinDate">
 
-<div class="stat">
+<i class="fa-solid fa-calendar"></i>
 
-<div id="postsCount"
-class="stat-number">
+Joined 2026
 
-0
+</span>
+
+<span id="profileLocation">
+
+<i class="fa-solid fa-location-dot"></i>
+
+India
+
+</span>
+
+</div>
+<!-- =========================
+Profile Stats
+========================= -->
+
+<div class="profileStats">
+
+    <div class="stat">
+
+        <h2 id="postsCount">0</h2>
+
+        <span>Posts</span>
+
+    </div>
+
+    <div class="stat">
+
+        <h2 id="followersCount">0</h2>
+
+        <span>Followers</span>
+
+    </div>
+
+    <div class="stat">
+
+        <h2 id="followingCount">0</h2>
+
+        <span>Following</span>
+
+    </div>
+
+    <div class="stat">
+
+        <h2 id="videosCount">0</h2>
+
+        <span>Videos</span>
+
+    </div>
 
 </div>
 
-<div class="stat-text">
+<!-- =========================
+Action Buttons
+========================= -->
 
-Posts
+<div class="profileButtons">
+
+    <button id="followBtn" class="primaryBtn">
+
+        <i class="fa-solid fa-user-plus"></i>
+
+        Follow
+
+    </button>
+
+    <a href="edit-profile.html"
+       id="editProfileBtn"
+       class="secondaryBtn">
+
+        <i class="fa-solid fa-pen"></i>
+
+        Edit
+
+    </a>
+
+    <button id="messageBtn"
+            class="secondaryBtn">
+
+        <i class="fa-solid fa-paper-plane"></i>
+
+        Message
+
+    </button>
+
+</div>
+
+<!-- =========================
+Story Highlights
+========================= -->
+
+<section class="storySection">
+
+<h3>
+
+Story Highlights
+
+</h3>
+
+<div class="storiesWrapper">
+
+<div class="storyItem">
+
+<div class="storyCircle">
+
+<img src="assets/default-avatar.png">
+
+</div>
+
+<p>Travel</p>
+
+</div>
+
+<div class="storyItem">
+
+<div class="storyCircle">
+
+<img src="assets/default-avatar.png">
+
+</div>
+
+<p>Gaming</p>
+
+</div>
+
+<div class="storyItem">
+
+<div class="storyCircle">
+
+<img src="assets/default-avatar.png">
+
+</div>
+
+<p>Music</p>
+
+</div>
+
+<div class="storyItem">
+
+<div class="storyCircle">
+
+<img src="assets/default-avatar.png">
+
+</div>
+
+<p>Vlogs</p>
+
+</div>
+
+<div class="storyItem">
+
+<div class="storyCircle addStory">
+
+<i class="fa-solid fa-plus"></i>
+
+</div>
+
+<p>New</p>
 
 </div>
 
 </div>
 
-<div class="stat">
+</section>
 
-<div id="followersCount"
-class="stat-number">
+<!-- =========================
+Profile Tabs
+========================= -->
 
-0
+<div class="profileTabs">
 
-</div>
+<button
+class="tabBtn active"
+data-tab="videos">
 
-<div class="stat-text">
-
-Followers
-
-</div>
-
-</div>
-
-<div class="stat">
-
-<div id="followingCount"
-class="stat-number">
-
-0
-
-</div>
-
-<div class="stat-text">
-
-Following
-
-</div>
-
-</div>
-
-<div class="stat">
-
-<div id="videosCount"
-class="stat-number">
-
-0
-
-</div>
-
-<div class="stat-text">
+<i class="fa-solid fa-video"></i>
 
 Videos
 
-</div>
-
-</div>
-
-</div>
-
-<!-- Buttons -->
-
-<div class="buttons">
-
-<button id="followBtn">
-
-Follow
-
 </button>
-
-<a
-id="editProfileBtn"
-href="edit-profile.html">
-
-Edit Profile
-
-</a>
 
 <button
-id="messageBtn"
-onclick="openChat()">
+class="tabBtn"
+data-tab="shorts">
 
-💬 Message
+<i class="fa-solid fa-play"></i>
+
+Shorts
+
+</button>
+
+<button
+class="tabBtn"
+data-tab="posts">
+
+<i class="fa-solid fa-image"></i>
+
+Posts
+
+</button>
+
+<button
+class="tabBtn"
+data-tab="saved">
+
+<i class="fa-solid fa-bookmark"></i>
+
+Saved
 
 </button>
 
 </div>
 
-<!-- Tabs -->
+<!-- =========================
+Tab Content
+========================= -->
 
-<div class="profile-tabs">
+<div class="tabContainer">
 
-<div class="profile-tab active">
+<div id="videosTab"
+class="tabContent active">
 
-🎥 Videos
+<div id="videosList">
 
-</div>
-
-<div class="profile-tab">
-
-▶ Shorts
-
-</div>
-
-<div class="profile-tab">
-
-📝 Posts
-
-</div>
-
-<div class="profile-tab">
-
-❤️ Saved
+<!-- Firebase Videos -->
 
 </div>
 
 </div>
 
-<div class="tab-content">
+<div id="shortsTab"
+class="tabContent">
 
-<div id="videosList"></div>
+<div id="shortsList">
 
-<div id="shortsList"></div>
-
-<div id="profilePosts"></div>
-
-<div id="savedPosts"></div>
+<!-- Firebase Shorts -->
 
 </div>
 
 </div>
 
-<!-- Floating Chat -->
+<div id="postsTab"
+class="tabContent">
+
+<div id="postsList">
+
+<!-- Firebase Posts -->
+
+</div>
+
+</div>
+
+<div id="savedTab"
+class="tabContent">
+
+<div id="savedList">
+
+<!-- Saved Content -->
+
+</div>
+
+</div>
+
+</div>
+<!-- =========================
+Floating Chat Button
+========================= -->
 
 <button
 id="floatingChat"
-onclick="location.href='messages.html'">
+class="floatingChat">
 
-💬
+<i class="fa-solid fa-comments"></i>
 
 </button>
 
 <!-- =========================
-Bottom Navigation
+Scroll To Top
+========================= -->
+
+<button
+id="scrollTopBtn"
+class="floatingTop hidden">
+
+<i class="fa-solid fa-arrow-up"></i>
+
+</button>
+
+<!-- =========================
+Toast
+========================= -->
+
+<div
+id="toast"
+class="toast hidden">
+
+<i
+id="toastIcon"
+class="fa-solid fa-circle-check"></i>
+
+<span
+id="toastText">
+
+Success
+
+</span>
+
+</div>
+
+<!-- =========================
+Premium Bottom Navigation
 ========================= -->
 
 <nav class="bottomNav">
 
 <a href="index.html">
-    <span class="activeIndicator"></span>
-    <i class="fa-solid fa-house"></i>
-    <span>Home</span>
+
+<span class="activeIndicator"></span>
+
+<i class="fa-solid fa-house"></i>
+
+<span>Home</span>
+
 </a>
 
 <a href="shorts.html">
-    <span class="activeIndicator"></span>
-    <i class="fa-solid fa-play"></i>
-    <span>Shorts</span>
+
+<span class="activeIndicator"></span>
+
+<i class="fa-solid fa-play"></i>
+
+<span>Shorts</span>
+
 </a>
 
-<a href="upload.html" class="uploadNav">
-    <i class="fa-solid fa-plus"></i>
+<a
+href="upload.html"
+class="uploadNav">
+
+<i class="fa-solid fa-plus"></i>
+
 </a>
 
 <a href="users.html">
-    <span class="activeIndicator"></span>
-    <i class="fa-solid fa-users"></i>
-    <span>Users</span>
+
+<span class="activeIndicator"></span>
+
+<i class="fa-solid fa-users"></i>
+
+<span>Users</span>
+
 </a>
 
-<a href="profile.html">
-    <span class="activeIndicator"></span>
-    <i class="fa-solid fa-user"></i>
-    <span>Profile</span>
+<a
+href="profile.html"
+class="active">
+
+<span class="activeIndicator"></span>
+
+<i class="fa-solid fa-user"></i>
+
+<span>Profile</span>
+
 </a>
 
 </nav>
+
+<!-- Hidden Story Upload -->
 
 <input
 type="file"
@@ -1328,13 +532,26 @@ id="storyFile"
 accept="image/*,video/*"
 hidden>
 
+<!-- =========================
+Firebase SDK
+========================= -->
+
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
 
+<!-- =========================
+Viewora Scripts
+========================= -->
+
 <script src="firebase.js"></script>
+
 <script src="profile.js"></script>
+
 <script src="nav.js"></script>
 
 <script>
@@ -1343,17 +560,110 @@ window.addEventListener("load",()=>{
 
 setTimeout(()=>{
 
-const loader=document.getElementById("pageLoader");
+document.getElementById("pageLoader").classList.add("hidden");
 
-loader.style.opacity="0";
+document.getElementById("app").classList.remove("hidden");
 
-setTimeout(()=>{
+},800);
 
-loader.remove();
+});
 
-},500);
+</script>
+<!-- =========================
+End of Main App
+========================= -->
 
-},900);
+</div>
+
+<!-- =========================
+Extra Overlay (Optional)
+========================= -->
+
+<div id="imageViewer" class="hidden">
+
+    <div class="viewerOverlay"></div>
+
+    <img
+        id="viewerImage"
+        src=""
+        alt="Preview">
+
+    <button
+        id="closeViewer">
+
+        <i class="fa-solid fa-xmark"></i>
+
+    </button>
+
+</div>
+
+<!-- =========================
+Offline Notification
+========================= -->
+
+<div
+id="offlineToast"
+class="hidden">
+
+<i class="fa-solid fa-wifi"></i>
+
+<span>
+
+No Internet Connection
+
+</span>
+
+</div>
+
+<script>
+
+window.addEventListener("online",()=>{
+
+const toast=document.getElementById("offlineToast");
+
+toast.classList.add("hidden");
+
+});
+
+window.addEventListener("offline",()=>{
+
+const toast=document.getElementById("offlineToast");
+
+toast.classList.remove("hidden");
+
+});
+
+document.getElementById("floatingChat")?.addEventListener("click",()=>{
+
+location.href="messages.html";
+
+});
+
+document.getElementById("scrollTopBtn")?.addEventListener("click",()=>{
+
+window.scrollTo({
+
+top:0,
+
+behavior:"smooth"
+
+});
+
+});
+
+window.addEventListener("scroll",()=>{
+
+const btn=document.getElementById("scrollTopBtn");
+
+if(window.scrollY>400){
+
+btn.classList.remove("hidden");
+
+}else{
+
+btn.classList.add("hidden");
+
+}
 
 });
 
