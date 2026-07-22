@@ -1,42 +1,25 @@
 /*=========================================
-        VIEWORA SIGNUP
-        signup.js - PART 1A
+        VIEWORA V3 PREMIUM
+            signup.js
+            PART 1
+ Firebase • DOM • Loader • Toast
 =========================================*/
 
 "use strict";
 
 /*=========================================
-Global Error Handler
-=========================================*/
-
-window.onerror = function (message, source, line, col, error) {
-
-    console.error(error || message);
-
-    if (typeof hideLoading === "function") {
-        hideLoading();
-    }
-
-    if (typeof showToast === "function") {
-        showToast("Something went wrong.", "error");
-    }
-
-    return true;
-};
-
-/*=========================================
 Firebase Check
 =========================================*/
 
-if (typeof firebase === "undefined") {
+if(typeof firebase==="undefined"){
     throw new Error("Firebase SDK Missing");
 }
 
-if (typeof auth === "undefined") {
+if(typeof auth==="undefined"){
     throw new Error("Firebase Auth Missing");
 }
 
-if (typeof db === "undefined") {
+if(typeof db==="undefined"){
     throw new Error("Realtime Database Missing");
 }
 
@@ -44,678 +27,737 @@ if (typeof db === "undefined") {
 DOM Elements
 =========================================*/
 
-const signupForm = document.getElementById("signupForm");
+const signupForm=document.getElementById("signupForm");
 
-const nameInput = document.getElementById("name");
-const username = document.getElementById("username");
-const email = document.getElementById("email");
-const password = document.getElementById("password");
-const confirmPassword = document.getElementById("confirmPassword");
+const nameInput=document.getElementById("name");
+const usernameInput=document.getElementById("username");
+const emailInput=document.getElementById("email");
+const passwordInput=document.getElementById("password");
+const confirmPasswordInput=document.getElementById("confirmPassword");
 
-const signupBtn = document.getElementById("signupBtn");
-const googleSignup = document.getElementById("googleSignup");
+const signupBtn=document.getElementById("signupBtn");
+const googleSignupBtn=document.getElementById("googleSignup");
 
-const acceptTerms = document.getElementById("acceptTerms");
+const togglePassword=document.getElementById("togglePassword");
+const toggleConfirmPassword=document.getElementById("toggleConfirmPassword");
 
-const usernameStatus = document.getElementById("usernameStatus");
+const usernameStatus=document.getElementById("usernameStatus");
 
-const strengthFill = document.getElementById("strengthFill");
-const strengthText = document.getElementById("strengthText");
+const strengthFill=document.getElementById("strengthFill");
+const strengthText=document.getElementById("strengthText");
 
-const loading = document.getElementById("loadingOverlay");
+const loadingOverlay=document.getElementById("loadingOverlay");
 
-const toast = document.getElementById("toast");
-const toastText = document.getElementById("toastText");
-const toastIcon = document.getElementById("toastIcon");
+const toast=document.getElementById("toast");
+const toastText=document.getElementById("toastText");
+const toastIcon=document.getElementById("toastIcon");
 
-const verifyModal = document.getElementById("verifyModal");
+const verifyModal=document.getElementById("verifyModal");
+const openMailBtn=document.getElementById("openMailBtn");
+const continueBtn=document.getElementById("continueBtn");
 
-const openMailBtn = document.getElementById("openMailBtn");
-const continueBtn = document.getElementById("continueBtn");
-
-const togglePassword = document.getElementById("togglePassword");
-const toggleConfirmPassword = document.getElementById("toggleConfirmPassword");
+const acceptTerms=document.getElementById("acceptTerms");
 
 /*=========================================
 Variables
 =========================================*/
 
-let usernameAvailable = false;
-let loadingState = false;
-let usernameTimer = null;
-let toastTimer = null;
+let usernameAvailable=false;
+let loadingState=false;
+let usernameTimer=null;
+let toastTimer=null;
 
 /*=========================================
 Loader
 =========================================*/
 
-function showLoading() {
+function showLoading(){
 
-    if (loadingState) return;
+    loadingState=true;
 
-    loadingState = true;
+    loadingOverlay.classList.remove("hidden");
 
-    if (loading) {
-        loading.classList.remove("hidden");
-    }
-
-    if (signupBtn) {
-        signupBtn.disabled = true;
-    }
+    signupBtn.disabled=true;
 
 }
 
-function hideLoading() {
+function hideLoading(){
 
-    loadingState = false;
+    loadingState=false;
 
-    if (loading) {
-        loading.classList.add("hidden");
-    }
+    loadingOverlay.classList.add("hidden");
 
-    if (signupBtn) {
-        signupBtn.disabled = false;
-    }
+    signupBtn.disabled=false;
 
 }
 
-console.log("✅ VIEWORA Signup Part 1A Loaded");
 /*=========================================
-Toast Notification
+Toast
 =========================================*/
 
-function showToast(message, type = "success") {
+function showToast(message,type="success"){
 
-    if (!toast) {
-        alert(message);
-        return;
-    }
+    toastText.textContent=message;
 
-    toastText.textContent = message;
+    if(type==="success"){
 
-    switch (type) {
+        toastIcon.className=
+        "fa-solid fa-circle-check";
 
-        case "success":
-            toastIcon.className = "fa-solid fa-circle-check";
-            toastIcon.style.color = "#00d26a";
-            break;
+        toastIcon.style.color="#00d26a";
 
-        case "error":
-            toastIcon.className = "fa-solid fa-circle-xmark";
-            toastIcon.style.color = "#ff4d4d";
-            break;
+    }else{
 
-        case "warning":
-            toastIcon.className = "fa-solid fa-triangle-exclamation";
-            toastIcon.style.color = "#ff9800";
-            break;
+        toastIcon.className=
+        "fa-solid fa-circle-xmark";
 
-        default:
-            toastIcon.className = "fa-solid fa-circle-info";
-            toastIcon.style.color = "#00aaff";
+        toastIcon.style.color="#ff4d4d";
+
     }
 
     toast.classList.remove("hidden");
 
-    requestAnimationFrame(() => {
+    requestAnimationFrame(()=>{
+
         toast.classList.add("show");
+
     });
 
     clearTimeout(toastTimer);
 
-    toastTimer = setTimeout(() => {
+    toastTimer=setTimeout(()=>{
 
         toast.classList.remove("show");
 
-        setTimeout(() => {
+        setTimeout(()=>{
 
             toast.classList.add("hidden");
 
-        }, 300);
+        },300);
 
-    }, 3000);
+    },3000);
 
 }
-
-/*=========================================
-Startup
-=========================================*/
-
-document.addEventListener("DOMContentLoaded", () => {
-
-    hideLoading();
-
-    console.log("================================");
-    console.log("VIEWORA SIGNUP READY");
-    console.log("Firebase :", !!firebase);
-    console.log("Auth :", !!auth);
-    console.log("Database :", !!db);
-    console.log("================================");
-
-});
 
 /*=========================================
 Password Toggle
 =========================================*/
 
-function togglePasswordField(input, button) {
+function toggleField(input,button){
 
-    if (!input || !button) return;
+    if(input.type==="password"){
 
-    if (input.type === "password") {
+        input.type="text";
 
-        input.type = "text";
-        button.innerHTML =
+        button.innerHTML=
         '<i class="fa-solid fa-eye-slash"></i>';
 
-    } else {
+    }else{
 
-        input.type = "password";
-        button.innerHTML =
+        input.type="password";
+
+        button.innerHTML=
         '<i class="fa-solid fa-eye"></i>';
 
     }
 
 }
 
-if (togglePassword) {
+togglePassword.addEventListener("click",()=>{
 
-    togglePassword.addEventListener("click", () => {
+    toggleField(passwordInput,togglePassword);
 
-        togglePasswordField(password, togglePassword);
+});
 
-    });
+toggleConfirmPassword.addEventListener("click",()=>{
 
-}
+    toggleField(
+        confirmPasswordInput,
+        toggleConfirmPassword
+    );
 
-if (toggleConfirmPassword) {
+});
 
-    toggleConfirmPassword.addEventListener("click", () => {
+/*=========================================
+Startup
+=========================================*/
 
-        togglePasswordField(
-            confirmPassword,
-            toggleConfirmPassword
-        );
+document.addEventListener("DOMContentLoaded",()=>{
 
-    });
+    hideLoading();
 
-}
+    console.log("================================");
+    console.log("🚀 VIEWORA SIGNUP READY");
+    console.log("Firebase :",!!firebase);
+    console.log("Auth :",!!auth);
+    console.log("Database :",!!db);
+    console.log("================================");
 
-console.log("✅ VIEWORA Signup Part 1B Loaded");
+});
+/*=========================================
+        VIEWORA V3 PREMIUM
+            signup.js
+            PART 2
+Validation • Password Strength
+Username Availability
+=========================================*/
+
 /*=========================================
 Password Strength
 =========================================*/
 
-function updatePasswordStrength() {
+function updatePasswordStrength(){
 
-    if (!password || !strengthFill || !strengthText) return;
+    const value=passwordInput.value.trim();
 
-    const value = password.value.trim();
+    let score=0;
 
-    let score = 0;
+    if(value.length>=8) score++;
+    if(/[A-Z]/.test(value)) score++;
+    if(/[0-9]/.test(value)) score++;
+    if(/[!@#$%^&*(),.?":{}|<>]/.test(value)) score++;
 
-    if (value.length >= 8) score++;
-    if (/[A-Z]/.test(value)) score++;
-    if (/[0-9]/.test(value)) score++;
-    if (/[!@#$%^&*(),.?":{}|<>]/.test(value)) score++;
-
-    switch (score) {
+    switch(score){
 
         case 0:
         case 1:
-            strengthFill.style.width = "25%";
-            strengthFill.style.background = "#ff4d4d";
-            strengthText.textContent = "Password Strength : Weak";
-            break;
+
+            strengthFill.style.width="25%";
+            strengthFill.style.background="#ff4d4d";
+            strengthText.textContent="Password Strength : Weak";
+
+        break;
 
         case 2:
-            strengthFill.style.width = "50%";
-            strengthFill.style.background = "#ff9800";
-            strengthText.textContent = "Password Strength : Medium";
-            break;
+
+            strengthFill.style.width="50%";
+            strengthFill.style.background="#ff9800";
+            strengthText.textContent="Password Strength : Medium";
+
+        break;
 
         case 3:
-            strengthFill.style.width = "75%";
-            strengthFill.style.background = "#00aaff";
-            strengthText.textContent = "Password Strength : Good";
-            break;
+
+            strengthFill.style.width="75%";
+            strengthFill.style.background="#00AAFF";
+            strengthText.textContent="Password Strength : Good";
+
+        break;
 
         case 4:
-            strengthFill.style.width = "100%";
-            strengthFill.style.background = "#00d26a";
-            strengthText.textContent = "Password Strength : Strong";
-            break;
+
+            strengthFill.style.width="100%";
+            strengthFill.style.background="#00d26a";
+            strengthText.textContent="Password Strength : Strong";
+
+        break;
+
     }
 
 }
 
-if (password) {
-    password.addEventListener("input", updatePasswordStrength);
-}
+passwordInput.addEventListener(
+"input",
+updatePasswordStrength
+);
 
 /*=========================================
 Validation Helpers
 =========================================*/
 
-function validEmail(emailValue) {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailValue);
+function validEmail(email){
+
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+
 }
 
-function validUsername(usernameValue) {
-    return /^[a-z0-9_]{3,20}$/.test(usernameValue);
+function validUsername(username){
+
+    return /^[a-z0-9_]{3,20}$/.test(username);
+
 }
 
 /*=========================================
-Debounce Helper
+Debounce
 =========================================*/
 
-function debounce(callback, delay = 500) {
+function debounce(callback,delay=500){
 
-    return (...args) => {
+    return (...args)=>{
 
         clearTimeout(usernameTimer);
 
-        usernameTimer = setTimeout(() => {
+        usernameTimer=setTimeout(()=>{
+
             callback(...args);
-        }, delay);
+
+        },delay);
 
     };
 
 }
 
-console.log("✅ VIEWORA Signup Part 1C Loaded");
 /*=========================================
-        VIEWORA SIGNUP
-        PART 2
 Username Availability
 =========================================*/
 
-const checkUsername = debounce(async () => {
+const checkUsername=debounce(async()=>{
 
-    if (!username || !usernameStatus) return;
+    let value=usernameInput.value
 
-    let value = username.value
-        .trim()
-        .toLowerCase()
-        .replace(/^@/, "")
-        .replace(/[^a-z0-9_]/g, "");
+    .trim()
 
-    username.value = value;
+    .toLowerCase()
 
-    usernameAvailable = false;
+    .replace(/^@/,"")
 
-    if (value.length < 3) {
+    .replace(/[^a-z0-9_]/g,"");
 
-        usernameStatus.textContent = "Minimum 3 characters";
-        usernameStatus.style.color = "#ff9800";
+    usernameInput.value=value;
+
+    usernameAvailable=false;
+
+    if(value.length<3){
+
+        usernameStatus.textContent=
+        "Minimum 3 characters";
+
+        usernameStatus.style.color="#ff9800";
 
         return;
 
     }
 
-    usernameStatus.textContent = "Checking...";
-    usernameStatus.style.color = "#00aaff";
+    usernameStatus.textContent="Checking...";
+    usernameStatus.style.color="#00AAFF";
 
-    try {
+    try{
 
-        const snap = await db
-            .ref("usernames/" + value)
-            .once("value");
+        const snap=await db
+        .ref("usernames/"+value)
+        .once("value");
 
-        if (snap.exists()) {
+        if(snap.exists()){
 
-            usernameStatus.textContent =
-                "❌ Username already taken";
+            usernameStatus.textContent=
+            "❌ Username already taken";
 
-            usernameStatus.style.color = "#ff4d4d";
+            usernameStatus.style.color="#ff4d4d";
 
-            usernameAvailable = false;
+            usernameAvailable=false;
 
-        } else {
+        }else{
 
-            usernameStatus.textContent =
-                "✅ Username available";
+            usernameStatus.textContent=
+            "✅ Username available";
 
-            usernameStatus.style.color = "#00d26a";
+            usernameStatus.style.color="#00d26a";
 
-            usernameAvailable = true;
+            usernameAvailable=true;
 
         }
 
-    } catch (error) {
+    }catch(error){
 
         console.error(error);
 
-        usernameStatus.textContent =
-            "Unable to check username";
+        usernameStatus.textContent=
+        "Unable to check username";
 
-        usernameStatus.style.color = "#ff9800";
-
-        usernameAvailable = false;
+        usernameStatus.style.color="#ff9800";
 
     }
 
-}, 500);
+},500);
 
-if (username) {
-    username.addEventListener("input", checkUsername);
-}
+usernameInput.addEventListener(
+"input",
+checkUsername
+);
 
 /*=========================================
 Form Validation
 =========================================*/
 
-function validateForm() {
+function validateForm(){
 
-    const fullName = nameInput.value.trim();
-    const userName = username.value.trim().toLowerCase();
-    const userEmail = email.value.trim().toLowerCase();
-    const userPassword = password.value;
-    const confirm = confirmPassword.value;
+    const fullName=nameInput.value.trim();
 
-    if (fullName.length < 2) {
-        showToast("Enter your full name", "error");
+    const username=usernameInput.value
+    .trim()
+    .toLowerCase();
+
+    const email=emailInput.value
+    .trim()
+    .toLowerCase();
+
+    const password=passwordInput.value;
+
+    const confirm=
+    confirmPasswordInput.value;
+
+    if(fullName.length<2){
+
+        showToast(
+        "Enter your full name",
+        "error"
+        );
+
         return null;
+
     }
 
-    if (!validUsername(userName)) {
-        showToast("Invalid username", "error");
+    if(!validUsername(username)){
+
+        showToast(
+        "Invalid username",
+        "error"
+        );
+
         return null;
+
     }
 
-    if (!usernameAvailable) {
-        showToast("Please choose an available username.", "error");
+    if(!usernameAvailable){
+
+        showToast(
+        "Username not available",
+        "error"
+        );
+
         return null;
+
     }
 
-    if (!validEmail(userEmail)) {
-        showToast("Invalid email address", "error");
+    if(!validEmail(email)){
+
+        showToast(
+        "Invalid email",
+        "error"
+        );
+
         return null;
+
     }
 
-    if (userPassword.length < 8) {
-        showToast("Password must be at least 8 characters", "error");
+    if(password.length<8){
+
+        showToast(
+        "Password must be at least 8 characters",
+        "error"
+        );
+
         return null;
+
     }
 
-    if (userPassword !== confirm) {
-        showToast("Passwords do not match", "error");
+    if(password!==confirm){
+
+        showToast(
+        "Passwords do not match",
+        "error"
+        );
+
         return null;
+
     }
 
-    if (!acceptTerms.checked) {
-        showToast("Accept Terms & Conditions", "error");
+    if(!acceptTerms.checked){
+
+        showToast(
+        "Accept Terms & Conditions",
+        "error"
+        );
+
         return null;
+
     }
 
-    return {
+    return{
+
         fullName,
-        userName,
-        userEmail,
-        userPassword
+        username,
+        email,
+        password
+
     };
 
 }
 
-if (signupForm) {
-    signupForm.addEventListener("submit", createAccount);
-}
+signupForm.addEventListener(
+"submit",
+createAccount
+);
 
-console.log("✅ VIEWORA Signup Part 2 Loaded");
+console.log("✅ Signup Part 2 Loaded");
 /*=========================================
-        VIEWORA SIGNUP
-        PART 3
-Create Account
+        VIEWORA V3 PREMIUM
+            signup.js
+            PART 3
+ Signup • Save User • Email Verification
 =========================================*/
 
-async function createAccount(e) {
+async function createAccount(e){
 
     e.preventDefault();
 
-    if (loadingState) return;
+    if(loadingState) return;
 
-    const form = validateForm();
+    const data=validateForm();
 
-    if (!form) return;
+    if(!data) return;
 
     showLoading();
 
-    try {
+    try{
 
-        /* Create Firebase User */
+        // ==========================
+        // Create Firebase Account
+        // ==========================
 
-        const result = await auth.createUserWithEmailAndPassword(
-            form.userEmail,
-            form.userPassword
+        const result=
+
+        await auth.createUserWithEmailAndPassword(
+
+            data.email,
+
+            data.password
+
         );
 
-        const user = result.user;
+        const user=result.user;
 
-        /* Save User */
+        // ==========================
+        // Update Profile
+        // ==========================
 
-        await db.ref("users/" + user.uid).set({
+        await user.updateProfile({
 
-            uid: user.uid,
-
-            name: form.fullName,
-
-            username: form.userName,
-
-            email: form.userEmail,
-
-            photo: "assets/default-avatar.png",
-
-            bio: "👋 Hello! I'm new on Viewora.",
-
-            followers: 0,
-            following: 0,
-            posts: 0,
-            likes: 0,
-
-            verified: false,
-
-            online: true,
-
-            createdAt:
-                firebase.database.ServerValue.TIMESTAMP,
-
-            lastLogin:
-                firebase.database.ServerValue.TIMESTAMP
+            displayName:data.fullName
 
         });
 
-        /* Reserve Username */
-
-        await db.ref("usernames/" + form.userName).set({
-
-            uid: user.uid
-
-        });
-
-        /* Send Email Verification */
+        // ==========================
+        // Send Verification Email
+        // ==========================
 
         await user.sendEmailVerification();
 
-        /* Logout Until Verified */
+        // ==========================
+        // Save Username
+        // ==========================
 
-        await auth.signOut();
+        await db
+
+        .ref("usernames/"+data.username)
+
+        .set(user.uid);
+
+        // ==========================
+        // Save User Data
+        // ==========================
+
+        await db
+
+        .ref("users/"+user.uid)
+
+        .set({
+
+            uid:user.uid,
+
+            fullName:data.fullName,
+
+            username:data.username,
+
+            email:data.email,
+
+            profilePhoto:"assets/default-avatar.png",
+
+            coverPhoto:"",
+
+            bio:"",
+
+            verified:false,
+
+            emailVerified:false,
+
+            followers:0,
+
+            following:0,
+
+            posts:0,
+
+            likes:0,
+
+            online:true,
+
+            createdAt:firebase.database.ServerValue.TIMESTAMP,
+
+            lastLogin:firebase.database.ServerValue.TIMESTAMP
+
+        });
+
+        // ==========================
+        // User Settings
+        // ==========================
+
+        await db
+
+        .ref("settings/"+user.uid)
+
+        .set({
+
+            theme:"dark",
+
+            language:"en",
+
+            notifications:true,
+
+            privateAccount:false
+
+        });
 
         hideLoading();
 
         showToast(
-            "Verification email sent successfully."
+
+            "Account Created Successfully"
+
         );
 
-        if (verifyModal) {
-
-            verifyModal.classList.remove("hidden");
-
-        }
+        verifyModal.classList.remove("hidden");
 
     }
 
-    catch (error) {
-
-        console.error(error);
+    catch(error){
 
         hideLoading();
 
-        switch (error.code) {
+        let message="Signup Failed";
+
+        switch(error.code){
 
             case "auth/email-already-in-use":
 
-                showToast(
-                    "Email already exists.",
-                    "error"
-                );
+                message="Email already exists";
 
-                break;
+            break;
 
             case "auth/invalid-email":
 
-                showToast(
-                    "Invalid email address.",
-                    "error"
-                );
+                message="Invalid email address";
 
-                break;
+            break;
 
             case "auth/weak-password":
 
-                showToast(
-                    "Password is too weak.",
-                    "error"
-                );
+                message="Weak password";
 
-                break;
+            break;
 
             case "auth/network-request-failed":
 
-                showToast(
-                    "No internet connection.",
-                    "error"
-                );
+                message="No Internet Connection";
 
-                break;
+            break;
 
             default:
 
-                showToast(
-                    error.message,
-                    "error"
-                );
+                message=error.message;
 
         }
+
+        showToast(message,"error");
+
+        console.error(error);
 
     }
 
 }
 
-console.log("✅ VIEWORA Signup Part 3 Loaded");
+console.log("✅ Signup Part 3 Loaded")
 /*=========================================
-        VIEWORA SIGNUP
-        PART 4
-Google Signup • Online Status
+        VIEWORA V3 PREMIUM
+            signup.js
+            PART 4
+ Google Signup • Verify Modal
+ Auth State • Network
 =========================================*/
 
 /*=========================================
 Google Signup
 =========================================*/
 
-if (googleSignup) {
-    googleSignup.addEventListener("click", googleSignUp);
-}
+googleSignupBtn.addEventListener("click", async()=>{
 
-async function googleSignUp() {
-
-    if (loadingState) return;
+    if(loadingState) return;
 
     showLoading();
 
-    try {
+    try{
 
-        const provider = new firebase.auth.GoogleAuthProvider();
-
-        provider.setCustomParameters({
-            prompt: "select_account"
-        });
-
-        const result = await auth.signInWithPopup(provider);
+        const result =
+        await auth.signInWithPopup(
+            googleProvider
+        );
 
         const user = result.user;
 
-        const userRef = db.ref("users/" + user.uid);
+        const username =
+        (user.displayName || "user")
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g,"") +
+        Math.floor(Math.random()*9999);
 
-        const snap = await userRef.once("value");
+        const userRef =
+        db.ref("users/"+user.uid);
 
-        if (!snap.exists()) {
+        const snap =
+        await userRef.once("value");
 
-            let baseUsername = (user.email || "user")
-                .split("@")[0]
-                .toLowerCase()
-                .replace(/[^a-z0-9_]/g, "");
+        if(!snap.exists()){
 
-            let finalUsername = baseUsername;
-            let count = 1;
-
-            while (true) {
-
-                const check = await db
-                    .ref("usernames/" + finalUsername)
-                    .once("value");
-
-                if (!check.exists()) break;
-
-                finalUsername = baseUsername + count;
-                count++;
-
-            }
+            await db.ref(
+            "usernames/"+username
+            ).set(user.uid);
 
             await userRef.set({
 
-                uid: user.uid,
+                uid:user.uid,
 
-                name: user.displayName || "Viewora User",
+                fullName:
+                user.displayName || "",
 
-                username: finalUsername,
+                username:username,
 
-                email: user.email,
+                email:user.email,
 
-                photo:
-                    user.photoURL ||
-                    "assets/default-avatar.png",
+                profilePhoto:
+                user.photoURL || "assets/default-avatar.png",
 
-                bio: "👋 Hello! I'm using Viewora.",
+                coverPhoto:"",
 
-                followers: 0,
-                following: 0,
-                posts: 0,
-                likes: 0,
+                bio:"",
 
-                verified: true,
+                verified:false,
 
-                online: true,
+                emailVerified:true,
+
+                followers:0,
+
+                following:0,
+
+                posts:0,
+
+                likes:0,
+
+                online:true,
 
                 createdAt:
-                    firebase.database.ServerValue.TIMESTAMP,
+                firebase.database.ServerValue.TIMESTAMP,
 
                 lastLogin:
-                    firebase.database.ServerValue.TIMESTAMP
-
-            });
-
-            await db.ref("usernames/" + finalUsername).set({
-                uid: user.uid
-            });
-
-        } else {
-
-            await userRef.update({
-
-                online: true,
-
-                lastLogin:
-                    firebase.database.ServerValue.TIMESTAMP
+                firebase.database.ServerValue.TIMESTAMP
 
             });
 
@@ -723,59 +765,169 @@ async function googleSignUp() {
 
         hideLoading();
 
-        showToast("Welcome to Viewora 🎉");
+        showToast(
+        "Google Sign Up Successful"
+        );
 
-        setTimeout(() => {
-            location.replace("index.html");
-        }, 1000);
+        setTimeout(()=>{
 
-    } catch (error) {
+            location.href="index.html";
+
+        },1000);
+
+    }catch(error){
+
+        hideLoading();
 
         console.error(error);
 
-        hideLoading();
-
-        switch (error.code) {
-
-            case "auth/popup-closed-by-user":
-                showToast("Google Sign-in cancelled", "error");
-                break;
-
-            case "auth/network-request-failed":
-                showToast("Check your internet connection", "error");
-                break;
-
-            default:
-                showToast(error.message, "error");
-
-        }
+        showToast(
+        error.message,
+        "error"
+        );
 
     }
+
+});
+
+/*=========================================
+Verify Email Modal
+=========================================*/
+
+if(openMailBtn){
+
+openMailBtn.onclick=()=>{
+
+window.open(
+"https://mail.google.com",
+"_blank"
+);
+
+};
+
+}
+
+if(continueBtn){
+
+continueBtn.onclick=async()=>{
+
+const user=auth.currentUser;
+
+if(!user) return;
+
+await user.reload();
+
+if(user.emailVerified){
+
+await db.ref(
+"users/"+user.uid
+).update({
+
+emailVerified:true
+
+});
+
+showToast(
+"Email Verified"
+);
+
+location.href="login.html";
+
+}else{
+
+showToast(
+"Please verify your email first",
+"error"
+);
+
+}
+
+};
 
 }
 
 /*=========================================
-Online Status
+Auth State
 =========================================*/
 
-auth.onAuthStateChanged(async (user) => {
+auth.onAuthStateChanged(user=>{
 
-    if (!user) return;
+if(user){
 
-    const ref = db.ref("users/" + user.uid);
+console.log(
+"Logged In:",
+user.uid
+);
 
-    await ref.update({
+}else{
 
-        online: true,
+console.log(
+"Not Logged In"
+);
 
-        lastLogin:
-            firebase.database.ServerValue.TIMESTAMP
+}
+
+});
+
+/*=========================================
+Network Status
+=========================================*/
+
+window.addEventListener(
+"online",
+()=>{
+
+showToast(
+"Internet Connected"
+);
+
+});
+
+window.addEventListener(
+"offline",
+()=>{
+
+showToast(
+"No Internet Connection",
+"error"
+);
+
+});
+
+console.log("✅ Signup Part 4 Loaded");
+/*=========================================
+        VIEWORA V3 PREMIUM
+            signup.js
+            PART 5 FINAL
+ Ripple • Cleanup • Startup
+=========================================*/
+
+/*=========================================
+Ripple Effect
+=========================================*/
+
+document.querySelectorAll("button").forEach(button=>{
+
+    button.addEventListener("click",e=>{
+
+        const ripple=document.createElement("span");
+
+        ripple.className="ripple";
+
+        const rect=button.getBoundingClientRect();
+
+        ripple.style.left=(e.clientX-rect.left)+"px";
+        ripple.style.top=(e.clientY-rect.top)+"px";
+
+        button.appendChild(ripple);
+
+        setTimeout(()=>{
+
+            ripple.remove();
+
+        },600);
 
     });
-
-    ref.child("online")
-        .onDisconnect()
-        .set(false);
 
 });
 
@@ -783,133 +935,23 @@ auth.onAuthStateChanged(async (user) => {
 Auto Redirect
 =========================================*/
 
-auth.onAuthStateChanged((user) => {
+auth.onAuthStateChanged(async user=>{
 
-    if (!user) return;
+    if(!user) return;
 
-    if (
-        user.providerData[0].providerId === "google.com" ||
-        user.emailVerified
-    ) {
+    await user.reload();
 
-        location.replace("index.html");
+    if(user.emailVerified){
 
-    }
+        db.ref("users/"+user.uid).update({
 
-});
+            online:true,
 
-console.log("✅ VIEWORA Signup Part 4 Loaded");
-/*=========================================
-        VIEWORA SIGNUP
-        PART 5 (FINAL)
-Cleanup • Verify Modal • Ripple
-=========================================*/
+            lastLogin:firebase.database.ServerValue.TIMESTAMP
 
-/*=========================================
-Reset Form
-=========================================*/
-
-function resetSignupForm() {
-
-    if (!signupForm) return;
-
-    signupForm.reset();
-
-    usernameAvailable = false;
-
-    if (usernameStatus) {
-
-        usernameStatus.textContent =
-            "Username must be unique";
-
-        usernameStatus.style.color = "#9fb7ff";
+        });
 
     }
-
-    if (strengthFill) {
-
-        strengthFill.style.width = "0%";
-        strengthFill.style.background = "#ff4d4d";
-
-    }
-
-    if (strengthText) {
-
-        strengthText.textContent =
-            "Password Strength";
-
-    }
-
-}
-
-/*=========================================
-Verify Modal Buttons
-=========================================*/
-
-if (continueBtn) {
-
-    continueBtn.addEventListener("click", () => {
-
-        location.replace("login.html");
-
-    });
-
-}
-
-if (openMailBtn) {
-
-    openMailBtn.addEventListener("click", () => {
-
-        window.open("https://mail.google.com", "_blank");
-
-    });
-
-}
-
-/*=========================================
-Close Verify Modal
-=========================================*/
-
-if (verifyModal) {
-
-    verifyModal.addEventListener("click", (e) => {
-
-        if (e.target === verifyModal) {
-
-            verifyModal.classList.add("hidden");
-
-        }
-
-    });
-
-}
-
-/*=========================================
-Ripple Effect
-=========================================*/
-
-document.querySelectorAll(".signupBtn,.googleBtn").forEach(btn => {
-
-    btn.addEventListener("click", function (e) {
-
-        const ripple = document.createElement("span");
-
-        ripple.className = "ripple";
-
-        const rect = this.getBoundingClientRect();
-
-        ripple.style.left = (e.clientX - rect.left) + "px";
-        ripple.style.top = (e.clientY - rect.top) + "px";
-
-        this.appendChild(ripple);
-
-        setTimeout(() => {
-
-            ripple.remove();
-
-        }, 600);
-
-    });
 
 });
 
@@ -917,36 +959,88 @@ document.querySelectorAll(".signupBtn,.googleBtn").forEach(btn => {
 Before Unload
 =========================================*/
 
-window.addEventListener("beforeunload", async () => {
+window.addEventListener("beforeunload",()=>{
 
-    const user = auth.currentUser;
+    const user=auth.currentUser;
 
-    if (!user) return;
+    if(user){
 
-    try {
+        db.ref("users/"+user.uid).update({
 
-        await db.ref("users/" + user.uid).update({
-
-            online: false
+            online:false
 
         });
-
-    } catch (e) {
-
-        console.error(e);
 
     }
 
 });
 
 /*=========================================
-Ready
+Reset Form
+=========================================*/
+
+function resetSignupForm(){
+
+    signupForm.reset();
+
+    usernameAvailable=false;
+
+    strengthFill.style.width="0%";
+
+    strengthText.textContent="Password Strength : Weak";
+
+    usernameStatus.textContent=
+    "Username must be unique";
+
+    usernameStatus.style.color="#9fb7ff";
+
+}
+
+/*=========================================
+Prevent Double Submit
+=========================================*/
+
+signupForm.addEventListener("submit",()=>{
+
+    signupBtn.disabled=true;
+
+    setTimeout(()=>{
+
+        signupBtn.disabled=false;
+
+    },3000);
+
+});
+
+/*=========================================
+Page Animation
+=========================================*/
+
+window.addEventListener("load",()=>{
+
+    document.body.classList.add("fadeIn");
+
+});
+
+/*=========================================
+Cleanup
+=========================================*/
+
+window.addEventListener("unload",()=>{
+
+    db.ref().off();
+
+});
+
+/*=========================================
+Console
 =========================================*/
 
 console.log("================================");
-console.log("🚀 VIEWORA SIGNUP READY");
-console.log("Version : 3.0 FINAL");
-console.log("No Syntax Errors");
-console.log("Firebase Auth Ready");
-console.log("Realtime Database Ready");
+console.log("🚀 VIEWORA V3 PREMIUM");
+console.log("✅ Signup System Loaded");
+console.log("✅ Firebase Connected");
+console.log("✅ Realtime Database Ready");
+console.log("✅ Google Signup Ready");
+console.log("✅ Email Verification Ready");
 console.log("================================");

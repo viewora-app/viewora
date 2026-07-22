@@ -1,659 +1,680 @@
-/*=====================================================
-            VIEWORA V1.0 FINAL
-                login.js
-                 PART 1
- DOM • Loader • Toast • Password Toggle • Startup
-=====================================================*/
+/*=========================================
+        VIEWORA V3 PREMIUM
+            login.js
+            PART 1
+ Firebase • DOM • Loader • Toast
+=========================================*/
 
-//=====================================
-// DOM Elements
-//=====================================
+"use strict";
 
-const loginForm = document.getElementById("loginForm");
+/*=========================================
+Firebase Check
+=========================================*/
 
-const email =
-document.getElementById("email");
+if(typeof firebase==="undefined"){
+    throw new Error("Firebase SDK Missing");
+}
 
-const password =
-document.getElementById("password");
+if(typeof auth==="undefined"){
+    throw new Error("Firebase Auth Missing");
+}
 
-const loginBtn =
-document.getElementById("loginBtn");
+if(typeof db==="undefined"){
+    throw new Error("Realtime Database Missing");
+}
 
-const googleBtn =
-document.getElementById("googleLogin");
+/*=========================================
+DOM Elements
+=========================================*/
 
-const rememberMe =
-document.getElementById("rememberMe");
+const loginForm=document.getElementById("loginForm");
 
-const forgotPassword =
-document.getElementById("forgotPassword");
+const loginInput=document.getElementById("loginInput");
+const passwordInput=document.getElementById("password");
 
-const loading =
-document.getElementById("loadingOverlay");
+const loginBtn=document.getElementById("loginBtn");
+const googleLoginBtn=document.getElementById("googleLogin");
 
-const toast =
-document.getElementById("toast");
+const rememberMe=document.getElementById("rememberMe");
 
-const toastText =
-document.getElementById("toastText");
+const togglePassword=document.getElementById("togglePassword");
 
-const toastIcon =
-document.getElementById("toastIcon");
+const forgotPassword=document.getElementById("forgotPassword");
 
-const togglePassword =
-document.getElementById("togglePassword");
+const loadingOverlay=document.getElementById("loadingOverlay");
 
-//=====================================
-// Loader
-//=====================================
+const toast=document.getElementById("toast");
+const toastText=document.getElementById("toastText");
+const toastIcon=document.getElementById("toastIcon");
+
+const verifyModal=document.getElementById("verifyModal");
+const forgotModal=document.getElementById("forgotModal");
+
+const networkBanner=document.getElementById("networkBanner");
+
+/*=========================================
+Variables
+=========================================*/
+
+let loading=false;
+let toastTimer=null;
+
+/*=========================================
+Loader
+=========================================*/
 
 function showLoading(){
 
-if(loading){
+    loading=true;
 
-loading.classList.remove("hidden");
+    if(loadingOverlay){
 
-}
+        loadingOverlay.classList.remove("hidden");
 
-if(loginBtn){
+    }
 
-loginBtn.disabled=true;
+    if(loginBtn){
 
-}
+        loginBtn.disabled=true;
+
+    }
 
 }
 
 function hideLoading(){
 
-if(loading){
+    loading=false;
 
-loading.classList.add("hidden");
+    if(loadingOverlay){
+
+        loadingOverlay.classList.add("hidden");
+
+    }
+
+    if(loginBtn){
+
+        loginBtn.disabled=false;
+
+    }
 
 }
 
-if(loginBtn){
-
-loginBtn.disabled=false;
-
-}
-
-}
-
-//=====================================
-// Premium Toast
-//=====================================
+/*=========================================
+Toast
+=========================================*/
 
 function showToast(message,type="success"){
 
-if(!toast){
+    if(!toast) return;
 
-alert(message);
+    toastText.textContent=message;
 
-return;
+    if(type==="success"){
 
-}
+        toastIcon.className=
+        "fa-solid fa-circle-check";
 
-toastText.innerText=message;
+        toastIcon.style.color="#00d26a";
 
-switch(type){
+    }else{
 
-case "success":
+        toastIcon.className=
+        "fa-solid fa-circle-xmark";
 
-toastIcon.className=
-"fa-solid fa-circle-check";
+        toastIcon.style.color="#ff4d4d";
 
-toastIcon.style.color="#00d26a";
+    }
 
-break;
+    toast.classList.remove("hidden");
 
-case "error":
+    requestAnimationFrame(()=>{
 
-toastIcon.className=
-"fa-solid fa-circle-xmark";
+        toast.classList.add("show");
 
-toastIcon.style.color="#ff4d4d";
+    });
 
-break;
+    clearTimeout(toastTimer);
 
-default:
+    toastTimer=setTimeout(()=>{
 
-toastIcon.className=
-"fa-solid fa-circle-info";
+        toast.classList.remove("show");
 
-toastIcon.style.color="#00aaff";
+        setTimeout(()=>{
 
-}
+            toast.classList.add("hidden");
 
-toast.classList.remove("hidden");
+        },300);
 
-setTimeout(()=>{
-
-toast.classList.add("show");
-
-},50);
-
-setTimeout(()=>{
-
-toast.classList.remove("show");
-
-setTimeout(()=>{
-
-toast.classList.add("hidden");
-
-},300);
-
-},3000);
+    },3000);
 
 }
 
-//=====================================
-// Password Toggle
-//=====================================
+/*=========================================
+Password Toggle
+=========================================*/
 
 if(togglePassword){
 
-togglePassword.onclick=()=>{
+togglePassword.addEventListener("click",()=>{
 
-if(password.type==="password"){
+    if(passwordInput.type==="password"){
 
-password.type="text";
+        passwordInput.type="text";
 
-togglePassword.innerHTML=
-'<i class="fa-solid fa-eye-slash"></i>';
+        togglePassword.innerHTML=
+        '<i class="fa-solid fa-eye-slash"></i>';
 
-}else{
+    }else{
 
-password.type="password";
+        passwordInput.type="password";
 
-togglePassword.innerHTML=
-'<i class="fa-solid fa-eye"></i>';
+        togglePassword.innerHTML=
+        '<i class="fa-solid fa-eye"></i>';
+
+    }
+
+});
 
 }
 
-};
+/*=========================================
+Remember Me
+=========================================*/
 
-}
+const savedLogin=
 
-//=====================================
-// Remember Me
-//=====================================
+localStorage.getItem("viewora_login");
 
-if(localStorage.getItem("vieworaRemember")==="true"){
+if(savedLogin){
+
+loginInput.value=savedLogin;
 
 rememberMe.checked=true;
 
 }
 
-rememberMe.addEventListener("change",()=>{
+/*=========================================
+Startup
+=========================================*/
 
-localStorage.setItem(
-"vieworaRemember",
-rememberMe.checked
-);
+document.addEventListener("DOMContentLoaded",()=>{
 
-});
+    hideLoading();
 
-//=====================================
-// Auto Redirect
-//=====================================
-
-auth.onAuthStateChanged(user=>{
-
-if(!user) return;
-
-if(user.emailVerified){
-
-location.replace("index.html");
-
-}
+    console.log("================================");
+    console.log("🚀 VIEWORA LOGIN READY");
+    console.log("Firebase :",!!firebase);
+    console.log("Auth :",!!auth);
+    console.log("Database :",!!db);
+    console.log("================================");
 
 });
+/*=========================================
+        VIEWORA V3 PREMIUM
+            login.js
+            PART 2
+ Validation • Username/Email Login
+ Remember Me
+=========================================*/
 
-//=====================================
-// Forgot Password
-//=====================================
+/*=========================================
+Validation
+=========================================*/
 
-if(forgotPassword){
+function isEmail(value){
 
-forgotPassword.onclick=()=>{
-
-let mail=prompt(
-"Enter your registered Email"
-);
-
-if(!mail) return;
-
-auth.sendPasswordResetEmail(mail.trim())
-
-.then(()=>{
-
-showToast(
-"Password reset email sent"
-);
-
-})
-
-.catch(error=>{
-
-showToast(
-error.message,
-"error"
-);
-
-});
-
-};
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 
 }
 
-//=====================================
-// Startup
-//=====================================
+function isUsername(value){
 
-hideLoading();
-
-console.log("================================");
-console.log("🚀 VIEWORA LOGIN STARTED");
-console.log("Firebase :",!!firebase);
-console.log("Auth :",!!auth);
-console.log("Database :",!!db);
-console.log("================================");
-console.log("✅ Login Part 1 Loaded");
-/*=====================================================
-            VIEWORA V1.0 FINAL
-                login.js
-                 PART 2
-   Email • Username • @Username Login (Fixed)
-=====================================================*/
-
-//=====================================
-// Login Form
-//=====================================
-
-if(loginForm){
-
-loginForm.addEventListener(
-"submit",
-loginUser
-);
+    return /^[a-zA-Z0-9_]{3,20}$/.test(value);
 
 }
 
-async function loginUser(e){
+function validateLogin(){
 
-e.preventDefault();
+    const login=loginInput.value.trim();
+    const password=passwordInput.value;
 
-if(loginBtn.disabled) return;
+    if(login===""){
 
-showLoading();
+        showToast("Enter email or username","error");
+        loginInput.focus();
+        return false;
 
-try{
+    }
 
-let loginInput =
-email.value
-.trim()
-.toLowerCase();
+    if(password===""){
 
-const userPassword =
-password.value;
+        showToast("Enter password","error");
+        passwordInput.focus();
+        return false;
 
-//==============================
-// Validation
-//==============================
+    }
 
-if(loginInput===""){
+    if(password.length<6){
 
-hideLoading();
+        showToast("Password is too short","error");
+        passwordInput.focus();
+        return false;
 
-showToast(
-"Enter Email or Username",
-"error"
-);
+    }
 
-return;
+    return true;
 
 }
 
-if(userPassword===""){
+/*=========================================
+Remember Me
+=========================================*/
 
-hideLoading();
+function saveRememberMe(value){
 
-showToast(
-"Enter Password",
-"error"
-);
+    if(rememberMe.checked){
 
-return;
+        localStorage.setItem(
+            "viewora_login",
+            value
+        );
 
-}
+    }else{
 
-// Remove @
-if(loginInput.startsWith("@")){
+        localStorage.removeItem(
+            "viewora_login"
+        );
 
-loginInput =
-loginInput.substring(1);
-
-}
-
-let loginEmail = loginInput;
-
-//====================================
-// Username Login Support
-//====================================
-
-if(!loginInput.includes("@")){
-
-// Method 1
-const usernameMap =
-await db
-.ref("usernames/"+loginInput)
-.once("value");
-
-if(usernameMap.exists()){
-
-const uid =
-usernameMap.val().uid;
-
-const userData =
-await db
-.ref("users/"+uid)
-.once("value");
-
-if(userData.exists()){
-
-loginEmail =
-userData.val().email;
+    }
 
 }
 
-}else{
+/*=========================================
+Username → Email Lookup
+=========================================*/
 
-//====================================
-// Method 2 (Old Database Support)
-//====================================
+async function getEmailFromUsername(username){
 
-const users =
-await db
-.ref("users")
-.once("value");
+    try{
 
-let found = false;
+        const usernameSnap=
+        await db.ref(
+            "usernames/"+username.toLowerCase()
+        ).once("value");
 
-users.forEach(child=>{
+        if(!usernameSnap.exists()){
 
-const data = child.val();
+            return null;
 
-if(
-data.username &&
-data.username
-.replace("@","")
-.toLowerCase()===loginInput
-){
+        }
 
-loginEmail = data.email;
+        const uid=usernameSnap.val();
 
-found = true;
+        const userSnap=
+        await db.ref(
+            "users/"+uid
+        ).once("value");
 
-}
+        if(!userSnap.exists()){
 
-});
+            return null;
 
-if(!found){
+        }
 
-hideLoading();
+        return userSnap.val().email || null;
 
-showToast(
-"Username not found",
-"error"
-);
+    }catch(error){
 
-return;
+        console.error(error);
 
-}
+        return null;
+
+    }
 
 }
 
-}
+/*=========================================
+Prepare Login
+=========================================*/
 
-//====================================
-// Remember Me
-//====================================
+async function prepareLogin(){
 
-await auth.setPersistence(
+    if(!validateLogin()){
 
-rememberMe.checked
-?
+        return null;
 
-firebase.auth.Auth.Persistence.LOCAL
+    }
 
-:
+    let login=
 
-firebase.auth.Auth.Persistence.SESSION
+    loginInput.value
 
-);
+    .trim()
 
-//====================================
-// Firebase Login
-//====================================
+    .toLowerCase();
 
-const result =
-await auth
-.signInWithEmailAndPassword(
-loginEmail,
-userPassword
-);
+    const password=
 
-const user = result.user;
+    passwordInput.value;
 
-await user.reload();
+    if(isUsername(login)){
 
-//====================================
-// Email Verify
-//====================================
+        const email=
 
-if(!user.emailVerified){
+        await getEmailFromUsername(login);
 
-await auth.signOut();
+        if(!email){
 
-hideLoading();
+            showToast(
+                "Username not found",
+                "error"
+            );
 
-showToast(
-"Please verify your email first",
-"error"
-);
+            return null;
 
-return;
+        }
 
-}
+        login=email;
 
-//====================================
-// Update User
-//====================================
+    }
 
-await db
-.ref("users/"+user.uid)
-.update({
+    if(!isEmail(login)){
 
-online:true,
+        showToast(
+            "Invalid email or username",
+            "error"
+        );
 
-lastLogin:
-firebase.database.ServerValue.TIMESTAMP
+        return null;
 
-});
+    }
 
-hideLoading();
+    saveRememberMe(login);
 
-showToast(
-"Welcome Back 🎉"
-);
+    return{
 
-setTimeout(()=>{
+        email:login,
 
-location.replace(
-"index.html"
-);
+        password:password
 
-},1000);
-
-}catch(error){
-
-hideLoading();
-
-console.log(error);
-
-//====================================
-// Better Errors
-//====================================
-
-switch(error.code){
-
-case "auth/invalid-credential":
-
-case "auth/wrong-password":
-
-case "auth/user-not-found":
-
-showToast(
-"Incorrect email/username or password",
-"error"
-);
-
-break;
-
-case "auth/invalid-email":
-
-showToast(
-"Invalid email address",
-"error"
-);
-
-break;
-
-case "auth/network-request-failed":
-
-showToast(
-"Check your internet connection",
-"error"
-);
-
-break;
-
-case "auth/too-many-requests":
-
-showToast(
-"Too many attempts. Try again later.",
-"error"
-);
-
-break;
-
-default:
-
-showToast(
-error.message,
-"error"
-);
-
-}
-
-}
+    };
 
 }
 
 console.log("✅ Login Part 2 Loaded");
-/*=====================================================
-            VIEWORA V1.0 FINAL
-                login.js
-                 PART 3
- Google Login • Password Reset • Online Status
-=====================================================*/
+/*=========================================
+        VIEWORA V3 PREMIUM
+            login.js
+            PART 3
+ Login • Email Verification
+ Online Status • Redirect
+=========================================*/
 
-//=====================================
-// Google Login
-//=====================================
+/*=========================================
+Login Function
+=========================================*/
 
-if (googleBtn) {
+async function loginUser(e){
 
-    googleBtn.addEventListener("click", googleLogin);
+    if(e) e.preventDefault();
 
-}
+    if(loading) return;
 
-async function googleLogin() {
+    const data=await prepareLogin();
+
+    if(!data) return;
 
     showLoading();
 
-    try {
+    try{
 
-        const provider = new firebase.auth.GoogleAuthProvider();
+        const result=
 
-        provider.setCustomParameters({
-            prompt: "select_account"
-        });
+        await auth.signInWithEmailAndPassword(
 
-        const result =
-        await auth.signInWithPopup(provider);
+            data.email,
 
-        const user = result.user;
+            data.password
 
-        const userRef =
-        db.ref("users/" + user.uid);
+        );
 
-        const snap =
-        await userRef.once("value");
+        const user=result.user;
 
-        if (!snap.exists()) {
+        await user.reload();
 
-            let username =
-            (user.email || "user")
-            .split("@")[0]
-            .toLowerCase()
-            .replace(/[^a-z0-9_]/g, "");
+        /*=============================
+        Email Verification
+        =============================*/
 
-            // Username unique
-            let finalUsername = username;
-            let count = 1;
+        if(!user.emailVerified){
 
-            while (true) {
+            hideLoading();
 
-                const check =
-                await db.ref("usernames/" + finalUsername)
-                .once("value");
+            if(verifyModal){
 
-                if (!check.exists()) break;
-
-                finalUsername = username + count;
-                count++;
+                verifyModal.classList.remove("hidden");
 
             }
 
-            // Save User
+            showToast(
+
+                "Please verify your email",
+
+                "error"
+
+            );
+
+            await auth.signOut();
+
+            return;
+
+        }
+
+        /*=============================
+        Update User Status
+        =============================*/
+
+        await db.ref("users/"+user.uid).update({
+
+            online:true,
+
+            emailVerified:true,
+
+            lastLogin:
+            firebase.database.ServerValue.TIMESTAMP
+
+        });
+
+        db.ref("users/"+user.uid)
+
+        .onDisconnect()
+
+        .update({
+
+            online:false
+
+        });
+
+        hideLoading();
+
+        showToast(
+
+            "Login Successful"
+
+        );
+
+        /*=============================
+        Redirect
+        =============================*/
+
+        setTimeout(()=>{
+
+            location.replace("index.html");
+
+        },1200);
+
+    }
+
+    catch(error){
+
+        hideLoading();
+
+        console.error(error);
+
+        let message="Login Failed";
+
+        switch(error.code){
+
+            case "auth/user-not-found":
+
+                message="Account not found";
+                break;
+
+            case "auth/wrong-password":
+
+                message="Incorrect password";
+                break;
+
+            case "auth/invalid-credential":
+
+                message="Invalid email or password";
+                break;
+
+            case "auth/too-many-requests":
+
+                message="Too many attempts. Try later.";
+                break;
+
+            case "auth/network-request-failed":
+
+                message="No Internet Connection";
+                break;
+
+            default:
+
+                message=error.message;
+
+        }
+
+        showToast(message,"error");
+
+    }
+
+}
+
+/*=========================================
+Login Form
+=========================================*/
+
+if(loginForm){
+
+    loginForm.addEventListener(
+
+        "submit",
+
+        loginUser
+
+    );
+
+}
+
+/*=========================================
+Enter Key
+=========================================*/
+
+passwordInput.addEventListener(
+
+    "keypress",
+
+    function(e){
+
+        if(e.key==="Enter"){
+
+            loginUser(e);
+
+        }
+
+    }
+
+);
+
+console.log("✅ Login Part 3 Loaded");
+/*=========================================
+        VIEWORA V3 PREMIUM
+            login.js
+            PART 4
+ Google Login • Forgot Password
+ Auto Login • Auth State
+=========================================*/
+
+/*=========================================
+Google Login
+=========================================*/
+
+if(googleLoginBtn){
+
+googleLoginBtn.addEventListener("click",async()=>{
+
+    if(loading) return;
+
+    showLoading();
+
+    try{
+
+        const result=
+
+        await auth.signInWithPopup(
+            googleProvider
+        );
+
+        const user=result.user;
+
+        const userRef=
+        db.ref("users/"+user.uid);
+
+        const snap=
+        await userRef.once("value");
+
+        if(!snap.exists()){
+
+            const username=
+            (user.displayName||"user")
+            .toLowerCase()
+            .replace(/[^a-z0-9]/g,"")+
+            Math.floor(Math.random()*9999);
+
+            await db.ref(
+                "usernames/"+username
+            ).set(user.uid);
 
             await userRef.set({
 
-                uid: user.uid,
+                uid:user.uid,
 
-                name: user.displayName || "Viewora User",
+                fullName:user.displayName||"",
 
-                username: "@" + finalUsername,
+                username:username,
 
-                email: user.email,
+                email:user.email,
 
-                photo: user.photoURL || "assets/default-avatar.png",
+                profilePhoto:
+                user.photoURL||
 
-                bio: "👋 Hello! I'm using Viewora.",
+                "assets/default-avatar.png",
 
-                followers: 0,
+                verified:false,
 
-                following: 0,
+                emailVerified:true,
 
-                posts: 0,
+                followers:0,
 
-                likes: 0,
+                following:0,
 
-                verified: true,
+                posts:0,
 
-                online: true,
+                likes:0,
+
+                online:true,
 
                 createdAt:
                 firebase.database.ServerValue.TIMESTAMP,
@@ -663,20 +684,11 @@ async function googleLogin() {
 
             });
 
-            // Username Mapping
-
-            await db.ref("usernames/" + finalUsername)
-            .set({
-
-                uid: user.uid
-
-            });
-
-        } else {
+        }else{
 
             await userRef.update({
 
-                online: true,
+                online:true,
 
                 lastLogin:
                 firebase.database.ServerValue.TIMESTAMP
@@ -687,154 +699,181 @@ async function googleLogin() {
 
         hideLoading();
 
-        showToast("Welcome to Viewora 🎉");
+        showToast("Google Login Successful");
 
-        setTimeout(() => {
+        setTimeout(()=>{
 
             location.replace("index.html");
 
-        }, 800);
-
-    } catch (error) {
-
-        hideLoading();
-
-        console.log(error);
-
-        showToast(error.message, "error");
+        },1000);
 
     }
 
+    catch(error){
+
+        hideLoading();
+
+        console.error(error);
+
+        showToast(error.message,"error");
+
+    }
+
+});
+
 }
 
-//=====================================
-// Forgot Password
-//=====================================
+/*=========================================
+Forgot Password
+=========================================*/
 
-if (forgotPassword) {
+const sendResetBtn=
+document.getElementById("sendResetBtn");
 
-    forgotPassword.onclick = async () => {
+const closeForgotBtn=
+document.getElementById("closeForgotBtn");
 
-        const mail = prompt(
-            "Enter your registered email"
+const resetEmail=
+document.getElementById("resetEmail");
+
+if(forgotPassword){
+
+forgotPassword.onclick=(e)=>{
+
+    e.preventDefault();
+
+    forgotModal.classList.remove("hidden");
+
+};
+
+}
+
+if(closeForgotBtn){
+
+closeForgotBtn.onclick=()=>{
+
+    forgotModal.classList.add("hidden");
+
+};
+
+}
+
+if(sendResetBtn){
+
+sendResetBtn.onclick=async()=>{
+
+    const email=
+
+    resetEmail.value.trim();
+
+    if(email===""){
+
+        showToast(
+            "Enter your email",
+            "error"
         );
 
-        if (!mail) return;
+        return;
 
-        try {
+    }
 
-            await auth.sendPasswordResetEmail(
-                mail.trim()
-            );
+    try{
 
-            showToast(
-                "Password reset email sent"
-            );
+        await auth.sendPasswordResetEmail(email);
 
-        } catch (error) {
+        showToast(
+            "Password reset email sent"
+        );
 
-            showToast(
-                error.message,
-                "error"
-            );
+        forgotModal.classList.add("hidden");
 
-        }
+        resetEmail.value="";
 
-    };
+    }
+
+    catch(error){
+
+        console.error(error);
+
+        showToast(error.message,"error");
+
+    }
+
+};
 
 }
 
-//=====================================
-// Online Status
-//=====================================
+/*=========================================
+Resend Verification
+=========================================*/
 
-auth.onAuthStateChanged(async (user) => {
+const resendVerificationBtn=
+document.getElementById(
+"resendVerificationBtn"
+);
 
-    if (!user) return;
+const closeVerifyBtn=
+document.getElementById(
+"closeVerifyBtn"
+);
 
-    const ref =
-    db.ref("users/" + user.uid);
+if(closeVerifyBtn){
 
-    await ref.update({
+closeVerifyBtn.onclick=()=>{
 
-        online: true,
+    verifyModal.classList.add("hidden");
 
-        lastLogin:
-        firebase.database.ServerValue.TIMESTAMP
+};
 
-    });
+}
 
-    ref.child("online")
-    .onDisconnect()
-    .set(false);
+if(resendVerificationBtn){
 
-});
+resendVerificationBtn.onclick=async()=>{
 
-//=====================================
-// Enter Key Support
-//=====================================
+    const user=auth.currentUser;
 
-[email, password].forEach(input => {
+    if(!user){
 
-    if (!input) return;
+        showToast("Login again","error");
 
-    input.addEventListener("keypress", e => {
+        return;
 
-        if (e.key === "Enter") {
+    }
 
-            loginBtn.click();
+    try{
 
-        }
+        await user.sendEmailVerification();
 
-    });
+        showToast(
+            "Verification email sent"
+        );
 
-});
+    }
 
-//=====================================
-// Ripple Effect
-//=====================================
+    catch(error){
 
-document.querySelectorAll(
-".loginBtn,.googleBtn"
-).forEach(btn => {
+        console.error(error);
 
-    btn.addEventListener("click", function (e) {
+        showToast(error.message,"error");
 
-        const ripple =
-        document.createElement("span");
+    }
 
-        ripple.className = "ripple";
+};
 
-        const rect =
-        this.getBoundingClientRect();
+}
 
-        ripple.style.left =
-        (e.clientX - rect.left) + "px";
+/*=========================================
+Auto Login
+=========================================*/
 
-        ripple.style.top =
-        (e.clientY - rect.top) + "px";
+auth.onAuthStateChanged(async(user)=>{
 
-        this.appendChild(ripple);
+    if(!user) return;
 
-        setTimeout(() => {
+    await user.reload();
 
-            ripple.remove();
-
-        }, 600);
-
-    });
-
-});
-
-//=====================================
-// Auto Redirect
-//=====================================
-
-auth.onAuthStateChanged(user => {
-
-    if (!user) return;
-
-    if (user.emailVerified) {
+    if(user.emailVerified){
 
         location.replace("index.html");
 
@@ -842,12 +881,170 @@ auth.onAuthStateChanged(user => {
 
 });
 
-//=====================================
-// Startup
-//=====================================
+console.log("✅ Login Part 4 Loaded");
+/*=========================================
+        VIEWORA V3 PREMIUM
+            login.js
+            PART 5 FINAL
+ Ripple • Network • Cleanup
+=========================================*/
 
-console.log("================================");
-console.log("🚀 VIEWORA LOGIN READY");
-console.log("✅ Premium Login Loaded");
-console.log("Version : 1.0 FINAL");
-console.log("================================");
+/*=========================================
+Ripple Effect
+=========================================*/
+
+document.querySelectorAll("button").forEach(button=>{
+
+    button.addEventListener("click",function(e){
+
+        const ripple=document.createElement("span");
+
+        ripple.className="ripple";
+
+        const rect=this.getBoundingClientRect();
+
+        ripple.style.left=
+        (e.clientX-rect.left)+"px";
+
+        ripple.style.top=
+        (e.clientY-rect.top)+"px";
+
+        this.appendChild(ripple);
+
+        setTimeout(()=>{
+
+            ripple.remove();
+
+        },600);
+
+    });
+
+});
+
+/*=========================================
+Network Status
+=========================================*/
+
+function updateNetworkStatus(){
+
+    if(!networkBanner) return;
+
+    if(navigator.onLine){
+
+        networkBanner.classList.add("hidden");
+
+        showToast("Internet Connected");
+
+    }else{
+
+        networkBanner.classList.remove("hidden");
+
+        showToast("No Internet Connection","error");
+
+    }
+
+}
+
+window.addEventListener(
+
+"online",
+
+updateNetworkStatus
+
+);
+
+window.addEventListener(
+
+"offline",
+
+updateNetworkStatus
+
+);
+
+/*=========================================
+Online / Offline User
+=========================================*/
+
+window.addEventListener(
+
+"beforeunload",
+
+()=>{
+
+    const user=auth.currentUser;
+
+    if(user){
+
+        db.ref("users/"+user.uid).update({
+
+            online:false,
+
+            lastSeen:
+            firebase.database.ServerValue.TIMESTAMP
+
+        });
+
+    }
+
+});
+
+/*=========================================
+Close Modal
+=========================================*/
+
+window.addEventListener("click",e=>{
+
+    if(e.target===forgotModal){
+
+        forgotModal.classList.add("hidden");
+
+    }
+
+    if(e.target===verifyModal){
+
+        verifyModal.classList.add("hidden");
+
+    }
+
+});
+
+/*=========================================
+Page Startup
+=========================================*/
+
+window.addEventListener("load",()=>{
+
+    hideLoading();
+
+    updateNetworkStatus();
+
+    console.log("================================");
+    console.log("🚀 VIEWORA LOGIN SYSTEM");
+    console.log("✅ Firebase Ready");
+    console.log("✅ Login Ready");
+    console.log("✅ Google Login Ready");
+    console.log("✅ Password Reset Ready");
+    console.log("✅ Network Ready");
+    console.log("================================");
+
+});
+
+/*=========================================
+Cleanup
+=========================================*/
+
+window.addEventListener("unload",()=>{
+
+    try{
+
+        db.ref().off();
+
+    }catch(e){
+
+        console.log(e);
+
+    }
+
+});
+
+console.log("✅ Login Part 5 Loaded");

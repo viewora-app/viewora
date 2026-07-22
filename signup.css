@@ -1,253 +1,887 @@
-/*======================================================
-                VIEWORA V1.0 PREMIUM
-                  signup.css
-                    PART 1
-      Global • Aurora • Glass • Loader
-======================================================*/
-
-/*==============================
-Reset
-==============================*/
+/*=========================================
+        VIEWORA V3 PREMIUM
+            signup.css
+            PART 1
+ Reset • Variables • Background
+=========================================*/
 
 *{
-margin:0;
-padding:0;
-box-sizing:border-box;
-font-family:"Inter",sans-serif;
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:"Inter",sans-serif;
+    -webkit-tap-highlight-color:transparent;
+}
+
+:root{
+
+    --primary:#00AAFF;
+    --secondary:#0088ff;
+    --success:#00d26a;
+    --danger:#ff4d4d;
+    --warning:#ffb300;
+
+    --bg:#050816;
+    --card:rgba(255,255,255,.08);
+    --border:rgba(255,255,255,.15);
+
+    --text:#ffffff;
+    --text2:#c8d2ff;
+
+    --shadow:
+    0 20px 60px rgba(0,0,0,.35);
+
+    --radius:24px;
+
 }
 
 html{
-scroll-behavior:smooth;
+
+    scroll-behavior:smooth;
+
 }
 
 body{
 
-min-height:100vh;
-overflow-x:hidden;
+    background:var(--bg);
 
-display:flex;
-justify-content:center;
-align-items:center;
+    color:var(--text);
 
-background:
-linear-gradient(
-135deg,
-#050816,
-#0b1024,
-#111827
-);
+    min-height:100vh;
 
-color:#ffffff;
-position:relative;
+    overflow-x:hidden;
+
+    display:flex;
+
+    justify-content:center;
+
+    align-items:center;
+
+    position:relative;
 
 }
 
-/*==============================
-Hidden
-==============================*/
-
-.hidden{
-display:none!important;
-}
-
-/*==============================
+/*=========================================
 Aurora Background
-==============================*/
+=========================================*/
 
 .aurora{
 
-position:fixed;
-inset:0;
-overflow:hidden;
-z-index:-5;
+    position:fixed;
+
+    inset:0;
+
+    overflow:hidden;
+
+    z-index:-3;
 
 }
 
 .light{
 
-position:absolute;
-border-radius:50%;
-filter:blur(110px);
-opacity:.30;
+    position:absolute;
 
-animation:
-auroraMove 15s ease-in-out infinite;
+    width:500px;
+
+    height:500px;
+
+    border-radius:50%;
+
+    filter:blur(120px);
+
+    opacity:.55;
+
+    animation:float 12s linear infinite;
 
 }
 
 .light1{
 
-width:430px;
-height:430px;
+    background:#00AAFF;
 
-background:#00aaff;
+    top:-120px;
 
-top:-120px;
-left:-110px;
+    left:-100px;
 
 }
 
 .light2{
 
-width:460px;
-height:460px;
+    background:#6A5CFF;
 
-background:#7c3aed;
+    right:-120px;
 
-bottom:-140px;
-right:-120px;
+    top:20%;
 
-animation-delay:5s;
+    animation-delay:2s;
 
 }
 
 .light3{
 
-width:360px;
-height:360px;
+    background:#00d26a;
 
-background:#06d6a0;
+    bottom:-150px;
 
-top:42%;
-left:38%;
+    left:25%;
 
-animation-delay:10s;
+    animation-delay:5s;
 
 }
 
-@keyframes auroraMove{
+@keyframes float{
 
-0%,100%{
+0%{
 
-transform:
-translate(0,0)
-scale(1);
+transform:translate(0,0) scale(1);
 
 }
 
 50%{
 
-transform:
-translate(70px,-40px)
-scale(1.15);
+transform:translate(80px,-60px) scale(1.15);
 
 }
-
-}
-
-/*==============================
-Floating Particles
-==============================*/
-
-#particles{
-
-position:fixed;
-inset:0;
-
-pointer-events:none;
-
-background-image:
-radial-gradient(
-rgba(255,255,255,.16) 1px,
-transparent 1px
-);
-
-background-size:34px 34px;
-
-opacity:.25;
-
-animation:
-particlesMove 30s linear infinite;
-
-z-index:-4;
-
-}
-
-@keyframes particlesMove{
 
 100%{
 
-transform:
-translateY(-180px);
+transform:translate(0,0) scale(1);
 
 }
 
 }
 
-/*==============================
+/*=========================================
+Particles
+=========================================*/
+
+#particles{
+
+    position:fixed;
+
+    inset:0;
+
+    pointer-events:none;
+
+    z-index:-2;
+
+}
+
+/*=========================================
 Glass Effect
-==============================*/
+=========================================*/
 
 .glass{
 
-background:
-rgba(255,255,255,.08);
+    background:rgba(255,255,255,.08);
 
-backdrop-filter:
-blur(22px);
+    backdrop-filter:blur(25px);
 
--webkit-backdrop-filter:
-blur(22px);
+    -webkit-backdrop-filter:blur(25px);
 
-border:
-1px solid rgba(255,255,255,.12);
+    border:1px solid rgba(255,255,255,.12);
 
-box-shadow:
-0 25px 60px rgba(0,0,0,.40);
+    box-shadow:var(--shadow);
 
 }
 
-/*==============================
-Premium Loader
-==============================*/
+/*=========================================
+Utility
+=========================================*/
+
+.hidden{
+
+    display:none !important;
+
+}
+
+.fadeIn{
+
+    animation:fadeIn .6s ease;
+
+}
+
+@keyframes fadeIn{
+
+from{
+
+opacity:0;
+
+transform:translateY(25px);
+
+}
+
+to{
+
+opacity:1;
+
+transform:translateY(0);
+
+}
+
+}
+/*=========================================
+        VIEWORA V3 PREMIUM
+            signup.css
+            PART 2
+ Signup Card • Logo • Inputs
+=========================================*/
+
+/*=========================================
+Main App
+=========================================*/
+
+#app{
+
+    width:100%;
+
+    display:flex;
+
+    justify-content:center;
+
+    align-items:center;
+
+    padding:40px 20px;
+
+}
+
+/*=========================================
+Signup Card
+=========================================*/
+
+.signupCard{
+
+    width:100%;
+
+    max-width:470px;
+
+    padding:40px;
+
+    border-radius:28px;
+
+    position:relative;
+
+    overflow:hidden;
+
+}
+
+.signupCard::before{
+
+    content:"";
+
+    position:absolute;
+
+    inset:0;
+
+    background:
+
+    linear-gradient(
+    135deg,
+    rgba(0,170,255,.08),
+    rgba(106,92,255,.08));
+
+    pointer-events:none;
+
+}
+
+/*=========================================
+Logo
+=========================================*/
+
+.logoBox{
+
+    text-align:center;
+
+    margin-bottom:35px;
+
+}
+
+.logo{
+
+    width:88px;
+
+    height:88px;
+
+    object-fit:contain;
+
+    border-radius:22px;
+
+    margin-bottom:18px;
+
+    animation:logoFloat 3s ease-in-out infinite;
+
+}
+
+@keyframes logoFloat{
+
+0%,100%{
+
+transform:translateY(0);
+
+}
+
+50%{
+
+transform:translateY(-8px);
+
+}
+
+}
+
+.logoBox h1{
+
+    font-size:2rem;
+
+    font-weight:800;
+
+    margin-bottom:8px;
+
+}
+
+.logoBox p{
+
+    color:var(--text2);
+
+    font-size:.95rem;
+
+    line-height:1.5;
+
+}
+
+/*=========================================
+Form
+=========================================*/
+
+#signupForm{
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:18px;
+
+}
+
+/*=========================================
+Input Group
+=========================================*/
+
+.inputGroup{
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:8px;
+
+}
+
+.inputGroup label{
+
+    font-size:.95rem;
+
+    font-weight:600;
+
+    color:#fff;
+
+}
+
+/*=========================================
+Input Box
+=========================================*/
+
+.inputBox{
+
+    position:relative;
+
+    display:flex;
+
+    align-items:center;
+
+}
+
+.inputBox i:first-child{
+
+    position:absolute;
+
+    left:16px;
+
+    color:#9fb7ff;
+
+    font-size:16px;
+
+}
+
+.inputBox input{
+
+    width:100%;
+
+    height:56px;
+
+    border:none;
+
+    outline:none;
+
+    border-radius:16px;
+
+    padding:0 52px 0 48px;
+
+    background:rgba(255,255,255,.07);
+
+    color:#fff;
+
+    border:1px solid rgba(255,255,255,.12);
+
+    transition:.25s;
+
+    font-size:15px;
+
+}
+
+.inputBox input::placeholder{
+
+    color:#8fa4c9;
+
+}
+
+.inputBox input:focus{
+
+    border-color:var(--primary);
+
+    box-shadow:
+
+    0 0 0 4px rgba(0,170,255,.15);
+
+}
+
+/*=========================================
+Password Toggle
+=========================================*/
+
+.togglePassword{
+
+    position:absolute;
+
+    right:14px;
+
+    width:36px;
+
+    height:36px;
+
+    border:none;
+
+    background:none;
+
+    color:#9fb7ff;
+
+    cursor:pointer;
+
+    font-size:17px;
+
+    transition:.25s;
+
+}
+
+.togglePassword:hover{
+
+    color:#fff;
+
+    transform:scale(1.1);
+
+}
+
+/*=========================================
+Username Status
+=========================================*/
+
+.statusText{
+
+    font-size:.82rem;
+
+    color:#9fb7ff;
+
+    margin-left:4px;
+
+}
+
+/*=========================================
+Password Strength
+=========================================*/
+
+.strengthContainer{
+
+    margin-top:8px;
+
+}
+
+.strengthBar{
+
+    width:100%;
+
+    height:6px;
+
+    background:rgba(255,255,255,.08);
+
+    border-radius:100px;
+
+    overflow:hidden;
+
+}
+
+#strengthFill{
+
+    width:0;
+
+    height:100%;
+
+    border-radius:100px;
+
+    background:var(--danger);
+
+    transition:.3s;
+
+}
+
+#strengthText{
+
+    margin-top:8px;
+
+    font-size:.82rem;
+
+    color:var(--text2);
+
+}
+
+/*=========================================
+Responsive
+=========================================*/
+
+@media(max-width:600px){
+
+.signupCard{
+
+padding:28px 20px;
+
+border-radius:22px;
+
+}
+
+.logo{
+
+width:74px;
+
+height:74px;
+
+}
+
+.logoBox h1{
+
+font-size:1.7rem;
+
+}
+
+.inputBox input{
+
+height:52px;
+
+font-size:14px;
+
+}
+
+}
+/*=========================================
+        VIEWORA V3 PREMIUM
+            signup.css
+            PART 3
+ Terms • Buttons • Divider • Footer
+=========================================*/
+
+/*=========================================
+Terms
+=========================================*/
+
+.termsBox{
+
+    margin-top:8px;
+
+}
+
+.termsBox label{
+
+    display:flex;
+
+    align-items:flex-start;
+
+    gap:10px;
+
+    font-size:.92rem;
+
+    color:var(--text2);
+
+    line-height:1.6;
+
+}
+
+.termsBox input{
+
+    width:18px;
+
+    height:18px;
+
+    accent-color:var(--primary);
+
+    margin-top:2px;
+
+    cursor:pointer;
+
+}
+
+.termsBox a{
+
+    color:var(--primary);
+
+    text-decoration:none;
+
+    font-weight:600;
+
+}
+
+.termsBox a:hover{
+
+    text-decoration:underline;
+
+}
+
+/*=========================================
+Premium Buttons
+=========================================*/
+
+.signupBtn,
+.googleBtn{
+
+    width:100%;
+
+    height:56px;
+
+    border:none;
+
+    border-radius:16px;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    gap:12px;
+
+    cursor:pointer;
+
+    font-size:16px;
+
+    font-weight:700;
+
+    transition:.3s;
+
+    position:relative;
+
+    overflow:hidden;
+
+}
+
+/*=========================================
+Signup Button
+=========================================*/
+
+.signupBtn{
+
+    background:linear-gradient(
+        135deg,
+        var(--primary),
+        var(--secondary)
+    );
+
+    color:#fff;
+
+    box-shadow:
+    0 10px 30px rgba(0,170,255,.35);
+
+}
+
+.signupBtn:hover{
+
+    transform:translateY(-3px);
+
+    box-shadow:
+    0 18px 40px rgba(0,170,255,.45);
+
+}
+
+.signupBtn:active{
+
+    transform:scale(.98);
+
+}
+
+/*=========================================
+Google Button
+=========================================*/
+
+.googleBtn{
+
+    margin-top:14px;
+
+    background:rgba(255,255,255,.08);
+
+    border:1px solid rgba(255,255,255,.12);
+
+    color:#fff;
+
+}
+
+.googleBtn img{
+
+    width:22px;
+
+    height:22px;
+
+}
+
+.googleBtn:hover{
+
+    background:rgba(255,255,255,.14);
+
+    transform:translateY(-2px);
+
+}
+
+/*=========================================
+Divider
+=========================================*/
+
+.divider{
+
+    display:flex;
+
+    align-items:center;
+
+    margin:24px 0 10px;
+
+}
+
+.divider::before,
+.divider::after{
+
+    content:"";
+
+    flex:1;
+
+    height:1px;
+
+    background:rgba(255,255,255,.15);
+
+}
+
+.divider span{
+
+    margin:0 14px;
+
+    color:#9fb7ff;
+
+    font-size:.9rem;
+
+    font-weight:600;
+
+}
+
+/*=========================================
+Login Box
+=========================================*/
+
+.loginBox{
+
+    margin-top:24px;
+
+    text-align:center;
+
+}
+
+.loginBox p{
+
+    color:var(--text2);
+
+}
+
+.loginBox a{
+
+    color:var(--primary);
+
+    font-weight:700;
+
+    text-decoration:none;
+
+}
+
+.loginBox a:hover{
+
+    text-decoration:underline;
+
+}
+
+/*=========================================
+Footer
+=========================================*/
+
+.footer{
+
+    margin-top:30px;
+
+    text-align:center;
+
+}
+
+.footer p{
+
+    color:#7d8db6;
+
+    font-size:.82rem;
+
+}
+/*=========================================
+        VIEWORA V3 PREMIUM
+            signup.css
+            PART 4
+ Loader • Toast • Verify Modal
+=========================================*/
+
+/*=========================================
+Page Loader
+=========================================*/
 
 #pageLoader{
 
-position:fixed;
-inset:0;
+    position:fixed;
+    inset:0;
 
-display:flex;
-flex-direction:column;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    align-items:center;
 
-justify-content:center;
-align-items:center;
+    background:#050816;
 
-background:#050816;
+    z-index:99999;
 
-z-index:999999;
-
-transition:.45s;
-
-}
-
-.loaderLogo{
-
-width:110px;
-height:110px;
-
-display:flex;
-justify-content:center;
-align-items:center;
-
-border-radius:50%;
-
-background:
-rgba(255,255,255,.06);
-
-border:
-1px solid rgba(255,255,255,.10);
-
-animation:
-logoPulse 2.5s infinite;
+    transition:.5s;
 
 }
 
 .loaderLogo img{
 
-width:78px;
-height:78px;
+    width:90px;
+    height:90px;
 
-object-fit:contain;
+    animation:logoPulse 1.8s infinite;
 
 }
 
@@ -269,71 +903,62 @@ transform:scale(1.08);
 
 #pageLoader h1{
 
-margin-top:22px;
+    margin-top:20px;
 
-font-size:34px;
-font-weight:800;
+    font-size:2rem;
 
-background:
-linear-gradient(
-90deg,
-#00aaff,
-#ffffff,
-#7c3aed
-);
+    font-weight:800;
 
--webkit-background-clip:text;
--webkit-text-fill-color:transparent;
+    color:#fff;
 
 }
 
 #pageLoader p{
 
-margin-top:10px;
+    margin-top:8px;
 
-font-size:15px;
-
-color:#b8bfd8;
+    color:#9fb7ff;
 
 }
 
 .loaderBar{
 
-width:260px;
-height:8px;
+    width:220px;
 
-margin-top:28px;
+    height:8px;
 
-border-radius:30px;
+    background:rgba(255,255,255,.08);
 
-overflow:hidden;
+    border-radius:100px;
 
-background:
-rgba(255,255,255,.08);
+    margin-top:25px;
+
+    overflow:hidden;
 
 }
 
 .loaderFill{
 
+    width:0;
+
+    height:100%;
+
+    background:linear-gradient(
+    90deg,
+    #00AAFF,
+    #6A5CFF);
+
+    animation:loading 1.4s linear infinite;
+
+}
+
+@keyframes loading{
+
+0%{
+
 width:0;
-height:100%;
-
-border-radius:30px;
-
-background:
-linear-gradient(
-90deg,
-#00aaff,
-#7c3aed,
-#06d6a0
-);
-
-animation:
-loadingBar 1.6s linear forwards;
 
 }
-
-@keyframes loadingBar{
 
 100%{
 
@@ -343,747 +968,9 @@ width:100%;
 
 }
 
-/*==============================
-Fade Animation
-==============================*/
-
-.fadeIn{
-
-animation:
-fadeIn .6s ease;
-
-}
-
-@keyframes fadeIn{
-
-from{
-
-opacity:0;
-
-transform:
-translateY(25px);
-
-}
-
-to{
-
-opacity:1;
-
-transform:
-translateY(0);
-
-}
-
-}
-/*======================================================
-                VIEWORA V1.0 PREMIUM
-                  signup.css
-                    PART 2
-     Signup Card • Inputs • Strength • Buttons
-======================================================*/
-
-/*==============================
-Main App
-==============================*/
-
-#app{
-
-width:100%;
-min-height:100vh;
-
-display:flex;
-justify-content:center;
-align-items:center;
-
-padding:40px 20px;
-
-}
-
-/*==============================
-Premium Signup Card
-==============================*/
-
-.signupCard{
-
-position:relative;
-
-width:100%;
-max-width:470px;
-
-padding:40px;
-
-border-radius:30px;
-
-overflow:hidden;
-
-animation:cardShow .8s ease;
-
-}
-
-.signupCard::before{
-
-content:"";
-
-position:absolute;
-inset:-2px;
-
-border-radius:32px;
-
-padding:2px;
-
-background:
-linear-gradient(
-135deg,
-#00aaff,
-#7c3aed,
-#06d6a0,
-#00aaff
-);
-
-background-size:300% 300%;
-
-animation:borderMove 6s linear infinite;
-
--webkit-mask:
-linear-gradient(#fff 0 0) content-box,
-linear-gradient(#fff 0 0);
-
--webkit-mask-composite:xor;
-mask-composite:exclude;
-
-pointer-events:none;
-
-}
-
-@keyframes borderMove{
-
-0%{
-background-position:0% 50%;
-}
-
-100%{
-background-position:300% 50%;
-}
-
-}
-
-@keyframes cardShow{
-
-from{
-
-opacity:0;
-
-transform:
-translateY(35px)
-scale(.95);
-
-}
-
-to{
-
-opacity:1;
-
-transform:
-translateY(0)
-scale(1);
-
-}
-
-}
-
-/*==============================
-Logo
-==============================*/
-
-.logoBox{
-
-text-align:center;
-
-margin-bottom:30px;
-
-}
-
-.logo{
-
-width:90px;
-height:90px;
-
-object-fit:contain;
-
-animation:
-logoFloat 3s ease-in-out infinite;
-
-filter:
-drop-shadow(
-0 0 25px
-rgba(0,170,255,.45)
-);
-
-}
-
-@keyframes logoFloat{
-
-0%,100%{
-
-transform:translateY(0);
-
-}
-
-50%{
-
-transform:translateY(-10px);
-
-}
-
-}
-
-.logoBox h1{
-
-margin-top:18px;
-
-font-size:34px;
-font-weight:800;
-
-background:
-linear-gradient(
-90deg,
-#ffffff,
-#00aaff
-);
-
--webkit-background-clip:text;
--webkit-text-fill-color:transparent;
-
-}
-
-.logoBox p{
-
-margin-top:8px;
-
-font-size:15px;
-
-color:#b8bfd8;
-
-}
-
-/*==============================
-Input Group
-==============================*/
-
-.inputGroup{
-
-margin-bottom:20px;
-
-}
-
-.inputGroup label{
-
-display:block;
-
-margin-bottom:8px;
-
-font-size:14px;
-font-weight:600;
-
-color:#dbe5ff;
-
-}
-
-/*==============================
-Input Box
-==============================*/
-
-.inputBox{
-
-position:relative;
-
-display:flex;
-align-items:center;
-
-}
-
-.inputBox i{
-
-position:absolute;
-
-left:18px;
-
-color:#00aaff;
-
-font-size:17px;
-
-z-index:2;
-
-}
-
-.inputBox input{
-
-width:100%;
-height:58px;
-
-padding:0 55px;
-
-border-radius:16px;
-
-border:
-1px solid rgba(255,255,255,.10);
-
-background:
-rgba(255,255,255,.06);
-
-outline:none;
-
-color:#ffffff;
-
-font-size:15px;
-
-transition:.35s;
-
-}
-
-.inputBox input::placeholder{
-
-color:#8e98ba;
-
-}
-
-.inputBox input:focus{
-
-border-color:#00aaff;
-
-background:
-rgba(255,255,255,.09);
-
-box-shadow:
-
-0 0 0 4px
-rgba(0,170,255,.15),
-
-0 0 20px
-rgba(0,170,255,.25);
-
-transform:translateY(-2px);
-
-}
-
-.togglePassword{
-
-position:absolute;
-
-right:15px;
-
-width:38px;
-height:38px;
-
-background:none;
-
-border:none;
-
-cursor:pointer;
-
-color:#9fb7ff;
-
-font-size:18px;
-
-transition:.3s;
-
-}
-
-.togglePassword:hover{
-
-color:#00aaff;
-
-transform:scale(1.1);
-
-}
-
-/*==============================
-Username Status
-==============================*/
-
-.statusText{
-
-display:block;
-
-margin-top:8px;
-
-font-size:13px;
-
-color:#9fb7ff;
-
-}
-
-/*==============================
-Password Strength
-==============================*/
-
-.strengthContainer{
-
-margin-top:12px;
-
-}
-
-.strengthBar{
-
-width:100%;
-height:8px;
-
-border-radius:50px;
-
-overflow:hidden;
-
-background:
-rgba(255,255,255,.08);
-
-}
-
-#strengthFill{
-
-width:20%;
-
-height:100%;
-
-border-radius:50px;
-
-background:#ff4d4d;
-
-transition:.35s;
-
-}
-
-#strengthText{
-
-margin-top:8px;
-
-font-size:13px;
-
-font-weight:600;
-
-color:#b8bfd8;
-
-}
-
-/*==============================
-Terms
-==============================*/
-
-.termsBox{
-
-margin:22px 0;
-
-font-size:14px;
-
-color:#dbe5ff;
-
-}
-
-.termsBox label{
-
-display:flex;
-
-align-items:flex-start;
-
-gap:10px;
-
-cursor:pointer;
-
-line-height:1.6;
-
-}
-
-.termsBox input{
-
-margin-top:3px;
-
-accent-color:#00aaff;
-
-}
-
-.termsBox a{
-
-color:#00aaff;
-
-text-decoration:none;
-
-font-weight:600;
-
-}
-
-.termsBox a:hover{
-
-color:#7c3aed;
-
-}
-
-/*==============================
-Buttons
-==============================*/
-
-.signupBtn,
-.googleBtn{
-
-width:100%;
-height:58px;
-
-display:flex;
-
-justify-content:center;
-align-items:center;
-
-gap:10px;
-
-border:none;
-
-border-radius:16px;
-
-font-size:16px;
-font-weight:700;
-
-cursor:pointer;
-
-transition:.35s;
-
-}
-
-.signupBtn{
-
-background:
-linear-gradient(
-135deg,
-#00aaff,
-#2563eb,
-#7c3aed
-);
-
-background-size:250% 250%;
-
-color:#ffffff;
-
-animation:
-buttonFlow 5s linear infinite;
-
-box-shadow:
-0 12px 35px
-rgba(0,170,255,.35);
-
-}
-
-.signupBtn:hover{
-
-transform:translateY(-3px);
-
-box-shadow:
-0 20px 45px
-rgba(0,170,255,.45);
-
-}
-
-.googleBtn{
-
-margin-top:16px;
-
-background:
-rgba(255,255,255,.08);
-
-border:
-1px solid rgba(255,255,255,.12);
-
-color:#ffffff;
-
-}
-
-.googleBtn:hover{
-
-background:
-rgba(255,255,255,.12);
-
-transform:translateY(-2px);
-
-}
-
-@keyframes buttonFlow{
-
-0%{
-background-position:0% 50%;
-}
-
-100%{
-background-position:250% 50%;
-}
-
-}
-/*======================================================
-                VIEWORA V1.0 PREMIUM
-                  signup.css
-                    PART 3
-      Toast • Verify Modal • Responsive • Animations
-======================================================*/
-
-/*==============================
-Divider
-==============================*/
-
-.divider{
-
-display:flex;
-align-items:center;
-
-margin:28px 0;
-
-color:#9aa6c2;
-
-font-size:13px;
-font-weight:600;
-
-}
-
-.divider::before,
-.divider::after{
-
-content:"";
-
-flex:1;
-
-height:1px;
-
-background:rgba(255,255,255,.10);
-
-}
-
-.divider span{
-
-padding:0 16px;
-
-}
-
-/*==============================
-Login Box
-==============================*/
-
-.loginBox{
-
-margin-top:28px;
-
-text-align:center;
-
-}
-
-.loginBox p{
-
-font-size:15px;
-
-color:#b8bfd8;
-
-}
-
-.loginBox a{
-
-color:#00aaff;
-
-font-weight:700;
-
-text-decoration:none;
-
-transition:.3s;
-
-}
-
-.loginBox a:hover{
-
-color:#7c3aed;
-
-}
-
-/*==============================
-Footer
-==============================*/
-
-.footer{
-
-margin-top:35px;
-
-text-align:center;
-
-}
-
-.footer p{
-
-font-size:13px;
-
-color:#8d96b5;
-
-line-height:1.8;
-
-}
-
-/*==============================
-Premium Toast
-==============================*/
-
-#toast{
-
-position:fixed;
-
-left:50%;
-bottom:90px;
-
-transform:translateX(-50%);
-
-display:flex;
-align-items:center;
-gap:12px;
-
-padding:15px 24px;
-
-background:rgba(15,18,35,.96);
-
-backdrop-filter:blur(18px);
-
-border:1px solid rgba(255,255,255,.10);
-
-border-radius:50px;
-
-box-shadow:
-0 18px 40px rgba(0,0,0,.45);
-
-opacity:0;
-visibility:hidden;
-
-transition:.35s;
-
-z-index:999999;
-
-}
-
-#toast.show{
-
-opacity:1;
-visibility:visible;
-
-bottom:110px;
-
-}
-
-#toastIcon{
-
-font-size:20px;
-
-color:#00d26a;
-
-}
-
-#toastText{
-
-font-size:15px;
-font-weight:600;
-
-color:#ffffff;
-
-}
-
-/*==============================
+/*=========================================
 Loading Overlay
-==============================*/
+=========================================*/
 
 #loadingOverlay{
 
@@ -1092,17 +979,18 @@ position:fixed;
 inset:0;
 
 display:flex;
+
 flex-direction:column;
 
 justify-content:center;
+
 align-items:center;
 
-background:
-rgba(5,8,22,.82);
+background:rgba(0,0,0,.55);
 
-backdrop-filter:blur(14px);
+backdrop-filter:blur(10px);
 
-z-index:999999;
+z-index:9999;
 
 }
 
@@ -1110,8 +998,9 @@ z-index:999999;
 
 position:relative;
 
-width:90px;
-height:90px;
+width:80px;
+
+height:80px;
 
 }
 
@@ -1119,44 +1008,27 @@ height:90px;
 
 position:absolute;
 
-width:90px;
-height:90px;
-
-border-radius:50%;
+inset:0;
 
 border:4px solid transparent;
 
-border-top-color:#00aaff;
+border-top-color:#00AAFF;
+
+border-radius:50%;
 
 animation:spin 1s linear infinite;
 
 }
 
-.loaderRing.delay1{
+.delay1{
 
-width:70px;
-height:70px;
-
-top:10px;
-left:10px;
-
-border-top-color:#7c3aed;
-
-animation-duration:1.4s;
+animation-delay:.15s;
 
 }
 
-.loaderRing.delay2{
+.delay2{
 
-width:50px;
-height:50px;
-
-top:20px;
-left:20px;
-
-border-top-color:#06d6a0;
-
-animation-duration:.8s;
+animation-delay:.3s;
 
 }
 
@@ -1174,17 +1046,63 @@ transform:rotate(360deg);
 
 margin-top:20px;
 
-font-size:15px;
+color:#fff;
 
 font-weight:600;
 
-color:#d8deff;
+}
+
+/*=========================================
+Toast
+=========================================*/
+
+#toast{
+
+position:fixed;
+
+left:50%;
+
+bottom:35px;
+
+transform:translateX(-50%) translateY(120px);
+
+background:rgba(20,20,30,.95);
+
+color:#fff;
+
+padding:15px 22px;
+
+border-radius:16px;
+
+display:flex;
+
+align-items:center;
+
+gap:10px;
+
+box-shadow:0 12px 35px rgba(0,0,0,.4);
+
+transition:.35s;
+
+z-index:99999;
 
 }
 
-/*==============================
-Verify Email Modal
-==============================*/
+#toast.show{
+
+transform:translateX(-50%) translateY(0);
+
+}
+
+#toast i{
+
+font-size:22px;
+
+}
+
+/*=========================================
+Verify Modal
+=========================================*/
 
 .modal{
 
@@ -1193,95 +1111,58 @@ position:fixed;
 inset:0;
 
 display:flex;
+
 justify-content:center;
+
 align-items:center;
 
-padding:20px;
-
-background:rgba(0,0,0,.72);
+background:rgba(0,0,0,.6);
 
 backdrop-filter:blur(10px);
 
-z-index:999999;
+z-index:99999;
 
 }
 
 .modalCard{
 
-width:100%;
-max-width:440px;
+width:90%;
 
-padding:36px;
+max-width:420px;
 
-border-radius:26px;
+padding:35px;
+
+border-radius:24px;
 
 text-align:center;
-
-animation:popupShow .35s ease;
-
-}
-
-@keyframes popupShow{
-
-from{
-
-opacity:0;
-
-transform:scale(.9);
-
-}
-
-to{
-
-opacity:1;
-
-transform:scale(1);
-
-}
 
 }
 
 .popupIcon{
 
-width:78px;
-height:78px;
+font-size:60px;
 
-margin:auto;
+color:#00AAFF;
 
-display:flex;
-justify-content:center;
-align-items:center;
-
-border-radius:50%;
-
-background:
-rgba(0,170,255,.15);
-
-color:#00aaff;
-
-font-size:32px;
-
-margin-bottom:22px;
+margin-bottom:18px;
 
 }
 
 .modalCard h2{
 
-font-size:30px;
-
 margin-bottom:12px;
+
+font-size:1.8rem;
 
 }
 
 .modalCard p{
 
-font-size:15px;
+color:#c8d2ff;
 
-line-height:1.8;
+line-height:1.6;
 
-color:#c7d0e8;
-
-margin-bottom:24px;
+margin-bottom:28px;
 
 }
 
@@ -1291,8 +1172,6 @@ display:flex;
 
 gap:12px;
 
-margin-top:18px;
-
 }
 
 .primaryBtn,
@@ -1300,153 +1179,77 @@ margin-top:18px;
 
 flex:1;
 
-height:54px;
+height:50px;
 
 border:none;
 
-border-radius:15px;
-
-font-size:15px;
-font-weight:700;
+border-radius:14px;
 
 cursor:pointer;
 
-transition:.3s;
+font-weight:700;
+
+transition:.25s;
 
 }
 
 .primaryBtn{
 
-background:
+background:#00AAFF;
 
-linear-gradient(
-135deg,
-#00aaff,
-#7c3aed
-);
-
-color:#ffffff;
-
-}
-
-.primaryBtn:hover{
-
-transform:translateY(-2px);
-
-box-shadow:
-0 12px 30px rgba(0,170,255,.30);
+color:#fff;
 
 }
 
 .secondaryBtn{
 
-background:
-rgba(255,255,255,.08);
+background:rgba(255,255,255,.08);
 
-border:
-1px solid rgba(255,255,255,.12);
+color:#fff;
 
-color:#ffffff;
+border:1px solid rgba(255,255,255,.12);
 
 }
 
+.primaryBtn:hover,
 .secondaryBtn:hover{
 
-background:
-rgba(255,255,255,.12);
+transform:translateY(-2px);
 
 }
+/*=========================================
+        VIEWORA V3 PREMIUM
+            signup.css
+            PART 5 FINAL
+ Ripple • Scrollbar • Animations
+=========================================*/
 
-/*==============================
-Responsive
-==============================*/
+/*=========================================
+Ripple Effect
+=========================================*/
 
-@media(max-width:768px){
-
-.signupCard{
-
-padding:28px;
-
-border-radius:24px;
-
-}
-
-.logo{
-
-width:75px;
-height:75px;
-
-}
-
-.logoBox h1{
-
-font-size:28px;
-
-}
-
-.modalButtons{
-
-flex-direction:column;
-
-}
-
-}
-
-@media(max-width:480px){
-
-#app{
-
-padding:20px 14px;
-
-}
-
-.signupCard{
-
-padding:22px;
-
-}
-
-.inputBox input,
 .signupBtn,
 .googleBtn{
 
-height:54px;
+position:relative;
 
-font-size:14px;
-
-}
-
-.logoBox h1{
-
-font-size:24px;
+overflow:hidden;
 
 }
-
-.modalCard{
-
-padding:24px;
-
-}
-
-}
-
-/*==============================
-Ripple Animation
-==============================*/
 
 .ripple{
 
 position:absolute;
 
 width:20px;
+
 height:20px;
+
+background:rgba(255,255,255,.45);
 
 border-radius:50%;
 
-background:
-rgba(255,255,255,.4);
-
-transform:translate(-50%,-50%);
+transform:translate(-50%,-50%) scale(0);
 
 animation:ripple .6s linear;
 
@@ -1456,47 +1259,190 @@ pointer-events:none;
 
 @keyframes ripple{
 
-from{
-
-opacity:.8;
-
-transform:
-translate(-50%,-50%)
-scale(0);
-
-}
-
 to{
+
+transform:translate(-50%,-50%) scale(18);
 
 opacity:0;
 
-transform:
-translate(-50%,-50%)
-scale(12);
-
 }
 
 }
 
-/*==============================
-Smooth Hover Animation
-==============================*/
+/*=========================================
+Hover Animation
+=========================================*/
 
-.signupCard,
-.signupBtn,
-.googleBtn,
-.primaryBtn,
-.secondaryBtn{
+.signupCard{
 
-transition:all .3s ease;
+transition:.35s;
 
 }
 
 .signupCard:hover{
 
-transform:translateY(-4px);
+transform:translateY(-6px);
 
 box-shadow:
-0 30px 70px rgba(0,0,0,.45);
+
+0 25px 70px rgba(0,170,255,.20);
+
+}
+
+.logo{
+
+transition:.35s;
+
+}
+
+.logo:hover{
+
+transform:rotate(-5deg) scale(1.08);
+
+}
+
+/*=========================================
+Buttons Disabled
+=========================================*/
+
+button:disabled{
+
+opacity:.6;
+
+cursor:not-allowed;
+
+filter:grayscale(.2);
+
+}
+
+/*=========================================
+Selection
+=========================================*/
+
+::selection{
+
+background:#00AAFF;
+
+color:#fff;
+
+}
+
+/*=========================================
+Scrollbar
+=========================================*/
+
+::-webkit-scrollbar{
+
+width:8px;
+
+}
+
+::-webkit-scrollbar-track{
+
+background:#050816;
+
+}
+
+::-webkit-scrollbar-thumb{
+
+background:#00AAFF;
+
+border-radius:20px;
+
+}
+
+::-webkit-scrollbar-thumb:hover{
+
+background:#0088ff;
+
+}
+
+/*=========================================
+Input Autofill
+=========================================*/
+
+input:-webkit-autofill{
+
+-webkit-box-shadow:
+
+0 0 0 1000px
+
+rgba(255,255,255,.07)
+
+inset;
+
+-webkit-text-fill-color:#fff;
+
+transition:background-color 9999s;
+
+}
+
+/*=========================================
+Responsive
+=========================================*/
+
+@media(max-width:480px){
+
+body{
+
+padding:15px;
+
+}
+
+.signupCard{
+
+padding:24px 18px;
+
+}
+
+.logo{
+
+width:70px;
+
+height:70px;
+
+}
+
+.logoBox h1{
+
+font-size:1.6rem;
+
+}
+
+.logoBox p{
+
+font-size:.9rem;
+
+}
+
+.modalButtons{
+
+flex-direction:column;
+
+}
+
+.primaryBtn,
+.secondaryBtn{
+
+width:100%;
+
+}
+
+}
+
+/*=========================================
+Finish
+=========================================*/
+
+html,
+body{
+
+min-height:100%;
+
+}
+
+body{
+
+animation:fadeIn .8s ease;
 
 }

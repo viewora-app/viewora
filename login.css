@@ -1,13 +1,13 @@
-/*======================================================
-                VIEWORA V1.0 PREMIUM
-                  login.css
-                    PART 1
-      Global • Aurora • Glass • Loader
-======================================================*/
+/*=========================================
+        VIEWORA V3 PREMIUM
+            login.css
+            PART 1
+ Global • Aurora • Background
+=========================================*/
 
-/*==============================
+/*=========================================
 Reset
-==============================*/
+=========================================*/
 
 *{
 margin:0;
@@ -23,79 +23,76 @@ scroll-behavior:smooth;
 body{
 
 min-height:100vh;
+
+background:#050816;
+
+color:#ffffff;
+
 overflow-x:hidden;
 
 display:flex;
+
 justify-content:center;
+
 align-items:center;
 
-background:
-linear-gradient(
-135deg,
-#050816,
-#0b1024,
-#111827
-);
-
-color:#ffffff;
 position:relative;
 
+padding:25px;
+
 }
 
-/*==============================
-Hidden
-==============================*/
-
-.hidden{
-display:none!important;
-}
-
-/*==============================
+/*=========================================
 Aurora Background
-==============================*/
+=========================================*/
 
 .aurora{
 
 position:fixed;
+
 inset:0;
+
 overflow:hidden;
-z-index:-5;
+
+z-index:-3;
 
 }
 
 .light{
 
 position:absolute;
-border-radius:50%;
-filter:blur(110px);
-opacity:.30;
 
-animation:
-auroraMove 15s ease-in-out infinite;
+width:420px;
+
+height:420px;
+
+border-radius:50%;
+
+filter:blur(120px);
+
+opacity:.55;
+
+animation:float 16s linear infinite;
 
 }
 
 .light1{
 
-width:420px;
-height:420px;
+background:#00AAFF;
 
-background:#00aaff;
+top:-80px;
 
-top:-120px;
-left:-100px;
+left:-80px;
 
 }
 
 .light2{
 
-width:460px;
-height:460px;
+background:#8A2BE2;
 
-background:#7c3aed;
-
-bottom:-150px;
 right:-120px;
+
+top:35%;
 
 animation-delay:5s;
 
@@ -103,482 +100,237 @@ animation-delay:5s;
 
 .light3{
 
-width:350px;
-height:350px;
+background:#00E5A8;
 
-background:#06d6a0;
+bottom:-100px;
 
-top:45%;
-left:40%;
+left:30%;
 
-animation-delay:10s;
+animation-delay:9s;
 
 }
 
-@keyframes auroraMove{
+@keyframes float{
 
-0%,100%{
+0%{
 
-transform:
-translate(0,0)
-scale(1);
+transform:translate(0,0) scale(1);
 
 }
 
 50%{
 
-transform:
-translate(70px,-40px)
-scale(1.15);
+transform:translate(80px,-60px) scale(1.15);
+
+}
+
+100%{
+
+transform:translate(0,0) scale(1);
 
 }
 
 }
 
-/*==============================
-Floating Particles
-==============================*/
+/*=========================================
+Particles Canvas
+=========================================*/
 
 #particles{
 
 position:fixed;
+
 inset:0;
+
+width:100%;
+
+height:100%;
+
+z-index:-2;
 
 pointer-events:none;
 
-background-image:
-radial-gradient(
-rgba(255,255,255,.16) 1px,
-transparent 1px
-);
-
-background-size:34px 34px;
-
-opacity:.25;
-
-animation:
-particlesMove
-30s linear infinite;
-
-z-index:-4;
-
 }
 
-@keyframes particlesMove{
-
-100%{
-
-transform:
-translateY(-180px);
-
-}
-
-}
-
-/*==============================
+/*=========================================
 Glass Effect
-==============================*/
+=========================================*/
 
 .glass{
 
-background:
-rgba(255,255,255,.08);
+background:rgba(255,255,255,.08);
 
-backdrop-filter:
-blur(22px);
+backdrop-filter:blur(22px);
 
--webkit-backdrop-filter:
-blur(22px);
+-webkit-backdrop-filter:blur(22px);
 
-border:
-1px solid rgba(255,255,255,.12);
+border:1px solid rgba(255,255,255,.12);
 
 box-shadow:
 
-0 25px 60px
-rgba(0,0,0,.40);
+0 8px 40px rgba(0,0,0,.35);
 
 }
 
-/*==============================
-Premium Loader
-==============================*/
+/*=========================================
+Animations
+=========================================*/
 
-#pageLoader{
+.hidden{
 
-position:fixed;
-inset:0;
-
-display:flex;
-flex-direction:column;
-
-justify-content:center;
-align-items:center;
-
-background:#050816;
-
-z-index:999999;
-
-transition:.45s;
+display:none !important;
 
 }
-
-.loaderLogo{
-
-width:110px;
-height:110px;
-
-display:flex;
-justify-content:center;
-align-items:center;
-
-border-radius:50%;
-
-background:
-rgba(255,255,255,.06);
-
-border:
-1px solid rgba(255,255,255,.10);
-
-animation:
-logoPulse 2.5s infinite;
-
-}
-
-.loaderLogo img{
-
-width:78px;
-height:78px;
-object-fit:contain;
-
-}
-
-@keyframes logoPulse{
-
-0%,100%{
-
-transform:scale(1);
-
-}
-
-50%{
-
-transform:scale(1.08);
-
-}
-
-}
-
-#pageLoader h1{
-
-margin-top:22px;
-
-font-size:34px;
-font-weight:800;
-
-background:
-
-linear-gradient(
-90deg,
-#00aaff,
-#ffffff,
-#7c3aed
-);
-
--webkit-background-clip:text;
--webkit-text-fill-color:transparent;
-
-}
-
-#pageLoader p{
-
-margin-top:10px;
-
-font-size:15px;
-color:#b8bfd8;
-
-}
-
-.loaderBar{
-
-width:250px;
-height:8px;
-
-margin-top:28px;
-
-border-radius:30px;
-overflow:hidden;
-
-background:
-rgba(255,255,255,.08);
-
-}
-
-.loaderFill{
-
-width:0;
-height:100%;
-
-border-radius:30px;
-
-background:
-
-linear-gradient(
-90deg,
-#00aaff,
-#7c3aed,
-#06d6a0
-);
-
-animation:
-loadingBar
-1.6s linear forwards;
-
-}
-
-@keyframes loadingBar{
-
-100%{
-
-width:100%;
-
-}
-
-}
-
-/*==============================
-Fade Animation
-==============================*/
 
 .fadeIn{
-
-animation:
-fadeIn .6s ease;
-
+    animation:fadeIn .4s ease;
 }
 
 @keyframes fadeIn{
-
-from{
-
-opacity:0;
-transform:
-translateY(25px);
-
+    from{
+        opacity:0;
+    }
+    to{
+        opacity:1;
+    }
 }
 
-to{
+/*=========================================
+Selection
+=========================================*/
 
-opacity:1;
-transform:
-translateY(0);
+::selection{
 
-}
+background:#00AAFF;
 
-}
-/*======================================================
-                VIEWORA V1.0 PREMIUM
-                  login.css
-                    PART 2
-     Login Card • Logo • Inputs • Buttons
-======================================================*/
-
-/*==============================
-Main App
-==============================*/
-
-#app{
-
-width:100%;
-min-height:100vh;
-
-display:flex;
-justify-content:center;
-align-items:center;
-
-padding:40px 20px;
+color:#fff;
 
 }
+/*=========================================
+        VIEWORA V3 PREMIUM
+            login.css
+            PART 2
+ Login Card • Logo • Inputs • Buttons
+=========================================*/
 
-/*==============================
-Premium Login Card
-==============================*/
+/*=========================================
+Login Wrapper
+=========================================*/
+
+.loginWrapper{
+    width:100%;
+    max-width:430px;
+    margin:auto;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+}
+
+/*=========================================
+Login Card
+=========================================*/
 
 .loginCard{
 
-position:relative;
-
 width:100%;
-max-width:450px;
 
-padding:40px;
+max-width:430px;
 
-border-radius:30px;
+padding:35px 28px;
+
+border-radius:24px;
+
+position:relative;
 
 overflow:hidden;
 
-animation:cardShow .8s ease;
+animation:fadeIn .4s ease;
 
 }
-
-/* Animated Border */
 
 .loginCard::before{
 
 content:"";
 
 position:absolute;
-inset:-2px;
 
-border-radius:32px;
+top:0;
 
-padding:2px;
+left:0;
 
-background:
+width:100%;
 
-linear-gradient(
-135deg,
-#00aaff,
-#7c3aed,
-#06d6a0,
-#00aaff
+height:4px;
+
+background:linear-gradient(
+90deg,
+#00AAFF,
+#8A2BE2,
+#00E5A8
 );
 
-background-size:300% 300%;
-
-animation:borderMove 6s linear infinite;
-
--webkit-mask:
-linear-gradient(#fff 0 0) content-box,
-linear-gradient(#fff 0 0);
-
--webkit-mask-composite:xor;
-mask-composite:exclude;
-
-pointer-events:none;
-
 }
 
-@keyframes borderMove{
-
-0%{
-
-background-position:0% 50%;
-
-}
-
-100%{
-
-background-position:300% 50%;
-
-}
-
-}
-
-@keyframes cardShow{
-
-from{
-
-opacity:0;
-
-transform:
-translateY(40px)
-scale(.95);
-
-}
-
-to{
-
-opacity:1;
-
-transform:
-translateY(0)
-scale(1);
-
-}
-
-}
-
-/*==============================
+/*=========================================
 Logo
-==============================*/
+=========================================*/
 
 .logoBox{
 
 text-align:center;
 
-margin-bottom:35px;
+margin-bottom:30px;
 
 }
 
 .logo{
 
 width:90px;
+
 height:90px;
 
-object-fit:contain;
+border-radius:20px;
 
-animation:
-logoFloat 3s ease-in-out infinite;
+object-fit:cover;
 
-filter:
+box-shadow:
+0 10px 35px rgba(0,170,255,.35);
 
-drop-shadow(
-0 0 25px
-rgba(0,170,255,.45)
-);
+margin-bottom:18px;
 
-}
-
-@keyframes logoFloat{
-
-0%,100%{
-
-transform:translateY(0);
+transition:.3s;
 
 }
 
-50%{
+.logo:hover{
 
-transform:translateY(-10px);
-
-}
+transform:scale(1.08) rotate(5deg);
 
 }
 
 .logoBox h1{
 
-margin-top:18px;
+font-size:30px;
 
-font-size:34px;
 font-weight:800;
 
-background:
-
-linear-gradient(
-90deg,
-#ffffff,
-#00aaff
-);
-
--webkit-background-clip:text;
--webkit-text-fill-color:transparent;
+margin-bottom:8px;
 
 }
 
 .logoBox p{
 
-margin-top:10px;
+color:#b8c2d8;
 
 font-size:15px;
 
-color:#b8bfd8;
+line-height:1.6;
 
 }
 
-/*==============================
+/*=========================================
 Input Group
-==============================*/
+=========================================*/
 
 .inputGroup{
 
@@ -593,105 +345,83 @@ display:block;
 margin-bottom:8px;
 
 font-size:14px;
+
 font-weight:600;
 
-color:#dbe5ff;
+color:#d8e3ff;
 
 }
 
-/*==============================
-Input Box
-==============================*/
-
 .inputBox{
 
-position:relative;
-
 display:flex;
+
 align-items:center;
+
+background:rgba(255,255,255,.06);
+
+border:1px solid rgba(255,255,255,.12);
+
+border-radius:14px;
+
+padding:0 16px;
+
+transition:.3s;
+
+}
+
+.inputBox:focus-within{
+
+border-color:#00AAFF;
+
+box-shadow:
+0 0 0 4px rgba(0,170,255,.15);
 
 }
 
 .inputBox i{
 
-position:absolute;
+color:#9fb7ff;
 
-left:18px;
+font-size:18px;
 
-font-size:17px;
-
-color:#00aaff;
-
-z-index:2;
+margin-right:12px;
 
 }
 
 .inputBox input{
 
-width:100%;
-height:58px;
+flex:1;
 
-padding:0 55px;
+height:56px;
 
-border-radius:16px;
-
-border:
-1px solid rgba(255,255,255,.10);
-
-background:
-rgba(255,255,255,.06);
+border:none;
 
 outline:none;
 
-color:#ffffff;
+background:transparent;
+
+color:#fff;
 
 font-size:15px;
-
-transition:.35s;
 
 }
 
 .inputBox input::placeholder{
 
-color:#8e98ba;
+color:#8f9db7;
 
 }
 
-.inputBox input:focus{
+/*=========================================
+Password Toggle
+=========================================*/
 
-border-color:#00aaff;
-
-background:
-rgba(255,255,255,.09);
-
-box-shadow:
-
-0 0 0 4px
-rgba(0,170,255,.15),
-
-0 0 20px
-rgba(0,170,255,.25);
-
-transform:translateY(-2px);
-
-}
-
-/*==============================
-Show Password
-==============================*/
-
-.togglePassword{
-
-position:absolute;
-
-right:15px;
-
-width:38px;
-height:38px;
-
-border:none;
+.toggleBtn{
 
 background:none;
+
+border:none;
 
 color:#9fb7ff;
 
@@ -699,30 +429,133 @@ font-size:18px;
 
 cursor:pointer;
 
+padding:8px;
+
+transition:.25s;
+
+}
+
+.toggleBtn:hover{
+
+color:#00AAFF;
+
+transform:scale(1.1);
+
+}
+
+/*=========================================
+Buttons
+=========================================*/
+
+.loginBtn,
+.googleBtn{
+
+width:100%;
+
+height:56px;
+
+border:none;
+
+border-radius:14px;
+
+font-size:16px;
+
+font-weight:700;
+
+cursor:pointer;
+
+display:flex;
+
+align-items:center;
+
+justify-content:center;
+
+gap:10px;
+
 transition:.3s;
 
-}
-
-.togglePassword:hover{
-
-color:#00aaff;
-
-transform:scale(1.15);
+margin-top:16px;
 
 }
 
-/*==============================
-Remember + Forgot
-==============================*/
+.loginBtn{
 
-.optionsRow{
+background:linear-gradient(
+135deg,
+#00AAFF,
+#0066FF
+);
+
+color:#fff;
+
+box-shadow:
+0 12px 30px rgba(0,170,255,.30);
+
+}
+
+.loginBtn:hover{
+
+transform:translateY(-2px);
+
+box-shadow:
+0 18px 40px rgba(0,170,255,.40);
+
+}
+
+.googleBtn{
+
+background:rgba(255,255,255,.08);
+
+border:1px solid rgba(255,255,255,.12);
+
+color:#fff;
+
+}
+
+.googleBtn:hover{
+
+background:rgba(255,255,255,.14);
+
+transform:translateY(-2px);
+
+}
+
+.googleBtn img{
+
+width:22px;
+
+height:22px;
+
+border-radius:50%;
+
+object-fit:contain;
+
+}
+/*=========================================
+        VIEWORA V3 PREMIUM
+            login.css
+            PART 3
+ Remember • Divider • Footer
+ Responsive
+=========================================*/
+
+/*=========================================
+Login Options
+=========================================*/
+
+.loginOptions{
 
 display:flex;
 
 justify-content:space-between;
+
 align-items:center;
 
-margin-bottom:24px;
+margin:18px 0 24px;
+
+gap:12px;
+
+flex-wrap:wrap;
 
 }
 
@@ -738,166 +571,64 @@ cursor:pointer;
 
 font-size:14px;
 
-color:#dbe5ff;
+color:#d8e3ff;
+
+user-select:none;
 
 }
 
 .rememberBox input{
 
-accent-color:#00aaff;
+width:18px;
 
-transform:scale(1.1);
+height:18px;
+
+accent-color:#00AAFF;
+
+cursor:pointer;
 
 }
 
-.forgotBtn{
+#forgotPassword{
 
-background:none;
+color:#00AAFF;
 
-border:none;
-
-color:#00aaff;
+text-decoration:none;
 
 font-size:14px;
-font-weight:600;
 
-cursor:pointer;
+font-weight:600;
 
 transition:.3s;
 
 }
 
-.forgotBtn:hover{
+#forgotPassword:hover{
 
-color:#7c3aed;
+color:#66cfff;
 
-}
-
-/*==============================
-Buttons
-==============================*/
-
-.loginBtn,
-.googleBtn{
-
-width:100%;
-height:58px;
-
-border:none;
-
-border-radius:16px;
-
-display:flex;
-
-justify-content:center;
-align-items:center;
-
-gap:10px;
-
-font-size:16px;
-font-weight:700;
-
-cursor:pointer;
-
-transition:.35s;
+text-decoration:underline;
 
 }
 
-.loginBtn{
-
-background:
-
-linear-gradient(
-135deg,
-#00aaff,
-#2563eb,
-#7c3aed
-);
-
-background-size:250% 250%;
-
-color:#ffffff;
-
-animation:
-buttonFlow 5s linear infinite;
-
-box-shadow:
-
-0 12px 35px
-rgba(0,170,255,.35);
-
-}
-
-.loginBtn:hover{
-
-transform:translateY(-3px);
-
-box-shadow:
-
-0 20px 45px
-rgba(0,170,255,.45);
-
-}
-
-.googleBtn{
-
-margin-top:16px;
-
-background:
-rgba(255,255,255,.08);
-
-border:
-1px solid rgba(255,255,255,.12);
-
-color:#ffffff;
-
-}
-
-.googleBtn:hover{
-
-background:
-rgba(255,255,255,.12);
-
-transform:translateY(-2px);
-
-}
-
-@keyframes buttonFlow{
-
-0%{
-
-background-position:0% 50%;
-
-}
-
-100%{
-
-background-position:250% 50%;
-
-}
-
-}
-/*======================================================
-                VIEWORA V1.0 PREMIUM
-                  login.css
-                    PART 3
-     Divider • Footer • Toast • Loader • Modal
-======================================================*/
-
-/*==============================
+/*=========================================
 Divider
-==============================*/
+=========================================*/
 
 .divider{
 
 display:flex;
+
 align-items:center;
+
+justify-content:center;
 
 margin:28px 0;
 
-color:#9aa6c2;
+color:#9fb7ff;
 
-font-size:13px;
+font-size:14px;
+
 font-weight:600;
 
 }
@@ -911,20 +642,19 @@ flex:1;
 
 height:1px;
 
-background:
-rgba(255,255,255,.10);
+background:rgba(255,255,255,.12);
 
 }
 
 .divider span{
 
-padding:0 16px;
+padding:0 18px;
 
 }
 
-/*==============================
+/*=========================================
 Signup Box
-==============================*/
+=========================================*/
 
 .signupBox{
 
@@ -938,13 +668,13 @@ text-align:center;
 
 font-size:15px;
 
-color:#b8bfd8;
+color:#c8d2e8;
 
 }
 
 .signupBox a{
 
-color:#00aaff;
+color:#00AAFF;
 
 font-weight:700;
 
@@ -956,17 +686,23 @@ transition:.3s;
 
 .signupBox a:hover{
 
-color:#7c3aed;
+color:#66cfff;
+
+text-decoration:underline;
 
 }
 
-/*==============================
+/*=========================================
 Footer
-==============================*/
+=========================================*/
 
 .footer{
 
-margin-top:35px;
+margin-top:30px;
+
+padding-top:18px;
+
+border-top:1px solid rgba(255,255,255,.08);
 
 text-align:center;
 
@@ -976,85 +712,122 @@ text-align:center;
 
 font-size:13px;
 
+color:#8f9db7;
+
 line-height:1.8;
 
-color:#8d96b5;
+}
+
+/*=========================================
+Responsive
+=========================================*/
+
+@media (max-width:768px){
+
+.loginCard{
+
+padding:28px 20px;
+
+border-radius:20px;
 
 }
 
-/*==============================
-Premium Toast
-==============================*/
+.logo{
 
-#toast{
+width:75px;
 
-position:fixed;
-
-left:50%;
-bottom:90px;
-
-transform:translateX(-50%);
-
-display:flex;
-align-items:center;
-gap:12px;
-
-padding:15px 24px;
-
-background:
-rgba(15,18,35,.95);
-
-backdrop-filter:blur(18px);
-
-border:
-1px solid rgba(255,255,255,.10);
-
-border-radius:50px;
-
-box-shadow:
-
-0 18px 40px
-rgba(0,0,0,.45);
-
-opacity:0;
-visibility:hidden;
-
-transition:.35s;
-
-z-index:999999;
+height:75px;
 
 }
 
-#toast.show{
+.logoBox h1{
 
-opacity:1;
-visibility:visible;
-
-bottom:110px;
+font-size:26px;
 
 }
 
-#toastIcon{
+.loginBtn,
+.googleBtn{
 
-font-size:19px;
-
-color:#00d26a;
-
-}
-
-#toastText{
+height:52px;
 
 font-size:15px;
 
-font-weight:600;
-
-color:#ffffff;
+}
 
 }
 
-/*==============================
+@media (max-width:480px){
+
+body{
+
+padding:14px;
+
+}
+
+.loginCard{
+
+padding:22px 16px;
+
+}
+
+.logo{
+
+width:68px;
+
+height:68px;
+
+}
+
+.logoBox h1{
+
+font-size:22px;
+
+}
+
+.logoBox p{
+
+font-size:13px;
+
+}
+
+.inputBox input{
+
+font-size:14px;
+
+}
+
+.loginOptions{
+
+flex-direction:column;
+
+align-items:flex-start;
+
+}
+
+#forgotPassword{
+
+margin-top:6px;
+
+}
+
+.footer p{
+
+font-size:12px;
+
+}
+
+}
+/*=========================================
+        VIEWORA V3 PREMIUM
+            login.css
+            PART 4
+ Loader • Toast • Modal • Network
+=========================================*/
+
+/*=========================================
 Loading Overlay
-==============================*/
+=========================================*/
 
 #loadingOverlay{
 
@@ -1063,17 +836,20 @@ position:fixed;
 inset:0;
 
 display:flex;
+
 flex-direction:column;
 
 justify-content:center;
+
 align-items:center;
 
-background:
-rgba(5,8,22,.82);
+background:rgba(5,8,22,.75);
 
-backdrop-filter:blur(14px);
+backdrop-filter:blur(12px);
 
-z-index:999999;
+-webkit-backdrop-filter:blur(12px);
+
+z-index:99999;
 
 }
 
@@ -1081,8 +857,9 @@ z-index:999999;
 
 position:relative;
 
-width:90px;
-height:90px;
+width:80px;
+
+height:80px;
 
 }
 
@@ -1090,46 +867,27 @@ height:90px;
 
 position:absolute;
 
-width:90px;
-height:90px;
-
-border-radius:50%;
+inset:0;
 
 border:4px solid transparent;
 
-border-top-color:#00aaff;
+border-top:4px solid #00AAFF;
 
-animation:
+border-radius:50%;
 
-spin 1s linear infinite;
-
-}
-
-.loaderRing.delay1{
-
-width:70px;
-height:70px;
-
-top:10px;
-left:10px;
-
-border-top-color:#7c3aed;
-
-animation-duration:1.4s;
+animation:spin 1s linear infinite;
 
 }
 
-.loaderRing.delay2{
+.delay1{
 
-width:50px;
-height:50px;
+animation-delay:.15s;
 
-top:20px;
-left:20px;
+}
 
-border-top-color:#06d6a0;
+.delay2{
 
-animation-duration:.8s;
+animation-delay:.3s;
 
 }
 
@@ -1145,19 +903,83 @@ transform:rotate(360deg);
 
 #loadingOverlay p{
 
-margin-top:22px;
+margin-top:20px;
+
+font-size:16px;
+
+font-weight:600;
+
+color:#ffffff;
+
+}
+
+/*=========================================
+Toast
+=========================================*/
+
+#toast{
+
+position:fixed;
+
+left:50%;
+
+bottom:30px;
+
+transform:translateX(-50%) translateY(120px);
+
+min-width:280px;
+
+max-width:90%;
+
+padding:16px 22px;
+
+display:flex;
+
+align-items:center;
+
+gap:12px;
+
+background:rgba(20,20,30,.95);
+
+border:1px solid rgba(255,255,255,.08);
+
+border-radius:16px;
+
+box-shadow:0 15px 40px rgba(0,0,0,.45);
+
+transition:.35s;
+
+z-index:999999;
+
+}
+
+#toast.show{
+
+transform:translateX(-50%) translateY(0);
+
+}
+
+#toast i{
+
+font-size:22px;
+
+color:#00d26a;
+
+}
+
+#toast span{
+
+color:#fff;
 
 font-size:15px;
 
 font-weight:600;
 
-color:#d8deff;
-
 }
 
-/*==============================
-Forgot Password Modal
-==============================*/
+/*=========================================
+Modal
+=========================================*/
 
 .modal{
 
@@ -1168,83 +990,44 @@ inset:0;
 display:flex;
 
 justify-content:center;
+
 align-items:center;
 
-padding:20px;
-
-background:
-rgba(0,0,0,.70);
+background:rgba(0,0,0,.65);
 
 backdrop-filter:blur(10px);
 
-z-index:999999;
+z-index:99999;
 
 }
 
 .modalCard{
 
-width:100%;
-max-width:430px;
+width:92%;
 
-padding:35px;
+max-width:420px;
 
-border-radius:26px;
+padding:30px;
+
+border-radius:24px;
 
 text-align:center;
-
-animation:popupShow .35s ease;
-
-}
-
-@keyframes popupShow{
-
-from{
-
-opacity:0;
-
-transform:
-scale(.9);
-
-}
-
-to{
-
-opacity:1;
-
-transform:
-scale(1);
-
-}
 
 }
 
 .popupIcon{
 
-width:75px;
-height:75px;
+font-size:58px;
 
-margin:auto;
+color:#00AAFF;
 
-display:flex;
-justify-content:center;
-align-items:center;
-
-border-radius:50%;
-
-background:
-rgba(0,170,255,.15);
-
-color:#00aaff;
-
-font-size:30px;
-
-margin-bottom:20px;
+margin-bottom:18px;
 
 }
 
 .modalCard h2{
 
-font-size:28px;
+font-size:26px;
 
 margin-bottom:12px;
 
@@ -1254,11 +1037,43 @@ margin-bottom:12px;
 
 font-size:15px;
 
+color:#c9d5ef;
+
 line-height:1.7;
 
-color:#c7d0e8;
+margin-bottom:22px;
 
-margin-bottom:25px;
+}
+
+.modalInput{
+
+width:100%;
+
+height:54px;
+
+padding:0 16px;
+
+background:rgba(255,255,255,.08);
+
+border:1px solid rgba(255,255,255,.12);
+
+border-radius:14px;
+
+outline:none;
+
+color:#fff;
+
+font-size:15px;
+
+margin-bottom:22px;
+
+}
+
+.modalInput:focus{
+
+border-color:#00AAFF;
+
+box-shadow:0 0 0 4px rgba(0,170,255,.15);
 
 }
 
@@ -1268,8 +1083,6 @@ display:flex;
 
 gap:12px;
 
-margin-top:20px;
-
 }
 
 .primaryBtn,
@@ -1277,7 +1090,7 @@ margin-top:20px;
 
 flex:1;
 
-height:52px;
+height:50px;
 
 border:none;
 
@@ -1295,15 +1108,13 @@ transition:.3s;
 
 .primaryBtn{
 
-background:
-
-linear-gradient(
+background:linear-gradient(
 135deg,
-#00aaff,
-#7c3aed
+#00AAFF,
+#0066FF
 );
 
-color:#ffffff;
+color:#fff;
 
 }
 
@@ -1315,95 +1126,338 @@ transform:translateY(-2px);
 
 .secondaryBtn{
 
-background:
-rgba(255,255,255,.08);
+background:rgba(255,255,255,.08);
 
-border:
-1px solid rgba(255,255,255,.12);
+border:1px solid rgba(255,255,255,.12);
 
-color:#ffffff;
+color:#fff;
 
 }
 
 .secondaryBtn:hover{
 
-background:
-rgba(255,255,255,.12);
+background:rgba(255,255,255,.14);
 
 }
 
-/*==============================
-Responsive
-==============================*/
+/*=========================================
+Network Banner
+=========================================*/
 
-@media(max-width:768px){
+#networkBanner{
+
+position:fixed;
+
+top:20px;
+
+left:50%;
+
+transform:translateX(-50%);
+
+padding:14px 22px;
+
+display:flex;
+
+align-items:center;
+
+gap:10px;
+
+background:#ff4d4d;
+
+color:#fff;
+
+border-radius:14px;
+
+font-weight:600;
+
+box-shadow:0 12px 30px rgba(0,0,0,.35);
+
+z-index:999999;
+
+}
+
+#networkBanner i{
+
+font-size:18px;
+
+}
+/*=========================================
+        VIEWORA V3 PREMIUM
+            login.css
+            PART 5 FINAL
+ Ripple • Scrollbar • Animations
+=========================================*/
+
+/*=========================================
+Ripple Effect
+=========================================*/
+
+.loginBtn,
+.googleBtn,
+.primaryBtn,
+.secondaryBtn{
+
+position:relative;
+
+overflow:hidden;
+
+}
+
+.ripple{
+
+position:absolute;
+
+width:20px;
+
+height:20px;
+
+border-radius:50%;
+
+background:rgba(255,255,255,.45);
+
+transform:translate(-50%,-50%) scale(0);
+
+pointer-events:none;
+
+animation:ripple .6s linear;
+
+}
+
+@keyframes ripple{
+
+to{
+
+transform:translate(-50%,-50%) scale(18);
+
+opacity:0;
+
+}
+
+}
+
+/*=========================================
+Card Hover
+=========================================*/
 
 .loginCard{
 
-padding:28px;
+transition:.35s ease;
 
-border-radius:24px;
+}
+
+.loginCard:hover{
+    transform:none;
+}
+
+/*=========================================
+Button Hover
+=========================================*/
+
+.loginBtn:hover,
+.googleBtn:hover,
+.primaryBtn:hover{
+
+filter:brightness(1.08);
+
+}
+
+.loginBtn:active,
+.googleBtn:active,
+.primaryBtn:active,
+.secondaryBtn:active{
+
+transform:scale(.98);
+
+}
+
+/*=========================================
+Disabled Buttons
+=========================================*/
+
+button:disabled{
+
+opacity:.65;
+
+cursor:not-allowed;
+
+filter:grayscale(.2);
+
+}
+
+/*=========================================
+Input Autofill
+=========================================*/
+
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus{
+
+-webkit-text-fill-color:#fff;
+
+-webkit-box-shadow:
+0 0 0 1000px
+rgba(255,255,255,.06)
+inset;
+
+transition:
+background-color 9999s;
+
+}
+
+/*=========================================
+Custom Scrollbar
+=========================================*/
+
+::-webkit-scrollbar{
+
+width:8px;
+
+}
+
+::-webkit-scrollbar-track{
+
+background:#050816;
+
+}
+
+::-webkit-scrollbar-thumb{
+
+background:#00AAFF;
+
+border-radius:20px;
+
+}
+
+::-webkit-scrollbar-thumb:hover{
+
+background:#0088ff;
+
+}
+
+/*=========================================
+Focus Ring
+=========================================*/
+
+button:focus-visible,
+input:focus-visible,
+a:focus-visible{
+
+outline:2px solid #00AAFF;
+
+outline-offset:3px;
+
+}
+
+/*=========================================
+Page Animation
+=========================================*/
+
+body{
+
+animation:pageFade .7s ease;
+
+}
+
+@keyframes pageFade{
+
+from{
+opacity:0;
+}
+
+to{
+opacity:1;
+}
+
+}
+
+/*=========================================
+Floating Animation
+=========================================*/
+
+.logo{
+
+animation:floatLogo 4s ease-in-out infinite;
+
+}
+
+@keyframes floatLogo{
+
+0%,100%{
+
+transform:translateY(0);
+
+}
+
+50%{
+
+transform:translateY(-8px);
+
+}
+
+}
+
+/*=========================================
+Responsive
+=========================================*/
+
+@media(max-width:360px){
+
+.loginCard{
+
+padding:18px 14px;
 
 }
 
 .logo{
 
-width:75px;
-height:75px;
+width:60px;
+
+height:60px;
 
 }
 
 .logoBox h1{
 
-font-size:28px;
+font-size:20px;
 
 }
 
-.optionsRow{
-
-flex-direction:column;
-align-items:flex-start;
-
-gap:14px;
-
-}
-
-.modalButtons{
-
-flex-direction:column;
-
-}
-
-}
-
-@media(max-width:480px){
-
-#app{
-
-padding:20px 14px;
-
-}
-
-.loginCard{
-
-padding:22px;
-
-}
-
-.inputBox input,
 .loginBtn,
 .googleBtn{
 
-height:54px;
+height:50px;
 
 font-size:14px;
 
 }
 
-.logoBox h1{
+}
 
-font-size:24px;
+/*=========================================
+Print
+=========================================*/
+
+@media print{
+
+body{
+
+background:#fff;
+
+}
+
+.aurora,
+#particles,
+#pageLoader,
+#loadingOverlay,
+#toast,
+#networkBanner{
+
+display:none !important;
 
 }
 
 }
+
+/*=========================================
+END OF FILE
+=========================================*/
