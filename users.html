@@ -7,24 +7,26 @@
 
 <title>Viewora • Users</title>
 
-<!-- CSS -->
-<link rel="stylesheet" href="users.css">
-<link rel="stylesheet" href="nav.css">
+<meta name="theme-color" content="#08111f">
+
+<!-- Premium Font -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
 <!-- Font Awesome -->
 <link rel="stylesheet"
 href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"/>
 
-<!-- Google Font -->
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<!-- CSS -->
+<link rel="stylesheet" href="users.css">
+<link rel="stylesheet" href="nav.css">
 
 </head>
 
 <body>
 
-<!-- ===========================
-     Animated Background
-=========================== -->
+<!-- =====================================
+        Animated Premium Background
+====================================== -->
 
 <div class="bg-gradient"></div>
 
@@ -47,33 +49,35 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
 
 </div>
 
-<!-- ===========================
-      Loading Screen
-=========================== -->
+<!-- =====================================
+          Premium Page Loader
+====================================== -->
 
 <div id="pageLoader">
 
 <div class="loaderCircle"></div>
 
-<h2>Loading Users</h2>
+<h2>Viewora Users</h2>
 
-<p>Please wait...</p>
+<p>Loading amazing creators...</p>
 
 </div>
 
-<!-- ===========================
-        Main App
-=========================== -->
+<!-- =====================================
+            Main Application
+====================================== -->
 
 <div id="app" class="hidden">
 
-<!-- ===========================
-          Header
-=========================== -->
+<!-- =====================================
+              Header
+====================================== -->
 
 <header class="topBar">
 
-<button id="backBtn" class="iconBtn">
+<button
+id="backBtn"
+class="iconBtn">
 
 <i class="fa-solid fa-arrow-left"></i>
 
@@ -83,16 +87,23 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
 
 <h2>
 
+<i class="fa-solid fa-users"></i>
 
 Viewora Users
 
 </h2>
 
-<p>Discover Amazing People</p>
+<p>
+
+Discover • Follow • Connect
+
+</p>
 
 </div>
 
-<button id="refreshBtn" class="iconBtn">
+<button
+id="refreshBtn"
+class="iconBtn">
 
 <i class="fa-solid fa-rotate"></i>
 
@@ -100,9 +111,9 @@ Viewora Users
 
 </header>
 
-<!-- ===========================
-          Search
-=========================== -->
+<!-- =====================================
+            Search Section
+====================================== -->
 
 <section class="searchSection">
 
@@ -113,9 +124,10 @@ Viewora Users
 <input
 type="text"
 id="searchInput"
-placeholder="Search users...">
+placeholder="Search by name, username or bio...">
 
-<button id="clearSearch">
+<button
+id="clearSearch">
 
 <i class="fa-solid fa-xmark"></i>
 
@@ -124,10 +136,9 @@ placeholder="Search users...">
 </div>
 
 </section>
-
-<!-- ===========================
-      Suggested Users
-=========================== -->
+<!-- =====================================
+        Suggested Users
+====================================== -->
 
 <section class="section">
 
@@ -157,9 +168,9 @@ class="suggestedContainer">
 
 </section>
 
-<!-- ===========================
-      Online Users
-=========================== -->
+<!-- =====================================
+          Online Users
+====================================== -->
 
 <section class="section">
 
@@ -189,9 +200,9 @@ class="onlineContainer">
 
 </section>
 
-<!-- ===========================
-      All Users
-=========================== -->
+<!-- =====================================
+            All Users
+====================================== -->
 
 <section class="section">
 
@@ -215,16 +226,19 @@ class="onlineContainer">
 id="usersList"
 class="usersList">
 
-<!-- JS -->
+<!-- JS Render -->
 
 </div>
 
 </section>
-<!-- ===========================
-        Empty State
-=========================== -->
 
-<div id="emptyState" class="hidden">
+<!-- =====================================
+            Empty State
+====================================== -->
+
+<div
+id="emptyState"
+class="hidden">
 
 <div class="emptyIcon">
 
@@ -232,124 +246,23 @@ class="usersList">
 
 </div>
 
-<h2>No Users Found</h2>
+<h2>
 
-<p>Try searching with another username.</p>
-
-</div>
-
-<!-- ===========================
-      Profile Preview Modal
-=========================== -->
-
-<div id="profileModal" class="modal hidden">
-
-<div class="modalOverlay"></div>
-
-<div class="modalContent">
-
-<button
-id="closeModal"
-class="closeBtn">
-
-<i class="fa-solid fa-xmark"></i>
-
-</button>
-
-<img
-id="modalAvatar"
-class="modalAvatar"
-src="assets/default-avatar.png">
-
-<h2 id="modalName">
-
-User Name
+No Users Found
 
 </h2>
 
-<p id="modalUsername">
+<p>
 
-@username
-
-</p>
-
-<p id="modalBio">
-
-No Bio
+Try searching with another username.
 
 </p>
 
-<div class="profileStats">
-
-<div>
-
-<h3 id="modalPosts">
-
-0
-
-</h3>
-
-<span>Posts</span>
-
 </div>
 
-<div>
-
-<h3 id="modalFollowers">
-
-0
-
-</h3>
-
-<span>Followers</span>
-
-</div>
-
-<div>
-
-<h3 id="modalFollowing">
-
-0
-
-</h3>
-
-<span>Following</span>
-
-</div>
-
-</div>
-
-<div class="modalButtons">
-
-<button
-id="followBtn"
-class="primaryBtn">
-
-<i class="fa-solid fa-user-plus"></i>
-
-Follow
-
-</button>
-
-<button
-id="messageBtn"
-class="secondaryBtn">
-
-<i class="fa-solid fa-paper-plane"></i>
-
-Message
-
-</button>
-
-</div>
-
-</div>
-
-</div>
-
-<!-- ===========================
-      Skeleton Loading
-=========================== -->
+<!-- =====================================
+          Skeleton Loader
+====================================== -->
 
 <div
 id="usersSkeleton"
@@ -362,86 +275,200 @@ class="hidden">
 <div class="skeletonCard"></div>
 
 </div>
+<!-- =====================================
+          Profile Preview Modal
+====================================== -->
 
-<!-- ===========================
-      Floating Buttons
-=========================== -->
+<div id="profileModal" class="modal hidden">
 
-<button
-id="scrollTopBtn"
-class="floatingBtn hidden">
+    <div class="modalOverlay"></div>
 
-<i class="fa-solid fa-arrow-up"></i>
+    <div class="modalContent">
 
-</button>
+        <button
+            id="closeModal"
+            class="closeBtn">
 
-<button
-id="addFriendBtn"
-class="floatingBtn addBtn">
+            <i class="fa-solid fa-xmark"></i>
 
-<i class="fa-solid fa-user-plus"></i>
+        </button>
 
-</button>
+        <img
+            id="modalAvatar"
+            class="modalAvatar"
+            src="assets/default-avatar.png"
+            alt="Profile">
 
-<!-- ===========================
-      Premium Toast
-=========================== -->
+        <h2 id="modalName">
 
-<div
-id="toast"
-class="toast hidden">
+            Viewora User
 
-<i
-id="toastIcon"
-class="fa-solid fa-circle-check"></i>
+        </h2>
 
-<span id="toastText">
+        <p id="modalUsername">
 
-Success
+            @username
 
-</span>
+        </p>
+
+        <p id="modalBio">
+
+            Welcome to Viewora 🚀
+
+        </p>
+
+        <div class="profileStats">
+
+            <div>
+
+                <h3 id="modalPosts">0</h3>
+
+                <span>Posts</span>
+
+            </div>
+
+            <div>
+
+                <h3 id="modalFollowers">0</h3>
+
+                <span>Followers</span>
+
+            </div>
+
+            <div>
+
+                <h3 id="modalFollowing">0</h3>
+
+                <span>Following</span>
+
+            </div>
+
+        </div>
+
+        <div class="modalButtons">
+
+            <button
+                id="followBtn"
+                class="primaryBtn">
+
+                <i class="fa-solid fa-user-plus"></i>
+
+                Follow
+
+            </button>
+
+            <button
+                id="messageBtn"
+                class="secondaryBtn">
+
+                <i class="fa-solid fa-paper-plane"></i>
+
+                Message
+
+            </button>
+
+        </div>
+
+    </div>
 
 </div>
 
-<!-- ===========================
-      Bottom Navigation
-=========================== -->
+<!-- =====================================
+            Floating Buttons
+====================================== -->
+
+<button
+    id="scrollTopBtn"
+    class="floatingBtn hidden">
+
+    <i class="fa-solid fa-arrow-up"></i>
+
+</button>
+
+<button
+    id="addFriendBtn"
+    class="floatingBtn addBtn">
+
+    <i class="fa-solid fa-user-plus"></i>
+
+</button>
+
+<!-- =====================================
+              Premium Toast
+====================================== -->
+
+<div
+    id="toast"
+    class="toast hidden">
+
+    <i
+        id="toastIcon"
+        class="fa-solid fa-circle-check"></i>
+
+    <span id="toastText">
+
+        Success
+
+    </span>
+
+</div>
+<!-- =====================================
+        Premium Bottom Navigation
+====================================== -->
 
 <nav class="bottomNav">
 
-<a href="index.html">
-    <span class="activeIndicator"></span>
-    <i class="fa-solid fa-house"></i>
-    <span>Home</span>
-</a>
+    <a href="index.html">
 
-<a href="shorts.html">
-    <span class="activeIndicator"></span>
-    <i class="fa-solid fa-play"></i>
-    <span>Shorts</span>
-</a>
+        <span class="activeIndicator"></span>
 
-<a href="upload.html" class="uploadNav">
-    <i class="fa-solid fa-plus"></i>
-</a>
+        <i class="fa-solid fa-house"></i>
 
-<a href="users.html">
-    <span class="activeIndicator"></span>
-    <i class="fa-solid fa-users"></i>
-    <span>Users</span>
-</a>
+        <span>Home</span>
 
-<a href="profile.html">
-    <span class="activeIndicator"></span>
-    <i class="fa-solid fa-user"></i>
-    <span>Profile</span>
-</a>
+    </a>
+
+    <a href="shorts.html">
+
+        <span class="activeIndicator"></span>
+
+        <i class="fa-solid fa-play"></i>
+
+        <span>Shorts</span>
+
+    </a>
+
+    <a href="upload.html" class="uploadNav">
+
+        <i class="fa-solid fa-plus"></i>
+
+    </a>
+
+    <a href="users.html" class="active">
+
+        <span class="activeIndicator"></span>
+
+        <i class="fa-solid fa-users"></i>
+
+        <span>Users</span>
+
+    </a>
+
+    <a href="profile.html">
+
+        <span class="activeIndicator"></span>
+
+        <i class="fa-solid fa-user"></i>
+
+        <span>Profile</span>
+
+    </a>
 
 </nav>
 
-<!-- ===========================
-      Firebase
-=========================== -->
+<!-- =====================================
+            Firebase SDK
+====================================== -->
 
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 
@@ -451,10 +478,13 @@ Success
 
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
 
-<script src="firebase.js"></script>
-<script src="nav.js"></script>
+<!-- =====================================
+          Viewora Scripts
+====================================== -->
 
-<!-- Users JS -->
+<script src="firebase.js"></script>
+
+<script src="nav.js"></script>
 
 <script src="users.js"></script>
 
