@@ -1,16 +1,12 @@
 /*=========================================
-        VIEWORA USERS V7
+        VIEWORA USERS V8
         users.js (PART 1)
-        Firebase Initialization
+        Firebase + Initialization
 =========================================*/
 
-//==============================
-// Firebase References
-//==========
-
-//==============================
+//=========================================
 // DOM Elements
-//==============================
+//=========================================
 
 const pageLoader = document.getElementById("pageLoader");
 const app = document.getElementById("app");
@@ -25,35 +21,188 @@ const clearSearch = document.getElementById("clearSearch");
 const totalUsers = document.getElementById("totalUsers");
 const onlineCount = document.getElementById("onlineCount");
 
-const toast = document.getElementById("toast");
-const toastText = document.getElementById("toastText");
-const toastIcon = document.getElementById("toastIcon");
-
-const emptyState = document.getElementById("emptyState");
+const profileModal = document.getElementById("profileModal");
 
 const skeleton = document.getElementById("usersSkeleton");
 
+const emptyState = document.getElementById("emptyState");
+
+const toast = document.getElementById("toast");
+const toastIcon = document.getElementById("toastIcon");
+const toastText = document.getElementById("toastText");
+
 const scrollTopBtn = document.getElementById("scrollTopBtn");
 
-const profileModal = document.getElementById("profileModal");
+//=========================================
+// Firebase References
+//=========================================
 
-//==============================
+const auth = firebase.auth();
+const db = firebase.database();
+const storage = firebase.storage();
+
+//=========================================
 // Variables
-//==============================
+//=========================================
 
 let currentUser = null;
 
 let users = [];
-
 let filteredUsers = [];
 
 let following = [];
 
 let onlineUsersList = [];
 
-//==============================
+let isLoading = false;
+
+//=========================================
+// Loader
+//=========================================
+
+function showLoader(){
+
+isLoading=true;
+
+pageLoader.classList.remove("hidden");
+
+app.classList.add("hidden");
+
+}
+
+function hideLoader(){
+
+setTimeout(()=>{
+
+pageLoader.classList.add("hidden");
+
+app.classList.remove("hidden");
+
+app.classList.add("fadeIn");
+
+isLoading=false;
+
+},600);
+
+}
+
+//=========================================
+// Skeleton
+//=========================================
+
+function showSkeleton(){
+
+if(skeleton){
+
+skeleton.classList.remove("hidden");
+
+}
+
+if(usersList){
+
+usersList.classList.add("hidden");
+
+}
+
+}
+
+function hideSkeleton(){
+
+if(skeleton){
+
+skeleton.classList.add("hidden");
+
+}
+
+if(usersList){
+
+usersList.classList.remove("hidden");
+
+}
+
+}
+
+//=========================================
+// Toast
+//=========================================
+
+function showToast(text,success=true){
+
+toastText.textContent=text;
+
+toast.style.background=
+
+success
+
+?
+
+"#16a34a"
+
+:
+
+"#dc2626";
+
+toastIcon.className=
+
+success
+
+?
+
+"fa-solid fa-circle-check"
+
+:
+
+"fa-solid fa-circle-xmark";
+
+toast.classList.remove("hidden");
+
+setTimeout(()=>{
+
+toast.classList.add("hidden");
+
+},2500);
+
+}
+
+//=========================================
+// Helpers
+//=========================================
+
+function avatar(url){
+
+return url || "assets/default-avatar.png";
+
+}
+
+function formatNumber(number){
+
+number=Number(number)||0;
+
+if(number>=1000000){
+
+return (number/1000000).toFixed(1)+"M";
+
+}
+
+if(number>=1000){
+
+return (number/1000).toFixed(1)+"K";
+
+}
+
+return number;
+
+}
+
+function shuffle(arr){
+
+return [...arr].sort(()=>Math.random()-0.5);
+
+}
+
+//=========================================
 // Authentication
-//==============================
+//=========================================
 
 auth.onAuthStateChanged(user=>{
 
@@ -67,17 +216,15 @@ return;
 
 currentUser=user;
 
+showLoader();
+
 loadCurrentUser();
-
-loadUsers();
-
-listenOnlineUsers();
 
 });
 
-//==============================
+//=========================================
 // Current User
-//==============================
+//=========================================
 
 function loadCurrentUser(){
 
@@ -89,276 +236,258 @@ db.ref("users/"+currentUser.uid)
 
 const data=snapshot.val();
 
-if(!data)return;
+if(!data){
+
+hideLoader();
+
+return;
+
+}
 
 following=data.following || [];
+
+if(!Array.isArray(following)){
+
+following=[];
+
+}
+
+// Next
+
+loadUsers();
+
+listenOnlineUsers();
+
+})
+
+.catch(error=>{
+
+console.error(error);
+
+hideLoader();
+
+showToast("Failed to load profile",false);
 
 });
 
 }
 
-//==============================
-// Show Loader
-//==============================
+//=========================================
+// Online Status
+//=========================================
 
-function showLoader(){
+function updateMyStatus(status){
 
-pageLoader.classList.remove("hidden");
+if(!currentUser) return;
 
-app.classList.add("hidden");
+db.ref("users/"+currentUser.uid).update({
 
-}
+online:status,
 
-//==============================
-// Hide Loader
-//==============================
+lastSeen:Date.now()
 
-function hideLoader(){
-
-setTimeout(()=>{
-
-pageLoader.classList.add("hidden");
-
-app.classList.remove("hidden");
-
-app.classList.add("fadeIn");
-
-},700);
+});
 
 }
 
-//==============================
-// Toast
-//==============================
+window.addEventListener("load",()=>{
 
-function showToast(text,success=true){
+updateMyStatus(true);
 
-toastText.textContent=text;
+});
 
-toastIcon.className=success
-?
-"fa-solid fa-circle-check"
-:
-"fa-solid fa-circle-xmark";
+window.addEventListener("beforeunload",()=>{
 
-toast.style.background=
-success
-?
-"#16a34a"
-:
-"#dc2626";
+updateMyStatus(false);
 
-toast.classList.remove("hidden");
+});
 
-setTimeout(()=>{
+//=========================================
+// Internet Status
+//=========================================
 
-toast.classList.add("hidden");
+window.addEventListener("online",()=>{
 
-},2500);
+showToast("Back Online");
 
-}
+});
 
-//==============================
-// Number Formatter
-//==============================
+window.addEventListener("offline",()=>{
 
-function formatNumber(num){
+showToast("No Internet",false);
 
-if(num>=1000000){
+});
 
-return (num/1000000).toFixed(1)+"M";
+//=========================================
+// End Part 1
+//=========================================
 
-}
-
-if(num>=1000){
-
-return (num/1000).toFixed(1)+"K";
-
-}
-
-return num;
-
-}
-
-//==============================
-// Avatar
-//==============================
-
-function avatar(url){
-
-return url || "assets/default-avatar.png";
-
-}
-
-//==============================
-// Random Suggestions
-//==============================
-
-function shuffle(array){
-
-return [...array]
-
-.sort(()=>Math.random()-0.5);
-
-}
+console.log(
+"%cUsers.js Part 1 Loaded",
+"color:#00AAFF;font-size:16px;font-weight:bold;"
+);
 /*=========================================
         USERS.JS PART 2
         Load Users + Search + Render
 =========================================*/
 
-//==============================
-// Load All Users
-//==============================
+// ==============================
+// Load Users
+// ==============================
 
-function loadUsers(){
+function loadUsers() {
 
-showLoader();
+    showLoader();
 
-db.ref("users").on("value",snapshot=>{
+    db.ref("users").on("value", snapshot => {
 
-users=[];
+        users = [];
 
-snapshot.forEach(child=>{
+        snapshot.forEach(child => {
 
-const user=child.val();
+            const user = child.val();
+            user.uid = child.key;
 
-user.uid=child.key;
+            if (currentUser && user.uid === currentUser.uid) return;
 
-// Skip current user
-if(user.uid===currentUser.uid) return;
+            users.push(user);
 
-users.push(user);
+        });
 
-});
+        filteredUsers = [...users];
 
-filteredUsers=[...users];
+        renderSuggestedUsers();
+        renderUsers(filteredUsers);
+        updateCounters();
 
-renderSuggestedUsers();
+        observeCards();
+        hideLoader();
 
-renderUsers(filteredUsers);
+    });
 
-updateCounters();
+}
 
-hideLoader();
+// ==============================
+// Counters
+// ==============================
+
+function updateCounters() {
+
+    if (totalUsers)
+        totalUsers.textContent = users.length + " Users";
+
+    if (onlineCount)
+        onlineCount.textContent = onlineUsersList.length + " Online";
+
+}
+
+// ==============================
+// Search
+// ==============================
+
+if (searchInput) {
+
+searchInput.addEventListener("input", () => {
+
+    const keyword = searchInput.value
+        .trim()
+        .toLowerCase();
+
+    if (!keyword) {
+
+        filteredUsers = [...users];
+
+    } else {
+
+        filteredUsers = users.filter(user => {
+
+            return (
+
+                (user.name || "")
+                .toLowerCase()
+                .includes(keyword)
+
+                ||
+
+                (user.username || "")
+                .toLowerCase()
+                .includes(keyword)
+
+                ||
+
+                (user.bio || "")
+                .toLowerCase()
+                .includes(keyword)
+
+            );
+
+        });
+
+    }
+
+    renderUsers(filteredUsers);
 
 });
 
 }
 
-//==============================
-// Update Counters
-//==============================
-
-function updateCounters(){
-
-totalUsers.textContent=
-users.length+" Users";
-
-onlineCount.textContent=
-onlineUsersList.length+" Online";
-
-}
-
-//==============================
-// Live Search
-//==============================
-
-searchInput.addEventListener("input",()=>{
-
-const keyword=
-searchInput.value
-.trim()
-.toLowerCase();
-
-if(keyword===""){
-
-filteredUsers=[...users];
-
-}else{
-
-filteredUsers=users.filter(user=>{
-
-const name=
-(user.name||"")
-.toLowerCase();
-
-const username=
-(user.username||"")
-.toLowerCase();
-
-const bio=
-(user.bio||"")
-.toLowerCase();
-
-return(
-
-name.includes(keyword) ||
-
-username.includes(keyword) ||
-
-bio.includes(keyword)
-
-);
-
-});
-
-}
-
-renderUsers(filteredUsers);
-
-});
-
-//==============================
+// ==============================
 // Clear Search
-//==============================
+// ==============================
 
-clearSearch.onclick=()=>{
+if (clearSearch) {
 
-searchInput.value="";
+clearSearch.onclick = () => {
 
-filteredUsers=[...users];
+    searchInput.value = "";
 
-renderUsers(filteredUsers);
+    filteredUsers = [...users];
+
+    renderUsers(filteredUsers);
 
 };
 
-//==============================
+}
+
+// ==============================
 // Suggested Users
-//==============================
+// ==============================
 
-function renderSuggestedUsers(){
+function renderSuggestedUsers() {
 
-suggestedUsers.innerHTML="";
+    if (!suggestedUsers) return;
 
-const randomUsers=
-shuffle(users)
-.slice(0,8);
+    suggestedUsers.innerHTML = "";
 
-randomUsers.forEach(user=>{
+    shuffle(users)
+        .slice(0, 8)
+        .forEach(user => {
 
-suggestedUsers.innerHTML+=`
+            suggestedUsers.innerHTML += `
 
-<div class="suggestCard fadeIn">
+<div class="suggestCard">
 
 <img src="${avatar(user.photoURL)}">
 
 <h4>
+${user.name || "Unknown"}
 
-${user.name||"Unknown"}
-
-${user.verified?'<i class="fa-solid fa-circle-check"></i>':''}
+${user.verified
+?
+'<i class="fa-solid fa-circle-check"></i>'
+:
+''
+}
 
 </h4>
 
 <p>
 
-@${user.username||"user"}
+@${user.username || "user"}
 
 </p>
 
-<button
-
-onclick="followUser('${user.uid}')">
+<button onclick="followUser('${user.uid}')">
 
 Follow
 
@@ -368,39 +497,37 @@ Follow
 
 `;
 
-});
+        });
 
 }
 
-//==============================
+// ==============================
 // Render Users
-//==============================
+// ==============================
 
-function renderUsers(data){
+function renderUsers(data) {
 
-usersList.innerHTML="";
+    if (!usersList) return;
 
-if(data.length===0){
+    usersList.innerHTML = "";
 
-emptyState.classList.remove("hidden");
+    if (data.length === 0) {
 
-return;
+        emptyState.classList.remove("hidden");
+        return;
 
-}
+    }
 
-emptyState.classList.add("hidden");
+    emptyState.classList.add("hidden");
 
-data.forEach(user=>{
+    data.forEach(user => {
 
-const isFollowing=
-following.includes(user.uid);
+        const isFollowing =
+            following.includes(user.uid);
 
-usersList.innerHTML+=`
+        usersList.innerHTML += `
 
-<div
-
-class="userCard"
-
+<div class="userCard"
 onclick="openProfile('${user.uid}')">
 
 <img src="${avatar(user.photoURL)}">
@@ -409,19 +536,20 @@ onclick="openProfile('${user.uid}')">
 
 <h4>
 
-${user.name||"Unknown"}
+${user.name || "Unknown"}
 
-${user.verified?
-
+${user.verified
+?
 '<i class="fa-solid fa-circle-check"></i>'
-
-:''}
+:
+''
+}
 
 </h4>
 
 <p>
 
-@${user.username||"user"}
+@${user.username || "user"}
 
 </p>
 
@@ -429,17 +557,15 @@ ${user.verified?
 
 <span>
 
-${formatNumber(user.followers||0)}
-
-Followers
+${formatNumber(user.followers || 0)}
+ Followers
 
 </span>
 
 <span>
 
-${formatNumber(user.posts||0)}
-
-Posts
+${formatNumber(user.posts || 0)}
+ Posts
 
 </span>
 
@@ -448,24 +574,14 @@ Posts
 </div>
 
 <button
-
 class="followBtn"
 
-onclick="event.stopPropagation();
+onclick="
+event.stopPropagation();
+followUser('${user.uid}');
+">
 
-followUser('${user.uid}')">
-
-${isFollowing
-
-?
-
-"Following"
-
-:
-
-"Follow"
-
-}
+${isFollowing ? "Following" : "Follow"}
 
 </button>
 
@@ -473,311 +589,422 @@ ${isFollowing
 
 `;
 
-});
+    });
+
+    observeCards();
 
 }
 /*=========================================
         USERS.JS PART 3
-  Online Users • Follow System • Modal
+   Online Users • Follow • Profile Modal
 =========================================*/
 
-//==============================
-// Listen Online Users
-//==============================
+// ==============================
+// Online Users
+// ==============================
 
-function listenOnlineUsers(){
+function listenOnlineUsers() {
 
-db.ref("users").on("value",snapshot=>{
+    db.ref("users").on("value", snapshot => {
 
-onlineUsers.innerHTML="";
+        onlineUsers.innerHTML = "";
+        onlineUsersList = [];
 
-onlineUsersList=[];
+        snapshot.forEach(child => {
 
-snapshot.forEach(child=>{
+            const user = child.val();
+            user.uid = child.key;
 
-const user=child.val();
-user.uid=child.key;
+            if (currentUser && user.uid === currentUser.uid) return;
 
-if(user.uid===currentUser.uid) return;
+            if (user.online) {
 
-if(user.online){
+                onlineUsersList.push(user);
 
-onlineUsersList.push(user);
+                onlineUsers.innerHTML += `
 
-onlineUsers.innerHTML+=`
-
-<div
-class="onlineUser"
+<div class="onlineUser"
 onclick="openProfile('${user.uid}')">
 
 <img src="${avatar(user.photoURL)}">
 
 <div class="onlineDot"></div>
 
-<h5>
-
-${user.name||"User"}
-
-</h5>
+<h5>${user.name || "User"}</h5>
 
 </div>
 
 `;
 
-}
+            }
 
-});
+        });
 
-updateCounters();
+        updateCounters();
 
-});
-
-}
-
-//==============================
-// Follow User
-//==============================
-
-async function followUser(uid){
-
-if(uid===currentUser.uid) return;
-
-const ref=db.ref("users/"+currentUser.uid);
-
-const target=db.ref("users/"+uid);
-
-const snap=await ref.once("value");
-
-const me=snap.val();
-
-let list=me.following||[];
-
-if(list.includes(uid)){
-
-list=list.filter(id=>id!==uid);
-
-await ref.update({
-
-following:list
-
-});
-
-const targetSnap=
-await target.once("value");
-
-const targetUser=
-targetSnap.val();
-
-await target.update({
-
-followers:
-Math.max(
-0,
-(targetUser.followers||1)-1
-)
-
-});
-
-showToast("Unfollowed");
-
-}else{
-
-list.push(uid);
-
-await ref.update({
-
-following:list
-
-});
-
-const targetSnap=
-await target.once("value");
-
-const targetUser=
-targetSnap.val();
-
-await target.update({
-
-followers:
-(targetUser.followers||0)+1
-
-});
-
-showToast("Following");
+    });
 
 }
 
-following=list;
+// ==============================
+// Follow / Unfollow
+// ==============================
 
-renderUsers(filteredUsers);
+async function followUser(uid) {
 
-renderSuggestedUsers();
+    if (!currentUser) return;
+
+    const myRef = db.ref("users/" + currentUser.uid);
+    const targetRef = db.ref("users/" + uid);
+
+    const mySnap = await myRef.once("value");
+    const me = mySnap.val();
+
+    let list = me.following || [];
+
+    if (list.includes(uid)) {
+
+        list = list.filter(id => id !== uid);
+
+        await myRef.update({
+            following: list
+        });
+
+        const targetSnap = await targetRef.once("value");
+        const target = targetSnap.val();
+
+        await targetRef.update({
+            followers: Math.max(0, (target.followers || 1) - 1)
+        });
+
+        showToast("Unfollowed");
+
+    } else {
+
+        list.push(uid);
+
+        await myRef.update({
+            following: list
+        });
+
+        const targetSnap = await targetRef.once("value");
+        const target = targetSnap.val();
+
+        await targetRef.update({
+            followers: (target.followers || 0) + 1
+        });
+
+        showToast("Following");
+
+    }
+
+    following = list;
+
+    renderUsers(filteredUsers);
+    renderSuggestedUsers();
 
 }
 
-//==============================
+// ==============================
 // Open Profile Modal
-//==============================
+// ==============================
 
-function openProfile(uid){
+function openProfile(uid) {
 
-const user=
+    const user = users.find(u => u.uid === uid);
 
-users.find(u=>u.uid===uid);
+    if (!user) return;
 
-if(!user) return;
+    profileModal.classList.remove("hidden");
 
-profileModal.classList.remove("hidden");
+    document.getElementById("modalAvatar").src =
+        avatar(user.photoURL);
 
-document.getElementById("modalAvatar").src=
-avatar(user.photoURL);
+    document.getElementById("modalName").textContent =
+        user.name || "Unknown";
 
-document.getElementById("modalName").textContent=
-user.name||"Unknown";
+    document.getElementById("modalUsername").textContent =
+        "@" + (user.username || "user");
 
-document.getElementById("modalUsername").textContent=
-"@"+(user.username||"user");
+    document.getElementById("modalBio").textContent =
+        user.bio || "No bio available.";
 
-document.getElementById("modalBio").textContent=
-user.bio||"No bio yet.";
+    document.getElementById("modalPosts").textContent =
+        formatNumber(user.posts || 0);
 
-document.getElementById("modalPosts").textContent=
-formatNumber(user.posts||0);
+    document.getElementById("modalFollowers").textContent =
+        formatNumber(user.followers || 0);
 
-document.getElementById("modalFollowers").textContent=
-formatNumber(user.followers||0);
+    document.getElementById("modalFollowing").textContent =
+        formatNumber(user.followingCount || 0);
 
-document.getElementById("modalFollowing").textContent=
-formatNumber(user.followingCount||0);
+    const followBtn =
+        document.getElementById("followBtn");
 
-const btn=
-document.getElementById("followBtn");
+    if (following.includes(uid)) {
 
-btn.innerHTML=
-following.includes(uid)
+        followBtn.innerHTML =
+            '<i class="fa-solid fa-user-check"></i> Following';
 
-?
+    } else {
 
-'<i class="fa-solid fa-user-check"></i> Following'
+        followBtn.innerHTML =
+            '<i class="fa-solid fa-user-plus"></i> Follow';
 
-:
+    }
 
-'<i class="fa-solid fa-user-plus"></i> Follow';
+    followBtn.onclick = () => {
 
-btn.onclick=()=>{
+        followUser(uid);
 
-followUser(uid);
+    };
 
-};
+    document.getElementById("messageBtn").onclick = () => {
 
-document.getElementById("messageBtn").onclick=()=>{
+        location.href = "chat.html?uid=" + uid;
 
-location.href=
-
-"chat.html?uid="+uid;
-
-};
+    };
 
 }
 
-//==============================
+// ==============================
 // Close Modal
-//==============================
+// ==============================
 
-document
-.getElementById("closeModal")
-.onclick=()=>{
+document.getElementById("closeModal").onclick = () => {
 
-profileModal.classList.add("hidden");
+    profileModal.classList.add("hidden");
 
 };
 
-document
-.querySelector(".modalOverlay")
-.onclick=()=>{
+document.querySelector(".modalOverlay").onclick = () => {
 
-profileModal.classList.add("hidden");
+    profileModal.classList.add("hidden");
 
 };
 
-//==============================
+// ==============================
 // Scroll To Top
+// ==============================
+
+window.addEventListener("scroll", () => {
+
+    if (window.scrollY > 350) {
+
+        scrollTopBtn.classList.remove("hidden");
+
+    } else {
+
+        scrollTopBtn.classList.add("hidden");
+
+    }
+
+});
+
+scrollTopBtn.onclick = () => {
+
+    window.scrollTo({
+
+        top: 0,
+        behavior: "smooth"
+
+    });
+
+};
+/*=========================================
+        USERS.JS PART 4 FINAL
+ Premium Effects • Performance • Initialize
+=========================================*/
+
+//==============================
+// Ripple Effect
 //==============================
 
-window.addEventListener("scroll",()=>{
+document.addEventListener("click",e=>{
 
-if(window.scrollY>350){
+const btn=e.target.closest("button,a");
 
-scrollTopBtn.classList.remove("hidden");
+if(!btn) return;
 
-}else{
+const ripple=document.createElement("span");
 
-scrollTopBtn.classList.add("hidden");
+const size=Math.max(btn.clientWidth,btn.clientHeight);
+
+const rect=btn.getBoundingClientRect();
+
+ripple.className="ripple";
+
+ripple.style.width=size+"px";
+ripple.style.height=size+"px";
+
+ripple.style.left=
+(e.clientX-rect.left-size/2)+"px";
+
+ripple.style.top=
+(e.clientY-rect.top-size/2)+"px";
+
+btn.appendChild(ripple);
+
+setTimeout(()=>{
+
+ripple.remove();
+
+},600);
+
+});
+
+//==============================
+// Pull To Refresh
+//==============================
+
+let touchStart=0;
+let pullDistance=0;
+
+window.addEventListener("touchstart",e=>{
+
+if(window.scrollY===0){
+
+touchStart=e.touches[0].clientY;
 
 }
 
 });
 
-scrollTopBtn.onclick=()=>{
+window.addEventListener("touchmove",e=>{
 
-window.scrollTo({
-
-top:0,
-
-behavior:"smooth"
+pullDistance=e.touches[0].clientY-touchStart;
 
 });
 
-};
+window.addEventListener("touchend",()=>{
 
-//==============================
-// Refresh Button
-//==============================
-
-document
-.getElementById("refreshBtn")
-.onclick=()=>{
+if(pullDistance>120){
 
 showToast("Refreshing...");
 
 loadUsers();
 
-};
+}
+
+pullDistance=0;
+
+});
 
 //==============================
-// Add Friend Button
+// Lazy Load Images
 //==============================
 
-document
-.getElementById("addFriendBtn")
-.onclick=()=>{
+function lazyLoadImages(){
 
-showToast("Feature Coming Soon",false);
+const images=document.querySelectorAll("img[data-src]");
 
-};
+const observer=new IntersectionObserver(entries=>{
+
+entries.forEach(entry=>{
+
+if(entry.isIntersecting){
+
+const img=entry.target;
+
+img.src=img.dataset.src;
+
+img.removeAttribute("data-src");
+
+observer.unobserve(img);
+
+}
+
+});
+
+});
+
+images.forEach(img=>observer.observe(img));
+
+}
 
 //==============================
-// Back Button
+// Observe Cards
 //==============================
 
-document
-.getElementById("backBtn")
-.onclick=()=>{
+const cardObserver=new IntersectionObserver(entries=>{
 
-history.back();
+entries.forEach(entry=>{
 
-};
+if(entry.isIntersecting){
+
+entry.target.classList.add("fadeIn");
+
+cardObserver.unobserve(entry.target);
+
+}
+
+});
+
+},{threshold:.15});
+
+function observeCards(){
+
+document.querySelectorAll(
+
+".userCard,.suggestCard,.onlineUser"
+
+).forEach(card=>{
+
+cardObserver.observe(card);
+
+});
+
+}
 
 //==============================
-// Update Online Status
+// Keyboard Shortcuts
+//==============================
+
+document.addEventListener("keydown",e=>{
+
+if(e.key==="/"){
+
+e.preventDefault();
+
+searchInput.focus();
+
+}
+
+if(e.key==="Escape"){
+
+profileModal.classList.add("hidden");
+
+}
+
+});
+
+//==============================
+// Online / Offline
+//==============================
+
+window.addEventListener("online",()=>{
+
+showToast("Internet Connected");
+
+loadUsers();
+
+});
+
+window.addEventListener("offline",()=>{
+
+showToast("No Internet",false);
+
+});
+
+//==============================
+// Online Status
 //==============================
 
 window.addEventListener("load",()=>{
 
 if(currentUser){
 
-db.ref("users/"+currentUser.uid)
-.update({
+db.ref("users/"+currentUser.uid).update({
 
 online:true,
 
@@ -793,8 +1020,7 @@ window.addEventListener("beforeunload",()=>{
 
 if(currentUser){
 
-db.ref("users/"+currentUser.uid)
-.update({
+db.ref("users/"+currentUser.uid).update({
 
 online:false,
 
@@ -805,265 +1031,33 @@ lastSeen:Date.now()
 }
 
 });
-/*=========================================
-        USERS.JS PART 4 (FINAL)
- Premium Effects • Optimization • Init
-=========================================*/
 
 //==============================
-// Ripple Animation
+// Search Animation
 //==============================
 
-document.addEventListener("click",e=>{
-
-const target=e.target.closest("button");
-
-if(!target) return;
-
-const ripple=document.createElement("span");
-
-const size=Math.max(
-target.clientWidth,
-target.clientHeight
-);
-
-const rect=target.getBoundingClientRect();
-
-ripple.style.width=size+"px";
-ripple.style.height=size+"px";
-
-ripple.style.left=
-(e.clientX-rect.left-size/2)+"px";
-
-ripple.style.top=
-(e.clientY-rect.top-size/2)+"px";
-
-ripple.className="ripple";
-
-target.appendChild(ripple);
-
-setTimeout(()=>{
-
-ripple.remove();
-
-},600);
-
-});
-
-//==============================
-// Pull To Refresh
-//==============================
-
-let startY=0;
-let distance=0;
-
-window.addEventListener("touchstart",e=>{
-
-if(window.scrollY===0){
-
-startY=e.touches[0].clientY;
-
-}
-
-});
-
-window.addEventListener("touchmove",e=>{
-
-distance=e.touches[0].clientY-startY;
-
-});
-
-window.addEventListener("touchend",()=>{
-
-if(distance>140){
-
-showToast("Refreshing Users");
-
-loadUsers();
-
-}
-
-distance=0;
-
-});
-
-//==============================
-// Skeleton Control
-//==============================
-
-function showSkeleton(){
-
-skeleton.classList.remove("hidden");
-
-usersList.classList.add("hidden");
-
-}
-
-function hideSkeleton(){
-
-skeleton.classList.add("hidden");
-
-usersList.classList.remove("hidden");
-
-}
-
-//==============================
-// Lazy Images
-//==============================
-
-function lazyLoadImages(){
-
-const imgs=document.querySelectorAll("img");
-
-const observer=new IntersectionObserver(entries=>{
-
-entries.forEach(entry=>{
-
-if(entry.isIntersecting){
-
-const img=entry.target;
-
-if(img.dataset.src){
-
-img.src=img.dataset.src;
-
-img.removeAttribute("data-src");
-
-}
-
-observer.unobserve(img);
-
-}
-
-});
-
-});
-
-imgs.forEach(img=>observer.observe(img));
-
-}
-
-//==============================
-// Keyboard Shortcuts
-//==============================
-
-document.addEventListener("keydown",e=>{
-
-// Search
-if(e.key==="/"){
-
-e.preventDefault();
-
-searchInput.focus();
-
-}
-
-// ESC close modal
-if(e.key==="Escape"){
-
-profileModal.classList.add("hidden");
-
-}
-
-// Refresh
-if(e.key==="F5"){
-
-e.preventDefault();
-
-loadUsers();
-
-showToast("Refreshing");
-
-}
-
-});
-
-//==============================
-// Auto Reconnect
-//==============================
-
-window.addEventListener("online",()=>{
-
-showToast("Back Online");
-
-loadUsers();
-
-});
-
-window.addEventListener("offline",()=>{
-
-showToast("No Internet",false);
-
-});
-
-//==============================
-// Auto Hide Loader
-//==============================
-
-setTimeout(()=>{
-
-hideLoader();
-
-},2000);
-
-//==============================
-// Scroll Animation
-//==============================
-
-const observer=
-
-new IntersectionObserver(entries=>{
-
-entries.forEach(entry=>{
-
-if(entry.isIntersecting){
-
-entry.target.classList.add("fadeIn");
-
-}
-
-});
-
-},{
-threshold:.15
-});
-
-function observeCards(){
-
-document
-.querySelectorAll(
-".userCard,.suggestCard,.onlineUser"
-)
-.forEach(card=>{
-
-observer.observe(card);
-
-});
-
-}
-
-//==============================
-// Search Focus Animation
-//==============================
+if(searchInput){
 
 searchInput.addEventListener("focus",()=>{
 
-document
-.querySelector(".searchBox")
+document.querySelector(".searchBox")
+
 .style.transform="scale(1.02)";
 
 });
 
 searchInput.addEventListener("blur",()=>{
 
-document
-.querySelector(".searchBox")
+document.querySelector(".searchBox")
+
 .style.transform="scale(1)";
 
 });
 
+}
+
 //==============================
-// Vibration
+// Button Vibration
 //==============================
 
 document.addEventListener("click",e=>{
@@ -1072,7 +1066,7 @@ if(
 
 navigator.vibrate &&
 
-e.target.closest("button")
+e.target.closest("button,a")
 
 ){
 
@@ -1083,12 +1077,28 @@ navigator.vibrate(10);
 });
 
 //==============================
+// Floating Button
+//==============================
+
+if(document.getElementById("addFriendBtn")){
+
+document.getElementById("addFriendBtn")
+
+.onclick=()=>{
+
+showToast("Coming Soon",false);
+
+};
+
+}
+
+//==============================
 // Initialize
 //==============================
 
 function initializeUsersPage(){
 
-showSkeleton();
+showLoader();
 
 loadUsers();
 
@@ -1098,26 +1108,22 @@ lazyLoadImages();
 
 observeCards();
 
-hideSkeleton();
+hideLoader();
 
 console.log(
 
-"%cViewora Users V7 Loaded",
+"%cVIEWORA USERS V8 LOADED",
 
-"color:#6366f1;font-size:18px;font-weight:bold"
+"color:#00aaff;font-size:18px;font-weight:bold"
 
 );
 
 }
 
-window.onload=()=>{
-
-initializeUsersPage();
-
-};
+window.addEventListener("load",initializeUsersPage);
 
 //==============================
-// End
+// Finish
 //==============================
 
-console.log("Users.js Loaded Successfully");
+console.log("✅ Users.js Loaded Successfully");

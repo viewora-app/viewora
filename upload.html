@@ -5,37 +5,58 @@
 
 <meta charset="UTF-8">
 
-<meta name="viewport"
+<meta
+name="viewport"
 content="width=device-width, initial-scale=1.0">
+
+<meta
+name="theme-color"
+content="#050816">
+
+<meta
+name="description"
+content="Upload videos and photos to Viewora">
 
 <title>Viewora • Upload</title>
 
-<meta name="theme-color"
-content="#6366f1">
+<link
+rel="icon"
+href="assets/logo.png">
 
-<link rel="stylesheet"
+<!-- CSS -->
+
+<link
+rel="stylesheet"
 href="upload.css">
 
-<link rel="preconnect"
+<!-- Google Font -->
+
+<link
+rel="preconnect"
 href="https://fonts.googleapis.com">
 
-<link rel="preconnect"
+<link
+rel="preconnect"
 href="https://fonts.gstatic.com"
 crossorigin>
 
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+<link
+href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
 rel="stylesheet">
 
-<link rel="stylesheet"
+<!-- Font Awesome -->
+
+<link
+rel="stylesheet"
 href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
 
 </head>
 
 <body>
 
-<!-- =========================
-Animated Background
-========================= -->
+<!-- ======================================
+Premium Animated Background
+====================================== -->
 
 <div class="bgGradient"></div>
 
@@ -45,349 +66,851 @@ Animated Background
 
 <div class="blob blob3"></div>
 
-<!-- =========================
+<canvas id="particles"></canvas>
+
+<!-- ======================================
+Page Loader
+====================================== -->
+
+<div id="pageLoader">
+
+<div class="loaderLogo">
+
+<img
+src="assets/logo.png"
+alt="Viewora">
+
+</div>
+
+<h1>VIEWORA</h1>
+
+<p>Preparing Upload Studio...</p>
+
+<div class="loaderBar">
+
+<div class="loaderFill"></div>
+
+</div>
+
+</div>
+
+<!-- ======================================
+Main App
+====================================== -->
+
+<div id="app" class="hidden">
+
+<!-- ======================================
 Header
-========================= -->
+====================================== -->
 
 <header class="header glass">
 
 <button
-id="backBtn">
+id="backBtn"
+class="iconBtn">
 
 <i class="fa-solid fa-arrow-left"></i>
 
 </button>
 
-<h2>
+<div class="headerTitle">
 
-Create Post
+<h2>Create Post</h2>
 
-</h2>
+<p>Share your creativity with the world</p>
+
+</div>
 
 <button
-id="draftBtn">
+id="draftBtn"
+class="draftBtn">
 
-Draft
+<i class="fa-regular fa-floppy-disk"></i>
+
+<span>Draft</span>
 
 </button>
 
 </header>
 
-<!-- =========================
+<!-- ======================================
 Upload Container
-========================= -->
+====================================== -->
 
 <main class="uploadContainer">
 
-<!-- Upload Card -->
-
 <div class="uploadCard glass">
 
-<h2>
-
-Create Amazing Post
-
-</h2>
-
-<p>
-
-Share photos & videos with your followers.
-
-</p>
-
-<!-- Drag & Drop -->
-
-<div id="dropArea">
-
-<i class="fa-solid fa-cloud-arrow-up"></i>
-
-<h3>
-
-Drag & Drop Files
-
-</h3>
-
-<p>
-
-or
-
-</p>
-
-<button
-id="chooseFileBtn">
-
-Choose File
-
-</button>
-
-<input
-type="file"
-id="mediaInput"
-accept="image/*,video/*"
-hidden>
-
-</div>
-
-<!-- Preview -->
-
-<div
-id="previewContainer"
-class="hidden">
+<div class="uploadTop">
 
 <img
-id="previewImage"
-hidden>
+src="assets/logo.png"
+class="uploadLogo"
+alt="Viewora">
 
-<video
-id="previewVideo"
-controls
-playsinline
-hidden>
+<h2>Create Amazing Content</h2>
 
-</video>
-
-<button
-id="removeMedia">
-
-<i class="fa-solid fa-trash"></i>
-
-Remove
-
-</button>
-
-</div>
-
-<!-- Progress -->
-
-<div
-id="progressBox"
-class="hidden">
-
-<div class="progressBar">
-
-<div
-id="progressFill">
-
-</div>
-
-</div>
-
-<p
-id="progressText">
-
-0%
-
+<p>
+Upload photos, videos or Shorts
+to your Viewora audience.
 </p>
 
 </div>
-<!-- =========================
+<!-- ======================================
+Drag & Drop Upload Area
+====================================== -->
+
+<div class="dropZone" id="dropZone">
+
+    <input
+    type="file"
+    id="fileInput"
+    accept="image/*,video/*"
+    hidden>
+
+    <div class="dropContent">
+
+        <div class="uploadIcon">
+
+            <i class="fa-solid fa-cloud-arrow-up"></i>
+
+        </div>
+
+        <h3>Drag & Drop Files Here</h3>
+
+        <p>or click below to browse</p>
+
+        <button
+        type="button"
+        id="browseBtn"
+        class="primaryBtn">
+
+            <i class="fa-solid fa-folder-open"></i>
+
+            <span>Select File</span>
+
+        </button>
+
+        <small>
+            Supported:
+            MP4 • MOV • WEBM • JPG • PNG • JPEG
+        </small>
+
+    </div>
+
+</div>
+
+<!-- ======================================
+Selected File Preview
+====================================== -->
+
+<div
+id="previewSection"
+class="previewSection hidden">
+
+    <!-- Video Preview -->
+
+    <video
+    id="videoPreview"
+    controls
+    class="previewVideo hidden">
+    </video>
+
+    <!-- Image Preview -->
+
+    <img
+    id="imagePreview"
+    class="previewImage hidden"
+    alt="Preview">
+
+    <!-- File Info -->
+
+    <div class="fileInfo">
+
+        <h3
+        id="fileName">
+
+            No file selected
+
+        </h3>
+
+        <p
+        id="fileSize">
+
+            0 MB
+
+        </p>
+
+        <div class="fileType">
+
+            <span id="fileTypeBadge">
+
+                Unknown
+
+            </span>
+
+        </div>
+
+    </div>
+
+</div>
+
+<!-- ======================================
+Quick Actions
+====================================== -->
+
+<div class="quickActions">
+
+    <button
+    type="button"
+    id="changeFileBtn"
+    class="secondaryBtn">
+
+        <i class="fa-solid fa-rotate"></i>
+
+        Change File
+
+    </button>
+
+    <button
+    type="button"
+    id="removeFileBtn"
+    class="dangerBtn">
+
+        <i class="fa-solid fa-trash"></i>
+
+        Remove
+
+    </button>
+
+</div>
+
+<!-- ======================================
+Content Details
+====================================== -->
+
+<div class="sectionTitle">
+
+    <i class="fa-solid fa-pen"></i>
+
+    <span>Content Details</span>
+
+</div>
+<!-- ======================================
+Title
+====================================== -->
+
+<div class="formGroup">
+
+    <label for="title">
+
+        <i class="fa-solid fa-heading"></i>
+
+        Title
+
+    </label>
+
+    <input
+    type="text"
+    id="title"
+    maxlength="100"
+    placeholder="Enter an attractive title">
+
+    <div class="counter">
+
+        <span id="titleCount">0</span>/100
+
+    </div>
+
+</div>
+
+<!-- ======================================
 Caption
-========================= -->
+====================================== -->
 
 <div class="formGroup">
 
-<label>
+    <label for="caption">
 
-Caption
+        <i class="fa-solid fa-align-left"></i>
 
-</label>
+        Caption
 
-<textarea
+    </label>
 
-id="caption"
+    <textarea
+    id="caption"
+    maxlength="500"
+    rows="6"
+    placeholder="Write something about your post..."></textarea>
 
-maxlength="500"
+    <div class="counter">
 
-placeholder="Write an awesome caption...">
+        <span id="captionCount">0</span>/500
 
-</textarea>
-
-<div class="counter">
-
-<span id="captionCount">
-
-0
-
-</span>
-
-/500
+    </div>
 
 </div>
 
-</div>
-
-<!-- =========================
+<!-- ======================================
 Hashtags
-========================= -->
+====================================== -->
 
 <div class="formGroup">
 
-<label>
+    <label for="hashtags">
 
-Hashtags
+        <i class="fa-solid fa-hashtag"></i>
 
-</label>
+        Hashtags
 
-<input
+    </label>
 
-type="text"
-
-id="hashtags"
-
-placeholder="#travel #gaming #music">
+    <input
+    type="text"
+    id="hashtags"
+    placeholder="#viewora #gaming #music">
 
 </div>
 
-<!-- =========================
-Location
-========================= -->
+<!-- ======================================
+Mention Users
+====================================== -->
 
 <div class="formGroup">
 
-<label>
+    <label for="mentions">
 
-Location
+        <i class="fa-solid fa-at"></i>
 
-</label>
+        Mention Users
 
-<input
+    </label>
 
-type="text"
-
-id="location"
-
-placeholder="Add location">
+    <input
+    type="text"
+    id="mentions"
+    placeholder="@username">
 
 </div>
 
-<!-- =========================
+<!-- ======================================
+Category
+====================================== -->
+
+<div class="formGroup">
+
+    <label for="category">
+
+        <i class="fa-solid fa-layer-group"></i>
+
+        Category
+
+    </label>
+
+    <select id="category">
+
+        <option value="general">General</option>
+
+        <option value="gaming">Gaming</option>
+
+        <option value="music">Music</option>
+
+        <option value="education">Education</option>
+
+        <option value="technology">Technology</option>
+
+        <option value="sports">Sports</option>
+
+        <option value="comedy">Comedy</option>
+
+        <option value="vlog">Vlog</option>
+
+        <option value="news">News</option>
+
+        <option value="shorts">Shorts</option>
+
+    </select>
+
+</div>
+
+<!-- ======================================
 Visibility
-========================= -->
+====================================== -->
 
 <div class="formGroup">
 
-<label>
+    <label for="visibility">
 
-Who can see this?
+        <i class="fa-solid fa-earth-asia"></i>
 
-</label>
+        Visibility
 
-<select id="visibility">
+    </label>
 
-<option value="public">
+    <select id="visibility">
 
-🌍 Public
+        <option value="public">
+            🌍 Public
+        </option>
 
-</option>
+        <option value="followers">
+            👥 Followers Only
+        </option>
 
-<option value="followers">
+        <option value="private">
+            🔒 Private
+        </option>
 
-👥 Followers
-
-</option>
-
-<option value="private">
-
-🔒 Private
-
-</option>
-
-</select>
+    </select>
 
 </div>
 
-<!-- =========================
-Options
-========================= -->
+<!-- ======================================
+Post Options
+====================================== -->
 
-<div class="optionRow">
+<div class="optionsGrid">
 
-<label>
+    <label class="switchCard">
 
-Allow Comments
+        <span>Allow Comments</span>
 
-</label>
+        <input
+        type="checkbox"
+        id="allowComments"
+        checked>
 
-<input
+    </label>
 
-type="checkbox"
+    <label class="switchCard">
 
-id="allowComments"
+        <span>Allow Downloads</span>
 
-checked>
+        <input
+        type="checkbox"
+        id="allowDownload">
+
+    </label>
+
+    <label class="switchCard">
+
+        <span>Notify Followers</span>
+
+        <input
+        type="checkbox"
+        id="notifyFollowers"
+        checked>
+
+    </label>
+
+    <label class="switchCard">
+
+        <span>18+ Content</span>
+
+        <input
+        type="checkbox"
+        id="ageRestricted">
+
+    </label>
+
+</div>
+<!-- ======================================
+Thumbnail Upload (Videos)
+====================================== -->
+
+<div class="sectionTitle">
+
+    <i class="fa-solid fa-image"></i>
+
+    <span>Video Thumbnail</span>
 
 </div>
 
-<div class="optionRow">
+<div class="thumbnailCard">
 
-<label>
+    <div id="thumbnailPreview">
 
-Allow Downloads
+        <img
+        id="thumbnailImage"
+        src="assets/default-thumbnail.png"
+        alt="Thumbnail">
 
-</label>
+    </div>
 
-<input
+    <div class="thumbnailButtons">
 
-type="checkbox"
+        <input
+        type="file"
+        id="thumbnailInput"
+        accept="image/*"
+        hidden>
 
-id="allowDownload">
+        <button
+        type="button"
+        id="chooseThumbnailBtn"
+        class="secondaryBtn">
+
+            <i class="fa-solid fa-images"></i>
+
+            Choose Thumbnail
+
+        </button>
+
+        <button
+        type="button"
+        id="removeThumbnailBtn"
+        class="dangerBtn">
+
+            <i class="fa-solid fa-trash"></i>
+
+            Remove
+
+        </button>
+
+    </div>
 
 </div>
 
-<!-- =========================
-Buttons
-========================= -->
+<!-- ======================================
+Location
+====================================== -->
+
+<div class="formGroup">
+
+    <label>
+
+        <i class="fa-solid fa-location-dot"></i>
+
+        Location
+
+    </label>
+
+    <input
+    type="text"
+    id="location"
+    placeholder="Add location (optional)">
+
+</div>
+
+<!-- ======================================
+Schedule Upload
+====================================== -->
+
+<div class="formGroup">
+
+    <label>
+
+        <i class="fa-solid fa-calendar-days"></i>
+
+        Schedule Upload
+
+    </label>
+
+    <input
+    type="datetime-local"
+    id="scheduleDate">
+
+</div>
+
+<!-- ======================================
+Upload Progress
+====================================== -->
+
+<div
+id="progressSection"
+class="hidden">
+
+    <div class="progressHeader">
+
+        <span>Uploading...</span>
+
+        <span id="progressPercent">
+
+            0%
+
+        </span>
+
+    </div>
+
+    <div class="progressBar">
+
+        <div
+        id="progressFill">
+
+        </div>
+
+    </div>
+
+    <div class="progressInfo">
+
+        <span id="uploadSpeed">
+
+            0 MB/s
+
+        </span>
+
+        <span id="timeRemaining">
+
+            Calculating...
+
+        </span>
+
+    </div>
+
+</div>
+
+<!-- ======================================
+Upload Statistics
+====================================== -->
+
+<div class="statsGrid">
+
+    <div class="statCard">
+
+        <h4>Resolution</h4>
+
+        <span id="videoResolution">
+
+            --
+
+        </span>
+
+    </div>
+
+    <div class="statCard">
+
+        <h4>Duration</h4>
+
+        <span id="videoDuration">
+
+            --
+
+        </span>
+
+    </div>
+
+    <div class="statCard">
+
+        <h4>File Size</h4>
+
+        <span id="videoSize">
+
+            --
+
+        </span>
+
+    </div>
+
+</div>
+
+<!-- ======================================
+Action Buttons
+====================================== -->
 
 <div class="buttonGroup">
 
-<button
-id="uploadPostBtn">
+    <button
+    type="button"
+    id="saveDraftBtn"
+    class="secondaryBtn">
 
-<i class="fa-solid fa-cloud-arrow-up"></i>
+        <i class="fa-solid fa-floppy-disk"></i>
 
-Upload Post
+        Save Draft
 
-</button>
+    </button>
 
-<button
-id="cancelBtn">
+    <button
+    type="button"
+    id="cancelUploadBtn"
+    class="dangerBtn">
 
-Cancel
+        <i class="fa-solid fa-xmark"></i>
 
-</button>
+        Cancel
+
+    </button>
+
+    <button
+    type="submit"
+    id="uploadPostBtn"
+    class="primaryBtn">
+
+        <i class="fa-solid fa-cloud-arrow-up"></i>
+
+        Publish Post
+
+    </button>
 
 </div>
 
 </div>
 
 </main>
+<!-- ======================================
+Premium Loading Overlay
+====================================== -->
 
-<!-- =========================
-Toast
-========================= -->
+<div id="loadingOverlay" class="hidden">
 
-<div
-id="toast"
-class="hidden">
+    <div class="premiumLoader">
 
-<i
-id="toastIcon"
-class="fa-solid fa-circle-check">
+        <div class="loaderRing"></div>
+        <div class="loaderRing delay1"></div>
+        <div class="loaderRing delay2"></div>
 
-</i>
+    </div>
 
-<span
-id="toastText">
+    <h3>Uploading...</h3>
 
-Success
-
-</span>
+    <p>Please wait while we publish your content.</p>
 
 </div>
 
-<!-- =========================
-Firebase
-========================= -->
+<!-- ======================================
+Toast Notification
+====================================== -->
+
+<div id="toast" class="toast hidden">
+
+    <i
+    id="toastIcon"
+    class="fa-solid fa-circle-check">
+    </i>
+
+    <span id="toastText">
+
+        Success
+
+    </span>
+
+</div>
+
+<!-- ======================================
+Upload Success Modal
+====================================== -->
+
+<div
+id="successModal"
+class="modal hidden">
+
+    <div class="modalCard glass">
+
+        <div class="successIcon">
+
+            <i class="fa-solid fa-circle-check"></i>
+
+        </div>
+
+        <h2>Upload Successful 🎉</h2>
+
+        <p>
+
+            Your post has been published successfully.
+
+        </p>
+
+        <div class="modalButtons">
+
+            <button
+            id="viewPostBtn"
+            class="primaryBtn">
+
+                <i class="fa-solid fa-play"></i>
+
+                View Post
+
+            </button>
+
+            <button
+            id="uploadAnotherBtn"
+            class="secondaryBtn">
+
+                <i class="fa-solid fa-plus"></i>
+
+                Upload Another
+
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+<!-- ======================================
+Upload Failed Modal
+====================================== -->
+
+<div
+id="failedModal"
+class="modal hidden">
+
+    <div class="modalCard glass">
+
+        <div class="errorIcon">
+
+            <i class="fa-solid fa-circle-xmark"></i>
+
+        </div>
+
+        <h2>Upload Failed</h2>
+
+        <p id="uploadErrorMessage">
+
+            Something went wrong while uploading.
+
+        </p>
+
+        <div class="modalButtons">
+
+            <button
+            id="retryUploadBtn"
+            class="primaryBtn">
+
+                <i class="fa-solid fa-rotate-right"></i>
+
+                Retry
+
+            </button>
+
+            <button
+            id="closeFailedBtn"
+            class="secondaryBtn">
+
+                Close
+
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+<!-- ======================================
+Network Banner
+====================================== -->
+
+<div
+id="networkBanner"
+class="hidden">
+
+    <i class="fa-solid fa-wifi"></i>
+
+    <span>
+
+        No Internet Connection
+
+    </span>
+
+</div>
+
+<!-- ======================================
+Firebase SDK
+====================================== -->
 
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 
@@ -397,13 +920,46 @@ Firebase
 
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
 
-<!-- =========================
-App Files
-========================= -->
+<!-- ======================================
+Application Files
+====================================== -->
 
 <script src="firebase.js"></script>
 
 <script src="upload.js"></script>
+
+<!-- ======================================
+Premium Startup
+====================================== -->
+
+<script>
+
+window.addEventListener("load",()=>{
+
+    const loader=document.getElementById("pageLoader");
+    const app=document.getElementById("app");
+
+    setTimeout(()=>{
+
+        if(loader){
+
+            loader.style.opacity="0";
+            loader.style.visibility="hidden";
+
+        }
+
+        if(app){
+
+            app.classList.remove("hidden");
+            app.classList.add("fadeIn");
+
+        }
+
+    },1200);
+
+});
+
+</script>
 
 </body>
 </html>
