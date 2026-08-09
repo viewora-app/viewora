@@ -1,262 +1,2902 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Viewora • Profile</title>
-  <meta name="theme-color" content="#08111f" />
 
-  <!-- Fonts -->
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" />
+    <meta charset="UTF-8">
 
-  <!-- CSS -->
-  <link rel="stylesheet" href="profile.css" />
-  <link rel="stylesheet" href="nav.css" />
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    >
+
+    <title>Viewora • Profile</title>
+
+    <meta
+        name="theme-color"
+        content="#070912"
+    >
+
+    <!-- =====================================================
+         FONTS
+    ====================================================== -->
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet"
+    >
+
+    <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
+    >
+
+    <!-- =====================================================
+         PROFILE CSS
+    ====================================================== -->
+
+    <link
+        rel="stylesheet"
+        href="profile.css"
+    >
+
+    <link
+        rel="stylesheet"
+        href="nav.css"
+    >
+
+    <style>
+
+        /* =====================================================
+           VIEWORA PREMIUM PROFILE
+        ====================================================== */
+
+        :root {
+
+            --bg:
+                #06070c;
+
+            --card:
+                rgba(255,255,255,.055);
+
+            --card-border:
+                rgba(255,255,255,.09);
+
+            --text:
+                #ffffff;
+
+            --muted:
+                #9da3b4;
+
+            --accent:
+                #6c63ff;
+
+            --accent2:
+                #00d9ff;
+
+            --shadow:
+                0 25px 70px rgba(0,0,0,.45);
+        }
+
+
+        * {
+
+            margin: 0;
+            padding: 0;
+
+            box-sizing: border-box;
+
+            font-family:
+                "Inter",
+                sans-serif;
+
+            -webkit-tap-highlight-color:
+                transparent;
+        }
+
+
+        html {
+
+            scroll-behavior:
+                smooth;
+        }
+
+
+        body {
+
+            min-height: 100vh;
+
+            background:
+                var(--bg);
+
+            color:
+                var(--text);
+
+            overflow-x:
+                hidden;
+        }
+
+
+        /* =====================================================
+           ANIMATED BACKGROUND
+        ====================================================== */
+
+        .premiumBackground {
+
+            position: fixed;
+
+            inset: 0;
+
+            z-index: -5;
+
+            overflow: hidden;
+
+            background:
+                radial-gradient(
+                    circle at 15% 10%,
+                    rgba(108,99,255,.16),
+                    transparent 30%
+                ),
+                radial-gradient(
+                    circle at 85% 20%,
+                    rgba(0,217,255,.10),
+                    transparent 28%
+                ),
+                #06070c;
+        }
+
+
+        .orb {
+
+            position: absolute;
+
+            width: 280px;
+            height: 280px;
+
+            border-radius: 50%;
+
+            filter:
+                blur(80px);
+
+            opacity: .35;
+
+            animation:
+                floatingOrb 10s ease-in-out infinite;
+        }
+
+
+        .orbOne {
+
+            top: 5%;
+            left: -80px;
+
+            background:
+                #655cff;
+        }
+
+
+        .orbTwo {
+
+            right: -90px;
+            top: 35%;
+
+            background:
+                #00d9ff;
+
+            animation-delay:
+                -3s;
+        }
+
+
+        .orbThree {
+
+            bottom: -100px;
+            left: 35%;
+
+            background:
+                #9b59ff;
+
+            animation-delay:
+                -6s;
+        }
+
+
+        @keyframes floatingOrb {
+
+            0%,
+            100% {
+
+                transform:
+                    translate3d(0,0,0)
+                    scale(1);
+            }
+
+            50% {
+
+                transform:
+                    translate3d(35px,-45px,0)
+                    scale(1.12);
+            }
+        }
+
+
+        /* =====================================================
+           LOADER
+        ====================================================== */
+
+        #pageLoader {
+
+            position: fixed;
+
+            inset: 0;
+
+            z-index: 99999;
+
+            display:
+                flex;
+
+            flex-direction:
+                column;
+
+            align-items:
+                center;
+
+            justify-content:
+                center;
+
+            gap: 18px;
+
+            background:
+                #06070c;
+
+            transition:
+                opacity .45s ease,
+                visibility .45s ease;
+        }
+
+
+        #pageLoader.hidden {
+
+            opacity: 0;
+
+            visibility:
+                hidden;
+
+            pointer-events:
+                none;
+        }
+
+
+        .loader {
+
+            position:
+                relative;
+
+            width: 65px;
+            height: 65px;
+        }
+
+
+        .ring {
+
+            position: absolute;
+
+            inset: 0;
+
+            border-radius:
+                50%;
+
+            border:
+                3px solid
+                rgba(255,255,255,.08);
+
+            border-top-color:
+                var(--accent);
+
+            border-right-color:
+                var(--accent2);
+
+            animation:
+                loaderSpin 1s linear infinite;
+        }
+
+
+        .ring.delay {
+
+            inset: 9px;
+
+            border:
+                2px solid
+                rgba(255,255,255,.06);
+
+            border-bottom-color:
+                #fff;
+
+            animation-direction:
+                reverse;
+
+            animation-duration:
+                1.6s;
+        }
+
+
+        @keyframes loaderSpin {
+
+            to {
+
+                transform:
+                    rotate(360deg);
+            }
+        }
+
+
+        #pageLoader h2 {
+
+            font-size:
+                14px;
+
+            font-weight:
+                600;
+
+            color:
+                #aeb4c5;
+
+            letter-spacing:
+                .4px;
+        }
+
+
+        /* =====================================================
+           APP
+        ====================================================== */
+
+        #app {
+
+            width:
+                100%;
+
+            max-width:
+                760px;
+
+            min-height:
+                100vh;
+
+            margin:
+                auto;
+
+            padding-bottom:
+                100px;
+
+            animation:
+                pageEnter .7s ease both;
+        }
+
+
+        #app.hidden {
+
+            display:
+                none;
+        }
+
+
+        @keyframes pageEnter {
+
+            from {
+
+                opacity: 0;
+
+                transform:
+                    translateY(18px);
+            }
+
+            to {
+
+                opacity: 1;
+
+                transform:
+                    translateY(0);
+            }
+        }
+
+
+        /* =====================================================
+           COVER
+        ====================================================== */
+
+        .profileBanner {
+
+            position:
+                relative;
+
+            height:
+                245px;
+
+            overflow:
+                hidden;
+
+            border-radius:
+                0 0 34px 34px;
+
+            background:
+                #111;
+        }
+
+
+        #coverPhoto {
+
+            width:
+                100%;
+
+            height:
+                100%;
+
+            object-fit:
+                cover;
+
+            transform:
+                scale(1.04);
+
+            animation:
+                coverReveal 1.3s ease both;
+        }
+
+
+        @keyframes coverReveal {
+
+            from {
+
+                opacity: 0;
+
+                transform:
+                    scale(1.12);
+            }
+
+            to {
+
+                opacity: 1;
+
+                transform:
+                    scale(1.04);
+            }
+        }
+
+
+        .bannerOverlay {
+
+            position:
+                absolute;
+
+            inset:
+                0;
+
+            background:
+                linear-gradient(
+                    to bottom,
+                    rgba(0,0,0,.18),
+                    transparent 35%,
+                    rgba(6,7,12,.95)
+                );
+        }
+
+
+        .profileBanner::after {
+
+            content:
+                "";
+
+            position:
+                absolute;
+
+            inset:
+                0;
+
+            background:
+                linear-gradient(
+                    110deg,
+                    transparent 25%,
+                    rgba(255,255,255,.10) 50%,
+                    transparent 75%
+                );
+
+            transform:
+                translateX(-120%);
+
+            animation:
+                coverShine 5s ease-in-out infinite;
+        }
+
+
+        @keyframes coverShine {
+
+            0%,
+            55% {
+
+                transform:
+                    translateX(-120%);
+            }
+
+            75%,
+            100% {
+
+                transform:
+                    translateX(120%);
+            }
+        }
+
+
+        /* =====================================================
+           TOP BUTTONS
+        ====================================================== */
+
+        .shareBtn,
+        .settingsBtn {
+
+            position:
+                absolute;
+
+            top:
+                18px;
+
+            z-index:
+                5;
+
+            width:
+                43px;
+
+            height:
+                43px;
+
+            border:
+                1px solid
+                rgba(255,255,255,.14);
+
+            border-radius:
+                15px;
+
+            color:
+                #fff;
+
+            background:
+                rgba(10,12,20,.48);
+
+            backdrop-filter:
+                blur(18px);
+
+            -webkit-backdrop-filter:
+                blur(18px);
+
+            cursor:
+                pointer;
+
+            transition:
+                .25s ease;
+        }
+
+
+        .shareBtn {
+
+            right:
+                68px;
+        }
+
+
+        .settingsBtn {
+
+            right:
+                18px;
+        }
+
+
+        .shareBtn:hover,
+        .settingsBtn:hover {
+
+            transform:
+                translateY(-3px)
+                scale(1.04);
+
+            background:
+                rgba(108,99,255,.45);
+        }
+
+
+        /* =====================================================
+           PROFILE CARD
+        ====================================================== */
+
+        .profileCard {
+
+            position:
+                relative;
+
+            margin:
+                -58px 14px 0;
+
+            padding:
+                0 20px 24px;
+
+            text-align:
+                center;
+
+            z-index:
+                10;
+
+            border:
+                1px solid
+                var(--card-border);
+
+            border-radius:
+                30px;
+
+            background:
+                linear-gradient(
+                    145deg,
+                    rgba(255,255,255,.075),
+                    rgba(255,255,255,.025)
+                );
+
+            box-shadow:
+                var(--shadow);
+
+            backdrop-filter:
+                blur(24px);
+
+            -webkit-backdrop-filter:
+                blur(24px);
+
+            animation:
+                cardRise .8s .15s ease both;
+        }
+
+
+        @keyframes cardRise {
+
+            from {
+
+                opacity: 0;
+
+                transform:
+                    translateY(35px);
+            }
+
+            to {
+
+                opacity: 1;
+
+                transform:
+                    translateY(0);
+            }
+        }
+
+
+        /* =====================================================
+           AVATAR
+        ====================================================== */
+
+        #storyRing {
+
+            position:
+                relative;
+
+            width:
+                112px;
+
+            height:
+                112px;
+
+            margin:
+                -56px auto 14px;
+
+            padding:
+                4px;
+
+            border-radius:
+                50%;
+
+            background:
+                conic-gradient(
+                    from 0deg,
+                    #6c63ff,
+                    #00d9ff,
+                    #ff4fd8,
+                    #6c63ff
+                );
+
+            animation:
+                avatarGradient 5s linear infinite;
+
+            box-shadow:
+                0 12px 40px
+                rgba(108,99,255,.35);
+        }
+
+
+        @keyframes avatarGradient {
+
+            to {
+
+                transform:
+                    rotate(360deg);
+            }
+        }
+
+
+        #storyRing img {
+
+            width:
+                100%;
+
+            height:
+                100%;
+
+            display:
+                block;
+
+            object-fit:
+                cover;
+
+            border:
+                4px solid
+                #090a10;
+
+            border-radius:
+                50%;
+
+            animation:
+                avatarImageIn .8s ease both;
+        }
+
+
+        @keyframes avatarImageIn {
+
+            from {
+
+                opacity: 0;
+
+                transform:
+                    scale(.75);
+            }
+
+            to {
+
+                opacity: 1;
+
+                transform:
+                    scale(1);
+            }
+        }
+
+
+        .storyPlus {
+
+            position:
+                absolute;
+
+            right:
+                1px;
+
+            bottom:
+                2px;
+
+            width:
+                32px;
+
+            height:
+                32px;
+
+            display:
+                flex;
+
+            align-items:
+                center;
+
+            justify-content:
+                center;
+
+            border:
+                3px solid
+                #090a10;
+
+            border-radius:
+                50%;
+
+            background:
+                linear-gradient(
+                    135deg,
+                    #6c63ff,
+                    #00d9ff
+                );
+
+            color:
+                #fff;
+
+            cursor:
+                pointer;
+
+            transition:
+                .25s ease;
+        }
+
+
+        .storyPlus:hover {
+
+            transform:
+                rotate(90deg)
+                scale(1.08);
+        }
+
+
+        /* =====================================================
+           NAME
+        ====================================================== */
+
+        #profileName {
+
+            display:
+                flex;
+
+            align-items:
+                center;
+
+            justify-content:
+                center;
+
+            gap:
+                6px;
+
+            margin:
+                0;
+
+            font-size:
+                24px;
+
+            font-weight:
+                800;
+
+            letter-spacing:
+                -.6px;
+        }
+
+
+        .verified {
+
+            color:
+                #20cfff;
+
+            font-size:
+                17px;
+
+            animation:
+                verifiedPulse 2s ease-in-out infinite;
+        }
+
+
+        .verified.hidden {
+
+            display:
+                none;
+        }
+
+
+        @keyframes verifiedPulse {
+
+            50% {
+
+                transform:
+                    scale(1.15);
+            }
+        }
+
+
+        .username {
+
+            margin-top:
+                5px;
+
+            color:
+                #8f97aa;
+
+            font-size:
+                13px;
+        }
+
+
+        .bio {
+
+            max-width:
+                500px;
+
+            margin:
+                13px auto 0;
+
+            color:
+                #d5d8e2;
+
+            line-height:
+                1.55;
+
+            font-size:
+                14px;
+        }
+
+
+        /* =====================================================
+           META
+        ====================================================== */
+
+        .profileMeta {
+
+            display:
+                flex;
+
+            align-items:
+                center;
+
+            justify-content:
+                center;
+
+            flex-wrap:
+                wrap;
+
+            gap:
+                15px;
+
+            margin-top:
+                14px;
+
+            color:
+                #858da0;
+
+            font-size:
+                11px;
+        }
+
+
+        .profileMeta span {
+
+            display:
+                flex;
+
+            align-items:
+                center;
+
+            gap:
+                5px;
+        }
+
+
+        .profileMeta i {
+
+            color:
+                #7c73ff;
+        }
+
+
+        /* =====================================================
+           STATS
+        ====================================================== */
+
+        .profileStats {
+
+            display:
+                grid;
+
+            grid-template-columns:
+                repeat(4,1fr);
+
+            gap:
+                8px;
+
+            margin-top:
+                22px;
+        }
+
+
+        .stat {
+
+            padding:
+                13px 5px;
+
+            border:
+                1px solid
+                rgba(255,255,255,.065);
+
+            border-radius:
+                17px;
+
+            background:
+                rgba(255,255,255,.035);
+
+            transition:
+                .3s ease;
+        }
+
+
+        .stat:hover {
+
+            transform:
+                translateY(-4px);
+
+            background:
+                rgba(108,99,255,.10);
+
+            border-color:
+                rgba(108,99,255,.25);
+        }
+
+
+        .stat h2 {
+
+            font-size:
+                18px;
+
+            font-weight:
+                800;
+        }
+
+
+        .stat span {
+
+            display:
+                block;
+
+            margin-top:
+                3px;
+
+            color:
+                #8b92a4;
+
+            font-size:
+                10px;
+        }
+
+
+        /* =====================================================
+           BUTTONS
+        ====================================================== */
+
+        .profileButtons {
+
+            display:
+                grid;
+
+            grid-template-columns:
+                1fr 1fr 1fr;
+
+            gap:
+                9px;
+
+            margin-top:
+                18px;
+        }
+
+
+        .profileButtons button,
+        .profileButtons a {
+
+            min-height:
+                44px;
+
+            display:
+                flex;
+
+            align-items:
+                center;
+
+            justify-content:
+                center;
+
+            gap:
+                7px;
+
+            border:
+                1px solid
+                rgba(255,255,255,.10);
+
+            border-radius:
+                14px;
+
+            color:
+                #fff;
+
+            text-decoration:
+                none;
+
+            font-size:
+                12px;
+
+            font-weight:
+                700;
+
+            cursor:
+                pointer;
+
+            transition:
+                .25s ease;
+        }
+
+
+        .primaryBtn {
+
+            border:
+                0 !important;
+
+            background:
+                linear-gradient(
+                    135deg,
+                    #6c63ff,
+                    #00bfe9
+                );
+
+            box-shadow:
+                0 8px 25px
+                rgba(78,110,255,.25);
+        }
+
+
+        .secondaryBtn {
+
+            background:
+                rgba(255,255,255,.045);
+        }
+
+
+        .profileButtons button:hover,
+        .profileButtons a:hover {
+
+            transform:
+                translateY(-3px);
+        }
+
+
+        /* =====================================================
+           STORY HIGHLIGHTS
+        ====================================================== */
+
+        .storySection {
+
+            margin:
+                18px 14px 0;
+
+            padding:
+                18px;
+
+            border:
+                1px solid
+                rgba(255,255,255,.07);
+
+            border-radius:
+                25px;
+
+            background:
+                rgba(255,255,255,.035);
+
+            backdrop-filter:
+                blur(18px);
+
+            animation:
+                sectionReveal .7s .3s ease both;
+        }
+
+
+        @keyframes sectionReveal {
+
+            from {
+
+                opacity: 0;
+
+                transform:
+                    translateY(20px);
+            }
+
+            to {
+
+                opacity: 1;
+
+                transform:
+                    translateY(0);
+            }
+        }
+
+
+        .storySection h3 {
+
+            margin-bottom:
+                15px;
+
+            font-size:
+                14px;
+        }
+
+
+        .storiesWrapper {
+
+            display:
+                flex;
+
+            gap:
+                15px;
+
+            overflow-x:
+                auto;
+
+            scrollbar-width:
+                none;
+        }
+
+
+        .storiesWrapper::-webkit-scrollbar {
+
+            display:
+                none;
+        }
+
+
+        .storyItem {
+
+            min-width:
+                66px;
+
+            text-align:
+                center;
+
+            cursor:
+                pointer;
+        }
+
+
+        .storyCircle {
+
+            width:
+                62px;
+
+            height:
+                62px;
+
+            padding:
+                3px;
+
+            display:
+                flex;
+
+            align-items:
+                center;
+
+            justify-content:
+                center;
+
+            margin:
+                auto;
+
+            border-radius:
+                50%;
+
+            background:
+                conic-gradient(
+                    #6c63ff,
+                    #00d9ff,
+                    #ff4fd8,
+                    #6c63ff
+                );
+
+            transition:
+                .3s ease;
+        }
+
+
+        .storyCircle:hover {
+
+            transform:
+                scale(1.08)
+                rotate(4deg);
+        }
+
+
+        .storyCircle img {
+
+            width:
+                100%;
+
+            height:
+                100%;
+
+            object-fit:
+                cover;
+
+            border:
+                3px solid
+                #08090f;
+
+            border-radius:
+                50%;
+        }
+
+
+        .addStory {
+
+            color:
+                #fff;
+
+            font-size:
+                18px;
+
+            background:
+                linear-gradient(
+                    135deg,
+                    #181b29,
+                    #252a3b
+                );
+
+            border:
+                1px solid
+                rgba(255,255,255,.1);
+        }
+
+
+        .storyItem p {
+
+            margin-top:
+                7px;
+
+            color:
+                #9aa1b2;
+
+            font-size:
+                10px;
+
+            white-space:
+                nowrap;
+
+            overflow:
+                hidden;
+
+            text-overflow:
+                ellipsis;
+        }
+
+
+        /* =====================================================
+           TABS
+        ====================================================== */
+
+        .profileTabs {
+
+            position:
+                sticky;
+
+            top:
+                0;
+
+            z-index:
+                30;
+
+            display:
+                grid;
+
+            grid-template-columns:
+                repeat(4,1fr);
+
+            margin:
+                15px 14px 0;
+
+            padding:
+                5px;
+
+            border:
+                1px solid
+                rgba(255,255,255,.08);
+
+            border-radius:
+                18px;
+
+            background:
+                rgba(8,9,15,.78);
+
+            backdrop-filter:
+                blur(22px);
+
+            -webkit-backdrop-filter:
+                blur(22px);
+        }
+
+
+        .tabBtn {
+
+            position:
+                relative;
+
+            min-height:
+                43px;
+
+            display:
+                flex;
+
+            flex-direction:
+                column;
+
+            align-items:
+                center;
+
+            justify-content:
+                center;
+
+            gap:
+                3px;
+
+            border:
+                0;
+
+            border-radius:
+                13px;
+
+            background:
+                transparent;
+
+            color:
+                #737b8f;
+
+            font-size:
+                9px;
+
+            cursor:
+                pointer;
+
+            transition:
+                .25s ease;
+        }
+
+
+        .tabBtn i {
+
+            font-size:
+                14px;
+        }
+
+
+        .tabBtn.active {
+
+            color:
+                #fff;
+
+            background:
+                linear-gradient(
+                    135deg,
+                    rgba(108,99,255,.24),
+                    rgba(0,217,255,.10)
+                );
+        }
+
+
+        .tabBtn.active::after {
+
+            content:
+                "";
+
+            position:
+                absolute;
+
+            left:
+                25%;
+
+            right:
+                25%;
+
+            bottom:
+                2px;
+
+            height:
+                2px;
+
+            border-radius:
+                10px;
+
+            background:
+                linear-gradient(
+                    90deg,
+                    #6c63ff,
+                    #00d9ff
+                );
+        }
+
+
+        /* =====================================================
+           TAB CONTENT
+        ====================================================== */
+
+        .tabContainer {
+
+            margin:
+                12px 14px 0;
+        }
+
+
+        .tabContent {
+
+            display:
+                none;
+
+            animation:
+                tabIn .35s ease both;
+        }
+
+
+        .tabContent.active {
+
+            display:
+                block;
+        }
+
+
+        @keyframes tabIn {
+
+            from {
+
+                opacity: 0;
+
+                transform:
+                    translateY(10px);
+            }
+
+            to {
+
+                opacity: 1;
+
+                transform:
+                    translateY(0);
+            }
+        }
+
+
+        .postsGrid,
+        .shortsGrid,
+        .savedGrid {
+
+            display:
+                grid;
+
+            grid-template-columns:
+                repeat(3,1fr);
+
+            gap:
+                4px;
+        }
+
+
+        .videosList {
+
+            display:
+                flex;
+
+            flex-direction:
+                column;
+
+            gap:
+                10px;
+        }
+
+
+        /* =====================================================
+           BOTTOM NAV
+        ====================================================== */
+
+        .bottomNav {
+
+            position:
+                fixed;
+
+            left:
+                50%;
+
+            bottom:
+                12px;
+
+            transform:
+                translateX(-50%);
+
+            z-index:
+                1000;
+
+            width:
+                min(94%, 600px);
+
+            height:
+                64px;
+
+            display:
+                flex;
+
+            align-items:
+                center;
+
+            justify-content:
+                space-around;
+
+            padding:
+                5px 8px;
+
+            border:
+                1px solid
+                rgba(255,255,255,.10);
+
+            border-radius:
+                23px;
+
+            background:
+                rgba(10,11,18,.78);
+
+            backdrop-filter:
+                blur(25px);
+
+            -webkit-backdrop-filter:
+                blur(25px);
+
+            box-shadow:
+                0 15px 50px
+                rgba(0,0,0,.45);
+        }
+
+
+        .bottomNav a {
+
+            position:
+                relative;
+
+            width:
+                58px;
+
+            height:
+                54px;
+
+            display:
+                flex;
+
+            flex-direction:
+                column;
+
+            align-items:
+                center;
+
+            justify-content:
+                center;
+
+            gap:
+                3px;
+
+            color:
+                #777f93;
+
+            text-decoration:
+                none;
+
+            font-size:
+                9px;
+
+            transition:
+                .25s ease;
+        }
+
+
+        .bottomNav a i {
+
+            font-size:
+                17px;
+        }
+
+
+        .bottomNav a.active {
+
+            color:
+                #fff;
+        }
+
+
+        .activeIndicator {
+
+            position:
+                absolute;
+
+            top:
+                4px;
+
+            width:
+                5px;
+
+            height:
+                5px;
+
+            border-radius:
+                50%;
+
+            background:
+                #00d9ff;
+
+            opacity:
+                0;
+
+            transform:
+                scale(0);
+
+            transition:
+                .25s ease;
+        }
+
+
+        .bottomNav a.active .activeIndicator {
+
+            opacity:
+                1;
+
+            transform:
+                scale(1);
+        }
+
+
+        .uploadNav {
+
+            width:
+                48px !important;
+
+            height:
+                48px !important;
+
+            border-radius:
+                16px !important;
+
+            color:
+                #fff !important;
+
+            background:
+                linear-gradient(
+                    135deg,
+                    #6c63ff,
+                    #00c9ed
+                );
+
+            box-shadow:
+                0 8px 25px
+                rgba(90,100,255,.35);
+        }
+
+
+        .uploadNav i {
+
+            font-size:
+                20px !important;
+        }
+
+
+        /* =====================================================
+           SCROLL TOP
+        ====================================================== */
+
+        .floatingTop {
+
+            position:
+                fixed;
+
+            right:
+                18px;
+
+            bottom:
+                92px;
+
+            z-index:
+                900;
+
+            width:
+                42px;
+
+            height:
+                42px;
+
+            border:
+                1px solid
+                rgba(255,255,255,.12);
+
+            border-radius:
+                14px;
+
+            background:
+                rgba(20,22,32,.8);
+
+            color:
+                #fff;
+
+            backdrop-filter:
+                blur(15px);
+
+            cursor:
+                pointer;
+
+            transition:
+                .25s ease;
+        }
+
+
+        .floatingTop.hidden {
+
+            opacity:
+                0;
+
+            pointer-events:
+                none;
+
+            transform:
+                translateY(10px);
+        }
+
+
+        .floatingTop:not(.hidden) {
+
+            animation:
+                topButtonIn .3s ease;
+        }
+
+
+        @keyframes topButtonIn {
+
+            from {
+
+                opacity: 0;
+
+                transform:
+                    translateY(10px);
+            }
+
+            to {
+
+                opacity: 1;
+
+                transform:
+                    translateY(0);
+            }
+        }
+
+
+        /* =====================================================
+           MOBILE
+        ====================================================== */
+
+        @media (max-width: 520px) {
+
+            #app {
+
+                padding-bottom:
+                    92px;
+            }
+
+
+            .profileBanner {
+
+                height:
+                    215px;
+
+                border-radius:
+                    0 0 28px 28px;
+            }
+
+
+            .profileCard {
+
+                margin-top:
+                    -52px;
+
+                padding:
+                    0 14px 20px;
+
+                border-radius:
+                    26px;
+            }
+
+
+            #storyRing {
+
+                width:
+                    104px;
+
+                height:
+                    104px;
+
+                margin-top:
+                    -52px;
+            }
+
+
+            #profileName {
+
+                font-size:
+                    21px;
+            }
+
+
+            .profileStats {
+
+                gap:
+                    5px;
+            }
+
+
+            .stat {
+
+                padding:
+                    11px 3px;
+            }
+
+
+            .stat h2 {
+
+                font-size:
+                    16px;
+            }
+
+
+            .profileButtons {
+
+                gap:
+                    6px;
+            }
+
+
+            .profileButtons button,
+            .profileButtons a {
+
+                font-size:
+                    10px;
+
+                min-height:
+                    42px;
+            }
+
+
+            .profileButtons i {
+
+                font-size:
+                    11px;
+            }
+
+
+            .storySection {
+
+                border-radius:
+                    22px;
+            }
+        }
+
+
+        @media (max-width: 360px) {
+
+            .profileButtons span {
+
+                display:
+                    none;
+            }
+
+
+            .profileButtons button,
+            .profileButtons a {
+
+                min-height:
+                    40px;
+            }
+        }
+
+    </style>
+
 </head>
+
 
 <body>
 
-<!-- Background -->
 
-<div class="bgGlow"></div>
+<!-- =====================================================
+     PREMIUM BACKGROUND
+====================================================== -->
 
-<!-- Loader -->
+<div class="premiumBackground">
+
+    <div class="orb orbOne"></div>
+
+    <div class="orb orbTwo"></div>
+
+    <div class="orb orbThree"></div>
+
+</div>
+
+
+<!-- =====================================================
+     LOADER
+====================================================== -->
 
 <div id="pageLoader">
 
-<div class="loader">
+    <div class="loader">
 
-<div class="ring"></div>
+        <div class="ring"></div>
 
-<div class="ring delay"></div>
+        <div class="ring delay"></div>
+
+    </div>
+
+    <h2>
+        Loading Profile...
+    </h2>
 
 </div>
 
-<h2>Loading Profile...</h2>
 
-</div>
+<!-- =====================================================
+     APP
+====================================================== -->
 
-  <!-- Main App -->
-  <div id="app" class="hidden">
+<div id="app" class="hidden">
 
-    <!-- Banner -->
+
+    <!-- =================================================
+         PROFILE BANNER
+    ================================================== -->
+
     <section class="profileBanner">
-      <img id="coverPhoto" src="assets/default-banner.jpg" alt="Cover" />
-      <div class="bannerOverlay"></div>
 
-      <button class="shareBtn" title="Share Profile">
-        <i class="fa-solid fa-share-nodes"></i>
-      </button>
+        <img
+            id="coverPhoto"
+            src="assets/default-banner.jpg"
+            alt="Cover"
+        >
 
-      <button class="settingsBtn" onclick="location.href='settings.html'" title="Settings">
-        <i class="fa-solid fa-gear"></i>
-      </button>
+        <div class="bannerOverlay"></div>
+
+
+        <button
+            class="shareBtn"
+            id="shareProfileBtn"
+            title="Share Profile"
+            type="button"
+        >
+
+            <i class="fa-solid fa-share-nodes"></i>
+
+        </button>
+
+
+        <button
+            class="settingsBtn"
+            id="settingsBtn"
+            title="Settings"
+            type="button"
+        >
+
+            <i class="fa-solid fa-gear"></i>
+
+        </button>
+
     </section>
 
-    <!-- Profile Card -->
+
+    <!-- =================================================
+         PROFILE CARD
+    ================================================== -->
+
     <section class="profileCard">
 
-      <!-- Avatar + Story Ring -->
-      <div id="storyRing">
-        <img id="profilePic" src="assets/default-avatar.png" alt="Profile" />
-        <div class="storyPlus" onclick="createStory()">
-          <i class="fa-solid fa-plus"></i>
+
+        <!-- Avatar -->
+
+        <div id="storyRing">
+
+            <img
+                id="profilePic"
+                src="assets/default-avatar.png"
+                alt="Profile"
+            >
+
+            <button
+                class="storyPlus"
+                id="storyPlusBtn"
+                type="button"
+                title="Create Story"
+            >
+
+                <i class="fa-solid fa-plus"></i>
+
+            </button>
+
         </div>
-      </div>
 
-      <!-- Name -->
-      <h1 id="profileName">
-        Loading...
-        <span id="verifiedBadge" class="verified hidden">
-          <i class="fa-solid fa-circle-check"></i>
-        </span>
-      </h1>
 
-      <p id="profileUsername" class="username">@loading</p>
-      <p id="profileBio" class="bio">Welcome to Viewora 🚀</p>
+        <!-- Name -->
 
-      <!-- Meta -->
-      <div class="profileMeta">
-        <span id="joinDate">
-          <i class="fa-solid fa-calendar"></i> Joined 2026
-        </span>
-        <span id="profileLocation">
-          <i class="fa-solid fa-location-dot"></i> India
-        </span>
-      </div>
+        <h1 id="profileName">
 
-      <!-- Stats -->
-      <div class="profileStats">
-        <div class="stat">
-          <h2 id="postsCount">0</h2>
-          <span>Posts</span>
+            Loading...
+
+            <span
+                id="verifiedBadge"
+                class="verified hidden"
+            >
+
+                <i
+                    class="fa-solid fa-circle-check"
+                ></i>
+
+            </span>
+
+        </h1>
+
+
+        <p
+            id="profileUsername"
+            class="username"
+        >
+            @loading
+        </p>
+
+
+        <p
+            id="profileBio"
+            class="bio"
+        >
+            Welcome to Viewora 🚀
+        </p>
+
+
+        <!-- Meta -->
+
+        <div class="profileMeta">
+
+            <span id="joinDate">
+
+                <i
+                    class="fa-solid fa-calendar"
+                ></i>
+
+                Joined 2026
+
+            </span>
+
+
+            <span id="profileLocation">
+
+                <i
+                    class="fa-solid fa-location-dot"
+                ></i>
+
+                India
+
+            </span>
+
         </div>
-        <div class="stat">
-          <h2 id="followersCount">0</h2>
-          <span>Followers</span>
-        </div>
-        <div class="stat">
-          <h2 id="followingCount">0</h2>
-          <span>Following</span>
-        </div>
-        <div class="stat">
-          <h2 id="videosCount">0</h2>
-          <span>Videos</span>
-        </div>
-      </div>
 
-      <!-- Action Buttons -->
-      <div class="profileButtons">
-        <button id="followBtn" class="primaryBtn">
-          <i class="fa-solid fa-user-plus"></i>
-          <span>Follow</span>
-        </button>
 
-        <a href="edit-profile.html" class="secondaryBtn" id="editProfileBtn">
-          <i class="fa-solid fa-pen"></i>
-          <span>Edit</span>
-        </a>
+        <!-- Stats -->
 
-        <button id="messageBtn" class="secondaryBtn">
-          <i class="fa-solid fa-paper-plane"></i>
-          <span>Message</span>
-        </button>
-      </div>
+        <div class="profileStats">
+
+            <div class="stat">
+
+                <h2 id="postsCount">
+                    0
+                </h2>
+
+                <span>
+                    Posts
+                </span>
+
+            </div>
+
+
+            <div class="stat">
+
+                <h2 id="followersCount">
+                    0
+                </h2>
+
+                <span>
+                    Followers
+                </span>
+
+            </div>
+
+
+            <div class="stat">
+
+                <h2 id="followingCount">
+                    0
+                </h2>
+
+                <span>
+                    Following
+                </span>
+
+            </div>
+
+
+            <div class="stat">
+
+                <h2 id="videosCount">
+                    0
+                </h2>
+
+                <span>
+                    Videos
+                </span>
+
+            </div>
+
+        </div>
+
+
+        <!-- Buttons -->
+
+        <div class="profileButtons">
+
+
+            <button
+                id="followBtn"
+                class="primaryBtn"
+                type="button"
+            >
+
+                <i
+                    class="fa-solid fa-user-plus"
+                ></i>
+
+                <span>
+                    Follow
+                </span>
+
+            </button>
+
+
+            <a
+                href="edit-profile.html"
+                class="secondaryBtn"
+                id="editProfileBtn"
+            >
+
+                <i
+                    class="fa-solid fa-pen"
+                ></i>
+
+                <span>
+                    Edit
+                </span>
+
+            </a>
+
+
+            <button
+                id="messageBtn"
+                class="secondaryBtn"
+                type="button"
+            >
+
+                <i
+                    class="fa-solid fa-paper-plane"
+                ></i>
+
+                <span>
+                    Message
+                </span>
+
+            </button>
+
+        </div>
+
     </section>
 
-    <!-- Story Highlights -->
+
+    <!-- =================================================
+         STORY HIGHLIGHTS
+    ================================================== -->
+
     <section class="storySection">
-      <h3>Story Highlights</h3>
-      <div class="storiesWrapper" id="storiesWrapper">
-        <!-- Stories will load here -->
-        <div class="storyItem" onclick="createStory()">
-          <div class="storyCircle addStory">
-            <i class="fa-solid fa-plus"></i>
-          </div>
-          <p>New</p>
+
+        <h3>
+            Story Highlights
+        </h3>
+
+
+        <div
+            class="storiesWrapper"
+            id="storiesWrapper"
+        >
+
+            <div
+                class="storyItem"
+                id="newStoryItem"
+            >
+
+                <div
+                    class="storyCircle addStory"
+                >
+
+                    <i
+                        class="fa-solid fa-plus"
+                    ></i>
+
+                </div>
+
+                <p>
+                    New
+                </p>
+
+            </div>
+
         </div>
-      </div>
+
     </section>
 
-    <!-- Tabs -->
+
+    <!-- =================================================
+         TABS
+    ================================================== -->
+
     <div class="profileTabs">
-      <button class="tabBtn active" data-tab="posts">
-        <i class="fa-solid fa-image"></i>
-        <span>Posts</span>
-      </button>
-      <button class="tabBtn" data-tab="shorts">
-        <i class="fa-solid fa-play"></i>
-        <span>Shorts</span>
-      </button>
-      <button class="tabBtn" data-tab="videos">
-        <i class="fa-solid fa-video"></i>
-        <span>Videos</span>
-      </button>
-      <button class="tabBtn" data-tab="saved">
-        <i class="fa-solid fa-bookmark"></i>
-        <span>Saved</span>
-      </button>
+
+
+        <button
+            class="tabBtn active"
+            data-tab="posts"
+            type="button"
+        >
+
+            <i
+                class="fa-solid fa-image"
+            ></i>
+
+            <span>
+                Posts
+            </span>
+
+        </button>
+
+
+        <button
+            class="tabBtn"
+            data-tab="shorts"
+            type="button"
+        >
+
+            <i
+                class="fa-solid fa-play"
+            ></i>
+
+            <span>
+                Shorts
+            </span>
+
+        </button>
+
+
+        <button
+            class="tabBtn"
+            data-tab="videos"
+            type="button"
+        >
+
+            <i
+                class="fa-solid fa-video"
+            ></i>
+
+            <span>
+                Videos
+            </span>
+
+        </button>
+
+
+        <button
+            class="tabBtn"
+            data-tab="saved"
+            type="button"
+        >
+
+            <i
+                class="fa-solid fa-bookmark"
+            ></i>
+
+            <span>
+                Saved
+            </span>
+
+        </button>
+
     </div>
 
-    <!-- Tab Contents -->
+
+    <!-- =================================================
+         TAB CONTENT
+    ================================================== -->
+
     <div class="tabContainer">
 
-      <!-- Posts -->
-      <div id="postsTab" class="tabContent active">
-        <div id="postsList" class="postsGrid">
-          <!-- Posts load here -->
-        </div>
-      </div>
 
-      <!-- Shorts -->
-      <div id="shortsTab" class="tabContent">
-        <div id="shortsList" class="shortsGrid">
-          <!-- Shorts load here -->
-        </div>
-      </div>
+        <div
+            id="postsTab"
+            class="tabContent active"
+        >
 
-      <!-- Videos -->
-      <div id="videosTab" class="tabContent">
-        <div id="videosList" class="videosList">
-          <!-- Videos load here -->
-        </div>
-      </div>
+            <div
+                id="postsList"
+                class="postsGrid"
+            ></div>
 
-      <!-- Saved -->
-      <div id="savedTab" class="tabContent">
-        <div id="savedList" class="savedGrid">
-          <!-- Saved posts load here -->
         </div>
-      </div>
+
+
+        <div
+            id="shortsTab"
+            class="tabContent"
+        >
+
+            <div
+                id="shortsList"
+                class="shortsGrid"
+            ></div>
+
+        </div>
+
+
+        <div
+            id="videosTab"
+            class="tabContent"
+        >
+
+            <div
+                id="videosList"
+                class="videosList"
+            ></div>
+
+        </div>
+
+
+        <div
+            id="savedTab"
+            class="tabContent"
+        >
+
+            <div
+                id="savedList"
+                class="savedGrid"
+            ></div>
+
+        </div>
 
     </div>
 
-    <!-- Bottom Navigation -->
+
+    <!-- =================================================
+         BOTTOM NAV
+    ================================================== -->
+
     <nav class="bottomNav">
-      <a href="index.html">
-        <span class="activeIndicator"></span>
-        <i class="fa-solid fa-house"></i>
-        <span>Home</span>
-      </a>
-      <a href="shorts.html">
-        <span class="activeIndicator"></span>
-        <i class="fa-solid fa-play"></i>
-        <span>Shorts</span>
-      </a>
-      <a href="upload.html" class="uploadNav">
-        <i class="fa-solid fa-plus"></i>
-      </a>
-      <a href="users.html">
-        <span class="activeIndicator"></span>
-        <i class="fa-solid fa-users"></i>
-        <span>Users</span>
-      </a>
-      <a href="profile.html" class="active">
-        <span class="activeIndicator"></span>
-        <i class="fa-solid fa-user"></i>
-        <span>Profile</span>
-      </a>
+
+
+        <a href="index.html">
+
+            <span class="activeIndicator"></span>
+
+            <i
+                class="fa-solid fa-house"
+            ></i>
+
+            <span>
+                Home
+            </span>
+
+        </a>
+
+
+        <a href="shorts.html">
+
+            <span class="activeIndicator"></span>
+
+            <i
+                class="fa-solid fa-play"
+            ></i>
+
+            <span>
+                Shorts
+            </span>
+
+        </a>
+
+
+        <a
+            href="upload.html"
+            class="uploadNav"
+        >
+
+            <i
+                class="fa-solid fa-plus"
+            ></i>
+
+        </a>
+
+
+        <a href="users.html">
+
+            <span class="activeIndicator"></span>
+
+            <i
+                class="fa-solid fa-users"
+            ></i>
+
+            <span>
+                Users
+            </span>
+
+        </a>
+
+
+        <a
+            href="profile.html"
+            class="active"
+        >
+
+            <span class="activeIndicator"></span>
+
+            <i
+                class="fa-solid fa-user"
+            ></i>
+
+            <span>
+                Profile
+            </span>
+
+        </a>
+
     </nav>
 
-    <!-- Hidden Story Input -->
-    <input type="file" id="storyFile" accept="image/*,video/*" hidden />
 
-    <!-- Scroll Top -->
-    <button id="scrollTopBtn" class="floatingTop hidden">
-      <i class="fa-solid fa-arrow-up"></i>
+    <!-- =================================================
+         STORY FILE
+    ================================================== -->
+
+    <input
+        type="file"
+        id="storyFile"
+        accept="image/*,video/*"
+        hidden
+    >
+
+
+    <!-- =================================================
+         SCROLL TOP
+    ================================================== -->
+
+    <button
+        id="scrollTopBtn"
+        class="floatingTop hidden"
+        type="button"
+        title="Scroll to top"
+    >
+
+        <i
+            class="fa-solid fa-arrow-up"
+        ></i>
+
     </button>
 
-  </div>
 
-  <!-- Firebase + Scripts -->
-  <!-- Firebase SDK -->
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
+</div>
 
-<!-- Viewora Core -->
+
+<!-- =====================================================
+     FIREBASE
+====================================================== -->
+
+<script
+    src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"
+></script>
+
+<script
+    src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"
+></script>
+
+<script
+    src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"
+></script>
+
+<script
+    src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"
+></script>
+
+
+<!-- =====================================================
+     VIEWORA CORE
+====================================================== -->
+
 <script src="firebase.js"></script>
+
 <script src="utils.js"></script>
+
 <script src="nav.js"></script>
+
 <script src="profile.js"></script>
 
+
+<!-- =====================================================
+     PREMIUM PROFILE BOOT
+====================================================== -->
+
 <script>
-  // Temporary force hide loader after 2 seconds
-  setTimeout(() => {
-    const loader = document.getElementById("pageLoader");
-    const app = document.getElementById("app");
-    
-    if (loader) loader.classList.add("hidden");
-    if (app) {
-      app.classList.remove("hidden");
-      app.classList.add("fadeIn");
+
+"use strict";
+
+
+document.addEventListener(
+    "DOMContentLoaded",
+    () => {
+
+        /*
+         * Story button
+         */
+
+        const storyBtn =
+            document.getElementById(
+                "storyPlusBtn"
+            );
+
+        const newStory =
+            document.getElementById(
+                "newStoryItem"
+            );
+
+        const storyFile =
+            document.getElementById(
+                "storyFile"
+            );
+
+
+        function openStoryPicker() {
+
+            if (storyFile) {
+
+                storyFile.click();
+
+            } else if (
+                typeof createStory ===
+                "function"
+            ) {
+
+                createStory();
+
+            }
+
+        }
+
+
+        storyBtn?.addEventListener(
+            "click",
+            openStoryPicker
+        );
+
+
+        newStory?.addEventListener(
+            "click",
+            openStoryPicker
+        );
+
+
+        /*
+         * Settings
+         */
+
+        document
+            .getElementById(
+                "settingsBtn"
+            )
+            ?.addEventListener(
+                "click",
+                () => {
+
+                    location.href =
+                        "settings.html";
+
+                }
+            );
+
+
+        /*
+         * Share profile
+         */
+
+        document
+            .getElementById(
+                "shareProfileBtn"
+            )
+            ?.addEventListener(
+                "click",
+                async () => {
+
+                    const username =
+                        document
+                            .getElementById(
+                                "profileUsername"
+                            )
+                            ?.textContent
+                            ?.trim();
+
+                    const shareData = {
+
+                        title:
+                            "Viewora Profile",
+
+                        text:
+                            username
+                                ? `Check out ${username} on Viewora`
+                                : "Check out this profile on Viewora",
+
+                        url:
+                            window.location.href
+
+                    };
+
+
+                    try {
+
+                        if (
+                            navigator.share
+                        ) {
+
+                            await navigator.share(
+                                shareData
+                            );
+
+                        } else if (
+                            navigator.clipboard
+                        ) {
+
+                            await navigator.clipboard.writeText(
+                                window.location.href
+                            );
+
+                            alert(
+                                "Profile link copied!"
+                            );
+
+                        }
+
+                    } catch (error) {
+
+                        if (
+                            error?.name !==
+                            "AbortError"
+                        ) {
+
+                            console.warn(
+                                "Share failed:",
+                                error
+                            );
+
+                        }
+
+                    }
+
+                }
+            );
+
+
+        /*
+         * Scroll top
+         */
+
+        const topBtn =
+            document.getElementById(
+                "scrollTopBtn"
+            );
+
+
+        window.addEventListener(
+            "scroll",
+            () => {
+
+                if (!topBtn) {
+                    return;
+                }
+
+                topBtn.classList.toggle(
+                    "hidden",
+                    window.scrollY < 400
+                );
+
+            },
+            {
+                passive: true
+            }
+        );
+
+
+        topBtn?.addEventListener(
+            "click",
+            () => {
+
+                window.scrollTo({
+
+                    top:
+                        0,
+
+                    behavior:
+                        "smooth"
+
+                });
+
+            }
+        );
+
+
+        /*
+         * Premium tab animation
+         */
+
+        document
+            .querySelectorAll(
+                ".tabBtn"
+            )
+            .forEach(
+                button => {
+
+                    button.addEventListener(
+                        "click",
+                        () => {
+
+                            document
+                                .querySelectorAll(
+                                    ".tabBtn"
+                                )
+                                .forEach(
+                                    btn =>
+                                        btn.classList.remove(
+                                            "active"
+                                        )
+                                );
+
+                            button.classList.add(
+                                "active"
+                            );
+
+                        }
+                    );
+
+                }
+            );
+
+
+        /*
+         * Loader fallback.
+         * profile.js can hide it earlier.
+         */
+
+        setTimeout(
+            () => {
+
+                const loader =
+                    document.getElementById(
+                        "pageLoader"
+                    );
+
+                const app =
+                    document.getElementById(
+                        "app"
+                    );
+
+                loader?.classList.add(
+                    "hidden"
+                );
+
+                app?.classList.remove(
+                    "hidden"
+                );
+
+            },
+            5000
+        );
+
     }
-    
-    console.log("Loader force hidden");
-  }, 2000);
+);
+
 </script>
 
 </body>
+
 </html>

@@ -1,654 +1,2125 @@
 "use strict";
 
+/* =========================================================
+   VIEWORA MESSAGES V2 FINAL
+   Clean Realtime Chat List + Unread System
+========================================================= */
+
 console.clear();
-console.log("%cVIEWORA PREMIUM MESSAGES V13", "color:#00E5FF;font-size:18px;font-weight:bold");
 
-if (typeof firebase === "undefined") throw new Error("Firebase SDK Not Loaded");
-if (typeof auth === "undefined") throw new Error("Firebase Auth Missing");
-if (typeof db === "undefined") throw new Error("Realtime Database Missing");
+console.log(
+    "%cVIEWORA • MESSAGES V2 FINAL",
+    "color:#00E5FF;font-size:18px;font-weight:800"
+);
 
-// ====================== GLOBALS ======================
-let currentUser = null;
-let currentUID = null;
-let currentUserData = null;
-let chats = [];
-let filteredChats = [];
-let initialized = false;
-let chatListener = null;
-let unreadListener = null;
-let currentFilter = "all";
 
-// ====================== DOM ======================
-const loadingOverlay = document.getElementById("loadingOverlay");
-const chatList = document.getElementById("chatList");
-const chatSkeleton = document.getElementById("chatSkeleton");
-const emptyChats = document.getElementById("emptyChats");
-const searchInput = document.getElementById("searchInput");
-const clearSearch = document.getElementById("clearSearch");
-const newChatBtn = document.getElementById("newChatBtn");
-const newMessageFab = document.getElementById("newMessageFab");
-const startChatBtn = document.getElementById("startChatBtn");
-const messageBadge = document.getElementById("messageBadge");
-const connectionStatus = document.getElementById("connectionStatus");
-const newChatModal = document.getElementById("newChatModal");
-const closeNewChat = document.getElementById("closeNewChat");
-const newChatSearch = document.getElementById("newChatSearch");
-const newChatUserList = document.getElementById("newChatUserList");
-const usersLoading = document.getElementById("usersLoading");
-const emptyUsers = document.getElementById("emptyUsers");
+/* =========================================================
+   FIREBASE CHECK
+========================================================= */
 
-// ====================== LOADER ======================
-function showLoader() {
-    loadingOverlay?.classList.remove("hidden");
-}
-function hideLoader() {
-    loadingOverlay?.classList.add("hidden");
-}
-function showSkeleton() {
-    chatSkeleton?.classList.remove("hidden");
-}
-function hideSkeleton() {
-    chatSkeleton?.classList.add("hidden");
+if (typeof firebase === "undefined") {
+    throw new Error("Firebase SDK Not Loaded");
 }
 
-// ====================== TOAST ======================
-function showToast(text) {
-    const toast = document.getElementById("toast");
-    const toastText = document.getElementById("toastText");
-    if (!toast || !toastText) return;
+if (typeof auth === "undefined") {
+    throw new Error("Firebase Auth Missing");
+}
 
-    toastText.textContent = text || "";
+if (typeof db === "undefined") {
+    throw new Error("Firebase Realtime Database Missing");
+}
+
+
+/* =========================================================
+   STATE
+========================================================= */
+
+let messagesUser = null;
+let messagesUID = null;
+let messagesUserData = {};
+
+let messagesChats = [];
+let messagesFilter = "all";
+
+let messagesInitialized = false;
+
+let messagesChatsRef = null;
+let messagesChatsValueListener = null;
+
+
+/* =========================================================
+   DOM
+========================================================= */
+
+const messagesLoading =
+    document.getElementById("loadingOverlay");
+
+const messagesApp =
+    document.getElementById("app");
+
+const messagesChatList =
+    document.getElementById("chatList");
+
+const messagesSkeleton =
+    document.getElementById("chatSkeleton");
+
+const messagesEmpty =
+    document.getElementById("emptyChats");
+
+const messagesSearch =
+    document.getElementById("searchInput");
+
+const messagesClearSearch =
+    document.getElementById("clearSearch");
+
+const messagesUnreadBadge =
+    document.getElementById("unreadBadge");
+
+const messagesChatCount =
+    document.getElementById("chatCount");
+
+const messagesConnection =
+    document.getElementById("connectionStatus");
+
+const messagesRefresh =
+    document.getElementById("refreshBtn");
+
+const messagesNewChat =
+    document.getElementById("newChatBtn");
+
+const messagesFab =
+    document.getElementById("newMessageFab");
+
+const messagesStartChat =
+    document.getElementById("startChatBtn");
+
+const messagesModal =
+    document.getElementById("newChatModal");
+
+const messagesModalBackdrop =
+    document.getElementById("newChatBackdrop");
+
+const messagesModalClose =
+    document.getElementById("closeNewChat");
+
+const messagesUserSearch =
+    document.getElementById("newChatSearch");
+
+const messagesUserList =
+    document.getElementById("newChatUserList");
+
+const messagesUsersLoading =
+    document.getElementById("usersLoading");
+
+const messagesEmptyUsers =
+    document.getElementById("emptyUsers");
+
+
+/* =========================================================
+   LOADING
+========================================================= */
+
+function messagesShowLoading() {
+
+    if (messagesLoading) {
+        messagesLoading.classList.remove("hidden");
+    }
+
+}
+
+
+function messagesHideLoading() {
+
+    if (messagesLoading) {
+        messagesLoading.classList.add("hidden");
+    }
+
+}
+
+
+function messagesShowSkeleton() {
+
+    if (messagesSkeleton) {
+        messagesSkeleton.classList.remove("hidden");
+    }
+
+}
+
+
+function messagesHideSkeleton() {
+
+    if (messagesSkeleton) {
+        messagesSkeleton.classList.add("hidden");
+    }
+
+}
+
+
+/* =========================================================
+   TOAST
+========================================================= */
+
+let messagesToastTimer = null;
+
+function messagesToast(text) {
+
+    const toast =
+        document.getElementById("toast");
+
+    const toastText =
+        document.getElementById("toastText");
+
+    if (!toast || !toastText) {
+        return;
+    }
+
+    toastText.textContent =
+        text || "";
+
     toast.classList.remove("hidden");
 
-    clearTimeout(window.toastTimer);
-    window.toastTimer = setTimeout(function () {
-        toast.classList.add("hidden");
-    }, 2500);
+    clearTimeout(
+        messagesToastTimer
+    );
+
+    messagesToastTimer =
+        setTimeout(function () {
+
+            toast.classList.add("hidden");
+
+        }, 2500);
+
 }
 
-// ====================== NETWORK ======================
-function updateConnectionStatus() {
-    if (!connectionStatus) return;
-    connectionStatus.innerHTML = navigator.onLine ? "🟢 Online" : "🔴 Offline";
-}
-window.addEventListener("online", updateConnectionStatus);
-window.addEventListener("offline", updateConnectionStatus);
 
-// ====================== AUTH ======================
-auth.onAuthStateChanged(async function (user) {
-    if (!user) {
-        location.replace("login.html");
+/* =========================================================
+   CONNECTION
+========================================================= */
+
+function messagesUpdateConnection() {
+
+    if (!messagesConnection) {
         return;
     }
 
-    currentUser = user;
-    currentUID = user.uid;
-    console.log("Logged In :", currentUID);
-    updateConnectionStatus();
-    await initializeMessages();
-});
+    if (navigator.onLine) {
 
-// ====================== INIT ======================
-async function initializeMessages() {
-    if (initialized) return;
-    initialized = true;
+        messagesConnection.textContent =
+            "🟢 Online";
 
-    showLoader();
-    showSkeleton();
+    } else {
 
-    try {
-        await loadCurrentUser();
-        listenChats();
-        listenUnreadCount();
+        messagesConnection.textContent =
+            "🔴 Offline";
 
-        hideSkeleton();
-        hideLoader();
-
-        var app = document.getElementById("app");
-        if (app) app.classList.remove("hidden");
-
-        console.log("Messages Ready");
-    } catch (error) {
-        console.error(error);
-        hideLoader();
-        showToast("Unable to load messages");
     }
+
 }
 
-// ====================== LOAD USER ======================
-async function loadCurrentUser() {
-    try {
-        var snapshot = await db.ref("users/" + currentUID).once("value");
 
-        if (!snapshot.exists()) {
-            showToast("Profile not found");
+window.addEventListener(
+    "online",
+    messagesUpdateConnection
+);
+
+
+window.addEventListener(
+    "offline",
+    messagesUpdateConnection
+);
+
+
+/* =========================================================
+   FIREBASE CONNECTION
+========================================================= */
+
+function messagesListenConnection() {
+
+    db.ref(".info/connected").on(
+        "value",
+        function(snapshot) {
+
+            if (!messagesConnection) {
+                return;
+            }
+
+            if (snapshot.val() === true) {
+
+                messagesConnection.textContent =
+                    "🟢 Connected";
+
+            } else {
+
+                messagesConnection.textContent =
+                    "🔴 Reconnecting...";
+
+            }
+
+        }
+    );
+
+}
+
+
+/* =========================================================
+   AUTH
+========================================================= */
+
+auth.onAuthStateChanged(
+    async function(user) {
+
+        if (!user) {
+
+            location.replace(
+                "login.html"
+            );
+
             return;
         }
 
-        currentUserData = snapshot.val();
+        messagesUser =
+            user;
 
-        db.ref("users/" + currentUID).update({
-            online: true,
-            lastSeen: firebase.database.ServerValue.TIMESTAMP
-        });
+        messagesUID =
+            user.uid;
 
-        db.ref("users/" + currentUID).onDisconnect().update({
-            online: false,
-            lastSeen: firebase.database.ServerValue.TIMESTAMP
-        });
+        console.log(
+            "VIEWORA USER:",
+            messagesUID
+        );
+
+        messagesUpdateConnection();
+
+        await messagesInitialize();
+
+    }
+);
+
+
+/* =========================================================
+   INITIALIZE
+========================================================= */
+
+async function messagesInitialize() {
+
+    if (messagesInitialized) {
+        return;
+    }
+
+    messagesInitialized = true;
+
+    messagesShowLoading();
+    messagesShowSkeleton();
+
+    try {
+
+        console.log(
+            "Loading Viewora messages..."
+        );
+
+
+        await messagesLoadUser();
+
+
+        messagesListenConnection();
+
+
+        messagesListenChats();
+
+
+        /*
+         * IMPORTANT:
+         * Page should never remain stuck
+         * on loading.
+         */
+
+        messagesHideSkeleton();
+        messagesHideLoading();
+
+
+        if (messagesApp) {
+
+            messagesApp.classList.remove(
+                "hidden"
+            );
+
+        }
+
+
+        console.log(
+            "%cVIEWORA MESSAGES READY",
+            "color:#00E676;font-size:18px;font-weight:800"
+        );
+
+
     } catch (error) {
-        console.error(error);
-        showToast("Unable to load profile");
-    }
-}
 
-// ====================== HELPERS ======================
-function formatTime(time) {
-    if (!time) return "";
-    return new Date(time).toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit"
-    });
-}
+        console.error(
+            "MESSAGES ERROR:",
+            error
+        );
 
-// ====================== LISTEN CHATS ======================
-function listenChats() {
-    if (!currentUID) return;
 
-    if (chatListener) {
-        db.ref("userChats/" + currentUID).off("value", chatListener);
-    }
+        messagesHideSkeleton();
+        messagesHideLoading();
 
-    chatListener = function (snapshot) {
-        chats = [];
 
-        if (snapshot.exists()) {
-            snapshot.forEach(function (child) {
-                var chat = child.val();
-                chat.chatId = child.key;
-                chats.push(chat);
-            });
+        if (messagesApp) {
+
+            messagesApp.classList.remove(
+                "hidden"
+            );
+
         }
 
-        sortChats();
-        renderChats();
-    };
 
-    db.ref("userChats/" + currentUID).on("value", chatListener);
+        messagesToast(
+            "Unable to load messages"
+        );
+
+    }
+
 }
 
-function sortChats() {
-    chats.sort(function (a, b) {
-        return (b.lastMessageTime || 0) - (a.lastMessageTime || 0);
+
+/* =========================================================
+   LOAD USER
+========================================================= */
+
+async function messagesLoadUser() {
+
+    if (!messagesUID) {
+        throw new Error(
+            "Current UID Missing"
+        );
+    }
+
+
+    const userRef =
+        db.ref(
+            "users/" +
+            messagesUID
+        );
+
+
+    const snapshot =
+        await userRef.once(
+            "value"
+        );
+
+
+    if (snapshot.exists()) {
+
+        messagesUserData =
+            snapshot.val() || {};
+
+    } else {
+
+        messagesUserData = {};
+
+    }
+
+
+    /*
+     * Online status
+     */
+
+    userRef.update({
+
+        online: true,
+
+        lastSeen:
+            firebase.database
+                .ServerValue
+                .TIMESTAMP
+
+    }).catch(function(error) {
+
+        console.warn(
+            "Online update failed:",
+            error
+        );
+
     });
-    filteredChats = chats.slice();
+
+
+    /*
+     * Offline status
+     */
+
+    userRef.onDisconnect().update({
+
+        online: false,
+
+        lastSeen:
+            firebase.database
+                .ServerValue
+                .TIMESTAMP
+
+    }).catch(function(error) {
+
+        console.warn(
+            "onDisconnect failed:",
+            error
+        );
+
+    });
+
+
+    console.log(
+        "User loaded"
+    );
+
 }
 
-// ====================== RENDER ======================
-function renderChats() {
-    if (!chatList) return;
 
-    chatList.innerHTML = "";
+/* =========================================================
+   REALTIME USER CHATS
+========================================================= */
 
-    if (filteredChats.length === 0) {
-        chatList.classList.add("hidden");
-        if (emptyChats) emptyChats.classList.remove("hidden");
+function messagesListenChats() {
+
+    if (!messagesUID) {
         return;
     }
 
-    if (emptyChats) emptyChats.classList.add("hidden");
-    chatList.classList.remove("hidden");
 
-    filteredChats.forEach(function (chat) {
-        chatList.appendChild(createChatCard(chat));
-    });
+    /*
+     * Remove old listener if any
+     */
 
-    animateChatCards();
-}
+    messagesRemoveChatListener();
 
-function createChatCard(chat) {
-    var card = document.createElement("div");
-    card.className = "chatCard";
-    card.dataset.chatid = chat.chatId;
 
-    if (Number(chat.unread || 0) > 0) {
-        card.classList.add("unread");
-    }
+    /*
+     * EXACT DATABASE PATH
+     *
+     * userChats/
+     *     CURRENT_UID/
+     *         CHAT_ID/
+     */
 
-    var photo = chat.photoURL || chat.profilePhoto || "assets/default-avatar.png";
-    var unread = Number(chat.unread || 0);
+    messagesChatsRef =
+        db.ref(
+            "userChats/" +
+            messagesUID
+        );
 
-    card.innerHTML =
-        '<div class="chatAvatar">' +
-            '<img src="' + photo + '" alt="User" onerror="this.src=\'assets/default-avatar.png\'">' +
-            (chat.online ? '<span class="onlineDot"></span>' : '') +
-        '</div>' +
-        '<div class="chatInfo">' +
-            '<div class="chatTop">' +
-                '<h3 class="chatName">' + (chat.name || "Unknown User") + '</h3>' +
-                '<span class="chatTime">' + formatTime(chat.lastMessageTime) + '</span>' +
-            '</div>' +
-            '<div class="chatBottom">' +
-                '<p class="chatPreview">' + (chat.lastMessage || "Start chatting...") + '</p>' +
-                (unread > 0 ? '<div class="unreadBadge">' + unread + '</div>' : '') +
-            '</div>' +
-        '</div>';
 
-    card.onclick = function () {
-        location.href = "chat.html?uid=" + chat.userId;
-    };
+    messagesChatsValueListener =
+        function(snapshot) {
 
-    return card;
-}
+            const newChats = [];
 
-let hasAnimated = false;
 
-function animateChatCards() {
-    if (hasAnimated) {
-        // Already animated → just show without animation
-        document.querySelectorAll(".chatCard").forEach(function (card) {
-            card.classList.add("show");
-            card.style.opacity = "1";
-            card.style.transform = "none";
-        });
-        return;
-    }
+            if (snapshot.exists()) {
 
-    hasAnimated = true;
+                snapshot.forEach(
+                    function(child) {
 
-    document.querySelectorAll(".chatCard").forEach(function (card, i) {
-        setTimeout(function () {
-            card.classList.add("show");
-        }, i * 40);
-    });
-}
+                        const chat =
+                            child.val() || {};
 
-// ====================== UNREAD ======================
-function listenUnreadCount() {
-    if (!currentUID) return;
 
-    unreadListener = db.ref("userChats/" + currentUID);
-    unreadListener.on("value", function (snapshot) {
-        var total = 0;
+                        chat.chatId =
+                            child.key;
 
-        if (snapshot.exists()) {
-            snapshot.forEach(function (child) {
-                total += Number(child.val().unread || 0);
-            });
-        }
 
-        if (messageBadge) {
-            if (total > 0) {
-                messageBadge.textContent = total > 99 ? "99+" : total;
-                messageBadge.classList.remove("hidden");
-            } else {
-                messageBadge.classList.add("hidden");
-            }
-        }
+                        newChats.push(
+                            chat
+                        );
 
-        var unreadBadge = document.getElementById("unreadBadge");
-        if (unreadBadge) {
-            if (total > 0) {
-                unreadBadge.textContent = total;
-                unreadBadge.classList.remove("hidden");
-            } else {
-                unreadBadge.classList.add("hidden");
-            }
-        }
-    });
-}
-
-// ====================== SEARCH ======================
-if (searchInput) {
-    searchInput.addEventListener("input", function () {
-        var keyword = searchInput.value.toLowerCase().trim();
-
-        if (!keyword) {
-            filteredChats = chats.slice();
-            if (clearSearch) clearSearch.classList.add("hidden");
-        } else {
-            if (clearSearch) clearSearch.classList.remove("hidden");
-            filteredChats = chats.filter(function (c) {
-                return (
-                    (c.name || "").toLowerCase().includes(keyword) ||
-                    (c.username || "").toLowerCase().includes(keyword) ||
-                    (c.lastMessage || "").toLowerCase().includes(keyword)
+                    }
                 );
-            });
+
+            }
+
+
+            messagesChats =
+                newChats;
+
+
+            messagesSortChats();
+
+
+            messagesUpdateUnread();
+
+
+            messagesRender();
+
+        };
+
+
+    /*
+     * ONE VALUE LISTENER
+     *
+     * This is enough for:
+     * - new messages
+     * - unread count
+     * - latest message
+     * - online state
+     * - new conversations
+     */
+
+    messagesChatsRef.on(
+        "value",
+        messagesChatsValueListener
+    );
+
+
+    console.log(
+        "Realtime userChats listener started"
+    );
+
+}
+
+
+/* =========================================================
+   REMOVE CHAT LISTENER
+========================================================= */
+
+function messagesRemoveChatListener() {
+
+    if (
+        messagesChatsRef &&
+        messagesChatsValueListener
+    ) {
+
+        messagesChatsRef.off(
+            "value",
+            messagesChatsValueListener
+        );
+
+    }
+
+
+    messagesChatsRef = null;
+
+    messagesChatsValueListener = null;
+
+}
+
+
+/* =========================================================
+   SORT
+========================================================= */
+
+function messagesSortChats() {
+
+    messagesChats.sort(
+        function(a, b) {
+
+            return (
+                Number(
+                    b.lastMessageTime || 0
+                ) -
+                Number(
+                    a.lastMessageTime || 0
+                )
+            );
+
         }
-        applyFilter();
-    });
+    );
+
 }
 
-if (clearSearch) {
-    clearSearch.addEventListener("click", function () {
-        searchInput.value = "";
-        filteredChats = chats.slice();
-        clearSearch.classList.add("hidden");
-        applyFilter();
-    });
+
+/* =========================================================
+   UNREAD
+========================================================= */
+
+function messagesUpdateUnread() {
+
+    let totalUnread = 0;
+
+
+    messagesChats.forEach(
+        function(chat) {
+
+            totalUnread +=
+                Number(
+                    chat.unread || 0
+                );
+
+        }
+    );
+
+
+    /*
+     * Unread filter badge
+     */
+
+    if (messagesUnreadBadge) {
+
+        if (totalUnread > 0) {
+
+            messagesUnreadBadge.textContent =
+                totalUnread > 99
+                    ? "99+"
+                    : String(totalUnread);
+
+            messagesUnreadBadge.classList.remove(
+                "hidden"
+            );
+
+        } else {
+
+            messagesUnreadBadge.classList.add(
+                "hidden"
+            );
+
+        }
+
+    }
+
+
+    /*
+     * Optional global badge.
+     * Works if HTML has messageBadge.
+     */
+
+    const globalBadge =
+        document.getElementById(
+            "messageBadge"
+        );
+
+
+    if (globalBadge) {
+
+        if (totalUnread > 0) {
+
+            globalBadge.textContent =
+                totalUnread > 99
+                    ? "99+"
+                    : String(totalUnread);
+
+            globalBadge.classList.remove(
+                "hidden"
+            );
+
+        } else {
+
+            globalBadge.classList.add(
+                "hidden"
+            );
+
+        }
+
+    }
+
 }
 
-// ====================== FILTERS ======================
-document.querySelectorAll(".filterChip").forEach(function (chip) {
-    chip.onclick = function () {
-        document.querySelectorAll(".filterChip").forEach(function (b) {
-            b.classList.remove("active");
-        });
-        chip.classList.add("active");
-        currentFilter = chip.dataset.filter;
-        applyFilter();
-    };
-});
 
-function applyFilter() {
-    var list = filteredChats.slice();
+/* =========================================================
+   SEARCH + FILTER
+========================================================= */
 
-    if (currentFilter === "online") {
-        list = list.filter(function (c) { return c.online === true; });
-    }
-    if (currentFilter === "unread") {
-        list = list.filter(function (c) { return Number(c.unread || 0) > 0; });
-    }
-    if (currentFilter === "groups") {
-        list = list.filter(function (c) { return c.type === "group"; });
-    }
+function messagesGetFilteredChats() {
 
-    chatList.innerHTML = "";
+    let result =
+        messagesChats.slice();
 
-    if (list.length === 0) {
-        chatList.classList.add("hidden");
-        if (emptyChats) emptyChats.classList.remove("hidden");
-        return;
-    }
 
-    if (emptyChats) emptyChats.classList.add("hidden");
-    chatList.classList.remove("hidden");
+    const keyword =
+        messagesSearch
+            ? messagesSearch.value
+                .toLowerCase()
+                .trim()
+            : "";
 
-    list.forEach(function (c) {
-        chatList.appendChild(createChatCard(c));
-    });
 
-    animateChatCards();
-}
-
-function refreshChats() {
-    sortChats();
-    var keyword = searchInput ? searchInput.value.toLowerCase().trim() : "";
+    /*
+     * Search
+     */
 
     if (keyword) {
-        filteredChats = chats.filter(function (c) {
-            return (
-                (c.name || "").toLowerCase().includes(keyword) ||
-                (c.username || "").toLowerCase().includes(keyword) ||
-                (c.lastMessage || "").toLowerCase().includes(keyword)
+
+        result =
+            result.filter(
+                function(chat) {
+
+                    const name =
+                        String(
+                            chat.name || ""
+                        ).toLowerCase();
+
+
+                    const username =
+                        String(
+                            chat.username || ""
+                        ).toLowerCase();
+
+
+                    const lastMessage =
+                        String(
+                            chat.lastMessage || ""
+                        ).toLowerCase();
+
+
+                    return (
+                        name.includes(keyword) ||
+                        username.includes(keyword) ||
+                        lastMessage.includes(keyword)
+                    );
+
+                }
             );
-        });
-    } else {
-        filteredChats = chats.slice();
+
     }
-    applyFilter();
-}
 
-// ====================== LIVE UPDATES ======================
-function setupLiveUpdates() {
-    if (!currentUID) return;
 
-    db.ref("userChats/" + currentUID).on("child_changed", function (snap) {
-        var chat = snap.val();
-        chat.chatId = snap.key;
+    /*
+     * Filter
+     */
 
-        // Sirf online + unread update karo, full re-render mat karo
-        updateOnlineStatus(chat.chatId, chat.online);
-        updateUnreadBadge(chat.chatId, Number(chat.unread || 0));
+    if (
+        messagesFilter ===
+        "unread"
+    ) {
 
-        // Full refresh sirf zarurat padne par
-        // refreshChats();   ← is line ko comment kar do
-    });
-}
+        result =
+            result.filter(
+                function(chat) {
 
-function updateOnlineStatus(chatId, online) {
-    var card = document.querySelector('[data-chatid="' + chatId + '"]');
-    if (!card) return;
+                    return Number(
+                        chat.unread || 0
+                    ) > 0;
 
-    var avatar = card.querySelector(".chatAvatar");
-    var dot = avatar.querySelector(".onlineDot");
+                }
+            );
 
-    if (online && !dot) {
-        dot = document.createElement("span");
-        dot.className = "onlineDot";
-        avatar.appendChild(dot);
-    } else if (!online && dot) {
-        dot.remove();
     }
+
+
+    if (
+        messagesFilter ===
+        "online"
+    ) {
+
+        result =
+            result.filter(
+                function(chat) {
+
+                    return (
+                        chat.online === true
+                    );
+
+                }
+            );
+
+    }
+
+
+    if (
+        messagesFilter ===
+        "pinned"
+    ) {
+
+        result =
+            result.filter(
+                function(chat) {
+
+                    return (
+                        chat.pinned === true
+                    );
+
+                }
+            );
+
+    }
+
+
+    return result;
+
 }
 
-function updateUnreadBadge(chatId, unread) {
-    var card = document.querySelector('[data-chatid="' + chatId + '"]');
-    if (!card) return;
 
-    var bottom = card.querySelector(".chatBottom");
-    var badge = bottom.querySelector(".unreadBadge");
+/* =========================================================
+   RENDER
+========================================================= */
+
+function messagesRender() {
+
+    if (!messagesChatList) {
+        return;
+    }
+
+
+    const result =
+        messagesGetFilteredChats();
+
+
+    messagesChatList.innerHTML =
+        "";
+
+
+    /*
+     * Count
+     */
+
+    if (messagesChatCount) {
+
+        messagesChatCount.textContent =
+            messagesChats.length;
+
+    }
+
+
+    /*
+     * Empty
+     */
+
+    if (result.length === 0) {
+
+        messagesChatList.classList.add(
+            "hidden"
+        );
+
+
+        if (messagesEmpty) {
+
+            messagesEmpty.classList.remove(
+                "hidden"
+            );
+
+        }
+
+
+        return;
+    }
+
+
+    if (messagesEmpty) {
+
+        messagesEmpty.classList.add(
+            "hidden"
+        );
+
+    }
+
+
+    messagesChatList.classList.remove(
+        "hidden"
+    );
+
+
+    result.forEach(
+        function(chat) {
+
+            messagesChatList.appendChild(
+                messagesCreateCard(chat)
+            );
+
+        }
+    );
+
+
+    messagesAnimateCards();
+
+}
+
+
+/* =========================================================
+   ESCAPE
+========================================================= */
+
+function messagesEscape(value) {
+
+    return String(
+        value == null
+            ? ""
+            : value
+    )
+        .replace(
+            /&/g,
+            "&amp;"
+        )
+        .replace(
+            /</g,
+            "&lt;"
+        )
+        .replace(
+            />/g,
+            "&gt;"
+        )
+        .replace(
+            /"/g,
+            "&quot;"
+        )
+        .replace(
+            /'/g,
+            "&#039;"
+        );
+
+}
+
+
+/* =========================================================
+   TIME
+========================================================= */
+
+function messagesTime(timestamp) {
+
+    if (!timestamp) {
+        return "";
+    }
+
+
+    const date =
+        new Date(
+            Number(timestamp)
+        );
+
+
+    if (
+        isNaN(
+            date.getTime()
+        )
+    ) {
+
+        return "";
+
+    }
+
+
+    const now =
+        new Date();
+
+
+    if (
+        date.toDateString() ===
+        now.toDateString()
+    ) {
+
+        return date.toLocaleTimeString(
+            [],
+            {
+                hour: "2-digit",
+                minute: "2-digit"
+            }
+        );
+
+    }
+
+
+    return date.toLocaleDateString(
+        [],
+        {
+            day: "2-digit",
+            month: "short"
+        }
+    );
+
+}
+
+
+/* =========================================================
+   CHAT CARD
+========================================================= */
+
+function messagesCreateCard(chat) {
+
+    const card =
+        document.createElement(
+            "div"
+        );
+
+
+    card.className =
+        "chatCard";
+
+
+    card.dataset.chatid =
+        chat.chatId || "";
+
+
+    card.dataset.userid =
+        chat.userId || "";
+
+
+    const name =
+        messagesEscape(
+            chat.name ||
+            "Unknown User"
+        );
+
+
+    const photo =
+        chat.photoURL ||
+        chat.profilePhoto ||
+        "assets/default-avatar.png";
+
+
+    const preview =
+        messagesEscape(
+            chat.lastMessage ||
+            "Start chatting..."
+        );
+
+
+    const unread =
+        Number(
+            chat.unread || 0
+        );
+
+
+    const unreadHTML =
+        unread > 0
+
+            ? `
+                <div class="unreadBadge">
+                    ${
+                        unread > 99
+                            ? "99+"
+                            : unread
+                    }
+                </div>
+              `
+
+            : "";
+
+
+    const onlineHTML =
+        chat.online === true
+
+            ? `
+                <span class="onlineDot"></span>
+              `
+
+            : "";
+
+
+    card.innerHTML = `
+
+        <div class="chatAvatar">
+
+            <img
+                src="${messagesEscape(photo)}"
+                alt="${name}"
+                loading="lazy"
+                onerror="this.src='assets/default-avatar.png'"
+            >
+
+            ${onlineHTML}
+
+        </div>
+
+
+        <div class="chatInfo">
+
+            <div class="chatTop">
+
+                <h3 class="chatName">
+                    ${name}
+                </h3>
+
+                <span class="chatTime">
+                    ${messagesTime(
+                        chat.lastMessageTime
+                    )}
+                </span>
+
+            </div>
+
+
+            <div class="chatBottom">
+
+                <p class="chatPreview">
+                    ${preview}
+                </p>
+
+                ${unreadHTML}
+
+            </div>
+
+        </div>
+
+    `;
+
+
+    /*
+     * UNREAD VISUAL
+     */
 
     if (unread > 0) {
-        card.classList.add("unread");
-        if (!badge) {
-            badge = document.createElement("div");
-            badge.className = "unreadBadge";
-            bottom.appendChild(badge);
-        }
-        badge.textContent = unread;
-    } else {
-        card.classList.remove("unread");
-        if (badge) badge.remove();
+
+        card.classList.add(
+            "unread"
+        );
+
     }
-}
 
-// ====================== MODAL ======================
-function openNewChat() {
-    if (!newChatModal) return;
-    newChatModal.classList.remove("hidden");
-    requestAnimationFrame(function () {
-        newChatModal.classList.add("show");
-    });
-    loadUsers();
-}
 
-function closeModal() {
-    if (!newChatModal) return;
-    newChatModal.classList.remove("show");
-    setTimeout(function () {
-        newChatModal.classList.add("hidden");
-    }, 280);
-}
+    /*
+     * OPEN CHAT
+     */
 
-if (newChatBtn) newChatBtn.addEventListener("click", openNewChat);
-if (newMessageFab) newMessageFab.addEventListener("click", openNewChat);
-if (startChatBtn) startChatBtn.addEventListener("click", openNewChat);
-if (closeNewChat) closeNewChat.addEventListener("click", closeModal);
+    card.addEventListener(
+        "click",
+        function() {
 
-if (newChatModal) {
-    newChatModal.addEventListener("click", function (e) {
-        if (e.target === newChatModal || e.target.classList.contains("modalOverlay")) {
-            closeModal();
-        }
-    });
-}
+            if (!chat.userId) {
 
-if (newChatSearch) {
-    newChatSearch.addEventListener("input", function () {
-        loadUsers(newChatSearch.value.trim());
-    });
-}
+                messagesToast(
+                    "User information missing"
+                );
 
-// ====================== USERS ======================
-async function loadUsers(keyword) {
-    keyword = keyword || "";
-    if (usersLoading) usersLoading.classList.remove("hidden");
-    if (emptyUsers) emptyUsers.classList.add("hidden");
-    if (newChatUserList) newChatUserList.innerHTML = "";
-
-    try {
-        var snap = await db.ref("users").once("value");
-        if (usersLoading) usersLoading.classList.add("hidden");
-
-        if (!snap.exists()) {
-            if (emptyUsers) emptyUsers.classList.remove("hidden");
-            return;
-        }
-
-        var count = 0;
-
-        snap.forEach(function (child) {
-            var uid = child.key;
-            var user = child.val();
-
-            if (uid === currentUID) return;
-
-            var match = !keyword ||
-                (user.name || "").toLowerCase().includes(keyword.toLowerCase()) ||
-                (user.username || "").toLowerCase().includes(keyword.toLowerCase());
-
-            if (!match) return;
-
-            count++;
-            if (newChatUserList) {
-                newChatUserList.appendChild(createUserCard(uid, user));
+                return;
             }
-        });
 
-        if (count === 0 && emptyUsers) {
-            emptyUsers.classList.remove("hidden");
+
+            location.href =
+                "chat.html?uid=" +
+                encodeURIComponent(
+                    chat.userId
+                );
+
         }
-    } catch (err) {
-        console.error(err);
-        if (usersLoading) usersLoading.classList.add("hidden");
-        showToast("Unable to load users");
-    }
-}
+    );
 
-function createUserCard(uid, user) {
-    var card = document.createElement("div");
-    card.className = "userCard";
-
-    var photo = user.photoURL || user.profilePhoto || "assets/default-avatar.png";
-
-    card.innerHTML =
-        '<div class="userAvatar">' +
-            '<img src="' + photo + '" onerror="this.src=\'assets/default-avatar.png\'">' +
-            (user.online ? '<span class="onlineDot"></span>' : '') +
-        '</div>' +
-        '<div class="userDetails">' +
-            '<h3>' + (user.name || "Unknown") + '</h3>' +
-            '<p>@' + (user.username || "user") + '</p>' +
-        '</div>' +
-        '<button class="startChatBtn">Chat</button>';
-
-    var btn = card.querySelector(".startChatBtn");
-    if (btn) {
-        btn.onclick = function (e) {
-            e.stopPropagation();
-            createChat(uid, user);
-        };
-    }
-
-    card.onclick = function () {
-        createChat(uid, user);
-    };
 
     return card;
+
 }
 
-// ====================== CREATE CHAT ======================
-async function createChat(otherUid, user) {
-    try {
-        showLoader();
 
-        var chatId = [currentUID, otherUid].sort().join("_");
-        var chatRef = db.ref("chats/" + chatId);
-        var chatSnap = await chatRef.once("value");
+/* =========================================================
+   CARD ANIMATION
+========================================================= */
 
-        if (!chatSnap.exists()) {
-            await chatRef.set({
-                type: "private",
-                createdAt: firebase.database.ServerValue.TIMESTAMP,
-                members: {
-                    [currentUID]: true,
-                    [otherUid]: true
+let messagesFirstRender = true;
+
+function messagesAnimateCards() {
+
+    const cards =
+        document.querySelectorAll(
+            ".chatCard"
+        );
+
+
+    if (!messagesFirstRender) {
+
+        cards.forEach(
+            function(card) {
+
+                card.classList.add(
+                    "show"
+                );
+
+            }
+        );
+
+        return;
+
+    }
+
+
+    messagesFirstRender =
+        false;
+
+
+    cards.forEach(
+        function(card, index) {
+
+            setTimeout(
+                function() {
+
+                    card.classList.add(
+                        "show"
+                    );
+
+                },
+                index * 45
+            );
+
+        }
+    );
+
+}
+
+
+/* =========================================================
+   SEARCH EVENTS
+========================================================= */
+
+if (messagesSearch) {
+
+    messagesSearch.addEventListener(
+        "input",
+        function() {
+
+            const value =
+                messagesSearch.value
+                    .trim();
+
+
+            if (messagesClearSearch) {
+
+                if (value) {
+
+                    messagesClearSearch.classList.remove(
+                        "hidden"
+                    );
+
+                } else {
+
+                    messagesClearSearch.classList.add(
+                        "hidden"
+                    );
+
                 }
-            });
+
+            }
+
+
+            messagesRender();
+
+        }
+    );
+
+}
+
+
+if (messagesClearSearch) {
+
+    messagesClearSearch.addEventListener(
+        "click",
+        function() {
+
+            if (messagesSearch) {
+
+                messagesSearch.value =
+                    "";
+
+            }
+
+
+            messagesClearSearch.classList.add(
+                "hidden"
+            );
+
+
+            messagesRender();
+
+        }
+    );
+
+}
+
+
+/* =========================================================
+   FILTER BUTTONS
+========================================================= */
+
+document
+    .querySelectorAll(
+        ".filter"
+    )
+    .forEach(
+        function(button) {
+
+            button.addEventListener(
+                "click",
+                function() {
+
+                    document
+                        .querySelectorAll(
+                            ".filter"
+                        )
+                        .forEach(
+                            function(item) {
+
+                                item.classList.remove(
+                                    "active"
+                                );
+
+                            }
+                        );
+
+
+                    button.classList.add(
+                        "active"
+                    );
+
+
+                    messagesFilter =
+                        button.dataset.filter ||
+                        "all";
+
+
+                    messagesRender();
+
+                }
+            );
+
+        }
+    );
+
+
+/* =========================================================
+   REFRESH
+========================================================= */
+
+if (messagesRefresh) {
+
+    messagesRefresh.addEventListener(
+        "click",
+        async function() {
+
+            if (!messagesUID) {
+                return;
+            }
+
+
+            messagesRefresh.classList.add(
+                "loading"
+            );
+
+
+            try {
+
+                const snapshot =
+                    await db
+                        .ref(
+                            "userChats/" +
+                            messagesUID
+                        )
+                        .once(
+                            "value"
+                        );
+
+
+                const newChats = [];
+
+
+                if (snapshot.exists()) {
+
+                    snapshot.forEach(
+                        function(child) {
+
+                            const chat =
+                                child.val() || {};
+
+
+                            chat.chatId =
+                                child.key;
+
+
+                            newChats.push(
+                                chat
+                            );
+
+                        }
+                    );
+
+                }
+
+
+                messagesChats =
+                    newChats;
+
+
+                messagesSortChats();
+
+                messagesUpdateUnread();
+
+                messagesRender();
+
+
+                messagesToast(
+                    "Messages refreshed"
+                );
+
+
+            } catch (error) {
+
+                console.error(
+                    error
+                );
+
+                messagesToast(
+                    "Refresh failed"
+                );
+
+            } finally {
+
+                messagesRefresh.classList.remove(
+                    "loading"
+                );
+
+            }
+
+        }
+    );
+
+}
+
+
+/* =========================================================
+   NEW CHAT MODAL
+========================================================= */
+
+function messagesOpenModal() {
+
+    if (!messagesModal) {
+        return;
+    }
+
+
+    messagesModal.classList.remove(
+        "hidden"
+    );
+
+
+    requestAnimationFrame(
+        function() {
+
+            messagesModal.classList.add(
+                "show"
+            );
+
+        }
+    );
+
+
+    messagesLoadUsers("");
+
+}
+
+
+function messagesCloseModal() {
+
+    if (!messagesModal) {
+        return;
+    }
+
+
+    messagesModal.classList.remove(
+        "show"
+    );
+
+
+    setTimeout(
+        function() {
+
+            messagesModal.classList.add(
+                "hidden"
+            );
+
+        },
+        280
+    );
+
+}
+
+
+if (messagesNewChat) {
+
+    messagesNewChat.addEventListener(
+        "click",
+        messagesOpenModal
+    );
+
+}
+
+
+if (messagesFab) {
+
+    messagesFab.addEventListener(
+        "click",
+        messagesOpenModal
+    );
+
+}
+
+
+if (messagesStartChat) {
+
+    messagesStartChat.addEventListener(
+        "click",
+        messagesOpenModal
+    );
+
+}
+
+
+if (messagesModalClose) {
+
+    messagesModalClose.addEventListener(
+        "click",
+        messagesCloseModal
+    );
+
+}
+
+
+if (messagesModalBackdrop) {
+
+    messagesModalBackdrop.addEventListener(
+        "click",
+        messagesCloseModal
+    );
+
+}
+
+
+/* =========================================================
+   USER SEARCH
+========================================================= */
+
+let messagesUserSearchTimer = null;
+
+
+if (messagesUserSearch) {
+
+    messagesUserSearch.addEventListener(
+        "input",
+        function() {
+
+            clearTimeout(
+                messagesUserSearchTimer
+            );
+
+
+            messagesUserSearchTimer =
+                setTimeout(
+                    function() {
+
+                        messagesLoadUsers(
+                            messagesUserSearch.value
+                                .trim()
+                        );
+
+                    },
+                    250
+                );
+
+        }
+    );
+
+}
+
+
+/* =========================================================
+   LOAD USERS
+========================================================= */
+
+async function messagesLoadUsers(
+    keyword
+) {
+
+    keyword =
+        keyword || "";
+
+
+    if (messagesUsersLoading) {
+
+        messagesUsersLoading.classList.remove(
+            "hidden"
+        );
+
+    }
+
+
+    if (messagesEmptyUsers) {
+
+        messagesEmptyUsers.classList.add(
+            "hidden"
+        );
+
+    }
+
+
+    if (messagesUserList) {
+
+        messagesUserList.innerHTML =
+            "";
+
+    }
+
+
+    try {
+
+        const snapshot =
+            await db
+                .ref("users")
+                .once("value");
+
+
+        if (messagesUsersLoading) {
+
+            messagesUsersLoading.classList.add(
+                "hidden"
+            );
+
         }
 
-        await db.ref("userChats/" + currentUID + "/" + chatId).update({
-            chatId: chatId,
-            userId: otherUid,
-            name: user.name || "Unknown",
-            username: user.username || "",
-            photoURL: user.photoURL || user.profilePhoto || "",
-            lastMessage: "",
-            lastMessageTime: firebase.database.ServerValue.TIMESTAMP,
-            unread: 0,
-            online: user.online || false
-        });
 
-        var mySnap = await db.ref("users/" + currentUID).once("value");
-        var me = mySnap.val() || {};
+        if (!snapshot.exists()) {
 
-        await db.ref("userChats/" + otherUid + "/" + chatId).update({
-            chatId: chatId,
-            userId: currentUID,
-            name: me.name || "Unknown",
-            username: me.username || "",
-            photoURL: me.photoURL || me.profilePhoto || "",
-            lastMessage: "",
-            lastMessageTime: firebase.database.ServerValue.TIMESTAMP,
-            unread: 0,
-            online: true
-        });
+            if (messagesEmptyUsers) {
 
-        hideLoader();
-        closeModal();
-        showToast("Opening Chat...");
+                messagesEmptyUsers.classList.remove(
+                    "hidden"
+                );
 
-        setTimeout(function () {
-            location.href = "chat.html?uid=" + otherUid;
-        }, 250);
+            }
+
+            return;
+
+        }
+
+
+        let found =
+            0;
+
+
+        snapshot.forEach(
+            function(child) {
+
+                const uid =
+                    child.key;
+
+                const user =
+                    child.val() || {};
+
+
+                if (
+                    uid === messagesUID
+                ) {
+
+                    return;
+
+                }
+
+
+                const search =
+                    keyword.toLowerCase();
+
+
+                const name =
+                    String(
+                        user.name || ""
+                    ).toLowerCase();
+
+
+                const username =
+                    String(
+                        user.username || ""
+                    ).toLowerCase();
+
+
+                if (
+                    search &&
+                    !name.includes(search) &&
+                    !username.includes(search)
+                ) {
+
+                    return;
+
+                }
+
+
+                found++;
+
+
+                if (messagesUserList) {
+
+                    messagesUserList.appendChild(
+                        messagesCreateUserCard(
+                            uid,
+                            user
+                        )
+                    );
+
+                }
+
+            }
+        );
+
+
+        if (
+            found === 0 &&
+            messagesEmptyUsers
+        ) {
+
+            messagesEmptyUsers.classList.remove(
+                "hidden"
+            );
+
+        }
 
     } catch (error) {
-        console.error(error);
-        hideLoader();
-        showToast("Failed to create chat");
+
+        console.error(
+            "User loading error:",
+            error
+        );
+
+
+        if (messagesUsersLoading) {
+
+            messagesUsersLoading.classList.add(
+                "hidden"
+            );
+
+        }
+
+
+        messagesToast(
+            "Unable to load users"
+        );
+
     }
+
 }
 
-// ====================== REFRESH ======================
-var refreshBtn = document.getElementById("refreshBtn");
-if (refreshBtn) {
-    refreshBtn.addEventListener("click", function () {
-        refreshChats();
-        showToast("Chats refreshed");
-    });
+
+/* =========================================================
+   USER CARD
+========================================================= */
+
+function messagesCreateUserCard(
+    uid,
+    user
+) {
+
+    const card =
+        document.createElement(
+            "div"
+        );
+
+
+    card.className =
+        "userCard";
+
+
+    const photo =
+        user.photoURL ||
+        user.profilePhoto ||
+        "assets/default-avatar.png";
+
+
+    card.innerHTML = `
+
+        <div class="userAvatar">
+
+            <img
+                src="${messagesEscape(photo)}"
+                alt="User"
+                loading="lazy"
+                onerror="this.src='assets/default-avatar.png'"
+            >
+
+            ${
+                user.online === true
+                    ? '<span class="onlineDot"></span>'
+                    : ''
+            }
+
+        </div>
+
+
+        <div class="userDetails">
+
+            <h3>
+                ${messagesEscape(
+                    user.name ||
+                    "Unknown"
+                )}
+            </h3>
+
+            <p>
+                @${messagesEscape(
+                    user.username ||
+                    "user"
+                )}
+            </p>
+
+        </div>
+
+
+        <button
+            class="startChatBtn"
+            type="button"
+        >
+            Chat
+        </button>
+
+    `;
+
+
+    card.addEventListener(
+        "click",
+        function() {
+
+            messagesCreateChat(
+                uid,
+                user
+            );
+
+        }
+    );
+
+
+    return card;
+
 }
 
-window.addEventListener("focus", function () {
-    refreshChats();
-});
 
-// ====================== CLEANUP ======================
-window.addEventListener("beforeunload", function () {
-    if (chatListener && currentUID) {
-        db.ref("userChats/" + currentUID).off("value", chatListener);
-    }
-    if (unreadListener && currentUID) {
-        db.ref("userChats/" + currentUID).off("value", unreadListener);
-    }
-});
+/* =========================================================
+   CREATE CHAT
+========================================================= */
 
-// Start live updates after auth
-auth.onAuthStateChanged(function (user) {
-    if (user) {
-        setTimeout(setupLiveUpdates, 1000);
-    }
-});
+async function messagesCreateChat(
+    otherUID,
+    otherUser
+) {
 
-console.log("%cVIEWORA PREMIUM MESSAGES V13 READY", "color:#00E676;font-size:18px;font-weight:bold");
+    if (
+        !messagesUID ||
+        !otherUID
+    ) {
+
+        return;
+
+    }
+
+
+    try {
+
+        messagesShowLoading();
+
+
+        /*
+         * SAME CHAT ID
+         */
+
+        const chatID =
+            [
+                messagesUID,
+                otherUID
+            ]
+                .sort()
+                .join("_");
+
+
+        const chatRef =
+            db.ref(
+                "chats/" +
+                chatID
+            );
+
+
+        const chatSnapshot =
+            await chatRef.once(
+                "value"
+            );
+
+
+        /*
+         * MAIN CHAT
+         */
+
+        if (!chatSnapshot.exists()) {
+
+            await chatRef.set({
+
+                type: "private",
+
+                createdAt:
+                    firebase.database
+                        .ServerValue
+                        .TIMESTAMP,
+
+                members: {
+
+                    [messagesUID]: true,
+
+                    [otherUID]: true
+
+                }
+
+            });
+
+        }
+
+
+        /*
+         * MY CHAT ENTRY
+         */
+
+        await db
+            .ref(
+                "userChats/" +
+                messagesUID +
+                "/" +
+                chatID
+            )
+            .update({
+
+                chatId:
+                    chatID,
+
+                userId:
+                    otherUID,
+
+                name:
+                    otherUser.name ||
+                    "Unknown",
+
+                username:
+                    otherUser.username ||
+                    "",
+
+                photoURL:
+                    otherUser.photoURL ||
+                    otherUser.profilePhoto ||
+                    "",
+
+                lastMessage:
+                    "",
+
+                lastMessageTime:
+                    firebase.database
+                        .ServerValue
+                        .TIMESTAMP,
+
+                unread:
+                    0,
+
+                online:
+                    otherUser.online === true
+
+            });
+
+
+        /*
+         * MY USER DATA
+         */
+
+        const mySnapshot =
+            await db
+                .ref(
+                    "users/" +
+                    messagesUID
+                )
+                .once(
+                    "value"
+                );
+
+
+        const me =
+            mySnapshot.val() || {};
+
+
+        /*
+         * RECEIVER CHAT ENTRY
+         */
+
+        await db
+            .ref(
+                "userChats/" +
+                otherUID +
+                "/" +
+                chatID
+            )
+            .update({
+
+                chatId:
+                    chatID,
+
+                userId:
+                    messagesUID,
+
+                name:
+                    me.name ||
+                    "Unknown",
+
+                username:
+                    me.username ||
+                    "",
+
+                photoURL:
+                    me.photoURL ||
+                    me.profilePhoto ||
+                    "",
+
+                lastMessage:
+                    "",
+
+                lastMessageTime:
+                    firebase.database
+                        .ServerValue
+                        .TIMESTAMP,
+
+                unread:
+                    0,
+
+                online:
+                    me.online === true
+
+            });
+
+
+        messagesCloseModal();
+
+        messagesHideLoading();
+
+
+        setTimeout(
+            function() {
+
+                location.href =
+                    "chat.html?uid=" +
+                    encodeURIComponent(
+                        otherUID
+                    );
+
+            },
+            200
+        );
+
+
+    } catch (error) {
+
+        console.error(
+            "Create chat error:",
+            error
+        );
+
+
+        messagesHideLoading();
+
+
+        messagesToast(
+            "Failed to create chat"
+        );
+
+    }
+
+}
+
+
+/* =========================================================
+   CLEANUP
+========================================================= */
+
+window.addEventListener(
+    "beforeunload",
+    function() {
+
+        messagesRemoveChatListener();
+
+    }
+);
+
+
+/* =========================================================
+   FINAL
+========================================================= */
+
+console.log(
+    "%cVIEWORA MESSAGES V2 FINAL LOADED",
+    "color:#00E676;font-size:18px;font-weight:800"
+);

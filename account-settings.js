@@ -1,513 +1,920 @@
-// ======================================
-// Viewora Account Settings
-// Part 1
-// ======================================
+/* =========================================================
+VIEWORA • ACCOUNT SETTINGS
+Premium Account Management
+========================================================= */
 
-auth.onAuthStateChanged((user) => {
+(function () {
 
-    if (!user) {
-        window.location.href = "login.html";
-        return;
-    }
+"use strict";
 
-    loadProfile(user.uid);
+let currentUser = null;
+let originalData = {};
+
+/* =====================================================
+   DOM READY
+===================================================== */
+
+document.addEventListener("DOMContentLoaded", function () {
+
+    console.log(
+        "%cVIEWORA ACCOUNT SETTINGS READY",
+        "color:#00c6ff;font-size:16px;font-weight:800"
+    );
+
+    initAccountSettings();
 
 });
 
-function loadProfile(uid) {
 
-    db.ref("users/" + uid).once("value").then((snapshot) => {
+/* =====================================================
+   FIREBASE AUTH
+===================================================== */
 
-        if (!snapshot.exists()) return;
+function initAccountSettings() {
 
-        const user = snapshot.val();
+    if (
+        typeof firebase === "undefined" ||
+        typeof auth === "undefined" ||
+        typeof db === "undefined"
+    ) {
 
-        document.getElementById("profilePhoto").src =
-            user.profilePhoto || "non.jpg";
+        console.error(
+            "Firebase/Auth/Database is not available."
+        );
 
-        document.getElementById("profileName").innerText =
-            user.name || "User";
+        showToast(
+            "❌ Firebase connection unavailable",
+            "error"
+        );
 
-        document.getElementById("profileUsername").innerText =
-            "@" + (user.username || "user");
+        return;
 
-        document.getElementById("fullName").value =
-            user.name || "";
+    }
 
-        document.getElementById("username").value =
-            user.username || "";
 
-        document.getElementById("email").value =
-            user.email || "";
+    auth.onAuthStateChanged(function (user) {
 
-        document.getElementById("phone").value =
-            user.phone || "";
+        if (!user) {
 
-        document.getElementById("birthday").value =
-            user.birthday || "";
+            console.warn(
+                "No authenticated user."
+            );
 
-        document.getElementById("gender").value =
-            user.gender || "";
+            window.location.href = "login.html";
 
-        document.getElementById("bio").value =
-            user.bio || "";
+            return;
 
-        const counter = document.getElementById("bioCount");
-        if (counter) {
-            counter.innerText = (user.bio || "").length;
         }
+
+
+        currentUser = user;
+
+
+        console.log(
+            "Viewora User Authenticated:",
+            user.uid
+        );
+
+
+        loadAccountData(user);
 
     });
 
 }
 
-// ======================================
-// Change Profile Photo
-// ======================================
 
-function changeProfilePhoto() {
+/* =====================================================
+   LOAD ACCOUNT DATA
+===================================================== */
 
-    const url = prompt("Enter Profile Photo URL");
-
-    if (!url) return;
-
-    document.getElementById("profilePhoto").src = url;
-
-}
-
-// ======================================
-// Remove Profile Photo
-// ======================================
-
-function removeProfilePhoto() {
-
-    if (!confirm("Remove profile photo?")) return;
-
-    document.getElementById("profilePhoto").src = "users.jpg";
-
-}
-// ======================================
-// Viewora Account Settings
-// Part 2
-// Save Profile
-// ======================================
-
-async function saveProfile() {
-
-    const user = auth.currentUser;
-
-    if (!user) return;
-
-    const fullName = document.getElementById("fullName").value.trim();
-    const username = document.getElementById("username").value.trim().toLowerCase();
-    const email = document.getElementById("email").value.trim();
-    const phone = document.getElementById("phone").value.trim();
-    const birthday = document.getElementById("birthday").value;
-    const gender = document.getElementById("gender").value;
-    const bio = document.getElementById("bio").value.trim();
-    const profilePhoto = document.getElementById("profilePhoto").src;
-
-    // =============================
-    // Validation
-    // =============================
-
-    if (fullName.length < 3) {
-        return showToast("❌ Name must be at least 3 characters");
-    }
-
-    if (username.length < 3) {
-        return showToast("❌ Username must be at least 3 characters");
-    }
-
-    if (bio.length > 150) {
-        return showToast("❌ Bio cannot exceed 150 characters");
-    }
+async function loadAccountData(user) {
 
     try {
 
-        // Update Email (if changed)
-        if (email !== user.email) {
+        const snapshot = await db
+            .ref("users/" + user.uid)
+            .once("value");
 
-            await user.updateEmail(email);
+
+        const data = snapshot.exists()
+            ? snapshot.val()
+            : {};
+
+
+        originalData = {
+
+            email:
+                user.email ||
+                data.email ||
+                "",
+
+            phone:
+                data.phone ||
+                "",
+
+            birthday:
+                data.birthday ||
+                ""
+
+        };
+
+
+        /* Email */
+
+        const emailInput =
+            document.getElementById("email");
+
+        if (emailInput) {
+
+            emailInput.value =
+                originalData.email;
 
         }
 
-        // Save Database
 
-        await db.ref("users/" + user.uid).update({
+        /* Phone */
 
-            name: fullName,
+        const phoneInput =
+            document.getElementById("phone");
 
-            username: username,
+        if (phoneInput) {
 
-            email: email,
+            phoneInput.value =
+                originalData.phone;
 
-            phone: phone,
+        }
 
-            birthday: birthday,
 
-            gender: gender,
+        /* Birthday */
 
-            bio: bio,
+        const birthdayInput =
+            document.getElementById("birthday");
 
-            profilePhoto: profilePhoto,
+        if (birthdayInput) {
 
-            updatedAt: firebase.database.ServerValue.TIMESTAMP
+            birthdayInput.value =
+                normalizeBirthday(
+                    originalData.birthday
+                );
 
-        });
+        }
 
-        document.getElementById("profileName").innerText = fullName;
-        document.getElementById("profileUsername").innerText = "@" + username;
 
-        showToast("✅ Profile Updated Successfully");
+        updateVerificationStatus(user);
+
+
+        console.log(
+            "Account profile loaded"
+        );
 
     }
 
     catch (error) {
 
-        alert(error.message);
+        console.error(
+            "Account loading error:",
+            error
+        );
+
+        showToast(
+            "❌ Could not load account",
+            "error"
+        );
 
     }
 
 }
 
-// ======================================
-// Reset Form
-// ======================================
 
-function resetForm() {
+/* =====================================================
+   BIRTHDAY NORMALIZER
+===================================================== */
 
-    if (!confirm("Reset all unsaved changes?")) return;
+function normalizeBirthday(value) {
 
-    loadProfile(auth.currentUser.uid);
+    if (!value) return "";
 
-    showToast("🔄 Form Reset");
+    /*
+     Supports:
+     YYYY-MM-DD
+     DD/MM/YYYY
+     DD-MM-YYYY
+    */
 
-}
-// ======================================
-// Viewora Account Settings
-// Part 3
-// Security & Validation
-// ======================================
+    if (
+        /^\d{4}-\d{2}-\d{2}$/.test(value)
+    ) {
 
-// =============================
-// Email Verification
-// =============================
-
-async function verifyEmail(){
-
-    const user = auth.currentUser;
-
-    if(!user) return;
-
-    try{
-
-        await user.sendEmailVerification();
-
-        showToast("📧 Verification email sent.");
+        return value;
 
     }
 
-    catch(error){
 
-        alert(error.message);
+    if (
+        /^\d{2}\/\d{2}\/\d{4}$/.test(value)
+    ) {
+
+        const parts =
+            value.split("/");
+
+        return (
+            parts[2] +
+            "-" +
+            parts[1] +
+            "-" +
+            parts[0]
+        );
+
+    }
+
+
+    if (
+        /^\d{2}-\d{2}-\d{4}$/.test(value)
+    ) {
+
+        const parts =
+            value.split("-");
+
+        return (
+            parts[2] +
+            "-" +
+            parts[1] +
+            "-" +
+            parts[0]
+        );
+
+    }
+
+
+    return value;
+
+}
+
+
+/* =====================================================
+   SAVE ACCOUNT
+   FIXES:
+   saveAccount is not defined
+===================================================== */
+
+window.saveAccount = async function () {
+
+    if (!currentUser) {
+
+        showToast(
+            "❌ Please login first",
+            "error"
+        );
+
+        return;
+
+    }
+
+
+    const emailInput =
+        document.getElementById("email");
+
+    const phoneInput =
+        document.getElementById("phone");
+
+    const birthdayInput =
+        document.getElementById("birthday");
+
+
+    const email =
+        emailInput
+            ? emailInput.value.trim()
+            : "";
+
+
+    const phone =
+        phoneInput
+            ? phoneInput.value.trim()
+            : "";
+
+
+    const birthday =
+        birthdayInput
+            ? birthdayInput.value
+            : "";
+
+
+    /* Email validation */
+
+    if (!email) {
+
+        showToast(
+            "📧 Enter your email",
+            "error"
+        );
+
+        return;
+
+    }
+
+
+    const emailPattern =
+        /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+
+    if (!emailPattern.test(email)) {
+
+        showToast(
+            "❌ Enter a valid email",
+            "error"
+        );
+
+        return;
+
+    }
+
+
+    try {
+
+        showToast(
+            "⏳ Saving changes..."
+        );
+
+
+        /*
+         * Update Realtime Database
+         */
+
+        await db
+            .ref("users/" + currentUser.uid)
+            .update({
+
+                email: email,
+                phone: phone,
+                birthday: birthday
+
+            });
+
+
+        /*
+         * Update Firebase Authentication email
+         * only if it changed.
+         */
+
+        if (
+            currentUser.email &&
+            currentUser.email !== email
+        ) {
+
+            try {
+
+                await currentUser.updateEmail(
+                    email
+                );
+
+
+            }
+            catch (emailError) {
+
+                console.warn(
+                    "Authentication email update failed:",
+                    emailError
+                );
+
+
+                /*
+                 * Firebase may require
+                 * recent authentication.
+                 */
+
+                showToast(
+                    "⚠️ Re-login required to change email",
+                    "error"
+                );
+
+                return;
+
+            }
+
+        }
+
+
+        originalData = {
+
+            email: email,
+            phone: phone,
+            birthday: birthday
+
+        };
+
+
+        showToast(
+            "✅ Account updated successfully"
+        );
+
+
+        updateVerificationStatus(
+            currentUser
+        );
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "Save account error:",
+            error
+        );
+
+
+        showToast(
+            "❌ " +
+            getFirebaseErrorMessage(error),
+            "error"
+        );
+
+    }
+
+};
+
+
+/* =====================================================
+   RESET ACCOUNT
+   FIXES:
+   resetAccount is not defined
+===================================================== */
+
+window.resetAccount = function () {
+
+    const emailInput =
+        document.getElementById("email");
+
+    const phoneInput =
+        document.getElementById("phone");
+
+    const birthdayInput =
+        document.getElementById("birthday");
+
+
+    if (emailInput) {
+
+        emailInput.value =
+            originalData.email || "";
+
+    }
+
+
+    if (phoneInput) {
+
+        phoneInput.value =
+            originalData.phone || "";
+
+    }
+
+
+    if (birthdayInput) {
+
+        birthdayInput.value =
+            normalizeBirthday(
+                originalData.birthday || ""
+            );
+
+    }
+
+
+    showToast(
+        "↩️ Changes reset"
+    );
+
+};
+
+
+/* =====================================================
+   CHANGE PASSWORD
+===================================================== */
+
+window.changePassword = async function () {
+
+    if (!currentUser) {
+
+        showToast(
+            "❌ Please login first",
+            "error"
+        );
+
+        return;
+
+    }
+
+
+    if (!currentUser.email) {
+
+        showToast(
+            "❌ No email linked to this account",
+            "error"
+        );
+
+        return;
+
+    }
+
+
+    try {
+
+        await auth.sendPasswordResetEmail(
+            currentUser.email
+        );
+
+
+        showToast(
+            "📧 Password reset email sent"
+        );
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "Password reset error:",
+            error
+        );
+
+
+        showToast(
+            "❌ " +
+            getFirebaseErrorMessage(error),
+            "error"
+        );
+
+    }
+
+};
+
+
+/* =====================================================
+   EMAIL VERIFICATION
+===================================================== */
+
+window.verifyEmail = async function () {
+
+    if (!currentUser) {
+
+        showToast(
+            "❌ Please login first",
+            "error"
+        );
+
+        return;
+
+    }
+
+
+    /*
+     Refresh Firebase user state.
+     */
+
+    try {
+
+        await currentUser.reload();
+
+    }
+    catch (error) {
+
+        console.warn(
+            "User reload failed:",
+            error
+        );
+
+    }
+
+
+    if (currentUser.emailVerified) {
+
+        showToast(
+            "✅ Email already verified"
+        );
+
+        updateVerificationStatus(
+            currentUser
+        );
+
+        return;
+
+    }
+
+
+    try {
+
+        await currentUser.sendEmailVerification();
+
+
+        showToast(
+            "📧 Verification email sent"
+        );
+
+
+    }
+    catch (error) {
+
+        console.error(
+            "Verification error:",
+            error
+        );
+
+
+        showToast(
+            "❌ " +
+            getFirebaseErrorMessage(error),
+            "error"
+        );
+
+    }
+
+};
+
+
+/* =====================================================
+   VERIFICATION STATUS
+===================================================== */
+
+function updateVerificationStatus(user) {
+
+    const text =
+        document.getElementById(
+            "verificationText"
+        );
+
+
+    const badge =
+        document.getElementById(
+            "verificationBadge"
+        );
+
+
+    const emailStatus =
+        document.getElementById(
+            "emailStatus"
+        );
+
+
+    if (!user) return;
+
+
+    if (user.emailVerified) {
+
+        if (text) {
+
+            text.textContent =
+                "Your email address is verified";
+
+        }
+
+
+        if (badge) {
+
+            badge.textContent =
+                "✓ Verified";
+
+            badge.classList.add(
+                "verified"
+            );
+
+        }
+
+
+        if (emailStatus) {
+
+            emailStatus.textContent =
+                "✓ Verified email address";
+
+        }
+
+    }
+
+    else {
+
+        if (text) {
+
+            text.textContent =
+                "Your email address is not verified";
+
+        }
+
+
+        if (badge) {
+
+            badge.textContent =
+                "Verify";
+
+            badge.classList.remove(
+                "verified"
+            );
+
+        }
+
+
+        if (emailStatus) {
+
+            emailStatus.textContent =
+                "⚠ Email verification required";
+
+        }
 
     }
 
 }
 
-// =============================
-// Reset Password
-// =============================
 
-async function resetPassword(){
+/* =====================================================
+   BACK
+===================================================== */
 
-    const user=auth.currentUser;
+window.goBack = function () {
 
-    if(!user) return;
+    if (
+        document.referrer &&
+        document.referrer !== location.href
+    ) {
 
-    try{
+        history.back();
 
-        await auth.sendPasswordResetEmail(user.email);
+    }
+    else {
 
-        showToast("🔑 Password reset email sent.");
+        window.location.href =
+            "settings.html";
 
     }
 
-    catch(error){
+};
 
-        alert(error.message);
 
-    }
+/* =====================================================
+   FIREBASE ERROR MESSAGE
+===================================================== */
 
-}
+function getFirebaseErrorMessage(error) {
 
-// =============================
-// Username Validation
-// =============================
+    if (!error) {
 
-const usernameInput=document.getElementById("username");
-
-if(usernameInput){
-
-usernameInput.addEventListener("input",()=>{
-
-let value=usernameInput.value
-.toLowerCase()
-.replace(/[^a-z0-9_.]/g,"");
-
-usernameInput.value=value;
-
-});
-
-}
-
-// =============================
-// Full Name Validation
-// =============================
-
-const nameInput=document.getElementById("fullName");
-
-if(nameInput){
-
-nameInput.addEventListener("input",()=>{
-
-if(nameInput.value.length>40){
-
-nameInput.value=nameInput.value.substring(0,40);
-
-}
-
-});
-
-}
-
-// =============================
-// Bio Counter
-// =============================
-
-const bio=document.getElementById("bio");
-
-const counter=document.getElementById("bioCount");
-
-if(bio && counter){
-
-bio.addEventListener("input",()=>{
-
-counter.innerText=bio.value.length;
-
-});
-
-}
-
-// =============================
-// Auto Save Indicator
-// =============================
-
-const formFields=document.querySelectorAll(
-
-"#fullName,#username,#email,#phone,#birthday,#gender,#bio"
-
-);
-
-formFields.forEach(field=>{
-
-field.addEventListener("input",()=>{
-
-document.title="● Unsaved Changes";
-
-});
-
-});
-
-// =============================
-// Save Success
-// =============================
-
-function profileSaved(){
-
-document.title="👤 Account Settings • Viewora";
-
-showToast("✅ Changes Saved");
-
-}
-
-// ======================================
-// End Part 3
-// ======================================
-// ======================================
-// Viewora Account Settings
-// Part 4 (Final)
-// ======================================
-
-// =============================
-// Reload Profile
-// =============================
-
-function refreshProfile(){
-
-    const user = auth.currentUser;
-
-    if(!user) return;
-
-    loadProfile(user.uid);
-
-    showToast("🔄 Profile Refreshed");
-
-}
-
-// =============================
-// Logout
-// =============================
-
-async function logout(){
-
-    try{
-
-        await auth.signOut();
-
-        showToast("👋 Logged Out");
-
-        setTimeout(()=>{
-
-            window.location.href="login.html";
-
-        },800);
+        return "Something went wrong";
 
     }
 
-    catch(error){
 
-        alert(error.message);
+    const code =
+        error.code || "";
+
+
+    switch (code) {
+
+        case "auth/invalid-email":
+
+            return "Invalid email address";
+
+
+        case "auth/email-already-in-use":
+
+            return "This email is already in use";
+
+
+        case "auth/requires-recent-login":
+
+            return "Please login again and try";
+
+
+        case "auth/too-many-requests":
+
+            return "Too many attempts. Try again later";
+
+
+        case "auth/network-request-failed":
+
+            return "Network error. Check your internet";
+
+
+        case "permission-denied":
+
+            return "Database permission denied";
+
+
+        default:
+
+            return (
+                error.message ||
+                "Something went wrong"
+            );
 
     }
 
 }
 
-// =============================
-// Internet Status
-// =============================
 
-window.addEventListener("online",()=>{
+/* =====================================================
+   TOAST
+===================================================== */
 
-    showToast("🌐 Internet Connected");
+window.showToast = function (
+    message,
+    type = "success"
+) {
 
-});
+    const toast =
+        document.getElementById(
+            "vieworaToast"
+        );
 
-window.addEventListener("offline",()=>{
 
-    showToast("❌ Internet Disconnected");
+    const toastMessage =
+        document.getElementById(
+            "toastMessage"
+        );
 
-});
 
-// =============================
-// Page Loaded
-// =============================
+    const toastIcon =
+        document.getElementById(
+            "toastIcon"
+        );
 
-window.addEventListener("load",()=>{
 
-    console.log("✅ Account Settings Loaded");
+    if (!toast) {
 
-});
+        console.log(
+            message
+        );
 
-// =============================
-// Premium Toast
-// =============================
-
-function showToast(message){
-
-    let toast=document.getElementById("vieworaToast");
-
-    if(!toast){
-
-        toast=document.createElement("div");
-
-        toast.id="vieworaToast";
-
-        toast.style.cssText=`
-        position:fixed;
-        left:50%;
-        bottom:35px;
-        transform:translateX(-50%);
-        background:#00aaff;
-        color:#fff;
-        padding:14px 22px;
-        border-radius:30px;
-        font-size:14px;
-        font-weight:bold;
-        box-shadow:0 8px 25px rgba(0,170,255,.35);
-        z-index:99999;
-        opacity:0;
-        transition:.35s;
-        `;
-
-        document.body.appendChild(toast);
+        return;
 
     }
 
-    toast.innerHTML=message;
 
-    toast.style.opacity="1";
+    if (toastMessage) {
 
-    setTimeout(()=>{
+        toastMessage.textContent =
+            message;
 
-        toast.style.opacity="0";
+    }
 
-    },2500);
 
-}
+    if (toastIcon) {
 
-// =============================
-// Profile Photo Click
-// =============================
+        toastIcon.textContent =
+            type === "error"
+                ? "!"
+                : "✓";
 
-const profileImage=document.getElementById("profilePhoto");
+    }
 
-if(profileImage){
 
-    profileImage.addEventListener("click",()=>{
+    toast.classList.remove(
+        "show",
+        "error"
+    );
 
-        changeProfilePhoto();
+
+    if (type === "error") {
+
+        toast.classList.add(
+            "error"
+        );
+
+    }
+
+
+    requestAnimationFrame(() => {
+
+        toast.classList.add(
+            "show"
+        );
 
     });
 
-}
 
-// =============================
-// Save Shortcut
-// Ctrl + S
-// =============================
+    clearTimeout(
+        window.__vieworaToastTimer
+    );
 
-document.addEventListener("keydown",(e)=>{
 
-    if(e.ctrlKey && e.key==="s"){
+    window.__vieworaToastTimer =
+        setTimeout(() => {
 
-        e.preventDefault();
+            toast.classList.remove(
+                "show"
+            );
 
-        saveProfile();
+        }, 2800);
+
+};
+
+
+/* =====================================================
+   AUTO HIDE / PAGE READY
+===================================================== */
+
+document.addEventListener(
+    "DOMContentLoaded",
+    function () {
+
+        document.body.classList.add(
+            "page-ready"
+        );
 
     }
+);
 
-});
-
-// =============================
-// Before Leaving Page
-// =============================
-
-window.addEventListener("beforeunload",(e)=>{
-
-    if(document.title==="● Unsaved Changes"){
-
-        e.preventDefault();
-
-        e.returnValue="";
-
-    }
-
-});
-
-// ======================================
-// End
-// ======================================
-
-console.log("🚀 Viewora Account Settings Ready");
+})();

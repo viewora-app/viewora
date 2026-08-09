@@ -2,930 +2,729 @@
 <html lang="en">
 
 <head>
+    <meta charset="UTF-8">
 
-<meta charset="UTF-8">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    >
 
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#070b12">
 
-<title>Viewora • Settings</title>
+    <title>Viewora • Settings</title>
 
-<link rel="stylesheet" href="style.css">
-
-<style>
-
-*{
-
-margin:0;
-padding:0;
-box-sizing:border-box;
-font-family:Arial,sans-serif;
-
-}
-
-body{
-
-background:#0d1117;
-color:#fff;
-overflow-x:hidden;
-padding-bottom:120px;
-
-}
-
-/* Animated Background */
-
-body::before{
-
-content:"";
-
-position:fixed;
-
-width:300%;
-height:300%;
-
-left:-100%;
-top:-100%;
-
-background:
-
-radial-gradient(circle,#00aaff22,transparent 35%),
-
-radial-gradient(circle,#ff008822,transparent 35%),
-
-radial-gradient(circle,#00ff8822,transparent 35%);
-
-animation:bgMove 25s linear infinite;
-
-z-index:-1;
-
-}
-
-@keyframes bgMove{
-
-100%{
-
-transform:rotate(360deg);
-
-}
-
-}
-
-/* Header */
-
-.header{
-
-padding:35px 20px;
-
-text-align:center;
-
-background:linear-gradient(135deg,#00aaff,#0066ff);
-
-border-bottom-left-radius:35px;
-
-border-bottom-right-radius:35px;
-
-box-shadow:0 15px 35px rgba(0,170,255,.25);
-
-}
-
-.header h1{
-
-font-size:30px;
-
-}
-
-.header p{
-
-margin-top:8px;
-
-opacity:.9;
-
-}
-
-/* Profile */
-
-.profile{
-
-width:92%;
-
-margin:25px auto;
-
-padding:25px;
-
-text-align:center;
-
-background:rgba(255,255,255,.05);
-
-backdrop-filter:blur(15px);
-
-border-radius:25px;
-
-border:1px solid rgba(255,255,255,.08);
-
-animation:zoom .5s;
-
-}
-
-.profile img{
-
-width:100px;
-
-height:100px;
-
-border-radius:50%;
-
-object-fit:cover;
-
-border:4px solid #00aaff;
-
-box-shadow:0 0 25px rgba(0,170,255,.4);
-
-}
-
-.profile h2{
-
-margin-top:15px;
-
-}
-
-.profile p{
-
-color:#aaa;
-
-margin-top:5px;
-
-}
-
-.editBtn{
-
-margin-top:18px;
-
-padding:12px 28px;
-
-border:none;
-
-border-radius:30px;
-
-background:#00aaff;
-
-color:#fff;
-
-font-weight:bold;
-
-cursor:pointer;
-
-transition:.3s;
-
-}
-
-.editBtn:hover{
-
-transform:scale(1.05);
-
-}
-
-.section{
-
-width:92%;
-
-margin:auto;
-
-margin-top:25px;
-
-}
-
-.section h3{
-
-margin-bottom:15px;
-
-color:#00aaff;
-
-}
-
-@keyframes zoom{
-
-from{
-
-opacity:0;
-
-transform:scale(.9);
-
-}
-
-to{
-
-opacity:1;
-
-transform:scale(1);
-
-}
-
-}
-
-</style>
-
+    <link rel="stylesheet" href="settings.css">
 
 </head>
 
 <body>
 
-<div class="header">
+<!-- =====================================================
+     BACKGROUND
+===================================================== -->
 
-<h1>⚙️ Settings</h1>
+<div class="ambient ambient-one"></div>
+<div class="ambient ambient-two"></div>
+<div class="ambient ambient-three"></div>
 
-<p>Manage your Viewora account</p>
 
-</div>
+<!-- =====================================================
+     HEADER
+===================================================== -->
 
-<div class="profile">
+<header class="settings-header">
 
-<img id="profilePhoto" src="non.jpg">
+    <div class="header-content">
 
-<h2 id="profileName">
+        <button
+            class="back-button"
+            type="button"
+            onclick="goBack()"
+            aria-label="Go back"
+        >
+            <span>‹</span>
+        </button>
 
-Loading...
+        <div class="header-title">
 
-</h2>
+            <span class="header-icon">⚙️</span>
 
-<p id="profileUsername">
+            <div>
+                <h1>Settings</h1>
 
-@loading
-
-</p>
-
-<button class="editBtn"
-
-onclick="location.href='account-settings.html'">
-
-✏️ Edit Profile
-
-</button>
-
-</div>
-
-<div class="section">
-
-<h3>Settings Categories</h3>
-<!-- ========================= -->
-<!-- Settings Categories -->
-<!-- ========================= -->
-
-<div class="settings-grid">
-
-    <!-- Account -->
-
-    <div class="setting-card"
-    onclick="location.href='account-settings.html'">
-
-        <div class="icon">👤</div>
-
-        <div>
-
-            <h4>Account</h4>
-
-            <small>
-                Profile, Name, Email, Phone
-            </small>
+                <p>
+                    Personalize your Viewora
+                </p>
+            </div>
 
         </div>
 
-        <span>›</span>
-
     </div>
 
-    <!-- Security -->
+</header>
 
-    <div class="setting-card"
-    onclick="location.href='security-settings.html'">
 
-        <div class="icon">🔒</div>
+<!-- =====================================================
+     MAIN
+===================================================== -->
 
-        <div>
+<main class="settings-main">
 
-            <h4>Security</h4>
 
-            <small>
-                Password, Privacy & Verification
-            </small>
+    <!-- =================================================
+         PROFILE HERO
+    ================================================== -->
+
+    <section class="profile-hero">
+
+        <div class="profile-glow"></div>
+
+        <div class="profile-avatar-wrap">
+
+            <div class="avatar-ring"></div>
+
+            <img
+                id="profilePhoto"
+                src="non.jpg"
+                alt="Profile photo"
+                class="profile-avatar"
+            >
+
+            <span
+                class="online-dot"
+                title="Online"
+            ></span>
 
         </div>
 
-        <span>›</span>
 
-    </div>
+        <div class="profile-info">
 
-    <!-- Preferences -->
+            <h2 id="profileName">
+                Loading...
+            </h2>
 
-    <div class="setting-card"
-    onclick="location.href='appearance-settings.html'">
+            <p id="profileUsername">
+                @loading
+            </p>
 
-        <div class="icon">🎨</div>
-
-        <div>
-
-            <h4>Appearance</h4>
-
-            <small>
-                Theme, Language & Dark mode
-            </small>
+            <div class="profile-status">
+                <span class="status-dot"></span>
+                Viewora member
+            </div>
 
         </div>
 
-        <span>›</span>
+    </section>
 
-    </div>
 
-    <!-- Notifications -->
 
-    <div class="setting-card"
-    onclick="location.href='notification-settings.html'">
+    <!-- =================================================
+         ACCOUNT
+    ================================================== -->
 
-        <div class="icon">🔔</div>
+    <section class="settings-section">
 
-        <div>
+        <div class="section-heading">
 
-            <h4>Notifications</h4>
+            <span class="section-icon">👤</span>
 
-            <small>
-                Likes, Messages & Stories
-            </small>
+            <div>
+                <h3>Account</h3>
 
-        </div>
-
-        <span>›</span>
-
-    </div>
-
-    <!-- Support -->
-
-    <div class="setting-card"
-    onclick="location.href='support-settings.html'">
-
-        <div class="icon">❓</div>
-
-        <div>
-
-            <h4>Help & Support</h4>
-
-            <small>
-                Help Center & Contact
-            </small>
+                <p>
+                    Manage your personal account
+                </p>
+            </div>
 
         </div>
 
-        <span>›</span>
 
-    </div>
+        <div class="settings-list">
 
-    <!-- About -->
 
-    <div class="setting-card"
-    onclick="location.href='about-settings.html'">
+            <button
+                class="setting-item"
+                type="button"
+                onclick="openPage('account-settings.html')"
+            >
 
-        <div class="icon">ℹ️</div>
+                <span class="item-icon blue">
+                    👤
+                </span>
 
-        <div>
+                <span class="item-content">
 
-            <h4>About Viewora</h4>
+                    <strong>Account Information</strong>
 
-            <small>
-                Version, Privacy & Terms
-            </small>
+                    <small>
+                        Name, username, email & phone
+                    </small>
+
+                </span>
+
+                <span class="item-arrow">›</span>
+
+            </button>
+
+
+            <button
+                class="setting-item"
+                type="button"
+                onclick="openPage('security-settings.html')"
+            >
+
+                <span class="item-icon purple">
+                    🔐
+                </span>
+
+                <span class="item-content">
+
+                    <strong>Security</strong>
+
+                    <small>
+                        Password, verification & login activity
+                    </small>
+
+                </span>
+
+                <span class="item-arrow">›</span>
+
+            </button>
+
+
+            <button
+                class="setting-item"
+                type="button"
+                onclick="openPage('privacy.html')"
+            >
+
+                <span class="item-icon green">
+                    🛡️
+                </span>
+
+                <span class="item-content">
+
+                    <strong>Privacy</strong>
+
+                    <small>
+                        Control your privacy and visibility
+                    </small>
+
+                </span>
+
+                <span class="item-arrow">›</span>
+
+            </button>
 
         </div>
 
-        <span>›</span>
+    </section>
 
-    </div>
 
+
+    <!-- =================================================
+         PERSONALIZATION
+    ================================================== -->
+
+    <section class="settings-section">
+
+        <div class="section-heading">
+
+            <span class="section-icon">✨</span>
+
+            <div>
+
+                <h3>Personalization</h3>
+
+                <p>
+                    Make Viewora feel like yours
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <div class="settings-list">
+
+
+            <button
+                class="setting-item"
+                type="button"
+                onclick="openPage('appearance-settings.html')"
+            >
+
+                <span class="item-icon pink">
+                    🎨
+                </span>
+
+                <span class="item-content">
+
+                    <strong>Appearance</strong>
+
+                    <small>
+                        Theme, colors & display
+                    </small>
+
+                </span>
+
+                <span class="item-arrow">›</span>
+
+            </button>
+
+
+            <button
+                class="setting-item"
+                type="button"
+                onclick="openPage('notification-settings.html')"
+            >
+
+                <span class="item-icon orange notification-icon">
+                    🔔
+                    <span
+                        id="notificationBadge"
+                        class="notification-badge hidden"
+                    >
+                        !
+                    </span>
+                </span>
+
+                <span class="item-content">
+
+                    <strong>Notifications</strong>
+
+                    <small>
+                        Messages, likes, comments & stories
+                    </small>
+
+                </span>
+
+                <span class="item-arrow">›</span>
+
+            </button>
+
+
+            <button
+                class="setting-item"
+                type="button"
+                onclick="changeLanguage()"
+            >
+
+                <span class="item-icon cyan">
+                    🌐
+                </span>
+
+                <span class="item-content">
+
+                    <strong>Language</strong>
+
+                    <small>
+                        English • More languages coming soon
+                    </small>
+
+                </span>
+
+                <span class="item-arrow">›</span>
+
+            </button>
+
+        </div>
+
+    </section>
+
+
+
+    <!-- =================================================
+         QUICK ACTIONS
+    ================================================== -->
+
+    <section class="settings-section">
+
+        <div class="section-heading">
+
+            <span class="section-icon">⚡</span>
+
+            <div>
+
+                <h3>Quick Actions</h3>
+
+                <p>
+                    Useful Viewora tools
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <div class="settings-list">
+
+
+            <button
+                class="setting-item"
+                type="button"
+                onclick="shareApp()"
+            >
+
+                <span class="item-icon blue">
+                    📤
+                </span>
+
+                <span class="item-content">
+
+                    <strong>Share Viewora</strong>
+
+                    <small>
+                        Invite friends to Viewora
+                    </small>
+
+                </span>
+
+                <span class="item-arrow">›</span>
+
+            </button>
+
+
+            <button
+                class="setting-item"
+                type="button"
+                onclick="clearCache()"
+            >
+
+                <span class="item-icon yellow">
+                    🧹
+                </span>
+
+                <span class="item-content">
+
+                    <strong>Clear Cache</strong>
+
+                    <small>
+                        Clean temporary app data
+                    </small>
+
+                </span>
+
+                <span class="item-arrow">›</span>
+
+            </button>
+
+
+            <button
+                class="setting-item"
+                type="button"
+                onclick="manageDownloads()"
+            >
+
+                <span class="item-icon green">
+                    📥
+                </span>
+
+                <span class="item-content">
+
+                    <strong>Downloads</strong>
+
+                    <small>
+                        Manage saved media
+                    </small>
+
+                </span>
+
+                <span class="item-arrow">›</span>
+
+            </button>
+
+
+            <button
+                class="setting-item"
+                type="button"
+                onclick="managePermissions()"
+            >
+
+                <span class="item-icon purple">
+                    🔑
+                </span>
+
+                <span class="item-content">
+
+                    <strong>App Permissions</strong>
+
+                    <small>
+                        Camera, microphone & storage
+                    </small>
+
+                </span>
+
+                <span class="item-arrow">›</span>
+
+            </button>
+
+        </div>
+
+    </section>
+
+
+
+    <!-- =================================================
+         SUPPORT
+    ================================================== -->
+
+    <section class="settings-section">
+
+        <div class="section-heading">
+
+            <span class="section-icon">💬</span>
+
+            <div>
+
+                <h3>Support</h3>
+
+                <p>
+                    Need help?
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <div class="settings-list">
+
+
+            <button
+                class="setting-item"
+                type="button"
+                onclick="showHelp()"
+            >
+
+                <span class="item-icon cyan">
+                    ❓
+                </span>
+
+                <span class="item-content">
+
+                    <strong>Help & Support</strong>
+
+                    <small>
+                        Get help with Viewora
+                    </small>
+
+                </span>
+
+                <span class="item-arrow">›</span>
+
+            </button>
+
+
+            <button
+                class="setting-item"
+                type="button"
+                onclick="showAbout()"
+            >
+
+                <span class="item-icon blue">
+                    ℹ️
+                </span>
+
+                <span class="item-content">
+
+                    <strong>About Viewora</strong>
+
+                    <small>
+                        Version, privacy & terms
+                    </small>
+
+                </span>
+
+                <span class="item-arrow">›</span>
+
+            </button>
+
+        </div>
+
+    </section>
+
+
+
+    <!-- =================================================
+         ACCOUNT ACTIONS
+    ================================================== -->
+
+    <section class="settings-section danger-section">
+
+        <div class="section-heading">
+
+            <span class="section-icon">⚠️</span>
+
+            <div>
+
+                <h3>Account Actions</h3>
+
+                <p>
+                    Manage your session
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <div class="settings-list">
+
+
+            <button
+                class="setting-item logout-item"
+                type="button"
+                onclick="logout()"
+            >
+
+                <span class="item-icon orange">
+                    🚪
+                </span>
+
+                <span class="item-content">
+
+                    <strong>Logout</strong>
+
+                    <small>
+                        Sign out from this device
+                    </small>
+
+                </span>
+
+                <span class="item-arrow">›</span>
+
+            </button>
+
+
+            <button
+                class="setting-item delete-item"
+                type="button"
+                onclick="deleteAccount()"
+            >
+
+                <span class="item-icon red">
+                    🗑️
+                </span>
+
+                <span class="item-content">
+
+                    <strong>Delete Account</strong>
+
+                    <small>
+                        Permanently remove your Viewora account
+                    </small>
+
+                </span>
+
+                <span class="item-arrow">›</span>
+
+            </button>
+
+        </div>
+
+    </section>
+
+
+
+    <!-- =================================================
+         VERSION CARD
+    ================================================== -->
+
+    <section class="version-card">
+
+        <div class="version-logo">
+            V
+        </div>
+
+        <div>
+
+            <h2>Viewora</h2>
+
+            <p>
+                Premium Social Platform
+            </p>
+
+            <span>
+                Version 1.0.0
+            </span>
+
+        </div>
+
+    </section>
+
+
+
+    <!-- =================================================
+         FOOTER
+    ================================================== -->
+
+    <footer class="settings-footer">
+
+        <div class="footer-heart">
+            ❤️
+        </div>
+
+        <h3>
+            Thanks for using Viewora
+        </h3>
+
+        <p>
+            Stay connected with the world.
+        </p>
+
+        <div class="footer-line"></div>
+
+        <small>
+            © 2026 Viewora • All Rights Reserved
+        </small>
+
+    </footer>
+
+</main>
+
+
+
+<!-- =====================================================
+     TOAST
+===================================================== -->
+
+<div
+    id="vieworaToast"
+    class="viewora-toast"
+    aria-live="polite"
+>
+    <span id="toastIcon">✓</span>
+    <span id="toastMessage">
+        Done
+    </span>
 </div>
 
-<style>
 
-.settings-grid{
 
-display:flex;
+<!-- =====================================================
+     LOADING
+===================================================== -->
 
-flex-direction:column;
+<div
+    id="settingsLoader"
+    class="settings-loader"
+>
 
-gap:15px;
-
-}
-
-.setting-card{
-
-display:flex;
-
-align-items:center;
-
-gap:18px;
-
-padding:18px;
-
-background:rgba(255,255,255,.06);
-
-backdrop-filter:blur(15px);
-
-border:1px solid rgba(255,255,255,.08);
-
-border-radius:22px;
-
-cursor:pointer;
-
-transition:.35s;
-
-animation:slideUp .5s ease forwards;
-
-opacity:0;
-
-}
-
-.setting-card:nth-child(1){animation-delay:.05s;}
-.setting-card:nth-child(2){animation-delay:.10s;}
-.setting-card:nth-child(3){animation-delay:.15s;}
-.setting-card:nth-child(4){animation-delay:.20s;}
-.setting-card:nth-child(5){animation-delay:.25s;}
-.setting-card:nth-child(6){animation-delay:.30s;}
-
-.setting-card:hover{
-
-transform:translateY(-4px);
-
-background:rgba(255,255,255,.10);
-
-box-shadow:0 15px 35px rgba(0,170,255,.18);
-
-}
-
-.icon{
-
-font-size:34px;
-
-width:55px;
-
-height:55px;
-
-display:flex;
-
-align-items:center;
-
-justify-content:center;
-
-border-radius:16px;
-
-background:linear-gradient(135deg,#00aaff,#0077ff);
-
-box-shadow:0 8px 20px rgba(0,170,255,.25);
-
-}
-
-.setting-card h4{
-
-font-size:18px;
-
-margin-bottom:5px;
-
-}
-
-.setting-card small{
-
-color:#aaa;
-
-font-size:13px;
-
-}
-
-.setting-card span{
-
-margin-left:auto;
-
-font-size:28px;
-
-color:#00aaff;
-
-}
-
-@keyframes slideUp{
-
-from{
-
-opacity:0;
-
-transform:translateY(25px);
-
-}
-
-to{
-
-opacity:1;
-
-transform:translateY(0);
-
-}
-
-}
-
-</style>
-<!-- ========================= -->
-<!-- Quick Actions -->
-<!-- ========================= -->
-
-<div class="section">
-
-<h3>Quick Actions</h3>
-
-<div class="settings-grid">
-
-<div class="setting-card"
-onclick="shareApp()">
-
-<div class="icon">📤</div>
-
-<div>
-
-<h4>Share Viewora</h4>
-
-<small>Invite your friends</small>
-
-</div>
-
-<span>›</span>
-
-</div>
-
-<div class="setting-card"
-onclick="clearCache()">
-
-<div class="icon">🧹</div>
-
-<div>
-
-<h4>Clear Cache</h4>
-
-<small>Free up storage</small>
-
-</div>
-
-<span>›</span>
-
-</div>
-
-<div class="setting-card"
-onclick="manageDownloads()">
-
-<div class="icon">📥</div>
-
-<div>
-
-<h4>Downloads</h4>
-
-<small>Manage saved files</small>
-
-</div>
-
-<span>›</span>
-
-</div>
-
-</div>
-
-</div>
-
-<!-- ========================= -->
-<!-- Account -->
-<!-- ========================= -->
-
-<div class="section">
-
-<h3>Account</h3>
-
-<div class="settings-grid">
-
-<div class="setting-card logout-card"
-onclick="logout()">
-
-<div class="icon">🚪</div>
-
-<div>
-
-<h4>Logout</h4>
-
-<small>Sign out from Viewora</small>
-
-</div>
-
-<span>›</span>
-
-</div>
-
-<div class="setting-card delete-card"
-onclick="location.href='delete-account.html'">
-
-<div class="icon">🗑️</div>
-
-<div>
-
-<h4>Delete Account</h4>
-
-<small>Permanently remove your account</small>
-
-</div>
-
-<span>›</span>
-
-</div>
-
-</div>
-
-</div>
-
-<!-- ========================= -->
-<!-- Version Card -->
-<!-- ========================= -->
-
-<div class="version-card">
-
-<h2>🚀 Viewora</h2>
-
-<p>Version 1.0.0</p>
-
-<p>Premium Social Media Platform</p>
-
-</div>
-
-<style>
-
-.logout-card .icon{
-
-background:linear-gradient(135deg,#ff9800,#ff5722);
-
-}
-
-.delete-card .icon{
-
-background:linear-gradient(135deg,#ff1744,#d50000);
-
-}
-
-.version-card{
-
-width:92%;
-
-margin:35px auto;
-
-padding:25px;
-
-text-align:center;
-
-background:rgba(255,255,255,.05);
-
-backdrop-filter:blur(15px);
-
-border-radius:25px;
-
-border:1px solid rgba(255,255,255,.08);
-
-animation:fadeUp .8s;
-
-}
-
-.version-card h2{
-
-color:#00aaff;
-
-margin-bottom:10px;
-
-}
-
-.version-card p{
-
-color:#aaa;
-
-margin:5px 0;
-
-}
-
-@keyframes fadeUp{
-
-from{
-
-opacity:0;
-
-transform:translateY(40px);
-
-}
-
-to{
-
-opacity:1;
-
-transform:translateY(0);
-
-}
-
-}
-
-</style>
-<!-- ========================= -->
-<!-- Premium Footer -->
-<!-- ========================= -->
-
-<div class="footer">
-
-    <h2>❤️ Thanks for using Viewora</h2>
+    <div class="loader-ring"></div>
 
     <p>
-        Stay connected with the world.
-    </p>
-
-    <p class="copyright">
-
-        © 2026 Viewora
-
+        Loading Viewora...
     </p>
 
 </div>
 
-<!-- Floating Version Badge -->
 
-<div class="version-badge">
 
-    v1.0.0
-
-</div>
-
-<style>
-
-/* Footer */
-
-.footer{
-
-width:92%;
-
-margin:50px auto 120px;
-
-padding:25px;
-
-text-align:center;
-
-background:rgba(255,255,255,.05);
-
-backdrop-filter:blur(18px);
-
-border-radius:25px;
-
-border:1px solid rgba(255,255,255,.08);
-
-animation:fadeIn 1s;
-
-}
-
-.footer h2{
-
-color:#00aaff;
-
-margin-bottom:10px;
-
-}
-
-.footer p{
-
-color:#999;
-
-margin-top:8px;
-
-}
-
-.copyright{
-
-margin-top:18px;
-
-font-size:13px;
-
-color:#666;
-
-}
-
-/* Floating Badge */
-
-.version-badge{
-
-position:fixed;
-
-right:18px;
-
-bottom:95px;
-
-padding:10px 18px;
-
-border-radius:30px;
-
-background:linear-gradient(
-135deg,
-#00aaff,
-#0066ff
-);
-
-color:#fff;
-
-font-weight:bold;
-
-font-size:13px;
-
-box-shadow:0 8px 25px rgba(0,170,255,.35);
-
-animation:pulse 2s infinite;
-
-z-index:999;
-
-}
-
-/* Fade */
-
-@keyframes fadeIn{
-
-from{
-
-opacity:0;
-
-transform:translateY(40px);
-
-}
-
-to{
-
-opacity:1;
-
-transform:translateY(0);
-
-}
-
-}
-
-/* Pulse */
-
-@keyframes pulse{
-
-0%,100%{
-
-transform:scale(1);
-
-}
-
-50%{
-
-transform:scale(1.08);
-
-}
-
-}
-
-/* Floating Glow */
-
-body::after{
-
-content:"";
-
-position:fixed;
-
-width:220px;
-
-height:220px;
-
-background:#00aaff22;
-
-filter:blur(80px);
-
-right:-70px;
-
-bottom:-70px;
-
-border-radius:50%;
-
-pointer-events:none;
-
-animation:floatGlow 6s ease-in-out infinite;
-
-}
-
-@keyframes floatGlow{
-
-0%,100%{
-
-transform:translateY(0);
-
-}
-
-50%{
-
-transform:translateY(-20px);
-
-}
-
-}
-
-</style>
-
-<!-- Firebase -->
+<!-- =====================================================
+     FIREBASE
+===================================================== -->
 
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 
@@ -933,41 +732,78 @@ transform:translateY(-20px);
 
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
 
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
+
+
+<!-- =====================================================
+     VIEWORA
+===================================================== -->
+
 <script src="firebase.js"></script>
 
 <script src="settings.js"></script>
 
 <script src="nav.js"></script>
 
+
+<!-- =====================================================
+     PAGE START
+===================================================== -->
+
 <script>
 
-// Smooth page load
+document.addEventListener(
+    "DOMContentLoaded",
+    () => {
 
-document.body.style.opacity="0";
+        document.body.classList.add(
+            "page-ready"
+        );
 
-window.onload=()=>{
+    }
+);
 
-document.body.style.transition=".4s";
 
-document.body.style.opacity="1";
+window.addEventListener(
+    "online",
+    () => {
 
-};
+        if (
+            typeof showToast === "function"
+        ) {
 
-// Internet Status
+            showToast(
+                "🌐 Internet Connected"
+            );
 
-window.addEventListener("online",()=>{
+        }
 
-showToast("🌐 Internet Connected");
+    }
+);
 
-});
 
-window.addEventListener("offline",()=>{
+window.addEventListener(
+    "offline",
+    () => {
 
-showToast("❌ Internet Disconnected");
+        if (
+            typeof showToast === "function"
+        ) {
 
-});
+            showToast(
+                "⚠️ You're offline"
+            );
 
-console.log("✅ Viewora Premium Settings Loaded");
+        }
+
+    }
+);
+
+
+console.log(
+    "%cVIEWORA PREMIUM SETTINGS",
+    "color:#00c6ff;font-size:18px;font-weight:800"
+);
 
 </script>
 

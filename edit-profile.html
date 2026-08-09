@@ -1,154 +1,550 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Edit Profile - Viewora</title>
+    <meta charset="UTF-8">
 
-<style>
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    >
 
-*{
-margin:0;
-padding:0;
-box-sizing:border-box;
-font-family:Arial,sans-serif;
-}
+    <meta
+        name="theme-color"
+        content="#08090f"
+    >
 
-body{
-background:#111;
-color:white;
-padding:20px;
-}
+    <meta
+        name="description"
+        content="Edit your Viewora profile"
+    >
 
-.container{
-max-width:500px;
-margin:auto;
-background:#1b1b1b;
-padding:20px;
-border-radius:15px;
-}
+    <title>Viewora • Edit Profile</title>
 
-h1{
-text-align:center;
-margin-bottom:20px;
-}
+    <!-- Google Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 
-.profile-preview{
-display:flex;
-justify-content:center;
-margin-bottom:20px;
-}
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet"
+    >
 
-.profile-preview img{
-width:120px;
-height:120px;
-border-radius:50%;
-object-fit:cover;
-border:3px solid #00aaff;
-}
+    <!-- Font Awesome -->
+    <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
+    >
 
-label{
-display:block;
-margin-top:15px;
-margin-bottom:5px;
-}
-
-input,
-textarea,
-select{
-width:100%;
-padding:12px;
-border:none;
-border-radius:10px;
-background:#2a2a2a;
-color:white;
-font-size:16px;
-}
-
-textarea{
-resize:none;
-height:80px;
-}
-
-button{
-width:100%;
-margin-top:20px;
-padding:14px;
-border:none;
-border-radius:12px;
-background:#0095ff;
-color:white;
-font-size:17px;
-cursor:pointer;
-}
-
-.back-btn{
-background:#444;
-margin-top:10px;
-}
-
-</style>
+    <!-- Viewora CSS -->
+    <link rel="stylesheet" href="edit_profile.css">
 
 </head>
 
 <body>
 
-<div class="container">
+    <!-- ==========================================
+         PAGE
+    =========================================== -->
 
-<h1>✏️ Edit Profile</h1>
+    <main class="editPage">
 
-<div class="profile-preview">
-    <img id="previewPhoto" src="users.jpg">
-</div>
+        <!-- ======================================
+             HEADER
+        ======================================= -->
 
-<label>Profile Photo URL</label>
-<input
-type="text"
-id="photoInput"
-placeholder="https://example.com/photo.jpg">
+        <header class="editHeader">
 
-<label>Name</label>
-<input
-type="text"
-id="nameInput"
-placeholder="Your Name">
+            <button
+                type="button"
+                class="headerBtn"
+                id="backBtn"
+                aria-label="Go back"
+            >
+                <i class="fa-solid fa-arrow-left"></i>
+            </button>
 
-<label>Username</label>
-<input
-type="text"
-id="usernameInput"
-placeholder="@username">
+            <div class="headerTitle">
+                <h1>Edit Profile</h1>
+                <span>Customize your Viewora profile</span>
+            </div>
 
-<label>Bio</label>
-<textarea
-id="bioInput"
-placeholder="Tell people about yourself"></textarea>
+            <button
+                type="button"
+                class="headerBtn saveTopBtn"
+                id="saveTopBtn"
+                aria-label="Save profile"
+            >
+                <i class="fa-solid fa-check"></i>
+            </button>
 
-<label>Gender</label>
-<select id="genderInput">
-    <option value="Male">Male</option>
-    <option value="Female">Female</option>
-    <option value="Other">Other</option>
-</select>
+        </header>
 
-<button onclick="updateProfile()">💾 Save Profile</button>
 
-</div>
+        <!-- ======================================
+             PROFILE PREVIEW
+        ======================================= -->
 
-<button
-class="back-btn"
-onclick="window.location.href='profile.html'">
-⬅ Back
-</button>
+        <section class="profilePreview glass">
 
-</div>
+            <!-- Banner -->
 
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+            <div
+                class="bannerArea"
+                id="bannerArea"
+                role="button"
+                tabindex="0"
+                aria-label="Change profile banner"
+            >
 
-<script src="firebase.js"></script>
-<script src="edit-profile.js"></script>
+                <img
+                    id="bannerPreview"
+                    class="bannerPreview"
+                    src="assets/default-banner.jpg"
+                    alt="Profile banner"
+                >
+
+                <div class="bannerOverlay">
+
+                    <div class="changeBannerIcon">
+                        <i class="fa-solid fa-camera"></i>
+                    </div>
+
+                    <span>Change banner</span>
+
+                </div>
+
+                <div class="bannerGradient"></div>
+
+            </div>
+
+
+            <!-- Profile Photo -->
+
+            <div class="profilePhotoWrapper">
+
+                <button
+                    type="button"
+                    class="profilePhotoButton"
+                    id="profilePhotoButton"
+                    aria-label="Change profile photo"
+                >
+
+                    <img
+                        id="profilePreview"
+                        class="profilePreview"
+                        src="assets/default-avatar.png"
+                        alt="Profile photo"
+                    >
+
+                    <span class="photoCamera">
+
+                        <i class="fa-solid fa-camera"></i>
+
+                    </span>
+
+                </button>
+
+            </div>
+
+
+            <div class="previewInfo">
+
+                <h2 id="previewName">
+                    Your Name
+                </h2>
+
+                <p id="previewUsername">
+                    @username
+                </p>
+
+                <p
+                    id="previewBio"
+                    class="previewBio"
+                >
+                    Your bio will appear here.
+                </p>
+
+            </div>
+
+        </section>
+
+
+        <!-- ======================================
+             HIDDEN FILE INPUTS
+        ======================================= -->
+
+        <input
+            type="file"
+            id="profilePhotoInput"
+            accept="image/jpeg,image/png,image/webp,image/jpg"
+            hidden
+        >
+
+        <input
+            type="file"
+            id="bannerInput"
+            accept="image/jpeg,image/png,image/webp,image/jpg"
+            hidden
+        >
+
+
+        <!-- ======================================
+             PROFILE INFORMATION
+        ======================================= -->
+
+        <section class="formSection">
+
+            <div class="sectionTitle">
+
+                <div class="sectionIcon">
+                    <i class="fa-solid fa-user"></i>
+                </div>
+
+                <div>
+                    <h2>Profile Information</h2>
+                    <p>Tell people about yourself</p>
+                </div>
+
+            </div>
+
+
+            <!-- Name -->
+
+            <div class="formGroup">
+
+                <label for="nameInput">
+                    Name
+                </label>
+
+                <div class="inputBox">
+
+                    <i class="fa-regular fa-id-card"></i>
+
+                    <input
+                        type="text"
+                        id="nameInput"
+                        placeholder="Your name"
+                        maxlength="50"
+                        autocomplete="name"
+                    >
+
+                </div>
+
+                <div class="fieldBottom">
+
+                    <span>
+                        This is the name people see on your profile.
+                    </span>
+
+                    <small id="nameCounter">
+                        0/50
+                    </small>
+
+                </div>
+
+            </div>
+
+
+            <!-- Username -->
+
+            <div class="formGroup">
+
+                <label for="usernameInput">
+                    Username
+                </label>
+
+                <div class="inputBox usernameBox">
+
+                    <span class="inputPrefix">@</span>
+
+                    <input
+                        type="text"
+                        id="usernameInput"
+                        placeholder="username"
+                        maxlength="30"
+                        autocomplete="username"
+                        autocapitalize="none"
+                        spellcheck="false"
+                    >
+
+                    <span
+                        id="usernameStatus"
+                        class="inputStatus"
+                    ></span>
+
+                </div>
+
+                <div class="fieldBottom">
+
+                    <span>
+                        Letters, numbers, dots and underscores.
+                    </span>
+
+                    <small id="usernameCounter">
+                        0/30
+                    </small>
+
+                </div>
+
+            </div>
+
+
+            <!-- Profile URL -->
+
+            <div class="formGroup">
+
+                <label for="profileUrlInput">
+                    Profile URL
+                </label>
+
+                <div class="inputBox">
+
+                    <i class="fa-solid fa-link"></i>
+
+                    <input
+                        type="text"
+                        id="profileUrlInput"
+                        placeholder="your-profile"
+                        maxlength="40"
+                        autocapitalize="none"
+                        spellcheck="false"
+                    >
+
+                </div>
+
+                <div class="urlPreview">
+
+                    <span>
+                        viewora.app/
+                    </span>
+
+                    <strong id="profileUrlPreview">
+                        your-profile
+                    </strong>
+
+                </div>
+
+                <div class="fieldHint">
+                    Your custom Viewora profile link.
+                </div>
+
+            </div>
+
+
+            <!-- Gender -->
+
+            <div class="formGroup">
+
+                <label for="genderInput">
+                    Gender
+                </label>
+
+                <div class="selectBox">
+
+                    <i class="fa-solid fa-venus-mars"></i>
+
+                    <select id="genderInput">
+
+                        <option value="">
+                            Select gender
+                        </option>
+
+                        <option value="male">
+                            Male
+                        </option>
+
+                        <option value="female">
+                            Female
+                        </option>
+
+                        <option value="non-binary">
+                            Non-binary
+                        </option>
+
+                        <option value="prefer-not-to-say">
+                            Prefer not to say
+                        </option>
+
+                    </select>
+
+                    <i class="fa-solid fa-chevron-down selectArrow"></i>
+
+                </div>
+
+            </div>
+
+
+            <!-- Bio -->
+
+            <div class="formGroup">
+
+                <label for="bioInput">
+                    Bio
+                </label>
+
+                <div class="textareaBox">
+
+                    <textarea
+                        id="bioInput"
+                        placeholder="Tell the Viewora community something about you..."
+                        maxlength="160"
+                        rows="5"
+                    ></textarea>
+
+                </div>
+
+                <div class="fieldBottom">
+
+                    <span>
+                        Keep it short and personal.
+                    </span>
+
+                    <small id="bioCounter">
+                        0/160
+                    </small>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- ======================================
+             PROFILE LINK CARD
+        ======================================= -->
+
+        <section class="profileLinkCard glass">
+
+            <div class="linkIcon">
+
+                <i class="fa-solid fa-globe"></i>
+
+            </div>
+
+            <div class="linkContent">
+
+                <h3>Your public profile</h3>
+
+                <p id="publicProfileLink">
+                    viewora.app/username
+                </p>
+
+            </div>
+
+            <button
+                type="button"
+                class="copyBtn"
+                id="copyProfileUrl"
+                aria-label="Copy profile URL"
+            >
+
+                <i class="fa-regular fa-copy"></i>
+
+            </button>
+
+        </section>
+
+
+        <!-- ======================================
+             SAVE AREA
+        ======================================= -->
+
+        <section class="saveSection">
+
+            <button
+                type="button"
+                class="saveProfileBtn"
+                id="saveProfileBtn"
+            >
+
+                <span class="saveIcon">
+                    <i class="fa-solid fa-check"></i>
+                </span>
+
+                <span>
+                    Save Profile
+                </span>
+
+                <i class="fa-solid fa-arrow-right"></i>
+
+            </button>
+
+            <p>
+                Your profile changes will be visible after saving.
+            </p>
+
+        </section>
+
+    </main>
+
+
+    <!-- ==========================================
+         TOAST
+    =========================================== -->
+
+    <div
+        id="toast"
+        class="toast"
+        role="status"
+        aria-live="polite"
+    >
+
+        <i
+            id="toastIcon"
+            class="fa-solid fa-circle-check"
+        ></i>
+
+        <span id="toastText">
+            Profile updated
+        </span>
+
+    </div>
+
+
+    <!-- ==========================================
+         LOADING OVERLAY
+    =========================================== -->
+
+    <div
+        id="loadingOverlay"
+        class="loadingOverlay hidden"
+    >
+
+        <div class="loadingCard">
+
+            <div class="loadingSpinner"></div>
+
+            <h3 id="loadingTitle">
+                Saving profile
+            </h3>
+
+            <p id="loadingText">
+                Please wait...
+            </p>
+
+        </div>
+
+    </div>
+
+
+    <!-- ==========================================
+         FIREBASE
+    =========================================== -->
+
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
+
+    <script src="firebase.js"></script>
+
+    <!-- Edit Profile Logic -->
+    <script src="edit_profile.js"></script>
+
 </body>
 </html>

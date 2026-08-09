@@ -1,1878 +1,2752 @@
-/*=========================================
-        VIEWORA PROFILE V9
-             PART 1
-=========================================*/
+/* =========================================================
+   VIEWORA • PREMIUM PROFILE.JS
+   V12 CLEAN PRODUCTION VERSION
+
+   Uses:
+   • firebase.js
+   • Firebase Auth
+   • Firebase Realtime Database
+   • stories.js
+   • Cloudinary through stories.js
+
+   IMPORTANT:
+   firebase.js MUST load before this file.
+========================================================= */
 
 "use strict";
 
-/* ===========================
-        Current User
-=========================== */
+/* =========================================================
+   GLOBAL STATE
+========================================================= */
 
 let currentUser = null;
-let currentUID = null;
+let profileUserId = null;
 let profileData = {};
 
-/* ===========================
-        DOM Elements
-=========================== */
+let database = null;
+let firebaseAuth = null;
 
-const app = document.getElementById("app");
-const loader = document.getElementById("pageLoader");
+let profilePosts = [];
+let profileShorts = [];
+let profileVideos = [];
+let profileStories = [];
 
-const profilePic = document.getElementById("profilePic");
-const coverPhoto = document.getElementById("coverPhoto");
-
-const profileName = document.getElementById("profileName");
-const profileUsername = document.getElementById("profileUsername");
-const profileBio = document.getElementById("profileBio");
-
-const verifiedBadge = document.getElementById("verifiedBadge");
-
-const postsCount = document.getElementById("postsCount");
-const followersCount = document.getElementById("followersCount");
-const followingCount = document.getElementById("followingCount");
-const videosCount = document.getElementById("videosCount");
-
-const followBtn = document.getElementById("followBtn");
-const messageBtn = document.getElementById("messageBtn");
-
-const storyFile = document.getElementById("storyFile");
-
-const toast = document.getElementById("toast");
-const toastText = document.getElementById("toastText");
-const toastIcon = document.getElementById("toastIcon");
-
-const scrollBtn = document.getElementById("scrollTopBtn");
-
-/* ===========================
-      Default Images
-=========================== */
+/* =========================================================
+   DEFAULTS
+========================================================= */
 
 const DEFAULT_AVATAR =
-"assets/default-avatar.png";
+    "assets/default-avatar.png";
 
 const DEFAULT_BANNER =
-"assets/default-banner.jpg";
+    "assets/default-banner.jpg";
 
-/* ===========================
-      Loader
-=========================== */
+/* =========================================================
+   DOM HELPER
+========================================================= */
 
-function hideLoader(){
+const $ = id =>
+    document.getElementById(id);
 
-setTimeout(()=>{
+/* =========================================================
+   DOM
+========================================================= */
 
-loader.classList.add("hidden");
-app.classList.remove("hidden");
-app.classList.add("fadeIn");
+const pageLoader =
+    $("pageLoader");
 
-},700);
+const app =
+    $("app");
 
+const coverPhoto =
+    $("coverPhoto");
+
+const profilePic =
+    $("profilePic");
+
+const profileName =
+    $("profileName");
+
+const profileUsername =
+    $("profileUsername");
+
+const profileBio =
+    $("profileBio");
+
+const profileLocation =
+    $("profileLocation");
+
+const joinDate =
+    $("joinDate");
+
+const verifiedBadge =
+    $("verifiedBadge");
+
+const postsCount =
+    $("postsCount");
+
+const followersCount =
+    $("followersCount");
+
+const followingCount =
+    $("followingCount");
+
+const videosCount =
+    $("videosCount");
+
+const followBtn =
+    $("followBtn");
+
+const editProfileBtn =
+    $("editProfileBtn");
+
+const messageBtn =
+    $("messageBtn");
+
+const postsList =
+    $("postsList");
+
+const shortsList =
+    $("shortsList");
+
+const videosList =
+    $("videosList");
+
+const savedList =
+    $("savedList");
+
+const storyFile =
+    $("storyFile");
+
+const storiesWrapper =
+    $("storiesWrapper");
+
+const storyRing =
+    $("storyRing");
+
+const shareBtn =
+    document.querySelector(".shareBtn");
+
+const scrollTopBtn =
+    $("scrollTopBtn");
+
+/* =========================================================
+   FIREBASE
+========================================================= */
+
+function getFirebaseServices() {
+
+    if (
+        typeof firebase ===
+        "undefined"
+    ) {
+
+        console.error(
+            "❌ Firebase SDK is missing."
+        );
+
+        return false;
+    }
+
+    /*
+     * firebase.js exports:
+     *
+     * window.auth
+     * window.db
+     */
+
+    if (
+        !window.auth ||
+        !window.db
+    ) {
+
+        console.error(
+            "❌ Viewora Firebase is not ready. Load firebase.js before profile.js."
+        );
+
+        return false;
+    }
+
+    firebaseAuth =
+        window.auth;
+
+    database =
+        window.db;
+
+    console.log(
+        "✅ VIEWORA PROFILE: Firebase connected"
+    );
+
+    return true;
 }
 
-/* ===========================
-      Toast
-=========================== */
+/* =========================================================
+   AUTH
+========================================================= */
 
-function showToast(message,success=true){
+function startProfile() {
 
-toast.classList.remove("hidden");
+    if (
+        !getFirebaseServices()
+    ) {
 
-toastText.textContent = message;
+        showLoader(false);
 
-toast.style.background =
-success ? "#16a34a" : "#ef4444";
+        return;
+    }
 
-toastIcon.className =
-success
-?
-"fa-solid fa-circle-check"
-:
-"fa-solid fa-circle-xmark";
+    firebaseAuth.onAuthStateChanged(
+        async user => {
 
-setTimeout(()=>{
+            if (!user) {
 
-toast.classList.add("hidden");
+                currentUser =
+                    null;
 
-},2500);
+                console.warn(
+                    "👤 No authenticated user."
+                );
 
+                showLoader(false);
+
+                /*
+                 * Do not automatically redirect.
+                 * This prevents profile.js from fighting
+                 * with your login system.
+                 */
+
+                return;
+            }
+
+            currentUser =
+                user;
+
+            const params =
+                new URLSearchParams(
+                    window.location.search
+                );
+
+            /*
+             * profile.html
+             *
+             * Own profile:
+             * profile.html
+             *
+             * Other profile:
+             * profile.html?uid=OTHER_UID
+             */
+
+            profileUserId =
+                params.get("uid") ||
+                user.uid;
+
+            await loadProfile();
+        }
+    );
 }
 
-/* ===========================
-      Number Format
-=========================== */
+/* =========================================================
+   LOAD PROFILE
+========================================================= */
 
-function formatNumber(value){
+async function loadProfile() {
 
-value = Number(value||0);
+    if (
+        !currentUser ||
+        !profileUserId ||
+        !database
+    ) {
 
-if(value>=1000000){
+        return;
+    }
 
-return (value/1000000).toFixed(1)+"M";
+    try {
 
+        showLoader(true);
+
+        const snapshot =
+            await database
+                .ref(
+                    `users/${profileUserId}`
+                )
+                .once("value");
+
+        profileData =
+            snapshot.exists()
+                ? snapshot.val() || {}
+                : {};
+
+        renderProfile();
+
+        await Promise.all([
+            loadPosts(),
+            loadShorts(),
+            loadVideos(),
+            loadSavedPosts(),
+            loadStories()
+        ]);
+
+        await loadStats();
+
+        updateProfileButtons();
+
+        showLoader(false);
+
+        animateProfile();
+
+    } catch (error) {
+
+        console.error(
+            "❌ Profile loading error:",
+            error
+        );
+
+        showLoader(false);
+
+        showToast(
+            "Unable to load profile."
+        );
+    }
 }
 
-if(value>=1000){
+/* =========================================================
+   RENDER PROFILE
+========================================================= */
 
-return (value/1000).toFixed(1)+"K";
+function renderProfile() {
 
+    if (!profileData)
+        profileData = {};
+
+    const name =
+        profileData.name ||
+        profileData.fullName ||
+        profileData.displayName ||
+        currentUser?.displayName ||
+        "Viewora User";
+
+    const username =
+        profileData.username ||
+        profileData.handle ||
+        "user";
+
+    const bio =
+        profileData.bio ||
+        "Welcome to Viewora 🚀";
+
+    const avatar =
+        profileData.profilePhoto ||
+        profileData.photoURL ||
+        profileData.avatar ||
+        profileData.profilePic ||
+        currentUser?.photoURL ||
+        DEFAULT_AVATAR;
+
+    const cover =
+        profileData.coverPhoto ||
+        profileData.cover ||
+        DEFAULT_BANNER;
+
+    /* -------------------------------------------------------
+       NAME
+    ------------------------------------------------------- */
+
+    if (profileName) {
+
+        profileName.textContent =
+            name;
+
+        if (
+            profileData.verified === true ||
+            profileData.isVerified === true
+        ) {
+
+            if (verifiedBadge) {
+
+                verifiedBadge.classList.remove(
+                    "hidden"
+                );
+
+                profileName.appendChild(
+                    verifiedBadge
+                );
+            }
+
+        } else {
+
+            verifiedBadge?.classList.add(
+                "hidden"
+            );
+        }
+    }
+
+    /* -------------------------------------------------------
+       USERNAME
+    ------------------------------------------------------- */
+
+    if (profileUsername) {
+
+        profileUsername.textContent =
+            "@" +
+            String(username)
+                .replace(/^@/, "");
+    }
+
+    /* -------------------------------------------------------
+       BIO
+    ------------------------------------------------------- */
+
+    if (profileBio) {
+
+        profileBio.textContent =
+            bio;
+    }
+
+    /* -------------------------------------------------------
+       AVATAR
+    ------------------------------------------------------- */
+
+    if (profilePic) {
+
+        profilePic.src =
+            avatar;
+
+        profilePic.onerror =
+            () => {
+
+                profilePic.src =
+                    DEFAULT_AVATAR;
+            };
+    }
+
+    /* -------------------------------------------------------
+       COVER
+    ------------------------------------------------------- */
+
+    if (coverPhoto) {
+
+        coverPhoto.src =
+            cover;
+
+        coverPhoto.onerror =
+            () => {
+
+                coverPhoto.src =
+                    DEFAULT_BANNER;
+            };
+    }
+
+    /* -------------------------------------------------------
+       LOCATION
+    ------------------------------------------------------- */
+
+    const location =
+        profileData.location ||
+        profileData.city ||
+        profileData.country;
+
+    if (profileLocation) {
+
+        if (location) {
+
+            profileLocation.innerHTML =
+                `
+                <i class="fa-solid fa-location-dot"></i>
+                ${escapeHTML(location)}
+                `;
+
+        } else {
+
+            profileLocation.innerHTML =
+                `
+                <i class="fa-solid fa-location-dot"></i>
+                India
+                `;
+        }
+    }
+
+    /* -------------------------------------------------------
+       JOIN DATE
+    ------------------------------------------------------- */
+
+    const createdAt =
+        profileData.createdAt ||
+        profileData.joinedAt ||
+        profileData.timestamp;
+
+    if (
+        joinDate &&
+        createdAt
+    ) {
+
+        const date =
+            new Date(
+                Number(createdAt)
+            );
+
+        if (
+            !Number.isNaN(
+                date.getTime()
+            )
+        ) {
+
+            joinDate.innerHTML =
+                `
+                <i class="fa-solid fa-calendar"></i>
+                Joined ${date.getFullYear()}
+                `;
+        }
+    }
 }
 
-return value;
+/* =========================================================
+   STATS
+========================================================= */
 
+async function loadStats() {
+
+    if (!database)
+        return;
+
+    try {
+
+        /*
+         * Followers
+         *
+         * users/UID/followers/FOLLOWER_UID
+         */
+
+        const userSnapshot =
+            await database
+                .ref(
+                    `users/${profileUserId}`
+                )
+                .once("value");
+
+        const user =
+            userSnapshot.val() || {};
+
+        const followers =
+            countObject(
+                user.followers
+            );
+
+        const following =
+            countObject(
+                user.following
+            );
+
+        /*
+         * Support both:
+         *
+         * followersCount
+         * actual followers object
+         */
+
+        const followerTotal =
+            Number(
+                user.followersCount
+            ) ||
+            followers;
+
+        const followingTotal =
+            Number(
+                user.followingCount
+            ) ||
+            following;
+
+        if (followersCount) {
+
+            followersCount.textContent =
+                formatNumber(
+                    followerTotal
+                );
+        }
+
+        if (followingCount) {
+
+            followingCount.textContent =
+                formatNumber(
+                    followingTotal
+                );
+        }
+
+        /* ---------------------------------------------------
+           POST + VIDEO COUNT
+        --------------------------------------------------- */
+
+        const snapshot =
+            await database
+                .ref("posts")
+                .once("value");
+
+        let posts =
+            0;
+
+        let videos =
+            0;
+
+        snapshot.forEach(
+            child => {
+
+                const post =
+                    child.val();
+
+                if (!post)
+                    return;
+
+                const owner =
+                    post.uid ||
+                    post.userId ||
+                    post.authorId;
+
+                if (
+                    owner !==
+                    profileUserId
+                ) {
+
+                    return;
+                }
+
+                const type =
+                    String(
+                        post.type ||
+                        post.mediaType ||
+                        ""
+                    ).toLowerCase();
+
+                const isVideo =
+                    type.includes("video") ||
+                    !!post.videoURL ||
+                    !!post.videoUrl ||
+                    !!post.video;
+
+                if (isVideo) {
+
+                    videos++;
+
+                } else {
+
+                    posts++;
+                }
+            }
+        );
+
+        if (postsCount) {
+
+            postsCount.textContent =
+                formatNumber(posts);
+        }
+
+        if (videosCount) {
+
+            videosCount.textContent =
+                formatNumber(videos);
+        }
+
+    } catch (error) {
+
+        console.error(
+            "❌ Stats error:",
+            error
+        );
+    }
 }
 
-/* ===========================
-      Safe Text
-=========================== */
+/* =========================================================
+   POSTS
+========================================================= */
 
-function text(value,fallback=""){
+async function loadPosts() {
 
-return value ? value : fallback;
+    if (
+        !postsList ||
+        !database
+    )
+        return;
 
+    postsList.innerHTML =
+        loadingHTML();
+
+    try {
+
+        const snapshot =
+            await database
+                .ref("posts")
+                .once("value");
+
+        profilePosts = [];
+
+        snapshot.forEach(
+            child => {
+
+                const post =
+                    child.val();
+
+                if (!post)
+                    return;
+
+                const owner =
+                    post.uid ||
+                    post.userId ||
+                    post.authorId;
+
+                if (
+                    owner !==
+                    profileUserId
+                )
+                    return;
+
+                const type =
+                    String(
+                        post.type ||
+                        post.mediaType ||
+                        ""
+                    ).toLowerCase();
+
+                const isVideo =
+                    type.includes("video") ||
+                    !!post.videoURL ||
+                    !!post.videoUrl ||
+                    !!post.video;
+
+                if (isVideo)
+                    return;
+
+                profilePosts.push({
+                    id:
+                        child.key,
+                    ...post
+                });
+            }
+        );
+
+        sortByNewest(
+            profilePosts
+        );
+
+        if (
+            !profilePosts.length
+        ) {
+
+            postsList.innerHTML =
+                emptyHTML(
+                    "fa-images",
+                    "No posts yet"
+                );
+
+            return;
+        }
+
+        postsList.innerHTML =
+            profilePosts
+                .map(postCard)
+                .join("");
+
+    } catch (error) {
+
+        console.error(
+            "❌ Posts error:",
+            error
+        );
+
+        postsList.innerHTML =
+            emptyHTML(
+                "fa-triangle-exclamation",
+                "Unable to load posts"
+            );
+    }
 }
 
-/* ===========================
-      Scroll Button
-=========================== */
+/* =========================================================
+   SHORTS
+========================================================= */
 
-window.addEventListener("scroll",()=>{
+async function loadShorts() {
 
-if(window.scrollY>400){
+    if (
+        !shortsList ||
+        !database
+    )
+        return;
 
-scrollBtn.classList.remove("hidden");
+    shortsList.innerHTML =
+        loadingHTML();
 
-}else{
+    try {
 
-scrollBtn.classList.add("hidden");
+        const snapshot =
+            await database
+                .ref("shorts")
+                .once("value");
 
+        profileShorts = [];
+
+        snapshot.forEach(
+            child => {
+
+                const short =
+                    child.val();
+
+                if (!short)
+                    return;
+
+                const owner =
+                    short.uid ||
+                    short.userId ||
+                    short.authorId;
+
+                if (
+                    owner !==
+                    profileUserId
+                )
+                    return;
+
+                profileShorts.push({
+                    id:
+                        child.key,
+                    ...short
+                });
+            }
+        );
+
+        sortByNewest(
+            profileShorts
+        );
+
+        if (
+            !profileShorts.length
+        ) {
+
+            shortsList.innerHTML =
+                emptyHTML(
+                    "fa-play",
+                    "No shorts yet"
+                );
+
+            return;
+        }
+
+        shortsList.innerHTML =
+            profileShorts
+                .map(shortCard)
+                .join("");
+
+    } catch (error) {
+
+        console.error(
+            "❌ Shorts error:",
+            error
+        );
+
+        shortsList.innerHTML =
+            emptyHTML(
+                "fa-play",
+                "Unable to load shorts"
+            );
+    }
 }
 
-});
+/* =========================================================
+   VIDEOS
+========================================================= */
 
-scrollBtn?.addEventListener("click",()=>{
+async function loadVideos() {
 
-window.scrollTo({
+    if (
+        !videosList ||
+        !database
+    )
+        return;
 
-top:0,
-behavior:"smooth"
+    videosList.innerHTML =
+        loadingHTML();
 
-});
+    try {
 
-});
+        const snapshot =
+            await database
+                .ref("posts")
+                .once("value");
 
-/* ===========================
-    Firebase Auth State
-=========================== */
+        profileVideos = [];
 
-auth.onAuthStateChanged(user=>{
+        snapshot.forEach(
+            child => {
 
-if(!user){
+                const post =
+                    child.val();
 
-location.href="login.html";
-return;
+                if (!post)
+                    return;
 
+                const owner =
+                    post.uid ||
+                    post.userId ||
+                    post.authorId;
+
+                if (
+                    owner !==
+                    profileUserId
+                )
+                    return;
+
+                const type =
+                    String(
+                        post.type ||
+                        post.mediaType ||
+                        ""
+                    ).toLowerCase();
+
+                const isVideo =
+                    type.includes("video") ||
+                    !!post.videoURL ||
+                    !!post.videoUrl ||
+                    !!post.video;
+
+                if (!isVideo)
+                    return;
+
+                profileVideos.push({
+                    id:
+                        child.key,
+                    ...post
+                });
+            }
+        );
+
+        sortByNewest(
+            profileVideos
+        );
+
+        if (
+            !profileVideos.length
+        ) {
+
+            videosList.innerHTML =
+                emptyHTML(
+                    "fa-video",
+                    "No videos yet"
+                );
+
+            return;
+        }
+
+        videosList.innerHTML =
+            profileVideos
+                .map(videoCard)
+                .join("");
+
+    } catch (error) {
+
+        console.error(
+            "❌ Videos error:",
+            error
+        );
+
+        videosList.innerHTML =
+            emptyHTML(
+                "fa-video",
+                "Unable to load videos"
+            );
+    }
 }
 
-currentUser = user;
-currentUID = user.uid;
+/* =========================================================
+   SAVED POSTS
+========================================================= */
 
-hideLoader();
+async function loadSavedPosts() {
 
-/* Load profile in Part 2 */
+    if (
+        !savedList ||
+        !database
+    )
+        return;
 
-});
-/*=========================================
-        VIEWORA PROFILE V9
-             PART 2
-=========================================*/
+    savedList.innerHTML =
+        loadingHTML();
 
-/* ===========================
-      Load User Profile
-=========================== */
+    /*
+     * Saved posts are PRIVATE.
+     */
 
-function loadUserProfile(){
+    if (
+        !currentUser ||
+        profileUserId !==
+        currentUser.uid
+    ) {
 
-if(!currentUID) return;
+        savedList.innerHTML =
+            emptyHTML(
+                "fa-lock",
+                "Saved posts are private"
+            );
 
-db.ref("users/"+currentUID)
-.on("value",snapshot=>{
+        return;
+    }
 
-if(!snapshot.exists()) return;
+    try {
 
-profileData=snapshot.val()||{};
+        /*
+         * Support:
+         *
+         * users/UID/saved/POST_ID
+         *
+         * and:
+         *
+         * savedPosts/UID/POST_ID
+         */
 
-/* ===========================
-      Basic Information
-=========================== */
+        let snapshot =
+            await database
+                .ref(
+                    `users/${profileUserId}/saved`
+                )
+                .once("value");
 
-profileName.textContent=
-text(profileData.name,"Viewora User");
+        let saved =
+            snapshot.val() || {};
 
-profileUsername.textContent=
-"@"+text(profileData.username,"user");
+        if (
+            !Object.keys(saved).length
+        ) {
 
-profileBio.textContent=
-text(
-profileData.bio,
-"Welcome to Viewora 🚀"
-);
+            snapshot =
+                await database
+                    .ref(
+                        `savedPosts/${profileUserId}`
+                    )
+                    .once("value");
 
-/* ===========================
-      Profile Picture
-=========================== */
+            saved =
+                snapshot.val() || {};
+        }
 
-profilePic.src=
-profileData.photoURL ||
-DEFAULT_AVATAR;
+        const ids =
+            Object.keys(saved);
 
-/* ===========================
-      Banner
-=========================== */
+        if (!ids.length) {
 
-coverPhoto.src=
-profileData.bannerURL ||
-DEFAULT_BANNER;
+            savedList.innerHTML =
+                emptyHTML(
+                    "fa-bookmark",
+                    "No saved posts"
+                );
 
-/* ===========================
-      Verified Badge
-=========================== */
+            return;
+        }
 
-if(profileData.verified){
+        const cards = [];
 
-verifiedBadge.classList.remove("hidden");
+        for (
+            const id of ids
+        ) {
 
-}else{
+            const postSnapshot =
+                await database
+                    .ref(
+                        `posts/${id}`
+                    )
+                    .once("value");
 
-verifiedBadge.classList.add("hidden");
+            if (
+                !postSnapshot.exists()
+            )
+                continue;
 
+            cards.push({
+                id,
+                ...(
+                    postSnapshot.val() ||
+                    {}
+                )
+            });
+        }
+
+        if (!cards.length) {
+
+            savedList.innerHTML =
+                emptyHTML(
+                    "fa-bookmark",
+                    "No saved posts"
+                );
+
+            return;
+        }
+
+        savedList.innerHTML =
+            cards
+                .map(postCard)
+                .join("");
+
+    } catch (error) {
+
+        console.error(
+            "❌ Saved posts error:",
+            error
+        );
+
+        savedList.innerHTML =
+            emptyHTML(
+                "fa-bookmark",
+                "Unable to load saved posts"
+            );
+    }
 }
 
-/* ===========================
-      Join Date
-=========================== */
+/* =========================================================
+   STORIES
+=========================================================
 
-const join=document.getElementById("joinDate");
+   IMPORTANT:
+   stories.js stores stories like:
 
-if(join){
+   stories/
+      STORY_ID/
+         uid
+         username
+         name
+         profilePhoto
+         url
+         type
+         createdAt
+         expiresAt
 
-if(profileData.createdAt){
+========================================================= */
 
-const d=new Date(profileData.createdAt);
+async function loadStories() {
 
-join.innerHTML=
-`<i class="fa-solid fa-calendar"></i>
-Joined ${d.getFullYear()}`;
+    if (
+        !storiesWrapper ||
+        !database
+    )
+        return;
 
-}else{
+    try {
 
-join.innerHTML=
-`<i class="fa-solid fa-calendar"></i>
-Joined 2026`;
+        const snapshot =
+            await database
+                .ref("stories")
+                .once("value");
 
+        profileStories = [];
+
+        snapshot.forEach(
+            child => {
+
+                const story =
+                    child.val() || {};
+
+                const owner =
+                    story.uid ||
+                    story.userId ||
+                    "";
+
+                if (
+                    owner !==
+                    profileUserId
+                )
+                    return;
+
+                if (
+                    isStoryExpired(story)
+                )
+                    return;
+
+                profileStories.push({
+                    id:
+                        child.key,
+                    ...story
+                });
+            }
+        );
+
+        sortByNewest(
+            profileStories
+        );
+
+        renderStories();
+
+    } catch (error) {
+
+        console.error(
+            "❌ Stories error:",
+            error
+        );
+    }
 }
 
+/* =========================================================
+   RENDER STORIES
+========================================================= */
+
+function renderStories() {
+
+    if (!storiesWrapper)
+        return;
+
+    const newStory = `
+        <div
+            class="storyItem"
+            onclick="createProfileStory()"
+        >
+
+            <div class="storyCircle addStory">
+                <i class="fa-solid fa-plus"></i>
+            </div>
+
+            <p>New</p>
+
+        </div>
+    `;
+
+    /*
+     * Only show New button on own profile.
+     */
+
+    const ownProfile =
+        currentUser &&
+        profileUserId ===
+        currentUser.uid;
+
+    const newStoryButton =
+        ownProfile
+            ? newStory
+            : "";
+
+    if (
+        !profileStories.length
+    ) {
+
+        storiesWrapper.innerHTML =
+            newStoryButton;
+
+        storyRing?.classList.remove(
+            "hasStory"
+        );
+
+        return;
+    }
+
+    storyRing?.classList.add(
+        "hasStory"
+    );
+
+    storiesWrapper.innerHTML =
+        newStoryButton +
+        profileStories
+            .map(
+                story =>
+                    profileStoryCard(
+                        story
+                    )
+            )
+            .join("");
 }
 
-/* ===========================
-      Location
-=========================== */
+/* =========================================================
+   PROFILE STORY CARD
+========================================================= */
 
-const locationBox=
-document.getElementById("profileLocation");
+function profileStoryCard(
+    story
+) {
 
-if(locationBox){
+    const media =
+        story.thumbnail ||
+        story.thumbnailURL ||
+        story.imageURL ||
+        story.imageUrl ||
+        story.url ||
+        story.mediaURL ||
+        story.mediaUrl ||
+        "";
 
-locationBox.innerHTML=
+    return `
+        <div
+            class="storyItem"
+            onclick="openProfileStory('${escapeAttribute(story.id)}')"
+        >
 
-`<i class="fa-solid fa-location-dot"></i>
-${text(profileData.location,"India")}`;
+            <div class="storyCircle">
 
+                ${
+                    media
+                        ?
+                        `
+                        <img
+                            src="${escapeAttribute(media)}"
+                            alt="Story"
+                            loading="lazy"
+                        >
+                        `
+                        :
+                        `
+                        <div class="storyPlaceholder">
+                            <i class="fa-solid fa-play"></i>
+                        </div>
+                        `
+                }
+
+            </div>
+
+            <p>
+                ${escapeHTML(
+                    story.title ||
+                    "Story"
+                )}
+            </p>
+
+        </div>
+    `;
 }
 
-/* ===========================
-      Stats
-=========================== */
+/* =========================================================
+   FOLLOW SYSTEM
+=========================================================
 
-postsCount.textContent=
-formatNumber(profileData.posts||0);
+   OWN PROFILE:
+   Follow button = HIDDEN
 
-followersCount.textContent=
-formatNumber(profileData.followers||0);
+   OTHER PROFILE:
+   Follow button = VISIBLE
 
-followingCount.textContent=
-formatNumber(profileData.following||0);
+   Database:
 
-videosCount.textContent=
-formatNumber(profileData.videos||0);
+   users/TARGET_UID/followers/CURRENT_UID
 
-});
+   users/CURRENT_UID/following/TARGET_UID
 
+========================================================= */
+
+function updateProfileButtons() {
+
+    if (!currentUser)
+        return;
+
+    const isOwnProfile =
+        profileUserId ===
+        currentUser.uid;
+
+    /* -------------------------------------------------------
+       OWN PROFILE
+    ------------------------------------------------------- */
+
+    if (isOwnProfile) {
+
+        if (followBtn) {
+
+            followBtn.style.display =
+                "none";
+
+            followBtn.disabled =
+                false;
+        }
+
+        if (editProfileBtn) {
+
+            editProfileBtn.style.display =
+                "flex";
+        }
+
+        if (messageBtn) {
+
+            messageBtn.style.display =
+                "none";
+        }
+
+        return;
+    }
+
+    /* -------------------------------------------------------
+       OTHER PROFILE
+    ------------------------------------------------------- */
+
+    if (followBtn) {
+
+        followBtn.style.display =
+            "flex";
+
+        followBtn.disabled =
+            false;
+    }
+
+    if (editProfileBtn) {
+
+        editProfileBtn.style.display =
+            "none";
+    }
+
+    if (messageBtn) {
+
+        messageBtn.style.display =
+            "flex";
+    }
+
+    checkFollowing();
 }
 
-/* ===========================
-      Realtime Counts
-=========================== */
+/* =========================================================
+   CHECK FOLLOWING
+========================================================= */
 
-function loadRealtimeCounts(){
+async function checkFollowing() {
 
-db.ref("followers/"+currentUID)
-.on("value",snap=>{
+    if (
+        !currentUser ||
+        !profileUserId ||
+        !database ||
+        !followBtn
+    )
+        return;
 
-followersCount.textContent=
-formatNumber(snap.numChildren());
+    if (
+        profileUserId ===
+        currentUser.uid
+    ) {
 
-});
+        followBtn.style.display =
+            "none";
 
-db.ref("following/"+currentUID)
-.on("value",snap=>{
+        return;
+    }
 
-followingCount.textContent=
-formatNumber(snap.numChildren());
+    try {
 
-});
+        const snapshot =
+            await database
+                .ref(
+                    `users/${profileUserId}/followers/${currentUser.uid}`
+                )
+                .once("value");
 
-db.ref("posts")
-.orderByChild("uid")
-.equalTo(currentUID)
-.on("value",snap=>{
+        setFollowButton(
+            snapshot.exists()
+        );
 
-postsCount.textContent=
-formatNumber(snap.numChildren());
+    } catch (error) {
 
-});
+        console.error(
+            "❌ Check following error:",
+            error
+        );
 
-db.ref("videos")
-.orderByChild("uid")
-.equalTo(currentUID)
-.on("value",snap=>{
-
-videosCount.textContent=
-formatNumber(snap.numChildren());
-
-});
-
+        setFollowButton(
+            false
+        );
+    }
 }
 
-/* ===========================
-      Start Loading
-=========================== */
+/* =========================================================
+   TOGGLE FOLLOW
+========================================================= */
 
-auth.onAuthStateChanged(user=>{
+async function toggleFollow() {
 
-if(!user) return;
+    if (
+        !currentUser ||
+        !database ||
+        !followBtn
+    )
+        return;
 
-currentUID=user.uid;
+    /*
+     * NEVER allow following yourself.
+     */
 
-loadUserProfile();
+    if (
+        profileUserId ===
+        currentUser.uid
+    ) {
 
-loadRealtimeCounts();
+        return;
+    }
 
-});
-/*=========================================
-        VIEWORA PROFILE V9
-             PART 3
- Profile Photo • Banner • Story Upload
-=========================================*/
+    if (
+        followBtn.disabled
+    )
+        return;
 
-/* ===========================
-      Profile Photo Upload
-=========================== */
+    followBtn.disabled =
+        true;
 
-const profileInput=document.createElement("input");
+    try {
 
-profileInput.type="file";
-profileInput.accept="image/*";
+        const followerPath =
+            `users/${profileUserId}/followers/${currentUser.uid}`;
 
-profilePic?.addEventListener("click",()=>{
+        const followingPath =
+            `users/${currentUser.uid}/following/${profileUserId}`;
 
-profileInput.click();
+        const targetUserPath =
+            `users/${profileUserId}`;
 
-});
+        const currentUserPath =
+            `users/${currentUser.uid}`;
 
-profileInput.addEventListener("change",e=>{
+        const snapshot =
+            await database
+                .ref(followerPath)
+                .once("value");
 
-const file=e.target.files[0];
+        const alreadyFollowing =
+            snapshot.exists();
 
-if(!file) return;
+        const updates = {};
 
-uploadProfilePhoto(file);
+        if (
+            alreadyFollowing
+        ) {
 
-});
+            /*
+             * UNFOLLOW
+             */
 
-async function uploadProfilePhoto(file){
+            updates[followerPath] =
+                null;
 
-try{
+            updates[followingPath] =
+                null;
 
-showToast("Uploading profile...",true);
+        } else {
 
-const ref=storage
-.ref("profilePhotos/"+currentUID);
+            /*
+             * FOLLOW
+             */
 
-await ref.put(file);
+            updates[followerPath] = {
 
-const url=await ref.getDownloadURL();
+                uid:
+                    currentUser.uid,
 
-await db.ref("users/"+currentUID).update({
+                createdAt:
+                    firebase.database
+                        .ServerValue
+                        .TIMESTAMP
+            };
 
-photoURL:url
+            updates[followingPath] = {
 
-});
+                uid:
+                    profileUserId,
 
-profilePic.src=url;
+                createdAt:
+                    firebase.database
+                        .ServerValue
+                        .TIMESTAMP
+            };
+        }
 
-showToast("Profile updated");
+        /*
+         * Atomic Firebase update.
+         */
 
-}catch(err){
+        await database
+            .ref()
+            .update(updates);
 
-console.error(err);
+        const nowFollowing =
+            !alreadyFollowing;
 
-showToast("Upload failed",false);
+        setFollowButton(
+            nowFollowing
+        );
 
+        /*
+         * Refresh counts.
+         */
+
+        await updateFollowCounts(
+            nowFollowing
+        );
+
+        showToast(
+            nowFollowing
+                ? "Following ✓"
+                : "Unfollowed"
+        );
+
+    } catch (error) {
+
+        console.error(
+            "❌ Follow error:",
+            error
+        );
+
+        showToast(
+            "Unable to update follow."
+        );
+
+    } finally {
+
+        followBtn.disabled =
+            false;
+    }
 }
 
+/* =========================================================
+   UPDATE FOLLOW COUNTS
+========================================================= */
+
+async function updateFollowCounts(
+    isFollowing
+) {
+
+    if (
+        !database ||
+        !profileUserId
+    )
+        return;
+
+    try {
+
+        const targetSnapshot =
+            await database
+                .ref(
+                    `users/${profileUserId}/followers`
+                )
+                .once("value");
+
+        const currentSnapshot =
+            await database
+                .ref(
+                    `users/${currentUser.uid}/following`
+                )
+                .once("value");
+
+        const targetFollowers =
+            countObject(
+                targetSnapshot.val()
+            );
+
+        const currentFollowing =
+            countObject(
+                currentSnapshot.val()
+            );
+
+        /*
+         * Keep explicit counters synced too.
+         */
+
+        await database
+            .ref(
+                `users/${profileUserId}`
+            )
+            .update({
+
+                followersCount:
+                    targetFollowers
+            });
+
+        await database
+            .ref(
+                `users/${currentUser.uid}`
+            )
+            .update({
+
+                followingCount:
+                    currentFollowing
+            });
+
+        if (followersCount) {
+
+            followersCount.textContent =
+                formatNumber(
+                    targetFollowers
+                );
+        }
+
+        if (followingCount) {
+
+            /*
+             * Only update following count
+             * if viewing own profile.
+             */
+
+            if (
+                profileUserId ===
+                currentUser.uid
+            ) {
+
+                followingCount.textContent =
+                    formatNumber(
+                        currentFollowing
+                    );
+            }
+        }
+
+    } catch (error) {
+
+        console.error(
+            "❌ Follow count update error:",
+            error
+        );
+    }
 }
 
-/* ===========================
-      Cover Banner Upload
-=========================== */
+/* =========================================================
+   FOLLOW BUTTON UI
+========================================================= */
 
-const bannerInput=document.createElement("input");
+function setFollowButton(
+    isFollowing
+) {
 
-bannerInput.type="file";
-bannerInput.accept="image/*";
+    if (!followBtn)
+        return;
 
-coverPhoto?.addEventListener("click",()=>{
+    /*
+     * Own profile = NEVER show Follow.
+     */
 
-bannerInput.click();
+    if (
+        currentUser &&
+        profileUserId ===
+        currentUser.uid
+    ) {
 
-});
+        followBtn.style.display =
+            "none";
 
-bannerInput.addEventListener("change",e=>{
+        return;
+    }
 
-const file=e.target.files[0];
+    followBtn.style.display =
+        "flex";
 
-if(!file) return;
+    followBtn.classList.toggle(
+        "following",
+        !!isFollowing
+    );
 
-uploadBanner(file);
-
-});
-
-async function uploadBanner(file){
-
-try{
-
-showToast("Uploading banner...",true);
-
-const ref=storage
-.ref("profileBanner/"+currentUID);
-
-await ref.put(file);
-
-const url=await ref.getDownloadURL();
-
-await db.ref("users/"+currentUID).update({
-
-bannerURL:url
-
-});
-
-coverPhoto.src=url;
-
-showToast("Banner updated");
-
-}catch(err){
-
-console.error(err);
-
-showToast("Upload failed",false);
-
+    followBtn.innerHTML =
+        isFollowing
+            ?
+            `
+            <i class="fa-solid fa-user-check"></i>
+            <span>Following</span>
+            `
+            :
+            `
+            <i class="fa-solid fa-user-plus"></i>
+            <span>Follow</span>
+            `;
 }
 
+/* =========================================================
+   MESSAGE
+========================================================= */
+
+function openMessage() {
+
+    if (
+        !currentUser ||
+        !profileUserId
+    )
+        return;
+
+    if (
+        profileUserId ===
+        currentUser.uid
+    )
+        return;
+
+    window.location.href =
+        `chat.html?uid=${encodeURIComponent(profileUserId)}`;
 }
 
-/* ===========================
-      Story Upload
-=========================== */
+/* =========================================================
+   SHARE PROFILE
+========================================================= */
 
-function createStory(){
+async function shareProfile() {
 
-storyFile.click();
+    if (!profileUserId)
+        return;
 
+    const username =
+        profileData.username ||
+        "user";
+
+    const name =
+        profileData.name ||
+        profileData.fullName ||
+        "Viewora User";
+
+    const shareUrl =
+        `${window.location.origin}${window.location.pathname}?uid=${encodeURIComponent(profileUserId)}`;
+
+    const shareData = {
+
+        title:
+            `${name} • Viewora`,
+
+        text:
+            `Check out @${username} on Viewora.`,
+
+        url:
+            shareUrl
+    };
+
+    try {
+
+        if (
+            navigator.share &&
+            window.isSecureContext
+        ) {
+
+            await navigator.share(
+                shareData
+            );
+
+            return;
+        }
+
+        if (
+            navigator.clipboard
+        ) {
+
+            await navigator.clipboard.writeText(
+                shareUrl
+            );
+
+            showToast(
+                "Profile link copied ✓"
+            );
+
+            return;
+        }
+
+        showToast(
+            "Copy this profile link manually."
+        );
+
+    } catch (error) {
+
+        if (
+            error?.name !==
+            "AbortError"
+        ) {
+
+            console.error(
+                "Share error:",
+                error
+            );
+        }
+    }
 }
 
-storyFile?.addEventListener("change",e=>{
+/* =========================================================
+   CREATE STORY
+========================================================= */
 
-const file=e.target.files[0];
+function createProfileStory() {
 
-if(!file) return;
+    if (!currentUser) {
 
-uploadStory(file);
+        showToast(
+            "Please login first."
+        );
 
-});
+        return;
+    }
 
-async function uploadStory(file){
+    if (
+        profileUserId !==
+        currentUser.uid
+    ) {
 
-try{
+        showToast(
+            "You can only create stories on your profile."
+        );
 
-showToast("Uploading story...",true);
+        return;
+    }
 
-const id=Date.now();
+    if (storyFile) {
 
-const ref=storage.ref(
-"stories/"+currentUID+"/"+id
-);
+        storyFile.value =
+            "";
 
-await ref.put(file);
+        storyFile.click();
 
-const url=await ref.getDownloadURL();
+        return;
+    }
 
-await db.ref(
-"stories/"+currentUID+"/"+id
-).set({
+    /*
+     * Fallback:
+     * stories.js creates its own file picker.
+     */
 
-uid:currentUID,
+    if (
+        typeof window.createStory ===
+        "function"
+    ) {
 
-url:url,
+        window.createStory();
 
-type:file.type.startsWith("video")
-?"video":"image",
+        return;
+    }
 
-createdAt:Date.now(),
-
-expiresAt:Date.now()+86400000
-
-});
-
-showToast("Story uploaded");
-
-}catch(err){
-
-console.error(err);
-
-showToast("Story upload failed",false);
-
+    showToast(
+        "Story system is not loaded."
+    );
 }
 
+/* =========================================================
+   STORY UPLOAD
+========================================================= */
+
+async function handleStoryUpload(
+    event
+) {
+
+    const file =
+        event.target.files?.[0];
+
+    if (!file)
+        return;
+
+    if (!currentUser)
+        return;
+
+    if (
+        profileUserId !==
+        currentUser.uid
+    ) {
+
+        showToast(
+            "You can only upload stories to your own profile."
+        );
+
+        return;
+    }
+
+    /*
+     * stories.js owns the actual Cloudinary upload.
+     */
+
+    if (
+        typeof window.uploadStory ===
+        "function"
+    ) {
+
+        try {
+
+            await window.uploadStory(
+                file
+            );
+
+            await loadStories();
+
+            showToast(
+                "Story uploaded ✓"
+            );
+
+        } catch (error) {
+
+            console.error(
+                "❌ Story upload error:",
+                error
+            );
+
+            showToast(
+                "Story upload failed."
+            );
+        }
+
+        return;
+    }
+
+    showToast(
+        "stories.js upload system is not loaded."
+    );
 }
 
-/* ===========================
-      Image Viewer
-=========================== */
+/* =========================================================
+   OPEN PROFILE STORY
+========================================================= */
 
-const imageViewer=
-document.getElementById("imageViewer");
+function openProfileStory(
+    storyId
+) {
 
-const viewerImage=
-document.getElementById("viewerImage");
+    if (!storyId)
+        return;
 
-const closeViewer=
-document.getElementById("closeViewer");
+    /*
+     * stories.js viewer uses story INDEX.
+     */
 
-profilePic?.addEventListener("dblclick",()=>{
+    if (
+        typeof window.openStory ===
+        "function"
+    ) {
 
-viewerImage.src=profilePic.src;
+        const index =
+            profileStories.findIndex(
+                story =>
+                    story.id ===
+                    storyId
+            );
 
-imageViewer.classList.remove("hidden");
+        if (index >= 0) {
 
-});
+            window.openStory(
+                index
+            );
 
-coverPhoto?.addEventListener("dblclick",()=>{
+            return;
+        }
+    }
 
-viewerImage.src=coverPhoto.src;
+    /*
+     * Fallback.
+     */
 
-imageViewer.classList.remove("hidden");
-
-});
-
-closeViewer?.addEventListener("click",()=>{
-
-imageViewer.classList.add("hidden");
-
-});
-
-imageViewer?.addEventListener("click",e=>{
-
-if(e.target===imageViewer){
-
-imageViewer.classList.add("hidden");
-
+    window.location.href =
+        `stories.html?uid=${encodeURIComponent(profileUserId)}&story=${encodeURIComponent(storyId)}`;
 }
 
-});
-/*=========================================
-        VIEWORA PROFILE V9
-             PART 4
- Follow • Message • Share • Tabs • Content
-=========================================*/
+/* =========================================================
+   TABS
+========================================================= */
 
-/* ===========================
-      Follow / Unfollow
-=========================== */
+function setupTabs() {
 
-let isFollowing = false;
+    const tabs =
+        document.querySelectorAll(
+            ".tabBtn"
+        );
 
-function checkFollowStatus(profileUID){
+    tabs.forEach(
+        tab => {
 
-if(!profileUID || profileUID===currentUID){
+            tab.addEventListener(
+                "click",
+                () => {
 
-followBtn.style.display="none";
-return;
+                    const target =
+                        tab.dataset.tab;
 
+                    tabs.forEach(
+                        item => {
+
+                            item.classList.toggle(
+                                "active",
+                                item === tab
+                            );
+                        }
+                    );
+
+                    document
+                        .querySelectorAll(
+                            ".tabContent"
+                        )
+                        .forEach(
+                            content => {
+
+                                content.classList.toggle(
+                                    "active",
+                                    content.id ===
+                                    `${target}Tab`
+                                );
+                            }
+                        );
+                }
+            );
+        }
+    );
 }
 
-db.ref("following/"+currentUID+"/"+profileUID)
-.on("value",snap=>{
+/* =========================================================
+   SCROLL TOP
+========================================================= */
 
-isFollowing=snap.exists();
+function setupScrollTop() {
 
-updateFollowButton();
+    if (!scrollTopBtn)
+        return;
 
-});
+    window.addEventListener(
+        "scroll",
+        () => {
 
+            scrollTopBtn.classList.toggle(
+                "hidden",
+                window.scrollY < 400
+            );
+        },
+        {
+            passive: true
+        }
+    );
+
+    scrollTopBtn.addEventListener(
+        "click",
+        () => {
+
+            window.scrollTo({
+
+                top:
+                    0,
+
+                behavior:
+                    "smooth"
+            });
+        }
+    );
 }
 
-function updateFollowButton(){
+/* =========================================================
+   ANIMATION
+========================================================= */
 
-if(isFollowing){
+function animateProfile() {
 
-followBtn.innerHTML=`
-<i class="fa-solid fa-user-check"></i>
-Following`;
+    const elements =
+        document.querySelectorAll(
+            ".profileBanner, .profileCard, .storySection, .profileTabs"
+        );
 
-followBtn.classList.add("following");
+    elements.forEach(
+        (element, index) => {
 
-}else{
+            element.style.opacity =
+                "0";
 
-followBtn.innerHTML=`
-<i class="fa-solid fa-user-plus"></i>
-Follow`;
+            element.style.transform =
+                "translateY(20px)";
 
-followBtn.classList.remove("following");
+            setTimeout(
+                () => {
 
+                    element.style.transition =
+                        "opacity .55s ease, transform .55s cubic-bezier(.2,.8,.2,1)";
+
+                    element.style.opacity =
+                        "1";
+
+                    element.style.transform =
+                        "translateY(0)";
+
+                },
+                index * 80
+            );
+        }
+    );
 }
 
+/* =========================================================
+   POST CARD
+========================================================= */
+
+function postCard(
+    post
+) {
+
+    const image =
+        post.thumbnail ||
+        post.imageURL ||
+        post.imageUrl ||
+        post.mediaURL ||
+        post.mediaUrl;
+
+    if (!image) {
+
+        return `
+            <article
+                class="profilePostCard noMedia"
+                onclick="openPost('${escapeAttribute(post.id)}')"
+            >
+                <i class="fa-solid fa-image"></i>
+            </article>
+        `;
+    }
+
+    return `
+        <article
+            class="profilePostCard"
+            onclick="openPost('${escapeAttribute(post.id)}')"
+        >
+
+            <img
+                src="${escapeAttribute(image)}"
+                alt="Post"
+                loading="lazy"
+                onerror="this.style.display='none'"
+            >
+
+            <div class="postOverlay">
+
+                <span>
+                    <i class="fa-solid fa-heart"></i>
+                    ${formatNumber(
+                        post.likesCount ||
+                        countObject(post.likes)
+                    )}
+                </span>
+
+                <span>
+                    <i class="fa-solid fa-comment"></i>
+                    ${formatNumber(
+                        post.commentsCount ||
+                        countObject(post.comments)
+                    )}
+                </span>
+
+            </div>
+
+        </article>
+    `;
 }
 
-followBtn?.addEventListener("click",async()=>{
+/* =========================================================
+   SHORT CARD
+========================================================= */
 
-const profileUID=
-profileData.uid || currentUID;
+function shortCard(
+    short
+) {
 
-if(profileUID===currentUID) return;
+    const thumbnail =
+        short.thumbnail ||
+        short.thumbnailURL ||
+        short.cover ||
+        short.imageURL ||
+        short.imageUrl;
 
-try{
+    return `
+        <article
+            class="shortCard"
+            onclick="openShort('${escapeAttribute(short.id)}')"
+        >
 
-if(isFollowing){
+            ${
+                thumbnail
+                    ?
+                    `
+                    <img
+                        src="${escapeAttribute(thumbnail)}"
+                        alt="Short"
+                        loading="lazy"
+                    >
+                    `
+                    :
+                    `
+                    <div class="shortPlaceholder">
+                        <i class="fa-solid fa-play"></i>
+                    </div>
+                    `
+            }
 
-await db.ref(
-"following/"+currentUID+"/"+profileUID
-).remove();
+            <div class="shortPlay">
+                <i class="fa-solid fa-play"></i>
+            </div>
 
-await db.ref(
-"followers/"+profileUID+"/"+currentUID
-).remove();
-
-showToast("Unfollowed");
-
-}else{
-
-await db.ref(
-"following/"+currentUID+"/"+profileUID
-).set(true);
-
-await db.ref(
-"followers/"+profileUID+"/"+currentUID
-).set(true);
-
-showToast("Following");
-
+        </article>
+    `;
 }
 
-}catch(err){
+/* =========================================================
+   VIDEO CARD
+========================================================= */
 
-console.error(err);
+function videoCard(
+    video
+) {
 
-showToast("Action failed",false);
+    const thumbnail =
+        video.thumbnail ||
+        video.thumbnailURL ||
+        video.imageURL ||
+        video.imageUrl;
 
+    return `
+        <article
+            class="videoCard"
+            onclick="openPost('${escapeAttribute(video.id)}')"
+        >
+
+            ${
+                thumbnail
+                    ?
+                    `
+                    <img
+                        src="${escapeAttribute(thumbnail)}"
+                        alt="Video"
+                        loading="lazy"
+                    >
+                    `
+                    :
+                    `
+                    <div class="videoPlaceholder">
+                        <i class="fa-solid fa-video"></i>
+                    </div>
+                    `
+            }
+
+            <div class="videoInfo">
+
+                <h3>
+                    ${escapeHTML(
+                        video.title ||
+                        video.caption ||
+                        "Viewora Video"
+                    )}
+                </h3>
+
+                <span>
+                    <i class="fa-solid fa-play"></i>
+                    ${formatNumber(
+                        video.views ||
+                        video.viewsCount ||
+                        0
+                    )}
+                </span>
+
+            </div>
+
+        </article>
+    `;
 }
 
-});
+/* =========================================================
+   OPEN POST
+========================================================= */
 
-/* ===========================
-      Message Button
-=========================== */
+function openPost(
+    id
+) {
 
-messageBtn?.addEventListener("click",()=>{
+    if (!id)
+        return;
 
-const profileUID=
-profileData.uid || currentUID;
-
-if(profileUID===currentUID){
-
-location.href="messages.html";
-
-}else{
-
-location.href=
-`chat.html?uid=${profileUID}`;
-
+    window.location.href =
+        `post.html?id=${encodeURIComponent(id)}`;
 }
 
-});
+/* =========================================================
+   OPEN SHORT
+========================================================= */
 
-/* ===========================
-      Share Profile
-=========================== */
+function openShort(
+    id
+) {
 
-const shareBtn=
-document.querySelector(".shareBtn");
+    if (!id)
+        return;
 
-shareBtn?.addEventListener("click",async()=>{
-
-const shareURL=
-location.origin+
-"/profile.html?uid="+
-(currentUID);
-
-if(navigator.share){
-
-try{
-
-await navigator.share({
-
-title:profileData.name,
-
-text:"Check out my Viewora profile",
-
-url:shareURL
-
-});
-
-}catch(e){}
-
-}else{
-
-navigator.clipboard.writeText(shareURL);
-
-showToast("Profile link copied");
-
+    window.location.href =
+        `shorts.html?id=${encodeURIComponent(id)}`;
 }
 
-});
+/* =========================================================
+   HELPERS
+========================================================= */
 
-/* ===========================
-      Tabs
-=========================== */
+function countObject(
+    value
+) {
 
-const tabs=
-document.querySelectorAll(".tabBtn");
+    if (!value)
+        return 0;
 
-const contents=
-document.querySelectorAll(".tabContent");
+    if (
+        typeof value ===
+        "number"
+    )
+        return value;
 
-tabs.forEach(tab=>{
+    if (
+        typeof value ===
+        "object"
+    )
+        return Object.keys(value).length;
 
-tab.addEventListener("click",()=>{
-
-tabs.forEach(t=>
-t.classList.remove("active"));
-
-contents.forEach(c=>
-c.classList.remove("active"));
-
-tab.classList.add("active");
-
-const id=
-tab.dataset.tab+"Tab";
-
-document
-.getElementById(id)
-.classList.add("active");
-
-});
-
-});
-
-/* ===========================
-      Videos
-=========================== */
-
-function loadVideos(){
-
-const list=
-document.getElementById("videosList");
-
-db.ref("videos")
-.orderByChild("uid")
-.equalTo(currentUID)
-.on("value",snap=>{
-
-list.innerHTML="";
-
-snap.forEach(item=>{
-
-const v=item.val();
-
-list.innerHTML+=`
-
-<div class="videoCard">
-
-<div class="videoThumb">
-
-<img src="${
-v.thumbnail ||
-DEFAULT_BANNER
-}">
-
-<div class="playIcon">
-
-<i class="fa-solid fa-play"></i>
-
-</div>
-
-</div>
-
-<div class="videoInfo">
-
-<h3 class="videoTitle">
-
-${text(v.title,"Untitled")}
-
-</h3>
-
-<p class="videoDesc">
-
-${text(v.description,"")}
-
-</p>
-
-</div>
-
-</div>
-
-`;
-
-});
-
-});
-
+    return 0;
 }
 
-/* ===========================
-      Posts
-=========================== */
+/* =========================================================
+   NUMBER FORMAT
+========================================================= */
 
-function loadPosts(){
+function formatNumber(
+    number
+) {
 
-const list=
-document.getElementById("postsList");
+    const value =
+        Number(number) || 0;
 
-db.ref("posts")
-.orderByChild("uid")
-.equalTo(currentUID)
-.on("value",snap=>{
+    if (
+        value >= 1000000
+    ) {
 
-list.innerHTML="";
+        return (
+            (value / 1000000)
+                .toFixed(1)
+                .replace(".0", "") +
+            "M"
+        );
+    }
 
-snap.forEach(item=>{
+    if (
+        value >= 1000
+    ) {
 
-const p=item.val();
+        return (
+            (value / 1000)
+                .toFixed(1)
+                .replace(".0", "") +
+            "K"
+        );
+    }
 
-list.innerHTML+=`
-
-<div class="postCard">
-
-<img src="${
-p.image ||
-DEFAULT_BANNER
-}">
-
-<div class="postInfo">
-
-<div class="postTitle">
-
-${text(p.title,"Post")}
-
-</div>
-
-<div class="postMeta">
-
-<span>
-
-❤️ ${p.likes||0}
-
-</span>
-
-<span>
-
-💬 ${p.comments||0}
-
-</span>
-
-</div>
-
-</div>
-
-</div>
-
-`;
-
-});
-
-});
-
+    return String(value);
 }
 
-/* ===========================
-      Shorts
-=========================== */
+/* =========================================================
+   SORT
+========================================================= */
 
-function loadShorts(){
+function sortByNewest(
+    array
+) {
 
-const list=
-document.getElementById("shortsList");
-
-db.ref("shorts")
-.orderByChild("uid")
-.equalTo(currentUID)
-.on("value",snap=>{
-
-list.innerHTML="";
-
-snap.forEach(item=>{
-
-const s=item.val();
-
-list.innerHTML+=`
-
-<div class="shortCard">
-
-<img src="${
-s.thumbnail ||
-DEFAULT_BANNER
-}">
-
-<div class="shortOverlay">
-
-<div class="shortTitle">
-
-${text(s.title,"Short")}
-
-</div>
-
-</div>
-
-</div>
-
-`;
-
-});
-
-});
-
+    array.sort(
+        (a, b) =>
+            Number(
+                b.createdAt ||
+                b.timestamp ||
+                0
+            ) -
+            Number(
+                a.createdAt ||
+                a.timestamp ||
+                0
+            )
+    );
 }
 
-/* ===========================
-      Initialize
-=========================== */
+/* =========================================================
+   STORY EXPIRY
+========================================================= */
 
-auth.onAuthStateChanged(user=>{
+function isStoryExpired(
+    story
+) {
 
-if(!user) return;
+    const expiresAt =
+        Number(
+            story.expiresAt ||
+            story.expireAt ||
+            0
+        );
 
-currentUID=user.uid;
+    if (!expiresAt)
+        return false;
 
-loadVideos();
-
-loadPosts();
-
-loadShorts();
-
-checkFollowStatus(currentUID);
-
-});
-/*=========================================
-        VIEWORA PROFILE V9
-             PART 5
- Saved • Online • Scroll • Logout
-=========================================*/
-
-/* ===========================
-      Saved Posts
-=========================== */
-
-function loadSavedPosts(){
-
-const list=document.getElementById("savedList");
-
-if(!list) return;
-
-db.ref("saved/"+currentUID)
-.on("value",snap=>{
-
-list.innerHTML="";
-
-if(!snap.exists()){
-
-list.innerHTML=`
-
-<div class="emptyState">
-
-<i class="fa-solid fa-bookmark"></i>
-
-<h3>No Saved Posts</h3>
-
-<p>Save posts to view them here.</p>
-
-</div>
-
-`;
-
-return;
-
+    return (
+        Date.now() >
+        expiresAt
+    );
 }
 
-snap.forEach(item=>{
+/* =========================================================
+   ESCAPE HTML
+========================================================= */
 
-const post=item.val();
+function escapeHTML(
+    value
+) {
 
-list.innerHTML+=`
+    return String(
+        value ?? ""
+    ).replace(
+        /[&<>"']/g,
+        char =>
+            ({
+                "&":
+                    "&amp;",
 
-<div class="savedCard">
+                "<":
+                    "&lt;",
 
-<img src="${post.image || DEFAULT_BANNER}">
+                ">":
+                    "&gt;",
 
-<div class="savedInfo">
+                '"':
+                    "&quot;",
 
-<h3>${text(post.title,"Saved Post")}</h3>
-
-<p>${text(post.creator,"Unknown")}</p>
-
-</div>
-
-</div>
-
-`;
-
-});
-
-});
-
+                "'":
+                    "&#039;"
+            })[char]
+    );
 }
 
-/* ===========================
-      Online Status
-=========================== */
+/* =========================================================
+   ESCAPE ATTRIBUTE
+========================================================= */
 
-const onlineRef=
-db.ref("status/"+currentUID);
+function escapeAttribute(
+    value
+) {
 
-firebase.database()
-.ref(".info/connected")
-.on("value",snap=>{
-
-if(snap.val()){
-
-onlineRef.set({
-
-online:true,
-
-lastSeen:firebase.database.ServerValue.TIMESTAMP
-
-});
-
-onlineRef.onDisconnect().set({
-
-online:false,
-
-lastSeen:firebase.database.ServerValue.TIMESTAMP
-
-});
-
+    return escapeHTML(
+        value
+    ).replace(
+        /`/g,
+        "&#096;"
+    );
 }
 
-});
+/* =========================================================
+   LOADING
+========================================================= */
 
-/* ===========================
-      Offline / Online Toast
-=========================== */
+function loadingHTML() {
 
-window.addEventListener("offline",()=>{
+    return `
+        <div class="profileLoading">
 
-showToast("No Internet Connection",false);
+            <div class="loadingSpinner"></div>
 
-});
+            <span>
+                Loading...
+            </span>
 
-window.addEventListener("online",()=>{
-
-showToast("Back Online");
-
-});
-
-/* ===========================
-      Scroll Animation
-=========================== */
-
-window.addEventListener("scroll",()=>{
-
-document
-.querySelectorAll(".videoCard,.postCard,.shortCard,.savedCard")
-.forEach(card=>{
-
-const top=
-card.getBoundingClientRect().top;
-
-if(top<window.innerHeight-80){
-
-card.classList.add("fadeIn");
-
+        </div>
+    `;
 }
 
-});
+/* =========================================================
+   EMPTY
+========================================================= */
 
-});
+function emptyHTML(
+    icon,
+    text
+) {
 
-/* ===========================
-      Ripple Effect
-=========================== */
+    return `
+        <div class="profileEmpty">
 
-document
-.querySelectorAll("button")
-.forEach(btn=>{
+            <div class="emptyIcon">
 
-btn.addEventListener("click",e=>{
+                <i class="fa-solid ${escapeAttribute(icon)}"></i>
 
-const ripple=
-document.createElement("span");
+            </div>
 
-ripple.className="ripple";
+            <h3>
+                ${escapeHTML(text)}
+            </h3>
 
-const rect=
-btn.getBoundingClientRect();
-
-ripple.style.left=
-(e.clientX-rect.left)+"px";
-
-ripple.style.top=
-(e.clientY-rect.top)+"px";
-
-btn.appendChild(ripple);
-
-setTimeout(()=>{
-
-ripple.remove();
-
-},600);
-
-});
-
-});
-
-/* ===========================
-      Logout
-=========================== */
-
-function logout(){
-
-if(!confirm("Logout from Viewora?"))
-return;
-
-auth.signOut()
-
-.then(()=>{
-
-showToast("Logged Out");
-
-setTimeout(()=>{
-
-location.href="login.html";
-
-},700);
-
-})
-
-.catch(()=>{
-
-showToast("Logout Failed",false);
-
-});
-
+        </div>
+    `;
 }
 
-/* ===========================
-      Settings Button
-=========================== */
+/* =========================================================
+   LOADER
+========================================================= */
 
-document
-.querySelector(".settingsBtn")
-?.addEventListener("click",()=>{
+function showLoader(
+    show
+) {
 
-location.href="settings.html";
+    if (!pageLoader)
+        return;
 
-});
+    if (show) {
 
-/* ===========================
-      Start
-=========================== */
+        pageLoader.classList.remove(
+            "hidden"
+        );
 
-auth.onAuthStateChanged(user=>{
+        app?.classList.add(
+            "hidden"
+        );
 
-if(!user) return;
+    } else {
 
-currentUID=user.uid;
+        pageLoader.classList.add(
+            "hidden"
+        );
 
-loadSavedPosts();
+        app?.classList.remove(
+            "hidden"
+        );
 
-});
-/*=========================================
-        VIEWORA PROFILE V9
-             PART 6
- Premium • Performance • Init
-=========================================*/
-
-/* ===========================
-      Share Profile
-=========================== */
-
-function shareProfile(){
-
-const url=location.href;
-
-if(navigator.share){
-
-navigator.share({
-
-title:"Viewora Profile",
-
-text:"Check out my Viewora profile!",
-
-url:url
-
-}).catch(()=>{});
-
-}else{
-
-navigator.clipboard.writeText(url);
-
-showToast("Profile link copied");
-
+        app?.classList.add(
+            "fadeIn"
+        );
+    }
 }
 
+/* =========================================================
+   TOAST
+========================================================= */
+
+function showToast(
+    message
+) {
+
+    let toast =
+        document.getElementById(
+            "vieworaToast"
+        );
+
+    if (!toast) {
+
+        toast =
+            document.createElement(
+                "div"
+            );
+
+        toast.id =
+            "vieworaToast";
+
+        toast.style.cssText = `
+            position:fixed;
+            left:50%;
+            bottom:100px;
+            transform:translateX(-50%) translateY(20px);
+            padding:12px 18px;
+            border-radius:999px;
+            background:rgba(15,18,28,.95);
+            color:#fff;
+            font-size:14px;
+            font-weight:700;
+            z-index:99999;
+            opacity:0;
+            pointer-events:none;
+            backdrop-filter:blur(18px);
+            box-shadow:0 12px 40px rgba(0,0,0,.35);
+            transition:.3s ease;
+        `;
+
+        document.body.appendChild(
+            toast
+        );
+    }
+
+    toast.textContent =
+        message;
+
+    requestAnimationFrame(
+        () => {
+
+            toast.style.opacity =
+                "1";
+
+            toast.style.transform =
+                "translateX(-50%) translateY(0)";
+        }
+    );
+
+    clearTimeout(
+        toast._timer
+    );
+
+    toast._timer =
+        setTimeout(
+            () => {
+
+                toast.style.opacity =
+                    "0";
+
+                toast.style.transform =
+                    "translateX(-50%) translateY(20px)";
+
+            },
+            2500
+        );
 }
 
-/* ===========================
-      Pull To Refresh
-=========================== */
+/* =========================================================
+   EVENTS
+========================================================= */
 
-let startY=0;
+function setupEvents() {
 
-window.addEventListener("touchstart",e=>{
+    if (followBtn) {
 
-startY=e.touches[0].clientY;
+        followBtn.addEventListener(
+            "click",
+            toggleFollow
+        );
+    }
 
-});
+    if (messageBtn) {
 
-window.addEventListener("touchend",e=>{
+        messageBtn.addEventListener(
+            "click",
+            openMessage
+        );
+    }
 
-const endY=e.changedTouches[0].clientY;
+    if (shareBtn) {
 
-if(window.scrollY===0 && endY-startY>120){
+        shareBtn.addEventListener(
+            "click",
+            shareProfile
+        );
+    }
 
-location.reload();
+    if (storyFile) {
 
+        storyFile.addEventListener(
+            "change",
+            handleStoryUpload
+        );
+    }
+
+    setupTabs();
+
+    setupScrollTop();
 }
 
-});
-
-/* ===========================
-      Lazy Images
-=========================== */
-
-document.querySelectorAll("img").forEach(img=>{
-
-img.loading="lazy";
-
-img.decoding="async";
-
-});
-
-/* ===========================
-      Keyboard Shortcuts
-=========================== */
-
-document.addEventListener("keydown",e=>{
-
-if(e.key==="Home"){
-
-window.scrollTo({
-
-top:0,
-
-behavior:"smooth"
-
-});
-
-}
-
-if(e.key==="Escape"){
-
-document
-.getElementById("imageViewer")
-?.classList.add("hidden");
-
-}
-
-});
-
-/* ===========================
-      Profile Search
-=========================== */
-
-function searchProfile(keyword){
-
-keyword=keyword.toLowerCase();
-
-document
-.querySelectorAll(".videoCard,.postCard,.savedCard")
-.forEach(card=>{
-
-const text=card.innerText.toLowerCase();
-
-card.style.display=
-
-text.includes(keyword)
-
-?
-
-"block"
-
-:
-
-"none";
-
-});
-
-}
-
-/* ===========================
-      Performance
-=========================== */
-
-window.addEventListener("load",()=>{
-
-document.body.classList.add("loaded");
-
-});
-
-/* ===========================
-      Network Monitor
-=========================== */
-
-setInterval(()=>{
-
-db.ref("status/"+currentUID).update({
-
-lastActive:firebase.database.ServerValue.TIMESTAMP
-
-});
-
-},60000);
-
-/* ===========================
-      Premium Animations
-=========================== */
-
-document
-.querySelectorAll(".profileCard,.videoCard,.postCard")
-.forEach(card=>{
-
-card.addEventListener("mouseenter",()=>{
-
-card.style.transform="translateY(-5px)";
-
-});
-
-card.addEventListener("mouseleave",()=>{
-
-card.style.transform="";
-
-});
-
-});
-
-/* ===========================
-      Final Initialize
-=========================== */
-
-window.addEventListener("load",()=>{
-
-hideLoader();
-
-loadUserProfile();
-
-loadRealtimeCounts();
-
-loadVideos();
-
-loadPosts();
-
-loadShorts();
-
-loadSavedPosts();
-
-showToast("Welcome to Viewora");
-
-});
-
-console.log(
-"%cViewora Profile V9 Loaded",
-"color:#6366f1;font-size:16px;font-weight:bold;"
-);
-/*=========================================
-        VIEWORA PROFILE V9
-             PART 7
- Story • Verification • Cleanup
-=========================================*/
-
-/* ===========================
-      Story Highlights
-=========================== */
-
-function loadStoryHighlights(){
-
-const container=document.querySelector(".storiesWrapper");
-
-if(!container) return;
-
-db.ref("stories/"+currentUID)
-.orderByChild("createdAt")
-.limitToLast(20)
-.on("value",snap=>{
-
-container.innerHTML="";
-
-if(!snap.exists()){
-
-container.innerHTML=`
-<div class="storyItem">
-<div class="storyCircle addStory">
-<i class="fa-solid fa-plus"></i>
-</div>
-<p>New</p>
-</div>`;
-return;
-
-}
-
-snap.forEach(item=>{
-
-const story=item.val();
-
-container.innerHTML+=`
-
-<div class="storyItem">
-
-<div class="storyCircle">
-
-<img src="${story.url}">
-
-</div>
-
-<p>Story</p>
-
-</div>
-
-`;
-
-});
-
-});
-
-}
-
-/* ===========================
-      Followers Popup
-=========================== */
-
-function showFollowers(type){
-
-location.href=
-`${type}.html?uid=${currentUID}`;
-
-}
-
-/* ===========================
-      Verification
-=========================== */
-
-function checkVerification(){
-
-db.ref("users/"+currentUID+"/verified")
-
-.on("value",snap=>{
-
-if(snap.val()){
-
-verifiedBadge.classList.remove("hidden");
-
-}else{
-
-verifiedBadge.classList.add("hidden");
-
-}
-
-});
-
-}
-
-/* ===========================
-      Compress Image
-=========================== */
-
-function compressImage(file,callback){
-
-const reader=new FileReader();
-
-reader.onload=e=>{
-
-const img=new Image();
-
-img.onload=()=>{
-
-const canvas=
-document.createElement("canvas");
-
-const ctx=
-canvas.getContext("2d");
-
-const max=1200;
-
-let w=img.width;
-let h=img.height;
-
-if(w>max){
-
-h*=max/w;
-w=max;
-
-}
-
-canvas.width=w;
-canvas.height=h;
-
-ctx.drawImage(img,0,0,w,h);
-
-canvas.toBlob(blob=>{
-
-callback(blob);
-
-},"image/jpeg",0.85);
-
-};
-
-img.src=e.target.result;
-
-};
-
-reader.readAsDataURL(file);
-
-}
-
-/* ===========================
-      Auto Refresh
-=========================== */
-
-setInterval(()=>{
-
-loadRealtimeCounts();
-
-},30000);
-
-/* ===========================
-      Cleanup
-=========================== */
-
-window.addEventListener("beforeunload",()=>{
-
-db.ref("status/"+currentUID).update({
-
-online:false,
-
-lastSeen:
-firebase.database.ServerValue.TIMESTAMP
-
-});
-
-});
-
-/* ===========================
-      Error Handler
-=========================== */
-
-window.onerror=function(){
-
-showToast("Unexpected Error",false);
-
-return false;
-
-};
-
-/* ===========================
-      Start Part 7
-=========================== */
-
-window.addEventListener("load",()=>{
-
-loadStoryHighlights();
-
-checkVerification();
-
-});
-/*=========================================
-        VIEWORA PROFILE V9
-             PART 8
-      Final Features & Optimization
-=========================================*/
-
-/* ===========================
-      Theme Preference
-=========================== */
-
-const savedTheme = localStorage.getItem("viewora-theme");
-
-if(savedTheme){
-
-document.body.setAttribute("data-theme",savedTheme);
-
-}
-
-/* ===========================
-      Notification Badge
-=========================== */
-
-function updateNotificationBadge(){
-
-const badge=document.getElementById("notificationBadge");
-
-if(!badge) return;
-
-db.ref("notifications/"+currentUID)
-.orderByChild("read")
-.equalTo(false)
-.on("value",snap=>{
-
-const count=snap.numChildren();
-
-if(count>0){
-
-badge.textContent=count>99?"99+":count;
-
-badge.classList.remove("hidden");
-
-}else{
-
-badge.classList.add("hidden");
-
-}
-
-});
-
-}
-
-/* ===========================
-      Profile Cache
-=========================== */
-
-function saveProfileCache(){
-
-localStorage.setItem(
-
-"viewora-profile",
-
-JSON.stringify(profileData)
-
-);
-
-}
-
-function loadProfileCache(){
-
-const cache=
-
-localStorage.getItem("viewora-profile");
-
-if(!cache) return;
-
-try{
-
-const data=JSON.parse(cache);
-
-profileName.textContent=data.name||"";
-
-profileUsername.textContent="@"+(data.username||"");
-
-profileBio.textContent=data.bio||"";
-
-profilePic.src=data.photoURL||DEFAULT_AVATAR;
-
-coverPhoto.src=data.bannerURL||DEFAULT_BANNER;
-
-}catch(e){}
-
-}
-
-/* ===========================
-      Auto Save Cache
-=========================== */
-
-setInterval(()=>{
-
-saveProfileCache();
-
-},10000);
-
-/* ===========================
-      Smooth Card Animation
-=========================== */
-
-const observer=new IntersectionObserver(entries=>{
-
-entries.forEach(entry=>{
-
-if(entry.isIntersecting){
-
-entry.target.classList.add("fadeIn");
-
-}
-
-});
-
-},{
-
-threshold:.2
-
-});
-
-document.querySelectorAll(
-
-".videoCard,.postCard,.savedCard,.shortCard"
-
-).forEach(card=>{
-
-observer.observe(card);
-
-});
-
-/* ===========================
-      Image Error Fallback
-=========================== */
-
-document.querySelectorAll("img")
-
-.forEach(img=>{
-
-img.onerror=()=>{
-
-img.src=DEFAULT_AVATAR;
-
-};
-
-});
-
-/* ===========================
-      App Visibility
-=========================== */
+/* =========================================================
+   START
+========================================================= */
 
 document.addEventListener(
+    "DOMContentLoaded",
+    () => {
 
-"visibilitychange",
+        setupEvents();
 
-()=>{
+        startProfile();
 
-if(document.hidden){
+    }
+);
 
-db.ref("status/"+currentUID)
+/* =========================================================
+   GLOBAL API
+========================================================= */
 
-.update({
+window.createProfileStory =
+    createProfileStory;
 
-online:false
+window.openProfileStory =
+    openProfileStory;
 
-});
+window.openPost =
+    openPost;
 
-}else{
+window.openShort =
+    openShort;
 
-db.ref("status/"+currentUID)
+window.toggleFollow =
+    toggleFollow;
 
-.update({
+window.shareProfile =
+    shareProfile;
 
-online:true,
-
-lastSeen:
-
-firebase.database.ServerValue.TIMESTAMP
-
-});
-
-}
-
-});
-
-/* ===========================
-      Welcome Animation
-=========================== */
-
-window.addEventListener("load",()=>{
-
-setTimeout(()=>{
-
-document.body.classList.add("loaded");
-
-},300);
-
-});
-
-/* ===========================
-      Version
-=========================== */
-
-const PROFILE_VERSION="Viewora V9 Premium";
-
-console.log(PROFILE_VERSION);
-
-/* ===========================
-      Initialize Everything
-=========================== */
-
-window.addEventListener("load",()=>{
-
-loadProfileCache();
-
-updateNotificationBadge();
-
-showToast("Profile Ready");
-
-});
-
-/* ===========================
-      Performance Cleanup
-=========================== */
-
-window.addEventListener("beforeunload",()=>{
-
-observer.disconnect();
-
-});
-
-/* ===========================
-      End of File
-=========================== */
+window.loadProfile =
+    loadProfile;
 
 console.log(
-
-"%c✔ Viewora Profile.js V9 Loaded Successfully",
-
-"color:#00aaff;font-size:16px;font-weight:bold;"
-
+    "%cVIEWORA PROFILE READY",
+    "color:#00e5ff;font-size:18px;font-weight:800"
 );

@@ -1,0 +1,1311 @@
+/* =========================================================
+   VIEWORA • EDIT PROFILE
+   Premium Dark Glass UI
+========================================================= */
+
+:root {
+    --bg: #08090f;
+    --bg-soft: #0d0f18;
+    --card: rgba(18, 20, 31, 0.82);
+    --card-soft: rgba(255, 255, 255, 0.045);
+    --border: rgba(255, 255, 255, 0.09);
+    --text: #ffffff;
+    --muted: #9da3b5;
+    --muted-2: #70778b;
+    --primary: #6366f1;
+    --primary-2: #8b5cf6;
+    --cyan: #00e5ff;
+    --success: #00e676;
+    --danger: #ff4d67;
+    --radius: 22px;
+}
+
+
+/* =========================================================
+   RESET
+========================================================= */
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    min-height: 100vh;
+
+    background:
+        radial-gradient(
+            circle at 15% 0%,
+            rgba(99, 102, 241, 0.16),
+            transparent 32%
+        ),
+        radial-gradient(
+            circle at 90% 20%,
+            rgba(139, 92, 246, 0.12),
+            transparent 30%
+        ),
+        var(--bg);
+
+    color: var(--text);
+
+    font-family: "Inter", sans-serif;
+
+    -webkit-font-smoothing: antialiased;
+
+    overflow-x: hidden;
+}
+
+button,
+input,
+textarea,
+select {
+    font: inherit;
+}
+
+button {
+    border: 0;
+}
+
+img {
+    display: block;
+    max-width: 100%;
+}
+
+
+/* =========================================================
+   PAGE
+========================================================= */
+
+.editPage {
+    width: min(760px, 100%);
+    margin: 0 auto;
+
+    padding:
+        18px
+        18px
+        120px;
+
+    position: relative;
+}
+
+
+/* =========================================================
+   GLASS
+========================================================= */
+
+.glass {
+    background: var(--card);
+
+    border: 1px solid var(--border);
+
+    box-shadow:
+        0 18px 60px rgba(0, 0, 0, 0.35),
+        inset 0 1px 0 rgba(255, 255, 255, 0.035);
+
+    backdrop-filter: blur(22px);
+    -webkit-backdrop-filter: blur(22px);
+}
+
+
+/* =========================================================
+   HEADER
+========================================================= */
+
+.editHeader {
+    height: 64px;
+
+    display: grid;
+    grid-template-columns: 48px 1fr 48px;
+
+    align-items: center;
+
+    margin-bottom: 18px;
+}
+
+.headerBtn {
+    width: 44px;
+    height: 44px;
+
+    border-radius: 14px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    background: rgba(255, 255, 255, 0.055);
+
+    border: 1px solid rgba(255, 255, 255, 0.08);
+
+    color: white;
+
+    cursor: pointer;
+
+    transition:
+        transform 0.2s ease,
+        background 0.2s ease,
+        border-color 0.2s ease;
+}
+
+.headerBtn:hover {
+    background: rgba(99, 102, 241, 0.18);
+
+    border-color: rgba(99, 102, 241, 0.4);
+
+    transform: translateY(-1px);
+}
+
+.headerBtn:active {
+    transform: scale(0.94);
+}
+
+.headerTitle {
+    text-align: center;
+}
+
+.headerTitle h1 {
+    font-size: 20px;
+    font-weight: 800;
+    letter-spacing: -0.4px;
+}
+
+.headerTitle span {
+    display: block;
+
+    margin-top: 3px;
+
+    color: var(--muted);
+
+    font-size: 11px;
+    font-weight: 500;
+}
+
+.saveTopBtn {
+    justify-self: end;
+
+    color: var(--cyan);
+}
+
+
+/* =========================================================
+   PROFILE PREVIEW
+========================================================= */
+
+.profilePreview {
+    position: relative;
+
+    overflow: hidden;
+
+    border-radius: 26px;
+
+    margin-bottom: 24px;
+
+    padding-bottom: 25px;
+}
+
+
+/* =========================================================
+   BANNER
+========================================================= */
+
+.bannerArea {
+    height: 210px;
+
+    position: relative;
+
+    overflow: hidden;
+
+    cursor: pointer;
+
+    background:
+        linear-gradient(
+            135deg,
+            #171a2c,
+            #0b0d16
+        );
+}
+
+.bannerPreview {
+    width: 100%;
+    height: 100%;
+
+    object-fit: cover;
+
+    transition:
+        transform 0.5s ease,
+        filter 0.5s ease;
+}
+
+.bannerArea:hover .bannerPreview {
+    transform: scale(1.035);
+
+    filter: brightness(0.72);
+}
+
+.bannerGradient {
+    position: absolute;
+
+    inset: 0;
+
+    pointer-events: none;
+
+    background:
+        linear-gradient(
+            to bottom,
+            transparent 45%,
+            rgba(8, 9, 15, 0.92) 100%
+        );
+}
+
+.bannerOverlay {
+    position: absolute;
+
+    inset: 0;
+
+    z-index: 3;
+
+    display: flex;
+    flex-direction: column;
+
+    align-items: center;
+    justify-content: center;
+
+    gap: 9px;
+
+    opacity: 0;
+
+    color: white;
+
+    background: rgba(0, 0, 0, 0.28);
+
+    transition: opacity 0.25s ease;
+}
+
+.bannerArea:hover .bannerOverlay,
+.bannerArea:focus .bannerOverlay {
+    opacity: 1;
+}
+
+.changeBannerIcon {
+    width: 48px;
+    height: 48px;
+
+    border-radius: 50%;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    background: rgba(0, 0, 0, 0.6);
+
+    border: 1px solid rgba(255, 255, 255, 0.18);
+
+    backdrop-filter: blur(10px);
+
+    font-size: 18px;
+}
+
+.bannerOverlay span {
+    font-size: 12px;
+    font-weight: 700;
+}
+
+
+/* =========================================================
+   PROFILE PHOTO
+========================================================= */
+
+.profilePhotoWrapper {
+    position: relative;
+
+    margin-top: -62px;
+
+    padding-left: 26px;
+
+    z-index: 5;
+}
+
+.profilePhotoButton {
+    position: relative;
+
+    width: 124px;
+    height: 124px;
+
+    padding: 5px;
+
+    border-radius: 50%;
+
+    cursor: pointer;
+
+    background:
+        linear-gradient(
+            135deg,
+            var(--cyan),
+            var(--primary),
+            var(--primary-2)
+        );
+
+    box-shadow:
+        0 12px 40px rgba(0, 0, 0, 0.45),
+        0 0 0 5px rgba(8, 9, 15, 0.9);
+
+    overflow: hidden;
+}
+
+.profilePreview {
+    width: 100%;
+    height: 100%;
+
+    border-radius: 50%;
+
+    object-fit: cover;
+
+    background: #151827;
+
+    border: 3px solid #0b0d14;
+
+    transition:
+        filter 0.25s ease,
+        transform 0.25s ease;
+}
+
+.profilePhotoButton:hover .profilePreview {
+    filter: brightness(0.72);
+
+    transform: scale(1.025);
+}
+
+.photoCamera {
+    position: absolute;
+
+    right: 9px;
+    bottom: 9px;
+
+    width: 34px;
+    height: 34px;
+
+    border-radius: 50%;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    color: white;
+
+    background: rgba(8, 9, 15, 0.9);
+
+    border: 1px solid rgba(255, 255, 255, 0.18);
+
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.45);
+
+    font-size: 13px;
+}
+
+
+/* =========================================================
+   PREVIEW INFO
+========================================================= */
+
+.previewInfo {
+    padding:
+        16px
+        26px
+        0;
+}
+
+.previewInfo h2 {
+    font-size: 22px;
+
+    font-weight: 800;
+
+    letter-spacing: -0.5px;
+}
+
+.previewUsername {
+    margin-top: 4px;
+
+    color: var(--cyan);
+
+    font-size: 13px;
+
+    font-weight: 600;
+}
+
+.previewBio {
+    max-width: 560px;
+
+    margin-top: 12px;
+
+    color: var(--muted);
+
+    font-size: 13px;
+
+    line-height: 1.6;
+}
+
+
+/* =========================================================
+   FORM SECTION
+========================================================= */
+
+.formSection {
+    margin-top: 24px;
+}
+
+.sectionTitle {
+    display: flex;
+
+    align-items: center;
+
+    gap: 13px;
+
+    margin-bottom: 22px;
+}
+
+.sectionIcon {
+    width: 42px;
+    height: 42px;
+
+    border-radius: 13px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    background:
+        linear-gradient(
+            135deg,
+            rgba(99, 102, 241, 0.22),
+            rgba(139, 92, 246, 0.12)
+        );
+
+    border: 1px solid rgba(99, 102, 241, 0.22);
+
+    color: #a5b4fc;
+}
+
+.sectionTitle h2 {
+    font-size: 16px;
+
+    font-weight: 800;
+}
+
+.sectionTitle p {
+    margin-top: 3px;
+
+    color: var(--muted-2);
+
+    font-size: 11px;
+}
+
+
+/* =========================================================
+   FORM GROUP
+========================================================= */
+
+.formGroup {
+    margin-bottom: 22px;
+}
+
+.formGroup label {
+    display: block;
+
+    margin-bottom: 8px;
+
+    color: #e9eaf0;
+
+    font-size: 13px;
+
+    font-weight: 700;
+}
+
+.inputBox,
+.selectBox,
+.textareaBox {
+    width: 100%;
+
+    border-radius: 15px;
+
+    background: rgba(255, 255, 255, 0.045);
+
+    border: 1px solid rgba(255, 255, 255, 0.08);
+
+    transition:
+        border-color 0.2s ease,
+        background 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.inputBox {
+    min-height: 54px;
+
+    display: flex;
+    align-items: center;
+
+    padding: 0 16px;
+
+    gap: 12px;
+}
+
+.inputBox:focus-within,
+.selectBox:focus-within,
+.textareaBox:focus-within {
+    border-color: rgba(99, 102, 241, 0.65);
+
+    background: rgba(99, 102, 241, 0.055);
+
+    box-shadow:
+        0 0 0 4px rgba(99, 102, 241, 0.08);
+}
+
+.inputBox > i {
+    width: 18px;
+
+    color: var(--muted-2);
+
+    text-align: center;
+}
+
+.inputBox input,
+.textareaBox textarea,
+.selectBox select {
+    width: 100%;
+
+    border: 0;
+    outline: 0;
+
+    color: white;
+
+    background: transparent;
+}
+
+.inputBox input {
+    height: 52px;
+
+    font-size: 14px;
+}
+
+.inputBox input::placeholder,
+.textareaBox textarea::placeholder {
+    color: #656b7d;
+}
+
+
+/* =========================================================
+   USERNAME
+========================================================= */
+
+.usernameBox {
+    padding-left: 14px;
+}
+
+.inputPrefix {
+    color: var(--cyan);
+
+    font-size: 16px;
+
+    font-weight: 800;
+}
+
+.usernameBox input {
+    padding-left: 0;
+}
+
+.inputStatus {
+    width: 22px;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    font-size: 13px;
+}
+
+.inputStatus.success {
+    color: var(--success);
+}
+
+.inputStatus.error {
+    color: var(--danger);
+}
+
+
+/* =========================================================
+   FIELD BOTTOM
+========================================================= */
+
+.fieldBottom {
+    display: flex;
+
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 12px;
+
+    margin-top: 7px;
+
+    padding: 0 2px;
+
+    color: var(--muted-2);
+
+    font-size: 10px;
+
+    line-height: 1.4;
+}
+
+.fieldBottom small {
+    flex-shrink: 0;
+
+    font-size: 10px;
+
+    color: #858b9c;
+}
+
+
+/* =========================================================
+   PROFILE URL
+========================================================= */
+
+.urlPreview {
+    display: flex;
+
+    align-items: center;
+
+    gap: 5px;
+
+    margin-top: 8px;
+
+    padding: 0 3px;
+
+    color: var(--muted-2);
+
+    font-size: 11px;
+}
+
+.urlPreview strong {
+    color: var(--cyan);
+
+    font-weight: 700;
+}
+
+.fieldHint {
+    margin-top: 7px;
+
+    color: var(--muted-2);
+
+    font-size: 10px;
+}
+
+
+/* =========================================================
+   SELECT
+========================================================= */
+
+.selectBox {
+    min-height: 54px;
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 12px;
+
+    padding: 0 16px;
+
+    position: relative;
+}
+
+.selectBox > i:first-child {
+    width: 18px;
+
+    color: var(--muted-2);
+
+    text-align: center;
+}
+
+.selectBox select {
+    height: 52px;
+
+    appearance: none;
+
+    -webkit-appearance: none;
+
+    padding-right: 35px;
+
+    cursor: pointer;
+
+    font-size: 14px;
+}
+
+.selectBox select option {
+    color: white;
+
+    background: #11131d;
+}
+
+.selectArrow {
+    position: absolute;
+
+    right: 17px;
+
+    color: var(--muted-2);
+
+    pointer-events: none;
+
+    font-size: 11px;
+}
+
+
+/* =========================================================
+   TEXTAREA
+========================================================= */
+
+.textareaBox {
+    padding: 13px 15px;
+}
+
+.textareaBox textarea {
+    display: block;
+
+    min-height: 105px;
+
+    resize: vertical;
+
+    line-height: 1.55;
+
+    font-size: 14px;
+}
+
+
+/* =========================================================
+   PROFILE LINK CARD
+========================================================= */
+
+.profileLinkCard {
+    margin-top: 30px;
+
+    min-height: 78px;
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 14px;
+
+    padding: 15px 17px;
+
+    border-radius: 19px;
+}
+
+.linkIcon {
+    width: 44px;
+    height: 44px;
+
+    flex-shrink: 0;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 13px;
+
+    color: var(--cyan);
+
+    background: rgba(0, 229, 255, 0.08);
+
+    border: 1px solid rgba(0, 229, 255, 0.14);
+}
+
+.linkContent {
+    min-width: 0;
+
+    flex: 1;
+}
+
+.linkContent h3 {
+    font-size: 13px;
+
+    font-weight: 700;
+}
+
+.linkContent p {
+    margin-top: 5px;
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+
+    white-space: nowrap;
+
+    color: var(--cyan);
+
+    font-size: 11px;
+}
+
+.copyBtn {
+    width: 42px;
+    height: 42px;
+
+    flex-shrink: 0;
+
+    border-radius: 12px;
+
+    color: #d8dbea;
+
+    background: rgba(255, 255, 255, 0.055);
+
+    border: 1px solid rgba(255, 255, 255, 0.08);
+
+    cursor: pointer;
+
+    transition:
+        transform 0.2s ease,
+        background 0.2s ease,
+        color 0.2s ease;
+}
+
+.copyBtn:hover {
+    color: var(--cyan);
+
+    background: rgba(0, 229, 255, 0.08);
+
+    transform: translateY(-1px);
+}
+
+.copyBtn:active {
+    transform: scale(0.94);
+}
+
+
+/* =========================================================
+   SAVE SECTION
+========================================================= */
+
+.saveSection {
+    margin-top: 25px;
+
+    text-align: center;
+}
+
+.saveProfileBtn {
+    width: 100%;
+
+    min-height: 58px;
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 12px;
+
+    padding: 0 18px;
+
+    border-radius: 17px;
+
+    color: white;
+
+    background:
+        linear-gradient(
+            135deg,
+            var(--primary),
+            var(--primary-2)
+        );
+
+    box-shadow:
+        0 12px 35px rgba(99, 102, 241, 0.24);
+
+    font-size: 14px;
+
+    font-weight: 800;
+
+    cursor: pointer;
+
+    transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease,
+        filter 0.2s ease;
+}
+
+.saveProfileBtn:hover {
+    transform: translateY(-2px);
+
+    box-shadow:
+        0 17px 42px rgba(99, 102, 241, 0.32);
+
+    filter: brightness(1.06);
+}
+
+.saveProfileBtn:active {
+    transform: scale(0.985);
+}
+
+.saveProfileBtn > span:nth-child(2) {
+    flex: 1;
+
+    text-align: left;
+}
+
+.saveIcon {
+    width: 32px;
+    height: 32px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 10px;
+
+    background: rgba(255, 255, 255, 0.13);
+}
+
+.saveSection > p {
+    margin-top: 10px;
+
+    color: var(--muted-2);
+
+    font-size: 10px;
+}
+
+
+/* =========================================================
+   TOAST
+========================================================= */
+
+.toast {
+    position: fixed;
+
+    left: 50%;
+
+    bottom: 28px;
+
+    z-index: 1000;
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 10px;
+
+    max-width: calc(100vw - 30px);
+
+    padding: 13px 17px;
+
+    border-radius: 14px;
+
+    color: white;
+
+    background: rgba(20, 23, 34, 0.94);
+
+    border: 1px solid rgba(255, 255, 255, 0.1);
+
+    box-shadow:
+        0 15px 45px rgba(0, 0, 0, 0.45);
+
+    backdrop-filter: blur(18px);
+
+    transform:
+        translate(-50%, 25px)
+        scale(0.96);
+
+    opacity: 0;
+
+    pointer-events: none;
+
+    transition:
+        opacity 0.25s ease,
+        transform 0.25s ease;
+}
+
+.toast.show {
+    opacity: 1;
+
+    transform:
+        translate(-50%, 0)
+        scale(1);
+}
+
+#toastIcon {
+    color: var(--success);
+}
+
+#toastText {
+    font-size: 12px;
+
+    font-weight: 600;
+}
+
+
+/* =========================================================
+   LOADING OVERLAY
+========================================================= */
+
+.loadingOverlay {
+    position: fixed;
+
+    inset: 0;
+
+    z-index: 2000;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    padding: 20px;
+
+    background: rgba(4, 5, 9, 0.78);
+
+    backdrop-filter: blur(15px);
+
+    opacity: 1;
+
+    transition: opacity 0.2s ease;
+}
+
+.loadingOverlay.hidden {
+    display: none;
+}
+
+.loadingCard {
+    width: min(330px, 100%);
+
+    padding: 30px 24px;
+
+    text-align: center;
+
+    border-radius: 22px;
+
+    background: rgba(18, 20, 31, 0.96);
+
+    border: 1px solid rgba(255, 255, 255, 0.09);
+
+    box-shadow:
+        0 25px 80px rgba(0, 0, 0, 0.55);
+}
+
+.loadingSpinner {
+    width: 44px;
+    height: 44px;
+
+    margin: 0 auto 17px;
+
+    border-radius: 50%;
+
+    border:
+        3px solid rgba(255, 255, 255, 0.08);
+
+    border-top-color: var(--cyan);
+
+    border-right-color: var(--primary);
+
+    animation:
+        vieworaSpin 0.8s linear infinite;
+}
+
+@keyframes vieworaSpin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.loadingCard h3 {
+    font-size: 15px;
+
+    font-weight: 800;
+}
+
+.loadingCard p {
+    margin-top: 6px;
+
+    color: var(--muted);
+
+    font-size: 11px;
+}
+
+
+/* =========================================================
+   ACCESSIBILITY
+========================================================= */
+
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+[role="button"]:focus-visible {
+    outline: 2px solid var(--cyan);
+
+    outline-offset: 3px;
+}
+
+
+/* =========================================================
+   TABLET
+========================================================= */
+
+@media (min-width: 700px) {
+
+    .editPage {
+        padding-top: 28px;
+    }
+
+    .profilePreview {
+        border-radius: 30px;
+    }
+
+    .bannerArea {
+        height: 250px;
+    }
+
+}
+
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 600px) {
+
+    .editPage {
+        width: 100%;
+
+        padding:
+            10px
+            12px
+            100px;
+    }
+
+    .editHeader {
+        height: 58px;
+
+        grid-template-columns: 44px 1fr 44px;
+    }
+
+    .headerBtn {
+        width: 40px;
+        height: 40px;
+
+        border-radius: 12px;
+    }
+
+    .headerTitle h1 {
+        font-size: 17px;
+    }
+
+    .headerTitle span {
+        font-size: 9px;
+    }
+
+    .profilePreview {
+        border-radius: 22px;
+    }
+
+    .bannerArea {
+        height: 175px;
+    }
+
+    .profilePhotoWrapper {
+        margin-top: -52px;
+
+        padding-left: 18px;
+    }
+
+    .profilePhotoButton {
+        width: 104px;
+        height: 104px;
+    }
+
+    .photoCamera {
+        width: 30px;
+        height: 30px;
+
+        right: 7px;
+        bottom: 7px;
+    }
+
+    .previewInfo {
+        padding:
+            13px
+            18px
+            0;
+    }
+
+    .previewInfo h2 {
+        font-size: 19px;
+    }
+
+    .previewBio {
+        font-size: 12px;
+    }
+
+    .sectionTitle {
+        margin-bottom: 18px;
+    }
+
+    .formGroup {
+        margin-bottom: 19px;
+    }
+
+    .inputBox,
+    .selectBox {
+        min-height: 51px;
+    }
+
+    .inputBox input,
+    .selectBox select {
+        height: 49px;
+    }
+
+    .fieldBottom {
+        font-size: 9px;
+    }
+
+    .profileLinkCard {
+        border-radius: 17px;
+    }
+
+}
+
+
+/* =========================================================
+   SMALL PHONES
+========================================================= */
+
+@media (max-width: 380px) {
+
+    .editPage {
+        padding-left: 9px;
+        padding-right: 9px;
+    }
+
+    .bannerArea {
+        height: 155px;
+    }
+
+    .profilePhotoButton {
+        width: 94px;
+        height: 94px;
+    }
+
+    .profilePhotoWrapper {
+        margin-top: -47px;
+    }
+
+    .previewInfo h2 {
+        font-size: 18px;
+    }
+
+    .sectionTitle h2 {
+        font-size: 14px;
+    }
+
+    .sectionIcon {
+        width: 38px;
+        height: 38px;
+    }
+
+}
