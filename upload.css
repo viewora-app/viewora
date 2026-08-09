@@ -1521,91 +1521,95 @@ Loader • Responsive • Utilities
 Animations • Production
 =========================================*/
 
-/*=========================================
+/* =========================
 Premium Loader
-=========================================*/
+========================= */
 
-#loadingOverlay{
+#pageLoader{
 
-    position:fixed;
+position:fixed;
 
-    inset:0;
+inset:0;
 
-    display:flex;
+background:#000;
 
-    flex-direction:column;
+display:flex;
 
-    align-items:center;
+flex-direction:column;
 
-    justify-content:center;
+justify-content:center;
 
-    background:rgba(5,8,22,.94);
+align-items:center;
 
-    backdrop-filter:blur(18px);
+z-index:999999;
 
-    z-index:99999;
-
-}
-
-.premiumLoader{
-
-    position:relative;
-
-    width:110px;
-
-    height:110px;
+transition:.5s;
 
 }
 
-.loaderRing{
+.loader{
 
-    position:absolute;
+position:relative;
 
-    inset:0;
+width:80px;
 
-    border:5px solid transparent;
+height:80px;
 
-    border-top:5px solid var(--primary);
-
-    border-radius:50%;
-
-    animation:spin 1s linear infinite;
+margin-bottom:25px;
 
 }
 
-.loaderRing.delay1{
+.ring{
 
-    inset:10px;
+position:absolute;
 
-    border-top-color:var(--accent);
+width:80px;
 
-    animation-duration:1.5s;
+height:80px;
 
-}
+border-radius:50%;
 
-.loaderRing.delay2{
+border:4px solid transparent;
 
-    inset:20px;
+border-top-color:#00bfff;
 
-    border-top-color:var(--success);
-
-    animation-duration:2s;
+animation:spin 1s linear infinite;
 
 }
 
-#loadingOverlay h3{
+.delay{
 
-    margin-top:25px;
+animation-delay:.35s;
 
-    font-size:24px;
+border-top-color:#7c3aed;
 
 }
 
-#loadingOverlay p{
+@keyframes spin{
 
-    margin-top:10px;
+100%{
 
-    color:var(--text2);
+transform:rotate(360deg);
+
+}
+
+}
+
+#pageLoader h2{
+
+font-size:22px;
+
+font-weight:700;
+
+margin-bottom:10px;
+
+}
+
+#pageLoader p{
+
+font-size:14px;
+
+color:#aaa;
 
 }
 

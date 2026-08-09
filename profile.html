@@ -1,547 +1,262 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Viewora • Profile</title>
+  <meta name="theme-color" content="#08111f" />
 
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" />
 
-<title>Viewora • Profile</title>
-
-<meta name="theme-color" content="#08111f">
-
-<meta
-name="description"
-content="Viewora Premium Profile">
-
-<!-- Google Font -->
-
-<link
-href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
-rel="stylesheet">
-
-<!-- Font Awesome -->
-
-<link
-rel="stylesheet"
-href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"/>
-
-<!-- CSS -->
-
-<link rel="stylesheet" href="profile.css">
-<link rel="stylesheet" href="nav.css">
-
+  <!-- CSS -->
+  <link rel="stylesheet" href="profile.css" />
+  <link rel="stylesheet" href="nav.css" />
 </head>
 
 <body>
 
-<!-- ==========================
- Animated Premium Background
-=========================== -->
+<!-- Background -->
 
-<div class="bg-gradient"></div>
+<div class="bgGlow"></div>
 
-<div class="blur blur1"></div>
-<div class="blur blur2"></div>
-<div class="blur blur3"></div>
-
-<div class="particles">
-
-<span></span>
-<span></span>
-<span></span>
-<span></span>
-<span></span>
-<span></span>
-<span></span>
-<span></span>
-
-</div>
-
-<!-- ==========================
- Premium Loader
-=========================== -->
+<!-- Loader -->
 
 <div id="pageLoader">
 
-<div class="loaderLogo">
+<div class="loader">
 
-<i class="fa-solid fa-play"></i>
+<div class="ring"></div>
 
-</div>
-
-<h2>Viewora</h2>
-
-<p>
-
-Loading your profile...
-
-</p>
+<div class="ring delay"></div>
 
 </div>
 
-<!-- ==========================
- Main Application
-=========================== -->
-
-<div id="app" class="hidden">
-
-<!-- ==========================
- Banner
-=========================== -->
-
-<section class="profileBanner">
-
-<img
-id="coverPhoto"
-src="assets/default-banner.jpg"
-alt="Banner">
-
-<div class="bannerOverlay"></div>
-
-<button
-class="settingsBtn"
-onclick="location.href='settings.html'">
-
-<i class="fa-solid fa-gear"></i>
-
-</button>
-
-<button class="shareBtn">
-
-<i class="fa-solid fa-share-nodes"></i>
-
-</button>
-
-</section>
-
-<!-- ==========================
- Profile Card
-=========================== -->
-
-<section class="profileCard">
-
-<div id="storyRing">
-
-<img
-id="profilePic"
-src="assets/default-avatar.png"
-alt="Profile">
-
-<div
-class="storyPlus"
-onclick="createStory()">
-
-<i class="fa-solid fa-plus"></i>
+<h2>Loading Profile...</h2>
 
 </div>
 
-</div>
+  <!-- Main App -->
+  <div id="app" class="hidden">
 
-<h1 id="profileName">
+    <!-- Banner -->
+    <section class="profileBanner">
+      <img id="coverPhoto" src="assets/default-banner.jpg" alt="Cover" />
+      <div class="bannerOverlay"></div>
 
-Loading...
+      <button class="shareBtn" title="Share Profile">
+        <i class="fa-solid fa-share-nodes"></i>
+      </button>
 
-<span
-id="verifiedBadge"
-class="verified hidden">
+      <button class="settingsBtn" onclick="location.href='settings.html'" title="Settings">
+        <i class="fa-solid fa-gear"></i>
+      </button>
+    </section>
 
-<i class="fa-solid fa-circle-check"></i>
+    <!-- Profile Card -->
+    <section class="profileCard">
 
-</span>
+      <!-- Avatar + Story Ring -->
+      <div id="storyRing">
+        <img id="profilePic" src="assets/default-avatar.png" alt="Profile" />
+        <div class="storyPlus" onclick="createStory()">
+          <i class="fa-solid fa-plus"></i>
+        </div>
+      </div>
 
-</h1>
+      <!-- Name -->
+      <h1 id="profileName">
+        Loading...
+        <span id="verifiedBadge" class="verified hidden">
+          <i class="fa-solid fa-circle-check"></i>
+        </span>
+      </h1>
 
-<p
-id="profileUsername"
-class="username">
+      <p id="profileUsername" class="username">@loading</p>
+      <p id="profileBio" class="bio">Welcome to Viewora 🚀</p>
 
-@loading
+      <!-- Meta -->
+      <div class="profileMeta">
+        <span id="joinDate">
+          <i class="fa-solid fa-calendar"></i> Joined 2026
+        </span>
+        <span id="profileLocation">
+          <i class="fa-solid fa-location-dot"></i> India
+        </span>
+      </div>
 
-</p>
+      <!-- Stats -->
+      <div class="profileStats">
+        <div class="stat">
+          <h2 id="postsCount">0</h2>
+          <span>Posts</span>
+        </div>
+        <div class="stat">
+          <h2 id="followersCount">0</h2>
+          <span>Followers</span>
+        </div>
+        <div class="stat">
+          <h2 id="followingCount">0</h2>
+          <span>Following</span>
+        </div>
+        <div class="stat">
+          <h2 id="videosCount">0</h2>
+          <span>Videos</span>
+        </div>
+      </div>
 
-<p
-id="profileBio"
-class="bio">
+      <!-- Action Buttons -->
+      <div class="profileButtons">
+        <button id="followBtn" class="primaryBtn">
+          <i class="fa-solid fa-user-plus"></i>
+          <span>Follow</span>
+        </button>
 
-Welcome to Viewora 🚀
+        <a href="edit-profile.html" class="secondaryBtn" id="editProfileBtn">
+          <i class="fa-solid fa-pen"></i>
+          <span>Edit</span>
+        </a>
 
-</p>
+        <button id="messageBtn" class="secondaryBtn">
+          <i class="fa-solid fa-paper-plane"></i>
+          <span>Message</span>
+        </button>
+      </div>
+    </section>
 
-<div class="profileMeta">
+    <!-- Story Highlights -->
+    <section class="storySection">
+      <h3>Story Highlights</h3>
+      <div class="storiesWrapper" id="storiesWrapper">
+        <!-- Stories will load here -->
+        <div class="storyItem" onclick="createStory()">
+          <div class="storyCircle addStory">
+            <i class="fa-solid fa-plus"></i>
+          </div>
+          <p>New</p>
+        </div>
+      </div>
+    </section>
 
-<span>
-
-<i class="fa-solid fa-calendar"></i>
-
-Joined 2026
-
-</span>
-
-<span>
-
-<i class="fa-solid fa-location-dot"></i>
-
-India
-
-</span>
-
-</div>
-<!-- ==========================
- Profile Stats
-=========================== -->
-
-<div class="profileStats">
-
-    <div class="stat">
-        <h2 id="postsCount">0</h2>
+    <!-- Tabs -->
+    <div class="profileTabs">
+      <button class="tabBtn active" data-tab="posts">
+        <i class="fa-solid fa-image"></i>
         <span>Posts</span>
-    </div>
-
-    <div class="stat">
-        <h2 id="followersCount">0</h2>
-        <span>Followers</span>
-    </div>
-
-    <div class="stat">
-        <h2 id="followingCount">0</h2>
-        <span>Following</span>
-    </div>
-
-    <div class="stat">
-        <h2 id="videosCount">0</h2>
-        <span>Videos</span>
-    </div>
-
-</div>
-
-<!-- ==========================
- Profile Buttons
-=========================== -->
-
-<div class="profileButtons">
-
-    <button
-        id="followBtn"
-        class="primaryBtn">
-
-        <i class="fa-solid fa-user-plus"></i>
-
-        <span>Follow</span>
-
-    </button>
-
-    <a
-        href="edit-profile.html"
-        id="editProfileBtn"
-        class="secondaryBtn">
-
-        <i class="fa-solid fa-pen"></i>
-
-        <span>Edit</span>
-
-    </a>
-
-    <button
-        id="messageBtn"
-        class="secondaryBtn">
-
-        <i class="fa-solid fa-paper-plane"></i>
-
-        <span>Message</span>
-
-    </button>
-
-</div>
-
-<!-- ==========================
- Story Highlights
-=========================== -->
-
-<section class="storySection">
-
-<h3>
-
-Story Highlights
-
-</h3>
-
-<div class="storiesWrapper">
-
-<div class="storyItem">
-
-<div class="storyCircle">
-
-<img
-src="assets/default-avatar.png"
-alt="Story">
-
-</div>
-
-<p>Travel</p>
-
-</div>
-
-<div class="storyItem">
-
-<div class="storyCircle">
-
-<img
-src="assets/default-avatar.png"
-alt="Story">
-
-</div>
-
-<p>Gaming</p>
-
-</div>
-
-<div class="storyItem">
-
-<div class="storyCircle">
-
-<img
-src="assets/default-avatar.png"
-alt="Story">
-
-</div>
-
-<p>Music</p>
-
-</div>
-
-<div class="storyItem">
-
-<div class="storyCircle">
-
-<img
-src="assets/default-avatar.png"
-alt="Story">
-
-</div>
-
-<p>Vlogs</p>
-
-</div>
-
-<div
-class="storyItem"
-onclick="createStory()">
-
-<div class="storyCircle addStory">
-
-<i class="fa-solid fa-plus"></i>
-
-</div>
-
-<p>New</p>
-
-</div>
-
-</div>
-
-</section>
-
-<!-- ==========================
- Profile Tabs
-=========================== -->
-
-<div class="profileTabs">
-
-<button
-class="tabBtn active"
-data-tab="videos">
-
-<i class="fa-solid fa-video"></i>
-
-<span>Videos</span>
-
-</button>
-
-<button
-class="tabBtn"
-data-tab="shorts">
-
-<i class="fa-solid fa-play"></i>
-
-<span>Shorts</span>
-
-</button>
-
-<button
-class="tabBtn"
-data-tab="posts">
-
-<i class="fa-solid fa-image"></i>
-
-<span>Posts</span>
-
-</button>
-
-<button
-class="tabBtn"
-data-tab="saved">
-
-<i class="fa-solid fa-bookmark"></i>
-
-<span>Saved</span>
-
-</button>
-
-</div>
-<!-- ==========================
- Premium Bottom Navigation
-=========================== -->
-
-<nav class="bottomNav">
-
-    <a href="index.html">
-
-        <span class="activeIndicator"></span>
-
-        <i class="fa-solid fa-house"></i>
-
-        <span>Home</span>
-
-    </a>
-
-    <a href="shorts.html">
-
-        <span class="activeIndicator"></span>
-
+      </button>
+      <button class="tabBtn" data-tab="shorts">
         <i class="fa-solid fa-play"></i>
-
         <span>Shorts</span>
+      </button>
+      <button class="tabBtn" data-tab="videos">
+        <i class="fa-solid fa-video"></i>
+        <span>Videos</span>
+      </button>
+      <button class="tabBtn" data-tab="saved">
+        <i class="fa-solid fa-bookmark"></i>
+        <span>Saved</span>
+      </button>
+    </div>
 
-    </a>
+    <!-- Tab Contents -->
+    <div class="tabContainer">
 
-    <a
-        href="upload.html"
-        class="uploadNav">
+      <!-- Posts -->
+      <div id="postsTab" class="tabContent active">
+        <div id="postsList" class="postsGrid">
+          <!-- Posts load here -->
+        </div>
+      </div>
 
+      <!-- Shorts -->
+      <div id="shortsTab" class="tabContent">
+        <div id="shortsList" class="shortsGrid">
+          <!-- Shorts load here -->
+        </div>
+      </div>
+
+      <!-- Videos -->
+      <div id="videosTab" class="tabContent">
+        <div id="videosList" class="videosList">
+          <!-- Videos load here -->
+        </div>
+      </div>
+
+      <!-- Saved -->
+      <div id="savedTab" class="tabContent">
+        <div id="savedList" class="savedGrid">
+          <!-- Saved posts load here -->
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Bottom Navigation -->
+    <nav class="bottomNav">
+      <a href="index.html">
+        <span class="activeIndicator"></span>
+        <i class="fa-solid fa-house"></i>
+        <span>Home</span>
+      </a>
+      <a href="shorts.html">
+        <span class="activeIndicator"></span>
+        <i class="fa-solid fa-play"></i>
+        <span>Shorts</span>
+      </a>
+      <a href="upload.html" class="uploadNav">
         <i class="fa-solid fa-plus"></i>
-
-    </a>
-
-    <a href="users.html">
-
+      </a>
+      <a href="users.html">
         <span class="activeIndicator"></span>
-
         <i class="fa-solid fa-users"></i>
-
         <span>Users</span>
-
-    </a>
-
-    <a
-        href="profile.html"
-        class="active">
-
+      </a>
+      <a href="profile.html" class="active">
         <span class="activeIndicator"></span>
-
         <i class="fa-solid fa-user"></i>
-
         <span>Profile</span>
+      </a>
+    </nav>
 
-    </a>
+    <!-- Hidden Story Input -->
+    <input type="file" id="storyFile" accept="image/*,video/*" hidden />
 
-</nav>
+    <!-- Scroll Top -->
+    <button id="scrollTopBtn" class="floatingTop hidden">
+      <i class="fa-solid fa-arrow-up"></i>
+    </button>
 
-<!-- ==========================
- Hidden Story Upload
-=========================== -->
+  </div>
 
-<input
-type="file"
-id="storyFile"
-accept="image/*,video/*"
-hidden>
-
-<!-- ==========================
- Firebase SDK
-=========================== -->
-
+  <!-- Firebase + Scripts -->
+  <!-- Firebase SDK -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
 
-<!-- ==========================
- Viewora Scripts
-=========================== -->
-
+<!-- Viewora Core -->
 <script src="firebase.js"></script>
-<script src="profile.js"></script>
+<script src="utils.js"></script>
 <script src="nav.js"></script>
-
-<!-- ==========================
- App Loader
-=========================== -->
+<script src="profile.js"></script>
 
 <script>
-
-window.addEventListener("load",()=>{
-
-setTimeout(()=>{
-
-document.getElementById("pageLoader").classList.add("hidden");
-
-document.getElementById("app").classList.remove("hidden");
-
-},800);
-
-});
-
-window.addEventListener("online",()=>{
-
-document.getElementById("offlineToast").classList.add("hidden");
-
-});
-
-window.addEventListener("offline",()=>{
-
-document.getElementById("offlineToast").classList.remove("hidden");
-
-});
-
-document.getElementById("floatingChat")?.addEventListener("click",()=>{
-
-location.href="messages.html";
-
-});
-
-document.getElementById("scrollTopBtn")?.addEventListener("click",()=>{
-
-window.scrollTo({
-
-top:0,
-
-behavior:"smooth"
-
-});
-
-});
-
-window.addEventListener("scroll",()=>{
-
-const btn=document.getElementById("scrollTopBtn");
-
-if(window.scrollY>400){
-
-btn.classList.remove("hidden");
-
-}else{
-
-btn.classList.add("hidden");
-
-}
-
-});
-
+  // Temporary force hide loader after 2 seconds
+  setTimeout(() => {
+    const loader = document.getElementById("pageLoader");
+    const app = document.getElementById("app");
+    
+    if (loader) loader.classList.add("hidden");
+    if (app) {
+      app.classList.remove("hidden");
+      app.classList.add("fadeIn");
+    }
+    
+    console.log("Loader force hidden");
+  }, 2000);
 </script>
 
-</div> <!-- End #app -->
-
 </body>
-
 </html>

@@ -1,1388 +1,1288 @@
-/*=========================================
-        VIEWORA V10 PREMIUM
-            upload.js
-            PART 1
-Firebase • Auth • DOM • Startup
-=========================================*/
+/* =========================================================
+   VIEWORA V12
+   upload.js
+   FINAL
+   Photo Post + Short + Long Video
+   Cloudinary Unsigned Upload + Firebase Realtime Database
+========================================================= */
 
 "use strict";
 
-/*=========================================
-Firebase Check
-=========================================*/
+document.addEventListener("DOMContentLoaded", () => {
 
-if(typeof firebase==="undefined"){
-    throw new Error("Firebase SDK Missing");
-}
+    /* =====================================================
+       CONFIG
+    ===================================================== */
 
-if(typeof auth==="undefined"){
-    throw new Error("Firebase Auth Missing");
-}
+    const CLOUDINARY_CLOUD_NAME = "z5m6wjdf";
+    const CLOUDINARY_UPLOAD_PRESET = "Viewora-upload";
 
-if(typeof db==="undefined"){
-    throw new Error("Realtime Database Missing");
-}
+    const CLOUDINARY_UPLOAD_URL =
+        `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/auto/upload`;
 
-if(typeof storage==="undefined"){
-    throw new Error("Firebase Storage Missing");
-}
+    /*
+       VIDEO CLASSIFICATION
+       <= 60 seconds = Short
+       > 60 seconds  = Long Video
+    */
+    const SHORT_MAX_DURATION = 60;
 
-/*=========================================
-DOM Elements
-=========================================*/
+    /* =====================================================
+       ELEMENT HELPERS
+    ===================================================== */
 
-const uploadForm =
-document.getElementById("uploadForm");
+    const $ = (id) => document.getElementById(id);
 
-const mediaInput =
-document.getElementById("mediaInput");
+    const mediaInput = $("mediaInput");
+    const browseBtn = $("browseBtn");
+    const dropZone = $("dropZone");
 
-const thumbnailInput =
-document.getElementById("thumbnailInput");
+    const previewSection = $("previewSection");
+    const previewImage = $("previewImage");
+    const previewVideo = $("previewVideo");
 
-const dropZone =
-document.getElementById("dropZone");
+    const fileName = $("fileName");
+    const titleInput = $("title");
+    const captionInput = $("caption");
+    const hashtagsInput = $("hashtags");
+    const mentionsInput = $("mentions");
 
-const previewVideo =
-document.getElementById("previewVideo");
+    const categoryInput = $("category");
+    const visibilityInput = $("visibility");
+    const audienceInput = $("audience");
+    const languageInput = $("language");
 
-const previewImage =
-document.getElementById("previewImage");
+    const allowComments = $("allowComments");
+    const allowDownload = $("allowDownload");
+    const notifyFollowers = $("notifyFollowers");
+    const ageRestricted = $("ageRestricted");
+    const allowRemix = $("allowRemix");
+    const allowShare = $("allowShare");
 
-const titleInput =
-document.getElementById("title");
+    const thumbnailInput = $("thumbnailInput");
+    const chooseThumbnailBtn = $("chooseThumbnailBtn");
+    const removeThumbnailBtn = $("removeThumbnailBtn");
+    const thumbnailImage = $("thumbnailImage");
 
-const captionInput =
-document.getElementById("caption");
+    const locationInput = $("location");
+    const scheduleDate = $("scheduleDate");
 
-const hashtagsInput =
-document.getElementById("hashtags");
+    const uploadPostBtn = $("uploadPostBtn");
+    const saveDraftBtn = $("saveDraftBtn");
+    const cancelUploadBtn = $("cancelUploadBtn");
 
-const mentionsInput =
-document.getElementById("mentions");
+    const progressSection = $("progressSection");
+    const progressFill = $("progressFill");
+    const progressPercent = $("progressPercent");
+    const uploadSpeed = $("uploadSpeed");
+    const remainingTime = $("remainingTime");
 
-const categorySelect =
-document.getElementById("category");
+    const loadingOverlay = $("loadingOverlay");
 
-const visibilitySelect =
-document.getElementById("visibility");
+    const toast = $("toast");
+    const toastIcon = $("toastIcon");
+    const toastText = $("toastText");
 
-const uploadBtn =
-document.getElementById("uploadPostBtn");
+    const successModal = $("successModal");
+    const failedModal = $("failedModal");
+    const uploadErrorMessage = $("uploadErrorMessage");
 
-const saveDraftBtn =
-document.getElementById("saveDraftBtn");
+    const retryUploadBtn = $("retryUploadBtn");
+    const closeFailedBtn = $("closeFailedBtn");
 
-const cancelBtn =
-document.getElementById("cancelUploadBtn");
+    const uploadAnotherBtn = $("uploadAnotherBtn");
+    const viewPostBtn = $("viewPostBtn");
 
-const loadingOverlay =
-document.getElementById("loadingOverlay");
+    const titleCounter = $("titleCounter");
+    const captionCounter = $("captionCounter");
 
-const toast =
-document.getElementById("toast");
+    /* =====================================================
+       STATE
+    ===================================================== */
 
-const toastText =
-document.getElementById("toastText");
+    let selectedFile = null;
+    let selectedThumbnail = null;
 
-const toastIcon =
-document.getElementById("toastIcon");
+    let uploadedMedia = null;
+    let uploadedThumbnail = null;
 
-/*=========================================
-Variables
-=========================================*/
+    let detectedMediaType = null;
+    let detectedDuration = 0;
 
-let currentUser = null;
+    let lastUploadData = null;
+    let uploadXHR = null;
 
-let selectedFile = null;
+    /* =====================================================
+       BASIC CHECK
+    ===================================================== */
 
-let selectedThumbnail = null;
-
-let uploadTask = null;
-
-let uploading = false;
-
-let draftKey = "viewora_upload_draft";
-
-/*=========================================
-Loading
-=========================================*/
-
-function showLoading(){
-
-    if(!loadingOverlay) return;
-
-    loadingOverlay.classList.remove("hidden");
-
-}
-
-function hideLoading(){
-
-    if(!loadingOverlay) return;
-
-    loadingOverlay.classList.add("hidden");
-
-}
-
-/*=========================================
-Toast
-=========================================*/
-
-let toastTimer = null;
-
-function showToast(message,type="success"){
-
-    if(!toast) return;
-
-    toastText.textContent = message;
-
-    if(type==="success"){
-
-        toastIcon.className =
-        "fa-solid fa-circle-check";
-
-        toastIcon.style.color =
-        "#00d26a";
-
-    }else{
-
-        toastIcon.className =
-        "fa-solid fa-circle-xmark";
-
-        toastIcon.style.color =
-        "#ff4d67";
-
-    }
-
-    toast.classList.remove("hidden");
-
-    requestAnimationFrame(()=>{
-
-        toast.classList.add("show");
-
-    });
-
-    clearTimeout(toastTimer);
-
-    toastTimer = setTimeout(()=>{
-
-        toast.classList.remove("show");
-
-        setTimeout(()=>{
-
-            toast.classList.add("hidden");
-
-        },300);
-
-    },3000);
-
-}
-
-/*=========================================
-Authentication
-=========================================*/
-
-auth.onAuthStateChanged(async(user)=>{
-
-    if(!user){
-
-        location.replace("login.html");
-
+    if (!mediaInput) {
+        console.error("❌ Viewora Upload: mediaInput not found");
         return;
-
     }
 
-    await user.reload();
+    console.log("==========================================");
+    console.log("🚀 VIEWORA UPLOAD V12");
+    console.log("☁️ Cloudinary:", CLOUDINARY_CLOUD_NAME);
+    console.log("📦 Preset:", CLOUDINARY_UPLOAD_PRESET);
+    console.log("==========================================");
 
-    currentUser = user;
+    /* =====================================================
+       CLOUDINARY CHECK
+    ===================================================== */
 
-    console.log("Logged In :",user.uid);
+    function checkCloudinaryConfig() {
 
-    loadUserProfile();
-
-});
-
-/*=========================================
-Load User Profile
-=========================================*/
-
-async function loadUserProfile(){
-
-    try{
-
-        const snap = await db
-        .ref("users/"+currentUser.uid)
-        .once("value");
-
-        if(!snap.exists()){
-
-            showToast(
-            "User profile not found",
-            "error"
+        if (!CLOUDINARY_CLOUD_NAME) {
+            throw new Error(
+                "Cloudinary Cloud Name is not configured."
             );
-
-            return;
-
         }
 
-        console.log(
-        "Profile Loaded",
-        snap.val()
-        );
-
-    }
-
-    catch(error){
-
-        console.error(error);
-
-        showToast(
-        "Failed to load profile",
-        "error"
-        );
-
-    }
-
-}
-
-/*=========================================
-Startup
-=========================================*/
-
-window.addEventListener("load",()=>{
-
-    hideLoading();
-
-    console.log("================================");
-    console.log("🚀 VIEWORA UPLOAD V10");
-    console.log("✅ Firebase Ready");
-    console.log("✅ Authentication Ready");
-    console.log("✅ Storage Ready");
-    console.log("✅ Database Ready");
-    console.log("================================");
-
-});
-/*=========================================
-        VIEWORA V10 PREMIUM
-            upload.js
-            PART 2
-Drag & Drop • File Picker
-Preview • Validation
-=========================================*/
-
-/*=========================================
-Supported Files
-=========================================*/
-
-const IMAGE_TYPES=[
-"image/jpeg",
-"image/jpg",
-"image/png",
-"image/webp"
-];
-
-const VIDEO_TYPES=[
-"video/mp4",
-"video/webm",
-"video/quicktime",
-"video/x-matroska"
-];
-
-const MAX_IMAGE_SIZE=10*1024*1024;
-const MAX_VIDEO_SIZE=500*1024*1024;
-
-/*=========================================
-Choose File
-=========================================*/
-
-if(dropZone){
-
-dropZone.addEventListener("click",()=>{
-
-mediaInput.click();
-
-});
-
-}
-
-if(mediaInput){
-
-mediaInput.addEventListener(
-
-"change",
-
-e=>{
-
-if(e.target.files.length){
-
-handleSelectedFile(
-
-e.target.files[0]
-
-);
-
-}
-
-});
-
-}
-
-/*=========================================
-Drag Events
-=========================================*/
-
-["dragenter","dragover"].forEach(event=>{
-
-dropZone.addEventListener(event,e=>{
-
-e.preventDefault();
-
-dropZone.classList.add("dragover");
-
-});
-
-});
-
-["dragleave","dragend"].forEach(event=>{
-
-dropZone.addEventListener(event,e=>{
-
-e.preventDefault();
-
-dropZone.classList.remove("dragover");
-
-});
-
-});
-
-dropZone.addEventListener("drop",e=>{
-
-e.preventDefault();
-
-dropZone.classList.remove("dragover");
-
-if(e.dataTransfer.files.length){
-
-handleSelectedFile(
-
-e.dataTransfer.files[0]
-
-);
-
-}
-
-});
-
-/*=========================================
-Handle Selected File
-=========================================*/
-
-function handleSelectedFile(file){
-
-if(!file) return;
-
-const isImage=
-
-IMAGE_TYPES.includes(file.type);
-
-const isVideo=
-
-VIDEO_TYPES.includes(file.type);
-
-if(!isImage && !isVideo){
-
-showToast(
-
-"Unsupported file type",
-
-"error"
-
-);
-
-return;
-
-}
-
-if(
-
-isImage &&
-
-file.size>MAX_IMAGE_SIZE
-
-){
-
-showToast(
-
-"Image must be under 10 MB",
-
-"error"
-
-);
-
-return;
-
-}
-
-if(
-
-isVideo &&
-
-file.size>MAX_VIDEO_SIZE
-
-){
-
-showToast(
-
-"Video must be under 500 MB",
-
-"error"
-
-);
-
-return;
-
-}
-
-selectedFile=file;
-
-showPreview(file);
-
-updateFileInfo(file);
-
-}
-
-/*=========================================
-Preview
-=========================================*/
-
-function showPreview(file){
-
-const url=
-
-URL.createObjectURL(file);
-
-previewImage.classList.add("hidden");
-
-previewVideo.classList.add("hidden");
-
-if(file.type.startsWith("image")){
-
-previewImage.src=url;
-
-previewImage.classList.remove("hidden");
-
-}
-
-if(file.type.startsWith("video")){
-
-previewVideo.src=url;
-
-previewVideo.load();
-
-previewVideo.classList.remove("hidden");
-
-}
-
-}
-
-/*=========================================
-File Information
-=========================================*/
-
-function updateFileInfo(file){
-
-const fileName=
-
-document.getElementById("fileName");
-
-const fileSize=
-
-document.getElementById("videoSize");
-
-const badge=
-
-document.getElementById("fileTypeBadge");
-
-if(fileName){
-
-fileName.textContent=file.name;
-
-}
-
-if(fileSize){
-
-fileSize.textContent=
-
-formatBytes(file.size);
-
-}
-
-if(badge){
-
-badge.textContent=
-
-file.type.startsWith("video")
-
-?"VIDEO"
-
-:"IMAGE";
-
-}
-
-}
-
-/*=========================================
-Format Bytes
-=========================================*/
-
-function formatBytes(bytes){
-
-if(bytes===0) return "0 Bytes";
-
-const k=1024;
-
-const sizes=[
-
-"Bytes",
-
-"KB",
-
-"MB",
-
-"GB"
-
-];
-
-const i=Math.floor(
-
-Math.log(bytes)/
-
-Math.log(k)
-
-);
-
-return(
-
-bytes/
-
-Math.pow(k,i)
-
-).toFixed(2)
-
-+" "+sizes[i];
-
-}
-
-/*=========================================
-Reset Preview
-=========================================*/
-
-function resetPreview(){
-
-selectedFile=null;
-
-mediaInput.value="";
-
-previewImage.src="";
-
-previewVideo.src="";
-
-previewImage.classList.add("hidden");
-
-previewVideo.classList.add("hidden");
-
-}
-
-/*=========================================
-Cancel Upload
-=========================================*/
-
-if(cancelBtn){
-
-cancelBtn.addEventListener(
-
-"click",
-
-()=>{
-
-resetPreview();
-
-showToast(
-
-"Selection cleared"
-
-);
-
-});
-
-}
-
-console.log("✅ Upload Part 2 Loaded");
-/*=========================================
-        VIEWORA V10 PREMIUM
-            upload.js
-            PART 3
-Thumbnail • Video Metadata
-Hashtags • Mentions • Counters
-=========================================*/
-
-"use strict";
-
-/*=========================================
-DOM Elements
-=========================================*/
-
-const thumbnailPreview =
-document.getElementById("thumbnailPreview");
-
-const titleCounter =
-document.getElementById("titleCounter");
-
-const captionCounter =
-document.getElementById("captionCounter");
-
-const durationText =
-document.getElementById("videoDuration");
-
-const resolutionText =
-document.getElementById("videoResolution");
-
-const hashtagPreview =
-document.getElementById("hashtagPreview");
-
-const mentionPreview =
-document.getElementById("mentionPreview");
-
-/*=========================================
-Thumbnail Upload
-=========================================*/
-
-if(thumbnailInput){
-
-thumbnailInput.addEventListener(
-"change",
-handleThumbnail
-);
-
-}
-
-function handleThumbnail(e){
-
-const file=e.target.files[0];
-
-if(!file) return;
-
-if(!file.type.startsWith("image")){
-
-showToast(
-"Thumbnail must be an image",
-"error"
-);
-
-return;
-
-}
-
-selectedThumbnail=file;
-
-const url=
-URL.createObjectURL(file);
-
-thumbnailPreview.innerHTML=
-`<img src="${url}" alt="Thumbnail">`;
-
-}
-
-/*=========================================
-Video Metadata
-=========================================*/
-
-if(previewVideo){
-
-previewVideo.addEventListener(
-
-"loadedmetadata",
-
-()=>{
-
-const width=
-previewVideo.videoWidth;
-
-const height=
-previewVideo.videoHeight;
-
-const duration=
-previewVideo.duration;
-
-if(durationText){
-
-durationText.textContent=
-
-formatDuration(duration);
-
-}
-
-if(resolutionText){
-
-resolutionText.textContent=
-
-width+" × "+height;
-
-}
-
-}
-
-);
-
-}
-
-/*=========================================
-Duration Format
-=========================================*/
-
-function formatDuration(seconds){
-
-seconds=Math.floor(seconds);
-
-const min=
-Math.floor(seconds/60);
-
-const sec=
-seconds%60;
-
-return String(min).padStart(2,"0")
-
-+":"
-
-+String(sec).padStart(2,"0");
-
-}
-
-/*=========================================
-Auto Thumbnail
-=========================================*/
-
-function generateVideoThumbnail(){
-
-if(!selectedFile) return;
-
-if(!selectedFile.type.startsWith("video"))
-
-return;
-
-const canvas=
-document.createElement("canvas");
-
-const ctx=
-canvas.getContext("2d");
-
-previewVideo.currentTime=1;
-
-previewVideo.onseeked=()=>{
-
-canvas.width=
-previewVideo.videoWidth;
-
-canvas.height=
-previewVideo.videoHeight;
-
-ctx.drawImage(
-
-previewVideo,
-
-0,
-
-0,
-
-canvas.width,
-
-canvas.height
-
-);
-
-thumbnailPreview.innerHTML="";
-
-thumbnailPreview.appendChild(canvas);
-
-};
-
-}
-
-/*=========================================
-Character Counter
-=========================================*/
-
-if(titleInput){
-
-titleInput.addEventListener(
-
-"input",
-
-()=>{
-
-if(titleCounter){
-
-titleCounter.textContent=
-
-titleInput.value.length
-
-+"/100";
-
-}
-
-}
-
-);
-
-}
-
-if(captionInput){
-
-captionInput.addEventListener(
-
-"input",
-
-()=>{
-
-if(captionCounter){
-
-captionCounter.textContent=
-
-captionInput.value.length
-
-+"/5000";
-
-}
-
-extractHashtags();
-
-extractMentions();
-
-}
-
-);
-
-}
-
-/*=========================================
-Hashtags
-=========================================*/
-
-function extractHashtags(){
-
-const tags=
-
-captionInput.value.match(
-
-/#[a-zA-Z0-9_]+/g
-
-)||[];
-
-if(hashtagPreview){
-
-hashtagPreview.innerHTML=
-
-tags.map(tag=>
-
-`<span>${tag}</span>`
-
-).join("");
-
-}
-
-return tags;
-
-}
-
-/*=========================================
-Mentions
-=========================================*/
-
-function extractMentions(){
-
-const mentions=
-
-captionInput.value.match(
-
-/@[a-zA-Z0-9_]+/g
-
-)||[];
-
-if(mentionPreview){
-
-mentionPreview.innerHTML=
-
-mentions.map(user=>
-
-`<span>${user}</span>`
-
-).join("");
-
-}
-
-return mentions;
-
-}
-
-/*=========================================
-Auto Generate Thumbnail
-=========================================*/
-
-if(previewVideo){
-
-previewVideo.addEventListener(
-
-"canplay",
-
-generateVideoThumbnail
-
-);
-
-}
-
-console.log(
-"✅ Upload Part 3 Loaded"
-);
-/*=========================================
-        VIEWORA V10 PREMIUM
-            upload.js
-            PART 4
-Firebase Storage Upload
-Progress • Speed • ETA • Cancel
-=========================================*/
-
-"use strict";
-
-/*=========================================
-Progress Elements
-=========================================*/
-
-const progressSection =
-document.getElementById("progressSection");
-
-const progressFill =
-document.getElementById("progressFill");
-
-const progressPercent =
-document.getElementById("progressPercent");
-
-const uploadSpeed =
-document.getElementById("uploadSpeed");
-
-const remainingTime =
-document.getElementById("remainingTime");
-
-/*=========================================
-Upload Variables
-=========================================*/
-
-let uploadTask = null;
-let uploadStartTime = 0;
-
-/*=========================================
-Upload File
-=========================================*/
-
-async function uploadMediaFile(){
-
-    if(!selectedFile){
-
-        showToast(
-        "Please select a file",
-        "error"
-        );
-
-        return null;
-
-    }
-
-    if(!currentUser){
-
-        showToast(
-        "Login required",
-        "error"
-        );
-
-        return null;
-
-    }
-
-    uploading = true;
-
-    showLoading();
-
-    progressSection?.classList.remove("hidden");
-
-    uploadStartTime = Date.now();
-
-    const extension =
-    selectedFile.name.split(".").pop();
-
-    const fileName =
-    Date.now()+"."+extension;
-
-    const folder =
-    selectedFile.type.startsWith("video")
-    ? "videos"
-    : "images";
-
-    const storageRef =
-    storage.ref(
-    folder+"/"+
-    currentUser.uid+"/"+
-    fileName
-    );
-
-    uploadTask =
-    storageRef.put(selectedFile);
-
-    return new Promise((resolve,reject)=>{
-
-        uploadTask.on(
-
-        "state_changed",
-
-        snapshot=>{
-
-            const percent =
-            Math.floor(
-
-            (snapshot.bytesTransferred/
-
-            snapshot.totalBytes)
-
-            *100
-
+        if (!CLOUDINARY_UPLOAD_PRESET) {
+            throw new Error(
+                "Cloudinary Upload Preset is not configured."
             );
+        }
 
-            if(progressFill){
-
-                progressFill.style.width =
-                percent+"%";
-
-            }
-
-            if(progressPercent){
-
-                progressPercent.textContent =
-                percent+"%";
-
-            }
-
-            updateUploadStats(snapshot);
-
-        },
-
-        error=>{
-
-            hideLoading();
-
-            uploading = false;
-
-            console.error(error);
-
-            showToast(
-
-            error.message,
-
-            "error"
-
+        if (
+            CLOUDINARY_CLOUD_NAME.includes("<") ||
+            CLOUDINARY_UPLOAD_PRESET.includes("<")
+        ) {
+            throw new Error(
+                "Cloudinary configuration is incomplete."
             );
-
-            reject(error);
-
-        },
-
-        async()=>{
-
-            const downloadURL =
-
-            await uploadTask.snapshot.ref
-
-            .getDownloadURL();
-
-            hideLoading();
-
-            uploading = false;
-
-            showToast(
-
-            "Media uploaded"
-
-            );
-
-            resolve(downloadURL);
-
-        });
-
-    });
-
-}
-
-/*=========================================
-Upload Statistics
-=========================================*/
-
-function updateUploadStats(snapshot){
-
-    const elapsed =
-
-    (Date.now()-uploadStartTime)
-
-    /1000;
-
-    if(elapsed<=0) return;
-
-    const speed =
-
-    snapshot.bytesTransferred
-
-    /elapsed;
-
-    const remaining =
-
-    snapshot.totalBytes-
-
-    snapshot.bytesTransferred;
-
-    const eta =
-
-    remaining/
-
-    speed;
-
-    if(uploadSpeed){
-
-        uploadSpeed.textContent =
-
-        formatSpeed(speed);
-
+        }
     }
 
-    if(remainingTime){
+    /* =====================================================
+       TOAST
+    ===================================================== */
 
-        remainingTime.textContent =
+    function showToast(message, type = "success") {
 
-        formatETA(eta);
+        if (!toast || !toastText) return;
 
+        toastText.textContent = message;
+
+        if (toastIcon) {
+
+            toastIcon.className =
+                type === "error"
+                    ? "fa-solid fa-circle-xmark"
+                    : "fa-solid fa-circle-check";
+        }
+
+        toast.classList.remove("hidden");
+
+        setTimeout(() => {
+            toast.classList.add("hidden");
+        }, 3500);
     }
 
-}
+    /* =====================================================
+       ERROR MODAL
+    ===================================================== */
 
-/*=========================================
-Speed Formatter
-=========================================*/
+    function showUploadError(message) {
 
-function formatSpeed(bytes){
+        console.error("❌ Upload Error:", message);
 
-    if(bytes<1024)
+        if (uploadErrorMessage) {
+            uploadErrorMessage.textContent = message;
+        }
 
-    return bytes.toFixed(0)
-
-    +" B/s";
-
-    if(bytes<1024*1024)
-
-    return(
-
-    bytes/1024
-
-    ).toFixed(1)
-
-    +" KB/s";
-
-    return(
-
-    bytes/
-
-    (1024*1024)
-
-    ).toFixed(2)
-
-    +" MB/s";
-
-}
-
-/*=========================================
-ETA Formatter
-=========================================*/
-
-function formatETA(sec){
-
-    sec=Math.max(0,Math.floor(sec));
-
-    const m=Math.floor(sec/60);
-
-    const s=sec%60;
-
-    return
-
-    String(m).padStart(2,"0")
-
-    +":"
-
-    +String(s).padStart(2,"0");
-
-}
-
-/*=========================================
-Cancel Upload
-=========================================*/
-
-function cancelUpload(){
-
-    if(uploadTask){
-
-        uploadTask.cancel();
-
-        uploading=false;
+        if (failedModal) {
+            failedModal.classList.remove("hidden");
+        }
 
         hideLoading();
-
-        showToast(
-
-        "Upload cancelled",
-
-        "error"
-
-        );
-
     }
 
-}
+    function closeUploadError() {
 
-if(cancelBtn){
-
-cancelBtn.addEventListener(
-
-"click",
-
-()=>{
-
-if(uploading){
-
-cancelUpload();
-
-}else{
-
-resetPreview();
-
-}
-
-});
-
-}
-
-/*=========================================
-Retry Upload
-=========================================*/
-
-async function retryUpload(){
-
-    if(!selectedFile){
-
-        showToast(
-
-        "No file selected",
-
-        "error"
-
-        );
-
-        return;
-
+        if (failedModal) {
+            failedModal.classList.add("hidden");
+        }
     }
 
-    try{
+    /* =====================================================
+       LOADING
+    ===================================================== */
 
-        await uploadMediaFile();
+    function showLoading(text = "Uploading...") {
 
-    }
+        if (!loadingOverlay) return;
 
-    catch(error){
+        const heading =
+            loadingOverlay.querySelector("h3");
 
-        console.error(error);
-
-    }
-
-}
-
-console.log("✅ Upload Part 4 Loaded");
-/*=========================================
-        VIEWORA V10 PREMIUM
-            upload.js
-            PART 5
-Realtime Database Save
-=========================================*/
-
-"use strict";
-
-/*=========================================
-Save Post
-=========================================*/
-
-async function publishPost(mediaURL, thumbnailURL = "") {
-
-    try {
-
-        const user = auth.currentUser;
-
-        if (!user) {
-            throw new Error("User not logged in");
+        if (heading) {
+            heading.textContent = text;
         }
 
-        const postRef = db.ref("posts").push();
-        const postId = postRef.key;
+        loadingOverlay.classList.remove("hidden");
+    }
 
-        const title = titleInput.value.trim();
-        const caption = captionInput.value.trim();
+    function hideLoading() {
 
-        const hashtags =
-            caption.match(/#[a-zA-Z0-9_]+/g) || [];
+        if (loadingOverlay) {
+            loadingOverlay.classList.add("hidden");
+        }
+    }
 
-        const mentions =
-            caption.match(/@[a-zA-Z0-9_]+/g) || [];
+    /* =====================================================
+       PROGRESS
+    ===================================================== */
 
-        const mediaType =
-            selectedFile.type.startsWith("video")
-            ? "video"
-            : "image";
+    function updateProgress(percent, speed = "0 MB/s", remaining = "Calculating...") {
 
-        const postData = {
+        percent = Math.max(
+            0,
+            Math.min(100, Math.round(percent))
+        );
 
-            postId,
+        if (progressSection) {
+            progressSection.classList.remove("hidden");
+        }
+
+        if (progressFill) {
+            progressFill.style.width = `${percent}%`;
+        }
+
+        if (progressPercent) {
+            progressPercent.textContent = `${percent}%`;
+        }
+
+        if (uploadSpeed) {
+            uploadSpeed.textContent = speed;
+        }
+
+        if (remainingTime) {
+            remainingTime.textContent = remaining;
+        }
+    }
+
+    function resetProgress() {
+
+        if (progressSection) {
+            progressSection.classList.add("hidden");
+        }
+
+        updateProgress(0);
+    }
+
+    /* =====================================================
+       FILE SIZE
+    ===================================================== */
+
+    function formatBytes(bytes) {
+
+        if (!bytes) return "0 MB";
+
+        const units = [
+            "Bytes",
+            "KB",
+            "MB",
+            "GB"
+        ];
+
+        const index =
+            Math.floor(
+                Math.log(bytes) /
+                Math.log(1024)
+            );
+
+        return (
+            parseFloat(
+                (bytes /
+                    Math.pow(1024, index))
+                    .toFixed(2)
+            ) +
+            " " +
+            units[index]
+        );
+    }
+
+    /* =====================================================
+       TIME
+    ===================================================== */
+
+    function formatDuration(seconds) {
+
+        if (!seconds || !isFinite(seconds)) {
+            return "00:00";
+        }
+
+        seconds = Math.floor(seconds);
+
+        const minutes =
+            Math.floor(seconds / 60);
+
+        const secs =
+            seconds % 60;
+
+        return (
+            String(minutes).padStart(2, "0") +
+            ":" +
+            String(secs).padStart(2, "0")
+        );
+    }
+
+    /* =====================================================
+       MEDIA TYPE
+    ===================================================== */
+
+    function detectType(file) {
+
+        if (!file) {
+            return "unknown";
+        }
+
+        if (file.type.startsWith("image/")) {
+            return "photo";
+        }
+
+        if (file.type.startsWith("video/")) {
+            return "video";
+        }
+
+        return "unknown";
+    }
+
+    /* =====================================================
+       VIDEO DURATION
+    ===================================================== */
+
+    function getVideoDuration(file) {
+
+        return new Promise((resolve, reject) => {
+
+            const video =
+                document.createElement("video");
+
+            const objectURL =
+                URL.createObjectURL(file);
+
+            video.preload = "metadata";
+
+            video.onloadedmetadata = () => {
+
+                const duration =
+                    video.duration;
+
+                URL.revokeObjectURL(objectURL);
+
+                resolve(duration);
+            };
+
+            video.onerror = () => {
+
+                URL.revokeObjectURL(objectURL);
+
+                reject(
+                    new Error(
+                        "Unable to read video duration."
+                    )
+                );
+            };
+
+            video.src = objectURL;
+        });
+    }
+
+    /* =====================================================
+       CLASSIFY MEDIA
+    ===================================================== */
+
+    async function classifyMedia(file) {
+
+        const type =
+            detectType(file);
+
+        if (type === "photo") {
+
+            detectedMediaType =
+                "photo_post";
+
+            detectedDuration = 0;
+
+            return;
+        }
+
+        if (type === "video") {
+
+            const duration =
+                await getVideoDuration(file);
+
+            detectedDuration =
+                duration;
+
+            if (duration <= SHORT_MAX_DURATION) {
+
+                detectedMediaType =
+                    "short";
+
+            } else {
+
+                detectedMediaType =
+                    "video";
+            }
+
+            return;
+        }
+
+        throw new Error(
+            "Unsupported file type. Please select an image or video."
+        );
+    }
+
+    /* =====================================================
+       MEDIA LABEL
+    ===================================================== */
+
+    function getMediaLabel() {
+
+        switch (detectedMediaType) {
+
+            case "photo_post":
+                return "PHOTO POST";
+
+            case "short":
+                return "SHORT";
+
+            case "video":
+                return "LONG VIDEO";
+
+            default:
+                return "UNKNOWN";
+        }
+    }
+
+    /* =====================================================
+       PREVIEW
+    ===================================================== */
+
+    async function previewFile(file) {
+
+        if (!file) return;
+
+        selectedFile = file;
+
+        try {
+
+            await classifyMedia(file);
+
+            const mediaType =
+                detectType(file);
+
+            if (previewSection) {
+                previewSection.classList.remove("hidden");
+            }
+
+            if (previewImage) {
+                previewImage.classList.add("hidden");
+                previewImage.removeAttribute("src");
+            }
+
+            if (previewVideo) {
+                previewVideo.classList.add("hidden");
+                previewVideo.removeAttribute("src");
+                previewVideo.load();
+            }
+
+            if (mediaType === "photo") {
+
+                const url =
+                    URL.createObjectURL(file);
+
+                if (previewImage) {
+
+                    previewImage.src = url;
+
+                    previewImage.classList.remove(
+                        "hidden"
+                    );
+                }
+
+            } else if (mediaType === "video") {
+
+                const url =
+                    URL.createObjectURL(file);
+
+                if (previewVideo) {
+
+                    previewVideo.src = url;
+
+                    previewVideo.classList.remove(
+                        "hidden"
+                    );
+                }
+            }
+
+            if (fileName) {
+                fileName.textContent =
+                    file.name;
+            }
+
+            /*
+               First matching elements because
+               current HTML contains duplicate IDs.
+            */
+
+            const sizeElements =
+                document.querySelectorAll(
+                    "#videoSize"
+                );
+
+            sizeElements.forEach(el => {
+                el.textContent =
+                    formatBytes(file.size);
+            });
+
+            const typeElements =
+                document.querySelectorAll(
+                    "#fileTypeBadge"
+                );
+
+            typeElements.forEach(el => {
+                el.textContent =
+                    getMediaLabel();
+            });
+
+            const durationElements =
+                document.querySelectorAll(
+                    "#videoDuration"
+                );
+
+            durationElements.forEach(el => {
+
+                el.textContent =
+                    detectedDuration
+                        ? formatDuration(
+                            detectedDuration
+                        )
+                        : "--";
+            });
+
+            if (
+                detectedMediaType ===
+                "photo_post"
+            ) {
+
+                showToast(
+                    "Photo detected — it will be published as a Post."
+                );
+
+            } else if (
+                detectedMediaType ===
+                "short"
+            ) {
+
+                showToast(
+                    "Short detected — this will be published as a Short."
+                );
+
+            } else {
+
+                showToast(
+                    "Long video detected — this will be published as a Video."
+                );
+            }
+
+        } catch (error) {
+
+            console.error(
+                "Preview error:",
+                error
+            );
+
+            selectedFile = null;
+
+            showUploadError(
+                error.message ||
+                "Unable to process this file."
+            );
+        }
+    }
+
+    /* =====================================================
+       FILE INPUT
+    ===================================================== */
+
+    browseBtn?.addEventListener(
+        "click",
+        () => mediaInput.click()
+    );
+
+    mediaInput.addEventListener(
+        "change",
+        async event => {
+
+            const file =
+                event.target.files?.[0];
+
+            if (file) {
+                await previewFile(file);
+            }
+        }
+    );
+
+    /* =====================================================
+       DRAG & DROP
+    ===================================================== */
+
+    if (dropZone) {
+
+        [
+            "dragenter",
+            "dragover"
+        ].forEach(eventName => {
+
+            dropZone.addEventListener(
+                eventName,
+                event => {
+
+                    event.preventDefault();
+
+                    dropZone.classList.add(
+                        "dragging"
+                    );
+                }
+            );
+        });
+
+        [
+            "dragleave",
+            "drop"
+        ].forEach(eventName => {
+
+            dropZone.addEventListener(
+                eventName,
+                event => {
+
+                    event.preventDefault();
+
+                    dropZone.classList.remove(
+                        "dragging"
+                    );
+                }
+            );
+        });
+
+        dropZone.addEventListener(
+            "drop",
+            async event => {
+
+                const file =
+                    event.dataTransfer
+                        ?.files?.[0];
+
+                if (file) {
+                    await previewFile(file);
+                }
+            }
+        );
+    }
+
+    /* =====================================================
+       CHANGE FILE
+    ===================================================== */
+
+    $("changeFileBtn")?.addEventListener(
+        "click",
+        () => mediaInput.click()
+    );
+
+    /* =====================================================
+       REMOVE FILE
+    ===================================================== */
+
+    $("removeFileBtn")?.addEventListener(
+        "click",
+        () => {
+
+            selectedFile = null;
+            uploadedMedia = null;
+            detectedMediaType = null;
+            detectedDuration = 0;
+
+            mediaInput.value = "";
+
+            if (previewSection) {
+                previewSection.classList.add(
+                    "hidden"
+                );
+            }
+
+            if (previewImage) {
+                previewImage.src = "";
+                previewImage.classList.add(
+                    "hidden"
+                );
+            }
+
+            if (previewVideo) {
+                previewVideo.pause();
+                previewVideo.src = "";
+                previewVideo.classList.add(
+                    "hidden"
+                );
+            }
+
+            showToast(
+                "File removed."
+            );
+        }
+    );
+
+    /* =====================================================
+       THUMBNAIL
+    ===================================================== */
+
+    chooseThumbnailBtn?.addEventListener(
+        "click",
+        () => thumbnailInput?.click()
+    );
+
+    thumbnailInput?.addEventListener(
+        "change",
+        event => {
+
+            const file =
+                event.target.files?.[0];
+
+            if (!file) return;
+
+            if (!file.type.startsWith("image/")) {
+
+                showToast(
+                    "Please select an image thumbnail.",
+                    "error"
+                );
+
+                return;
+            }
+
+            selectedThumbnail = file;
+
+            const url =
+                URL.createObjectURL(file);
+
+            if (thumbnailImage) {
+                thumbnailImage.src = url;
+            }
+
+            showToast(
+                "Thumbnail selected."
+            );
+        }
+    );
+
+    removeThumbnailBtn?.addEventListener(
+        "click",
+        () => {
+
+            selectedThumbnail = null;
+
+            if (thumbnailInput) {
+                thumbnailInput.value = "";
+            }
+
+            if (thumbnailImage) {
+
+                thumbnailImage.src =
+                    "assets/default-thumbnail.png";
+            }
+
+            showToast(
+                "Thumbnail removed."
+            );
+        }
+    );
+
+    /* =====================================================
+       COUNTERS
+    ===================================================== */
+
+    titleInput?.addEventListener(
+        "input",
+        () => {
+
+            if (titleCounter) {
+
+                titleCounter.textContent =
+                    titleInput.value.length;
+            }
+        }
+    );
+
+    captionInput?.addEventListener(
+        "input",
+        () => {
+
+            if (captionCounter) {
+
+                captionCounter.textContent =
+                    captionInput.value.length;
+            }
+        }
+    );
+
+    /* =====================================================
+       HASHTAGS
+    ===================================================== */
+
+    hashtagsInput?.addEventListener(
+        "input",
+        () => {
+
+            const preview =
+                $("hashtagPreview");
+
+            if (!preview) return;
+
+            const tags =
+                hashtagsInput.value
+                    .split(/[\s,]+/)
+                    .filter(Boolean)
+                    .map(tag =>
+                        tag.startsWith("#")
+                            ? tag
+                            : "#" + tag
+                    );
+
+            preview.innerHTML =
+                tags
+                    .map(tag =>
+                        `<span>${escapeHTML(tag)}</span>`
+                    )
+                    .join("");
+        }
+    );
+
+    /* =====================================================
+       MENTIONS
+    ===================================================== */
+
+    mentionsInput?.addEventListener(
+        "input",
+        () => {
+
+            const preview =
+                $("mentionPreview");
+
+            if (!preview) return;
+
+            const mentions =
+                mentionsInput.value
+                    .split(/[\s,]+/)
+                    .filter(Boolean)
+                    .map(username =>
+                        username.startsWith("@")
+                            ? username
+                            : "@" + username
+                    );
+
+            preview.innerHTML =
+                mentions
+                    .map(username =>
+                        `<span>${escapeHTML(username)}</span>`
+                    )
+                    .join("");
+        }
+    );
+
+    /* =====================================================
+       HTML ESCAPE
+    ===================================================== */
+
+    function escapeHTML(value) {
+
+        return String(value)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+
+    /* =====================================================
+       CLOUDINARY UPLOAD
+    ===================================================== */
+
+    function uploadToCloudinary(file) {
+
+        return new Promise(
+            (resolve, reject) => {
+
+                try {
+
+                    checkCloudinaryConfig();
+
+                    const formData =
+                        new FormData();
+
+                    formData.append(
+                        "file",
+                        file
+                    );
+
+                    formData.append(
+                        "upload_preset",
+                        CLOUDINARY_UPLOAD_PRESET
+                    );
+
+                    const xhr =
+                        new XMLHttpRequest();
+
+                    uploadXHR = xhr;
+
+                    const startedAt =
+                        Date.now();
+
+                    xhr.open(
+                        "POST",
+                        CLOUDINARY_UPLOAD_URL
+                    );
+
+                    xhr.upload.onprogress =
+                        event => {
+
+                            if (!event.lengthComputable)
+                                return;
+
+                            const percent =
+                                (
+                                    event.loaded /
+                                    event.total
+                                ) * 100;
+
+                            const elapsed =
+                                (
+                                    Date.now() -
+                                    startedAt
+                                ) / 1000;
+
+                            const speed =
+                                elapsed > 0
+                                    ? event.loaded /
+                                      elapsed
+                                    : 0;
+
+                            const remainingBytes =
+                                event.total -
+                                event.loaded;
+
+                            const remaining =
+                                speed > 0
+                                    ? remainingBytes /
+                                      speed
+                                    : 0;
+
+                            updateProgress(
+                                percent,
+                                formatBytes(
+                                    speed
+                                ) + "/s",
+                                remaining > 0
+                                    ? Math.ceil(
+                                        remaining
+                                    ) + " sec"
+                                    : "Finishing..."
+                            );
+                        };
+
+                    xhr.onload = () => {
+
+                        uploadXHR = null;
+
+                        let response = null;
+
+                        try {
+                            response =
+                                JSON.parse(
+                                    xhr.responseText
+                                );
+                        } catch {
+                            response = null;
+                        }
+
+                        if (
+                            xhr.status >= 200 &&
+                            xhr.status < 300 &&
+                            response
+                        ) {
+
+                            resolve(response);
+
+                        } else {
+
+                            console.error(
+                                "Cloudinary response:",
+                                response
+                            );
+
+                            reject(
+                                new Error(
+                                    response?.error?.message ||
+                                    "Cloudinary upload failed."
+                                )
+                            );
+                        }
+                    };
+
+                    xhr.onerror = () => {
+
+                        uploadXHR = null;
+
+                        reject(
+                            new Error(
+                                "Network error while uploading to Cloudinary."
+                            )
+                        );
+                    };
+
+                    xhr.onabort = () => {
+
+                        uploadXHR = null;
+
+                        reject(
+                            new Error(
+                                "Upload cancelled."
+                            )
+                        );
+                    };
+
+                    xhr.send(formData);
+
+                } catch (error) {
+
+                    reject(error);
+                }
+            }
+        );
+    }
+
+    /* =====================================================
+       UPLOAD THUMBNAIL
+    ===================================================== */
+
+    async function uploadThumbnailIfNeeded() {
+
+        if (!selectedThumbnail) {
+            return null;
+        }
+
+        showLoading(
+            "Uploading thumbnail..."
+        );
+
+        const result =
+            await uploadToCloudinary(
+                selectedThumbnail
+            );
+
+        return {
+            url: result.secure_url,
+            publicId: result.public_id
+        };
+    }
+
+    /* =====================================================
+       GET CURRENT USER
+    ===================================================== */
+
+    async function getUserForPost() {
+
+        if (
+            typeof auth === "undefined" ||
+            typeof db === "undefined"
+        ) {
+
+            throw new Error(
+                "Firebase is not loaded. Check firebase.js."
+            );
+        }
+
+        const user =
+            auth.currentUser;
+
+        if (!user) {
+
+            throw new Error(
+                "Please login before publishing."
+            );
+        }
+
+        let profile = {};
+
+        try {
+
+            const snapshot =
+                await db
+                    .ref("users/" + user.uid)
+                    .once("value");
+
+            if (snapshot.exists()) {
+                profile = snapshot.val() || {};
+            }
+
+        } catch (error) {
+
+            console.warn(
+                "Could not read user profile:",
+                error
+            );
+        }
+
+        return {
+            uid: user.uid,
+            email: user.email || "",
+            username:
+                profile.username ||
+                user.displayName ||
+                "user",
+            name:
+                profile.name ||
+                profile.fullName ||
+                user.displayName ||
+                "Viewora User",
+            profilePhoto:
+                profile.profilePhoto ||
+                user.photoURL ||
+                "assets/default-avatar.png"
+        };
+    }
+
+    /* =====================================================
+       CREATE POST DATA
+    ===================================================== */
+
+    function createPostData(
+        user,
+        media,
+        thumbnail
+    ) {
+
+        const postId =
+            db.ref("posts").push().key;
+
+        return {
+            id: postId,
 
             uid: user.uid,
 
-            username: currentUserData.username,
+            username: user.username,
 
-            fullName: currentUserData.fullName,
+            userName: user.name,
 
-            profilePhoto: currentUserData.profilePhoto,
+            profilePhoto: user.profilePhoto,
 
-            title,
+            title:
+                titleInput?.value.trim() ||
+                "Untitled",
 
-            caption,
+            caption:
+                captionInput?.value.trim() ||
+                "",
 
-            hashtags,
+            hashtags:
+                parseTags(
+                    hashtagsInput?.value || "",
+                    "#"
+                ),
 
-            mentions,
+            mentions:
+                parseTags(
+                    mentionsInput?.value || "",
+                    "@"
+                ),
 
-            mediaType,
+            category:
+                categoryInput?.value ||
+                "general",
 
-            mediaURL,
+            visibility:
+                visibilityInput?.value ||
+                "public",
 
-            thumbnailURL,
+            audience:
+                audienceInput?.value ||
+                "everyone",
 
-            duration: previewVideo?.duration || 0,
+            language:
+                languageInput?.value ||
+                "english",
 
-            visibility: "public",
+            mediaType:
+                "photo",
 
-            commentsEnabled: true,
+            contentType:
+                "post",
 
-            downloadAllowed: false,
+            mediaUrl:
+                media.url,
 
-            views: 0,
+            secureUrl:
+                media.url,
+
+            publicId:
+                media.publicId,
+
+            resourceType:
+                media.resourceType ||
+                "image",
+
+            format:
+                media.format ||
+                "",
+
+            width:
+                media.width ||
+                null,
+
+            height:
+                media.height ||
+                null,
+
+            duration: 0,
+
+            thumbnailUrl:
+                thumbnail?.url ||
+                media.url,
+
+            thumbnailPublicId:
+                thumbnail?.publicId ||
+                media.publicId,
+
+            location:
+                locationInput?.value.trim() ||
+                "",
+
+            scheduledAt:
+                scheduleDate?.value ||
+                null,
+
+            settings: {
+                allowComments:
+                    !!allowComments?.checked,
+
+                allowDownload:
+                    !!allowDownload?.checked,
+
+                notifyFollowers:
+                    !!notifyFollowers?.checked,
+
+                ageRestricted:
+                    !!ageRestricted?.checked,
+
+                allowRemix:
+                    !!allowRemix?.checked,
+
+                allowShare:
+                    !!allowShare?.checked
+            },
 
             likes: 0,
 
@@ -1390,784 +1290,971 @@ async function publishPost(mediaURL, thumbnailURL = "") {
 
             shares: 0,
 
+            views: 0,
+
+            saved: 0,
+
             createdAt:
-            firebase.database.ServerValue.TIMESTAMP
-
+                firebase.database
+                    .ServerValue
+                    .TIMESTAMP
         };
+    }
 
-        await postRef.set(postData);
+    /* =====================================================
+       CREATE SHORT DATA
+    ===================================================== */
 
-        /*=========================
-        User Posts
-        =========================*/
+    function createShortData(
+        user,
+        media,
+        thumbnail
+    ) {
 
-        await db.ref(
-        "userPosts/" +
-        user.uid + "/" +
-        postId
-        ).set(true);
+        const shortId =
+            db.ref("shorts").push().key;
 
-        /*=========================
-        Home Feed
-        =========================*/
+        return {
+            id: shortId,
 
-        await db.ref(
-        "feeds/home/" +
-        postId
-        ).set(true);
+            uid: user.uid,
 
-        /*=========================
-        Shorts Feed
-        =========================*/
+            username: user.username,
 
-        if (mediaType === "video") {
+            userName: user.name,
 
-            await db.ref(
-            "feeds/shorts/" +
-            postId
-            ).set(true);
+            profilePhoto: user.profilePhoto,
 
+            title:
+                titleInput?.value.trim() ||
+                "Untitled Short",
+
+            caption:
+                captionInput?.value.trim() ||
+                "",
+
+            hashtags:
+                parseTags(
+                    hashtagsInput?.value || "",
+                    "#"
+                ),
+
+            mentions:
+                parseTags(
+                    mentionsInput?.value || "",
+                    "@"
+                ),
+
+            category:
+                categoryInput?.value ||
+                "shorts",
+
+            visibility:
+                visibilityInput?.value ||
+                "public",
+
+            audience:
+                audienceInput?.value ||
+                "everyone",
+
+            language:
+                languageInput?.value ||
+                "english",
+
+            mediaType:
+                "video",
+
+            contentType:
+                "short",
+
+            mediaUrl:
+                media.url,
+
+            secureUrl:
+                media.url,
+
+            publicId:
+                media.publicId,
+
+            resourceType:
+                "video",
+
+            format:
+                media.format ||
+                "",
+
+            width:
+                media.width ||
+                null,
+
+            height:
+                media.height ||
+                null,
+
+            duration:
+                detectedDuration,
+
+            thumbnailUrl:
+                thumbnail?.url ||
+                media.thumbnail_url ||
+                "",
+
+            thumbnailPublicId:
+                thumbnail?.publicId ||
+                "",
+
+            location:
+                locationInput?.value.trim() ||
+                "",
+
+            settings: {
+                allowComments:
+                    !!allowComments?.checked,
+
+                allowDownload:
+                    !!allowDownload?.checked,
+
+                notifyFollowers:
+                    !!notifyFollowers?.checked,
+
+                ageRestricted:
+                    !!ageRestricted?.checked,
+
+                allowRemix:
+                    !!allowRemix?.checked,
+
+                allowShare:
+                    !!allowShare?.checked
+            },
+
+            likes: 0,
+
+            comments: 0,
+
+            shares: 0,
+
+            views: 0,
+
+            createdAt:
+                firebase.database
+                    .ServerValue
+                    .TIMESTAMP
+        };
+    }
+
+    /* =====================================================
+       CREATE LONG VIDEO DATA
+    ===================================================== */
+
+    function createVideoData(
+        user,
+        media,
+        thumbnail
+    ) {
+
+        const videoId =
+            db.ref("videos").push().key;
+
+        return {
+            id: videoId,
+
+            uid: user.uid,
+
+            username: user.username,
+
+            userName: user.name,
+
+            profilePhoto: user.profilePhoto,
+
+            title:
+                titleInput?.value.trim() ||
+                "Untitled Video",
+
+            caption:
+                captionInput?.value.trim() ||
+                "",
+
+            hashtags:
+                parseTags(
+                    hashtagsInput?.value || "",
+                    "#"
+                ),
+
+            mentions:
+                parseTags(
+                    mentionsInput?.value || "",
+                    "@"
+                ),
+
+            category:
+                categoryInput?.value ||
+                "general",
+
+            visibility:
+                visibilityInput?.value ||
+                "public",
+
+            audience:
+                audienceInput?.value ||
+                "everyone",
+
+            language:
+                languageInput?.value ||
+                "english",
+
+            mediaType:
+                "video",
+
+            contentType:
+                "video",
+
+            mediaUrl:
+                media.url,
+
+            secureUrl:
+                media.url,
+
+            publicId:
+                media.publicId,
+
+            resourceType:
+                "video",
+
+            format:
+                media.format ||
+                "",
+
+            width:
+                media.width ||
+                null,
+
+            height:
+                media.height ||
+                null,
+
+            duration:
+                detectedDuration,
+
+            thumbnailUrl:
+                thumbnail?.url ||
+                media.thumbnail_url ||
+                "",
+
+            thumbnailPublicId:
+                thumbnail?.publicId ||
+                "",
+
+            location:
+                locationInput?.value.trim() ||
+                "",
+
+            scheduledAt:
+                scheduleDate?.value ||
+                null,
+
+            settings: {
+                allowComments:
+                    !!allowComments?.checked,
+
+                allowDownload:
+                    !!allowDownload?.checked,
+
+                notifyFollowers:
+                    !!notifyFollowers?.checked,
+
+                ageRestricted:
+                    !!ageRestricted?.checked,
+
+                allowRemix:
+                    !!allowRemix?.checked,
+
+                allowShare:
+                    !!allowShare?.checked
+            },
+
+            likes: 0,
+
+            comments: 0,
+
+            shares: 0,
+
+            views: 0,
+
+            createdAt:
+                firebase.database
+                    .ServerValue
+                    .TIMESTAMP
+        };
+    }
+
+    /* =====================================================
+       TAG PARSER
+    ===================================================== */
+
+    function parseTags(value, prefix) {
+
+        return value
+            .split(/[\s,]+/)
+            .filter(Boolean)
+            .map(tag =>
+                tag.startsWith(prefix)
+                    ? tag.substring(1)
+                    : tag
+            )
+            .filter(Boolean);
+    }
+
+    /* =====================================================
+       SAVE TO FIREBASE
+    ===================================================== */
+
+    async function saveToFirebase(
+        user,
+        media,
+        thumbnail
+    ) {
+
+        let data;
+        let path;
+
+        /* ================================================
+           PHOTO
+        ================================================= */
+
+        if (
+            detectedMediaType ===
+            "photo_post"
+        ) {
+
+            data =
+                createPostData(
+                    user,
+                    media,
+                    thumbnail
+                );
+
+            path =
+                "posts/" + data.id;
         }
 
-        /*=========================
-        Update User Stats
-        =========================*/
+        /* ================================================
+           SHORT
+        ================================================= */
 
-        await db.ref(
-        "users/" + user.uid + "/posts"
-        ).transaction(value => {
+        else if (
+            detectedMediaType ===
+            "short"
+        ) {
 
-            return (value || 0) + 1;
+            data =
+                createShortData(
+                    user,
+                    media,
+                    thumbnail
+                );
 
-        });
+            path =
+                "shorts/" + data.id;
+        }
 
-        showToast(
-        "Post Published Successfully"
-        );
+        /* ================================================
+           LONG VIDEO
+        ================================================= */
 
-        resetUploadForm();
+        else if (
+            detectedMediaType ===
+            "video"
+        ) {
 
+            data =
+                createVideoData(
+                    user,
+                    media,
+                    thumbnail
+                );
+
+            path =
+                "videos/" + data.id;
+        }
+
+        else {
+
+            throw new Error(
+                "Unable to determine content type."
+            );
+        }
+
+        await db
+            .ref(path)
+            .set(data);
+
+        /*
+           Also create a universal feed entry.
+           This allows home feed to show all content.
+        */
+
+        await db
+            .ref("feed/" + data.id)
+            .set({
+                id: data.id,
+
+                contentType:
+                    data.contentType,
+
+                uid:
+                    data.uid,
+
+                username:
+                    data.username,
+
+                title:
+                    data.title,
+
+                thumbnailUrl:
+                    data.thumbnailUrl ||
+                    data.mediaUrl,
+
+                mediaUrl:
+                    data.mediaUrl,
+
+                createdAt:
+                    data.createdAt
+            });
+
+        return {
+            id: data.id,
+            type: data.contentType,
+            data
+        };
     }
 
-    catch(error){
+    /* =====================================================
+       UPDATE USER COUNTERS
+    ===================================================== */
 
-        console.error(error);
+    async function updateUserCounters(
+        user,
+        type
+    ) {
 
-        showToast(
-        error.message,
-        "error"
-        );
+        const updates = {};
 
+        if (type === "post") {
+
+            updates[
+                `users/${user.uid}/posts`
+            ] =
+                firebase.database.ServerValue
+                    .increment(1);
+        }
+
+        if (type === "short") {
+
+            updates[
+                `users/${user.uid}/shorts`
+            ] =
+                firebase.database.ServerValue
+                    .increment(1);
+        }
+
+        if (type === "video") {
+
+            updates[
+                `users/${user.uid}/videos`
+            ] =
+                firebase.database.ServerValue
+                    .increment(1);
+        }
+
+        if (
+            Object.keys(updates).length
+        ) {
+
+            await db
+                .ref()
+                .update(updates);
+        }
     }
 
-}
+    /* =====================================================
+       MAIN PUBLISH
+    ===================================================== */
 
-/*=========================================
-Upload + Publish
-=========================================*/
+    async function publishPost() {
 
-async function startUpload(){
+        if (!navigator.onLine) {
 
-    try{
+            throw new Error(
+                "No internet connection."
+            );
+        }
 
-        const mediaURL =
-        await uploadMediaFile();
+        if (!selectedFile) {
 
-        let thumbnailURL = "";
+            throw new Error(
+                "Please select a photo or video first."
+            );
+        }
 
-        if(selectedThumbnail){
+        if (!titleInput?.value.trim()) {
 
-            const thumbRef =
+            throw new Error(
+                "Please enter a title."
+            );
+        }
 
-            storage.ref(
+        checkCloudinaryConfig();
 
-            "thumbnails/" +
+        const user =
+            await getUserForPost();
 
-            auth.currentUser.uid +
+        /* ================================================
+           MEDIA UPLOAD
+        ================================================= */
 
-            "/" +
+        showLoading(
+            "Uploading media..."
+        );
 
-            Date.now()+".jpg"
+        updateProgress(
+            0,
+            "Starting...",
+            "Calculating..."
+        );
 
+        const cloudinaryResult =
+            await uploadToCloudinary(
+                selectedFile
             );
 
-            await thumbRef.put(selectedThumbnail);
+        uploadedMedia = {
 
-            thumbnailURL =
+            url:
+                cloudinaryResult.secure_url,
 
-            await thumbRef.getDownloadURL();
+            publicId:
+                cloudinaryResult.public_id,
 
+            resourceType:
+                cloudinaryResult.resource_type,
+
+            format:
+                cloudinaryResult.format,
+
+            width:
+                cloudinaryResult.width,
+
+            height:
+                cloudinaryResult.height,
+
+            duration:
+                cloudinaryResult.duration
+        };
+
+        updateProgress(
+            100,
+            "Uploaded",
+            "Complete"
+        );
+
+        /* ================================================
+           THUMBNAIL
+        ================================================= */
+
+        let thumbnail = null;
+
+        if (
+            detectedMediaType === "video" ||
+            detectedMediaType === "short"
+        ) {
+
+            if (selectedThumbnail) {
+
+                thumbnail =
+                    await uploadThumbnailIfNeeded();
+            }
         }
 
-        await publishPost(
+        /* ================================================
+           FIREBASE
+        ================================================= */
 
-            mediaURL,
-
-            thumbnailURL
-
+        showLoading(
+            "Publishing to Viewora..."
         );
 
-    }
+        const result =
+            await saveToFirebase(
+                user,
+                uploadedMedia,
+                thumbnail
+            );
 
-    catch(error){
-
-        console.error(error);
-
-        showToast(
-
-        "Upload failed",
-
-        "error"
-
+        await updateUserCounters(
+            user,
+            result.type
         );
 
-    }
+        lastUploadData = result;
 
-}
+        hideLoading();
 
-uploadBtn.addEventListener(
-"click",
-startUpload
-);
+        /* ================================================
+           SUCCESS
+        ================================================= */
 
-console.log("✅ Upload Part 5 Loaded");
-/*=========================================
-        VIEWORA V10 PREMIUM
-            upload.js
-            PART 6
-Draft • Auto Save • Schedule
-=========================================*/
-
-"use strict";
-
-/*=========================================
-Draft Storage Key
-=========================================*/
-
-const DRAFT_KEY = "viewora_upload_draft";
-
-/*=========================================
-Save Draft
-=========================================*/
-
-function saveDraft(){
-
-    const draft={
-
-        title:titleInput.value.trim(),
-
-        caption:captionInput.value.trim(),
-
-        hashtags:hashtagsInput
-        ?hashtagsInput.value.trim()
-        :"",
-
-        mentions:mentionsInput
-        ?mentionsInput.value.trim()
-        :"",
-
-        category:categorySelect.value,
-
-        visibility:visibilitySelect.value,
-
-        savedAt:Date.now()
-
-    };
-
-    localStorage.setItem(
-
-        DRAFT_KEY,
-
-        JSON.stringify(draft)
-
-    );
-
-    showToast("Draft Saved");
-
-}
-
-/*=========================================
-Restore Draft
-=========================================*/
-
-function restoreDraft(){
-
-    const data=
-
-    localStorage.getItem(DRAFT_KEY);
-
-    if(!data) return;
-
-    try{
-
-        const draft=
-
-        JSON.parse(data);
-
-        titleInput.value=
-        draft.title||"";
-
-        captionInput.value=
-        draft.caption||"";
-
-        if(hashtagsInput){
-
-            hashtagsInput.value=
-            draft.hashtags||"";
-
+        if (successModal) {
+            successModal.classList.remove(
+                "hidden"
+            );
         }
 
-        if(mentionsInput){
+        showToast(
+            result.type === "post"
+                ? "Photo Post published!"
+                : result.type === "short"
+                    ? "Short published!"
+                    : "Long Video published!"
+        );
 
-            mentionsInput.value=
-            draft.mentions||"";
+        console.log(
+            "✅ Published:",
+            result
+        );
+    }
 
+    /* =====================================================
+       PUBLISH BUTTON
+    ===================================================== */
+
+    uploadPostBtn?.addEventListener(
+        "click",
+        async event => {
+
+            event.preventDefault();
+
+            if (
+                uploadPostBtn.disabled
+            ) {
+                return;
+            }
+
+            uploadPostBtn.disabled =
+                true;
+
+            try {
+
+                await publishPost();
+
+            } catch (error) {
+
+                console.error(
+                    error
+                );
+
+                if (
+                    error.message ===
+                    "Upload cancelled."
+                ) {
+
+                    showToast(
+                        "Upload cancelled.",
+                        "error"
+                    );
+
+                } else {
+
+                    showUploadError(
+                        error.message ||
+                        "Upload failed."
+                    );
+                }
+
+            } finally {
+
+                uploadPostBtn.disabled =
+                    false;
+            }
         }
-
-        categorySelect.value=
-        draft.category||"general";
-
-        visibilitySelect.value=
-        draft.visibility||"public";
-
-        extractHashtags();
-
-        extractMentions();
-
-        showToast(
-        "Draft Restored"
-        );
-
-    }
-
-    catch(error){
-
-        console.error(error);
-
-    }
-
-}
-
-/*=========================================
-Clear Draft
-=========================================*/
-
-function clearDraft(){
-
-    localStorage.removeItem(
-    DRAFT_KEY
     );
 
-}
+    /* =====================================================
+       CANCEL UPLOAD
+    ===================================================== */
 
-/*=========================================
-Auto Save
-=========================================*/
+    cancelUploadBtn?.addEventListener(
+        "click",
+        () => {
 
-let autoDraftTimer=null;
+            if (uploadXHR) {
 
-function startAutoSave(){
+                uploadXHR.abort();
 
-    clearInterval(autoDraftTimer);
+                uploadXHR = null;
+            }
 
-    autoDraftTimer=setInterval(()=>{
+            hideLoading();
 
-        saveDraft();
+            resetProgress();
 
-    },30000);
-
-}
-
-[
-titleInput,
-captionInput,
-categorySelect,
-visibilitySelect
-
-].forEach(element=>{
-
-if(element){
-
-element.addEventListener(
-
-"input",
-
-startAutoSave
-
-);
-
-}
-
-});
-
-/*=========================================
-Manual Draft Button
-=========================================*/
-
-if(saveDraftBtn){
-
-saveDraftBtn.addEventListener(
-
-"click",
-
-saveDraft
-
-);
-
-}
-
-/*=========================================
-Schedule Upload
-=========================================*/
-
-async function scheduleUpload(uploadTime){
-
-    const now=Date.now();
-
-    const delay=
-
-    uploadTime-now;
-
-    if(delay<=0){
-
-        showToast(
-
-        "Invalid schedule time",
-
-        "error"
-
-        );
-
-        return;
-
-    }
-
-    showToast(
-
-    "Upload Scheduled"
-
-    );
-
-    setTimeout(async()=>{
-
-        await startUpload();
-
-    },delay);
-
-}
-
-/*=========================================
-Notifications
-=========================================*/
-
-function uploadNotification(title,body){
-
-    if(
-
-    !"Notification"
-
-    in window
-
-    ) return;
-
-    if(
-
-    Notification.permission
-
-    ==="granted"
-
-    ){
-
-        new Notification(
-
-        title,
-
-        {
-
-            body:body,
-
-            icon:"assets/logo.png"
-
+            showToast(
+                "Upload cancelled.",
+                "error"
+            );
         }
-
-        );
-
-    }
-
-}
-
-if(
-
-"Notification"
-
-in window
-
-){
-
-Notification.requestPermission();
-
-}
-
-/*=========================================
-After Successful Upload
-=========================================*/
-
-function uploadCompleted(){
-
-    clearDraft();
-
-    uploadNotification(
-
-    "Viewora",
-
-    "Your upload completed successfully."
-
     );
 
-}
+    /* =====================================================
+       RETRY
+    ===================================================== */
 
-/*=========================================
-Startup
-=========================================*/
+    retryUploadBtn?.addEventListener(
+        "click",
+        async () => {
 
-window.addEventListener(
+            closeUploadError();
 
-"load",
+            if (!selectedFile) {
 
-()=>{
+                showToast(
+                    "Please select a file again.",
+                    "error"
+                );
 
-restoreDraft();
+                return;
+            }
 
-startAutoSave();
+            uploadPostBtn?.click();
+        }
+    );
+
+    /* =====================================================
+       CLOSE ERROR
+    ===================================================== */
+
+    closeFailedBtn?.addEventListener(
+        "click",
+        closeUploadError
+    );
+
+    /* =====================================================
+       UPLOAD ANOTHER
+    ===================================================== */
+
+    uploadAnotherBtn?.addEventListener(
+        "click",
+        () => {
+
+            if (successModal) {
+                successModal.classList.add(
+                    "hidden"
+                );
+            }
+
+            selectedFile = null;
+            selectedThumbnail = null;
+            uploadedMedia = null;
+            detectedMediaType = null;
+            detectedDuration = 0;
+
+            mediaInput.value = "";
+
+            if (thumbnailInput) {
+                thumbnailInput.value = "";
+            }
+
+            if (previewSection) {
+                previewSection.classList.add(
+                    "hidden"
+                );
+            }
+
+            if (previewImage) {
+                previewImage.src = "";
+                previewImage.classList.add(
+                    "hidden"
+                );
+            }
+
+            if (previewVideo) {
+                previewVideo.pause();
+                previewVideo.src = "";
+                previewVideo.classList.add(
+                    "hidden"
+                );
+            }
+
+            if (titleInput) {
+                titleInput.value = "";
+            }
+
+            if (captionInput) {
+                captionInput.value = "";
+            }
+
+            resetProgress();
+
+            window.scrollTo({
+                top: 0,
+                behavior: "smooth"
+            });
+        }
+    );
+
+    /* =====================================================
+       VIEW POST
+    ===================================================== */
+
+    viewPostBtn?.addEventListener(
+        "click",
+        () => {
+
+            if (!lastUploadData) {
+                return;
+            }
+
+            const type =
+                lastUploadData.type;
+
+            const id =
+                lastUploadData.id;
+
+            if (type === "post") {
+
+                location.href =
+                    `post.html?id=${encodeURIComponent(id)}`;
+
+            } else if (
+                type === "short"
+            ) {
+
+                location.href =
+                    `shorts.html?id=${encodeURIComponent(id)}`;
+
+            } else {
+
+                location.href =
+                    `video.html?id=${encodeURIComponent(id)}`;
+            }
+        }
+    );
+
+    /* =====================================================
+       SAVE DRAFT
+    ===================================================== */
+
+    saveDraftBtn?.addEventListener(
+        "click",
+        async () => {
+
+            try {
+
+                if (
+                    typeof auth === "undefined" ||
+                    !auth.currentUser
+                ) {
+
+                    throw new Error(
+                        "Please login first."
+                    );
+                }
+
+                const user =
+                    auth.currentUser;
+
+                const draftId =
+                    db.ref("drafts").push().key;
+
+                const draft = {
+
+                    id: draftId,
+
+                    uid: user.uid,
+
+                    title:
+                        titleInput?.value.trim() ||
+                        "",
+
+                    caption:
+                        captionInput?.value.trim() ||
+                        "",
+
+                    hashtags:
+                        hashtagsInput?.value.trim() ||
+                        "",
+
+                    mentions:
+                        mentionsInput?.value.trim() ||
+                        "",
+
+                    category:
+                        categoryInput?.value ||
+                        "general",
+
+                    visibility:
+                        visibilityInput?.value ||
+                        "public",
+
+                    createdAt:
+                        firebase.database
+                            .ServerValue
+                            .TIMESTAMP
+                };
+
+                await db
+                    .ref(
+                        `drafts/${user.uid}/${draftId}`
+                    )
+                    .set(draft);
+
+                showToast(
+                    "Draft saved successfully."
+                );
+
+            } catch (error) {
+
+                showToast(
+                    error.message ||
+                    "Unable to save draft.",
+                    "error"
+                );
+            }
+        }
+    );
+
+    /* =====================================================
+       NETWORK
+    ===================================================== */
+
+    window.addEventListener(
+        "offline",
+        () => {
+
+            showToast(
+                "Internet connection lost.",
+                "error"
+            );
+        }
+    );
+
+    window.addEventListener(
+        "online",
+        () => {
+
+            showToast(
+                "Internet connection restored."
+            );
+        }
+    );
+
+    /* =====================================================
+       INITIAL STATE
+    ===================================================== */
+
+    resetProgress();
+
+    console.log(
+        "✅ Viewora Upload V12 Ready"
+    );
 
 });
-
-console.log("✅ Upload Part 6 Loaded");
-/*=========================================
-        VIEWORA V10 PREMIUM
-            upload.js
-            PART 7
-Production Security • Network
-Toast • Success Modal
-Error Handling • Cleanup
-=========================================*/
-
-"use strict";
-
-/*=========================================
-DOM Elements
-=========================================*/
-
-const successModal =
-document.getElementById("successModal");
-
-const uploadFailedModal =
-document.getElementById("uploadFailedModal");
-
-const networkBanner =
-document.getElementById("networkBanner");
-
-const retryUploadBtn =
-document.getElementById("retryUploadBtn");
-
-const successOkBtn =
-document.getElementById("successOkBtn");
-
-/*=========================================
-Network Status
-=========================================*/
-
-function updateNetworkStatus(){
-
-    if(!networkBanner) return;
-
-    if(navigator.onLine){
-
-        networkBanner.classList.add("hidden");
-
-        showToast(
-            "Internet Connected"
-        );
-
-    }else{
-
-        networkBanner.classList.remove("hidden");
-
-        showToast(
-            "No Internet Connection",
-            "error"
-        );
-
-    }
-
-}
-
-window.addEventListener(
-"online",
-updateNetworkStatus
-);
-
-window.addEventListener(
-"offline",
-updateNetworkStatus
-);
-
-/*=========================================
-Security Validation
-=========================================*/
-
-function validateUpload(){
-
-    if(!auth.currentUser){
-
-        showToast(
-        "Please login first",
-        "error"
-        );
-
-        return false;
-
-    }
-
-    if(!selectedFile){
-
-        showToast(
-        "Select a file",
-        "error"
-        );
-
-        return false;
-
-    }
-
-    if(titleInput.value.trim().length<3){
-
-        showToast(
-        "Enter title",
-        "error"
-        );
-
-        return false;
-
-    }
-
-    if(titleInput.value.length>100){
-
-        showToast(
-        "Title too long",
-        "error"
-        );
-
-        return false;
-
-    }
-
-    if(captionInput.value.length>5000){
-
-        showToast(
-        "Caption limit exceeded",
-        "error"
-        );
-
-        return false;
-
-    }
-
-    return true;
-
-}
-
-/*=========================================
-Success Modal
-=========================================*/
-
-function showSuccessModal(){
-
-    if(successModal){
-
-        successModal.classList.remove(
-        "hidden"
-        );
-
-    }
-
-}
-
-if(successOkBtn){
-
-successOkBtn.onclick=()=>{
-
-successModal.classList.add(
-"hidden"
-);
-
-location.href="profile.html";
-
-};
-
-}
-
-/*=========================================
-Upload Failed Modal
-=========================================*/
-
-function showUploadFailed(){
-
-    if(uploadFailedModal){
-
-        uploadFailedModal.classList.remove(
-        "hidden"
-        );
-
-    }
-
-}
-
-if(retryUploadBtn){
-
-retryUploadBtn.onclick=()=>{
-
-uploadFailedModal.classList.add(
-"hidden"
-);
-
-startUpload();
-
-};
-
-}
-
-/*=========================================
-Safe Upload
-=========================================*/
-
-async function safeUpload(){
-
-    if(!validateUpload()) return;
-
-    try{
-
-        await startUpload();
-
-        uploadCompleted();
-
-        showSuccessModal();
-
-    }
-
-    catch(error){
-
-        console.error(error);
-
-        showUploadFailed();
-
-    }
-
-}
-
-/*=========================================
-Button
-=========================================*/
-
-if(uploadBtn){
-
-uploadBtn.onclick=(e)=>{
-
-e.preventDefault();
-
-safeUpload();
-
-};
-
-}
-
-/*=========================================
-Global Error Handler
-=========================================*/
-
-window.addEventListener(
-
-"error",
-
-event=>{
-
-console.error(event.error);
-
-showToast(
-
-"Unexpected Error",
-
-"error"
-
-);
-
-}
-
-);
-
-window.addEventListener(
-
-"unhandledrejection",
-
-event=>{
-
-console.error(event.reason);
-
-showToast(
-
-"Promise Failed",
-
-"error"
-
-);
-
-}
-
-);
-
-/*=========================================
-Cleanup
-=========================================*/
-
-window.addEventListener(
-
-"beforeunload",
-
-()=>{
-
-if(uploadTask){
-
-try{
-
-uploadTask.cancel();
-
-}catch(e){}
-
-}
-
-});
-
-/*=========================================
-Startup
-=========================================*/
-
-window.addEventListener(
-
-"load",
-
-()=>{
-
-updateNetworkStatus();
-
-console.log("================================");
-console.log("🚀 VIEWORA V10 UPLOAD");
-console.log("✅ Firebase Connected");
-console.log("✅ Storage Ready");
-console.log("✅ Database Ready");
-console.log("✅ Upload Ready");
-console.log("✅ Production Mode");
-console.log("================================");
-
-});
-
-console.log("✅ Upload Part 7 Loaded");

@@ -1,421 +1,444 @@
 /*=========================================
-        VIEWORA USERS V8
-        users.js (PART 1)
-        Firebase + Initialization
+        VIEWORA USERS V9
+        users.js - PART 1
+ Firebase • Authentication • Variables
 =========================================*/
 
-//=========================================
-// DOM Elements
-//=========================================
+"use strict";
 
-const pageLoader = document.getElementById("pageLoader");
-const app = document.getElementById("app");
+console.log("=================================");
+console.log(" VIEWORA USERS V9 ");
+console.log(" Part 1 Loaded");
+console.log("=================================");
 
-const usersList = document.getElementById("usersList");
-const suggestedUsers = document.getElementById("suggestedUsers");
-const onlineUsers = document.getElementById("onlineUsers");
+/*=========================================
+DOM Elements
+=========================================*/
 
-const searchInput = document.getElementById("searchInput");
-const clearSearch = document.getElementById("clearSearch");
+const pageLoader=document.getElementById("pageLoader");
+const app=document.getElementById("app");
 
-const totalUsers = document.getElementById("totalUsers");
-const onlineCount = document.getElementById("onlineCount");
+const usersList=document.getElementById("usersList");
+const suggestedUsers=document.getElementById("suggestedUsers");
+const onlineUsers=document.getElementById("onlineUsers");
 
-const profileModal = document.getElementById("profileModal");
+const searchInput=document.getElementById("searchInput");
+const clearSearch=document.getElementById("clearSearch");
 
-const skeleton = document.getElementById("usersSkeleton");
+const totalUsers=document.getElementById("totalUsers");
+const onlineCount=document.getElementById("onlineCount");
 
-const emptyState = document.getElementById("emptyState");
+const profileModal=document.getElementById("profileModal");
 
-const toast = document.getElementById("toast");
-const toastIcon = document.getElementById("toastIcon");
-const toastText = document.getElementById("toastText");
+const skeleton=document.getElementById("usersSkeleton");
+const emptyState=document.getElementById("emptyState");
 
-const scrollTopBtn = document.getElementById("scrollTopBtn");
+const toast=document.getElementById("toast");
+const toastText=document.getElementById("toastText");
+const toastIcon=document.getElementById("toastIcon");
 
-//=========================================
-// Firebase References
-//=========================================
+const scrollTopBtn=document.getElementById("scrollTopBtn");
 
-const auth = firebase.auth();
-const db = firebase.database();
-const storage = firebase.storage();
+const refreshBtn=document.getElementById("refreshBtn");
+const backBtn=document.getElementById("backBtn");
 
-//=========================================
-// Variables
-//=========================================
+/*=========================================
+Variables
+=========================================*/
 
-let currentUser = null;
+let currentUser=null;
+let currentProfile=null;
 
-let users = [];
-let filteredUsers = [];
+let users=[];
+let filteredUsers=[];
 
-let following = [];
+let following=[];
+let followers=[];
 
-let onlineUsersList = [];
+let onlineUsersList=[];
 
-let isLoading = false;
+let usersListener=null;
+let onlineListener=null;
 
-//=========================================
-// Loader
-//=========================================
+let initialized=false;
+
+/*=========================================
+Loader
+=========================================*/
 
 function showLoader(){
 
-isLoading=true;
-
-pageLoader.classList.remove("hidden");
-
-app.classList.add("hidden");
+    pageLoader?.classList.remove("hidden");
+    app?.classList.add("hidden");
 
 }
 
 function hideLoader(){
 
-setTimeout(()=>{
-
-pageLoader.classList.add("hidden");
-
-app.classList.remove("hidden");
-
-app.classList.add("fadeIn");
-
-isLoading=false;
-
-},600);
+    pageLoader?.classList.add("hidden");
+    app?.classList.remove("hidden");
+    app?.classList.add("fadeIn");
 
 }
 
-//=========================================
-// Skeleton
-//=========================================
+/*=========================================
+Skeleton
+=========================================*/
 
 function showSkeleton(){
 
-if(skeleton){
-
-skeleton.classList.remove("hidden");
-
-}
-
-if(usersList){
-
-usersList.classList.add("hidden");
-
-}
+    skeleton?.classList.remove("hidden");
+    usersList?.classList.add("hidden");
 
 }
 
 function hideSkeleton(){
 
-if(skeleton){
-
-skeleton.classList.add("hidden");
-
-}
-
-if(usersList){
-
-usersList.classList.remove("hidden");
+    skeleton?.classList.add("hidden");
+    usersList?.classList.remove("hidden");
 
 }
 
-}
-
-//=========================================
-// Toast
-//=========================================
+/*=========================================
+Toast
+=========================================*/
 
 function showToast(text,success=true){
 
-toastText.textContent=text;
+    if(!toast) return;
 
-toast.style.background=
+    toastText.textContent=text;
 
-success
+    toastIcon.className=
+    success
+    ?
+    "fa-solid fa-circle-check"
+    :
+    "fa-solid fa-circle-xmark";
 
-?
+    toast.style.background=
+    success
+    ?
+    "#16a34a"
+    :
+    "#dc2626";
 
-"#16a34a"
+    toast.classList.remove("hidden");
 
-:
+    clearTimeout(window.toastTimer);
 
-"#dc2626";
+    window.toastTimer=setTimeout(()=>{
 
-toastIcon.className=
+        toast.classList.add("hidden");
 
-success
-
-?
-
-"fa-solid fa-circle-check"
-
-:
-
-"fa-solid fa-circle-xmark";
-
-toast.classList.remove("hidden");
-
-setTimeout(()=>{
-
-toast.classList.add("hidden");
-
-},2500);
+    },2500);
 
 }
 
-//=========================================
-// Helpers
-//=========================================
+/*=========================================
+Helpers
+=========================================*/
 
 function avatar(url){
 
-return url || "assets/default-avatar.png";
+    return url || "assets/default-avatar.png";
 
 }
 
-function formatNumber(number){
+function formatNumber(value){
 
-number=Number(number)||0;
+    value=Number(value)||0;
 
-if(number>=1000000){
+    if(value>=1000000){
 
-return (number/1000000).toFixed(1)+"M";
+        return (value/1000000).toFixed(1)+"M";
 
-}
+    }
 
-if(number>=1000){
+    if(value>=1000){
 
-return (number/1000).toFixed(1)+"K";
+        return (value/1000).toFixed(1)+"K";
 
-}
+    }
 
-return number;
-
-}
-
-function shuffle(arr){
-
-return [...arr].sort(()=>Math.random()-0.5);
+    return value;
 
 }
 
-//=========================================
-// Authentication
-//=========================================
+function shuffle(array){
 
-auth.onAuthStateChanged(user=>{
-
-if(!user){
-
-location.href="login.html";
-
-return;
+    return [...array].sort(()=>Math.random()-0.5);
 
 }
 
-currentUser=user;
+/*=========================================
+Authentication
+=========================================*/
 
-showLoader();
+auth.onAuthStateChanged(async(user)=>{
 
-loadCurrentUser();
+    if(!user){
+
+        location.href="login.html";
+        return;
+
+    }
+
+    currentUser=user;
+
+    showLoader();
+    showSkeleton();
+
+    try{
+
+        await loadCurrentUser();
+
+        initializeUsers();
+
+    }
+
+    catch(error){
+
+        console.error(error);
+
+        hideLoader();
+
+        showToast("Unable to load profile",false);
+
+    }
 
 });
 
-//=========================================
-// Current User
-//=========================================
+/*=========================================
+Load Current User
+=========================================*/
 
-function loadCurrentUser(){
+async function loadCurrentUser(){
 
-db.ref("users/"+currentUser.uid)
+    const snap=
+    await db.ref("users/"+currentUser.uid)
+    .once("value");
 
-.once("value")
+    if(!snap.exists()){
 
-.then(snapshot=>{
+        throw new Error("User profile not found");
 
-const data=snapshot.val();
+    }
 
-if(!data){
+    currentProfile=snap.val();
 
-hideLoader();
+    following=currentProfile.following || [];
 
-return;
+    followers=currentProfile.followers || [];
 
-}
+    if(!Array.isArray(following)){
 
-following=data.following || [];
+        following=[];
 
-if(!Array.isArray(following)){
+    }
 
-following=[];
+    if(!Array.isArray(followers)){
 
-}
+        followers=[];
 
-// Next
-
-loadUsers();
-
-listenOnlineUsers();
-
-})
-
-.catch(error=>{
-
-console.error(error);
-
-hideLoader();
-
-showToast("Failed to load profile",false);
-
-});
+    }
 
 }
 
-//=========================================
-// Online Status
-//=========================================
+/*=========================================
+Online Status
+=========================================*/
 
 function updateMyStatus(status){
 
-if(!currentUser) return;
+    if(!currentUser) return;
 
-db.ref("users/"+currentUser.uid).update({
+    db.ref("users/"+currentUser.uid).update({
 
-online:status,
+        online:status,
 
-lastSeen:Date.now()
-
-});
-
-}
-
-window.addEventListener("load",()=>{
-
-updateMyStatus(true);
-
-});
-
-window.addEventListener("beforeunload",()=>{
-
-updateMyStatus(false);
-
-});
-
-//=========================================
-// Internet Status
-//=========================================
-
-window.addEventListener("online",()=>{
-
-showToast("Back Online");
-
-});
-
-window.addEventListener("offline",()=>{
-
-showToast("No Internet",false);
-
-});
-
-//=========================================
-// End Part 1
-//=========================================
-
-console.log(
-"%cUsers.js Part 1 Loaded",
-"color:#00AAFF;font-size:16px;font-weight:bold;"
-);
-/*=========================================
-        USERS.JS PART 2
-        Load Users + Search + Render
-=========================================*/
-
-// ==============================
-// Load Users
-// ==============================
-
-function loadUsers() {
-
-    showLoader();
-
-    db.ref("users").on("value", snapshot => {
-
-        users = [];
-
-        snapshot.forEach(child => {
-
-            const user = child.val();
-            user.uid = child.key;
-
-            if (currentUser && user.uid === currentUser.uid) return;
-
-            users.push(user);
-
-        });
-
-        filteredUsers = [...users];
-
-        renderSuggestedUsers();
-        renderUsers(filteredUsers);
-        updateCounters();
-
-        observeCards();
-        hideLoader();
+        lastSeen:Date.now()
 
     });
 
 }
 
-// ==============================
-// Counters
-// ==============================
+window.addEventListener("load",()=>{
 
-function updateCounters() {
+    updateMyStatus(true);
 
-    if (totalUsers)
-        totalUsers.textContent = users.length + " Users";
+});
 
-    if (onlineCount)
-        onlineCount.textContent = onlineUsersList.length + " Online";
+window.addEventListener("beforeunload",()=>{
+
+    updateMyStatus(false);
+
+});
+
+/*=========================================
+Internet Status
+=========================================*/
+
+window.addEventListener("online",()=>{
+
+    showToast("Back Online");
+
+});
+
+window.addEventListener("offline",()=>{
+
+    showToast("No Internet",false);
+
+});
+
+/*=========================================
+Initialize
+=========================================*/
+
+function initializeUsers(){
+
+    if(initialized) return;
+
+    initialized=true;
+
+    loadUsers();
+
+    listenOnlineUsers();
+
+    hideSkeleton();
+
+    hideLoader();
 
 }
 
-// ==============================
-// Search
-// ==============================
+console.log("✅ users.js Part 1 Ready");
+/*=========================================
+        VIEWORA USERS V9
+        users.js - PART 2
+ Load Users • Search • Suggested Users
+=========================================*/
 
-if (searchInput) {
+/*=========================================
+Load Users
+=========================================*/
 
-searchInput.addEventListener("input", () => {
+function loadUsers(){
 
-    const keyword = searchInput.value
-        .trim()
-        .toLowerCase();
+    if(usersListener){
 
-    if (!keyword) {
+        db.ref("users").off("value",usersListener);
 
-        filteredUsers = [...users];
+    }
 
-    } else {
+    showLoader();
+    showSkeleton();
 
-        filteredUsers = users.filter(user => {
+    usersListener=(snapshot)=>{
 
-            return (
+        users=[];
 
-                (user.name || "")
+        snapshot.forEach(child=>{
+
+            const user=child.val()||{};
+
+            user.uid=child.key;
+
+            if(currentUser && user.uid===currentUser.uid){
+
+                return;
+
+            }
+
+            users.push(user);
+
+        });
+
+        users.sort((a,b)=>{
+
+            return (Number(b.followers)||0)-
+                   (Number(a.followers)||0);
+
+        });
+
+        filteredUsers=[...users];
+
+        renderSuggestedUsers();
+
+        renderUsers(filteredUsers);
+
+        updateCounters();
+
+        hideSkeleton();
+
+        hideLoader();
+
+    };
+
+    db.ref("users").on("value",usersListener);
+
+}
+
+/*=========================================
+Update Counters
+=========================================*/
+
+function updateCounters(){
+
+    if(totalUsers){
+
+        totalUsers.textContent=
+
+        users.length+" Users";
+
+    }
+
+    if(onlineCount){
+
+        onlineCount.textContent=
+
+        onlineUsersList.length+" Online";
+
+    }
+
+}
+
+/*=========================================
+Search Users
+=========================================*/
+
+searchInput?.addEventListener("input",()=>{
+
+    const keyword=
+
+    searchInput.value
+    .trim()
+    .toLowerCase();
+
+    if(keyword===""){
+
+        filteredUsers=[...users];
+
+    }
+
+    else{
+
+        filteredUsers=users.filter(user=>{
+
+            return(
+
+                (user.name||"")
                 .toLowerCase()
                 .includes(keyword)
 
                 ||
 
-                (user.username || "")
+                (user.username||"")
                 .toLowerCase()
                 .includes(keyword)
 
                 ||
 
-                (user.bio || "")
+                (user.bio||"")
                 .toLowerCase()
                 .includes(keyword)
 
@@ -429,67 +452,80 @@ searchInput.addEventListener("input", () => {
 
 });
 
-}
+/*=========================================
+Clear Search
+=========================================*/
 
-// ==============================
-// Clear Search
-// ==============================
+clearSearch?.addEventListener("click",()=>{
 
-if (clearSearch) {
+    searchInput.value="";
 
-clearSearch.onclick = () => {
-
-    searchInput.value = "";
-
-    filteredUsers = [...users];
+    filteredUsers=[...users];
 
     renderUsers(filteredUsers);
 
-};
+});
 
-}
+/*=========================================
+Suggested Users
+=========================================*/
 
-// ==============================
-// Suggested Users
-// ==============================
+function renderSuggestedUsers(){
 
-function renderSuggestedUsers() {
+    if(!suggestedUsers) return;
 
-    if (!suggestedUsers) return;
-
-    suggestedUsers.innerHTML = "";
+    suggestedUsers.innerHTML="";
 
     shuffle(users)
-        .slice(0, 8)
-        .forEach(user => {
 
-            suggestedUsers.innerHTML += `
+    .slice(0,8)
 
-<div class="suggestCard">
+    .forEach(user=>{
 
-<img src="${avatar(user.photoURL)}">
+        suggestedUsers.innerHTML+=`
+
+<div class="suggestCard fadeIn"
+
+onclick="openProfile('${user.uid}')">
+
+<img
+
+src="${avatar(user.photoURL)}"
+
+onerror="this.src='assets/default-avatar.png'">
 
 <h4>
-${user.name || "Unknown"}
 
-${user.verified
-?
-'<i class="fa-solid fa-circle-check"></i>'
-:
-''
-}
+${user.name||"Unknown"}
+
+${user.verified?
+
+'<i class="fa-solid fa-circle-check verified"></i>'
+
+:""}
 
 </h4>
 
 <p>
 
-@${user.username || "user"}
+@${user.username||"user"}
 
 </p>
 
-<button onclick="followUser('${user.uid}')">
+<button
 
-Follow
+onclick="event.stopPropagation();
+followUser('${user.uid}')">
+
+${following.includes(user.uid)
+
+?
+
+"Following"
+
+:
+
+"Follow"}
 
 </button>
 
@@ -497,59 +533,65 @@ Follow
 
 `;
 
-        });
+    });
 
 }
 
-// ==============================
-// Render Users
-// ==============================
+/*=========================================
+Render Users
+=========================================*/
 
-function renderUsers(data) {
+function renderUsers(list){
 
-    if (!usersList) return;
+    if(!usersList) return;
 
-    usersList.innerHTML = "";
+    usersList.innerHTML="";
 
-    if (data.length === 0) {
+    if(list.length===0){
 
-        emptyState.classList.remove("hidden");
+        emptyState?.classList.remove("hidden");
+
         return;
 
     }
 
-    emptyState.classList.add("hidden");
+    emptyState?.classList.add("hidden");
 
-    data.forEach(user => {
+    list.forEach(user=>{
 
-        const isFollowing =
-            following.includes(user.uid);
+        const isFollowing=
 
-        usersList.innerHTML += `
+        following.includes(user.uid);
 
-<div class="userCard"
+        usersList.innerHTML+=`
+
+<div class="userCard fadeIn"
+
 onclick="openProfile('${user.uid}')">
 
-<img src="${avatar(user.photoURL)}">
+<img
+
+src="${avatar(user.photoURL)}"
+
+onerror="this.src='assets/default-avatar.png'">
 
 <div class="userInfo">
 
-<h4>
+<h3>
 
-${user.name || "Unknown"}
+${user.name||"Unknown"}
 
-${user.verified
-?
-'<i class="fa-solid fa-circle-check"></i>'
-:
-''
-}
+${user.verified?
 
-</h4>
+'<i class="fa-solid fa-circle-check verified"></i>'
+
+:""}
+
+</h3>
 
 <p>
 
-@${user.username || "user"}
+@${user.username||"user"}
 
 </p>
 
@@ -557,15 +599,17 @@ ${user.verified
 
 <span>
 
-${formatNumber(user.followers || 0)}
- Followers
+${formatNumber(user.followers||0)}
+
+Followers
 
 </span>
 
 <span>
 
-${formatNumber(user.posts || 0)}
- Posts
+${formatNumber(user.posts||0)}
+
+Posts
 
 </span>
 
@@ -574,14 +618,21 @@ ${formatNumber(user.posts || 0)}
 </div>
 
 <button
+
 class="followBtn"
 
-onclick="
-event.stopPropagation();
-followUser('${user.uid}');
-">
+onclick="event.stopPropagation();
+followUser('${user.uid}')">
 
-${isFollowing ? "Following" : "Follow"}
+${isFollowing
+
+?
+
+"Following"
+
+:
+
+"Follow"}
 
 </button>
 
@@ -593,537 +644,702 @@ ${isFollowing ? "Following" : "Follow"}
 
     observeCards();
 
+    lazyLoadImages();
+
 }
+
 /*=========================================
-        USERS.JS PART 3
-   Online Users • Follow • Profile Modal
+Refresh List
 =========================================*/
 
-// ==============================
-// Online Users
-// ==============================
+function refreshUsers(){
 
-function listenOnlineUsers() {
+    renderSuggestedUsers();
 
-    db.ref("users").on("value", snapshot => {
+    renderUsers(filteredUsers);
 
-        onlineUsers.innerHTML = "";
-        onlineUsersList = [];
+    updateCounters();
 
-        snapshot.forEach(child => {
+}
 
-            const user = child.val();
-            user.uid = child.key;
+console.log("✅ users.js Part 2 Ready");
+/*=========================================
+        VIEWORA USERS V9
+        users.js - PART 3
+ Online Users • Follow • Profile Modal
+=========================================*/
 
-            if (currentUser && user.uid === currentUser.uid) return;
+/*=========================================
+Realtime Online Users
+=========================================*/
 
-            if (user.online) {
+function listenOnlineUsers(){
+
+    if(onlineListener){
+
+        db.ref("users").off("value",onlineListener);
+
+    }
+
+    onlineListener=(snapshot)=>{
+
+        onlineUsersList=[];
+
+        if(onlineUsers){
+
+            onlineUsers.innerHTML="";
+
+        }
+
+        snapshot.forEach(child=>{
+
+            const user=child.val()||{};
+
+            user.uid=child.key;
+
+            if(currentUser && user.uid===currentUser.uid){
+
+                return;
+
+            }
+
+            if(user.online===true){
 
                 onlineUsersList.push(user);
-
-                onlineUsers.innerHTML += `
-
-<div class="onlineUser"
-onclick="openProfile('${user.uid}')">
-
-<img src="${avatar(user.photoURL)}">
-
-<div class="onlineDot"></div>
-
-<h5>${user.name || "User"}</h5>
-
-</div>
-
-`;
 
             }
 
         });
 
+        onlineUsersList.sort((a,b)=>
+
+            (b.lastSeen||0)-(a.lastSeen||0)
+
+        );
+
+        if(onlineUsersList.length===0){
+
+            onlineUsers.innerHTML=`
+
+            <div class="emptyOnline">
+
+                <i class="fa-solid fa-user-slash"></i>
+
+                <p>No users online</p>
+
+            </div>
+
+            `;
+
+        }
+
+        else{
+
+            onlineUsersList.forEach(user=>{
+
+                onlineUsers.innerHTML+=`
+
+<div class="onlineUser fadeIn"
+
+onclick="openProfile('${user.uid}')">
+
+<div class="onlineAvatar">
+
+<img
+
+src="${avatar(user.photoURL)}"
+
+onerror="this.src='assets/default-avatar.png'">
+
+<span class="onlineDot"></span>
+
+</div>
+
+<h5>
+
+${user.name||"User"}
+
+</h5>
+
+</div>
+
+`;
+
+            });
+
+        }
+
         updateCounters();
 
-    });
+    };
+
+    db.ref("users").on("value",onlineListener);
 
 }
 
-// ==============================
-// Follow / Unfollow
-// ==============================
+/*=========================================
+Follow / Unfollow
+=========================================*/
 
-async function followUser(uid) {
+async function followUser(uid){
 
-    if (!currentUser) return;
+    try{
 
-    const myRef = db.ref("users/" + currentUser.uid);
-    const targetRef = db.ref("users/" + uid);
+        const myRef=db.ref("users/"+currentUser.uid);
 
-    const mySnap = await myRef.once("value");
-    const me = mySnap.val();
+        const targetRef=db.ref("users/"+uid);
 
-    let list = me.following || [];
+        const mySnap=await myRef.once("value");
+        const me=mySnap.val()||{};
 
-    if (list.includes(uid)) {
+        let myFollowing=me.following||[];
 
-        list = list.filter(id => id !== uid);
+        if(!Array.isArray(myFollowing)){
 
-        await myRef.update({
-            following: list
-        });
+            myFollowing=[];
 
-        const targetSnap = await targetRef.once("value");
-        const target = targetSnap.val();
+        }
 
-        await targetRef.update({
-            followers: Math.max(0, (target.followers || 1) - 1)
-        });
+        const targetSnap=await targetRef.once("value");
+        const target=targetSnap.val()||{};
 
-        showToast("Unfollowed");
+        if(myFollowing.includes(uid)){
 
-    } else {
+            myFollowing=myFollowing.filter(id=>id!==uid);
 
-        list.push(uid);
+            await myRef.update({
 
-        await myRef.update({
-            following: list
-        });
+                following:myFollowing
 
-        const targetSnap = await targetRef.once("value");
-        const target = targetSnap.val();
+            });
 
-        await targetRef.update({
-            followers: (target.followers || 0) + 1
-        });
+            await targetRef.update({
 
-        showToast("Following");
+                followers:Math.max(
+
+                    0,
+
+                    (target.followers||0)-1
+
+                )
+
+            });
+
+            showToast("Unfollowed");
+
+        }
+
+        else{
+
+            myFollowing.push(uid);
+
+            await myRef.update({
+
+                following:myFollowing
+
+            });
+
+            await targetRef.update({
+
+                followers:
+
+                (target.followers||0)+1
+
+            });
+
+            showToast("Following");
+
+        }
+
+        following=myFollowing;
+
+        refreshUsers();
 
     }
 
-    following = list;
+    catch(error){
 
-    renderUsers(filteredUsers);
-    renderSuggestedUsers();
+        console.error(error);
+
+        showToast("Something went wrong",false);
+
+    }
 
 }
 
-// ==============================
-// Open Profile Modal
-// ==============================
+/*=========================================
+Open Profile Modal
+=========================================*/
 
-function openProfile(uid) {
+function openProfile(uid){
 
-    const user = users.find(u => u.uid === uid);
+    const user=
 
-    if (!user) return;
+    users.find(item=>item.uid===uid);
 
-    profileModal.classList.remove("hidden");
+    if(!user) return;
 
-    document.getElementById("modalAvatar").src =
-        avatar(user.photoURL);
+    profileModal?.classList.remove("hidden");
 
-    document.getElementById("modalName").textContent =
-        user.name || "Unknown";
+    document.getElementById("modalAvatar").src=
 
-    document.getElementById("modalUsername").textContent =
-        "@" + (user.username || "user");
+    avatar(user.photoURL);
 
-    document.getElementById("modalBio").textContent =
-        user.bio || "No bio available.";
+    document.getElementById("modalName").textContent=
 
-    document.getElementById("modalPosts").textContent =
-        formatNumber(user.posts || 0);
+    user.name||"Unknown";
 
-    document.getElementById("modalFollowers").textContent =
-        formatNumber(user.followers || 0);
+    document.getElementById("modalUsername").textContent=
 
-    document.getElementById("modalFollowing").textContent =
-        formatNumber(user.followingCount || 0);
+    "@"+(user.username||"user");
 
-    const followBtn =
-        document.getElementById("followBtn");
+    document.getElementById("modalBio").textContent=
 
-    if (following.includes(uid)) {
+    user.bio||"No bio available.";
 
-        followBtn.innerHTML =
-            '<i class="fa-solid fa-user-check"></i> Following';
+    document.getElementById("modalPosts").textContent=
 
-    } else {
+    formatNumber(user.posts||0);
 
-        followBtn.innerHTML =
-            '<i class="fa-solid fa-user-plus"></i> Follow';
+    document.getElementById("modalFollowers").textContent=
+
+    formatNumber(user.followers||0);
+
+    document.getElementById("modalFollowing").textContent=
+
+    formatNumber(user.followingCount||0);
+
+    const followBtn=document.getElementById("followBtn");
+
+    if(following.includes(uid)){
+
+        followBtn.innerHTML=
+
+        '<i class="fa-solid fa-user-check"></i> Following';
 
     }
 
-    followBtn.onclick = () => {
+    else{
+
+        followBtn.innerHTML=
+
+        '<i class="fa-solid fa-user-plus"></i> Follow';
+
+    }
+
+    followBtn.onclick=()=>{
 
         followUser(uid);
 
     };
 
-    document.getElementById("messageBtn").onclick = () => {
+    document.getElementById("messageBtn").onclick=()=>{
 
-        location.href = "chat.html?uid=" + uid;
+        location.href="chat.html?uid="+uid;
 
     };
 
 }
 
-// ==============================
-// Close Modal
-// ==============================
+/*=========================================
+Close Modal
+=========================================*/
 
-document.getElementById("closeModal").onclick = () => {
+document.getElementById("closeModal")
 
-    profileModal.classList.add("hidden");
+?.addEventListener("click",()=>{
 
-};
+    profileModal?.classList.add("hidden");
 
-document.querySelector(".modalOverlay").onclick = () => {
+});
 
-    profileModal.classList.add("hidden");
+document.querySelector(".modalOverlay")
 
-};
+?.addEventListener("click",()=>{
 
-// ==============================
-// Scroll To Top
-// ==============================
+    profileModal?.classList.add("hidden");
 
-window.addEventListener("scroll", () => {
+});
 
-    if (window.scrollY > 350) {
+/*=========================================
+ESC Key Close
+=========================================*/
 
-        scrollTopBtn.classList.remove("hidden");
+document.addEventListener("keydown",e=>{
 
-    } else {
+    if(e.key==="Escape"){
 
-        scrollTopBtn.classList.add("hidden");
+        profileModal?.classList.add("hidden");
 
     }
 
 });
 
-scrollTopBtn.onclick = () => {
-
-    window.scrollTo({
-
-        top: 0,
-        behavior: "smooth"
-
-    });
-
-};
+console.log("✅ users.js Part 3 Ready");
 /*=========================================
-        USERS.JS PART 4 FINAL
+        VIEWORA USERS V9
+        users.js - PART 4 FINAL
  Premium Effects • Performance • Initialize
 =========================================*/
 
-//==============================
-// Ripple Effect
-//==============================
+/*=========================================
+Back Button
+=========================================*/
 
-document.addEventListener("click",e=>{
+backBtn?.addEventListener("click",()=>{
 
-const btn=e.target.closest("button,a");
-
-if(!btn) return;
-
-const ripple=document.createElement("span");
-
-const size=Math.max(btn.clientWidth,btn.clientHeight);
-
-const rect=btn.getBoundingClientRect();
-
-ripple.className="ripple";
-
-ripple.style.width=size+"px";
-ripple.style.height=size+"px";
-
-ripple.style.left=
-(e.clientX-rect.left-size/2)+"px";
-
-ripple.style.top=
-(e.clientY-rect.top-size/2)+"px";
-
-btn.appendChild(ripple);
-
-setTimeout(()=>{
-
-ripple.remove();
-
-},600);
+    history.back();
 
 });
 
-//==============================
-// Pull To Refresh
-//==============================
+/*=========================================
+Refresh Button
+=========================================*/
+
+refreshBtn?.addEventListener("click",()=>{
+
+    showToast("Refreshing...");
+
+    loadUsers();
+
+});
+
+/*=========================================
+Ripple Effect
+=========================================*/
+
+document.addEventListener("click",e=>{
+
+    const target=e.target.closest("button,a");
+
+    if(!target) return;
+
+    const ripple=document.createElement("span");
+
+    ripple.className="ripple";
+
+    const size=Math.max(
+
+        target.clientWidth,
+
+        target.clientHeight
+
+    );
+
+    const rect=target.getBoundingClientRect();
+
+    ripple.style.width=size+"px";
+    ripple.style.height=size+"px";
+
+    ripple.style.left=
+
+    (e.clientX-rect.left-size/2)+"px";
+
+    ripple.style.top=
+
+    (e.clientY-rect.top-size/2)+"px";
+
+    target.appendChild(ripple);
+
+    setTimeout(()=>{
+
+        ripple.remove();
+
+    },600);
+
+});
+
+/*=========================================
+Pull To Refresh
+=========================================*/
 
 let touchStart=0;
 let pullDistance=0;
 
 window.addEventListener("touchstart",e=>{
 
-if(window.scrollY===0){
+    if(window.scrollY===0){
 
-touchStart=e.touches[0].clientY;
+        touchStart=e.touches[0].clientY;
 
-}
+    }
 
 });
 
 window.addEventListener("touchmove",e=>{
 
-pullDistance=e.touches[0].clientY-touchStart;
+    pullDistance=
+
+    e.touches[0].clientY-touchStart;
 
 });
 
 window.addEventListener("touchend",()=>{
 
-if(pullDistance>120){
+    if(pullDistance>120){
 
-showToast("Refreshing...");
+        showToast("Refreshing...");
 
-loadUsers();
+        loadUsers();
 
-}
+    }
 
-pullDistance=0;
+    pullDistance=0;
 
 });
 
-//==============================
-// Lazy Load Images
-//==============================
+/*=========================================
+Lazy Image Loading
+=========================================*/
 
 function lazyLoadImages(){
 
-const images=document.querySelectorAll("img[data-src]");
+    const images=document.querySelectorAll("img[data-src]");
 
-const observer=new IntersectionObserver(entries=>{
+    if(images.length===0) return;
 
-entries.forEach(entry=>{
+    const observer=new IntersectionObserver(entries=>{
 
-if(entry.isIntersecting){
+        entries.forEach(entry=>{
 
-const img=entry.target;
+            if(entry.isIntersecting){
 
-img.src=img.dataset.src;
+                const img=entry.target;
 
-img.removeAttribute("data-src");
+                img.src=img.dataset.src;
 
-observer.unobserve(img);
+                img.removeAttribute("data-src");
 
-}
+                observer.unobserve(img);
 
-});
+            }
 
-});
+        });
 
-images.forEach(img=>observer.observe(img));
+    });
 
-}
-
-//==============================
-// Observe Cards
-//==============================
-
-const cardObserver=new IntersectionObserver(entries=>{
-
-entries.forEach(entry=>{
-
-if(entry.isIntersecting){
-
-entry.target.classList.add("fadeIn");
-
-cardObserver.unobserve(entry.target);
+    images.forEach(img=>observer.observe(img));
 
 }
 
-});
+/*=========================================
+Card Animation
+=========================================*/
 
-},{threshold:.15});
+const cardObserver=
+
+new IntersectionObserver(entries=>{
+
+    entries.forEach(entry=>{
+
+        if(entry.isIntersecting){
+
+            entry.target.classList.add("fadeIn");
+
+            cardObserver.unobserve(entry.target);
+
+        }
+
+    });
+
+},{
+    threshold:.15
+});
 
 function observeCards(){
 
-document.querySelectorAll(
+    document.querySelectorAll(
 
-".userCard,.suggestCard,.onlineUser"
+        ".userCard,.suggestCard,.onlineUser"
 
-).forEach(card=>{
+    ).forEach(card=>{
 
-cardObserver.observe(card);
+        cardObserver.observe(card);
 
-});
+    });
 
 }
 
-//==============================
-// Keyboard Shortcuts
-//==============================
+/*=========================================
+Scroll To Top
+=========================================*/
+
+window.addEventListener("scroll",()=>{
+
+    if(window.scrollY>350){
+
+        scrollTopBtn?.classList.remove("hidden");
+
+    }
+
+    else{
+
+        scrollTopBtn?.classList.add("hidden");
+
+    }
+
+});
+
+scrollTopBtn?.addEventListener("click",()=>{
+
+    window.scrollTo({
+
+        top:0,
+
+        behavior:"smooth"
+
+    });
+
+});
+
+/*=========================================
+Search Animation
+=========================================*/
+
+searchInput?.addEventListener("focus",()=>{
+
+    document.querySelector(".searchBox")
+
+    ?.classList.add("focused");
+
+});
+
+searchInput?.addEventListener("blur",()=>{
+
+    document.querySelector(".searchBox")
+
+    ?.classList.remove("focused");
+
+});
+
+/*=========================================
+Keyboard Shortcuts
+=========================================*/
 
 document.addEventListener("keydown",e=>{
 
-if(e.key==="/"){
+    if(e.key==="/"){
 
-e.preventDefault();
+        e.preventDefault();
 
-searchInput.focus();
+        searchInput?.focus();
 
-}
-
-if(e.key==="Escape"){
-
-profileModal.classList.add("hidden");
-
-}
+    }
 
 });
 
-//==============================
-// Online / Offline
-//==============================
+/*=========================================
+Online / Offline
+=========================================*/
 
 window.addEventListener("online",()=>{
 
-showToast("Internet Connected");
+    showToast("Internet Connected");
 
-loadUsers();
+    loadUsers();
 
 });
 
 window.addEventListener("offline",()=>{
 
-showToast("No Internet",false);
+    showToast("No Internet",false);
 
 });
 
-//==============================
-// Online Status
-//==============================
-
-window.addEventListener("load",()=>{
-
-if(currentUser){
-
-db.ref("users/"+currentUser.uid).update({
-
-online:true,
-
-lastSeen:Date.now()
-
-});
-
-}
-
-});
-
-window.addEventListener("beforeunload",()=>{
-
-if(currentUser){
-
-db.ref("users/"+currentUser.uid).update({
-
-online:false,
-
-lastSeen:Date.now()
-
-});
-
-}
-
-});
-
-//==============================
-// Search Animation
-//==============================
-
-if(searchInput){
-
-searchInput.addEventListener("focus",()=>{
-
-document.querySelector(".searchBox")
-
-.style.transform="scale(1.02)";
-
-});
-
-searchInput.addEventListener("blur",()=>{
-
-document.querySelector(".searchBox")
-
-.style.transform="scale(1)";
-
-});
-
-}
-
-//==============================
-// Button Vibration
-//==============================
+/*=========================================
+Vibration
+=========================================*/
 
 document.addEventListener("click",e=>{
 
-if(
+    if(
 
-navigator.vibrate &&
+        navigator.vibrate &&
 
-e.target.closest("button,a")
+        e.target.closest("button,a")
 
-){
+    ){
 
-navigator.vibrate(10);
+        navigator.vibrate(10);
 
-}
+    }
 
 });
 
-//==============================
-// Floating Button
-//==============================
-
-if(document.getElementById("addFriendBtn")){
+/*=========================================
+Floating Button
+=========================================*/
 
 document.getElementById("addFriendBtn")
 
-.onclick=()=>{
+?.addEventListener("click",()=>{
 
-showToast("Coming Soon",false);
+    showToast("Coming Soon",false);
 
-};
+});
 
-}
+/*=========================================
+Cleanup
+=========================================*/
 
-//==============================
-// Initialize
-//==============================
+window.addEventListener("beforeunload",()=>{
 
-function initializeUsersPage(){
+    if(usersListener){
 
-showLoader();
+        db.ref("users")
 
-loadUsers();
+        .off("value",usersListener);
 
-listenOnlineUsers();
+    }
 
-lazyLoadImages();
+    if(onlineListener){
 
-observeCards();
+        db.ref("users")
 
-hideLoader();
+        .off("value",onlineListener);
 
-console.log(
+    }
 
-"%cVIEWORA USERS V8 LOADED",
+});
 
-"color:#00aaff;font-size:18px;font-weight:bold"
+/*=========================================
+Initialize Premium Effects
+=========================================*/
 
-);
+window.addEventListener("load",()=>{
 
-}
+    lazyLoadImages();
 
-window.addEventListener("load",initializeUsersPage);
+    observeCards();
 
-//==============================
-// Finish
-//==============================
+    updateMyStatus(true);
 
-console.log("✅ Users.js Loaded Successfully");
+    console.log(
+
+        "%cVIEWORA USERS V9 READY",
+
+        "color:#00AAFF;font-size:18px;font-weight:bold"
+
+    );
+
+});
+
+/*=========================================
+Auto Refresh Every 30 Seconds
+=========================================*/
+
+setInterval(()=>{
+
+    if(currentUser){
+
+        loadUsers();
+
+    }
+
+},30000);
+
+/*=========================================
+Finish
+=========================================*/
+
+console.log("✅ Viewora Users V9 Loaded Successfully");

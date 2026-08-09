@@ -1,612 +1,637 @@
-/*=========================================
-        VIEWORA V2.0 FINAL
-            feed.js
-            PART 1
- Authentication • Load Feed • Render
-=========================================*/
+/*==========================================================
+        VIEWORA V12
+        feed.js
+        FINAL • PREMIUM FEED SYSTEM
 
-// ======================================
-// Global
-// ======================================
+        Firebase:
+        • Authentication
+        • Realtime Database
+        • Likes
+        • Comments
+        • Saves
+        • Views
+        • Notifications
+        • User Profiles
 
-let currentUser = null;
+        Cloudinary:
+        • Image URL
+        • Video URL
+        • Thumbnail URL
+
+==========================================================*/
+
+"use strict";
+
+/*==========================================================
+  1. GLOBALS
+==========================================================*/
+
+let loggedInUser = null;
+let currentUserData = null;
+
 let feedPosts = [];
+let feedLoaded = false;
 
-// ======================================
-// DOM
-// ======================================
+const viewedPosts = new Set();
+
+let activePostId = null;
+let commentListener = null;
+
+
+/*==========================================================
+  2. DOM
+==========================================================*/
 
 const feedContainer =
-document.getElementById("feedContainer");
+    document.getElementById("feedContainer");
 
-const skeleton =
-document.getElementById("feedSkeleton");
+const feedSkeleton =
+    document.getElementById("feedSkeleton");
 
-// ======================================
-// Auth
-// ======================================
+const searchInput =
+    document.getElementById("searchInput");
 
-auth.onAuthStateChanged(user=>{
+const commentModal =
+    document.getElementById("commentModal");
 
-    if(!user){
+const commentsContainer =
+    document.getElementById("commentsContainer");
 
-        location.href="login.html";
+const commentText =
+    document.getElementById("commentText");
+
+const closeComment =
+    document.getElementById("closeComment");
+
+const sendComment =
+    document.getElementById("sendComment");
+
+const notificationCount =
+    document.getElementById("notificationCount");
+
+const exploreBtn =
+    document.getElementById("exploreBtn");
+
+
+/*==========================================================
+  3. TOAST
+==========================================================*/
+
+function feedToast(message, type = "success") {
+
+    const toast =
+        document.getElementById("toast");
+
+    const toastText =
+        document.getElementById("toastText");
+
+    const toastIcon =
+        document.getElementById("toastIcon");
+
+    if (!toast || !toastText)
+        return;
+
+    toastText.textContent = message;
+
+    if (toastIcon) {
+
+        if (type === "error") {
+
+            toastIcon.className =
+                "fa-solid fa-circle-xmark";
+
+        } else if (type === "warning") {
+
+            toastIcon.className =
+                "fa-solid fa-circle-exclamation";
+
+        } else {
+
+            toastIcon.className =
+                "fa-solid fa-circle-check";
+
+        }
+
+    }
+
+    toast.classList.remove("hidden");
+
+    requestAnimationFrame(() => {
+        toast.classList.add("show");
+    });
+
+    clearTimeout(
+        feedToast.timer
+    );
+
+    feedToast.timer =
+        setTimeout(() => {
+
+            toast.classList.remove("show");
+
+            setTimeout(() => {
+
+                toast.classList.add("hidden");
+
+            }, 250);
+
+        }, 2200);
+
+}
+
+
+/*==========================================================
+  4. LOADING
+==========================================================*/
+
+function showFeedLoading() {
+
+    if (feedSkeleton)
+        feedSkeleton.classList.remove("hidden");
+
+}
+
+
+function hideFeedLoading() {
+
+    if (feedSkeleton)
+        feedSkeleton.classList.add("hidden");
+
+}
+
+
+/*==========================================================
+  5. AUTHENTICATION
+==========================================================*/
+
+auth.onAuthStateChanged(async user => {
+
+    if (!user) {
+
+        location.replace("login.html");
+
         return;
 
     }
 
-    currentUser=user;
+    loggedInUser = user;
+
+    try {
+
+        const snapshot =
+            await userRef(user.uid)
+                .once("value");
+
+        currentUserData =
+            snapshot.exists()
+                ? snapshot.val()
+                : {};
+
+        await safeUpdate(
+            "users/" + user.uid,
+            {
+                online: true,
+                lastLogin: SERVER_TIME
+            }
+        );
+
+        userRef(user.uid)
+            .child("online")
+            .onDisconnect()
+            .set(false);
+
+        userRef(user.uid)
+            .child("lastSeen")
+            .onDisconnect()
+            .set(SERVER_TIME);
+
+    } catch (error) {
+
+        console.error(
+            "User initialization error:",
+            error
+        );
+
+    }
+
+    listenNotificationCount();
 
     loadFeed();
 
 });
 
-// ======================================
-// Loading
-// ======================================
 
-function showLoading(){
+/*==========================================================
+  6. LOAD FEED
+==========================================================*/
 
-    if(skeleton)
-        skeleton.classList.remove("hidden");
+function loadFeed(force = false) {
+
+    if (feedLoaded && !force)
+        return;
+
+    feedLoaded = true;
+
+    showFeedLoading();
+
+    postsRef()
+        .orderByChild("createdAt")
+        .limitToLast(50)
+        .on(
+            "value",
+            snapshot => {
+
+                hideFeedLoading();
+
+                feedPosts = [];
+
+                if (!snapshot.exists()) {
+
+                    renderEmptyFeed();
+
+                    return;
+
+                }
+
+                snapshot.forEach(child => {
+
+                    const data =
+                        child.val() || {};
+
+                    /*
+                        Upload system uses:
+                        postId
+                        mediaURL
+                        mediaType
+                        profilePhoto
+                    */
+
+                    feedPosts.unshift({
+
+                        id: child.key,
+
+                        ...data
+
+                    });
+
+                });
+
+                renderFeed();
+
+            },
+
+            error => {
+
+                hideFeedLoading();
+
+                console.error(
+                    "Feed error:",
+                    error
+                );
+
+                renderFeedError();
+
+            }
+        );
 
 }
 
-function hideLoading(){
 
-    if(skeleton)
-        skeleton.classList.add("hidden");
+/*==========================================================
+  7. EMPTY FEED
+==========================================================*/
 
-}
+function renderEmptyFeed() {
 
-// ======================================
-// Load Feed
-// ======================================
+    if (!feedContainer)
+        return;
 
-function loadFeed(){
+    feedContainer.innerHTML = `
 
-    showLoading();
+        <div class="emptyFeed premiumEmpty">
 
-    db.ref("posts")
-
-    .orderByChild("createdAt")
-
-    .limitToLast(50)
-
-    .on("value",snapshot=>{
-
-        hideLoading();
-
-        feedPosts=[];
-
-        if(!snapshot.exists()){
-
-            feedContainer.innerHTML=`
-
-            <div class="emptyFeed">
-
-                <h2>📭 No Posts Yet</h2>
-
-                <p>Be the first creator to upload.</p>
-
+            <div class="emptyIcon">
+                <i class="fa-solid fa-images"></i>
             </div>
 
-            `;
+            <h2>No Posts Yet</h2>
 
-            return;
+            <p>
+                Be the first creator to share
+                something on Viewora.
+            </p>
 
-        }
+            <button
+                onclick="location.href='upload.html'">
 
-        snapshot.forEach(child=>{
+                <i class="fa-solid fa-plus"></i>
 
-            feedPosts.unshift({
+                Create Post
 
-                id:child.key,
-
-                ...child.val()
-
-            });
-
-        });
-
-        renderFeed();
-
-    },error=>{
-
-        hideLoading();
-
-        console.error(error);
-
-        feedContainer.innerHTML=`
-
-        <div class="emptyFeed">
-
-            <h2>⚠ Feed Error</h2>
-
-            <p>Unable to load posts.</p>
+            </button>
 
         </div>
 
-        `;
-
-    });
+    `;
 
 }
 
-// ======================================
-// Render Feed
-// ======================================
 
-function renderFeed(){
+/*==========================================================
+  8. FEED ERROR
+==========================================================*/
 
-    feedContainer.innerHTML="";
+function renderFeedError() {
 
-    feedPosts.forEach(post=>{
+    if (!feedContainer)
+        return;
 
-        feedContainer.appendChild(
+    feedContainer.innerHTML = `
 
-            createPost(post)
+        <div class="emptyFeed">
 
+            <div class="emptyIcon">
+                ⚠️
+            </div>
+
+            <h2>Unable to load feed</h2>
+
+            <p>
+                Please check your internet connection.
+            </p>
+
+            <button
+                onclick="refreshFeed()">
+
+                <i class="fa-solid fa-rotate"></i>
+
+                Try Again
+
+            </button>
+
+        </div>
+
+    `;
+
+}
+
+
+/*==========================================================
+  9. RENDER FEED
+==========================================================*/
+
+function renderFeed() {
+
+    if (!feedContainer)
+        return;
+
+    feedContainer.innerHTML = "";
+
+    if (!feedPosts.length) {
+
+        renderEmptyFeed();
+
+        return;
+
+    }
+
+    const fragment =
+        document.createDocumentFragment();
+
+    feedPosts.forEach(post => {
+
+        fragment.appendChild(
+            createPostCard(post)
         );
 
     });
 
+    feedContainer.appendChild(fragment);
+
+    observeFeedMedia();
+
 }
 
-// ======================================
-// Create Post
-// ======================================
 
-function createPost(post){
+/*==========================================================
+  10. CREATE POST CARD
+==========================================================*/
 
-    const card=document.createElement("article");
+function createPostCard(post) {
 
-    card.className="postCard glass";
+    const card =
+        document.createElement("article");
 
-    const media=
+    card.className =
+        "postCard glass";
 
-    post.type==="image"
+    card.dataset.postId =
+        post.id;
 
-    ?
 
-    `<img class="postMedia"
-    src="${post.fileURL}">`
+    /*------------------------------------------
+      USER
+    ------------------------------------------*/
 
-    :
+    const profile =
+        post.profilePhoto ||
+        post.photo ||
+        post.profile ||
+        "assets/default-avatar.png";
 
-    `<video
-    class="postMedia"
-    src="${post.fileURL}"
-    controls
-    playsinline>
-    </video>`;
+    const username =
+        post.username ||
+        "Viewora User";
 
-    card.innerHTML=`
+    const fullName =
+        post.fullName ||
+        post.name ||
+        username;
 
-    <div class="postHeader">
 
-        <div class="userInfo">
+    /*------------------------------------------
+      CONTENT
+    ------------------------------------------*/
 
-            <img
-            src="${post.profile || "assets/default-avatar.png"}"
-            class="profilePic">
+    const title =
+        escapeHTML(
+            post.title || ""
+        );
 
-            <div>
+    const caption =
+        escapeHTML(
+            post.caption || ""
+        );
 
-                <h3>
 
-                    ${post.username || "Unknown"}
+    /*------------------------------------------
+      STATS
+    ------------------------------------------*/
 
-                </h3>
+    const likes =
+        Number(post.likes || 0);
 
-                <span>
+    const comments =
+        Number(post.comments || 0);
 
-                    ${timeAgo(post.createdAt)}
+    const views =
+        Number(post.views || 0);
 
-                </span>
+    const shares =
+        Number(post.shares || 0);
+
+
+    /*------------------------------------------
+      MEDIA
+    ------------------------------------------*/
+
+    const mediaURL =
+        post.mediaURL ||
+        post.fileURL ||
+        "";
+
+    const thumbnail =
+        post.thumbnailURL ||
+        "";
+
+    let mediaHTML = "";
+
+
+    if (post.mediaType === "video" ||
+        post.type === "video") {
+
+        mediaHTML = `
+
+            <div class="postMediaWrapper">
+
+                <video
+
+                    class="postMedia"
+
+                    data-id="${post.id}"
+
+                    src="${escapeAttribute(mediaURL)}"
+
+                    ${thumbnail
+                        ? `poster="${escapeAttribute(thumbnail)}"`
+                        : ""}
+
+                    controls
+
+                    playsinline
+
+                    preload="metadata">
+
+                </video>
 
             </div>
 
-        </div>
+        `;
 
-    </div>
+    } else if (mediaURL) {
 
-    <div class="postContent">
+        mediaHTML = `
 
-        ${post.title || ""}
-
-    </div>
-
-    ${media}
-
-    <div class="postStats">
-
-        ❤️ ${post.likes || 0}
-        •
-        💬 ${post.comments || 0}
-        •
-        👁 ${post.views || 0}
-
-    </div>
-
-    <div class="postActions">
-
-        <button
-        onclick="likePost('${post.id}')">
-
-        ❤️ Like
-
-        </button>
-
-        <button
-        onclick="openComments('${post.id}')">
-
-        💬 Comment
-
-        </button>
-
-        <button
-        onclick="sharePost('${post.id}')">
-
-        📤 Share
-
-        </button>
-
-        <button
-        onclick="savePost('${post.id}')">
-
-        🔖 Save
-
-        </button>
-
-    </div>
-
-    `;
-
-    return card;
-
-}
-
-// ======================================
-// Time Ago
-// ======================================
-
-function timeAgo(time){
-
-    const sec=Math.floor(
-
-        (Date.now()-time)/1000
-
-    );
-
-    if(sec<60)
-        return "Just now";
-
-    if(sec<3600)
-        return Math.floor(sec/60)+" min ago";
-
-    if(sec<86400)
-        return Math.floor(sec/3600)+" hr ago";
-
-    if(sec<604800)
-        return Math.floor(sec/86400)+" days ago";
-
-    return new Date(time)
-    .toLocaleDateString();
-
-}
-
-console.log("✅ Feed Part 1 Loaded");
-/*=========================================
-        VIEWORA V2.0 FINAL
-            feed.js
-            PART 2
- Like • Save • Share • Views
-=========================================*/
-
-// ======================================
-// Like / Unlike
-// ======================================
-
-async function likePost(postId){
-
-    if(!currentUser) return;
-
-    const likeRef = db.ref(
-        "postLikes/"+postId+"/"+currentUser.uid
-    );
-
-    const postRef = db.ref(
-        "posts/"+postId+"/likes"
-    );
-
-    const liked = await likeRef.once("value");
-
-    let likes = 0;
-
-    const likeSnap = await postRef.once("value");
-
-    if(likeSnap.exists()){
-
-        likes = likeSnap.val();
-
-    }
-
-    if(liked.exists()){
-
-        await likeRef.remove();
-
-        likes = Math.max(0, likes-1);
-
-        await postRef.set(likes);
-
-        showToast("💔 Like Removed");
-
-    }else{
-
-        await likeRef.set(true);
-
-        likes++;
-
-        await postRef.set(likes);
-
-        showToast("❤️ Liked");
-
-    }
-
-}
-
-// ======================================
-// Save Post
-// ======================================
-
-async function savePost(postId){
-
-    if(!currentUser) return;
-
-    const ref = db.ref(
-        "savedPosts/"+currentUser.uid+"/"+postId
-    );
-
-    const snap = await ref.once("value");
-
-    if(snap.exists()){
-
-        await ref.remove();
-
-        showToast("🗑 Removed from Saved");
-
-    }else{
-
-        await ref.set({
-
-            savedAt:Date.now()
-
-        });
-
-        showToast("🔖 Saved");
-
-    }
-
-}
-
-// ======================================
-// Share Post
-// ======================================
-
-function sharePost(postId){
-
-    const url =
-    location.origin+
-    "/post.html?id="+postId;
-
-    if(navigator.share){
-
-        navigator.share({
-
-            title:"Viewora",
-
-            text:"Check this post",
-
-            url:url
-
-        }).catch(()=>{});
-
-    }else{
-
-        navigator.clipboard
-
-        .writeText(url)
-
-        .then(()=>{
-
-            showToast("🔗 Link Copied");
-
-        });
-
-    }
-
-}
-
-// ======================================
-// View Counter
-// ======================================
-
-const viewedPosts = new Set();
-
-async function addView(postId){
-
-    if(viewedPosts.has(postId))
-        return;
-
-    viewedPosts.add(postId);
-
-    const ref =
-    db.ref("posts/"+postId+"/views");
-
-    const snap =
-    await ref.once("value");
-
-    let views = 0;
-
-    if(snap.exists()){
-
-        views = snap.val();
-
-    }
-
-    await ref.set(views+1);
-
-}
-
-// ======================================
-// Observe Videos
-// ======================================
-
-const observer =
-new IntersectionObserver(entries=>{
-
-    entries.forEach(entry=>{
-
-        if(entry.isIntersecting){
-
-            const id =
-            entry.target.dataset.id;
-
-            if(id){
-
-                addView(id);
-
-            }
-
-        }
-
-    });
-
-},{
-    threshold:0.6
-});
-
-// ======================================
-// Attach Observer
-// ======================================
-
-function observePosts(){
-
-    document
-
-    .querySelectorAll(".postMedia")
-
-    .forEach(media=>{
-
-        observer.observe(media);
-
-    });
-
-}
-
-// ======================================
-// Update Render
-// ======================================
-
-const oldRender = renderFeed;
-
-renderFeed = function(){
-
-    oldRender();
-
-    observePosts();
-
-}
-
-console.log("✅ Feed Part 2 Loaded");
-/*=========================================
-        VIEWORA V2.0 FINAL
-            feed.js
-            PART 3
- Comments • Delete • Edit • Profile
-=========================================*/
-
-// ======================================
-// Current Post
-// ======================================
-
-let currentPostId = null;
-
-// ======================================
-// Open Comments
-// ======================================
-
-window.openComments = async function(postId){
-
-    currentPostId = postId;
-
-    const modal =
-    document.getElementById("commentModal");
-
-    const container =
-    document.getElementById("commentsContainer");
-
-    if(!modal || !container) return;
-
-    modal.classList.remove("hidden");
-
-    container.innerHTML =
-    "<p style='text-align:center'>Loading...</p>";
-
-    db.ref("comments/"+postId)
-
-    .orderByChild("createdAt")
-
-    .on("value",snap=>{
-
-        container.innerHTML="";
-
-        if(!snap.exists()){
-
-            container.innerHTML=`
-
-            <div class="emptyComments">
-
-                No comments yet.
-
-            </div>
-
-            `;
-
-            return;
-
-        }
-
-        snap.forEach(child=>{
-
-            const c = child.val();
-
-            container.innerHTML += `
-
-            <div class="commentCard">
+            <div class="postMediaWrapper">
 
                 <img
-                src="${c.photo || "assets/default-avatar.png"}"
-                class="commentAvatar">
 
-                <div>
+                    class="postMedia"
 
-                    <b>
+                    data-id="${post.id}"
 
-                    ${c.username || "Unknown"}
+                    src="${escapeAttribute(mediaURL)}"
 
-                    </b>
+                    loading="lazy"
 
-                    <p>
+                    alt="${escapeAttribute(title || "Viewora Post")}">
 
-                    ${c.text}
+            </div>
 
-                    </p>
+        `;
+
+    }
+
+
+    /*------------------------------------------
+      VERIFIED
+    ------------------------------------------*/
+
+    const verified =
+        post.verified === true
+            ? `
+                <i
+                    class="fa-solid fa-circle-check verified">
+                </i>
+              `
+            : "";
+
+
+    /*------------------------------------------
+      CAPTION
+    ------------------------------------------*/
+
+    const captionHTML =
+        caption
+            ? `
+                <div class="postCaption">
+                    ${caption}
+                </div>
+              `
+            : "";
+
+
+    /*------------------------------------------
+      CATEGORY
+    ------------------------------------------*/
+
+    const categoryHTML =
+        post.category
+            ? `
+                <span class="postCategory">
+                    ${escapeHTML(post.category)}
+                </span>
+              `
+            : "";
+
+
+    /*------------------------------------------
+      CARD
+    ------------------------------------------*/
+
+    card.innerHTML = `
+
+        <div class="postHeader">
+
+            <div
+                class="postUser"
+                onclick="openProfile('${escapeAttribute(post.uid || "")}')">
+
+                <img
+
+                    src="${escapeAttribute(profile)}"
+
+                    class="profilePic"
+
+                    loading="lazy"
+
+                    alt="Profile">
+
+                <div class="postUserInfo">
+
+                    <h3>
+
+                        ${escapeHTML(username)}
+
+                        ${verified}
+
+                    </h3>
 
                     <small>
 
-                    ${timeAgo(c.createdAt)}
+                        ${escapeHTML(fullName)}
+
+                        • ${timeAgo(post.createdAt)}
 
                     </small>
 
@@ -614,825 +639,1803 @@ window.openComments = async function(postId){
 
             </div>
 
-            `;
+            <button
+                class="postMenu"
+                onclick="openPostMenu('${post.id}')">
 
-        });
+                <i class="fa-solid fa-ellipsis"></i>
 
-    });
+            </button>
 
-};
+        </div>
 
-// ======================================
-// Close Comment
-// ======================================
 
-const closeComment =
-document.getElementById("closeComment");
+        ${categoryHTML}
 
-if(closeComment){
 
-closeComment.onclick=()=>{
+        ${
+            title
+            ? `
+                <h2 class="postTitle">
+                    ${title}
+                </h2>
+              `
+            : ""
+        }
 
-document
 
-.getElementById("commentModal")
+        ${captionHTML}
 
-.classList.add("hidden");
 
-};
+        ${mediaHTML}
+
+
+        <div class="postStats">
+
+            <span>
+
+                <i class="fa-solid fa-heart"></i>
+
+                ${formatNumber(likes)}
+
+            </span>
+
+            <span>
+
+                <i class="fa-solid fa-comment"></i>
+
+                ${formatNumber(comments)}
+
+            </span>
+
+            <span>
+
+                <i class="fa-solid fa-eye"></i>
+
+                ${formatNumber(views)}
+
+            </span>
+
+            ${
+                shares > 0
+                ? `
+                    <span>
+
+                        <i class="fa-solid fa-share"></i>
+
+                        ${formatNumber(shares)}
+
+                    </span>
+                  `
+                : ""
+            }
+
+        </div>
+
+
+        <div class="postActions">
+
+            <button
+                class="postAction likeButton"
+                data-post="${post.id}"
+                onclick="likePost('${post.id}')">
+
+                <i class="fa-regular fa-heart"></i>
+
+                <span>Like</span>
+
+            </button>
+
+
+            <button
+                class="postAction"
+                onclick="openComments('${post.id}')">
+
+                <i class="fa-regular fa-comment"></i>
+
+                <span>Comment</span>
+
+            </button>
+
+
+            <button
+                class="postAction"
+                onclick="sharePost('${post.id}')">
+
+                <i class="fa-solid fa-share"></i>
+
+                <span>Share</span>
+
+            </button>
+
+
+            <button
+                class="postAction"
+                onclick="savePost('${post.id}')">
+
+                <i class="fa-regular fa-bookmark"></i>
+
+                <span>Save</span>
+
+            </button>
+
+        </div>
+
+    `;
+
+    return card;
 
 }
 
-// ======================================
-// Send Comment
-// ======================================
 
-const sendBtn =
-document.getElementById("sendComment");
+/*==========================================================
+  11. HTML SAFETY
+==========================================================*/
 
-if(sendBtn){
+function escapeHTML(value) {
 
-sendBtn.onclick = async()=>{
-
-const input =
-document.getElementById("commentText");
-
-const text =
-input.value.trim();
-
-if(text==="") return;
-
-const id =
-db.ref().push().key;
-
-await db.ref(
-
-"comments/"+
-
-currentPostId+
-
-"/"+id
-
-)
-
-.set({
-
-id,
-
-uid:currentUser.uid,
-
-username:
-
-currentUser.displayName ||
-
-"User",
-
-photo:
-
-currentUser.photoURL ||
-
-"assets/default-avatar.png",
-
-text,
-
-createdAt:Date.now()
-
-});
-
-const ref =
-db.ref(
-
-"posts/"+
-
-currentPostId+
-
-"/comments"
-
-);
-
-const snap =
-await ref.once("value");
-
-await ref.set(
-
-(snap.val()||0)+1
-
-);
-
-input.value="";
-
-showToast("💬 Comment Added");
-
-};
+    return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
 
 }
 
-// ======================================
-// Delete Post
-// ======================================
 
-window.deletePost =
-async function(postId){
+function escapeAttribute(value) {
 
-if(!confirm(
-
-"Delete this post?"
-
-))
-
-return;
-
-await db.ref(
-
-"posts/"+postId
-
-).remove();
-
-showToast(
-
-"🗑 Post Deleted"
-
-);
-
-};
-
-// ======================================
-// Edit Post
-// ======================================
-
-window.editPost =
-async function(postId){
-
-const title = prompt(
-
-"Edit Title"
-
-);
-
-if(title===null) return;
-
-await db.ref(
-
-"posts/"+postId
-
-)
-
-.update({
-
-title
-
-});
-
-showToast(
-
-"✏️ Updated"
-
-);
-
-};
-
-// ======================================
-// Open Profile
-// ======================================
-
-window.openProfile =
-function(uid){
-
-location.href=
-
-"profile.html?uid="+uid;
-
-};
-
-// ======================================
-// Double Tap Like
-// ======================================
-
-document.addEventListener(
-
-"dblclick",
-
-e=>{
-
-const media =
-e.target.closest(".postMedia");
-
-if(!media) return;
-
-const id =
-media.dataset.id;
-
-if(id){
-
-likePost(id);
+    return escapeHTML(value);
 
 }
 
-});
 
-// ======================================
-// Premium Animation
-// ======================================
+/*==========================================================
+  12. FORMAT NUMBER
+==========================================================*/
 
-function animateLike(target){
+function formatNumber(number) {
 
-const heart =
-document.createElement("div");
+    number =
+        Number(number || 0);
 
-heart.innerHTML="❤️";
+    if (number < 1000)
+        return String(number);
 
-heart.style.cssText=`
+    if (number < 1000000)
+        return (
+            (number / 1000)
+                .toFixed(number >= 10000 ? 0 : 1)
+            + "K"
+        );
 
-position:absolute;
-font-size:70px;
-left:50%;
-top:50%;
-transform:translate(-50%,-50%);
-pointer-events:none;
-animation:pop .8s forwards;
-z-index:1000;
+    if (number < 1000000000)
+        return (
+            (number / 1000000)
+                .toFixed(number >= 10000000 ? 0 : 1)
+            + "M"
+        );
 
-`;
-
-target.parentElement.appendChild(heart);
-
-setTimeout(()=>{
-
-heart.remove();
-
-},800);
-
-}
-
-// ======================================
-// Like Animation Trigger
-// ======================================
-
-document.addEventListener(
-
-"dblclick",
-
-e=>{
-
-const media =
-e.target.closest(".postMedia");
-
-if(media){
-
-animateLike(media);
+    return (
+        (number / 1000000000)
+            .toFixed(1)
+        + "B"
+    );
 
 }
 
-});
 
-console.log("✅ Feed Part 3 Loaded");
-/*=========================================
-        VIEWORA V1.0
-            feed.js
-             PART 4 FINAL
-=========================================*/
+/*==========================================================
+  13. TIME AGO
+==========================================================*/
 
-// ===============================
-// Like Post
-// ===============================
+function timeAgo(timestamp) {
 
-window.likePost = async function(postId){
+    if (!timestamp)
+        return "Just now";
 
-    if(!currentUser) return;
+    const seconds =
+        Math.floor(
+            (Date.now() - Number(timestamp)) / 1000
+        );
 
-    const likeRef =
-    db.ref("likes/"+postId+"/"+currentUser.uid);
+    if (seconds < 60)
+        return "Just now";
 
-    const likeSnap =
-    await likeRef.once("value");
+    if (seconds < 3600)
+        return (
+            Math.floor(seconds / 60)
+            + " min ago"
+        );
 
-    const postRef =
-    db.ref("posts/"+postId);
+    if (seconds < 86400)
+        return (
+            Math.floor(seconds / 3600)
+            + " hr ago"
+        );
 
-    const postSnap =
-    await postRef.once("value");
+    if (seconds < 604800)
+        return (
+            Math.floor(seconds / 86400)
+            + " days ago"
+        );
 
-    if(!postSnap.exists()) return;
+    return new Date(
+        timestamp
+    ).toLocaleDateString();
 
-    let likes =
-    postSnap.val().likes || 0;
+}
 
-    if(likeSnap.exists()){
 
-        await likeRef.remove();
+/*==========================================================
+  14. LIKE SYSTEM
+==========================================================*/
 
-        likes=Math.max(0,likes-1);
+window.likePost =
+async function(postId) {
 
-    }else{
+    if (!loggedInUser) {
 
-        await likeRef.set(true);
+        feedToast(
+            "Please login first",
+            "warning"
+        );
 
-        likes++;
+        return;
 
     }
 
-    await postRef.update({
-        likes:likes
-    });
+    try {
 
-};
+        const likeRef =
+            likesRef(postId)
+                .child(loggedInUser.uid);
 
-// ===============================
-// Share
-// ===============================
+        const postDatabaseRef =
+            postRef(postId);
 
-window.sharePost=function(postId){
+        const postSnapshot =
+            await postDatabaseRef
+                .once("value");
 
-    const url=
-    location.origin+
-    "/post.html?id="+postId;
+        if (!postSnapshot.exists())
+            return;
 
-    if(navigator.share){
+        const post =
+            postSnapshot.val();
 
-        navigator.share({
+        const alreadyLiked =
+            await likeRef
+                .once("value");
 
-            title:"Viewora",
+        let currentLikes =
+            Number(post.likes || 0);
 
-            text:"Check this post",
 
-            url:url
+        if (alreadyLiked.exists()) {
 
-        });
+            await likeRef.remove();
 
-    }else{
+            currentLikes =
+                Math.max(
+                    0,
+                    currentLikes - 1
+                );
 
-        navigator.clipboard.writeText(url);
+            await postDatabaseRef.update({
 
-        showToast("Link Copied");
+                likes: currentLikes
 
-    }
+            });
 
-};
+            feedToast("Like removed");
 
-// ===============================
-// Comments
-// ===============================
+        } else {
 
-window.openComments=function(postId){
+            await likeRef.set({
 
-    location.href=
-    "post.html?id="+postId;
+                uid: loggedInUser.uid,
 
-};
+                createdAt:
+                    SERVER_TIME
 
-// ===============================
-// Notification Button
-// ===============================
+            });
 
-const notificationBtn=
-document.getElementById("notificationBtn");
+            currentLikes++;
 
-if(notificationBtn){
+            await postDatabaseRef.update({
 
-notificationBtn.onclick=()=>{
+                likes: currentLikes
 
-location.href="notifications.html";
+            });
 
-};
 
-}
+            /* Notification */
 
-// ===============================
-// Message Button
-// ===============================
+            if (
+                post.uid &&
+                post.uid !== loggedInUser.uid
+            ) {
 
-const messageBtn=
-document.getElementById("messageBtn");
+                await notificationsRef(post.uid)
+                    .push({
 
-if(messageBtn){
+                        type: "like",
 
-messageBtn.onclick=()=>{
+                        from:
+                            loggedInUser.uid,
 
-location.href="chatlist.html";
+                        postId,
 
-};
+                        read: false,
 
-}
+                        createdAt:
+                            SERVER_TIME
 
-// ===============================
-// Floating Upload
-// ===============================
-
-const fab=
-document.getElementById("fab");
-
-if(fab){
-
-fab.onclick=()=>{
-
-location.href="upload.html";
-
-};
-
-}
-
-// ===============================
-// Search
-// ===============================
-
-const searchInput=
-document.getElementById("searchInput");
-
-if(searchInput){
-
-searchInput.addEventListener(
-
-"input",
-
-e=>{
-
-const q=e.target.value.toLowerCase();
-
-document
-.querySelectorAll(".post")
-
-.forEach(post=>{
-
-post.style.display=
-
-post.innerText
-.toLowerCase()
-.includes(q)
-
-?"block"
-
-:"none";
-
-});
-
-});
-
-}
-
-// ===============================
-// Scroll Button
-// ===============================
-
-const topBtn=
-document.getElementById("scrollTopBtn");
-
-window.addEventListener(
-
-"scroll",
-
-()=>{
-
-if(!topBtn) return;
-
-topBtn.style.display=
-
-window.scrollY>500
-
-?"flex"
-
-:"none";
-
-});
-
-if(topBtn){
-
-topBtn.onclick=()=>{
-
-window.scrollTo({
-
-top:0,
-
-behavior:"smooth"
-
-});
-
-};
-
-}
-
-// ===============================
-// Network
-// ===============================
-
-window.addEventListener(
-
-"offline",
-
-()=>{
-
-showToast("No Internet");
-
-});
-
-window.addEventListener(
-
-"online",
-
-()=>{
-
-showToast("Connected");
-
-});
-
-// ===============================
-// Cleanup
-// ===============================
-
-window.addEventListener(
-
-"beforeunload",
-
-()=>{
-
-db.ref("posts").off();
-
-});
-
-// ===============================
-
-console.log("✅ Feed Part 4 Loaded");
-/*=========================================
-        VIEWORA V2.0
-            feed.js
-             PART 5
-=========================================*/
-
-// ===============================
-// Live Notification Count
-// ===============================
-
-function listenNotificationCount(){
-
-    if(!currentUser) return;
-
-    db.ref("notifications/"+currentUser.uid)
-
-    .on("value",snapshot=>{
-
-        let count=0;
-
-        snapshot.forEach(item=>{
-
-            const data=item.val();
-
-            if(!data.read){
-
-                count++;
+                    });
 
             }
 
-        });
-
-        const badge=
-        document.getElementById("notificationCount");
-
-        if(!badge) return;
-
-        if(count>0){
-
-            badge.style.display="flex";
-            badge.innerText=
-            count>99?"99+":count;
-
-        }else{
-
-            badge.style.display="none";
+            feedToast("❤️ Liked");
 
         }
 
-    });
+        updatePostStats(
+            postId,
+            "likes",
+            currentLikes
+        );
 
-}
+    } catch (error) {
 
-// ===============================
-// Explore Button
-// ===============================
+        console.error(
+            "Like error:",
+            error
+        );
 
-const exploreBtn=
-document.getElementById("exploreBtn");
+        feedToast(
+            "Unable to like post",
+            "error"
+        );
 
-if(exploreBtn){
-
-exploreBtn.onclick=()=>{
-
-location.href="explore.html";
+    }
 
 };
 
-}
 
-// ===============================
-// Auto Play Videos
-// ===============================
+/*==========================================================
+  15. SAVE POST
+==========================================================*/
 
-const observer=
+window.savePost =
+async function(postId) {
 
-new IntersectionObserver(
+    if (!loggedInUser)
+        return;
 
-entries=>{
+    try {
 
-entries.forEach(entry=>{
+        const ref =
+            savedPostsRef(
+                loggedInUser.uid
+            ).child(postId);
 
-const video=
+        const snapshot =
+            await ref.once("value");
 
-entry.target;
+        if (snapshot.exists()) {
 
-if(entry.isIntersecting){
+            await ref.remove();
 
-video.play().catch(()=>{});
+            feedToast("🔖 Removed from saved");
 
-}else{
+        } else {
 
-video.pause();
+            await ref.set({
 
-}
+                postId,
 
-});
+                savedAt:
+                    SERVER_TIME
 
-},
+            });
 
-{
+            feedToast("🔖 Post Saved");
 
-threshold:.7
+        }
 
-}
+    } catch (error) {
 
-);
+        console.error(
+            "Save error:",
+            error
+        );
 
-function observeVideos(){
+        feedToast(
+            "Unable to save post",
+            "error"
+        );
 
-document
-
-.querySelectorAll("video")
-
-.forEach(video=>{
-
-observer.observe(video);
-
-});
-
-}
-
-// ===============================
-// Infinite Scroll
-// ===============================
-
-let loadingMore=false;
-
-window.addEventListener(
-
-"scroll",
-
-()=>{
-
-if(loadingMore) return;
-
-if(
-
-window.innerHeight+
-
-window.scrollY>=
-
-document.body.offsetHeight-300
-
-){
-
-loadingMore=true;
-
-loadMorePosts();
-
-}
-
-});
-
-function loadMorePosts(){
-
-setTimeout(()=>{
-
-loadingMore=false;
-
-},1000);
-
-}
-
-// ===============================
-// Pull To Refresh
-// ===============================
-
-let startY=0;
-
-window.addEventListener(
-
-"touchstart",
-
-e=>{
-
-startY=
-
-e.touches[0].clientY;
-
-});
-
-window.addEventListener(
-
-"touchend",
-
-e=>{
-
-const endY=
-
-e.changedTouches[0].clientY;
-
-if(endY-startY>120){
-
-loadFeed();
-
-showToast(
-
-"Feed Updated"
-
-);
-
-}
-
-});
-
-// ===============================
-// Empty Feed Animation
-// ===============================
-
-function animateFeed(){
-
-document
-
-.querySelectorAll(".post")
-
-.forEach((post,index)=>{
-
-post.animate([
-
-{
-
-opacity:0,
-
-transform:
-
-"translateY(20px)"
-
-},
-
-{
-
-opacity:1,
-
-transform:
-
-"translateY(0)"
-
-}
-
-],{
-
-duration:400,
-
-delay:index*80,
-
-fill:"forwards"
-
-});
-
-});
-
-}
-
-// ===============================
-// Refresh Feed
-// ===============================
-
-window.refreshFeed=function(){
-
-loadFeed();
-
-showToast("Refreshing...");
+    }
 
 };
 
-// ===============================
-// Feed Loaded
-// ===============================
+
+/*==========================================================
+  16. SHARE POST
+==========================================================*/
+
+window.sharePost =
+async function(postId) {
+
+    const url =
+        new URL(
+            "post.html",
+            location.href
+        );
+
+    url.searchParams.set(
+        "id",
+        postId
+    );
+
+
+    try {
+
+        if (
+            navigator.share
+        ) {
+
+            await navigator.share({
+
+                title:
+                    "Viewora Post",
+
+                text:
+                    "Check out this post on Viewora",
+
+                url:
+                    url.href
+
+            });
+
+        } else {
+
+            await navigator.clipboard
+                .writeText(url.href);
+
+            feedToast(
+                "🔗 Link Copied"
+            );
+
+        }
+
+
+        /* Share Counter */
+
+        const ref =
+            postRef(postId)
+                .child("shares");
+
+        const snapshot =
+            await ref.once("value");
+
+        await ref.set(
+            Number(snapshot.val() || 0) + 1
+        );
+
+    } catch (error) {
+
+        if (
+            error?.name !==
+            "AbortError"
+        ) {
+
+            console.error(
+                "Share error:",
+                error
+            );
+
+        }
+
+    }
+
+};
+
+
+/*==========================================================
+  17. VIEW COUNTER
+==========================================================*/
+
+async function addPostView(postId) {
+
+    if (!postId)
+        return;
+
+    if (
+        viewedPosts.has(postId)
+    )
+        return;
+
+    viewedPosts.add(postId);
+
+    try {
+
+        const ref =
+            postRef(postId)
+                .child("views");
+
+        const snapshot =
+            await ref.once("value");
+
+        const views =
+            Number(snapshot.val() || 0);
+
+        await ref.set(
+            views + 1
+        );
+
+        updatePostStats(
+            postId,
+            "views",
+            views + 1
+        );
+
+    } catch (error) {
+
+        console.error(
+            "View error:",
+            error
+        );
+
+    }
+
+}
+
+
+/*==========================================================
+  18. INTERSECTION OBSERVER
+==========================================================*/
+
+let feedObserver = null;
+
+
+function createFeedObserver() {
+
+    if (
+        !("IntersectionObserver" in window)
+    )
+        return null;
+
+    return new IntersectionObserver(
+
+        entries => {
+
+            entries.forEach(entry => {
+
+                if (!entry.isIntersecting)
+                    return;
+
+                const media =
+                    entry.target;
+
+                const postId =
+                    media.dataset.id;
+
+                if (postId) {
+
+                    addPostView(
+                        postId
+                    );
+
+                }
+
+
+                /* Video autoplay */
+
+                if (
+                    media.tagName ===
+                    "VIDEO"
+                ) {
+
+                    media
+                        .play()
+                        .catch(() => {});
+
+                }
+
+            });
+
+        },
+
+        {
+            threshold: 0.65
+        }
+
+    );
+
+}
+
+
+feedObserver =
+    createFeedObserver();
+
+
+function observeFeedMedia() {
+
+    if (!feedObserver)
+        return;
+
+    document
+        .querySelectorAll(
+            ".postMedia"
+        )
+        .forEach(media => {
+
+            feedObserver.observe(
+                media
+            );
+
+        });
+
+}
+
+
+/*==========================================================
+  19. PAUSE VIDEO WHEN OUT OF VIEW
+==========================================================*/
+
+if ("IntersectionObserver" in window) {
+
+    const videoObserver =
+        new IntersectionObserver(
+
+            entries => {
+
+                entries.forEach(entry => {
+
+                    const video =
+                        entry.target;
+
+                    if (
+                        video.tagName !==
+                        "VIDEO"
+                    )
+                        return;
+
+                    if (
+                        entry.isIntersecting
+                    ) {
+
+                        video
+                            .play()
+                            .catch(() => {});
+
+                    } else {
+
+                        video.pause();
+
+                    }
+
+                });
+
+            },
+
+            {
+                threshold: 0.5
+            }
+
+        );
+
+
+    document.addEventListener(
+        "DOMContentLoaded",
+        () => {
+
+            document
+                .querySelectorAll(
+                    "video.postMedia"
+                )
+                .forEach(video => {
+
+                    videoObserver
+                        .observe(video);
+
+                });
+
+        }
+    );
+
+}
+
+
+/*==========================================================
+  20. UPDATE POST STATS UI
+==========================================================*/
+
+function updatePostStats(
+    postId,
+    field,
+    value
+) {
+
+    const card =
+        document.querySelector(
+            `[data-post-id="${CSS.escape(postId)}"]`
+        );
+
+    if (!card)
+        return;
+
+    const stats =
+        card.querySelectorAll(
+            ".postStats span"
+        );
+
+    if (!stats.length)
+        return;
+
+
+    if (field === "likes") {
+
+        const icon =
+            stats[0]
+                ?.querySelector("i");
+
+        if (icon) {
+
+            stats[0].lastChild.textContent =
+                " " + formatNumber(value);
+
+        }
+
+    }
+
+
+    if (field === "comments") {
+
+        if (stats[1]) {
+
+            stats[1].lastChild.textContent =
+                " " + formatNumber(value);
+
+        }
+
+    }
+
+
+    if (field === "views") {
+
+        if (stats[2]) {
+
+            stats[2].lastChild.textContent =
+                " " + formatNumber(value);
+
+        }
+
+    }
+
+}
+
+
+/*==========================================================
+  21. COMMENTS
+==========================================================*/
+
+window.openComments =
+async function(postId) {
+
+    if (!commentModal ||
+        !commentsContainer)
+        return;
+
+    activePostId =
+        postId;
+
+
+    commentModal
+        .classList
+        .remove("hidden");
+
+
+    commentsContainer.innerHTML = `
+
+        <div class="commentLoading">
+
+            <i class="fa-solid fa-spinner fa-spin"></i>
+
+            Loading comments...
+
+        </div>
+
+    `;
+
+
+    if (commentListener) {
+
+        commentsRef(activePostId)
+            .off(
+                "value",
+                commentListener
+            );
+
+    }
+
+
+    commentListener =
+        snapshot => {
+
+            commentsContainer
+                .innerHTML = "";
+
+
+            if (!snapshot.exists()) {
+
+                commentsContainer.innerHTML = `
+
+                    <div class="emptyComments">
+
+                        <i class="fa-regular fa-comment"></i>
+
+                        <p>No comments yet.</p>
+
+                        <small>
+                            Be the first to comment.
+                        </small>
+
+                    </div>
+
+                `;
+
+                return;
+
+            }
+
+
+            snapshot.forEach(child => {
+
+                const comment =
+                    child.val() || {};
+
+                const commentElement =
+                    createCommentElement(
+                        comment
+                    );
+
+                commentsContainer
+                    .appendChild(
+                        commentElement
+                    );
+
+            });
+
+            commentsContainer.scrollTop =
+                commentsContainer.scrollHeight;
+
+        };
+
+
+    commentsRef(postId)
+        .orderByChild("createdAt")
+        .on(
+            "value",
+            commentListener
+        );
+
+};
+
+
+function createCommentElement(comment) {
+
+    const element =
+        document.createElement("div");
+
+    element.className =
+        "commentCard";
+
+
+    const photo =
+        comment.photo ||
+        comment.profilePhoto ||
+        "assets/default-avatar.png";
+
+
+    element.innerHTML = `
+
+        <img
+
+            src="${escapeAttribute(photo)}"
+
+            class="commentAvatar"
+
+            loading="lazy">
+
+        <div class="commentContent">
+
+            <b>
+                ${escapeHTML(
+                    comment.username ||
+                    "User"
+                )}
+            </b>
+
+            <p>
+                ${escapeHTML(
+                    comment.text ||
+                    ""
+                )}
+            </p>
+
+            <small>
+                ${timeAgo(
+                    comment.createdAt
+                )}
+            </small>
+
+        </div>
+
+    `;
+
+    return element;
+
+}
+
+
+/*==========================================================
+  22. CLOSE COMMENTS
+==========================================================*/
+
+if (closeComment) {
+
+    closeComment.addEventListener(
+        "click",
+        closeComments
+    );
+
+}
+
+
+function closeComments() {
+
+    if (!commentModal)
+        return;
+
+    commentModal
+        .classList
+        .add("hidden");
+
+
+    if (
+        commentListener &&
+        activePostId
+    ) {
+
+        commentsRef(activePostId)
+            .off(
+                "value",
+                commentListener
+            );
+
+    }
+
+    activePostId = null;
+
+}
+
+
+/*==========================================================
+  23. SEND COMMENT
+==========================================================*/
+
+if (sendComment) {
+
+    sendComment.addEventListener(
+        "click",
+        submitComment
+    );
+
+}
+
+
+if (commentText) {
+
+    commentText.addEventListener(
+        "keydown",
+        event => {
+
+            if (
+                event.key === "Enter" &&
+                !event.shiftKey
+            ) {
+
+                event.preventDefault();
+
+                submitComment();
+
+            }
+
+        }
+    );
+
+}
+
+
+async function submitComment() {
+
+    if (!loggedInUser)
+        return;
+
+    if (!activePostId)
+        return;
+
+
+    const text =
+        commentText
+            ?.value
+            ?.trim();
+
+
+    if (!text)
+        return;
+
+
+    if (text.length > 1000) {
+
+        feedToast(
+            "Comment is too long",
+            "warning"
+        );
+
+        return;
+
+    }
+
+
+    try {
+
+        const commentRef =
+            commentsRef(
+                activePostId
+            ).push();
+
+
+        const commentId =
+            commentRef.key;
+
+
+        await commentRef.set({
+
+            id:
+                commentId,
+
+            uid:
+                loggedInUser.uid,
+
+            username:
+                currentUserData?.username ||
+                loggedInUser.displayName ||
+                "User",
+
+            photo:
+                currentUserData?.profilePhoto ||
+                loggedInUser.photoURL ||
+                "assets/default-avatar.png",
+
+            text,
+
+            createdAt:
+                SERVER_TIME
+
+        });
+
+
+        /* Update comment count */
+
+        const countRef =
+            postRef(activePostId)
+                .child("comments");
+
+
+        const countSnapshot =
+            await countRef.once("value");
+
+
+        const newCount =
+            Number(
+                countSnapshot.val() || 0
+            ) + 1;
+
+
+        await countRef.set(
+            newCount
+        );
+
+
+        /* Notification */
+
+        const postSnapshot =
+            await postRef(activePostId)
+                .once("value");
+
+
+        if (postSnapshot.exists()) {
+
+            const post =
+                postSnapshot.val();
+
+
+            if (
+                post.uid &&
+                post.uid !==
+                loggedInUser.uid
+            ) {
+
+                await notificationsRef(
+                    post.uid
+                ).push({
+
+                    type:
+                        "comment",
+
+                    from:
+                        loggedInUser.uid,
+
+                    postId:
+                        activePostId,
+
+                    read:
+                        false,
+
+                    createdAt:
+                        SERVER_TIME
+
+                });
+
+            }
+
+        }
+
+
+        commentText.value = "";
+
+        updatePostStats(
+            activePostId,
+            "comments",
+            newCount
+        );
+
+        feedToast(
+            "💬 Comment Added"
+        );
+
+    } catch (error) {
+
+        console.error(
+            "Comment error:",
+            error
+        );
+
+        feedToast(
+            "Unable to add comment",
+            "error"
+        );
+
+    }
+
+}
+
+
+/*==========================================================
+  24. PROFILE
+==========================================================*/
+
+window.openProfile =
+function(uid) {
+
+    if (!uid)
+        return;
+
+    location.href =
+        "profile.html?uid=" +
+        encodeURIComponent(uid);
+
+};
+
+
+/*==========================================================
+  25. POST MENU
+==========================================================*/
+
+window.openPostMenu =
+function(postId) {
+
+    const post =
+        feedPosts.find(
+            item =>
+                item.id === postId
+        );
+
+    if (!post)
+        return;
+
+
+    if (
+        loggedInUser &&
+        post.uid ===
+        loggedInUser.uid
+    ) {
+
+        const action =
+            confirm(
+                "Edit this post?\n\nOK = Edit\nCancel = Delete"
+            );
+
+
+        if (action) {
+
+            editPost(postId);
+
+        } else {
+
+            deletePost(postId);
+
+        }
+
+    } else {
+
+        feedToast(
+            "Post options coming soon",
+            "info"
+        );
+
+    }
+
+};
+
+
+/*==========================================================
+  26. EDIT POST
+==========================================================*/
+
+window.editPost =
+async function(postId) {
+
+    const post =
+        feedPosts.find(
+            item =>
+                item.id === postId
+        );
+
+
+    if (!post)
+        return;
+
+
+    if (
+        post.uid !==
+        loggedInUser?.uid
+    ) {
+
+        feedToast(
+            "You cannot edit this post",
+            "error"
+        );
+
+        return;
+
+    }
+
+
+    const newTitle =
+        prompt(
+            "Edit post title:",
+            post.title || ""
+        );
+
+
+    if (newTitle === null)
+        return;
+
+
+    try {
+
+        await postRef(postId)
+            .update({
+
+                title:
+                    newTitle.trim(),
+
+                updatedAt:
+                    SERVER_TIME
+
+            });
+
+
+        feedToast(
+            "✏️ Post Updated"
+        );
+
+    } catch (error) {
+
+        console.error(error);
+
+        feedToast(
+            "Update failed",
+            "error"
+        );
+
+    }
+
+};
+
+
+/*==========================================================
+  27. DELETE POST
+==========================================================*/
+
+window.deletePost =
+async function(postId) {
+
+    const post =
+        feedPosts.find(
+            item =>
+                item.id === postId
+        );
+
+
+    if (!post)
+        return;
+
+
+    if (
+        post.uid !==
+        loggedInUser?.uid
+    ) {
+
+        feedToast(
+            "You cannot delete this post",
+            "error"
+        );
+
+        return;
+
+    }
+
+
+    if (
+        !confirm(
+            "Are you sure you want to delete this post?"
+        )
+    )
+        return;
+
+
+    try {
+
+        /*
+          Firebase metadata is removed.
+
+          Cloudinary file is NOT deleted here
+          because Cloudinary deletion requires
+          a secure server-side API.
+        */
+
+        await postRef(
+            postId
+        ).remove();
+
+
+        await safeRemove(
+            "userPosts/" +
+            loggedInUser.uid +
+            "/" +
+            postId
+        );
+
+
+        await safeRemove(
+            "feeds/home/" +
+            postId
+        );
+
+
+        await safeRemove(
+            "feeds/shorts/" +
+            postId
+        );
+
+
+        await safeRemove(
+            "feeds/trending/" +
+            postId
+        );
+
+
+        feedToast(
+            "🗑 Post Deleted"
+        );
+
+    } catch (error) {
+
+        console.error(
+            "Delete error:",
+            error
+        );
+
+        feedToast(
+            "Delete failed",
+            "error"
+        );
+
+    }
+
+};
+
+
+/*==========================================================
+  28. NOTIFICATION COUNT
+==========================================================*/
+
+function listenNotificationCount() {
+
+    if (
+        !loggedInUser ||
+        !notificationCount
+    )
+        return;
+
+
+    notificationsRef(
+        loggedInUser.uid
+    ).on(
+        "value",
+        snapshot => {
+
+            let unread = 0;
+
+
+            snapshot.forEach(child => {
+
+                const data =
+                    child.val() || {};
+
+                if (
+                    data.read === false ||
+                    data.seen === false
+                ) {
+
+                    unread++;
+
+                }
+
+            });
+
+
+            if (unread > 0) {
+
+                notificationCount
+                    .style
+                    .display = "flex";
+
+                notificationCount
+                    .textContent =
+                    unread > 99
+                        ? "99+"
+                        : unread;
+
+            } else {
+
+                notificationCount
+                    .style
+                    .display = "none";
+
+            }
+
+        }
+    );
+
+}
+
+
+/*==========================================================
+  29. SEARCH
+==========================================================*/
+
+if (searchInput) {
+
+    searchInput.addEventListener(
+        "input",
+        event => {
+
+            const query =
+                event.target.value
+                    .trim()
+                    .toLowerCase();
+
+
+            document
+                .querySelectorAll(
+                    ".postCard"
+                )
+                .forEach(card => {
+
+                    const text =
+                        card.innerText
+                            .toLowerCase();
+
+
+                    card.style.display =
+                        !query ||
+                        text.includes(query)
+                            ? ""
+                            : "none";
+
+                });
+
+        }
+    );
+
+}
+
+
+/*==========================================================
+  30. EXPLORE
+==========================================================*/
+
+if (exploreBtn) {
+
+    exploreBtn.addEventListener(
+        "click",
+        () => {
+
+            location.href =
+                "explore.html";
+
+        }
+    );
+
+}
+
+
+/*==========================================================
+  31. REFRESH
+==========================================================*/
+
+window.refreshFeed =
+function() {
+
+    feedLoaded = false;
+
+    loadFeed(true);
+
+    feedToast(
+        "🔄 Feed Refreshed"
+    );
+
+};
+
+
+/*==========================================================
+  32. PULL TO REFRESH
+==========================================================*/
+
+let touchStartY = 0;
+
+
+window.addEventListener(
+    "touchstart",
+    event => {
+
+        if (
+            window.scrollY === 0 &&
+            event.touches.length
+        ) {
+
+            touchStartY =
+                event.touches[0].clientY;
+
+        }
+
+    },
+    {
+        passive: true
+    }
+);
+
+
+window.addEventListener(
+    "touchend",
+    event => {
+
+        if (!touchStartY)
+            return;
+
+
+        const endY =
+            event.changedTouches[0]
+                .clientY;
+
+
+        const distance =
+            endY - touchStartY;
+
+
+        touchStartY = 0;
+
+
+        if (
+            distance > 130 &&
+            window.scrollY === 0
+        ) {
+
+            refreshFeed();
+
+        }
+
+    },
+    {
+        passive: true
+    }
+);
+
+
+/*==========================================================
+  33. SCROLL TO TOP
+==========================================================*/
+
+const scrollTopBtn =
+    document.getElementById(
+        "scrollTopBtn"
+    );
+
+
+if (scrollTopBtn) {
+
+    window.addEventListener(
+        "scroll",
+        () => {
+
+            scrollTopBtn.style.display =
+                window.scrollY > 500
+                    ? "flex"
+                    : "none";
+
+        }
+    );
+
+
+    scrollTopBtn.addEventListener(
+        "click",
+        () => {
+
+            window.scrollTo({
+
+                top: 0,
+
+                behavior: "smooth"
+
+            });
+
+        }
+    );
+
+}
+
+
+/*==========================================================
+  34. NETWORK STATUS
+==========================================================*/
+
+window.addEventListener(
+    "offline",
+    () => {
+
+        feedToast(
+            "📡 No Internet Connection",
+            "warning"
+        );
+
+    }
+);
+
+
+window.addEventListener(
+    "online",
+    () => {
+
+        feedToast(
+            "🟢 Internet Connected"
+        );
+
+    }
+);
+
+
+/*==========================================================
+  35. CLEANUP
+==========================================================*/
+
+window.addEventListener(
+    "beforeunload",
+    () => {
+
+        if (loggedInUser) {
+
+            userRef(
+                loggedInUser.uid
+            )
+            .update({
+
+                online: false,
+
+                lastSeen:
+                    SERVER_TIME
+
+            });
+
+        }
+
+    }
+);
+
+
+/*==========================================================
+  36. STARTUP
+==========================================================*/
 
 document.addEventListener(
+    "DOMContentLoaded",
+    () => {
 
-"DOMContentLoaded",
+        console.log(
+            "=========================================="
+        );
 
-()=>{
+        console.log(
+            "🚀 VIEWORA V12 FEED"
+        );
 
-listenNotificationCount();
+        console.log(
+            "✅ Firebase Connected"
+        );
 
-observeVideos();
+        console.log(
+            "✅ Realtime Feed Ready"
+        );
 
-});
+        console.log(
+            "✅ Like System Ready"
+        );
 
-// ===============================
+        console.log(
+            "✅ Comment System Ready"
+        );
 
-console.log("✅ Feed Part 5 Loaded");
+        console.log(
+            "✅ Save System Ready"
+        );
+
+        console.log(
+            "✅ Share System Ready"
+        );
+
+        console.log(
+            "✅ View Counter Ready"
+        );
+
+        console.log(
+            "✅ Premium Video Autoplay Ready"
+        );
+
+        console.log(
+            "=========================================="
+        );
+
+    }
+);
+
+
+/*==========================================================
+  END
+==========================================================*/

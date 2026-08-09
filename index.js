@@ -1,1031 +1,1161 @@
-/*=========================================
-        VIEWORA V1.0
-        index.js
-        PART 1
-=========================================*/
+"use strict";
 
-// =========================================
-// Current User
-// =========================================
+/* =========================================================
+   VIEWORA INDEX.JS
+   Home Feed • Posts • Images • Videos • Likes • Comments
+========================================================= */
 
-let currentUser = null;
-let currentUserData = null;
+document.addEventListener("DOMContentLoaded", () => {
 
-// =========================================
-// DOM
-// =========================================
+    console.log("🚀 Viewora Index JS Started");
 
-const app = document.getElementById("app");
-const pageLoader = document.getElementById("pageLoader");
+    const feed = document.getElementById("feedContainer");
 
-const toast = document.getElementById("toast");
-const toastText = document.getElementById("toastText");
-const toastIcon = document.getElementById("toastIcon");
+    if (!feed) {
+        console.error("❌ feedContainer not found");
+        return;
+    }
 
-const feedContainer =
-document.getElementById("feedContainer");
+    /* =====================================================
+       HELPERS
+    ===================================================== */
 
-const notificationCount =
-document.getElementById("notificationCount");
+    function escapeHTML(value) {
 
-const searchInput =
-document.getElementById("searchInput");
+        if (value === null || value === undefined) return "";
 
-// =========================================
-// Toast
-// =========================================
+        return String(value)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
 
-function showToast(
-text,
-icon="fa-circle-check"
-){
 
-toastText.textContent=text;
+    function getMediaURL(post) {
 
-toastIcon.className=
-"fa-solid "+icon;
+        /*
+          Different possible field names supported
+        */
 
-toast.classList.remove("hidden");
+        const url =
+            post.mediaUrl ||
+            post.imageUrl ||
+            post.imageURL ||
+            post.photoUrl ||
+            post.photoURL ||
+            post.fileUrl ||
+            post.fileURL ||
+            post.cloudinaryUrl ||
+            post.url ||
+            post.image ||
+            post.media ||
+            "";
 
-clearTimeout(window.toastTimer);
+        return typeof url === "string" ? url.trim() : "";
+    }
 
-window.toastTimer=setTimeout(()=>{
 
-toast.classList.add("hidden");
+    function getPostText(post) {
 
-},2500);
+        return (
+            post.caption ||
+            post.text ||
+            post.content ||
+            post.description ||
+            post.title ||
+            ""
+        );
+    }
 
-}
 
-// =========================================
-// Loader
-// =========================================
+    function getPostType(post) {
 
-function hideLoader(){
+        const type =
+            post.type ||
+            post.postType ||
+            post.mediaType ||
+            "";
 
-pageLoader.style.opacity="0";
+        return String(type).toLowerCase();
+    }
 
-setTimeout(()=>{
 
-pageLoader.remove();
+    function isVideo(post) {
 
-app.classList.remove("hidden");
+        const type = getPostType(post);
 
-app.classList.add("fadeIn");
+        if (
+            type === "video" ||
+            type === "long" ||
+            type === "short" ||
+            type === "reel"
+        ) {
+            return true;
+        }
 
-},500);
+        const url = getMediaURL(post).toLowerCase();
 
-}
+        return (
+            url.includes(".mp4") ||
+            url.includes(".webm") ||
+            url.includes(".mov") ||
+            url.includes("video/upload")
+        );
+    }
 
-// =========================================
-// Auth Check
-// =========================================
 
-auth.onAuthStateChanged(async(user)=>{
+    function formatTime(timestamp) {
 
-if(!user){
+        if (!timestamp) return "Just now";
 
-location.href="login.html";
+        let date;
 
-return;
+        if (typeof timestamp === "number") {
 
-}
+            date = new Date(timestamp);
 
-currentUser=user;
+        } else {
 
-await loadCurrentUser();
+            date = new Date(timestamp);
 
-hideLoader();
+        }
 
-initApp();
+        if (isNaN(date.getTime())) {
+            return "Just now";
+        }
 
-});
+        const now = Date.now();
 
-// =========================================
-// Load Current User
-// =========================================
+        const diff = now - date.getTime();
 
-async function loadCurrentUser(){
+        const seconds = Math.floor(diff / 1000);
+        const minutes = Math.floor(seconds / 60);
+        const hours = Math.floor(minutes / 60);
+        const days = Math.floor(hours / 24);
 
-try{
+        if (seconds < 60) {
+            return "Just now";
+        }
 
-const snap=
-await db
-.ref("users/"+currentUser.uid)
-.once("value");
+        if (minutes < 60) {
+            return `${minutes}m`;
+        }
 
-currentUserData=snap.val()||{};
+        if (hours < 24) {
+            return `${hours}h`;
+        }
 
-console.log(currentUserData);
+        if (days < 7) {
+            return `${days}d`;
+        }
 
-}
-catch(e){
+        return date.toLocaleDateString();
+    }
 
-console.error(e);
 
-showToast(
-"User Load Failed",
-"fa-circle-xmark"
-);
+    function getUserName(post) {
 
-}
+        return (
+            post.username ||
+            post.userName ||
+            post.authorUsername ||
+            post.name ||
+            post.fullName ||
+            "Viewora User"
+        );
+    }
 
-}
 
-// =========================================
-// Logout
-// =========================================
+    function getUserPhoto(post) {
 
-async function logout(){
+        return (
+            post.profilePhoto ||
+            post.profilePhotoURL ||
+            post.photoURL ||
+            post.avatar ||
+            "assets/default-avatar.png"
+        );
+    }
 
-await auth.signOut();
 
-location.href="login.html";
+    /* =====================================================
+       LOAD POSTS
+    ===================================================== */
 
-}
+    async function loadPosts() {
 
-// =========================================
-// App Start
-// =========================================
+        feed.innerHTML = `
+            <div class="feedLoading">
+                <div class="premiumLoader">
+                    <div class="loaderRing"></div>
+                    <div class="loaderRing"></div>
+                    <div class="loaderRing"></div>
+                </div>
+                <p>Loading Viewora...</p>
+            </div>
+        `;
 
-function initApp(){
+        try {
 
-console.log("Viewora Started");
+            if (
+                typeof db === "undefined" ||
+                typeof postsRef !== "function"
+            ) {
 
-loadFeed();
+                throw new Error(
+                    "Firebase database is not available"
+                );
 
-loadStories();
+            }
 
-loadNotifications();
+            const snapshot =
+                await postsRef()
+                    .orderByChild("createdAt")
+                    .once("value");
 
-}
-/*=========================================
-        VIEWORA V1.0
-        PART 2
- Feed Loading + Infinite Scroll
-=========================================*/
+            const posts = [];
 
-// =========================================
-// Feed Variables
-// =========================================
+            snapshot.forEach(child => {
 
-let feedPosts = [];
-let feedLoading = false;
-let lastPostKey = null;
+                const data = child.val() || {};
 
-// =========================================
-// Feed
-// =========================================
+                posts.push({
 
-async function loadFeed() {
+                    id: child.key,
 
-    if (feedLoading) return;
+                    ...data
 
-    feedLoading = true;
+                });
 
-    showSkeleton(true);
+            });
 
-    try {
 
-        const snap = await db
-            .ref("posts")
-            .orderByChild("time")
-            .limitToLast(10)
-            .once("value");
+            /* Newest first */
 
-        feedPosts = [];
+            posts.reverse();
 
-        feedContainer.innerHTML = "";
 
-        snap.forEach(post => {
+            if (!posts.length) {
 
-            const data = post.val();
+                feed.innerHTML = `
+                    <div class="emptyFeed glass">
 
-            data.id = post.key;
+                        <div class="emptyIcon">
+                            <i class="fa-regular fa-images"></i>
+                        </div>
 
-            feedPosts.unshift(data);
+                        <h2>No posts yet</h2>
 
-        });
+                        <p>
+                            Be the first person to share something
+                            with the Viewora community.
+                        </p>
 
-        feedPosts.forEach(createPostCard);
+                        <button
+                            class="primaryBtn"
+                            onclick="location.href='upload.html'"
+                        >
+                            <i class="fa-solid fa-plus"></i>
+                            Create Post
+                        </button>
 
-        if (feedPosts.length) {
+                    </div>
+                `;
 
-            lastPostKey =
-            feedPosts[feedPosts.length-1].id;
+                return;
+            }
+
+
+            feed.innerHTML = "";
+
+            posts.forEach(post => {
+
+                feed.insertAdjacentHTML(
+                    "beforeend",
+                    createPostHTML(post)
+                );
+
+            });
+
+
+            attachPostEvents();
+
+            console.log(
+                `✅ ${posts.length} posts loaded`
+            );
+
+        } catch (error) {
+
+            console.error(
+                "❌ Feed loading error:",
+                error
+            );
+
+            feed.innerHTML = `
+                <div class="emptyFeed glass">
+
+                    <div class="emptyIcon error">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                    </div>
+
+                    <h2>Unable to load posts</h2>
+
+                    <p>
+                        Please check your internet connection
+                        and try again.
+                    </p>
+
+                    <button
+                        class="primaryBtn"
+                        id="retryFeed"
+                    >
+                        <i class="fa-solid fa-rotate"></i>
+                        Retry
+                    </button>
+
+                </div>
+            `;
+
+            const retry =
+                document.getElementById("retryFeed");
+
+            if (retry) {
+
+                retry.onclick = loadPosts;
+
+            }
 
         }
 
     }
 
-    catch(e){
 
-        console.error(e);
+    /* =====================================================
+       CREATE POST HTML
+    ===================================================== */
 
-        showToast(
-        "Feed Load Failed",
-        "fa-circle-xmark"
+    function createPostHTML(post) {
+
+        const mediaURL =
+            getMediaURL(post);
+
+        const caption =
+            getPostText(post);
+
+        const username =
+            getUserName(post);
+
+        const profilePhoto =
+            getUserPhoto(post);
+
+        const video =
+            isVideo(post);
+
+        const likes =
+            Number(post.likesCount || post.likes || 0);
+
+        const comments =
+            Number(post.commentsCount || post.comments || 0);
+
+        const views =
+            Number(post.views || post.viewCount || 0);
+
+        let mediaHTML = "";
+
+
+        /* ===============================================
+           MEDIA
+        =============================================== */
+
+        if (mediaURL) {
+
+            if (video) {
+
+                mediaHTML = `
+                    <div class="postMedia videoMedia">
+
+                        <video
+                            class="feedVideo"
+                            src="${escapeHTML(mediaURL)}"
+                            controls
+                            playsinline
+                            preload="metadata"
+                        ></video>
+
+                    </div>
+                `;
+
+            } else {
+
+                mediaHTML = `
+                    <div class="postMedia imageMedia">
+
+                        <img
+                            class="feedImage"
+                            src="${escapeHTML(mediaURL)}"
+                            alt="Viewora post"
+                            loading="lazy"
+                            onclick="openVieworaImage('${escapeHTML(mediaURL)}')"
+                            onerror="this.style.display='none'; this.parentElement.classList.add('mediaError');"
+                        >
+
+                        <div class="mediaErrorMessage">
+                            <i class="fa-regular fa-image"></i>
+                            <span>Image unavailable</span>
+                        </div>
+
+                    </div>
+                `;
+
+            }
+
+        }
+
+
+        /* ===============================================
+           USER INFO
+        =============================================== */
+
+        return `
+
+        <article
+            class="postCard glass"
+            data-post-id="${escapeHTML(post.id)}"
+        >
+
+            <div class="postHeader">
+
+                <div
+                    class="postUser"
+                    onclick="location.href='profile.html?uid=${encodeURIComponent(post.uid || post.userId || "")}'"
+                >
+
+                    <img
+                        class="postAvatar"
+                        src="${escapeHTML(profilePhoto)}"
+                        alt="${escapeHTML(username)}"
+                        onerror="this.src='assets/default-avatar.png'"
+                    >
+
+                    <div class="postUserInfo">
+
+                        <h3>
+                            ${escapeHTML(username)}
+
+                            ${
+                                post.verified === true
+                                ? `
+                                    <i
+                                        class="fa-solid fa-circle-check verifiedBadge"
+                                    ></i>
+                                  `
+                                : ""
+                            }
+
+                        </h3>
+
+                        <span>
+                            ${formatTime(
+                                post.createdAt ||
+                                post.timestamp
+                            )}
+                        </span>
+
+                    </div>
+
+                </div>
+
+
+                <button
+                    class="postMore"
+                    data-post-id="${escapeHTML(post.id)}"
+                    aria-label="More"
+                >
+
+                    <i class="fa-solid fa-ellipsis"></i>
+
+                </button>
+
+            </div>
+
+
+            ${
+                caption
+                ? `
+                    <div class="postContent">
+                        <p>${escapeHTML(caption)}</p>
+                    </div>
+                  `
+                : ""
+            }
+
+
+            ${mediaHTML}
+
+
+            <div class="postStats">
+
+                <span>
+                    <i class="fa-regular fa-heart"></i>
+                    <b class="likeCount">${likes}</b>
+                </span>
+
+                <span>
+                    <i class="fa-regular fa-comment"></i>
+                    <b>${comments}</b>
+                </span>
+
+                <span>
+                    <i class="fa-regular fa-eye"></i>
+                    <b>${views}</b>
+                </span>
+
+            </div>
+
+
+            <div class="postActions">
+
+                <button
+                    class="postAction likeButton"
+                    data-post-id="${escapeHTML(post.id)}"
+                >
+
+                    <i class="fa-regular fa-heart"></i>
+
+                    <span>Like</span>
+
+                </button>
+
+
+                <button
+                    class="postAction commentButton"
+                    data-post-id="${escapeHTML(post.id)}"
+                >
+
+                    <i class="fa-regular fa-comment"></i>
+
+                    <span>Comment</span>
+
+                </button>
+
+
+                <button
+                    class="postAction shareButton"
+                    data-post-id="${escapeHTML(post.id)}"
+                >
+
+                    <i class="fa-solid fa-share"></i>
+
+                    <span>Share</span>
+
+                </button>
+
+
+                <button
+                    class="postAction saveButton"
+                    data-post-id="${escapeHTML(post.id)}"
+                >
+
+                    <i class="fa-regular fa-bookmark"></i>
+
+                    <span>Save</span>
+
+                </button>
+
+            </div>
+
+        </article>
+
+        `;
+
+    }
+
+
+    /* =====================================================
+       EVENTS
+    ===================================================== */
+
+    function attachPostEvents() {
+
+        /* ===============================================
+           LIKE
+        =============================================== */
+
+        document
+            .querySelectorAll(".likeButton")
+            .forEach(button => {
+
+                button.addEventListener(
+                    "click",
+                    async function () {
+
+                        const postId =
+                            this.dataset.postId;
+
+                        if (!postId) return;
+
+                        const uid =
+                            typeof getUID === "function"
+                            ? getUID()
+                            : null;
+
+                        if (!uid) {
+
+                            location.href =
+                                "login.html";
+
+                            return;
+
+                        }
+
+                        const likeRef =
+                            db.ref(
+                                `likes/${postId}/${uid}`
+                            );
+
+                        try {
+
+                            const snap =
+                                await likeRef.once(
+                                    "value"
+                                );
+
+                            if (snap.exists()) {
+
+                                await likeRef.remove();
+
+                                this.classList.remove(
+                                    "liked"
+                                );
+
+                                this.querySelector(
+                                    "i"
+                                ).className =
+                                    "fa-regular fa-heart";
+
+                            } else {
+
+                                await likeRef.set({
+                                    uid: uid,
+                                    createdAt:
+                                        SERVER_TIME
+                                });
+
+                                this.classList.add(
+                                    "liked"
+                                );
+
+                                this.querySelector(
+                                    "i"
+                                ).className =
+                                    "fa-solid fa-heart";
+
+                            }
+
+                        } catch (error) {
+
+                            console.error(
+                                "Like error:",
+                                error
+                            );
+
+                        }
+
+                    }
+                );
+
+            });
+
+
+        /* ===============================================
+           COMMENTS
+        =============================================== */
+
+        document
+            .querySelectorAll(".commentButton")
+            .forEach(button => {
+
+                button.addEventListener(
+                    "click",
+                    function () {
+
+                        const postId =
+                            this.dataset.postId;
+
+                        openComments(postId);
+
+                    }
+                );
+
+            });
+
+
+        /* ===============================================
+           SHARE
+        =============================================== */
+
+        document
+            .querySelectorAll(".shareButton")
+            .forEach(button => {
+
+                button.addEventListener(
+                    "click",
+                    async function () {
+
+                        const postId =
+                            this.dataset.postId;
+
+                        const shareURL =
+                            `${location.origin}${location.pathname}?post=${encodeURIComponent(postId)}`;
+
+                        try {
+
+                            if (
+                                navigator.share
+                            ) {
+
+                                await navigator.share({
+
+                                    title:
+                                        "Viewora Post",
+
+                                    text:
+                                        "Check this post on Viewora",
+
+                                    url:
+                                        shareURL
+
+                                });
+
+                            } else {
+
+                                await navigator.clipboard.writeText(
+                                    shareURL
+                                );
+
+                                showToast(
+                                    "Link copied!"
+                                );
+
+                            }
+
+                        } catch (error) {
+
+                            console.log(
+                                "Share cancelled"
+                            );
+
+                        }
+
+                    }
+                );
+
+            });
+
+
+        /* ===============================================
+           SAVE
+        =============================================== */
+
+        document
+            .querySelectorAll(".saveButton")
+            .forEach(button => {
+
+                button.addEventListener(
+                    "click",
+                    async function () {
+
+                        const uid =
+                            typeof getUID === "function"
+                            ? getUID()
+                            : null;
+
+                        const postId =
+                            this.dataset.postId;
+
+                        if (!uid) {
+
+                            location.href =
+                                "login.html";
+
+                            return;
+
+                        }
+
+                        try {
+
+                            const ref =
+                                db.ref(
+                                    `savedPosts/${uid}/${postId}`
+                                );
+
+                            const snap =
+                                await ref.once("value");
+
+                            if (snap.exists()) {
+
+                                await ref.remove();
+
+                                this.querySelector(
+                                    "i"
+                                ).className =
+                                    "fa-regular fa-bookmark";
+
+                            } else {
+
+                                await ref.set({
+
+                                    postId:
+                                        postId,
+
+                                    savedAt:
+                                        SERVER_TIME
+
+                                });
+
+                                this.querySelector(
+                                    "i"
+                                ).className =
+                                    "fa-solid fa-bookmark";
+
+                            }
+
+                        } catch (error) {
+
+                            console.error(
+                                "Save error:",
+                                error
+                            );
+
+                        }
+
+                    }
+                );
+
+            });
+
+    }
+
+
+    /* =====================================================
+       IMAGE VIEWER
+    ===================================================== */
+
+    window.openVieworaImage =
+        function (url) {
+
+            const viewer =
+                document.getElementById(
+                    "imageViewer"
+                );
+
+            const image =
+                document.getElementById(
+                    "viewerImage"
+                );
+
+            if (!viewer || !image) {
+
+                window.open(url, "_blank");
+
+                return;
+
+            }
+
+            image.src = url;
+
+            viewer.classList.remove(
+                "hidden"
+            );
+
+        };
+
+
+    const closeViewer =
+        document.getElementById(
+            "closeViewer"
+        );
+
+    if (closeViewer) {
+
+        closeViewer.addEventListener(
+            "click",
+            () => {
+
+                const viewer =
+                    document.getElementById(
+                        "imageViewer"
+                    );
+
+                const image =
+                    document.getElementById(
+                        "viewerImage"
+                    );
+
+                if (viewer) {
+                    viewer.classList.add(
+                        "hidden"
+                    );
+                }
+
+                if (image) {
+                    image.src = "";
+                }
+
+            }
         );
 
     }
 
-    finally{
 
-        showSkeleton(false);
+    /* =====================================================
+       COMMENTS MODAL
+    ===================================================== */
 
-        feedLoading = false;
+    async function openComments(postId) {
 
-    }
+        const modal =
+            document.getElementById(
+                "commentModal"
+            );
 
-}
+        const container =
+            document.getElementById(
+                "commentsContainer"
+            );
 
-// =========================================
-// Skeleton
-// =========================================
+        if (!modal || !container) return;
 
-function showSkeleton(show){
+        modal.classList.remove(
+            "hidden"
+        );
 
-const skeleton =
-document.getElementById("feedSkeleton");
+        container.innerHTML = `
+            <div class="commentsLoading">
+                Loading comments...
+            </div>
+        `;
 
-if(!skeleton) return;
+        try {
 
-if(show){
+            const snapshot =
+                await commentsRef(postId)
+                    .orderByChild("createdAt")
+                    .once("value");
 
-skeleton.classList.remove("hidden");
+            container.innerHTML = "";
 
-}else{
+            if (!snapshot.exists()) {
 
-skeleton.classList.add("hidden");
+                container.innerHTML = `
+                    <div class="commentsEmpty">
+                        No comments yet.
+                        <br>
+                        Be the first to comment.
+                    </div>
+                `;
 
-}
+                return;
 
-}
+            }
 
-// =========================================
-// Create Post
-// =========================================
+            const comments = [];
 
-function createPostCard(post){
+            snapshot.forEach(child => {
 
-const card =
-document.createElement("article");
+                comments.push({
 
-card.className="postCard glass";
+                    id: child.key,
 
-card.innerHTML=`
+                    ...child.val()
 
-<div class="postHeader">
-
-<div class="userInfo">
-
-<img
-class="profilePic"
-src="${post.photoURL||'assets/default-avatar.png'}">
-
-<div>
-
-<h3>
-
-${post.name||"Unknown"}
-
-${post.verified?
-'<i class="fa-solid fa-circle-check verified"></i>'
-:''}
-
-</h3>
-
-<span>
-
-${timeAgo(post.time)}
-
-</span>
-
-</div>
-
-</div>
-
-<button class="postMenu">
-
-<i class="fa-solid fa-ellipsis"></i>
-
-</button>
-
-</div>
-
-<div class="postContent">
-
-${post.text||""}
-
-</div>
-
-${post.image?
-
-`<div class="postMedia">
-
-<img
-src="${post.image}">
-
-</div>`
-
-:""}
-
-<div class="postActions">
-
-<button>
-
-❤️ ${post.likes||0}
-
-</button>
-
-<button>
-
-💬 ${post.comments||0}
-
-</button>
-
-<button>
-
-📤 Share
-
-</button>
-
-<button>
-
-🔖 Save
-
-</button>
-
-</div>
-
-`;
-
-feedContainer.appendChild(card);
-
-}
-
-// =========================================
-// Infinite Scroll
-// =========================================
-
-window.addEventListener("scroll",()=>{
-
-if(feedLoading) return;
-
-if(
-
-window.innerHeight+
-
-window.scrollY>
-
-document.body.offsetHeight-500
-
-){
-
-loadMorePosts();
-
-}
-
-});
-
-// =========================================
-// Load More
-// =========================================
-
-async function loadMorePosts(){
-
-if(!lastPostKey) return;
-
-feedLoading=true;
-
-try{
-
-const snap=
-
-await db.ref("posts")
-
-.orderByKey()
-
-.endBefore(lastPostKey)
-
-.limitToLast(10)
-
-.once("value");
-
-const arr=[];
-
-snap.forEach(post=>{
-
-const data=post.val();
-
-data.id=post.key;
-
-arr.unshift(data);
-
-});
-
-arr.forEach(p=>{
-
-createPostCard(p);
-
-lastPostKey=p.id;
-
-});
-
-}
-
-catch(e){
-
-console.error(e);
-
-}
-
-finally{
-
-feedLoading=false;
-
-}
-
-}
-
-// =========================================
-// Time Ago
-// =========================================
-
-function timeAgo(time){
-
-const diff=
-
-(Date.now()-time)/1000;
-
-if(diff<60)
-return Math.floor(diff)+" sec";
-
-if(diff<3600)
-return Math.floor(diff/60)+" min";
-
-if(diff<86400)
-return Math.floor(diff/3600)+" hr";
-
-return Math.floor(diff/86400)+" d";
-
-}
-
-// =========================================
-// Pull Refresh
-// =========================================
-
-window.addEventListener("focus",()=>{
-
-loadFeed();
-
-});
-/*=========================================
-        VIEWORA V1.0
-        PART 3
- Like • Save • Share • Views
-=========================================*/
-
-// =========================================
-// Like / Unlike
-// =========================================
-
-async function toggleLike(postId){
-
-    if(!currentUser) return;
-
-    const likeRef =
-    db.ref(
-        "likes/" +
-        postId +
-        "/" +
-        currentUser.uid
-    );
-
-    const snap =
-    await likeRef.once("value");
-
-    if(snap.exists()){
-
-        await likeRef.remove();
-
-        showToast("Like Removed");
-
-    }else{
-
-        await likeRef.set(true);
-
-        showToast("Liked ❤️");
-
-    }
-
-}
-
-// =========================================
-// Save Post
-// =========================================
-
-async function toggleSave(postId){
-
-    const saveRef =
-    db.ref(
-        "saved/" +
-        currentUser.uid +
-        "/" +
-        postId
-    );
-
-    const snap =
-    await saveRef.once("value");
-
-    if(snap.exists()){
-
-        await saveRef.remove();
-
-        showToast("Removed from Saved");
-
-    }else{
-
-        await saveRef.set(true);
-
-        showToast("Saved 🔖");
-
-    }
-
-}
-
-// =========================================
-// Share
-// =========================================
-
-async function sharePost(post){
-
-    const url =
-    location.origin +
-    "/post.html?id=" +
-    post.id;
-
-    if(navigator.share){
-
-        try{
-
-            await navigator.share({
-
-                title:"Viewora",
-
-                text:post.text||"",
-
-                url
+                });
 
             });
 
-        }catch(e){}
+            comments.forEach(comment => {
 
-    }else{
+                container.insertAdjacentHTML(
+                    "beforeend",
+                    `
+                    <div class="commentItem">
 
-        await navigator.clipboard.writeText(url);
+                        <img
+                            src="${
+                                escapeHTML(
+                                    comment.profilePhoto ||
+                                    comment.photoURL ||
+                                    "assets/default-avatar.png"
+                                )
+                            }"
+                            onerror="this.src='assets/default-avatar.png'"
+                        >
 
-        showToast("Link Copied");
+                        <div>
+
+                            <b>
+                                ${escapeHTML(
+                                    comment.username ||
+                                    comment.name ||
+                                    "Viewora User"
+                                )}
+                            </b>
+
+                            <p>
+                                ${escapeHTML(
+                                    comment.text ||
+                                    comment.comment ||
+                                    ""
+                                )}
+                            </p>
+
+                            <small>
+                                ${formatTime(
+                                    comment.createdAt
+                                )}
+                            </small>
+
+                        </div>
+
+                    </div>
+                    `
+                );
+
+            });
+
+        } catch (error) {
+
+            console.error(
+                "Comments error:",
+                error
+            );
+
+            container.innerHTML = `
+                <div class="commentsEmpty">
+                    Unable to load comments.
+                </div>
+            `;
+
+        }
 
     }
 
-}
 
-// =========================================
-// View Counter
-// =========================================
+    const closeComment =
+        document.getElementById(
+            "closeComment"
+        );
 
-async function addView(postId){
+    if (closeComment) {
 
-    const ref =
-    db.ref(
-        "views/" +
-        postId +
-        "/" +
-        currentUser.uid
-    );
+        closeComment.addEventListener(
+            "click",
+            () => {
 
-    const snap =
-    await ref.once("value");
+                document
+                    .getElementById(
+                        "commentModal"
+                    )
+                    ?.classList.add(
+                        "hidden"
+                    );
 
-    if(!snap.exists()){
-
-        await ref.set(Date.now());
+            }
+        );
 
     }
 
-}
 
-// =========================================
-// Double Tap Like
-// =========================================
+    /* =====================================================
+       TOAST
+    ===================================================== */
 
-function enableDoubleTap(
-element,
-postId
-){
+    function showToast(message) {
 
-let lastTap=0;
+        const toast =
+            document.getElementById(
+                "toast"
+            );
 
-element.addEventListener(
-"touchend",
-()=>{
+        const text =
+            document.getElementById(
+                "toastText"
+            );
 
-const now=Date.now();
+        if (!toast || !text) return;
 
-if(now-lastTap<300){
+        text.textContent =
+            message;
 
-toggleLike(postId);
+        toast.classList.remove(
+            "hidden"
+        );
 
-heartAnimation(element);
+        setTimeout(() => {
 
-}
+            toast.classList.add(
+                "hidden"
+            );
 
-lastTap=now;
+        }, 2200);
 
-});
-
-}
-
-// =========================================
-// Heart Animation
-// =========================================
-
-function heartAnimation(card){
-
-const heart =
-document.createElement("div");
-
-heart.innerHTML="❤️";
-
-heart.style.position="absolute";
-
-heart.style.left="50%";
-
-heart.style.top="50%";
-
-heart.style.transform=
-"translate(-50%,-50%)";
-
-heart.style.fontSize="90px";
-
-heart.style.pointerEvents="none";
-
-heart.style.animation=
-"heartPop .7s ease";
-
-card.appendChild(heart);
-
-setTimeout(()=>{
-
-heart.remove();
-
-},700);
-
-}
-
-// =========================================
-// Realtime Like Count
-// =========================================
-
-function listenLikes(
-postId,
-button
-){
-
-db.ref("likes/"+postId)
-
-.on("value",snap=>{
-
-button.innerHTML=
-"❤️ "+
-snap.numChildren();
-
-});
-
-}
-
-// =========================================
-// Realtime Views
-// =========================================
-
-function listenViews(
-postId,
-element
-){
-
-db.ref("views/"+postId)
-
-.on("value",snap=>{
-
-element.textContent=
-snap.numChildren()+
-" Views";
-
-});
-
-}
-/*=========================================
-        VIEWORA V1.0
-        PART 4
- Comments • Notifications • Search
-=========================================*/
-
-// =========================================
-// Current Post
-// =========================================
-
-let currentPostId = null;
-
-// =========================================
-// Open Comments
-// =========================================
-
-function openComments(postId){
-
-    currentPostId = postId;
-
-    document
-    .getElementById("commentModal")
-    .classList.remove("hidden");
-
-    loadComments(postId);
-
-}
-
-// =========================================
-// Close Comments
-// =========================================
-
-document
-.getElementById("closeComment")
-.onclick=()=>{
-
-document
-.getElementById("commentModal")
-.classList.add("hidden");
-
-};
-
-// =========================================
-// Load Comments
-// =========================================
-
-function loadComments(postId){
-
-const container =
-document.getElementById("commentsContainer");
-
-container.innerHTML="";
-
-db.ref("comments/"+postId)
-.limitToLast(50)
-.on("child_added",snap=>{
-
-const c=snap.val();
-
-const div=document.createElement("div");
-
-div.className="commentItem";
-
-div.innerHTML=`
-
-<img
-class="commentAvatar"
-src="${c.photoURL||'assets/default-avatar.png'}">
-
-<div class="commentBubble">
-
-<h4>${c.name}</h4>
-
-<p>${c.text}</p>
-
-</div>
-
-`;
-
-container.appendChild(div);
-
-container.scrollTop=
-container.scrollHeight;
-
-});
-
-}
-
-// =========================================
-// Send Comment
-// =========================================
-
-document
-.getElementById("sendComment")
-.onclick=async()=>{
-
-const input=
-document.getElementById("commentText");
-
-const text=input.value.trim();
-
-if(!text) return;
-
-const id=db.ref().push().key;
-
-await db
-.ref("comments/"+currentPostId+"/"+id)
-.set({
-
-uid:currentUser.uid,
-
-name:currentUserData.name,
-
-photoURL:currentUserData.photoURL||"",
-
-text,
-
-time:Date.now()
-
-});
-
-input.value="";
-
-showToast("Comment Added");
-
-};
-
-// =========================================
-// Notifications
-// =========================================
-
-function loadNotifications(){
-
-db.ref("notifications/"+currentUser.uid)
-
-.limitToLast(30)
-
-.on("value",snap=>{
-
-const list=
-document.getElementById("notificationList");
-
-list.innerHTML="";
-
-let count=0;
-
-snap.forEach(item=>{
-
-count++;
-
-const n=item.val();
-
-const div=
-document.createElement("div");
-
-div.className="notificationItem";
-
-div.innerHTML=`
-
-<img
-src="${n.photoURL||'assets/default-avatar.png'}">
-
-<div>
-
-<h4>${n.title}</h4>
-
-<p>${n.body}</p>
-
-</div>
-
-`;
-
-list.prepend(div);
-
-});
-
-notificationCount.textContent=count;
-
-});
-
-}
-
-// =========================================
-// Live Search
-// =========================================
-
-searchInput.addEventListener(
-"input",
-searchUsers
-);
-
-async function searchUsers(){
-
-const keyword=
-searchInput.value
-.toLowerCase()
-.trim();
-
-if(keyword.length<2) return;
-
-const snap=
-await db.ref("users")
-.once("value");
-
-const results=[];
-
-snap.forEach(user=>{
-
-const u=user.val();
-
-if(
-
-u.name &&
-u.name
-.toLowerCase()
-.includes(keyword)
-
-){
-
-results.push({
-
-id:user.key,
-
-...u
-
-});
-
-}
-
-});
-
-showSearchResults(results);
-
-}
-
-// =========================================
-// Search Results
-// =========================================
-
-function showSearchResults(users){
-
-console.log(users);
-
-// Next Part:
-// Beautiful Search UI
-
-}
-
-// =========================================
-// Suggested Users
-// =========================================
-
-async function loadSuggestedUsers(){
-
-const snap=
-await db.ref("users")
-.limitToFirst(10)
-.once("value");
-
-const arr=[];
-
-snap.forEach(u=>{
-
-arr.push({
-
-id:u.key,
-
-...u.val()
-
-});
-
-});
-
-console.log(arr);
-
-}
-
-// =========================================
-// Trending
-// =========================================
-
-async function loadTrending(){
-
-const snap=
-await db.ref("posts")
-.orderByChild("likes")
-.limitToLast(5)
-.once("value");
-
-console.log("Trending Loaded");
-
-}
-firebase.auth().onAuthStateChanged(user => {
-
-    if (!user) {
-        location.href = "login.html";
-        return;
     }
 
-    currentUser = user;
 
-    loadChat();
+    window.vieworaToast =
+        showToast;
+
+
+    /* =====================================================
+       SEARCH
+    ===================================================== */
+
+    const searchInput =
+        document.getElementById(
+            "searchInput"
+        );
+
+    if (searchInput) {
+
+        searchInput.addEventListener(
+            "input",
+            function () {
+
+                const query =
+                    this.value
+                        .trim()
+                        .toLowerCase();
+
+                document
+                    .querySelectorAll(
+                        ".postCard"
+                    )
+                    .forEach(card => {
+
+                        const text =
+                            card.textContent
+                                .toLowerCase();
+
+                        card.style.display =
+                            !query ||
+                            text.includes(query)
+                            ? ""
+                            : "none";
+
+                    });
+
+            }
+        );
+
+    }
+
+
+    /* =====================================================
+       START
+    ===================================================== */
+
+    loadPosts();
 
 });

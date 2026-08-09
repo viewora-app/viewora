@@ -1,0 +1,2383 @@
+/* =========================================================
+   VIEWORA CHAT
+   chat.css
+   Clean Premium Chat UI
+========================================================= */
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+:root {
+    --bg: #08090d;
+    --bg-soft: #101219;
+
+    --glass: rgba(20, 22, 30, 0.72);
+    --glass-strong: rgba(16, 18, 25, 0.94);
+
+    --border: rgba(255, 255, 255, 0.09);
+    --border-light: rgba(255, 255, 255, 0.14);
+
+    --text: #ffffff;
+    --text-soft: #a8acb8;
+    --text-muted: #707583;
+
+    --accent: #7c5cff;
+    --accent-2: #9c7cff;
+
+    --sent: linear-gradient(
+        135deg,
+        #7456ff,
+        #6045e9
+    );
+
+    --received: rgba(31, 34, 44, 0.92);
+
+    --danger: #ff4d67;
+    --success: #39d98a;
+
+    --radius: 18px;
+
+    --header-height: 70px;
+    --input-height: 74px;
+}
+
+/* =========================================================
+   BODY
+========================================================= */
+
+html,
+body {
+    width: 100%;
+    height: 100%;
+}
+
+body {
+    font-family: "Inter", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    overflow: hidden;
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* =========================================================
+   SCROLLBAR
+========================================================= */
+
+* {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255,255,255,.12) transparent;
+}
+
+::-webkit-scrollbar {
+    width: 5px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,.12);
+    border-radius: 10px;
+}
+
+/* =========================================================
+   UTILITY
+========================================================= */
+
+.hidden {
+    display: none !important;
+}
+
+button {
+    border: 0;
+    outline: 0;
+    font-family: inherit;
+    cursor: pointer;
+}
+
+button:active {
+    transform: scale(.96);
+}
+
+input,
+textarea {
+    font-family: inherit;
+    outline: none;
+}
+
+/* =========================================================
+   GLASS
+========================================================= */
+
+.glass {
+    background: var(--glass);
+    border: 1px solid var(--border);
+    backdrop-filter: blur(22px);
+    -webkit-backdrop-filter: blur(22px);
+}
+
+/* =========================================================
+   BACKGROUND
+========================================================= */
+
+.aurora {
+    position: fixed;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+    z-index: -4;
+    background:
+        radial-gradient(
+            circle at top,
+            #12152a 0%,
+            #08090d 55%
+        );
+}
+
+.auroraBlob {
+    position: absolute;
+    width: 420px;
+    height: 420px;
+    border-radius: 50%;
+    filter: blur(100px);
+    opacity: .16;
+}
+
+.blob1 {
+    top: -180px;
+    left: -120px;
+    background: #654cff;
+}
+
+.blob2 {
+    top: 25%;
+    right: -180px;
+    background: #00a8ff;
+}
+
+.blob3 {
+    bottom: -220px;
+    left: 15%;
+    background: #ff3ca6;
+}
+
+.blob4 {
+    bottom: 15%;
+    right: 20%;
+    background: #6b5cff;
+}
+
+#particles {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    opacity: .15;
+    z-index: -3;
+}
+
+.noiseLayer {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: -2;
+    opacity: .035;
+    background-image:
+        url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.5'/%3E%3C/svg%3E");
+}
+
+/* =========================================================
+   LOADING
+========================================================= */
+
+.loadingOverlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    background:
+        radial-gradient(
+            circle at center,
+            #17152d 0%,
+            #08090d 65%
+        );
+
+    transition:
+        opacity .35s ease,
+        visibility .35s ease;
+}
+
+.loadingCard {
+    width: min(88%, 330px);
+    padding: 34px 24px;
+
+    text-align: center;
+
+    border-radius: 28px;
+    background: rgba(20,22,30,.72);
+    border: 1px solid rgba(255,255,255,.08);
+
+    backdrop-filter: blur(24px);
+}
+
+.loadingLogo {
+    width: 72px;
+    height: 72px;
+
+    margin: 0 auto 18px;
+
+    border-radius: 22px;
+    overflow: hidden;
+
+    box-shadow:
+        0 15px 50px rgba(124,92,255,.35);
+}
+
+.loadingLogo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.loadingCard h2 {
+    font-size: 24px;
+    margin-bottom: 7px;
+}
+
+.loadingCard p {
+    color: var(--text-soft);
+    font-size: 13px;
+}
+
+.loadingSpinner {
+    width: 28px;
+    height: 28px;
+
+    margin: 22px auto 0;
+
+    border-radius: 50%;
+
+    border: 3px solid rgba(255,255,255,.12);
+    border-top-color: var(--accent);
+
+    animation: spin .8s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* =========================================================
+   APP
+========================================================= */
+
+.app {
+    width: 100%;
+    height: 100dvh;
+
+    display: flex;
+    flex-direction: column;
+
+    position: relative;
+}
+
+/* =========================================================
+   HEADER
+========================================================= */
+
+.chatHeader {
+    height: var(--header-height);
+    min-height: var(--header-height);
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    padding: 0 14px;
+
+    position: relative;
+    z-index: 100;
+
+    border-left: 0;
+    border-right: 0;
+    border-top: 0;
+}
+
+.headerLeft,
+.headerRight {
+    display: flex;
+    align-items: center;
+}
+
+.headerLeft {
+    min-width: 0;
+    gap: 7px;
+}
+
+.headerRight {
+    gap: 3px;
+}
+
+.iconBtn {
+    width: 42px;
+    height: 42px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    color: var(--text-soft);
+    background: transparent;
+
+    border-radius: 50%;
+
+    transition:
+        background .2s ease,
+        color .2s ease;
+}
+
+.iconBtn:hover {
+    color: var(--text);
+    background: rgba(255,255,255,.07);
+}
+
+/* =========================================================
+   USER HEADER
+========================================================= */
+
+.userHeader {
+    display: flex;
+    align-items: center;
+
+    gap: 10px;
+
+    min-width: 0;
+
+    color: var(--text);
+    background: transparent;
+
+    text-align: left;
+}
+
+.profileWrapper {
+    width: 42px;
+    height: 42px;
+
+    position: relative;
+    flex: 0 0 42px;
+}
+
+.chatPhoto {
+    width: 100%;
+    height: 100%;
+
+    object-fit: cover;
+
+    border-radius: 50%;
+
+    border: 2px solid rgba(255,255,255,.08);
+}
+
+.onlineDot {
+    position: absolute;
+
+    right: 0;
+    bottom: 1px;
+
+    width: 11px;
+    height: 11px;
+
+    border-radius: 50%;
+
+    background: #35dc8b;
+
+    border: 2px solid #11131a;
+}
+
+.userInfo {
+    min-width: 0;
+}
+
+.userInfo h2 {
+    max-width: 180px;
+
+    font-size: 14px;
+    font-weight: 700;
+
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.userInfo span {
+    display: block;
+
+    margin-top: 2px;
+
+    color: var(--text-muted);
+
+    font-size: 11px;
+}
+
+/* =========================================================
+   SEARCH
+========================================================= */
+
+.searchBar {
+    position: absolute;
+
+    top: 76px;
+    left: 12px;
+    right: 12px;
+
+    z-index: 200;
+
+    height: 50px;
+
+    display: flex;
+    align-items: center;
+
+    gap: 10px;
+
+    padding: 0 8px 0 15px;
+
+    border-radius: 15px;
+
+    box-shadow:
+        0 15px 50px rgba(0,0,0,.35);
+}
+
+.searchBar > i {
+    color: var(--text-muted);
+}
+
+.searchBar input {
+    flex: 1;
+
+    min-width: 0;
+
+    border: 0;
+    background: transparent;
+
+    color: var(--text);
+
+    font-size: 14px;
+}
+
+.searchBar input::placeholder {
+    color: var(--text-muted);
+}
+
+/* =========================================================
+   CHAT MENU
+========================================================= */
+
+.chatMenu,
+.messageMenu {
+    position: absolute;
+
+    z-index: 500;
+
+    width: 215px;
+
+    padding: 7px;
+
+    border-radius: 17px;
+
+    box-shadow:
+        0 20px 60px rgba(0,0,0,.45);
+}
+
+.chatMenu {
+    top: 64px;
+    right: 12px;
+}
+
+.messageMenu {
+    right: 14px;
+    bottom: 145px;
+}
+
+.menuItem {
+    width: 100%;
+
+    min-height: 43px;
+
+    display: flex;
+    align-items: center;
+
+    gap: 12px;
+
+    padding: 10px 12px;
+
+    border-radius: 11px;
+
+    color: var(--text-soft);
+    background: transparent;
+
+    text-align: left;
+
+    font-size: 13px;
+
+    transition: background .18s ease;
+}
+
+.menuItem:hover {
+    background: rgba(255,255,255,.07);
+    color: var(--text);
+}
+
+.menuItem i {
+    width: 20px;
+    text-align: center;
+}
+
+.menuItem.danger {
+    color: var(--danger);
+}
+
+/* =========================================================
+   CHAT BODY
+========================================================= */
+
+.chatContainer {
+    flex: 1;
+
+    min-height: 0;
+
+    overflow-y: auto;
+    overflow-x: hidden;
+
+    padding:
+        16px
+        12px
+        calc(var(--input-height) + 28px);
+
+    scroll-behavior: smooth;
+}
+
+#messagesList {
+    width: 100%;
+
+    display: flex;
+    flex-direction: column;
+
+    gap: 7px;
+}
+
+/* =========================================================
+   DATE
+========================================================= */
+
+.dateDivider {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    margin: 7px 0 18px;
+}
+
+.dateDivider span {
+    padding: 6px 12px;
+
+    border-radius: 20px;
+
+    color: var(--text-muted);
+
+    background: rgba(255,255,255,.045);
+    border: 1px solid rgba(255,255,255,.05);
+
+    font-size: 10px;
+}
+
+/* =========================================================
+   MESSAGE ROW
+========================================================= */
+
+.messageRow {
+    width: 100%;
+
+    display: flex;
+
+    animation: messageIn .2s ease;
+}
+
+.messageRow.sent {
+    justify-content: flex-end;
+}
+
+.messageRow.received {
+    justify-content: flex-start;
+}
+
+@keyframes messageIn {
+    from {
+        opacity: 0;
+        transform: translateY(5px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.messageContent {
+    max-width: min(78%, 430px);
+
+    position: relative;
+}
+
+.messageBubble {
+    padding: 10px 13px;
+
+    border-radius: 17px;
+
+    color: var(--text);
+
+    font-size: 14px;
+    line-height: 1.45;
+
+    word-break: break-word;
+
+    background: var(--received);
+
+    border: 1px solid rgba(255,255,255,.055);
+}
+
+.messageRow.sent .messageBubble {
+    background: var(--sent);
+
+    border-bottom-right-radius: 5px;
+}
+
+.messageRow.received .messageBubble {
+    border-bottom-left-radius: 5px;
+}
+
+/* =========================================================
+   MESSAGE META
+========================================================= */
+
+.messageMeta {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+
+    gap: 4px;
+
+    margin-top: 4px;
+    padding: 0 4px;
+
+    color: var(--text-muted);
+
+    font-size: 9px;
+}
+
+.messageRow.sent .messageMeta i {
+    color: #b8adff;
+    font-size: 9px;
+}
+
+/* =========================================================
+   REPLY IN MESSAGE
+========================================================= */
+
+.messageContent .replyPreview {
+    position: relative;
+
+    display: block;
+
+    margin-bottom: 5px;
+    padding: 7px 9px;
+
+    border-radius: 10px;
+
+    background: rgba(0,0,0,.20);
+
+    border-left: 3px solid rgba(255,255,255,.5);
+}
+
+.messageContent .replyPreview strong {
+    display: block;
+
+    font-size: 10px;
+    margin-bottom: 2px;
+}
+
+.messageContent .replyPreview small {
+    display: block;
+
+    color: rgba(255,255,255,.65);
+
+    font-size: 9px;
+
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+/* =========================================================
+   PINNED
+========================================================= */
+
+.pinnedLabel {
+    display: flex;
+    align-items: center;
+
+    gap: 6px;
+
+    margin-bottom: 5px;
+
+    color: var(--text-muted);
+
+    font-size: 9px;
+}
+
+.pinnedLabel i {
+    color: var(--accent-2);
+}
+
+/* =========================================================
+   REACTIONS
+========================================================= */
+
+.messageReactions {
+    display: flex;
+    align-items: center;
+
+    gap: 3px;
+
+    margin-top: -5px;
+    margin-left: 7px;
+
+    position: relative;
+    z-index: 2;
+}
+
+.messageReactions span {
+    min-width: 25px;
+    height: 25px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 50%;
+
+    background: #20232d;
+
+    border: 2px solid #0d0f14;
+
+    font-size: 12px;
+}
+
+/* =========================================================
+   IMAGE MESSAGE
+========================================================= */
+
+.imageBubble {
+    overflow: hidden;
+
+    border-radius: 17px;
+
+    background: #151720;
+
+    border: 1px solid rgba(255,255,255,.07);
+}
+
+.chatImage {
+    display: block;
+
+    width: 100%;
+    max-width: 330px;
+
+    max-height: 420px;
+
+    object-fit: cover;
+
+    cursor: pointer;
+
+    transition: transform .2s ease;
+}
+
+.chatImage:hover {
+    transform: scale(1.015);
+}
+
+.imageCaption {
+    margin-top: 5px;
+
+    padding: 0 4px;
+
+    font-size: 12px;
+}
+
+/* =========================================================
+   VIDEO MESSAGE
+========================================================= */
+
+.chatVideo {
+    display: block;
+
+    width: min(330px, 100%);
+
+    max-height: 430px;
+
+    border-radius: 16px;
+
+    background: #000;
+
+    object-fit: contain;
+}
+
+/* =========================================================
+   AUDIO MESSAGE
+========================================================= */
+
+.audioBubble {
+    min-width: 245px;
+    max-width: 320px;
+
+    padding: 10px 12px;
+
+    display: flex;
+    align-items: center;
+
+    gap: 10px;
+
+    border-radius: 17px;
+
+    background: rgba(31,34,44,.95);
+    border: 1px solid rgba(255,255,255,.07);
+}
+
+.messageRow.sent .audioBubble {
+    background: rgba(97,72,230,.95);
+}
+
+.audioIcon {
+    width: 36px;
+    height: 36px;
+
+    flex: 0 0 36px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 50%;
+
+    background: rgba(255,255,255,.12);
+}
+
+.audioInfo {
+    min-width: 0;
+    flex: 1;
+}
+
+.audioInfo strong {
+    display: block;
+
+    margin-bottom: 4px;
+
+    font-size: 11px;
+
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.audioBubble audio {
+    width: 100%;
+    height: 32px;
+}
+
+/* =========================================================
+   DOCUMENT MESSAGE
+========================================================= */
+
+.fileBubble {
+    min-width: 220px;
+    max-width: 320px;
+
+    display: flex;
+    align-items: center;
+
+    gap: 12px;
+
+    padding: 12px;
+
+    border-radius: 16px;
+
+    background: var(--received);
+}
+
+.fileIcon {
+    width: 40px;
+    height: 40px;
+
+    flex: 0 0 40px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 12px;
+
+    background: rgba(124,92,255,.15);
+
+    color: var(--accent-2);
+}
+
+.fileInfo {
+    min-width: 0;
+}
+
+.fileInfo strong {
+    display: block;
+
+    font-size: 12px;
+
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.fileInfo small {
+    display: block;
+
+    margin-top: 3px;
+
+    color: var(--text-muted);
+
+    font-size: 10px;
+}
+
+/* =========================================================
+   TYPING
+========================================================= */
+
+.typingIndicator {
+    display: flex;
+    align-items: center;
+
+    gap: 8px;
+
+    margin: 5px 4px 12px;
+}
+
+.typingAvatar {
+    width: 28px;
+    height: 28px;
+
+    border-radius: 50%;
+
+    object-fit: cover;
+}
+
+.typingBubble {
+    display: flex;
+    align-items: center;
+
+    gap: 3px;
+
+    padding: 9px 11px;
+
+    border-radius: 14px;
+
+    background: var(--received);
+}
+
+.typingBubble span {
+    width: 5px;
+    height: 5px;
+
+    border-radius: 50%;
+
+    background: #aaa;
+
+    animation: typing 1.2s infinite;
+}
+
+.typingBubble span:nth-child(2) {
+    animation-delay: .15s;
+}
+
+.typingBubble span:nth-child(3) {
+    animation-delay: .3s;
+}
+
+@keyframes typing {
+    0%, 60%, 100% {
+        opacity: .35;
+        transform: translateY(0);
+    }
+
+    30% {
+        opacity: 1;
+        transform: translateY(-3px);
+    }
+}
+
+.typingIndicator small {
+    color: var(--text-muted);
+    font-size: 9px;
+}
+
+/* =========================================================
+   REPLY PREVIEW ABOVE INPUT
+========================================================= */
+
+.replyPreview {
+    position: relative;
+
+    display: flex;
+    align-items: center;
+
+    gap: 10px;
+
+    min-height: 58px;
+
+    padding: 8px 48px 8px 13px;
+
+    background: rgba(13,15,21,.92);
+
+    border-top: 1px solid var(--border);
+}
+
+.replyLine {
+    width: 3px;
+    height: 38px;
+
+    border-radius: 4px;
+
+    background: var(--accent);
+}
+
+.replyInfo {
+    min-width: 0;
+}
+
+.replyInfo strong {
+    display: block;
+
+    color: var(--accent-2);
+
+    font-size: 11px;
+}
+
+.replyInfo p {
+    margin-top: 3px;
+
+    color: var(--text-soft);
+
+    font-size: 11px;
+
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.replyClose {
+    position: absolute;
+
+    top: 50%;
+    right: 10px;
+
+    width: 34px;
+    height: 34px;
+
+    transform: translateY(-50%);
+
+    border-radius: 50%;
+
+    color: var(--text-muted);
+    background: rgba(255,255,255,.06);
+}
+
+/* =========================================================
+   REACTION BAR
+========================================================= */
+
+.reactionBar {
+    position: absolute;
+
+    right: 14px;
+    bottom: 132px;
+
+    z-index: 550;
+
+    display: flex;
+    align-items: center;
+
+    gap: 3px;
+
+    padding: 6px;
+
+    border-radius: 22px;
+
+    background: rgba(25,27,35,.96);
+
+    border: 1px solid var(--border-light);
+
+    box-shadow: 0 15px 45px rgba(0,0,0,.45);
+}
+
+.reactionBar button {
+    width: 34px;
+    height: 34px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 50%;
+
+    background: transparent;
+
+    font-size: 17px;
+}
+
+.reactionBar button:hover {
+    background: rgba(255,255,255,.08);
+}
+
+/* =========================================================
+   INPUT
+========================================================= */
+
+.chatInputWrapper {
+    position: relative;
+
+    z-index: 300;
+
+    min-height: var(--input-height);
+
+    display: flex;
+    align-items: flex-end;
+
+    gap: 6px;
+
+    padding: 10px 10px;
+
+    border-left: 0;
+    border-right: 0;
+    border-bottom: 0;
+}
+
+.inputBtn,
+.sendBtn {
+    width: 44px;
+    height: 44px;
+
+    flex: 0 0 44px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 50%;
+
+    background: rgba(255,255,255,.055);
+
+    color: var(--text-soft);
+
+    transition:
+        background .2s ease,
+        color .2s ease;
+}
+
+.inputBtn:hover {
+    background: rgba(255,255,255,.1);
+    color: var(--text);
+}
+
+.sendBtn {
+    background: var(--accent);
+    color: white;
+
+    box-shadow:
+        0 8px 25px rgba(124,92,255,.25);
+}
+
+.sendBtn:hover {
+    background: var(--accent-2);
+}
+
+.messageInputBox {
+    flex: 1;
+
+    min-width: 0;
+    min-height: 44px;
+
+    display: flex;
+    align-items: flex-end;
+
+    padding: 5px 7px 5px 5px;
+
+    border-radius: 22px;
+
+    background: rgba(255,255,255,.055);
+
+    border: 1px solid rgba(255,255,255,.07);
+}
+
+.emojiBtn,
+.cameraBtn {
+    width: 34px;
+    height: 34px;
+
+    flex: 0 0 34px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 50%;
+
+    color: var(--text-soft);
+    background: transparent;
+}
+
+.emojiBtn {
+    font-size: 18px;
+}
+
+.cameraBtn:hover,
+.emojiBtn:hover {
+    background: rgba(255,255,255,.07);
+}
+
+.messageInputBox textarea {
+    flex: 1;
+
+    min-width: 0;
+
+    max-height: 120px;
+    min-height: 32px;
+
+    resize: none;
+
+    padding: 7px 7px;
+
+    border: 0;
+    background: transparent;
+
+    color: var(--text);
+
+    font-size: 14px;
+    line-height: 18px;
+}
+
+.messageInputBox textarea::placeholder {
+    color: var(--text-muted);
+}
+
+/* =========================================================
+   EMOJI PANEL
+========================================================= */
+
+.emojiPanel {
+    position: absolute;
+
+    left: 10px;
+    right: 10px;
+    bottom: calc(var(--input-height) + 5px);
+
+    z-index: 350;
+
+    padding: 12px;
+
+    border-radius: 18px;
+
+    background: rgba(18,20,28,.97);
+
+    border: 1px solid var(--border);
+
+    box-shadow:
+        0 20px 60px rgba(0,0,0,.45);
+}
+
+.emojiGrid {
+    display: grid;
+
+    grid-template-columns:
+        repeat(8, 1fr);
+
+    gap: 3px;
+}
+
+.emojiGrid button {
+    aspect-ratio: 1;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 9px;
+
+    background: transparent;
+
+    font-size: 21px;
+}
+
+.emojiGrid button:hover {
+    background: rgba(255,255,255,.07);
+}
+
+/* =========================================================
+   ATTACHMENT SHEET
+========================================================= */
+
+.attachmentSheet {
+    position: fixed;
+    inset: 0;
+
+    z-index: 800;
+}
+
+.attachmentOverlay,
+.previewOverlay,
+.modalOverlay {
+    position: absolute;
+    inset: 0;
+
+    background: rgba(0,0,0,.64);
+
+    backdrop-filter: blur(5px);
+}
+
+.attachmentCard {
+    position: absolute;
+
+    left: 50%;
+    bottom: 15px;
+
+    width: min(94%, 430px);
+
+    transform: translateX(-50%);
+
+    padding: 16px;
+
+    border-radius: 24px;
+
+    box-shadow:
+        0 25px 80px rgba(0,0,0,.55);
+}
+
+.attachmentHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    margin-bottom: 14px;
+
+    color: var(--text);
+    font-size: 14px;
+}
+
+.attachmentGrid {
+    display: grid;
+
+    grid-template-columns:
+        repeat(4, 1fr);
+
+    gap: 10px;
+}
+
+.attachmentItem {
+    min-height: 90px;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+    gap: 7px;
+
+    border-radius: 16px;
+
+    background: rgba(255,255,255,.045);
+
+    color: var(--text-soft);
+
+    font-size: 10px;
+}
+
+.attachmentItem:hover {
+    background: rgba(255,255,255,.08);
+    color: var(--text);
+}
+
+.attachmentIcon {
+    width: 42px;
+    height: 42px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 14px;
+
+    background: rgba(124,92,255,.13);
+
+    color: var(--accent-2);
+
+    font-size: 17px;
+}
+
+/* =========================================================
+   MEDIA PREVIEW
+========================================================= */
+
+.mediaPreviewModal {
+    position: fixed;
+    inset: 0;
+
+    z-index: 900;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.previewContent {
+    position: relative;
+    z-index: 2;
+
+    width: min(94%, 560px);
+    max-height: 90dvh;
+
+    overflow-y: auto;
+
+    padding: 16px;
+
+    border-radius: 24px;
+
+    box-shadow:
+        0 25px 90px rgba(0,0,0,.6);
+}
+
+.previewHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    margin-bottom: 12px;
+}
+
+.previewHeader h3 {
+    font-size: 16px;
+}
+
+.previewImage,
+.previewVideo {
+    width: 100%;
+    max-height: 55dvh;
+
+    display: block;
+
+    object-fit: contain;
+
+    border-radius: 17px;
+
+    background: #050506;
+}
+
+.previewAudioBox {
+    padding: 20px;
+
+    text-align: center;
+
+    border-radius: 18px;
+
+    background: rgba(255,255,255,.045);
+}
+
+.audioPreviewIcon {
+    width: 65px;
+    height: 65px;
+
+    margin: 0 auto 10px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 50%;
+
+    background: rgba(124,92,255,.15);
+
+    color: var(--accent-2);
+
+    font-size: 24px;
+}
+
+.previewAudioBox strong {
+    display: block;
+
+    margin-bottom: 12px;
+
+    font-size: 12px;
+
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.previewAudioBox audio {
+    width: 100%;
+}
+
+.previewFileBox {
+    display: flex;
+    align-items: center;
+
+    gap: 14px;
+
+    padding: 20px;
+
+    border-radius: 17px;
+
+    background: rgba(255,255,255,.05);
+}
+
+.previewFileBox > i {
+    font-size: 32px;
+    color: var(--accent-2);
+}
+
+.previewFileBox strong,
+.previewFileBox small {
+    display: block;
+}
+
+.previewFileBox strong {
+    font-size: 13px;
+}
+
+.previewFileBox small {
+    margin-top: 4px;
+
+    color: var(--text-muted);
+
+    font-size: 10px;
+}
+
+#mediaCaption {
+    width: 100%;
+
+    min-height: 46px;
+    max-height: 110px;
+
+    margin-top: 12px;
+
+    padding: 12px;
+
+    resize: none;
+
+    border-radius: 13px;
+
+    border: 1px solid var(--border);
+
+    background: rgba(255,255,255,.045);
+
+    color: var(--text);
+
+    font-size: 13px;
+}
+
+.previewActions {
+    display: flex;
+    justify-content: flex-end;
+
+    gap: 8px;
+
+    margin-top: 12px;
+}
+
+/* =========================================================
+   BUTTONS
+========================================================= */
+
+.primaryBtn,
+.secondaryBtn,
+.modalBtn {
+    min-height: 42px;
+
+    padding: 0 17px;
+
+    border-radius: 12px;
+
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.primaryBtn {
+    background: var(--accent);
+    color: white;
+}
+
+.primaryBtn:hover {
+    background: var(--accent-2);
+}
+
+.secondaryBtn {
+    background: rgba(255,255,255,.07);
+    color: var(--text-soft);
+}
+
+.secondaryBtn:hover {
+    background: rgba(255,255,255,.11);
+    color: var(--text);
+}
+
+/* =========================================================
+   IMAGE VIEWER
+========================================================= */
+
+.imageViewer,
+.videoViewer {
+    position: fixed;
+    inset: 0;
+
+    z-index: 1000;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 20px;
+
+    background: rgba(0,0,0,.95);
+}
+
+.imageViewer img {
+    max-width: 100%;
+    max-height: 92dvh;
+
+    object-fit: contain;
+
+    border-radius: 8px;
+}
+
+.videoViewer video {
+    width: min(100%, 900px);
+    max-height: 90dvh;
+
+    background: #000;
+    border-radius: 10px;
+}
+
+.viewerClose {
+    position: absolute;
+
+    top: 16px;
+    right: 16px;
+
+    z-index: 3;
+
+    width: 44px;
+    height: 44px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 50%;
+
+    background: rgba(255,255,255,.09);
+
+    color: white;
+
+    font-size: 18px;
+}
+
+/* =========================================================
+   PROFILE MODAL
+========================================================= */
+
+.profileModal,
+.deleteModal,
+.forwardModal,
+.messageInfoModal {
+    position: fixed;
+    inset: 0;
+
+    z-index: 850;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.profileCard,
+.deleteCard,
+.forwardCard,
+.infoCard {
+    position: relative;
+    z-index: 2;
+
+    width: min(92%, 390px);
+
+    padding: 24px;
+
+    border-radius: 24px;
+
+    text-align: center;
+
+    box-shadow:
+        0 25px 80px rgba(0,0,0,.55);
+}
+
+.profileClose {
+    position: absolute;
+
+    top: 10px;
+    right: 10px;
+
+    width: 36px;
+    height: 36px;
+
+    border-radius: 50%;
+
+    color: var(--text-soft);
+    background: rgba(255,255,255,.06);
+}
+
+.profileImage {
+    width: 100px;
+    height: 100px;
+
+    margin: 5px auto 15px;
+
+    display: block;
+
+    object-fit: cover;
+
+    border-radius: 50%;
+
+    border: 3px solid rgba(255,255,255,.08);
+}
+
+.profileCard h2 {
+    font-size: 20px;
+}
+
+.profileCard p {
+    margin-top: 4px;
+
+    color: var(--text-muted);
+
+    font-size: 12px;
+}
+
+.profileStatus {
+    display: inline-block;
+
+    margin-top: 12px;
+    padding: 5px 10px;
+
+    border-radius: 20px;
+
+    color: var(--success);
+
+    background: rgba(57,217,138,.08);
+
+    font-size: 10px;
+}
+
+/* =========================================================
+   DELETE MODAL
+========================================================= */
+
+.deleteCard {
+    text-align: left;
+}
+
+.deleteCard h2 {
+    font-size: 19px;
+}
+
+.deleteCard p {
+    margin: 8px 0 20px;
+
+    color: var(--text-muted);
+
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+.modalBtn {
+    width: 100%;
+
+    margin-top: 8px;
+
+    background: rgba(255,255,255,.06);
+
+    color: var(--text);
+}
+
+.modalBtn.danger {
+    color: var(--danger);
+    background: rgba(255,77,103,.08);
+}
+
+.modalBtn.secondary {
+    color: var(--text-muted);
+}
+
+/* =========================================================
+   FORWARD
+========================================================= */
+
+.forwardCard {
+    padding: 0;
+    overflow: hidden;
+    text-align: left;
+}
+
+.forwardHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    padding: 16px;
+
+    border-bottom: 1px solid var(--border);
+}
+
+.forwardHeader h2 {
+    font-size: 16px;
+}
+
+.forwardUserList {
+    max-height: 55dvh;
+
+    overflow-y: auto;
+
+    padding: 8px;
+}
+
+/* =========================================================
+   INFO
+========================================================= */
+
+.infoCard {
+    text-align: left;
+}
+
+.infoCard h2 {
+    margin-bottom: 18px;
+
+    font-size: 18px;
+}
+
+.infoRow {
+    display: flex;
+    justify-content: space-between;
+
+    padding: 11px 0;
+
+    border-bottom: 1px solid rgba(255,255,255,.05);
+}
+
+.infoRow span {
+    color: var(--text-muted);
+    font-size: 12px;
+}
+
+.infoRow strong {
+    font-size: 12px;
+}
+
+.infoCard .primaryBtn {
+    width: 100%;
+    margin-top: 18px;
+}
+
+/* =========================================================
+   VOICE RECORDING
+========================================================= */
+
+.recordOverlay {
+    position: fixed;
+    inset: 0;
+
+    z-index: 950;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    background: rgba(0,0,0,.7);
+
+    backdrop-filter: blur(7px);
+}
+
+.recordCard {
+    width: min(90%, 350px);
+
+    padding: 30px 22px;
+
+    border-radius: 25px;
+
+    text-align: center;
+}
+
+.recordPulse {
+    width: 80px;
+    height: 80px;
+
+    margin: 0 auto 15px;
+
+    border-radius: 50%;
+
+    background: rgba(255,77,103,.13);
+
+    box-shadow:
+        0 0 0 0 rgba(255,77,103,.25);
+
+    animation: pulse 1.5s infinite;
+}
+
+.recordIcon {
+    margin-top: -62px;
+    margin-bottom: 27px;
+
+    color: var(--danger);
+
+    font-size: 25px;
+}
+
+.recordCard h3 {
+    font-size: 17px;
+}
+
+.recordCard p {
+    margin: 7px 0 20px;
+
+    color: var(--text-muted);
+
+    font-size: 13px;
+}
+
+.recordActions {
+    display: flex;
+    justify-content: center;
+
+    gap: 8px;
+}
+
+@keyframes pulse {
+    70% {
+        box-shadow:
+            0 0 0 20px rgba(255,77,103,0);
+    }
+
+    100% {
+        box-shadow:
+            0 0 0 0 rgba(255,77,103,0);
+    }
+}
+
+/* =========================================================
+   UPLOAD
+========================================================= */
+
+.uploadOverlay {
+    position: fixed;
+    inset: 0;
+
+    z-index: 980;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 20px;
+
+    background: rgba(0,0,0,.72);
+
+    backdrop-filter: blur(8px);
+}
+
+.uploadCard {
+    width: min(92%, 390px);
+
+    padding: 28px 22px;
+
+    border-radius: 24px;
+
+    text-align: center;
+}
+
+.uploadIcon {
+    width: 60px;
+    height: 60px;
+
+    margin: 0 auto 14px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 18px;
+
+    background: rgba(124,92,255,.13);
+
+    color: var(--accent-2);
+
+    font-size: 23px;
+}
+
+.uploadCard h3 {
+    font-size: 17px;
+}
+
+.uploadCard p {
+    margin-top: 6px;
+
+    color: var(--text-muted);
+
+    font-size: 10px;
+
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.uploadProgress {
+    width: 100%;
+    height: 7px;
+
+    margin-top: 20px;
+
+    overflow: hidden;
+
+    border-radius: 20px;
+
+    background: rgba(255,255,255,.08);
+}
+
+.uploadProgressBar {
+    width: 0;
+    height: 100%;
+
+    border-radius: inherit;
+
+    background: linear-gradient(
+        90deg,
+        var(--accent),
+        #a58cff
+    );
+
+    transition: width .15s linear;
+}
+
+.uploadStats {
+    display: flex;
+    justify-content: space-between;
+
+    margin-top: 8px;
+
+    color: var(--text-muted);
+
+    font-size: 10px;
+}
+
+.uploadCard .secondaryBtn {
+    margin-top: 18px;
+}
+
+/* =========================================================
+   SCROLL BUTTON
+========================================================= */
+
+.scrollBottomBtn {
+    position: absolute;
+
+    right: 15px;
+    bottom: calc(var(--input-height) + 15px);
+
+    z-index: 250;
+
+    width: 42px;
+    height: 42px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 50%;
+
+    color: var(--text);
+
+    background: rgba(24,26,34,.95);
+
+    border: 1px solid var(--border);
+
+    box-shadow:
+        0 10px 30px rgba(0,0,0,.35);
+}
+
+/* =========================================================
+   TOAST
+========================================================= */
+
+.toast {
+    position: fixed;
+
+    left: 50%;
+    bottom: 90px;
+
+    z-index: 2000;
+
+    max-width: calc(100% - 30px);
+
+    transform: translateX(-50%);
+
+    display: flex;
+    align-items: center;
+
+    gap: 8px;
+
+    padding: 10px 15px;
+
+    border-radius: 13px;
+
+    background: rgba(25,27,34,.96);
+
+    border: 1px solid var(--border);
+
+    box-shadow:
+        0 15px 50px rgba(0,0,0,.45);
+
+    color: var(--text);
+
+    font-size: 11px;
+
+    animation: toastIn .2s ease;
+}
+
+.toast i {
+    color: var(--success);
+}
+
+@keyframes toastIn {
+    from {
+        opacity: 0;
+        transform: translate(-50%, 10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translate(-50%, 0);
+    }
+}
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 600px) {
+
+    :root {
+        --header-height: 64px;
+        --input-height: 68px;
+    }
+
+    .chatHeader {
+        padding: 0 7px;
+    }
+
+    .headerRight {
+        gap: 0;
+    }
+
+    .headerRight .iconBtn {
+        width: 38px;
+        height: 38px;
+    }
+
+    .userInfo h2 {
+        max-width: 130px;
+    }
+
+    .chatContainer {
+        padding-left: 8px;
+        padding-right: 8px;
+    }
+
+    .messageContent {
+        max-width: 84%;
+    }
+
+    .messageBubble {
+        font-size: 13px;
+    }
+
+    .chatImage {
+        max-width: 290px;
+    }
+
+    .attachmentGrid {
+        grid-template-columns:
+            repeat(4, 1fr);
+    }
+
+    .attachmentItem {
+        min-height: 78px;
+    }
+
+    .attachmentIcon {
+        width: 36px;
+        height: 36px;
+    }
+
+    .reactionBar {
+        right: 8px;
+        bottom: 125px;
+    }
+
+    .reactionBar button {
+        width: 31px;
+        height: 31px;
+        font-size: 15px;
+    }
+
+    .messageMenu {
+        right: 8px;
+        bottom: 120px;
+    }
+
+    .emojiGrid {
+        grid-template-columns:
+            repeat(7, 1fr);
+    }
+
+    .emojiGrid button {
+        font-size: 19px;
+    }
+}
+
+/* =========================================================
+   SMALL PHONES
+========================================================= */
+
+@media (max-width: 380px) {
+
+    .headerRight .iconBtn:nth-child(2),
+    .headerRight .iconBtn:nth-child(3) {
+        display: none;
+    }
+
+    .userInfo h2 {
+        max-width: 115px;
+    }
+
+    .messageContent {
+        max-width: 88%;
+    }
+
+    .chatImage {
+        max-width: 260px;
+    }
+
+    .attachmentGrid {
+        grid-template-columns:
+            repeat(3, 1fr);
+    }
+
+    .emojiGrid {
+        grid-template-columns:
+            repeat(6, 1fr);
+    }
+
+    .inputBtn,
+    .sendBtn {
+        width: 40px;
+        height: 40px;
+        flex-basis: 40px;
+    }
+}
+
+/* =========================================================
+   DESKTOP
+========================================================= */
+
+@media (min-width: 900px) {
+
+    .app {
+        width: min(100%, 900px);
+
+        margin: 0 auto;
+
+        border-left: 1px solid rgba(255,255,255,.04);
+        border-right: 1px solid rgba(255,255,255,.04);
+
+        box-shadow:
+            0 0 100px rgba(0,0,0,.35);
+    }
+
+    .messageContent {
+        max-width: 65%;
+    }
+
+    .emojiPanel {
+        left: auto;
+        right: 90px;
+        width: 370px;
+    }
+
+    .attachmentCard {
+        bottom: 25px;
+    }
+}
+
+/* =========================================================
+   SAFE AREA
+========================================================= */
+
+@supports (padding: env(safe-area-inset-bottom)) {
+
+    .chatInputWrapper {
+        padding-bottom:
+            calc(10px + env(safe-area-inset-bottom));
+    }
+
+    .chatContainer {
+        padding-bottom:
+            calc(
+                var(--input-height) +
+                28px +
+                env(safe-area-inset-bottom)
+            );
+    }
+}
+
+/* =========================================================
+   REDUCED MOTION
+========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+
+    *,
+    *::before,
+    *::after {
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        scroll-behavior: auto !important;
+        transition-duration: .01ms !important;
+    }
+}

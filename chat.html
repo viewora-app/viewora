@@ -2,1159 +2,1296 @@
 <html lang="en">
 
 <head>
-
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>Viewora • Chat</title>
-
-<link rel="stylesheet" href="style.css">
-
-<style>
-
-*{
-margin:0;
-padding:0;
-box-sizing:border-box;
-font-family:Arial,sans-serif;
-}
-
-body{
-
-background:#0d0d0d;
-color:#fff;
-height:100vh;
-overflow:hidden;
-
-}
-
-/* Background */
-
-body::before{
-
-content:"";
-
-position:fixed;
-
-top:-50%;
-left:-50%;
-
-width:200%;
-height:200%;
-
-background:
-radial-gradient(circle,#00aaff22,transparent 35%),
-radial-gradient(circle,#ff008822,transparent 35%),
-radial-gradient(circle,#00ff8822,transparent 35%);
-
-animation:bgRotate 18s linear infinite;
-
-z-index:-2;
-
-}
-
-@keyframes bgRotate{
-
-0%{transform:rotate(0deg);}
-100%{transform:rotate(360deg);}
-
-}
-
-/* Header */
-
-.chat-header{
-
-position:fixed;
-
-top:0;
-left:0;
-
-width:100%;
-
-height:72px;
-
-display:flex;
-
-align-items:center;
-
-padding:12px 15px;
-
-background:rgba(18,18,18,.92);
-
-backdrop-filter:blur(16px);
-
-border-bottom:1px solid rgba(255,255,255,.08);
-
-z-index:999;
-
-}
-
-/* Back */
-
-.back-btn{
-
-font-size:26px;
-
-cursor:pointer;
-
-margin-right:12px;
-
-transition:.25s;
-
-}
-
-.back-btn:hover{
-
-transform:translateX(-4px);
-
-}
-
-/* User */
-
-.user-box{
-
-display:flex;
-
-align-items:center;
-
-cursor:pointer;
-
-flex:1;
-
-}
-
-.user-photo{
-
-width:48px;
-
-height:48px;
-
-border-radius:50%;
-
-object-fit:cover;
-
-border:2px solid #00aaff;
-
-box-shadow:0 0 15px rgba(0,170,255,.4);
-
-}
-
-.user-info{
-
-margin-left:12px;
-
-}
-
-#chatUserName{
-
-font-size:17px;
-
-font-weight:bold;
-
-}
-
-#chatStatus{
-
-font-size:13px;
-
-color:#00ff66;
-
-margin-top:2px;
-
-}
-
-/* Icons */
-
-.header-icons{
-
-display:flex;
-
-align-items:center;
-
-gap:18px;
-
-font-size:22px;
-
-}
-
-.header-icons span{
-
-cursor:pointer;
-
-transition:.25s;
-
-}
-
-.header-icons span:hover{
-
-color:#00aaff;
-
-transform:scale(1.15);
-
-}
-
-/* 3 Dot Menu */
-
-.chat-menu{
-
-display:none;
-
-position:absolute;
-
-top:70px;
-
-right:15px;
-
-width:210px;
-
-background:#1b1b1b;
-
-border-radius:14px;
-
-overflow:hidden;
-
-box-shadow:0 12px 30px rgba(0,0,0,.45);
-
-border:1px solid rgba(255,255,255,.06);
-
-z-index:9999;
-
-}
-
-.chat-menu div{
-
-padding:15px 18px;
-
-cursor:pointer;
-
-transition:.25s;
-
-font-size:15px;
-
-}
-
-.chat-menu div:hover{
-
-background:#2a2a2a;
-
-}
-
-.chat-menu div:not(:last-child){
-
-border-bottom:1px solid #333;
-
-}
-
-</style>
-
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    >
+
+    <title>Chat • Viewora</title>
+
+    <meta name="theme-color" content="#0a0a0f">
+
+    <link rel="icon" href="assets/logo.png">
+
+    <!-- Google Font -->
+    <link
+        rel="preconnect"
+        href="https://fonts.googleapis.com"
+    >
+
+    <link
+        rel="preconnect"
+        href="https://fonts.gstatic.com"
+        crossorigin
+    >
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet"
+    >
+
+    <!-- Font Awesome -->
+    <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"
+    >
+
+    <!-- Viewora Chat CSS -->
+    <link rel="stylesheet" href="chat.css">
 </head>
 
 <body>
 
-<!-- Header -->
+<!-- =====================================================
+     BACKGROUND
+===================================================== -->
 
-<div class="chat-header">
+<div class="aurora">
+    <div class="auroraBlob blob1"></div>
+    <div class="auroraBlob blob2"></div>
+    <div class="auroraBlob blob3"></div>
+    <div class="auroraBlob blob4"></div>
+</div>
 
-<div
-class="back-btn"
-onclick="history.back()">
+<canvas id="particles"></canvas>
 
-⬅
+<div class="noiseLayer"></div>
+
+
+<!-- =====================================================
+     LOADING SCREEN
+===================================================== -->
+
+<div id="loadingOverlay" class="loadingOverlay">
+
+    <div class="loadingCard">
+
+        <div class="loadingLogo">
+            <img
+                src="assets/logo.png"
+                alt="Viewora"
+            >
+        </div>
+
+        <h2>Viewora</h2>
+
+        <p id="loadingText">
+            Loading chat...
+        </p>
+
+        <div class="loadingSpinner"></div>
+
+    </div>
 
 </div>
 
-<div
-class="user-box"
-onclick="openProfile()">
 
-<img
-id="chatUserPhoto"
-class="user-photo"
-src="non.jpg">
+<!-- =====================================================
+     APP
+===================================================== -->
 
-<div class="user-info">
+<div id="app" class="app hidden">
 
-<div id="chatUserName">
 
-Loading...
+    <!-- =================================================
+         HEADER
+    ================================================== -->
+
+    <header class="chatHeader glass">
+
+        <div class="headerLeft">
+
+            <button
+                id="backBtn"
+                class="iconBtn"
+                type="button"
+                aria-label="Go back"
+            >
+                <i class="fa-solid fa-arrow-left"></i>
+            </button>
+
+
+            <!-- USER -->
+            <button
+                id="profileBtn"
+                class="userHeader"
+                type="button"
+            >
+
+                <div class="profileWrapper">
+
+                    <img
+                        id="chatPhoto"
+                        src="assets/default-avatar.png"
+                        class="chatPhoto"
+                        alt="Profile"
+                    >
+
+                    <span
+                        id="onlineDot"
+                        class="onlineDot"
+                    ></span>
+
+                </div>
+
+
+                <div class="userInfo">
+
+                    <h2 id="chatName">
+                        Loading...
+                    </h2>
+
+                    <span id="chatStatus">
+                        Connecting...
+                    </span>
+
+                </div>
+
+            </button>
+
+        </div>
+
+
+        <!-- HEADER ACTIONS -->
+
+        <div class="headerRight">
+
+            <button
+                id="searchBtn"
+                class="iconBtn"
+                type="button"
+                aria-label="Search"
+            >
+                <i class="fa-solid fa-magnifying-glass"></i>
+            </button>
+
+            <button
+                id="voiceCallBtn"
+                class="iconBtn"
+                type="button"
+                aria-label="Voice call"
+            >
+                <i class="fa-solid fa-phone"></i>
+            </button>
+
+            <button
+                id="videoCallBtn"
+                class="iconBtn"
+                type="button"
+                aria-label="Video call"
+            >
+                <i class="fa-solid fa-video"></i>
+            </button>
+
+            <button
+                id="menuBtn"
+                class="iconBtn"
+                type="button"
+                aria-label="More"
+            >
+                <i class="fa-solid fa-ellipsis-vertical"></i>
+            </button>
+
+        </div>
+
+    </header>
+
+
+    <!-- =================================================
+         SEARCH BAR
+    ================================================== -->
+
+    <div
+        id="searchBar"
+        class="searchBar glass hidden"
+    >
+
+        <i class="fa-solid fa-magnifying-glass"></i>
+
+        <input
+            id="searchInput"
+            type="search"
+            placeholder="Search messages..."
+            autocomplete="off"
+        >
+
+        <button
+            id="closeSearch"
+            class="iconBtn"
+            type="button"
+            aria-label="Close search"
+        >
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+
+    </div>
+
+
+    <!-- =================================================
+         CHAT MENU
+    ================================================== -->
+
+    <div
+        id="chatMenu"
+        class="chatMenu glass hidden"
+    >
+
+        <button
+            id="menuProfileBtn"
+            class="menuItem"
+            type="button"
+        >
+            <i class="fa-solid fa-user"></i>
+            <span>View Profile</span>
+        </button>
+
+        <button
+            id="menuMediaBtn"
+            class="menuItem"
+            type="button"
+        >
+            <i class="fa-solid fa-photo-film"></i>
+            <span>Media</span>
+        </button>
+
+        <button
+            id="menuPinnedBtn"
+            class="menuItem"
+            type="button"
+        >
+            <i class="fa-solid fa-thumbtack"></i>
+            <span>Pinned Messages</span>
+        </button>
+
+        <button
+            id="menuMuteBtn"
+            class="menuItem"
+            type="button"
+        >
+            <i class="fa-solid fa-bell-slash"></i>
+            <span>Mute</span>
+        </button>
+
+        <button
+            id="menuDeleteChatBtn"
+            class="menuItem danger"
+            type="button"
+        >
+            <i class="fa-solid fa-trash"></i>
+            <span>Delete Chat</span>
+        </button>
+
+    </div>
+
+
+    <!-- =================================================
+         CHAT BODY
+    ================================================== -->
+
+    <main
+        id="chatContainer"
+        class="chatContainer"
+    >
+
+        <!-- TYPING -->
+
+        <div
+            id="typingIndicator"
+            class="typingIndicator hidden"
+        >
+
+            <img
+                id="typingPhoto"
+                src="assets/default-avatar.png"
+                class="typingAvatar"
+                alt=""
+            >
+
+            <div class="typingBubble">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+
+            <small id="typingText">
+                Typing...
+            </small>
+
+        </div>
+
+
+        <!-- DATE -->
+
+        <div class="dateDivider">
+            <span>Today</span>
+        </div>
+
+
+        <!-- MESSAGES -->
+
+        <div id="messagesList"></div>
+
+    </main>
+
+
+    <!-- =================================================
+         SCROLL TO BOTTOM
+    ================================================== -->
+
+    <button
+        id="scrollBottomBtn"
+        class="scrollBottomBtn hidden"
+        type="button"
+        aria-label="Scroll to bottom"
+    >
+        <i class="fa-solid fa-arrow-down"></i>
+    </button>
+
+
+    <!-- =================================================
+         REPLY PREVIEW
+    ================================================== -->
+
+    <div
+        id="replyPreview"
+        class="replyPreview hidden"
+    >
+
+        <div class="replyLine"></div>
+
+        <div class="replyInfo">
+
+            <strong id="replyUser">
+                Replying...
+            </strong>
+
+            <p id="replyText">
+                Message preview...
+            </p>
+
+        </div>
+
+        <button
+            id="closeReplyPreview"
+            class="replyClose"
+            type="button"
+            aria-label="Cancel reply"
+        >
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+
+    </div>
+
+
+    <!-- =================================================
+         MESSAGE REACTION BAR
+    ================================================== -->
+
+    <div
+        id="reactionBar"
+        class="reactionBar hidden"
+    >
+
+        <button type="button">❤️</button>
+        <button type="button">😂</button>
+        <button type="button">👍</button>
+        <button type="button">😮</button>
+        <button type="button">😢</button>
+        <button type="button">🔥</button>
+        <button type="button">👏</button>
+
+    </div>
+
+
+    <!-- =================================================
+         MESSAGE ACTION MENU
+    ================================================== -->
+
+    <div
+        id="messageMenu"
+        class="messageMenu glass hidden"
+    >
+
+        <button
+            id="replyMessageBtn"
+            class="menuItem"
+            type="button"
+        >
+            <i class="fa-solid fa-reply"></i>
+            <span>Reply</span>
+        </button>
+
+        <button
+            id="copyMessageBtn"
+            class="menuItem"
+            type="button"
+        >
+            <i class="fa-regular fa-copy"></i>
+            <span>Copy</span>
+        </button>
+
+        <button
+            id="forwardMessageBtn"
+            class="menuItem"
+            type="button"
+        >
+            <i class="fa-solid fa-share"></i>
+            <span>Forward</span>
+        </button>
+
+        <button
+            id="reactMessageBtn"
+            class="menuItem"
+            type="button"
+        >
+            <i class="fa-regular fa-face-smile"></i>
+            <span>React</span>
+        </button>
+
+        <button
+            id="editMessageBtn"
+            class="menuItem"
+            type="button"
+        >
+            <i class="fa-solid fa-pen"></i>
+            <span>Edit</span>
+        </button>
+
+        <button
+            id="pinMessageBtn"
+            class="menuItem"
+            type="button"
+        >
+            <i class="fa-solid fa-thumbtack"></i>
+            <span>Pin Message</span>
+        </button>
+
+        <button
+            id="infoMessageBtn"
+            class="menuItem"
+            type="button"
+        >
+            <i class="fa-solid fa-circle-info"></i>
+            <span>Message Info</span>
+        </button>
+
+        <button
+            id="deleteMessageBtn"
+            class="menuItem danger"
+            type="button"
+        >
+            <i class="fa-solid fa-trash"></i>
+            <span>Delete</span>
+        </button>
+
+    </div>
+
+
+    <!-- =================================================
+         CHAT INPUT
+    ================================================== -->
+
+    <footer class="chatInputWrapper glass">
+
+        <!-- ATTACH -->
+
+        <button
+            id="attachBtn"
+            class="inputBtn"
+            type="button"
+            aria-label="Attach"
+        >
+            <i class="fa-solid fa-plus"></i>
+        </button>
+
+
+        <!-- INPUT BOX -->
+
+        <div class="messageInputBox">
+
+            <button
+                id="emojiBtn"
+                class="emojiBtn"
+                type="button"
+                aria-label="Emoji"
+            >
+                😊
+            </button>
+
+            <textarea
+                id="messageInput"
+                rows="1"
+                maxlength="5000"
+                placeholder="Message..."
+                autocomplete="off"
+            ></textarea>
+
+            <button
+                id="cameraBtn"
+                class="cameraBtn"
+                type="button"
+                aria-label="Camera"
+            >
+                <i class="fa-solid fa-camera"></i>
+            </button>
+
+        </div>
+
+
+        <!-- VOICE -->
+
+        <button
+            id="voiceBtn"
+            class="inputBtn"
+            type="button"
+            aria-label="Voice message"
+        >
+            <i class="fa-solid fa-microphone"></i>
+        </button>
+
+
+        <!-- SEND -->
+
+        <button
+            id="sendBtn"
+            class="sendBtn"
+            type="button"
+            aria-label="Send message"
+        >
+            <i class="fa-solid fa-paper-plane"></i>
+        </button>
+
+    </footer>
+
+
+    <!-- =================================================
+         EMOJI PANEL
+    ================================================== -->
+
+    <div
+        id="emojiPanel"
+        class="emojiPanel hidden"
+    >
+
+        <div class="emojiGrid">
+
+            <button type="button">😀</button>
+            <button type="button">😁</button>
+            <button type="button">😂</button>
+            <button type="button">🤣</button>
+            <button type="button">😊</button>
+            <button type="button">😍</button>
+            <button type="button">🥰</button>
+            <button type="button">😘</button>
+            <button type="button">😎</button>
+            <button type="button">🤩</button>
+            <button type="button">🤔</button>
+            <button type="button">😭</button>
+            <button type="button">😡</button>
+            <button type="button">🥳</button>
+            <button type="button">👍</button>
+            <button type="button">👎</button>
+            <button type="button">👏</button>
+            <button type="button">🙏</button>
+            <button type="button">🔥</button>
+            <button type="button">💯</button>
+            <button type="button">❤️</button>
+            <button type="button">💙</button>
+            <button type="button">💚</button>
+            <button type="button">💜</button>
+            <button type="button">🖤</button>
+            <button type="button">🤍</button>
+            <button type="button">✨</button>
+            <button type="button">🎉</button>
+            <button type="button">🚀</button>
+            <button type="button">😇</button>
+
+        </div>
+
+    </div>
+
+
+    <!-- =================================================
+         ATTACHMENT SHEET
+    ================================================== -->
+
+    <div
+        id="attachmentSheet"
+        class="attachmentSheet hidden"
+    >
+
+        <div class="attachmentOverlay"></div>
+
+        <div class="attachmentCard glass">
+
+            <div class="attachmentHeader">
+                <strong>Share with chat</strong>
+
+                <button
+                    id="closeAttachmentBtn"
+                    class="iconBtn"
+                    type="button"
+                >
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+
+            <div class="attachmentGrid">
+
+                <!-- PHOTO -->
+
+                <button
+                    id="galleryBtn"
+                    class="attachmentItem"
+                    type="button"
+                >
+                    <span class="attachmentIcon">
+                        <i class="fa-solid fa-image"></i>
+                    </span>
+
+                    <span>Photo</span>
+                </button>
+
+
+                <!-- CAMERA -->
+
+                <button
+                    id="cameraAttachmentBtn"
+                    class="attachmentItem"
+                    type="button"
+                >
+                    <span class="attachmentIcon">
+                        <i class="fa-solid fa-camera"></i>
+                    </span>
+
+                    <span>Camera</span>
+                </button>
+
+
+                <!-- VIDEO -->
+
+                <button
+                    id="videoBtn"
+                    class="attachmentItem"
+                    type="button"
+                >
+                    <span class="attachmentIcon">
+                        <i class="fa-solid fa-video"></i>
+                    </span>
+
+                    <span>Video</span>
+                </button>
+
+
+                <!-- DOCUMENT -->
+
+                <button
+                    id="documentBtn"
+                    class="attachmentItem"
+                    type="button"
+                >
+                    <span class="attachmentIcon">
+                        <i class="fa-solid fa-file"></i>
+                    </span>
+
+                    <span>Document</span>
+                </button>
+
+
+                <!-- AUDIO -->
+
+                <button
+                    id="audioBtn"
+                    class="attachmentItem"
+                    type="button"
+                >
+                    <span class="attachmentIcon">
+                        <i class="fa-solid fa-music"></i>
+                    </span>
+
+                    <span>Audio</span>
+                </button>
+
+
+                <!-- LOCATION -->
+
+                <button
+                    id="locationBtn"
+                    class="attachmentItem"
+                    type="button"
+                >
+                    <span class="attachmentIcon">
+                        <i class="fa-solid fa-location-dot"></i>
+                    </span>
+
+                    <span>Location</span>
+                </button>
+
+
+                <!-- CONTACT -->
+
+                <button
+                    id="contactBtn"
+                    class="attachmentItem"
+                    type="button"
+                >
+                    <span class="attachmentIcon">
+                        <i class="fa-solid fa-address-book"></i>
+                    </span>
+
+                    <span>Contact</span>
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- =================================================
+         FILE INPUTS
+    ================================================== -->
+
+    <input
+        id="imagePicker"
+        type="file"
+        accept="image/*"
+        hidden
+    >
+
+    <input
+        id="videoPicker"
+        type="file"
+        accept="video/*"
+        hidden
+    >
+
+    <input
+        id="audioPicker"
+        type="file"
+        accept="audio/*"
+        hidden
+    >
+
+    <input
+        id="documentPicker"
+        type="file"
+        hidden
+    >
+
+    <input
+        id="cameraPicker"
+        type="file"
+        accept="image/*"
+        capture="environment"
+        hidden
+    >
+
+
+    <!-- =================================================
+         MEDIA PREVIEW MODAL
+    ================================================== -->
+
+    <div
+        id="mediaPreviewModal"
+        class="mediaPreviewModal hidden"
+    >
+
+        <div class="previewOverlay"></div>
+
+        <div class="previewContent glass">
+
+            <div class="previewHeader">
+
+                <h3 id="previewTitle">
+                    Send Media
+                </h3>
+
+                <button
+                    id="closePreviewBtn"
+                    class="iconBtn"
+                    type="button"
+                >
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+
+            </div>
+
+
+            <!-- IMAGE -->
+
+            <img
+                id="previewImage"
+                class="previewImage hidden"
+                src=""
+                alt="Preview"
+            >
+
+
+            <!-- VIDEO -->
+
+            <video
+                id="previewVideo"
+                class="previewVideo hidden"
+                controls
+                playsinline
+                preload="metadata"
+            ></video>
+
+
+            <!-- AUDIO -->
+
+            <div
+                id="previewAudioBox"
+                class="previewAudioBox hidden"
+            >
+
+                <div class="audioPreviewIcon">
+                    <i class="fa-solid fa-music"></i>
+                </div>
+
+                <strong id="previewAudioName">
+                    Audio
+                </strong>
+
+                <audio
+                    id="previewAudio"
+                    controls
+                ></audio>
+
+            </div>
+
+
+            <!-- FILE -->
+
+            <div
+                id="previewFileBox"
+                class="previewFileBox hidden"
+            >
+
+                <i class="fa-solid fa-file"></i>
+
+                <div>
+                    <strong id="previewFileName">
+                        File
+                    </strong>
+
+                    <small id="previewFileSize">
+                        0 KB
+                    </small>
+                </div>
+
+            </div>
+
+
+            <!-- CAPTION -->
+
+            <textarea
+                id="mediaCaption"
+                rows="2"
+                maxlength="2000"
+                placeholder="Add a message..."
+            ></textarea>
+
+
+            <div class="previewActions">
+
+                <button
+                    id="cancelMediaBtn"
+                    class="secondaryBtn"
+                    type="button"
+                >
+                    Cancel
+                </button>
+
+                <button
+                    id="sendMediaBtn"
+                    class="primaryBtn"
+                    type="button"
+                >
+                    <i class="fa-solid fa-paper-plane"></i>
+                    Send
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- =================================================
+         FULL SCREEN IMAGE VIEWER
+    ================================================== -->
+
+    <div
+        id="imageViewer"
+        class="imageViewer hidden"
+    >
+
+        <button
+            id="closeViewerBtn"
+            class="viewerClose"
+            type="button"
+        >
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+
+        <img
+            id="viewerImage"
+            src=""
+            alt="Image"
+        >
+
+    </div>
+
+
+    <!-- =================================================
+         VIDEO VIEWER
+    ================================================== -->
+
+    <div
+        id="videoViewer"
+        class="videoViewer hidden"
+    >
+
+        <button
+            id="closeVideoViewerBtn"
+            class="viewerClose"
+            type="button"
+        >
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+
+        <video
+            id="viewerVideo"
+            controls
+            playsinline
+        ></video>
+
+    </div>
+
+
+    <!-- =================================================
+         PROFILE MODAL
+    ================================================== -->
+
+    <div
+        id="profileModal"
+        class="profileModal hidden"
+    >
+
+        <div class="modalOverlay"></div>
+
+        <div class="profileCard glass">
+
+            <button
+                id="closeProfileBtn"
+                class="profileClose"
+                type="button"
+            >
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+            <img
+                id="profileImage"
+                src="assets/default-avatar.png"
+                class="profileImage"
+                alt="Profile"
+            >
+
+            <h2 id="profileName">
+                User Name
+            </h2>
+
+            <p id="profileUsername">
+                @username
+            </p>
+
+            <span
+                id="profileStatus"
+                class="profileStatus"
+            >
+                Offline
+            </span>
+
+        </div>
+
+    </div>
+
+
+    <!-- =================================================
+         DELETE MODAL
+    ================================================== -->
+
+    <div
+        id="deleteModal"
+        class="deleteModal hidden"
+    >
+
+        <div class="modalOverlay"></div>
+
+        <div class="deleteCard glass">
+
+            <h2>Delete Message?</h2>
+
+            <p>
+                Choose how you want to delete this message.
+            </p>
+
+            <button
+                id="deleteForMeBtn"
+                class="modalBtn"
+                type="button"
+            >
+                Delete for Me
+            </button>
+
+            <button
+                id="deleteForEveryoneBtn"
+                class="modalBtn danger"
+                type="button"
+            >
+                Delete for Everyone
+            </button>
+
+            <button
+                id="cancelDeleteBtn"
+                class="modalBtn secondary"
+                type="button"
+            >
+                Cancel
+            </button>
+
+        </div>
+
+    </div>
+
+
+    <!-- =================================================
+         FORWARD MODAL
+    ================================================== -->
+
+    <div
+        id="forwardModal"
+        class="forwardModal hidden"
+    >
+
+        <div class="modalOverlay"></div>
+
+        <div class="forwardCard glass">
+
+            <div class="forwardHeader">
+
+                <h2>Forward Message</h2>
+
+                <button
+                    id="closeForwardBtn"
+                    class="iconBtn"
+                    type="button"
+                >
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+
+            </div>
+
+            <div
+                id="forwardUserList"
+                class="forwardUserList"
+            ></div>
+
+        </div>
+
+    </div>
+
+
+    <!-- =================================================
+         MESSAGE INFO
+    ================================================== -->
+
+    <div
+        id="messageInfoModal"
+        class="messageInfoModal hidden"
+    >
+
+        <div class="modalOverlay"></div>
+
+        <div class="infoCard glass">
+
+            <h2>Message Info</h2>
+
+            <div class="infoRow">
+                <span>Sent</span>
+                <strong id="sentTime">--</strong>
+            </div>
+
+            <div class="infoRow">
+                <span>Delivered</span>
+                <strong id="deliveredTime">--</strong>
+            </div>
+
+            <div class="infoRow">
+                <span>Seen</span>
+                <strong id="seenTime">--</strong>
+            </div>
+
+            <button
+                id="closeInfoBtn"
+                class="primaryBtn"
+                type="button"
+            >
+                OK
+            </button>
+
+        </div>
+
+    </div>
+
+
+    <!-- =================================================
+         VOICE RECORDING
+    ================================================== -->
+
+    <div
+        id="recordOverlay"
+        class="recordOverlay hidden"
+    >
+
+        <div class="recordCard glass">
+
+            <div class="recordPulse"></div>
+
+            <div class="recordIcon">
+                <i class="fa-solid fa-microphone"></i>
+            </div>
+
+            <h3>Recording...</h3>
+
+            <p id="recordTime">
+                00:00
+            </p>
+
+            <div class="recordActions">
+
+                <button
+                    id="cancelRecordingBtn"
+                    class="secondaryBtn"
+                    type="button"
+                >
+                    Cancel
+                </button>
+
+                <button
+                    id="stopRecordingBtn"
+                    class="primaryBtn"
+                    type="button"
+                >
+                    <i class="fa-solid fa-stop"></i>
+                    Stop
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- =================================================
+         UPLOAD OVERLAY
+    ================================================== -->
+
+    <div
+        id="uploadOverlay"
+        class="uploadOverlay hidden"
+    >
+
+        <div class="uploadCard glass">
+
+            <div class="uploadIcon">
+                <i class="fa-solid fa-cloud-arrow-up"></i>
+            </div>
+
+            <h3 id="uploadTitle">
+                Uploading...
+            </h3>
+
+            <p id="uploadFileName">
+                Preparing file...
+            </p>
+
+            <div class="uploadProgress">
+
+                <div
+                    id="uploadProgressBar"
+                    class="uploadProgressBar"
+                ></div>
+
+            </div>
+
+            <div class="uploadStats">
+
+                <span id="uploadPercent">
+                    0%
+                </span>
+
+                <span id="uploadSpeed">
+                    0 MB/s
+                </span>
+
+            </div>
+
+            <button
+                id="cancelUploadBtn"
+                class="secondaryBtn"
+                type="button"
+            >
+                Cancel Upload
+            </button>
+
+        </div>
+
+    </div>
+
+
+    <!-- =================================================
+         TOAST
+    ================================================== -->
+
+    <div
+        id="toast"
+        class="toast hidden"
+    >
+
+        <i
+            id="toastIcon"
+            class="fa-solid fa-circle-check"
+        ></i>
+
+        <span id="toastText">
+            Done
+        </span>
+
+    </div>
 
 </div>
 
-<div id="chatStatus">
 
-Connecting...
-
-</div>
-
-</div>
-
-</div>
-
-<div class="header-icons">
-
-<span onclick="voiceCall()">
-📞
-</span>
-
-<span onclick="videoCall()">
-🎥
-</span>
-
-<span onclick="toggleChatMenu()">
-⋮
-</span>
-
-</div>
-
-</div>
-
-<!-- 3 Dot Menu -->
-
-<div
-id="chatMenu"
-class="chat-menu">
-
-<div onclick="openProfile()">
-👤 About User
-</div>
-
-<div onclick="reportUser()">
-🚩 Report User
-</div>
-
-<div onclick="blockUser()">
-🚫 Block User
-</div>
-
-</div>
-<!-- ========================= -->
-<!-- Messages Area -->
-<!-- ========================= -->
-
-<style>
-
-/* Chat Area */
-
-.chat-area{
-
-margin-top:72px;
-margin-bottom:82px;
-
-height:calc(100vh - 154px);
-
-overflow-y:auto;
-
-padding:15px;
-
-scroll-behavior:smooth;
-
-}
-
-.chat-area::-webkit-scrollbar{
-
-width:6px;
-
-}
-
-.chat-area::-webkit-scrollbar-thumb{
-
-background:#00aaff;
-border-radius:20px;
-
-}
-
-/* Date Divider */
-
-.chat-date{
-
-text-align:center;
-
-margin:18px 0;
-
-font-size:13px;
-
-color:#999;
-
-}
-
-/* Message */
-
-.message{
-
-max-width:78%;
-
-padding:12px 16px;
-
-border-radius:18px;
-
-margin:10px 0;
-
-word-wrap:break-word;
-
-animation:pop .25s ease;
-
-position:relative;
-
-}
-
-/* Sent */
-
-.sent{
-
-margin-left:auto;
-
-background:linear-gradient(135deg,#00aaff,#0077ff);
-
-color:#fff;
-
-border-bottom-right-radius:6px;
-
-}
-
-/* Received */
-
-.received{
-
-margin-right:auto;
-
-background:#242424;
-
-color:#fff;
-
-border-bottom-left-radius:6px;
-
-border:1px solid rgba(255,255,255,.05);
-
-}
-
-/* Images */
-
-.message img{
-
-width:100%;
-
-border-radius:12px;
-
-margin-top:8px;
-
-display:block;
-
-}
-
-/* Videos */
-
-.message video{
-
-width:100%;
-
-border-radius:12px;
-
-margin-top:8px;
-
-display:block;
-
-}
-
-/* Time */
-
-.message-time{
-
-display:flex;
-
-justify-content:flex-end;
-
-align-items:center;
-
-gap:5px;
-
-margin-top:6px;
-
-font-size:11px;
-
-opacity:.75;
-
-}
-
-/* Seen Tick */
-
-.message-status{
-
-font-size:12px;
-
-font-weight:bold;
-
-}
-
-.message-status.seen{
-
-color:#5dd6ff;
-
-}
-
-.message-status.delivered{
-
-color:#ddd;
-
-}
-
-/* Reply Preview */
-
-.reply-box{
-
-padding:8px;
-
-margin-bottom:8px;
-
-background:rgba(255,255,255,.08);
-
-border-left:3px solid #00aaff;
-
-border-radius:8px;
-
-font-size:13px;
-
-color:#ddd;
-
-}
-
-/* Typing */
-
-.typing-box{
-
-display:none;
-
-width:max-content;
-
-background:#242424;
-
-padding:10px 15px;
-
-border-radius:18px;
-
-margin:10px 0;
-
-}
-
-.typing-dot{
-
-display:inline-block;
-
-width:8px;
-
-height:8px;
-
-border-radius:50%;
-
-background:#00aaff;
-
-margin:0 2px;
-
-animation:bounce .7s infinite;
-
-}
-
-.typing-dot:nth-child(2){
-
-animation-delay:.15s;
-
-}
-
-.typing-dot:nth-child(3){
-
-animation-delay:.3s;
-
-}
-
-@keyframes bounce{
-
-0%,100%{
-
-transform:translateY(0);
-
-}
-
-50%{
-
-transform:translateY(-5px);
-
-}
-
-}
-
-@keyframes pop{
-
-from{
-
-opacity:0;
-
-transform:scale(.8);
-
-}
-
-to{
-
-opacity:1;
-
-transform:scale(1);
-
-}
-
-}
-
-</style>
-
-<!-- ========================= -->
-<!-- Messages Container -->
-<!-- ========================= -->
-
-<div
-id="messagesContainer"
-class="chat-area">
-
-<!-- Messages will load here -->
-
-<div
-id="typingIndicator"
-class="typing-box">
-
-<span class="typing-dot"></span>
-
-<span class="typing-dot"></span>
-
-<span class="typing-dot"></span>
-
-</div>
-
-</div>
-<!-- ========================= -->
-<!-- Chat Input Styles -->
-<!-- ========================= -->
-
-<style>
-
-.chat-input-area{
-
-position:fixed;
-
-left:0;
-bottom:0;
-
-width:100%;
-
-padding:12px;
-
-display:flex;
-
-align-items:center;
-
-gap:10px;
-
-background:rgba(20,20,20,.92);
-
-backdrop-filter:blur(15px);
-
-border-top:1px solid rgba(255,255,255,.08);
-
-z-index:999;
-
-}
-
-/* Icon Buttons */
-
-.icon-btn{
-
-width:44px;
-height:44px;
-
-border:none;
-
-border-radius:50%;
-
-background:#242424;
-
-color:#fff;
-
-font-size:20px;
-
-cursor:pointer;
-
-display:flex;
-
-align-items:center;
-
-justify-content:center;
-
-transition:.25s;
-
-}
-
-.icon-btn:hover{
-
-background:#00aaff;
-
-transform:scale(1.08);
-
-}
-
-/* Message Input */
-
-#messageInput{
-
-flex:1;
-
-height:48px;
-
-padding:0 18px;
-
-border:none;
-
-outline:none;
-
-border-radius:30px;
-
-background:#1b1b1b;
-
-color:#fff;
-
-font-size:15px;
-
-}
-
-#messageInput::placeholder{
-
-color:#888;
-
-}
-
-/* Send Button */
-
-.send-btn{
-
-width:52px;
-
-height:52px;
-
-border:none;
-
-border-radius:50%;
-
-background:linear-gradient(135deg,#00aaff,#0077ff);
-
-color:#fff;
-
-font-size:22px;
-
-cursor:pointer;
-
-display:flex;
-
-align-items:center;
-
-justify-content:center;
-
-box-shadow:0 0 18px rgba(0,170,255,.35);
-
-transition:.25s;
-
-}
-
-.send-btn:hover{
-
-transform:scale(1.08);
-
-}
-
-/* Recording Box */
-
-.record-box{
-
-display:none;
-
-position:fixed;
-
-bottom:82px;
-
-left:50%;
-
-transform:translateX(-50%);
-
-padding:12px 22px;
-
-background:#1b1b1b;
-
-border-radius:30px;
-
-box-shadow:0 8px 25px rgba(0,0,0,.35);
-
-font-size:15px;
-
-z-index:1000;
-
-}
-
-.record-dot{
-
-display:inline-block;
-
-width:10px;
-
-height:10px;
-
-border-radius:50%;
-
-background:red;
-
-margin-right:8px;
-
-animation:blink 1s infinite;
-
-}
-
-@keyframes blink{
-
-0%,100%{opacity:1;}
-
-50%{opacity:.2;}
-
-}
-
-</style>
-
-<!-- ========================= -->
-<!-- Recording Indicator -->
-<!-- ========================= -->
-
-<div
-id="recordBox"
-class="record-box">
-
-<span class="record-dot"></span>
-
-Recording Voice...
-
-</div>
-
-<!-- ========================= -->
-<!-- Chat Input -->
-<!-- ========================= -->
-
-<div class="chat-input-area">
-
-<!-- Emoji -->
-
-<button
-class="icon-btn"
-onclick="openEmojiPicker()"
-title="Emoji">
-
-😊
-
-</button>
-
-<!-- Attachment -->
-
-<button
-class="icon-btn"
-onclick="document.getElementById('chatFile').click()"
-title="Attachment">
-
-📎
-
-</button>
-
-<!-- Camera -->
-
-<button
-class="icon-btn"
-onclick="openCamera()"
-title="Camera">
-
-📷
-
-</button>
-
-<!-- Voice -->
-
-<button
-class="icon-btn"
-onclick="startVoiceRecording()"
-title="Voice Message">
-
-🎤
-
-</button>
-
-<!-- Message -->
-
-<input
-
-type="text"
-
-id="messageInput"
-
-placeholder="Type a message..."
-
-autocomplete="off">
-
-<!-- Send -->
-
-<button
-
-class="send-btn"
-
-onclick="sendMessage()"
-
-title="Send">
-
-➤
-
-</button>
-
-</div>
-
-<!-- ========================= -->
-<!-- Hidden File Picker -->
-<!-- ========================= -->
-
-<input
-
-type="file"
-
-id="chatFile"
-
-hidden
-
-accept="image/*,video/*"
-
-onchange="uploadChatFile(event)">
-<!-- ========================= -->
-<!-- Firebase SDK -->
-<!-- ========================= -->
-
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
-
-<!-- Viewora Scripts -->
+<!-- =====================================================
+     FIREBASE
+===================================================== -->
+
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
 
 <script src="firebase.js"></script>
 <script src="chat.js"></script>
-<script src="nav.js"></script>
-
-<script>
-
-// =======================
-// Auto Focus
-// =======================
-
-window.addEventListener("load",()=>{
-
-const input=document.getElementById("messageInput");
-
-if(input) input.focus();
-
-});
-
-// =======================
-// Chat Menu
-// =======================
-
-function toggleChatMenu(){
-
-const menu=document.getElementById("chatMenu");
-
-menu.style.display=
-menu.style.display==="block"
-?"none":"block";
-
-}
-
-// Close menu
-
-document.addEventListener("click",(e)=>{
-
-const menu=document.getElementById("chatMenu");
-
-if(!menu)return;
-
-if(
-!menu.contains(e.target) &&
-!e.target.innerText.includes("⋮")
-){
-
-menu.style.display="none";
-
-}
-
-});
-
-// =======================
-// About User
-// =======================
-
-function openProfile(){
-
-if(typeof otherUserUid==="undefined") return;
-
-location.href=
-"profile.html?uid="+otherUserUid;
-
-}
-
-// =======================
-// Report User
-// =======================
-
-function reportUser(){
-
-if(!confirm("Report this user?")) return;
-
-db.ref("reports").push({
-
-reportedUid:otherUserUid,
-
-reportedBy:currentUser.uid,
-
-time:Date.now(),
-
-reason:"User Report"
-
-});
-
-alert("Report submitted.");
-
-toggleChatMenu();
-
-}
-
-// =======================
-// Block User
-// =======================
-
-function blockUser(){
-
-if(!confirm("Block this user?")) return;
-
-db.ref(
-"blocks/"+currentUser.uid+"/"+otherUserUid
-).set(true);
-
-alert("User Blocked");
-
-history.back();
-
-}
-
-// =======================
-// Voice Call
-// =======================
-
-function voiceCall(){
-
-alert("Voice Calling feature coming soon.");
-
-}
-
-// =======================
-// Video Call
-// =======================
-
-function videoCall(){
-
-alert("Video Calling feature coming soon.");
-
-}
-
-// =======================
-// Emoji
-// =======================
-
-function openEmojiPicker(){
-
-const input=document.getElementById("messageInput");
-
-if(input){
-
-input.value+="😊";
-
-input.focus();
-
-}
-
-}
-
-// =======================
-// Camera
-// =======================
-
-function openCamera(){
-
-document.getElementById("chatFile").click();
-
-}
-
-// =======================
-// Voice Recording
-// =======================
-
-function startVoiceRecording(){
-
-const box=document.getElementById("recordBox");
-
-box.style.display="block";
-
-setTimeout(()=>{
-
-box.style.display="none";
-
-alert("Voice message support coming soon.");
-
-},2500);
-
-}
-
-// =======================
-// Internet Status
-// =======================
-
-window.addEventListener("online",()=>{
-
-console.log("✅ Connected");
-
-});
-
-window.addEventListener("offline",()=>{
-
-alert("No Internet Connection");
-
-});
-
-// =======================
-// Fade Animation
-// =======================
-
-window.addEventListener("load",()=>{
-
-document.body.style.opacity="0";
-
-document.body.style.transition=".35s";
-
-requestAnimationFrame(()=>{
-
-document.body.style.opacity="1";
-
-});
-
-});
-
-// =======================
-// Version
-// =======================
-
-console.log("✅ Viewora Chat V4 Loaded");
-
-</script>
 
 </body>
 </html>

@@ -1,294 +1,1312 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
 
 <meta charset="UTF-8">
 
 <meta
-name="viewport"
-content="width=device-width, initial-scale=1.0">
+    name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+>
+
+<meta name="theme-color" content="#050816">
 
 <meta
-name="theme-color"
-content="#050816">
+    name="description"
+    content="Viewora Creator Studio - Create Posts, Shorts, Videos and Live"
+>
 
-<meta
-name="description"
-content="Upload videos and photos to Viewora">
+<title>Viewora • Creator Studio</title>
 
-<title>Viewora • Upload</title>
+<link rel="icon" href="assets/logo.png">
 
-<link
-rel="icon"
-href="assets/logo.png">
+<!-- =====================================================
+     GOOGLE FONT
+===================================================== -->
 
-<!-- CSS -->
-
-<link
-rel="stylesheet"
-href="upload.css">
-
-<!-- Google Font -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
 
 <link
-rel="preconnect"
-href="https://fonts.googleapis.com">
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+    rel="stylesheet"
+>
+
+<!-- =====================================================
+     FONT AWESOME
+===================================================== -->
 
 <link
-rel="preconnect"
-href="https://fonts.gstatic.com"
-crossorigin>
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
+>
 
-<link
-href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
-rel="stylesheet">
+<!-- =====================================================
+     UPLOAD CSS
+===================================================== -->
 
-<!-- Font Awesome -->
+<link rel="stylesheet" href="upload.css">
 
-<link
-rel="stylesheet"
-href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+<style>
+
+/* =====================================================
+   PREMIUM BASE
+===================================================== */
+
+*{
+    box-sizing:border-box;
+    margin:0;
+    padding:0;
+}
+
+html{
+    scroll-behavior:smooth;
+}
+
+body{
+    min-height:100vh;
+    font-family:"Inter",sans-serif;
+    background:
+        radial-gradient(circle at 10% 10%,rgba(74,99,255,.16),transparent 28%),
+        radial-gradient(circle at 90% 20%,rgba(0,220,255,.10),transparent 25%),
+        #050816;
+    color:#fff;
+    overflow-x:hidden;
+}
+
+/* =====================================================
+   BACKGROUND
+===================================================== */
+
+.bgGlow{
+    position:fixed;
+    inset:0;
+    pointer-events:none;
+    z-index:-1;
+    overflow:hidden;
+}
+
+.bgGlow::before,
+.bgGlow::after{
+    content:"";
+    position:absolute;
+    width:350px;
+    height:350px;
+    border-radius:50%;
+    filter:blur(100px);
+    opacity:.18;
+    animation:floatGlow 9s ease-in-out infinite alternate;
+}
+
+.bgGlow::before{
+    background:#4361ee;
+    top:-100px;
+    left:-100px;
+}
+
+.bgGlow::after{
+    background:#00d4ff;
+    right:-120px;
+    bottom:-100px;
+    animation-delay:2s;
+}
+
+@keyframes floatGlow{
+    from{
+        transform:translate(0,0) scale(1);
+    }
+    to{
+        transform:translate(50px,30px) scale(1.15);
+    }
+}
+
+/* =====================================================
+   PAGE LOADER
+===================================================== */
+
+#pageLoader{
+    position:fixed;
+    inset:0;
+    z-index:9999;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    flex-direction:column;
+    background:#050816;
+    transition:.6s ease;
+}
+
+#pageLoader h2{
+    margin-top:25px;
+    font-size:18px;
+    font-weight:600;
+}
+
+.loaderOrb{
+    width:80px;
+    height:80px;
+    position:relative;
+}
+
+.loaderOrb span{
+    position:absolute;
+    inset:0;
+    border:3px solid transparent;
+    border-top-color:#4f7cff;
+    border-right-color:#00d9ff;
+    border-radius:50%;
+    animation:spin 1s linear infinite;
+}
+
+.loaderOrb span:nth-child(2){
+    inset:9px;
+    border-top-color:#a855f7;
+    animation-duration:1.5s;
+    animation-direction:reverse;
+}
+
+.loaderOrb span:nth-child(3){
+    inset:18px;
+    border-top-color:#fff;
+    animation-duration:2s;
+}
+
+@keyframes spin{
+    to{
+        transform:rotate(360deg);
+    }
+}
+
+/* =====================================================
+   APP
+===================================================== */
+
+.hidden{
+    display:none !important;
+}
+
+#app{
+    min-height:100vh;
+}
+
+.fadeIn{
+    animation:fadeIn .7s ease forwards;
+}
+
+@keyframes fadeIn{
+    from{
+        opacity:0;
+        transform:translateY(15px);
+    }
+    to{
+        opacity:1;
+        transform:translateY(0);
+    }
+}
+
+/* =====================================================
+   HEADER
+===================================================== */
+
+.header{
+    position:sticky;
+    top:0;
+    z-index:100;
+    height:76px;
+    padding:0 20px;
+    display:flex;
+    align-items:center;
+    gap:15px;
+    border-bottom:1px solid rgba(255,255,255,.08);
+    backdrop-filter:blur(22px);
+    background:rgba(5,8,22,.78);
+}
+
+.iconBtn{
+    width:44px;
+    height:44px;
+    border:1px solid rgba(255,255,255,.1);
+    border-radius:14px;
+    background:rgba(255,255,255,.05);
+    color:white;
+    font-size:17px;
+    cursor:pointer;
+}
+
+.headerTitle{
+    flex:1;
+}
+
+.headerTitle h2{
+    font-size:19px;
+    font-weight:700;
+}
+
+.headerTitle p{
+    color:#9299ad;
+    font-size:12px;
+    margin-top:3px;
+}
+
+.draftBtn{
+    border:0;
+    padding:11px 15px;
+    border-radius:13px;
+    color:#fff;
+    background:rgba(255,255,255,.07);
+    cursor:pointer;
+}
+
+/* =====================================================
+   MAIN
+===================================================== */
+
+.uploadContainer{
+    width:min(950px,94%);
+    margin:30px auto 70px;
+}
+
+.uploadCard{
+    border:1px solid rgba(255,255,255,.08);
+    border-radius:28px;
+    padding:25px;
+    background:rgba(12,16,34,.72);
+    backdrop-filter:blur(24px);
+    box-shadow:0 25px 80px rgba(0,0,0,.35);
+}
+
+/* =====================================================
+   CREATOR TOP
+===================================================== */
+
+.uploadTop{
+    text-align:center;
+    padding:10px 0 25px;
+}
+
+.uploadLogo{
+    width:68px;
+    height:68px;
+    object-fit:contain;
+    margin-bottom:12px;
+    filter:drop-shadow(0 0 20px rgba(70,120,255,.45));
+}
+
+.uploadTop h1{
+    font-size:27px;
+    font-weight:800;
+}
+
+.uploadTop p{
+    color:#8f97ab;
+    margin-top:8px;
+    font-size:14px;
+}
+
+/* =====================================================
+   CONTENT TYPE TABS
+===================================================== */
+
+.contentTabs{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:10px;
+    margin:10px 0 25px;
+}
+
+.contentTab{
+    border:1px solid rgba(255,255,255,.08);
+    background:rgba(255,255,255,.035);
+    color:#aeb5c7;
+    border-radius:17px;
+    padding:16px 8px;
+    cursor:pointer;
+    transition:.25s ease;
+    text-align:center;
+}
+
+.contentTab i{
+    display:block;
+    font-size:20px;
+    margin-bottom:8px;
+}
+
+.contentTab span{
+    font-size:12px;
+    font-weight:600;
+}
+
+.contentTab:hover{
+    transform:translateY(-2px);
+    border-color:rgba(90,130,255,.5);
+}
+
+.contentTab.active{
+    color:#fff;
+    border-color:rgba(80,130,255,.8);
+    background:linear-gradient(
+        135deg,
+        rgba(67,97,238,.35),
+        rgba(0,210,255,.12)
+    );
+    box-shadow:0 10px 30px rgba(55,100,255,.15);
+}
+
+/* =====================================================
+   MODE INFO
+===================================================== */
+
+.modeInfo{
+    padding:17px;
+    margin-bottom:20px;
+    border:1px solid rgba(255,255,255,.07);
+    border-radius:17px;
+    background:rgba(255,255,255,.025);
+}
+
+.modeInfo h3{
+    font-size:15px;
+    margin-bottom:5px;
+}
+
+.modeInfo p{
+    font-size:12px;
+    color:#858da2;
+    line-height:1.6;
+}
+
+/* =====================================================
+   DROP ZONE
+===================================================== */
+
+.dropZone{
+    min-height:280px;
+    border:1.5px dashed rgba(100,140,255,.4);
+    border-radius:23px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    background:
+        linear-gradient(
+            135deg,
+            rgba(64,91,190,.08),
+            rgba(0,190,255,.035)
+        );
+    transition:.3s ease;
+}
+
+.dropZone.dragover{
+    border-color:#55b8ff;
+    background:rgba(60,120,255,.12);
+    transform:scale(1.01);
+}
+
+.dropContent{
+    padding:30px;
+}
+
+.uploadIcon{
+    width:70px;
+    height:70px;
+    margin:0 auto 18px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    border-radius:22px;
+    background:rgba(75,110,255,.13);
+    color:#65a7ff;
+    font-size:28px;
+}
+
+.dropContent h3{
+    font-size:18px;
+}
+
+.dropContent p{
+    margin:7px 0 18px;
+    color:#8992a7;
+    font-size:13px;
+}
+
+.dropContent small{
+    display:block;
+    color:#6f788d;
+    line-height:1.7;
+    margin-top:15px;
+}
+
+/* =====================================================
+   BUTTONS
+===================================================== */
+
+.primaryBtn,
+.secondaryBtn,
+.dangerBtn{
+    border:0;
+    border-radius:14px;
+    padding:13px 18px;
+    color:#fff;
+    font-weight:600;
+    cursor:pointer;
+    transition:.25s ease;
+}
+
+.primaryBtn{
+    background:linear-gradient(135deg,#536dff,#00b9ff);
+    box-shadow:0 10px 25px rgba(43,120,255,.2);
+}
+
+.secondaryBtn{
+    background:rgba(255,255,255,.07);
+    border:1px solid rgba(255,255,255,.08);
+}
+
+.dangerBtn{
+    background:rgba(255,65,90,.12);
+    color:#ff8294;
+    border:1px solid rgba(255,65,90,.15);
+}
+
+.primaryBtn:hover,
+.secondaryBtn:hover,
+.dangerBtn:hover{
+    transform:translateY(-2px);
+}
+
+/* =====================================================
+   PREVIEW
+===================================================== */
+
+.previewSection{
+    margin-top:22px;
+}
+
+.previewBox{
+    position:relative;
+    border-radius:20px;
+    overflow:hidden;
+    background:#02030a;
+    border:1px solid rgba(255,255,255,.08);
+}
+
+.previewBox img,
+.previewBox video{
+    width:100%;
+    max-height:450px;
+    display:block;
+    object-fit:contain;
+}
+
+.fileInfo{
+    padding:15px;
+}
+
+.fileInfo h3{
+    font-size:14px;
+    word-break:break-word;
+}
+
+.fileInfo p{
+    margin-top:5px;
+    color:#7e879b;
+    font-size:12px;
+}
+
+.quickActions{
+    display:flex;
+    gap:10px;
+    margin-top:12px;
+}
+
+/* =====================================================
+   FORM
+===================================================== */
+
+.sectionTitle{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin:30px 0 17px;
+    font-size:15px;
+    font-weight:700;
+}
+
+.sectionTitle i{
+    color:#6c9cff;
+}
+
+.formGroup{
+    margin-bottom:18px;
+    position:relative;
+}
+
+.formGroup label{
+    display:block;
+    margin-bottom:8px;
+    font-size:13px;
+    font-weight:600;
+    color:#c7ccda;
+}
+
+.formGroup label i{
+    margin-right:6px;
+    color:#759bff;
+}
+
+.formGroup input,
+.formGroup textarea,
+.formGroup select{
+    width:100%;
+    border:1px solid rgba(255,255,255,.09);
+    outline:none;
+    color:#fff;
+    background:rgba(255,255,255,.045);
+    border-radius:14px;
+    padding:14px;
+    font-family:inherit;
+}
+
+.formGroup textarea{
+    resize:vertical;
+}
+
+.formGroup select option{
+    background:#101426;
+}
+
+.formGroup input:focus,
+.formGroup textarea:focus,
+.formGroup select:focus{
+    border-color:#587cff;
+    box-shadow:0 0 0 3px rgba(80,120,255,.08);
+}
+
+.counter{
+    text-align:right;
+    margin-top:5px;
+    color:#697286;
+    font-size:11px;
+}
+
+/* =====================================================
+   OPTIONS
+===================================================== */
+
+.optionsGrid{
+    display:grid;
+    grid-template-columns:repeat(2,1fr);
+    gap:10px;
+}
+
+.switchCard{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:15px;
+    border:1px solid rgba(255,255,255,.07);
+    border-radius:15px;
+    background:rgba(255,255,255,.025);
+    color:#bfc5d3;
+    font-size:12px;
+}
+
+.switchCard input{
+    accent-color:#557cff;
+    width:18px;
+    height:18px;
+}
+
+/* =====================================================
+   THUMBNAIL
+===================================================== */
+
+.thumbnailCard{
+    padding:18px;
+    border-radius:20px;
+    border:1px solid rgba(255,255,255,.07);
+}
+
+#thumbnailPreview img{
+    width:100%;
+    max-height:260px;
+    object-fit:cover;
+    border-radius:15px;
+    display:block;
+}
+
+.thumbnailButtons{
+    display:flex;
+    gap:10px;
+    margin-top:12px;
+}
+
+/* =====================================================
+   PROGRESS
+===================================================== */
+
+.progressSection{
+    margin-top:25px;
+    padding:18px;
+    border-radius:18px;
+    background:rgba(255,255,255,.035);
+    border:1px solid rgba(255,255,255,.07);
+}
+
+.progressHeader,
+.progressInfo{
+    display:flex;
+    justify-content:space-between;
+    font-size:12px;
+}
+
+.progressInfo{
+    margin-top:9px;
+    color:#798296;
+}
+
+.progressBar{
+    height:9px;
+    margin-top:12px;
+    border-radius:20px;
+    overflow:hidden;
+    background:rgba(255,255,255,.08);
+}
+
+#progressFill{
+    width:0%;
+    height:100%;
+    border-radius:20px;
+    background:linear-gradient(90deg,#526dff,#00d9ff);
+    transition:.2s ease;
+}
+
+/* =====================================================
+   LIVE PANEL
+===================================================== */
+
+.livePanel{
+    padding:25px;
+    text-align:center;
+    border:1px solid rgba(255,70,100,.18);
+    border-radius:22px;
+    background:
+        radial-gradient(
+            circle at center,
+            rgba(255,60,90,.08),
+            transparent 65%
+        );
+}
+
+.liveIcon{
+    width:80px;
+    height:80px;
+    margin:0 auto 18px;
+    border-radius:50%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:rgba(255,55,85,.12);
+    color:#ff5d75;
+    font-size:30px;
+    animation:pulseLive 1.8s infinite;
+}
+
+@keyframes pulseLive{
+    0%,100%{
+        box-shadow:0 0 0 0 rgba(255,70,90,.25);
+    }
+    50%{
+        box-shadow:0 0 0 18px rgba(255,70,90,0);
+    }
+}
+
+.livePanel h2{
+    margin-bottom:7px;
+}
+
+.livePanel p{
+    color:#858da2;
+    font-size:13px;
+    line-height:1.6;
+    margin-bottom:18px;
+}
+
+/* =====================================================
+   STATS
+===================================================== */
+
+.statsGrid{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:10px;
+}
+
+.statCard{
+    padding:15px;
+    border-radius:16px;
+    background:rgba(255,255,255,.025);
+    border:1px solid rgba(255,255,255,.06);
+}
+
+.statCard h4{
+    font-size:11px;
+    color:#777f93;
+    margin-bottom:7px;
+}
+
+.statCard span{
+    font-size:13px;
+    font-weight:600;
+}
+
+/* =====================================================
+   ACTIONS
+===================================================== */
+
+.buttonGroup{
+    display:grid;
+    grid-template-columns:1fr 1fr 1.5fr;
+    gap:10px;
+    margin-top:30px;
+}
+
+/* =====================================================
+   OVERLAY
+===================================================== */
+
+#loadingOverlay{
+    position:fixed;
+    inset:0;
+    z-index:9998;
+    background:rgba(2,4,12,.82);
+    backdrop-filter:blur(18px);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    flex-direction:column;
+    text-align:center;
+}
+
+.premiumLoader{
+    width:75px;
+    height:75px;
+    position:relative;
+}
+
+.loaderRing{
+    position:absolute;
+    inset:0;
+    border:3px solid transparent;
+    border-top-color:#5b7cff;
+    border-radius:50%;
+    animation:spin 1s linear infinite;
+}
+
+.loaderRing.delay1{
+    inset:10px;
+    border-top-color:#00d5ff;
+    animation-duration:1.4s;
+}
+
+.loaderRing.delay2{
+    inset:20px;
+    border-top-color:#b05cff;
+    animation-duration:1.8s;
+}
+
+#loadingOverlay h3{
+    margin-top:22px;
+}
+
+#loadingOverlay p{
+    color:#838ca0;
+    font-size:12px;
+    margin-top:7px;
+}
+
+/* =====================================================
+   MODALS
+===================================================== */
+
+.modal{
+    position:fixed;
+    inset:0;
+    z-index:10000;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:20px;
+    background:rgba(0,0,0,.72);
+    backdrop-filter:blur(15px);
+}
+
+.modalCard{
+    width:min(430px,100%);
+    padding:30px;
+    text-align:center;
+    border:1px solid rgba(255,255,255,.09);
+    border-radius:25px;
+    background:#111525;
+}
+
+.successIcon,
+.errorIcon{
+    width:75px;
+    height:75px;
+    border-radius:50%;
+    margin:0 auto 18px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:30px;
+}
+
+.successIcon{
+    color:#5dff9a;
+    background:rgba(50,255,140,.1);
+}
+
+.errorIcon{
+    color:#ff6378;
+    background:rgba(255,60,90,.1);
+}
+
+.modalCard p{
+    color:#858da2;
+    margin:10px 0 22px;
+    line-height:1.5;
+}
+
+.modalButtons{
+    display:flex;
+    gap:10px;
+    justify-content:center;
+}
+
+/* =====================================================
+   TOAST
+===================================================== */
+
+.toast{
+    position:fixed;
+    left:50%;
+    bottom:25px;
+    transform:translateX(-50%);
+    z-index:11000;
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:13px 18px;
+    border-radius:15px;
+    background:#161b2c;
+    border:1px solid rgba(255,255,255,.1);
+    box-shadow:0 15px 40px rgba(0,0,0,.4);
+    font-size:13px;
+}
+
+/* =====================================================
+   NETWORK
+===================================================== */
+
+#networkBanner{
+    position:fixed;
+    left:50%;
+    top:15px;
+    transform:translateX(-50%);
+    z-index:12000;
+    padding:10px 16px;
+    border-radius:12px;
+    background:#32121a;
+    color:#ff9aaa;
+    border:1px solid rgba(255,70,100,.2);
+    font-size:12px;
+}
+
+/* =====================================================
+   MOBILE
+===================================================== */
+
+@media(max-width:700px){
+
+    .uploadContainer{
+        width:94%;
+        margin-top:15px;
+    }
+
+    .uploadCard{
+        padding:16px;
+        border-radius:22px;
+    }
+
+    .header{
+        padding:0 12px;
+    }
+
+    .contentTabs{
+        grid-template-columns:repeat(2,1fr);
+    }
+
+    .optionsGrid{
+        grid-template-columns:1fr;
+    }
+
+    .statsGrid{
+        grid-template-columns:repeat(2,1fr);
+    }
+
+    .buttonGroup{
+        grid-template-columns:1fr;
+    }
+
+    .thumbnailButtons,
+    .quickActions{
+        flex-direction:column;
+    }
+
+    .uploadTop h1{
+        font-size:22px;
+    }
+
+    .dropZone{
+        min-height:240px;
+    }
+}
+
+</style>
 
 </head>
 
 <body>
 
-<!-- ======================================
-Premium Animated Background
-====================================== -->
+<!-- =====================================================
+     BACKGROUND
+===================================================== -->
 
-<div class="bgGradient"></div>
+<div class="bgGlow"></div>
 
-<div class="blob blob1"></div>
-
-<div class="blob blob2"></div>
-
-<div class="blob blob3"></div>
-
-<canvas id="particles"></canvas>
-
-<!-- ======================================
-Page Loader
-====================================== -->
+<!-- =====================================================
+     PAGE LOADER
+===================================================== -->
 
 <div id="pageLoader">
 
-<div class="loaderLogo">
+    <div class="loaderOrb">
 
-<img
-src="assets/logo.png"
-alt="Viewora">
+        <span></span>
+        <span></span>
+        <span></span>
 
-</div>
+    </div>
 
-<h1>VIEWORA</h1>
-
-<p>Preparing Upload Studio...</p>
-
-<div class="loaderBar">
-
-<div class="loaderFill"></div>
+    <h2>Preparing Viewora Studio...</h2>
 
 </div>
 
-</div>
-
-<!-- ======================================
-Main App
-====================================== -->
+<!-- =====================================================
+     MAIN APP
+===================================================== -->
 
 <div id="app" class="hidden">
 
-<!-- ======================================
-Header
-====================================== -->
+<!-- =====================================================
+     HEADER
+===================================================== -->
 
-<header class="header glass">
+<header class="header">
 
-<button
-id="backBtn"
-class="iconBtn">
+    <button id="backBtn" class="iconBtn">
 
-<i class="fa-solid fa-arrow-left"></i>
+        <i class="fa-solid fa-arrow-left"></i>
 
-</button>
+    </button>
 
-<div class="headerTitle">
+    <div class="headerTitle">
 
-<h2>Create Post</h2>
+        <h2>Creator Studio</h2>
 
-<p>Share your creativity with the world</p>
+        <p>Create something amazing</p>
 
-</div>
+    </div>
 
-<button
-id="draftBtn"
-class="draftBtn">
+    <button id="draftBtn" class="draftBtn">
 
-<i class="fa-regular fa-floppy-disk"></i>
+        <i class="fa-regular fa-floppy-disk"></i>
 
-<span>Draft</span>
+        <span>Draft</span>
 
-</button>
+    </button>
 
 </header>
 
-<!-- ======================================
-Upload Container
-====================================== -->
+<!-- =====================================================
+     CONTENT
+===================================================== -->
 
 <main class="uploadContainer">
 
-<div class="uploadCard glass">
+<div class="uploadCard">
+
+<!-- =====================================================
+     TOP
+===================================================== -->
 
 <div class="uploadTop">
 
-<img
-src="assets/logo.png"
-class="uploadLogo"
-alt="Viewora">
+    <img
+        src="assets/logo.png"
+        class="uploadLogo"
+        alt="Viewora"
+    >
 
-<h2>Create Amazing Content</h2>
+    <h1>Create on Viewora</h1>
 
-<p>
-Upload photos, videos or Shorts
-to your Viewora audience.
-</p>
+    <p>
+        Share your photos, videos, shorts and live moments.
+    </p>
 
 </div>
-<!-- ======================================
-Drag & Drop Upload Area
-====================================== -->
 
-<div class="dropZone" id="dropZone">
+<!-- =====================================================
+     CONTENT TYPE
+===================================================== -->
 
-    <input
-    type="file"
-    id="fileInput"
-    accept="image/*,video/*"
-    hidden>
+<div class="contentTabs">
 
-    <div class="dropContent">
+    <button
+        class="contentTab active"
+        data-type="post"
+        type="button"
+    >
 
-        <div class="uploadIcon">
+        <i class="fa-solid fa-image"></i>
 
-            <i class="fa-solid fa-cloud-arrow-up"></i>
+        <span>Post</span>
+
+    </button>
+
+    <button
+        class="contentTab"
+        data-type="short"
+        type="button"
+    >
+
+        <i class="fa-solid fa-bolt"></i>
+
+        <span>Short</span>
+
+    </button>
+
+    <button
+        class="contentTab"
+        data-type="video"
+        type="button"
+    >
+
+        <i class="fa-solid fa-video"></i>
+
+        <span>Long Video</span>
+
+    </button>
+
+    <button
+        class="contentTab"
+        data-type="live"
+        type="button"
+    >
+
+        <i class="fa-solid fa-tower-broadcast"></i>
+
+        <span>Live</span>
+
+    </button>
+
+</div>
+
+<!-- =====================================================
+     MODE INFO
+===================================================== -->
+
+<div class="modeInfo" id="modeInfo">
+
+    <h3 id="modeTitle">
+        Create a Post
+    </h3>
+
+    <p id="modeDescription">
+        Share a photo or video with your Viewora community.
+    </p>
+
+</div>
+
+<!-- =====================================================
+     MEDIA CREATOR
+===================================================== -->
+
+<div id="mediaCreator">
+
+    <div
+        class="dropZone"
+        id="dropZone"
+    >
+
+        <input
+            type="file"
+            id="mediaInput"
+            accept="image/*,video/*"
+            hidden
+        >
+
+        <div class="dropContent">
+
+            <div class="uploadIcon">
+
+                <i class="fa-solid fa-cloud-arrow-up"></i>
+
+            </div>
+
+            <h3 id="dropTitle">
+                Drag & Drop your file
+            </h3>
+
+            <p id="dropDescription">
+                or choose a file from your device
+            </p>
+
+            <button
+                type="button"
+                id="browseBtn"
+                class="primaryBtn"
+            >
+
+                <i class="fa-solid fa-folder-open"></i>
+
+                Select File
+
+            </button>
+
+            <small id="supportedText">
+
+                Photos: JPG, PNG, WEBP
+                <br>
+                Videos: MP4, MOV, WEBM
+
+            </small>
 
         </div>
 
-        <h3>Drag & Drop Files Here</h3>
+    </div>
 
-        <p>or click below to browse</p>
+    <!-- =================================================
+         PREVIEW
+    ================================================= -->
 
-        <button
-        type="button"
-        id="browseBtn"
-        class="primaryBtn">
+    <div
+        id="previewSection"
+        class="previewSection hidden"
+    >
 
-            <i class="fa-solid fa-folder-open"></i>
+        <div class="previewBox">
 
-            <span>Select File</span>
+            <img
+                id="previewImage"
+                class="hidden"
+                alt="Preview"
+            >
 
-        </button>
+            <video
+                id="previewVideo"
+                class="hidden"
+                controls
+                playsinline
+            ></video>
 
-        <small>
-            Supported:
-            MP4 • MOV • WEBM • JPG • PNG • JPEG
-        </small>
+        </div>
+
+        <div class="fileInfo">
+
+            <h3 id="fileName">
+                No file selected
+            </h3>
+
+            <p id="fileSize">
+                0 MB
+            </p>
+
+        </div>
+
+        <div class="quickActions">
+
+            <button
+                type="button"
+                id="changeFileBtn"
+                class="secondaryBtn"
+            >
+
+                <i class="fa-solid fa-repeat"></i>
+
+                Change File
+
+            </button>
+
+            <button
+                type="button"
+                id="removeFileBtn"
+                class="dangerBtn"
+            >
+
+                <i class="fa-solid fa-trash"></i>
+
+                Remove
+
+            </button>
+
+        </div>
 
     </div>
 
 </div>
 
-<!-- ======================================
-Selected File Preview
-====================================== -->
+<!-- =====================================================
+     LIVE PANEL
+===================================================== -->
 
 <div
-id="previewSection"
-class="previewSection hidden">
+    id="livePanel"
+    class="livePanel hidden"
+>
 
-    <!-- Video Preview -->
+    <div class="liveIcon">
 
-    <video
-    id="videoPreview"
-    controls
-    class="previewVideo hidden">
-    </video>
-
-    <!-- Image Preview -->
-
-    <img
-    id="imagePreview"
-    class="previewImage hidden"
-    alt="Preview">
-
-    <!-- File Info -->
-
-    <div class="fileInfo">
-
-        <h3
-        id="fileName">
-
-            No file selected
-
-        </h3>
-
-        <p
-        id="fileSize">
-
-            0 MB
-
-        </p>
-
-        <div class="fileType">
-
-            <span id="fileTypeBadge">
-
-                Unknown
-
-            </span>
-
-        </div>
+        <i class="fa-solid fa-tower-broadcast"></i>
 
     </div>
 
-</div>
+    <h2>Go Live on Viewora</h2>
 
-<!-- ======================================
-Quick Actions
-====================================== -->
-
-<div class="quickActions">
-
-    <button
-    type="button"
-    id="changeFileBtn"
-    class="secondaryBtn">
-
-        <i class="fa-solid fa-rotate"></i>
-
-        Change File
-
-    </button>
+    <p>
+        Start a live session and interact with your audience
+        in real time.
+    </p>
 
     <button
-    type="button"
-    id="removeFileBtn"
-    class="dangerBtn">
+        type="button"
+        id="startLiveBtn"
+        class="primaryBtn"
+    >
 
-        <i class="fa-solid fa-trash"></i>
+        <i class="fa-solid fa-circle-play"></i>
 
-        Remove
+        Start Live
 
     </button>
 
 </div>
 
-<!-- ======================================
-Content Details
-====================================== -->
+<!-- =====================================================
+     CONTENT DETAILS
+===================================================== -->
+
+<div id="detailsSection">
 
 <div class="sectionTitle">
 
@@ -297,9 +1315,8 @@ Content Details
     <span>Content Details</span>
 
 </div>
-<!-- ======================================
-Title
-====================================== -->
+
+<!-- TITLE -->
 
 <div class="formGroup">
 
@@ -312,22 +1329,21 @@ Title
     </label>
 
     <input
-    type="text"
-    id="title"
-    maxlength="100"
-    placeholder="Enter an attractive title">
+        type="text"
+        id="title"
+        maxlength="100"
+        placeholder="Enter an attractive title"
+    >
 
     <div class="counter">
 
-        <span id="titleCount">0</span>/100
+        <span id="titleCounter">0</span>/100
 
     </div>
 
 </div>
 
-<!-- ======================================
-Caption
-====================================== -->
+<!-- CAPTION -->
 
 <div class="formGroup">
 
@@ -340,22 +1356,21 @@ Caption
     </label>
 
     <textarea
-    id="caption"
-    maxlength="500"
-    rows="6"
-    placeholder="Write something about your post..."></textarea>
+        id="caption"
+        rows="5"
+        maxlength="5000"
+        placeholder="Tell everyone about your content..."
+    ></textarea>
 
     <div class="counter">
 
-        <span id="captionCount">0</span>/500
+        <span id="captionCounter">0</span>/5000
 
     </div>
 
 </div>
 
-<!-- ======================================
-Hashtags
-====================================== -->
+<!-- HASHTAGS -->
 
 <div class="formGroup">
 
@@ -368,15 +1383,19 @@ Hashtags
     </label>
 
     <input
-    type="text"
-    id="hashtags"
-    placeholder="#viewora #gaming #music">
+        type="text"
+        id="hashtags"
+        placeholder="#viewora #gaming #music"
+    >
+
+    <div
+        id="hashtagPreview"
+        class="tagPreview"
+    ></div>
 
 </div>
 
-<!-- ======================================
-Mention Users
-====================================== -->
+<!-- MENTIONS -->
 
 <div class="formGroup">
 
@@ -389,15 +1408,19 @@ Mention Users
     </label>
 
     <input
-    type="text"
-    id="mentions"
-    placeholder="@username">
+        type="text"
+        id="mentions"
+        placeholder="@username"
+    >
+
+    <div
+        id="mentionPreview"
+        class="tagPreview"
+    ></div>
 
 </div>
 
-<!-- ======================================
-Category
-====================================== -->
+<!-- CATEGORY -->
 
 <div class="formGroup">
 
@@ -412,32 +1435,22 @@ Category
     <select id="category">
 
         <option value="general">General</option>
-
         <option value="gaming">Gaming</option>
-
         <option value="music">Music</option>
-
         <option value="education">Education</option>
-
         <option value="technology">Technology</option>
-
         <option value="sports">Sports</option>
-
         <option value="comedy">Comedy</option>
-
         <option value="vlog">Vlog</option>
-
         <option value="news">News</option>
-
-        <option value="shorts">Shorts</option>
+        <option value="movies">Movies</option>
+        <option value="anime">Anime</option>
 
     </select>
 
 </div>
 
-<!-- ======================================
-Visibility
-====================================== -->
+<!-- VISIBILITY -->
 
 <div class="formGroup">
 
@@ -451,25 +1464,75 @@ Visibility
 
     <select id="visibility">
 
-        <option value="public">
-            🌍 Public
-        </option>
-
-        <option value="followers">
-            👥 Followers Only
-        </option>
-
-        <option value="private">
-            🔒 Private
-        </option>
+        <option value="public">🌍 Public</option>
+        <option value="followers">👥 Followers Only</option>
+        <option value="private">🔒 Private</option>
 
     </select>
 
 </div>
 
-<!-- ======================================
-Post Options
-====================================== -->
+<!-- AUDIENCE -->
+
+<div class="formGroup">
+
+    <label for="audience">
+
+        <i class="fa-solid fa-users"></i>
+
+        Audience
+
+    </label>
+
+    <select id="audience">
+
+        <option value="everyone">Everyone</option>
+        <option value="18plus">18+</option>
+        <option value="kids">Made for Kids</option>
+
+    </select>
+
+</div>
+
+<!-- LANGUAGE -->
+
+<div class="formGroup">
+
+    <label for="language">
+
+        <i class="fa-solid fa-language"></i>
+
+        Language
+
+    </label>
+
+    <select id="language">
+
+        <option value="english">English</option>
+        <option value="hindi">Hindi</option>
+        <option value="bengali">Bengali</option>
+        <option value="tamil">Tamil</option>
+        <option value="telugu">Telugu</option>
+        <option value="marathi">Marathi</option>
+        <option value="gujarati">Gujarati</option>
+        <option value="punjabi">Punjabi</option>
+        <option value="other">Other</option>
+
+    </select>
+
+</div>
+
+<!-- =================================================
+     POST SETTINGS
+================================================= -->
+
+<div class="sectionTitle">
+
+    <i class="fa-solid fa-sliders"></i>
+
+    <span>Post Settings</span>
+
+</div>
 
 <div class="optionsGrid">
 
@@ -478,9 +1541,10 @@ Post Options
         <span>Allow Comments</span>
 
         <input
-        type="checkbox"
-        id="allowComments"
-        checked>
+            type="checkbox"
+            id="allowComments"
+            checked
+        >
 
     </label>
 
@@ -489,8 +1553,9 @@ Post Options
         <span>Allow Downloads</span>
 
         <input
-        type="checkbox"
-        id="allowDownload">
+            type="checkbox"
+            id="allowDownload"
+        >
 
     </label>
 
@@ -499,26 +1564,55 @@ Post Options
         <span>Notify Followers</span>
 
         <input
-        type="checkbox"
-        id="notifyFollowers"
-        checked>
+            type="checkbox"
+            id="notifyFollowers"
+            checked
+        >
 
     </label>
 
     <label class="switchCard">
 
-        <span>18+ Content</span>
+        <span>Age Restricted</span>
 
         <input
-        type="checkbox"
-        id="ageRestricted">
+            type="checkbox"
+            id="ageRestricted"
+        >
+
+    </label>
+
+    <label class="switchCard">
+
+        <span>Allow Remix</span>
+
+        <input
+            type="checkbox"
+            id="allowRemix"
+            checked
+        >
+
+    </label>
+
+    <label class="switchCard">
+
+        <span>Allow Sharing</span>
+
+        <input
+            type="checkbox"
+            id="allowShare"
+            checked
+        >
 
     </label>
 
 </div>
-<!-- ======================================
-Thumbnail Upload (Videos)
-====================================== -->
+
+<!-- =================================================
+     THUMBNAIL
+================================================= -->
+
+<div id="thumbnailSection">
 
 <div class="sectionTitle">
 
@@ -533,24 +1627,27 @@ Thumbnail Upload (Videos)
     <div id="thumbnailPreview">
 
         <img
-        id="thumbnailImage"
-        src="assets/default-thumbnail.png"
-        alt="Thumbnail">
+            id="thumbnailImage"
+            src="assets/default-thumbnail.png"
+            alt="Thumbnail"
+        >
 
     </div>
 
     <div class="thumbnailButtons">
 
         <input
-        type="file"
-        id="thumbnailInput"
-        accept="image/*"
-        hidden>
+            type="file"
+            id="thumbnailInput"
+            accept="image/*"
+            hidden
+        >
 
         <button
-        type="button"
-        id="chooseThumbnailBtn"
-        class="secondaryBtn">
+            type="button"
+            id="chooseThumbnailBtn"
+            class="secondaryBtn"
+        >
 
             <i class="fa-solid fa-images"></i>
 
@@ -559,9 +1656,10 @@ Thumbnail Upload (Videos)
         </button>
 
         <button
-        type="button"
-        id="removeThumbnailBtn"
-        class="dangerBtn">
+            type="button"
+            id="removeThumbnailBtn"
+            class="dangerBtn"
+        >
 
             <i class="fa-solid fa-trash"></i>
 
@@ -573,97 +1671,115 @@ Thumbnail Upload (Videos)
 
 </div>
 
-<!-- ======================================
-Location
-====================================== -->
+</div>
+
+<!-- =================================================
+     LOCATION
+================================================= -->
+
+<div class="sectionTitle">
+
+    <i class="fa-solid fa-location-dot"></i>
+
+    <span>Location</span>
+
+</div>
 
 <div class="formGroup">
 
-    <label>
+    <label for="location">
 
-        <i class="fa-solid fa-location-dot"></i>
+        <i class="fa-solid fa-map-location-dot"></i>
 
         Location
 
     </label>
 
     <input
-    type="text"
-    id="location"
-    placeholder="Add location (optional)">
+        type="text"
+        id="location"
+        placeholder="Add location (optional)"
+    >
 
 </div>
 
-<!-- ======================================
-Schedule Upload
-====================================== -->
+<!-- =================================================
+     SCHEDULE
+================================================= -->
+
+<div class="sectionTitle">
+
+    <i class="fa-solid fa-calendar-days"></i>
+
+    <span>Schedule</span>
+
+</div>
 
 <div class="formGroup">
 
-    <label>
+    <label for="scheduleDate">
 
-        <i class="fa-solid fa-calendar-days"></i>
+        <i class="fa-solid fa-clock"></i>
 
         Schedule Upload
 
     </label>
 
     <input
-    type="datetime-local"
-    id="scheduleDate">
+        type="datetime-local"
+        id="scheduleDate"
+    >
 
 </div>
 
-<!-- ======================================
-Upload Progress
-====================================== -->
+<!-- =================================================
+     PROGRESS
+================================================= -->
 
 <div
-id="progressSection"
-class="hidden">
+    id="progressSection"
+    class="progressSection hidden"
+>
 
     <div class="progressHeader">
 
         <span>Uploading...</span>
 
-        <span id="progressPercent">
-
-            0%
-
-        </span>
+        <span id="progressPercent">0%</span>
 
     </div>
 
     <div class="progressBar">
 
-        <div
-        id="progressFill">
-
-        </div>
+        <div id="progressFill"></div>
 
     </div>
 
     <div class="progressInfo">
 
         <span id="uploadSpeed">
-
             0 MB/s
-
         </span>
 
-        <span id="timeRemaining">
-
+        <span id="remainingTime">
             Calculating...
-
         </span>
 
     </div>
 
 </div>
 
-<!-- ======================================
-Upload Statistics
-====================================== -->
+<!-- =================================================
+     MEDIA INFORMATION
+================================================= -->
+
+<div class="sectionTitle">
+
+    <i class="fa-solid fa-chart-column"></i>
+
+    <span>Media Information</span>
+
+</div>
 
 <div class="statsGrid">
 
@@ -672,9 +1788,7 @@ Upload Statistics
         <h4>Resolution</h4>
 
         <span id="videoResolution">
-
             --
-
         </span>
 
     </div>
@@ -684,9 +1798,7 @@ Upload Statistics
         <h4>Duration</h4>
 
         <span id="videoDuration">
-
             --
-
         </span>
 
     </div>
@@ -695,26 +1807,35 @@ Upload Statistics
 
         <h4>File Size</h4>
 
-        <span id="videoSize">
-
+        <span id="mediaFileSize">
             --
+        </span>
 
+    </div>
+
+    <div class="statCard">
+
+        <h4>Media Type</h4>
+
+        <span id="fileTypeBadge">
+            --
         </span>
 
     </div>
 
 </div>
 
-<!-- ======================================
-Action Buttons
-====================================== -->
+<!-- =================================================
+     ACTION BUTTONS
+================================================= -->
 
 <div class="buttonGroup">
 
     <button
-    type="button"
-    id="saveDraftBtn"
-    class="secondaryBtn">
+        type="button"
+        id="saveDraftBtn"
+        class="secondaryBtn"
+    >
 
         <i class="fa-solid fa-floppy-disk"></i>
 
@@ -723,9 +1844,10 @@ Action Buttons
     </button>
 
     <button
-    type="button"
-    id="cancelUploadBtn"
-    class="dangerBtn">
+        type="button"
+        id="cancelUploadBtn"
+        class="dangerBtn"
+    >
 
         <i class="fa-solid fa-xmark"></i>
 
@@ -734,9 +1856,10 @@ Action Buttons
     </button>
 
     <button
-    type="submit"
-    id="uploadPostBtn"
-    class="primaryBtn">
+        type="button"
+        id="uploadPostBtn"
+        class="primaryBtn"
+    >
 
         <i class="fa-solid fa-cloud-arrow-up"></i>
 
@@ -748,12 +1871,18 @@ Action Buttons
 
 </div>
 
-</main>
-<!-- ======================================
-Premium Loading Overlay
-====================================== -->
+</div>
 
-<div id="loadingOverlay" class="hidden">
+</main>
+
+<!-- =====================================================
+     LOADING OVERLAY
+===================================================== -->
+
+<div
+    id="loadingOverlay"
+    class="hidden"
+>
 
     <div class="premiumLoader">
 
@@ -763,40 +1892,46 @@ Premium Loading Overlay
 
     </div>
 
-    <h3>Uploading...</h3>
+    <h3 id="loadingTitle">
+        Uploading...
+    </h3>
 
-    <p>Please wait while we publish your content.</p>
+    <p id="loadingText">
+        Please wait while your content is being published.
+    </p>
 
 </div>
 
-<!-- ======================================
-Toast Notification
-====================================== -->
+<!-- =====================================================
+     TOAST
+===================================================== -->
 
-<div id="toast" class="toast hidden">
+<div
+    id="toast"
+    class="toast hidden"
+>
 
     <i
-    id="toastIcon"
-    class="fa-solid fa-circle-check">
-    </i>
+        id="toastIcon"
+        class="fa-solid fa-circle-check"
+    ></i>
 
     <span id="toastText">
-
         Success
-
     </span>
 
 </div>
 
-<!-- ======================================
-Upload Success Modal
-====================================== -->
+<!-- =====================================================
+     SUCCESS MODAL
+===================================================== -->
 
 <div
-id="successModal"
-class="modal hidden">
+    id="successModal"
+    class="modal hidden"
+>
 
-    <div class="modalCard glass">
+    <div class="modalCard">
 
         <div class="successIcon">
 
@@ -804,33 +1939,35 @@ class="modal hidden">
 
         </div>
 
-        <h2>Upload Successful 🎉</h2>
+        <h2>
+            Published Successfully 🎉
+        </h2>
 
         <p>
-
-            Your post has been published successfully.
-
+            Your content is now available on Viewora.
         </p>
 
         <div class="modalButtons">
 
             <button
-            id="viewPostBtn"
-            class="primaryBtn">
+                id="viewPostBtn"
+                class="primaryBtn"
+            >
 
                 <i class="fa-solid fa-play"></i>
 
-                View Post
+                View
 
             </button>
 
             <button
-            id="uploadAnotherBtn"
-            class="secondaryBtn">
+                id="uploadAnotherBtn"
+                class="secondaryBtn"
+            >
 
                 <i class="fa-solid fa-plus"></i>
 
-                Upload Another
+                Create Another
 
             </button>
 
@@ -840,15 +1977,16 @@ class="modal hidden">
 
 </div>
 
-<!-- ======================================
-Upload Failed Modal
-====================================== -->
+<!-- =====================================================
+     FAILED MODAL
+===================================================== -->
 
 <div
-id="failedModal"
-class="modal hidden">
+    id="failedModal"
+    class="modal hidden"
+>
 
-    <div class="modalCard glass">
+    <div class="modalCard">
 
         <div class="errorIcon">
 
@@ -856,19 +1994,20 @@ class="modal hidden">
 
         </div>
 
-        <h2>Upload Failed</h2>
+        <h2>
+            Upload Failed
+        </h2>
 
         <p id="uploadErrorMessage">
-
-            Something went wrong while uploading.
-
+            Something went wrong.
         </p>
 
         <div class="modalButtons">
 
             <button
-            id="retryUploadBtn"
-            class="primaryBtn">
+                id="retryUploadBtn"
+                class="primaryBtn"
+            >
 
                 <i class="fa-solid fa-rotate-right"></i>
 
@@ -877,8 +2016,9 @@ class="modal hidden">
             </button>
 
             <button
-            id="closeFailedBtn"
-            class="secondaryBtn">
+                id="closeFailedBtn"
+                class="secondaryBtn"
+            >
 
                 Close
 
@@ -890,27 +2030,27 @@ class="modal hidden">
 
 </div>
 
-<!-- ======================================
-Network Banner
-====================================== -->
+<!-- =====================================================
+     NETWORK
+===================================================== -->
 
 <div
-id="networkBanner"
-class="hidden">
+    id="networkBanner"
+    class="hidden"
+>
 
     <i class="fa-solid fa-wifi"></i>
 
     <span>
-
         No Internet Connection
-
     </span>
 
 </div>
 
-<!-- ======================================
-Firebase SDK
-====================================== -->
+<!-- =====================================================
+     FIREBASE SDK
+     MUST LOAD BEFORE firebase.js
+===================================================== -->
 
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 
@@ -920,44 +2060,263 @@ Firebase SDK
 
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
 
-<!-- ======================================
-Application Files
-====================================== -->
+<!-- =====================================================
+     CLOUDINARY WIDGET
+     MUST LOAD BEFORE upload.js
+===================================================== -->
+
+<script
+    src="https://upload-widget.cloudinary.com/global/all.js"
+    type="text/javascript"
+></script>
+
+<!-- =====================================================
+     FIREBASE CONFIG
+===================================================== -->
 
 <script src="firebase.js"></script>
 
+<!-- =====================================================
+     UPLOAD LOGIC
+===================================================== -->
+
 <script src="upload.js"></script>
 
-<!-- ======================================
-Premium Startup
-====================================== -->
+<!-- =====================================================
+     PREMIUM STARTUP
+===================================================== -->
 
 <script>
 
-window.addEventListener("load",()=>{
+window.addEventListener("load", function(){
 
-    const loader=document.getElementById("pageLoader");
-    const app=document.getElementById("app");
+    const loader =
+        document.getElementById("pageLoader");
 
-    setTimeout(()=>{
+    const app =
+        document.getElementById("app");
 
-        if(loader){
+    setTimeout(function(){
 
-            loader.style.opacity="0";
-            loader.style.visibility="hidden";
+        loader.style.opacity = "0";
 
-        }
+        loader.style.visibility = "hidden";
 
-        if(app){
+        app.classList.remove("hidden");
 
-            app.classList.remove("hidden");
-            app.classList.add("fadeIn");
+        app.classList.add("fadeIn");
 
-        }
-
-    },1200);
+    }, 1000);
 
 });
+
+
+/* =====================================================
+   NETWORK
+===================================================== */
+
+function updateNetwork(){
+
+    const banner =
+        document.getElementById("networkBanner");
+
+    if(!navigator.onLine){
+
+        banner.classList.remove("hidden");
+
+    }else{
+
+        banner.classList.add("hidden");
+
+    }
+
+}
+
+window.addEventListener("offline", updateNetwork);
+
+window.addEventListener("online", updateNetwork);
+
+updateNetwork();
+
+
+/* =====================================================
+   CONTENT TYPE UI
+===================================================== */
+
+document.querySelectorAll(".contentTab").forEach(function(tab){
+
+    tab.addEventListener("click", function(){
+
+        document
+            .querySelectorAll(".contentTab")
+            .forEach(function(item){
+
+                item.classList.remove("active");
+
+            });
+
+        tab.classList.add("active");
+
+        const type = tab.dataset.type;
+
+        const mediaCreator =
+            document.getElementById("mediaCreator");
+
+        const livePanel =
+            document.getElementById("livePanel");
+
+        const detailsSection =
+            document.getElementById("detailsSection");
+
+        const modeTitle =
+            document.getElementById("modeTitle");
+
+        const modeDescription =
+            document.getElementById("modeDescription");
+
+        const dropTitle =
+            document.getElementById("dropTitle");
+
+        const dropDescription =
+            document.getElementById("dropDescription");
+
+        const supportedText =
+            document.getElementById("supportedText");
+
+        const thumbnailSection =
+            document.getElementById("thumbnailSection");
+
+        if(type === "post"){
+
+            mediaCreator.classList.remove("hidden");
+            livePanel.classList.add("hidden");
+            detailsSection.classList.remove("hidden");
+            thumbnailSection.classList.add("hidden");
+
+            modeTitle.textContent =
+                "Create a Post";
+
+            modeDescription.textContent =
+                "Share a photo or video with your Viewora community.";
+
+            dropTitle.textContent =
+                "Upload your Post";
+
+            dropDescription.textContent =
+                "Choose a photo or video from your device.";
+
+            supportedText.innerHTML =
+                "JPG • PNG • JPEG • WEBP<br>MP4 • MOV • WEBM";
+
+        }
+
+        else if(type === "short"){
+
+            mediaCreator.classList.remove("hidden");
+            livePanel.classList.add("hidden");
+            detailsSection.classList.remove("hidden");
+            thumbnailSection.classList.remove("hidden");
+
+            modeTitle.textContent =
+                "Create a Short";
+
+            modeDescription.textContent =
+                "Create a vertical short video for the Viewora Shorts feed.";
+
+            dropTitle.textContent =
+                "Upload your Short";
+
+            dropDescription.textContent =
+                "Best experience: vertical video.";
+
+            supportedText.innerHTML =
+                "MP4 • MOV • WEBM<br>Short-form video";
+
+        }
+
+        else if(type === "video"){
+
+            mediaCreator.classList.remove("hidden");
+            livePanel.classList.add("hidden");
+            detailsSection.classList.remove("hidden");
+            thumbnailSection.classList.remove("hidden");
+
+            modeTitle.textContent =
+                "Upload Long Video";
+
+            modeDescription.textContent =
+                "Publish your full-length video on Viewora.";
+
+            dropTitle.textContent =
+                "Upload Long Video";
+
+            dropDescription.textContent =
+                "Upload your full-length video.";
+
+            supportedText.innerHTML =
+                "MP4 • MOV • WEBM<br>Long-form video";
+
+        }
+
+        else if(type === "live"){
+
+            mediaCreator.classList.add("hidden");
+            livePanel.classList.remove("hidden");
+            detailsSection.classList.remove("hidden");
+            thumbnailSection.classList.add("hidden");
+
+            modeTitle.textContent =
+                "Viewora Live";
+
+            modeDescription.textContent =
+                "Start a live broadcast and connect with your audience.";
+
+        }
+
+    });
+
+});
+
+
+/* =====================================================
+   COUNTERS
+===================================================== */
+
+const titleInput =
+    document.getElementById("title");
+
+const titleCounter =
+    document.getElementById("titleCounter");
+
+const captionInput =
+    document.getElementById("caption");
+
+const captionCounter =
+    document.getElementById("captionCounter");
+
+
+if(titleInput){
+
+    titleInput.addEventListener("input", function(){
+
+        titleCounter.textContent =
+            titleInput.value.length;
+
+    });
+
+}
+
+
+if(captionInput){
+
+    captionInput.addEventListener("input", function(){
+
+        captionCounter.textContent =
+            captionInput.value.length;
+
+    });
+
+}
 
 </script>
 

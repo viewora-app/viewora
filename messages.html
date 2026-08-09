@@ -1,519 +1,602 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>Viewora • Messages</title>
-
-<link rel="stylesheet" href="style.css">
-
-<style>
-
-*{
-margin:0;
-padding:0;
-box-sizing:border-box;
-font-family:Arial,sans-serif;
-}
-
-body{
-background:#0f0f0f;
-color:#fff;
-padding-bottom:80px;
-overflow-x:hidden;
-}
-
-/* Animated Background */
-
-body::before{
-content:"";
-position:fixed;
-top:-50%;
-left:-50%;
-width:200%;
-height:200%;
-background:
-radial-gradient(circle,#00aaff22,transparent 40%),
-radial-gradient(circle,#ff00aa22,transparent 35%);
-animation:bgMove 12s linear infinite;
-z-index:-1;
-}
-
-@keyframes bgMove{
-
-0%{transform:rotate(0deg);}
-100%{transform:rotate(360deg);}
-
-}
-
-/* Header */
-
-.header{
-
-position:sticky;
-top:0;
-z-index:100;
-background:#161616;
-padding:18px;
-display:flex;
-justify-content:space-between;
-align-items:center;
-border-bottom:1px solid #333;
-
-}
-
-.logo{
-
-font-size:26px;
-font-weight:bold;
-background:linear-gradient(90deg,#00aaff,#ff00aa);
--webkit-background-clip:text;
--webkit-text-fill-color:transparent;
-
-}
-
-.newChat{
-
-background:#00aaff;
-color:white;
-border:none;
-padding:10px 18px;
-border-radius:25px;
-font-size:15px;
-cursor:pointer;
-transition:.3s;
-
-}
-
-.newChat:hover{
-
-transform:scale(1.08);
-
-}
-
-/* Search */
-
-.searchBox{
-
-padding:18px;
-
-}
-
-.searchBox input{
-
-width:100%;
-padding:14px 18px;
-border:none;
-outline:none;
-border-radius:30px;
-background:#1d1d1d;
-color:white;
-font-size:15px;
-transition:.3s;
-
-}
-
-.searchBox input:focus{
-
-box-shadow:0 0 12px #00aaff;
-
-}
-
-/* Chat List */
-
-#messagesList{
-
-padding:10px 15px;
-
-}
-
-/* Chat Card */
-
-.chat-item{
-
-display:flex;
-align-items:center;
-gap:14px;
-background:#181818;
-padding:14px;
-border-radius:18px;
-margin-bottom:12px;
-cursor:pointer;
-transition:.25s;
-
-}
-
-.chat-item:hover{
-
-background:#222;
-transform:translateY(-2px);
-
-}
-
-.chat-avatar{
-
-width:58px;
-height:58px;
-border-radius:50%;
-object-fit:cover;
-border:2px solid #00aaff;
-
-}
-
-.chat-info{
-
-flex:1;
-
-}
-
-.chat-name{
-
-font-size:17px;
-font-weight:bold;
-
-}
-
-.chat-last{
-
-font-size:14px;
-color:#aaa;
-margin-top:4px;
-
-}
-
-.chat-time{
-
-font-size:12px;
-color:#888;
-
-}
-
-.unread-badge{
-
-background:#00aaff;
-width:22px;
-height:22px;
-border-radius:50%;
-display:flex;
-justify-content:center;
-align-items:center;
-font-size:12px;
-font-weight:bold;
-
-}
-
-.online-dot{
-
-width:12px;
-height:12px;
-background:#00ff55;
-border-radius:50%;
-position:absolute;
-bottom:2px;
-right:2px;
-border:2px solid #181818;
-
-}
-
-.empty-chat{
-
-text-align:center;
-padding:60px 20px;
-color:#888;
-
-}
-
-.loading{
-
-text-align:center;
-padding:50px;
-color:#888;
-
-animation:pulse 1.5s infinite;
-
-}
-
-@keyframes pulse{
-
-0%{opacity:.4;}
-50%{opacity:1;}
-100%{opacity:.4;}
-
-}
-
-</style>
-
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    >
+
+    <title>Messages • Viewora</title>
+
+    <meta name="theme-color" content="#08080d">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+
+    <link rel="icon" href="assets/logo.png">
+
+    <!-- FONT -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect"
+          href="https://fonts.gstatic.com"
+          crossorigin>
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet"
+    >
+
+    <!-- ICONS -->
+    <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"
+    >
+
+    <!-- PAGE CSS -->
+    <link rel="stylesheet" href="messages.css">
 </head>
 
 <body>
 
-<div class="header">
+<!-- =====================================================
+     BACKGROUND
+===================================================== -->
 
-<div class="logo">
-Viewora Chat
-</div>
+<div class="background">
 
-<button class="newChat"
-onclick="location.href='users.html'">
-New Chat
-</button>
+    <div class="aurora auroraOne"></div>
+    <div class="aurora auroraTwo"></div>
+    <div class="aurora auroraThree"></div>
 
-</div>
-
-<div class="searchBox">
-
-<input
-type="text"
-id="searchInput"
-placeholder="Search chats...">
+    <div class="noise"></div>
 
 </div>
 
-<div id="messagesList">
 
-<div class="loading">
+<!-- =====================================================
+     PAGE LOADER
+===================================================== -->
 
-Loading Chats...
+<div id="loadingOverlay" class="loadingOverlay">
+
+    <div class="loadingCard">
+
+        <img
+            src="assets/logo.png"
+            class="loadingLogo"
+            alt="Viewora"
+        >
+
+        <div class="loadingTitle">
+            VIEWORA
+        </div>
+
+        <div class="loadingSubtitle">
+            Loading messages
+        </div>
+
+        <div class="loadingLine">
+            <div class="loadingProgress"></div>
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- =====================================================
+     APP
+===================================================== -->
+
+<div id="app" class="app hidden">
+
+
+    <!-- =================================================
+         HEADER
+    ================================================== -->
+
+    <header class="topHeader">
+
+        <div class="headerLeft">
+
+            <button
+                class="headerButton"
+                id="backBtn"
+                type="button"
+                aria-label="Back"
+            >
+                <i class="fa-solid fa-arrow-left"></i>
+            </button>
+
+            <div class="headerTitle">
+
+                <h1>Messages</h1>
+
+                <span id="connectionStatus">
+                    Connecting...
+                </span>
+
+            </div>
+
+        </div>
+
+
+        <div class="headerActions">
+
+            <button
+                id="refreshBtn"
+                class="headerButton"
+                type="button"
+                aria-label="Refresh"
+            >
+                <i class="fa-solid fa-rotate"></i>
+            </button>
+
+            <button
+                id="newChatBtn"
+                class="headerButton primaryHeaderButton"
+                type="button"
+                aria-label="New chat"
+            >
+                <i class="fa-solid fa-pen"></i>
+            </button>
+
+        </div>
+
+    </header>
+
+
+    <!-- =================================================
+         SEARCH
+    ================================================== -->
+
+    <section class="searchSection">
+
+        <div class="searchBox">
+
+            <i class="fa-solid fa-magnifying-glass"></i>
+
+            <input
+                id="searchInput"
+                type="search"
+                autocomplete="off"
+                placeholder="Search messages..."
+            >
+
+            <button
+                id="clearSearch"
+                class="clearSearch hidden"
+                type="button"
+                aria-label="Clear search"
+            >
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+        </div>
+
+    </section>
+
+
+    <!-- =================================================
+         FILTERS
+    ================================================== -->
+
+    <nav class="filters" aria-label="Message filters">
+
+        <button
+            class="filter active"
+            data-filter="all"
+            type="button"
+        >
+            All
+        </button>
+
+        <button
+            class="filter"
+            data-filter="unread"
+            type="button"
+        >
+            Unread
+
+            <span
+                id="unreadBadge"
+                class="filterBadge hidden"
+            >
+                0
+            </span>
+
+        </button>
+
+        <button
+            class="filter"
+            data-filter="online"
+            type="button"
+        >
+            Online
+        </button>
+
+        <button
+            class="filter"
+            data-filter="pinned"
+            type="button"
+        >
+            Pinned
+        </button>
+
+    </nav>
+
+
+    <!-- =================================================
+         MAIN CONTENT
+    ================================================== -->
+
+    <main class="messagesMain">
+
+
+        <!-- =============================================
+             PINNED
+        ============================================== -->
+
+        <section
+            id="pinnedSection"
+            class="chatSection hidden"
+        >
+
+            <div class="sectionHeader">
+
+                <div class="sectionHeading">
+
+                    <i class="fa-solid fa-thumbtack"></i>
+
+                    <span>Pinned</span>
+
+                </div>
+
+            </div>
+
+            <div
+                id="pinnedChatList"
+                class="chatList"
+            ></div>
+
+        </section>
+
+
+        <!-- =============================================
+             RECENT
+        ============================================== -->
+
+        <section class="chatSection">
+
+            <div class="sectionHeader">
+
+                <div class="sectionHeading">
+
+                    <span>Recent Messages</span>
+
+                </div>
+
+                <span
+                    id="chatCount"
+                    class="chatCount"
+                >
+                    0
+                </span>
+
+            </div>
+
+
+            <!-- SKELETON -->
+
+            <div
+                id="chatSkeleton"
+                class="chatSkeleton"
+            >
+
+                <div class="skeletonItem">
+
+                    <div class="skeletonAvatar"></div>
+
+                    <div class="skeletonText">
+
+                        <div class="skeletonLine title"></div>
+
+                        <div class="skeletonLine message"></div>
+
+                    </div>
+
+                </div>
+
+
+                <div class="skeletonItem">
+
+                    <div class="skeletonAvatar"></div>
+
+                    <div class="skeletonText">
+
+                        <div class="skeletonLine title"></div>
+
+                        <div class="skeletonLine message"></div>
+
+                    </div>
+
+                </div>
+
+
+                <div class="skeletonItem">
+
+                    <div class="skeletonAvatar"></div>
+
+                    <div class="skeletonText">
+
+                        <div class="skeletonLine title"></div>
+
+                        <div class="skeletonLine message"></div>
+
+                    </div>
+
+                </div>
+
+
+                <div class="skeletonItem">
+
+                    <div class="skeletonAvatar"></div>
+
+                    <div class="skeletonText">
+
+                        <div class="skeletonLine title"></div>
+
+                        <div class="skeletonLine message"></div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- REAL CHAT LIST -->
+
+            <div
+                id="chatList"
+                class="chatList hidden"
+            ></div>
+
+
+            <!-- EMPTY -->
+
+            <div
+                id="emptyChats"
+                class="emptyState hidden"
+            >
+
+                <div class="emptyIcon">
+                    <i class="fa-regular fa-comments"></i>
+                </div>
+
+                <h2>No conversations yet</h2>
+
+                <p>
+                    Start a conversation with someone on Viewora.
+                </p>
+
+                <button
+                    id="startChatBtn"
+                    class="startChatButton"
+                    type="button"
+                >
+                    <i class="fa-solid fa-plus"></i>
+                    Start a Chat
+                </button>
+
+            </div>
+
+        </section>
+
+    </main>
+
+
+    <!-- =================================================
+         NEW CHAT MODAL
+    ================================================== -->
+
+    <div
+        id="newChatModal"
+        class="modal hidden"
+    >
+
+        <div
+            class="modalBackdrop"
+            id="newChatBackdrop"
+        ></div>
+
+
+        <div class="modalCard">
+
+            <div class="modalHeader">
+
+                <div>
+
+                    <span class="modalEyebrow">
+                        VIEWORA
+                    </span>
+
+                    <h2>New Conversation</h2>
+
+                </div>
+
+                <button
+                    id="closeNewChat"
+                    class="modalClose"
+                    type="button"
+                >
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+
+            </div>
+
+
+            <div class="modalSearch">
+
+                <i class="fa-solid fa-magnifying-glass"></i>
+
+                <input
+                    id="newChatSearch"
+                    type="search"
+                    autocomplete="off"
+                    placeholder="Search people..."
+                >
+
+            </div>
+
+
+            <div
+                id="usersLoading"
+                class="usersLoading hidden"
+            >
+
+                <div class="miniSpinner"></div>
+
+                <span>
+                    Finding people...
+                </span>
+
+            </div>
+
+
+            <div
+                id="newChatUserList"
+                class="newChatUserList"
+            ></div>
+
+
+            <div
+                id="emptyUsers"
+                class="emptyUsers hidden"
+            >
+
+                <i class="fa-regular fa-user"></i>
+
+                <h3>No users found</h3>
+
+                <p>
+                    Try another username.
+                </p>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- =================================================
+         TOAST
+    ================================================== -->
+
+    <div
+        id="toast"
+        class="toast hidden"
+    >
+
+        <div class="toastIcon">
+            <i class="fa-solid fa-check"></i>
+        </div>
+
+        <div>
+
+            <strong>Viewora</strong>
+
+            <p id="toastText">
+                Done
+            </p>
+
+        </div>
+
+    </div>
+
+
+    <!-- =================================================
+         NEW CHAT FAB
+    ================================================== -->
+
+    <button
+        id="newMessageFab"
+        class="newMessageFab"
+        type="button"
+        aria-label="New message"
+    >
+
+        <i class="fa-solid fa-pen"></i>
+
+    </button>
+
+
+    <!-- =================================================
+         REFRESH INDICATOR
+    ================================================== -->
+
+    <div
+        id="refreshIndicator"
+        class="refreshIndicator hidden"
+    >
+
+        <div class="miniSpinner"></div>
+
+        <span>
+            Updating...
+        </span>
+
+    </div>
+
+
+    <!-- =================================================
+         CONNECTION BANNER
+    ================================================== -->
+
+    <div
+        id="connectionBanner"
+        class="connectionBanner hidden"
+    >
+
+        <i class="fa-solid fa-wifi"></i>
+
+        <span>
+            Connection restored
+        </span>
+
+    </div>
+
 
 </div>
 
-</div>
-<!-- Floating New Message Button -->
 
-<button id="fabChat"
-onclick="location.href='users.html'">
+<!-- =====================================================
+     FIREBASE
+===================================================== -->
 
-👥
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
 
-</button>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
 
-<style>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-database-compat.js"></script>
 
-#fabChat{
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-storage-compat.js"></script>
 
-position:fixed;
-right:20px;
-bottom:90px;
-width:60px;
-height:60px;
-border:none;
-border-radius:50%;
-background:linear-gradient(135deg,#00aaff,#0077ff);
-color:white;
-font-size:26px;
-cursor:pointer;
-box-shadow:0 8px 25px rgba(0,170,255,.45);
-transition:.3s;
-animation:floating 2.5s infinite;
 
-}
-
-#fabChat:hover{
-
-transform:scale(1.08);
-
-}
-
-@keyframes floating{
-
-0%{
-transform:translateY(0);
-}
-
-50%{
-transform:translateY(-8px);
-}
-
-100%{
-transform:translateY(0);
-}
-
-}
-
-/* Bottom Navigation */
-
-.bottom-nav{
-
-position:fixed;
-bottom:0;
-left:0;
-right:0;
-height:70px;
-background:#161616;
-display:flex;
-justify-content:space-around;
-align-items:center;
-border-top:1px solid #333;
-backdrop-filter:blur(12px);
-
-}
-
-.bottom-nav a{
-
-text-decoration:none;
-color:#bbb;
-font-size:12px;
-text-align:center;
-transition:.3s;
-
-}
-
-.bottom-nav a:hover{
-
-color:#00aaff;
-transform:translateY(-3px);
-
-}
-
-.bottom-nav a.active{
-
-color:#00aaff;
-font-weight:bold;
-
-}
-
-.nav-icon{
-
-font-size:22px;
-display:block;
-margin-bottom:4px;
-
-}
-
-</style>
-
-    <!-- Bottom Navigation -->
-<div class="bottom-nav">
-
-<a href="index.html">
-
-<span class="nav-icon">🏠</span>
-
-Home
-
-</a>
-
-<a href="shorts.html">
-
-<span class="nav-icon">▶<span>
-
-Shorts
-
-</a>
-
-<a href="profile.html">
-
-<span class="nav-icon">👤</span>
-
-Profile
-
-</a>
-
-</div>
-<!-- Firebase -->
-
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
-
-<!-- Viewora Scripts -->
+<!-- =====================================================
+     VIEWORA FIREBASE CONFIG
+===================================================== -->
 
 <script src="firebase.js"></script>
+
+
+<!-- =====================================================
+     MESSAGES LOGIC
+===================================================== -->
+
 <script src="messages.js"></script>
-<script src="nav.js"></script>
-
-<script>
-
-// ===============================
-// Loading Animation
-// ===============================
-
-window.addEventListener("load",()=>{
-
-    document.body.style.opacity="0";
-
-    document.body.style.transition="opacity .4s";
-
-    setTimeout(()=>{
-
-        document.body.style.opacity="1";
-
-    },100);
-
-});
-
-// ===============================
-// Page Animation
-// ===============================
-
-document.addEventListener("DOMContentLoaded",()=>{
-
-    const cards=document.querySelectorAll(".chat-item");
-
-    cards.forEach((card,index)=>{
-
-        card.style.opacity="0";
-        card.style.transform="translateY(20px)";
-
-        setTimeout(()=>{
-
-            card.style.transition=".35s";
-            card.style.opacity="1";
-            card.style.transform="translateY(0)";
-
-        },index*70);
-
-    });
-
-});
-
-// ===============================
-// Pull To Refresh
-// ===============================
-
-let startY=0;
-
-window.addEventListener("touchstart",(e)=>{
-
-    startY=e.touches[0].clientY;
-
-});
-
-window.addEventListener("touchend",(e)=>{
-
-    let endY=e.changedTouches[0].clientY;
-
-    if(endY-startY>120){
-
-        location.reload();
-
-    }
-
-});
-
-// ===============================
-// Auto Refresh Chats
-// ===============================
-
-setInterval(()=>{
-
-    if(typeof loadChats==="function"){
-
-        loadChats();
-
-    }
-
-},30000);
-
-// ===============================
-// End
-// ===============================
-
-console.log("✅ Messages Page Loaded");
-
-</script>
 
 </body>
 </html>

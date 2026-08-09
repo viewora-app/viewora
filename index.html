@@ -2,791 +2,1293 @@
 <html lang="en">
 <head>
 
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8">
 
-<title>Viewora • Home</title>
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    >
 
-<meta name="theme-color" content="#6366f1">
+    <meta
+        name="theme-color"
+        content="#6366f1"
+    >
 
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <meta
+        name="description"
+        content="Viewora — Premium Social Platform"
+    >
 
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <title>Viewora • Home</title>
 
-<link rel="stylesheet"
-href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+    <!-- ================================
+         FONTS
+    ================================= -->
 
-<link rel="stylesheet" href="index.css">
-<link rel="stylesheet" href="nav.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet"
+    >
+
+    <!-- ================================
+         FONT AWESOME
+    ================================= -->
+
+    <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
+    >
+
+    <!-- ================================
+         VIEWORA CSS
+    ================================= -->
+
+    <link rel="stylesheet" href="index.css">
+    <link rel="stylesheet" href="nav.css">
 
 </head>
 
 <body>
 
-<!-- =========================
-Aurora Background
-========================= -->
+<!-- ==================================================
+     PAGE LOADER
+================================================== -->
 
-<div class="aurora">
-<div class="light light1"></div>
-<div class="light light2"></div>
-<div class="light light3"></div>
-</div>
+<div id="pageLoader" class="pageLoader">
 
-<!-- Floating Particles -->
+    <div class="loaderLogo">
+        <img
+            src="viewora2.jpg"
+            alt="Viewora"
+        >
+    </div>
 
-<div id="particles"></div>
+    <div class="loaderSpinner"></div>
 
-<!-- =========================
-Premium Loader
-========================= -->
+    <h2>Viewora</h2>
 
-<div id="pageLoader">
-
-<div class="loaderLogo">
-
-<img src="assets/logo.png" alt="Viewora">
+    <p>Loading your world...</p>
 
 </div>
 
-<h1>Viewora</h1>
 
-<p>Connecting Your World...</p>
-
-<div class="loaderBar">
-
-<div class="loaderFill"></div>
-
-</div>
-
-</div>
-
-<!-- =========================
-Main App
-========================= -->
+<!-- ==================================================
+     MAIN APP
+================================================== -->
 
 <div id="app" class="hidden">
 
-<!-- =========================
-Header
-========================= -->
 
-<header class="header glass">
+    <!-- ==================================================
+         HEADER
+    ================================================== -->
 
-<div class="logoArea">
+    <header class="header glass">
 
-<img src="assets/logo.png" class="logo">
+        <div class="logoArea">
 
-<div>
+            <img
+                src="viewora2.jpg"
+                class="logo"
+                alt="Viewora"
+            >
 
-<h2>Viewora</h2>
+            <div class="logoText">
 
-<p>Premium Social Platform</p>
+                <h2>Viewora</h2>
 
-</div>
+                <p>Premium Social Platform</p>
 
-</div>
+            </div>
 
-<div class="headerRight">
+        </div>
 
-<button id="searchBtn">
 
-<i class="fa-solid fa-magnifying-glass"></i>
+        <div class="headerRight">
 
-</button>
+            <!-- Search -->
 
-<button id="notificationBtn"
-onclick="location.href='notifications.html'">
+            <button
+                id="searchBtn"
+                class="iconBtn"
+                aria-label="Search"
+            >
 
-<i class="fa-solid fa-bell"></i>
+                <i class="fa-solid fa-magnifying-glass"></i>
 
-<span id="notificationCount">
+            </button>
 
-0
 
-</span>
+            <!-- Notifications -->
 
-</button>
+            <button
+                id="notificationBtn"
+                class="iconBtn notificationButton"
+                aria-label="Notifications"
+                onclick="location.href='notifications.html'"
+            >
 
-<button id="messageBtn"
-onclick="location.href='messages.html'">
+                <i class="fa-solid fa-bell"></i>
 
-<i class="fa-solid fa-paper-plane"></i>
+                <span
+                    id="notificationCount"
+                    class="notificationCount"
+                    style="display:none"
+                >
+                    0
+                </span>
 
-</button>
+            </button>
 
-</div>
 
-</header>
+            <!-- Messages -->
 
-<!-- =========================
-Search
-========================= -->
+            <button
+                id="messageBtn"
+                class="iconBtn"
+                aria-label="Messages"
+                onclick="location.href='messages.html'"
+            >
 
-<section class="searchSection">
+                <i class="fa-solid fa-paper-plane"></i>
 
-<div class="searchBox">
+            </button>
 
-<i class="fa-solid fa-search"></i>
+        </div>
 
-<input
-type="text"
-id="searchInput"
-placeholder="Search creators, posts, shorts...">
+    </header>
 
-</div>
 
-</section>
+    <!-- ==================================================
+         SEARCH SECTION
+    ================================================== -->
 
-<!-- =========================
-Stories
-========================= -->
+    <section
+        id="searchSection"
+        class="searchSection"
+    >
 
-<section class="storiesSection">
+        <div class="searchBox">
 
-<div id="storiesContainer">
+            <i class="fa-solid fa-magnifying-glass"></i>
 
-<div class="story addStory">
+            <input
+                type="search"
+                id="searchInput"
+                placeholder="Search creators, posts, shorts..."
+                autocomplete="off"
+            >
 
-<div class="storyRing">
+            <button
+                id="clearSearch"
+                class="clearSearch"
+                aria-label="Clear search"
+            >
 
-<img
-src="assets/default-avatar.png">
+                <i class="fa-solid fa-xmark"></i>
 
-</div>
+            </button>
 
-<p>Your Story</p>
+        </div>
 
-</div>
+    </section>
 
-<!-- Stories Load Here -->
 
-</div>
+    <!-- ==================================================
+         STORIES
+    ================================================== -->
 
-</section>
+    <section class="storiesSection">
 
-<!-- =========================
-AI Banner
-========================= -->
+        <div class="sectionHeader">
 
-<section class="heroBanner glass">
+            <h3>
+                Stories
+            </h3>
 
-<div class="heroText">
+            <button
+                onclick="location.href='stories.html'"
+                class="viewAllBtn"
+            >
+                View all
+                <i class="fa-solid fa-chevron-right"></i>
+            </button>
 
-<h2>
+        </div>
 
-🔥 Trending For You
 
-</h2>
+        <div
+            id="storiesContainer"
+            class="storiesContainer"
+        >
 
-<p>
+            <!-- Add Story -->
 
-Discover millions of creators around the world.
+            <div
+                class="story addStory"
+                id="addStoryBtn"
+            >
 
-</p>
+                <div class="storyRing addStoryRing">
 
-<button id="exploreBtn">
+                    <div class="addStoryIcon">
 
-Explore Now
+                        <i class="fa-solid fa-plus"></i>
 
-</button>
+                    </div>
 
-</div>
+                </div>
 
-<div class="heroIcon">
+                <p>Your Story</p>
 
-<i class="fa-solid fa-fire"></i>
+            </div>
 
-</div>
+            <!-- Firebase stories will load here -->
 
-</section>
+        </div>
 
-<main id="feedContainer">
-    <!-- feed.js Firebase se real posts yahan load karega -->
-</main>
+    </section>
 
-<div id="feedSkeleton" class="hidden">
-    <!-- Loading skeleton -->
-</div>
 
-<!-- =========================
-Feed
-========================= -->
+    <!-- ==================================================
+         TRENDING / HERO
+    ================================================== -->
 
-<main id="feedContainer">
+    <section class="heroBanner glass">
 
-<!-- Feed loads from JS -->
+        <div class="heroGlow"></div>
 
-</main>
+        <div class="heroText">
 
-<!-- Floating Upload -->
+            <span class="heroBadge">
+                <i class="fa-solid fa-fire"></i>
+                Trending
+            </span>
 
+            <h2>
+                Discover something new
+            </h2>
 
+            <p>
+                Explore creators, posts, videos and shorts
+                from the Viewora community.
+            </p>
 
-<!-- Scroll Top -->
+            <button
+                id="exploreBtn"
+                class="primaryBtn"
+            >
 
-<!-- Toast -->
+                Explore Now
 
-<div id="toast" class="hidden">
+                <i class="fa-solid fa-arrow-right"></i>
 
-<i id="toastIcon"
-class="fa-solid fa-circle-check"></i>
+            </button>
 
-<span id="toastText">
+        </div>
 
-Success
 
-</span>
+        <div class="heroIcon">
 
-</div>
+            <div class="heroIconCircle">
 
-<!-- Loading -->
+                <i class="fa-solid fa-fire"></i>
 
-<div id="loadingOverlay"
-class="hidden">
+            </div>
 
-<div class="spinner"></div>
+        </div>
 
-<p>Loading...</p>
+    </section>
 
-</div>
 
-<!-- ===========================
-      Bottom Navigation
-=========================== -->
+    <!-- ==================================================
+         FEED
+         Firebase posts will render here
+    ================================================== -->
 
-<nav class="bottomNav">
+    <main
+        id="feedContainer"
+        class="feedContainer"
+    >
 
-<a href="index.html">
-    <span class="activeIndicator"></span>
-    <i class="fa-solid fa-house"></i>
-    <span>Home</span>
-</a>
+        <!-- feed.js inserts posts here -->
 
-<a href="shorts.html">
-    <span class="activeIndicator"></span>
-    <i class="fa-solid fa-play"></i>
-    <span>Shorts</span>
-</a>
+    </main>
 
-<a href="upload.html" class="uploadNav">
-    <i class="fa-solid fa-plus"></i>
-</a>
 
-<a href="users.html">
-    <span class="activeIndicator"></span>
-    <i class="fa-solid fa-users"></i>
-    <span>Users</span>
-</a>
+    <!-- ==================================================
+         FEED SKELETON
+    ================================================== -->
 
-<a href="profile.html">
-    <span class="activeIndicator"></span>
-    <i class="fa-solid fa-user"></i>
-    <span>Profile</span>
-</a>
+    <div
+        id="feedSkeleton"
+        class="feedSkeleton hidden"
+    >
 
-</nav>
+        <article class="skeletonCard glass">
 
-</div>
-<!-- =========================================
-        VIEWORA V1.0
-        PART 3
- Premium Modals & Drawers
-========================================= -->
+            <div class="skeletonHeader">
 
-<!-- =========================
-Comment Modal
-========================= -->
+                <div class="skeletonAvatar shimmer"></div>
 
-<div id="commentModal" class="modal hidden">
+                <div class="skeletonUser">
 
-<div class="modalCard glass">
+                    <div class="skeletonLine shimmer"></div>
 
-<div class="modalHeader">
+                    <div class="skeletonSmall shimmer"></div>
 
-<h2>
-💬 Comments
-</h2>
+                </div>
 
-<button id="closeComment">
+            </div>
 
-<i class="fa-solid fa-xmark"></i>
+            <div class="skeletonCaption shimmer"></div>
 
-</button>
+            <div class="skeletonMedia shimmer"></div>
 
-</div>
+            <div class="skeletonActions">
 
-<div id="commentsContainer">
+                <div class="skeletonAction shimmer"></div>
+                <div class="skeletonAction shimmer"></div>
+                <div class="skeletonAction shimmer"></div>
 
-<!-- Comments Load Here -->
+            </div>
 
-</div>
+        </article>
 
-<div class="commentInput">
 
-<img
-src="assets/default-avatar.png"
-class="commentAvatar">
+        <article class="skeletonCard glass">
 
-<input
-type="text"
-id="commentText"
-placeholder="Write a comment...">
+            <div class="skeletonHeader">
 
-<button id="sendComment">
+                <div class="skeletonAvatar shimmer"></div>
 
-<i class="fa-solid fa-paper-plane"></i>
+                <div class="skeletonUser">
 
-</button>
+                    <div class="skeletonLine shimmer"></div>
 
-</div>
+                    <div class="skeletonSmall shimmer"></div>
 
-</div>
+                </div>
 
-</div>
+            </div>
 
-<!-- =========================
-Share Modal
-========================= -->
+            <div class="skeletonCaption shimmer"></div>
 
-<div id="shareModal" class="modal hidden">
+            <div class="skeletonMedia shimmer"></div>
 
-<div class="modalCard glass">
+        </article>
 
-<div class="modalHeader">
-
-<h2>
-
-📤 Share
-
-</h2>
-
-<button id="closeShare">
-
-<i class="fa-solid fa-xmark"></i>
-
-</button>
-
-</div>
-
-<div class="shareGrid">
-
-<button class="shareItem">
-
-<i class="fa-brands fa-whatsapp"></i>
-
-<span>WhatsApp</span>
-
-</button>
-
-<button class="shareItem">
-
-<i class="fa-brands fa-facebook"></i>
-
-<span>Facebook</span>
-
-</button>
-
-<button class="shareItem">
-
-<i class="fa-brands fa-instagram"></i>
-
-<span>Instagram</span>
-
-</button>
-
-<button class="shareItem">
-
-<i class="fa-brands fa-x-twitter"></i>
-
-<span>X</span>
-
-</button>
-
-<button class="shareItem">
-
-<i class="fa-solid fa-link"></i>
-
-<span>Copy Link</span>
-
-</button>
-
-<button class="shareItem">
-
-<i class="fa-solid fa-user"></i>
-
-<span>Send in Chat</span>
-
-</button>
-
-</div>
-
-</div>
-
-</div>
-
-<!-- =========================
-Image Viewer
-========================= -->
-
-<div id="imageViewer" class="hidden">
-
-<button id="closeViewer">
-
-<i class="fa-solid fa-xmark"></i>
-
-</button>
-
-<img
-id="viewerImage"
-src="">
-
-</div>
-
-<!-- =========================
-Notification Drawer
-========================= -->
-
-<div id="notificationDrawer"
-class="hidden glass">
-
-<div class="drawerHeader">
-
-<h2>
-
-🔔 Notifications
-
-</h2>
-
-<button id="closeDrawer">
-
-<i class="fa-solid fa-xmark"></i>
-
-</button>
-
-</div>
-
-<div id="notificationList">
-
-<div class="notificationItem">
-
-<img
-src="assets/default-avatar.png">
-
-<div>
-
-<h4>
-
-Viewora Official
-
-</h4>
-
-<p>
-
-Welcome to Viewora 🎉
-
-</p>
-
-</div>
-
-</div>
-
-</div>
-
-</div>
-
-<!-- =========================
-Upload Popup
-========================= -->
-
-<div id="uploadPopup"
-class="hidden">
-
-<div class="uploadCard glass">
-
-<h2>
-
-Create
-
-</h2>
-
-<button
-onclick="location.href='upload.html'">
-
-<i class="fa-solid fa-image"></i>
-
-Post
-
-</button>
-
-<button
-onclick="location.href='story.html'">
-
-<i class="fa-solid fa-circle-play"></i>
-
-Story
-
-</button>
-
-<button
-onclick="location.href='shorts_upload.html'">
-
-<i class="fa-solid fa-video"></i>
-
-Short
-
-</button>
-
-<button
-onclick="location.href='live.html'">
-
-<i class="fa-solid fa-tower-broadcast"></i>
-
-Go Live
-
-</button>
-
-</div>
-
-</div>
-
-<!-- =========================
-Floating Chat Button
-========================= -->
-
-
-<!-- =========================
-Premium Loading Overlay
-========================= -->
-
-<div id="loadingOverlay"
-class="hidden">
-
-<div class="premiumLoader">
-
-<div class="loaderRing"></div>
-
-<div class="loaderRing delay1"></div>
-
-<div class="loaderRing delay2"></div>
-
-</div>
-
-<p>
-
-Loading...
-
-</p>
-
-</div>
-
-<!-- =========================================
-        VIEWORA V1.0
-        PART 4 (FINAL)
-========================================= -->
-
-<!-- =========================
-Story Viewer
-========================= -->
-
-<div id="storyViewer" class="hidden">
-
-    <div id="storyProgress">
-        <div class="progressFill"></div>
     </div>
 
-    <button id="closeStory">
-        <i class="fa-solid fa-xmark"></i>
+
+    <!-- ==================================================
+         EMPTY / ERROR FEED
+         feed.js can replace feed content
+    ================================================== -->
+
+
+    <!-- ==================================================
+         FLOATING CREATE BUTTON
+    ================================================== -->
+
+    <button
+        id="fab"
+        class="fab"
+        aria-label="Create"
+    >
+
+        <i class="fa-solid fa-plus"></i>
+
     </button>
 
-    <img id="storyImage" hidden>
 
-    <video id="storyVideo"
-           playsinline
-           controls
-           hidden>
-    </video>
+    <!-- ==================================================
+         SCROLL TOP
+    ================================================== -->
 
-    <div class="storyBottom">
+    <button
+        id="scrollTopBtn"
+        class="scrollTopBtn"
+        aria-label="Scroll to top"
+    >
 
-        <input
-        type="text"
-        id="storyReply"
-        placeholder="Reply to story...">
+        <i class="fa-solid fa-arrow-up"></i>
 
-        <button id="sendStoryReply">
-            <i class="fa-solid fa-paper-plane"></i>
+    </button>
+
+
+    <!-- ==================================================
+         TOAST
+    ================================================== -->
+
+    <div
+        id="toast"
+        class="toast hidden"
+        role="status"
+        aria-live="polite"
+    >
+
+        <i
+            id="toastIcon"
+            class="fa-solid fa-circle-check"
+        ></i>
+
+        <span id="toastText">
+            Success
+        </span>
+
+    </div>
+
+
+    <!-- ==================================================
+         LOADING OVERLAY
+    ================================================== -->
+
+    <div
+        id="loadingOverlay"
+        class="loadingOverlay hidden"
+    >
+
+        <div class="premiumLoader">
+
+            <div class="loaderRing"></div>
+            <div class="loaderRing delay1"></div>
+            <div class="loaderRing delay2"></div>
+
+        </div>
+
+        <p id="loadingText">
+            Loading...
+        </p>
+
+    </div>
+
+
+    <!-- ==================================================
+         COMMENT MODAL
+    ================================================== -->
+
+    <div
+        id="commentModal"
+        class="modal hidden"
+    >
+
+        <div class="modalCard glass">
+
+            <div class="modalHeader">
+
+                <h2>
+                    <i class="fa-regular fa-comment"></i>
+                    Comments
+                </h2>
+
+                <button
+                    id="closeComment"
+                    class="modalClose"
+                    aria-label="Close comments"
+                >
+
+                    <i class="fa-solid fa-xmark"></i>
+
+                </button>
+
+            </div>
+
+
+            <div
+                id="commentsContainer"
+                class="commentsContainer"
+            >
+
+                <div class="commentsLoading">
+                    Loading comments...
+                </div>
+
+            </div>
+
+
+            <div class="commentInput">
+
+                <img
+                    src="assets/default-avatar.png"
+                    class="commentAvatar"
+                    alt="You"
+                >
+
+                <input
+                    type="text"
+                    id="commentText"
+                    placeholder="Write a comment..."
+                    maxlength="500"
+                    autocomplete="off"
+                >
+
+                <button
+                    id="sendComment"
+                    aria-label="Send comment"
+                >
+
+                    <i class="fa-solid fa-paper-plane"></i>
+
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- ==================================================
+         SHARE MODAL
+    ================================================== -->
+
+    <div
+        id="shareModal"
+        class="modal hidden"
+    >
+
+        <div class="modalCard glass shareModalCard">
+
+            <div class="modalHeader">
+
+                <h2>
+                    <i class="fa-solid fa-share-nodes"></i>
+                    Share
+                </h2>
+
+                <button
+                    id="closeShare"
+                    class="modalClose"
+                    aria-label="Close share"
+                >
+
+                    <i class="fa-solid fa-xmark"></i>
+
+                </button>
+
+            </div>
+
+
+            <div class="shareGrid">
+
+                <button
+                    class="shareItem"
+                    data-share="whatsapp"
+                >
+
+                    <i class="fa-brands fa-whatsapp"></i>
+                    <span>WhatsApp</span>
+
+                </button>
+
+
+                <button
+                    class="shareItem"
+                    data-share="facebook"
+                >
+
+                    <i class="fa-brands fa-facebook"></i>
+                    <span>Facebook</span>
+
+                </button>
+
+
+                <button
+                    class="shareItem"
+                    data-share="instagram"
+                >
+
+                    <i class="fa-brands fa-instagram"></i>
+                    <span>Instagram</span>
+
+                </button>
+
+
+                <button
+                    class="shareItem"
+                    data-share="x"
+                >
+
+                    <i class="fa-brands fa-x-twitter"></i>
+                    <span>X</span>
+
+                </button>
+
+
+                <button
+                    class="shareItem"
+                    data-share="copy"
+                >
+
+                    <i class="fa-solid fa-link"></i>
+                    <span>Copy Link</span>
+
+                </button>
+
+
+                <button
+                    class="shareItem"
+                    data-share="chat"
+                >
+
+                    <i class="fa-solid fa-paper-plane"></i>
+                    <span>Send in Chat</span>
+
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- ==================================================
+         IMAGE VIEWER
+    ================================================== -->
+
+    <div
+        id="imageViewer"
+        class="mediaViewer hidden"
+    >
+
+        <button
+            id="closeViewer"
+            class="viewerClose"
+            aria-label="Close image"
+        >
+
+            <i class="fa-solid fa-xmark"></i>
+
+        </button>
+
+        <img
+            id="viewerImage"
+            src=""
+            alt="Post image"
+        >
+
+    </div>
+
+
+    <!-- ==================================================
+         VIDEO VIEWER
+    ================================================== -->
+
+    <div
+        id="videoViewer"
+        class="mediaViewer hidden"
+    >
+
+        <button
+            id="closeVideo"
+            class="viewerClose"
+            aria-label="Close video"
+        >
+
+            <i class="fa-solid fa-xmark"></i>
+
+        </button>
+
+        <video
+            id="viewerVideo"
+            controls
+            playsinline
+        ></video>
+
+    </div>
+
+
+    <!-- ==================================================
+         STORY VIEWER
+    ================================================== -->
+
+    <div
+        id="storyViewer"
+        class="storyViewer hidden"
+    >
+
+        <div
+            id="storyProgress"
+            class="storyProgress"
+        >
+
+            <div class="progressFill"></div>
+
+        </div>
+
+
+        <button
+            id="closeStory"
+            class="viewerClose"
+            aria-label="Close story"
+        >
+
+            <i class="fa-solid fa-xmark"></i>
+
+        </button>
+
+
+        <img
+            id="storyImage"
+            hidden
+            alt="Story"
+        >
+
+
+        <video
+            id="storyVideo"
+            playsinline
+            controls
+            hidden
+        ></video>
+
+
+        <div class="storyBottom">
+
+            <input
+                type="text"
+                id="storyReply"
+                placeholder="Reply to story..."
+                maxlength="300"
+            >
+
+            <button
+                id="sendStoryReply"
+                aria-label="Send reply"
+            >
+
+                <i class="fa-solid fa-paper-plane"></i>
+
+            </button>
+
+        </div>
+
+    </div>
+
+
+    <!-- ==================================================
+         NOTIFICATION DRAWER
+    ================================================== -->
+
+    <div
+        id="notificationDrawer"
+        class="notificationDrawer hidden glass"
+    >
+
+        <div class="drawerHeader">
+
+            <h2>
+                <i class="fa-solid fa-bell"></i>
+                Notifications
+            </h2>
+
+            <button
+                id="closeDrawer"
+                class="modalClose"
+            >
+
+                <i class="fa-solid fa-xmark"></i>
+
+            </button>
+
+        </div>
+
+
+        <div id="notificationList">
+
+            <div class="notificationItem">
+
+                <img
+                    src="assets/default-avatar.png"
+                    alt="Viewora"
+                >
+
+                <div>
+
+                    <h4>Viewora Official</h4>
+
+                    <p>
+                        Welcome to Viewora 🎉
+                    </p>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- ==================================================
+         CREATE / UPLOAD POPUP
+    ================================================== -->
+
+    <div
+        id="uploadPopup"
+        class="uploadPopup hidden"
+    >
+
+        <div class="uploadCard glass">
+
+            <div class="uploadCardHeader">
+
+                <h2>Create</h2>
+
+                <button
+                    id="closeUploadPopup"
+                    class="modalClose"
+                >
+
+                    <i class="fa-solid fa-xmark"></i>
+
+                </button>
+
+            </div>
+
+
+            <button
+                class="createOption"
+                onclick="location.href='upload.html'"
+            >
+
+                <span class="createIcon imageIcon">
+                    <i class="fa-solid fa-image"></i>
+                </span>
+
+                <span>
+                    <b>Post</b>
+                    <small>Share photos & videos</small>
+                </span>
+
+            </button>
+
+
+            <button
+                class="createOption"
+                onclick="location.href='story.html'"
+            >
+
+                <span class="createIcon storyIcon">
+                    <i class="fa-solid fa-circle-play"></i>
+                </span>
+
+                <span>
+                    <b>Story</b>
+                    <small>Share something for 24h</small>
+                </span>
+
+            </button>
+
+
+            <button
+                class="createOption"
+                onclick="location.href='shorts_upload.html'"
+            >
+
+                <span class="createIcon videoIcon">
+                    <i class="fa-solid fa-video"></i>
+                </span>
+
+                <span>
+                    <b>Short</b>
+                    <small>Create a short video</small>
+                </span>
+
+            </button>
+
+
+            <button
+                class="createOption"
+                onclick="location.href='live.html'"
+            >
+
+                <span class="createIcon liveIcon">
+                    <i class="fa-solid fa-tower-broadcast"></i>
+                </span>
+
+                <span>
+                    <b>Go Live</b>
+                    <small>Connect with your audience</small>
+                </span>
+
+            </button>
+
+        </div>
+
+    </div>
+
+
+    <!-- ==================================================
+         WELCOME POPUP
+    ================================================== -->
+
+    <div
+        id="welcomePopup"
+        class="welcomePopup hidden"
+    >
+
+        <div class="welcomeCard glass">
+
+            <div class="welcomeIcon">
+                <i class="fa-solid fa-sparkles"></i>
+            </div>
+
+            <h1>
+                Welcome to Viewora
+            </h1>
+
+            <p>
+                Create • Watch • Share • Connect
+            </p>
+
+            <button
+                id="startBtn"
+                class="primaryBtn"
+            >
+                Get Started
+            </button>
+
+        </div>
+
+    </div>
+
+
+    <!-- ==================================================
+         NETWORK STATUS
+    ================================================== -->
+
+    <div
+        id="networkStatus"
+        class="networkStatus hidden"
+    >
+
+        <i class="fa-solid fa-wifi"></i>
+
+        <span>
+            No Internet Connection
+        </span>
+
+    </div>
+
+
+    <!-- ==================================================
+         UPDATE BANNER
+    ================================================== -->
+
+    <div
+        id="updateBanner"
+        class="updateBanner hidden"
+    >
+
+        <span>
+            🔥 New Viewora version available
+        </span>
+
+        <button id="updateBtn">
+            Update
         </button>
 
     </div>
 
-</div>
 
-<!-- =========================
-Video Viewer
-========================= -->
+    <!-- ==================================================
+         BOTTOM NAVIGATION
+    ================================================== -->
 
-<div id="videoViewer" class="hidden">
+    <nav class="bottomNav">
 
-<button id="closeVideo">
+        <a
+            href="index.html"
+            class="active"
+        >
 
-<i class="fa-solid fa-xmark"></i>
+            <span class="activeIndicator"></span>
 
-</button>
+            <i class="fa-solid fa-house"></i>
 
-<video id="viewerVideo"
-controls
-playsinline>
+            <span>Home</span>
 
-</video>
+        </a>
 
-</div>
 
-<!-- =========================
-Welcome Popup
-========================= -->
+        <a href="shorts.html">
 
-<div id="welcomePopup"
-class="hidden">
+            <span class="activeIndicator"></span>
 
-<div class="welcomeCard glass">
+            <i class="fa-solid fa-play"></i>
 
-<h1>
+            <span>Shorts</span>
 
-👋 Welcome to Viewora
+        </a>
 
-</h1>
 
-<p>
+        <a
+            href="upload.html"
+            class="uploadNav"
+            aria-label="Create"
+        >
 
-Create • Watch • Share • Connect
+            <i class="fa-solid fa-plus"></i>
 
-</p>
+        </a>
 
-<button id="startBtn">
 
-Get Started
+        <a href="users.html">
 
-</button>
+            <span class="activeIndicator"></span>
 
-</div>
+            <i class="fa-solid fa-users"></i>
 
-</div>
+            <span>Users</span>
 
-<!-- =========================
-Internet Status
-========================= -->
+        </a>
 
-<div id="networkStatus"
-class="hidden">
 
-<i class="fa-solid fa-wifi"></i>
+        <a href="profile.html">
 
-<span>
+            <span class="activeIndicator"></span>
 
-No Internet Connection
+            <i class="fa-solid fa-user"></i>
 
-</span>
+            <span>Profile</span>
+
+        </a>
+
+    </nav>
 
 </div>
 
-<!-- =========================
-Update Banner
-========================= -->
 
-<div id="updateBanner"
-class="hidden">
-
-🔥 New Version Available
-
-<button id="updateBtn">
-
-Update
-
-</button>
-
-</div>
-
-<!-- Hidden Inputs -->
-
-<input
-type="file"
-id="imageInput"
-accept="image/*"
-hidden>
-
-<input
-type="file"
-id="videoInput"
-accept="video/*"
-hidden>
-
-<input
-type="file"
-id="storyInput"
-accept="image/*,video/*"
-hidden>
-
-<!-- Firebase -->
+<!-- ==================================================
+     FIREBASE SDK
+================================================== -->
 
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
 
-<script src="firebase.js"></script>
 
-<script src="feed.js"></script>
+<!-- ==================================================
+     VIEWORA FIREBASE
+================================================== -->
+
+<script src="firebase.js"></script>
+<script src="index.js"></script>
+
 <script src="notifications.js"></script>
 <script src="chat.js"></script>
 <script src="profile.js"></script>
 <script src="nav.js"></script>
-<!-- Loader -->
+
+<!-- ==================================================
+     PAGE STARTUP
+================================================== -->
 
 <script>
 
-window.addEventListener("load",()=>{
+document.addEventListener("DOMContentLoaded", function () {
 
-const loader=document.getElementById("pageLoader");
+    const loader =
+        document.getElementById("pageLoader");
 
-const app=document.getElementById("app");
+    const app =
+        document.getElementById("app");
 
-setTimeout(()=>{
+    if (!loader || !app) return;
 
-loader.style.opacity="0";
+    setTimeout(function () {
 
-loader.style.transform="scale(.95)";
+        loader.classList.add("loaderHide");
 
-setTimeout(()=>{
+        setTimeout(function () {
 
-loader.remove();
+            loader.remove();
 
-app.classList.remove("hidden");
+            app.classList.remove("hidden");
 
-app.classList.add("fadeIn");
+            app.classList.add("pageReady");
 
-},500);
+        }, 450);
 
-},1500);
-
-});
-
-// Network
-
-window.addEventListener("offline",()=>{
-
-document
-.getElementById("networkStatus")
-.classList.remove("hidden");
+    }, 900);
 
 });
 
-window.addEventListener("online",()=>{
 
-document
-.getElementById("networkStatus")
-.classList.add("hidden");
+/* =========================================
+   Network UI
+========================================= */
+
+function updateNetworkStatus() {
+
+    const status =
+        document.getElementById("networkStatus");
+
+    if (!status) return;
+
+    if (navigator.onLine) {
+
+        status.classList.add("hidden");
+
+    } else {
+
+        status.classList.remove("hidden");
+
+    }
+
+}
+
+window.addEventListener(
+    "online",
+    updateNetworkStatus
+);
+
+window.addEventListener(
+    "offline",
+    updateNetworkStatus
+);
+
+updateNetworkStatus();
+
+
+/* =========================================
+   Search Clear
+========================================= */
+
+document.addEventListener("DOMContentLoaded", function () {
+
+    const search =
+        document.getElementById("searchInput");
+
+    const clear =
+        document.getElementById("clearSearch");
+
+    if (!search || !clear) return;
+
+    search.addEventListener("input", function () {
+
+        clear.style.display =
+            search.value.trim()
+            ? "flex"
+            : "none";
+
+    });
+
+    clear.addEventListener("click", function () {
+
+        search.value = "";
+
+        clear.style.display = "none";
+
+        search.dispatchEvent(
+            new Event("input")
+        );
+
+        search.focus();
+
+    });
+
+});
+
+
+/* =========================================
+   Create Button
+========================================= */
+
+document.addEventListener("DOMContentLoaded", function () {
+
+    const fab =
+        document.getElementById("fab");
+
+    const popup =
+        document.getElementById("uploadPopup");
+
+    const close =
+        document.getElementById("closeUploadPopup");
+
+    if (!fab || !popup) return;
+
+    fab.addEventListener("click", function () {
+
+        popup.classList.remove("hidden");
+
+    });
+
+    if (close) {
+
+        close.addEventListener("click", function () {
+
+            popup.classList.add("hidden");
+
+        });
+
+    }
+
+    popup.addEventListener("click", function (event) {
+
+        if (event.target === popup) {
+
+            popup.classList.add("hidden");
+
+        }
+
+    });
+
+});
+
+
+/* =========================================
+   Scroll Top
+========================================= */
+
+window.addEventListener("scroll", function () {
+
+    const button =
+        document.getElementById("scrollTopBtn");
+
+    if (!button) return;
+
+    if (window.scrollY > 500) {
+
+        button.classList.add("show");
+
+    } else {
+
+        button.classList.remove("show");
+
+    }
+
+});
+
+
+document.addEventListener("DOMContentLoaded", function () {
+
+    const button =
+        document.getElementById("scrollTopBtn");
+
+    if (!button) return;
+
+    button.addEventListener("click", function () {
+
+        window.scrollTo({
+
+            top: 0,
+
+            behavior: "smooth"
+
+        });
+
+    });
 
 });
 
