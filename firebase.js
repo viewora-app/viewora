@@ -1,10 +1,13 @@
 /*==========================================================
         VIEWORA V12
         firebase.js
-        FINAL • PRODUCTION READY
+        FINAL • PREMIUM AUTH + DATABASE CORE
 
         Firebase:
         • Authentication
+        • Google Login
+        • Facebook Login
+        • X / Twitter Login
         • Realtime Database
         • Storage
         • Presence
@@ -12,6 +15,7 @@
 ==========================================================*/
 
 "use strict";
+
 
 /*==========================================================
   1. FIREBASE SDK CHECK
@@ -24,8 +28,9 @@ if (typeof firebase === "undefined") {
     );
 
     throw new Error(
-        "Firebase SDK not loaded. Check Firebase CDN scripts in upload.html."
+        "Firebase SDK not loaded. Check Firebase CDN scripts."
     );
+
 }
 
 
@@ -55,6 +60,7 @@ const firebaseConfig = {
 
     appId:
         "1:988622911735:web:e30c97dd88d5ac87c93bf2"
+
 };
 
 
@@ -90,6 +96,7 @@ try {
     );
 
     throw error;
+
 }
 
 
@@ -103,20 +110,17 @@ let storage = null;
 
 try {
 
-    auth =
-        firebase.auth();
+    auth = firebase.auth();
 
-    db =
-        firebase.database();
+    db = firebase.database();
 
     /*
-     * Storage is optional for Viewora upload.
-     * Cloudinary handles media uploads.
+     * Cloudinary is currently used for media upload.
+     * Firebase Storage remains optional.
      */
 
     if (
-        typeof firebase.storage ===
-        "function"
+        typeof firebase.storage === "function"
     ) {
 
         storage =
@@ -132,11 +136,65 @@ try {
     );
 
     throw error;
+
 }
 
 
 /*==========================================================
-  5. STANDARD FIELD NAMES
+  5. AUTH PROVIDERS
+==========================================================*/
+
+/*
+ * IMPORTANT:
+ *
+ * These are declared ONLY HERE.
+ *
+ * login.js should NOT create these again.
+ */
+
+let googleProvider = null;
+let facebookProvider = null;
+let twitterProvider = null;
+
+try {
+
+    googleProvider =
+        new firebase.auth.GoogleAuthProvider();
+
+    googleProvider.setCustomParameters({
+        prompt: "select_account"
+    });
+
+
+    facebookProvider =
+        new firebase.auth.FacebookAuthProvider();
+
+    facebookProvider.addScope(
+        "email"
+    );
+
+
+    /*
+     * Firebase uses TwitterAuthProvider
+     * for X / Twitter authentication.
+     */
+
+    twitterProvider =
+        new firebase.auth.TwitterAuthProvider();
+
+
+} catch (error) {
+
+    console.error(
+        "❌ Auth Provider Initialization Error:",
+        error
+    );
+
+}
+
+
+/*==========================================================
+  6. STANDARD FIELD NAMES
 ==========================================================*/
 
 const FIELDS = {
@@ -181,81 +239,106 @@ const FIELDS = {
 
 
 /*==========================================================
-  6. DATABASE REFERENCES
+  7. DATABASE REFERENCES
 ==========================================================*/
 
 const usersRef = () =>
     db.ref("users");
 
+
 const userRef = (uid) =>
     db.ref("users/" + uid);
+
 
 const postsRef = () =>
     db.ref("posts");
 
+
 const postRef = (postId) =>
     db.ref("posts/" + postId);
+
 
 const shortsRef = () =>
     db.ref("shorts");
 
+
 const shortRef = (shortId) =>
     db.ref("shorts/" + shortId);
+
 
 const storiesRef = () =>
     db.ref("stories");
 
+
 const storyRef = (storyId) =>
     db.ref("stories/" + storyId);
+
 
 const commentsRef = (postId) =>
     db.ref("comments/" + postId);
 
+
 const likesRef = (postId) =>
     db.ref("likes/" + postId);
+
 
 const savedPostsRef = (uid) =>
     db.ref("savedPosts/" + uid);
 
+
 const notificationsRef = (uid) =>
     db.ref("notifications/" + uid);
+
 
 const chatsRef = () =>
     db.ref("chats");
 
+
 const chatRef = (chatId) =>
     db.ref("chats/" + chatId);
+
 
 const userChatsRef = (uid) =>
     db.ref("userChats/" + uid);
 
+
 const callsRef = () =>
     db.ref("calls");
+
 
 const callRef = (callId) =>
     db.ref("calls/" + callId);
 
+
 const followersRef = (uid) =>
     db.ref("followers/" + uid);
+
 
 const followingRef = (uid) =>
     db.ref("following/" + uid);
 
+
 const blockedRef = (uid) =>
     db.ref("blockedUsers/" + uid);
 
+
 const usernamesRef = (username) =>
-    db.ref("usernames/" + username);
+    db.ref(
+        "usernames/" +
+        username.toLowerCase()
+    );
+
 
 const presenceRef = (uid) =>
     db.ref("status/" + uid);
+
 
 const feedsRef = (feed) =>
     db.ref("feeds/" + feed);
 
 
 /*==========================================================
-  7. SERVER TIMESTAMP
+  8. SERVER TIMESTAMP
 ==========================================================*/
 
 const SERVER_TIME =
@@ -263,7 +346,7 @@ const SERVER_TIME =
 
 
 /*==========================================================
-  8. SAFE DATABASE HELPERS
+  9. SAFE DATABASE HELPERS
 ==========================================================*/
 
 async function safeRead(path) {
@@ -288,11 +371,16 @@ async function safeRead(path) {
         );
 
         return null;
+
     }
+
 }
 
 
-async function safeWrite(path, data) {
+async function safeWrite(
+    path,
+    data
+) {
 
     try {
 
@@ -311,11 +399,16 @@ async function safeWrite(path, data) {
         );
 
         return false;
+
     }
+
 }
 
 
-async function safeUpdate(path, data) {
+async function safeUpdate(
+    path,
+    data
+) {
 
     try {
 
@@ -334,7 +427,9 @@ async function safeUpdate(path, data) {
         );
 
         return false;
+
     }
+
 }
 
 
@@ -357,18 +452,21 @@ async function safeRemove(path) {
         );
 
         return false;
+
     }
+
 }
 
 
 /*==========================================================
-  9. PRESENCE SYSTEM
+  10. PRESENCE SYSTEM
 ==========================================================*/
 
 function setupPresence(uid) {
 
-    if (!uid)
+    if (!uid) {
         return;
+    }
 
     const connectedRef =
         db.ref(".info/connected");
@@ -376,12 +474,19 @@ function setupPresence(uid) {
     const statusRef =
         presenceRef(uid);
 
+
     connectedRef.on(
         "value",
         snapshot => {
 
-            if (snapshot.val() !== true)
+            if (
+                snapshot.val() !== true
+            ) {
+
                 return;
+
+            }
+
 
             statusRef
                 .onDisconnect()
@@ -393,6 +498,7 @@ function setupPresence(uid) {
                         SERVER_TIME
 
                 });
+
 
             statusRef.set({
 
@@ -410,35 +516,47 @@ function setupPresence(uid) {
 
 
 /*==========================================================
-  10. USER ONLINE SYSTEM
+  11. USER ONLINE SYSTEM
 ==========================================================*/
 
 function setupUserOnline(uid) {
 
-    if (!uid)
+    if (!uid) {
         return;
+    }
+
 
     const onlineRef =
         userRef(uid)
             .child("online");
 
+
     const lastSeenRef =
         userRef(uid)
             .child("lastSeen");
 
+
     const connectedRef =
         db.ref(".info/connected");
+
 
     connectedRef.on(
         "value",
         snapshot => {
 
-            if (snapshot.val() !== true)
+            if (
+                snapshot.val() !== true
+            ) {
+
                 return;
+
+            }
+
 
             onlineRef
                 .onDisconnect()
                 .set(false);
+
 
             lastSeenRef
                 .onDisconnect()
@@ -446,7 +564,9 @@ function setupUserOnline(uid) {
                     SERVER_TIME
                 );
 
+
             onlineRef.set(true);
+
 
             lastSeenRef.set(
                 SERVER_TIME
@@ -459,7 +579,7 @@ function setupUserOnline(uid) {
 
 
 /*==========================================================
-  11. AUTH HELPERS
+  12. AUTH HELPERS
 ==========================================================*/
 
 function requireAuth() {
@@ -467,11 +587,21 @@ function requireAuth() {
     return new Promise(
         (resolve, reject) => {
 
+            let finished = false;
+
+
             const unsubscribe =
                 auth.onAuthStateChanged(
                     user => {
 
+                        if (finished) {
+                            return;
+                        }
+
+                        finished = true;
+
                         unsubscribe();
+
 
                         if (user) {
 
@@ -484,6 +614,7 @@ function requireAuth() {
                                     "User not logged in"
                                 )
                             );
+
 
                             location.replace(
                                 "login.html"
@@ -517,7 +648,7 @@ function getUID() {
 
 
 /*==========================================================
-  12. DEFAULT USER OBJECT
+  13. DEFAULT USER OBJECT
 ==========================================================*/
 
 function createDefaultUser(
@@ -527,7 +658,7 @@ function createDefaultUser(
 
     return {
 
-        uid,
+        uid: uid,
 
         name:
             data.name ||
@@ -565,17 +696,23 @@ function createDefaultUser(
 
         online: true,
 
-        followers: 0,
+        followers:
+            Number(data.followers || 0),
 
-        following: 0,
+        following:
+            Number(data.following || 0),
 
-        posts: 0,
+        posts:
+            Number(data.posts || 0),
 
-        videos: 0,
+        videos:
+            Number(data.videos || 0),
 
-        shorts: 0,
+        shorts:
+            Number(data.shorts || 0),
 
         createdAt:
+            data.createdAt ||
             SERVER_TIME,
 
         lastSeen:
@@ -590,30 +727,56 @@ function createDefaultUser(
 
 
 /*==========================================================
-  13. GLOBAL EXPORTS
+  14. GLOBAL EXPORTS
 ==========================================================*/
 
 window.firebaseConfig =
     firebaseConfig;
 
+
 window.auth =
     auth;
+
 
 window.db =
     db;
 
+
 window.storage =
     storage;
 
+
+window.googleProvider =
+    googleProvider;
+
+
+window.facebookProvider =
+    facebookProvider;
+
+
+window.twitterProvider =
+    twitterProvider;
+
+
+/*
+ * Alias for X login.
+ * login.js can use either name.
+ */
+
+window.xProvider =
+    twitterProvider;
+
+
 window.SERVER_TIME =
     SERVER_TIME;
+
 
 window.FIELDS =
     FIELDS;
 
 
 /*==========================================================
-  14. REFERENCE EXPORTS
+  15. DATABASE REFERENCE EXPORTS
 ==========================================================*/
 
 window.usersRef =
@@ -687,7 +850,7 @@ window.feedsRef =
 
 
 /*==========================================================
-  15. HELPER EXPORTS
+  16. HELPER EXPORTS
 ==========================================================*/
 
 window.safeRead =
@@ -722,7 +885,7 @@ window.createDefaultUser =
 
 
 /*==========================================================
-  16. AUTH STATE
+  17. AUTH STATE
 ==========================================================*/
 
 auth.onAuthStateChanged(
@@ -735,9 +898,11 @@ auth.onAuthStateChanged(
                 user.uid
             );
 
+
             setupPresence(
                 user.uid
             );
+
 
             setupUserOnline(
                 user.uid
@@ -756,17 +921,20 @@ auth.onAuthStateChanged(
 
 
 /*==========================================================
-  17. DATABASE CONNECTION MONITOR
+  18. DATABASE CONNECTION MONITOR
 ==========================================================*/
 
 const firebaseConnection =
     db.ref(".info/connected");
 
+
 firebaseConnection.on(
     "value",
     snapshot => {
 
-        if (snapshot.val() === true) {
+        if (
+            snapshot.val() === true
+        ) {
 
             console.log(
                 "🟢 Firebase Realtime Database Connected"
@@ -785,7 +953,7 @@ firebaseConnection.on(
 
 
 /*==========================================================
-  18. FINAL STARTUP
+  19. FINAL STARTUP
 ==========================================================*/
 
 console.log(
@@ -802,6 +970,18 @@ console.log(
 
 console.log(
     "✅ Authentication Ready"
+);
+
+console.log(
+    "✅ Google Provider Ready"
+);
+
+console.log(
+    "✅ Facebook Provider Ready"
+);
+
+console.log(
+    "✅ X / Twitter Provider Ready"
 );
 
 console.log(

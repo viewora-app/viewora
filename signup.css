@@ -1,1448 +1,2105 @@
-/*=========================================
-        VIEWORA V3 PREMIUM
-            signup.css
-            PART 1
- Reset • Variables • Background
-=========================================*/
+/* ==========================================================
+   VIEWORA V12 PREMIUM
+   signup.css
+   BLACK • COLOURFUL • GLASSMORPHISM
+   MOBILE • DESKTOP • RESPONSIVE
+========================================================== */
 
-*{
-    margin:0;
-    padding:0;
-    box-sizing:border-box;
-    font-family:"Inter",sans-serif;
-    -webkit-tap-highlight-color:transparent;
+
+/* ==========================================================
+   1. RESET
+========================================================== */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
 }
 
-:root{
+html {
+    scroll-behavior: smooth;
+}
 
-    --primary:#00AAFF;
-    --secondary:#0088ff;
-    --success:#00d26a;
-    --danger:#ff4d4d;
-    --warning:#ffb300;
+body {
+    min-height: 100vh;
+    background: #050505;
+    color: #ffffff;
+    font-family: "Inter", sans-serif;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+}
 
-    --bg:#050816;
-    --card:rgba(255,255,255,.08);
-    --border:rgba(255,255,255,.15);
 
-    --text:#ffffff;
-    --text2:#c8d2ff;
+/* ==========================================================
+   2. VARIABLES
+========================================================== */
+
+:root {
+
+    --bg: #050505;
+    --card: rgba(18, 18, 24, 0.78);
+
+    --white: #ffffff;
+    --muted: #9ca3af;
+
+    --border: rgba(255, 255, 255, 0.10);
+
+    --blue: #168cff;
+    --cyan: #00d9ff;
+    --purple: #8b5cf6;
+    --pink: #ff3cac;
+    --red: #ff4d67;
+    --green: #00d26a;
+
+    --glass: blur(24px);
 
     --shadow:
-    0 20px 60px rgba(0,0,0,.35);
+        0 30px 80px rgba(0, 0, 0, 0.55);
 
-    --radius:24px;
-
+    --radius: 24px;
 }
 
-html{
 
-    scroll-behavior:smooth;
+/* ==========================================================
+   3. BODY BACKGROUND
+========================================================== */
 
-}
+body::before {
 
-body{
+    content: "";
 
-    background:var(--bg);
+    position: fixed;
 
-    color:var(--text);
+    inset: 0;
 
-    min-height:100vh;
-
-    overflow-x:hidden;
-
-    display:flex;
-
-    justify-content:center;
-
-    align-items:center;
-
-    position:relative;
-
-}
-
-/*=========================================
-Aurora Background
-=========================================*/
-
-.aurora{
-
-    position:fixed;
-
-    inset:0;
-
-    overflow:hidden;
-
-    z-index:-3;
-
-}
-
-.light{
-
-    position:absolute;
-
-    width:500px;
-
-    height:500px;
-
-    border-radius:50%;
-
-    filter:blur(120px);
-
-    opacity:.55;
-
-    animation:float 12s linear infinite;
-
-}
-
-.light1{
-
-    background:#00AAFF;
-
-    top:-120px;
-
-    left:-100px;
-
-}
-
-.light2{
-
-    background:#6A5CFF;
-
-    right:-120px;
-
-    top:20%;
-
-    animation-delay:2s;
-
-}
-
-.light3{
-
-    background:#00d26a;
-
-    bottom:-150px;
-
-    left:25%;
-
-    animation-delay:5s;
-
-}
-
-@keyframes float{
-
-0%{
-
-transform:translate(0,0) scale(1);
-
-}
-
-50%{
-
-transform:translate(80px,-60px) scale(1.15);
-
-}
-
-100%{
-
-transform:translate(0,0) scale(1);
-
-}
-
-}
-
-/*=========================================
-Particles
-=========================================*/
-
-#particles{
-
-    position:fixed;
-
-    inset:0;
-
-    pointer-events:none;
-
-    z-index:-2;
-
-}
-
-/*=========================================
-Glass Effect
-=========================================*/
-
-.glass{
-
-    background:rgba(255,255,255,.08);
-
-    backdrop-filter:blur(25px);
-
-    -webkit-backdrop-filter:blur(25px);
-
-    border:1px solid rgba(255,255,255,.12);
-
-    box-shadow:var(--shadow);
-
-}
-
-/*=========================================
-Utility
-=========================================*/
-
-.hidden{
-
-    display:none !important;
-
-}
-
-.fadeIn{
-
-    animation:fadeIn .6s ease;
-
-}
-
-@keyframes fadeIn{
-
-from{
-
-opacity:0;
-
-transform:translateY(25px);
-
-}
-
-to{
-
-opacity:1;
-
-transform:translateY(0);
-
-}
-
-}
-/*=========================================
-        VIEWORA V3 PREMIUM
-            signup.css
-            PART 2
- Signup Card • Logo • Inputs
-=========================================*/
-
-/*=========================================
-Main App
-=========================================*/
-
-#app{
-
-    width:100%;
-
-    display:flex;
-
-    justify-content:center;
-
-    align-items:center;
-
-    padding:40px 20px;
-
-}
-
-/*=========================================
-Signup Card
-=========================================*/
-
-.signupCard{
-
-    width:100%;
-
-    max-width:470px;
-
-    padding:40px;
-
-    border-radius:28px;
-
-    position:relative;
-
-    overflow:hidden;
-
-}
-
-.signupCard::before{
-
-    content:"";
-
-    position:absolute;
-
-    inset:0;
+    pointer-events: none;
 
     background:
+        radial-gradient(
+            circle at 15% 20%,
+            rgba(0, 140, 255, 0.10),
+            transparent 28%
+        ),
+        radial-gradient(
+            circle at 85% 15%,
+            rgba(255, 0, 180, 0.09),
+            transparent 30%
+        ),
+        radial-gradient(
+            circle at 50% 100%,
+            rgba(125, 70, 255, 0.10),
+            transparent 35%
+        );
 
-    linear-gradient(
-    135deg,
-    rgba(0,170,255,.08),
-    rgba(106,92,255,.08));
-
-    pointer-events:none;
-
+    z-index: -3;
 }
 
-/*=========================================
-Logo
-=========================================*/
 
-.logoBox{
+/* ==========================================================
+   4. COLOURFUL BACKGROUND GLOWS
+========================================================== */
 
-    text-align:center;
+.backgroundGlow {
 
-    margin-bottom:35px;
+    position: fixed;
 
+    width: 280px;
+    height: 280px;
+
+    border-radius: 50%;
+
+    filter: blur(90px);
+
+    opacity: 0.42;
+
+    pointer-events: none;
+
+    z-index: -2;
+
+    animation: floatingGlow 10s ease-in-out infinite alternate;
 }
 
-.logo{
 
-    width:88px;
+.glowOne {
 
-    height:88px;
+    top: -90px;
+    left: -80px;
 
-    object-fit:contain;
-
-    border-radius:22px;
-
-    margin-bottom:18px;
-
-    animation:logoFloat 3s ease-in-out infinite;
-
+    background: #006eff;
 }
 
-@keyframes logoFloat{
 
-0%,100%{
+.glowTwo {
 
-transform:translateY(0);
+    top: 25%;
+    right: -100px;
 
+    background: #ff00b7;
+
+    animation-delay: -3s;
 }
 
-50%{
 
-transform:translateY(-8px);
+.glowThree {
 
+    bottom: -120px;
+    left: 35%;
+
+    background: #713cff;
+
+    animation-delay: -6s;
 }
 
+
+@keyframes floatingGlow {
+
+    from {
+        transform: translate3d(0, 0, 0) scale(1);
+    }
+
+    to {
+        transform: translate3d(30px, -25px, 0) scale(1.15);
+    }
 }
 
-.logoBox h1{
 
-    font-size:2rem;
+/* ==========================================================
+   5. PAGE
+========================================================== */
 
-    font-weight:800;
+.signupPage {
 
-    margin-bottom:8px;
+    width: 100%;
 
+    min-height: 100vh;
+
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+
+    justify-content: center;
+
+    padding: 40px 20px 30px;
 }
 
-.logoBox p{
 
-    color:var(--text2);
+/* ==========================================================
+   6. BRAND
+========================================================== */
 
-    font-size:.95rem;
+.brandArea {
 
-    line-height:1.5;
+    text-align: center;
 
+    margin-bottom: 22px;
+
+    animation: fadeDown 0.7s ease both;
 }
 
-/*=========================================
-Form
-=========================================*/
 
-#signupForm{
+.brandLogoWrap {
 
-    display:flex;
+    width: 72px;
+    height: 72px;
 
-    flex-direction:column;
+    margin: 0 auto 12px;
 
-    gap:18px;
+    display: flex;
 
-}
+    align-items: center;
+    justify-content: center;
 
-/*=========================================
-Input Group
-=========================================*/
+    border-radius: 22px;
 
-.inputGroup{
+    background:
+        linear-gradient(
+            135deg,
+            rgba(255,255,255,0.12),
+            rgba(255,255,255,0.025)
+        );
 
-    display:flex;
-
-    flex-direction:column;
-
-    gap:8px;
-
-}
-
-.inputGroup label{
-
-    font-size:.95rem;
-
-    font-weight:600;
-
-    color:#fff;
-
-}
-
-/*=========================================
-Input Box
-=========================================*/
-
-.inputBox{
-
-    position:relative;
-
-    display:flex;
-
-    align-items:center;
-
-}
-
-.inputBox i:first-child{
-
-    position:absolute;
-
-    left:16px;
-
-    color:#9fb7ff;
-
-    font-size:16px;
-
-}
-
-.inputBox input{
-
-    width:100%;
-
-    height:56px;
-
-    border:none;
-
-    outline:none;
-
-    border-radius:16px;
-
-    padding:0 52px 0 48px;
-
-    background:rgba(255,255,255,.07);
-
-    color:#fff;
-
-    border:1px solid rgba(255,255,255,.12);
-
-    transition:.25s;
-
-    font-size:15px;
-
-}
-
-.inputBox input::placeholder{
-
-    color:#8fa4c9;
-
-}
-
-.inputBox input:focus{
-
-    border-color:var(--primary);
+    border: 1px solid rgba(255,255,255,0.12);
 
     box-shadow:
+        0 0 35px rgba(0, 145, 255, 0.20),
+        inset 0 1px rgba(255,255,255,0.10);
 
-    0 0 0 4px rgba(0,170,255,.15);
+    backdrop-filter: blur(20px);
+
+    -webkit-backdrop-filter: blur(20px);
+}
+
+
+.brandLogo {
+
+    width: 52px;
+    height: 52px;
+
+    object-fit: contain;
+
+    filter:
+        drop-shadow(
+            0 5px 20px rgba(0, 170, 255, 0.25)
+        );
+}
+
+
+.brandArea h1 {
+
+    font-size: 28px;
+
+    font-weight: 800;
+
+    letter-spacing: -1px;
+
+    background:
+        linear-gradient(
+            90deg,
+            #ffffff,
+            #7dd3fc,
+            #c084fc,
+            #ffffff
+        );
+
+    background-size: 200% auto;
+
+    -webkit-background-clip: text;
+    background-clip: text;
+
+    color: transparent;
+
+    animation: brandGradient 5s linear infinite;
+}
+
+
+.brandArea p {
+
+    margin-top: 4px;
+
+    color: #8f96a3;
+
+    font-size: 12px;
+
+    font-weight: 500;
+
+    letter-spacing: 1.5px;
+
+    text-transform: uppercase;
+}
+
+
+@keyframes brandGradient {
+
+    to {
+        background-position: 200% center;
+    }
+}
+
+
+/* ==========================================================
+   7. SIGNUP CARD
+========================================================== */
+
+.signupCard {
+
+    position: relative;
+
+    width: 100%;
+
+    max-width: 480px;
+
+    padding: 32px;
+
+    border-radius: var(--radius);
+
+    background:
+        linear-gradient(
+            145deg,
+            rgba(24,24,31,0.86),
+            rgba(10,10,14,0.78)
+        );
+
+    border: 1px solid var(--border);
+
+    box-shadow: var(--shadow);
+
+    backdrop-filter: var(--glass);
+
+    -webkit-backdrop-filter: var(--glass);
+
+    overflow: hidden;
+
+    animation: cardEnter 0.8s cubic-bezier(.2,.8,.2,1) both;
+}
+
+
+.signupCard::before {
+
+    content: "";
+
+    position: absolute;
+
+    top: 0;
+    left: 10%;
+
+    width: 80%;
+    height: 1px;
+
+    background:
+        linear-gradient(
+            90deg,
+            transparent,
+            rgba(0, 190, 255, 0.8),
+            rgba(255, 0, 190, 0.8),
+            transparent
+        );
+
+    opacity: 0.9;
+}
+
+
+.signupCard::after {
+
+    content: "";
+
+    position: absolute;
+
+    inset: 0;
+
+    pointer-events: none;
+
+    background:
+        linear-gradient(
+            120deg,
+            rgba(255,255,255,0.035),
+            transparent 30%,
+            transparent 70%,
+            rgba(255,255,255,0.02)
+        );
+}
+
+
+@keyframes cardEnter {
+
+    from {
+
+        opacity: 0;
+
+        transform:
+            translateY(30px)
+            scale(0.97);
+
+    }
+
+    to {
+
+        opacity: 1;
+
+        transform:
+            translateY(0)
+            scale(1);
+
+    }
+}
+
+
+/* ==========================================================
+   8. HEADER
+========================================================== */
+
+.signupHeader {
+
+    text-align: center;
+
+    margin-bottom: 25px;
+}
+
+
+.welcomeBadge {
+
+    display: inline-flex;
+
+    align-items: center;
+
+    gap: 7px;
+
+    padding: 7px 12px;
+
+    margin-bottom: 12px;
+
+    border-radius: 999px;
+
+    font-size: 11px;
+
+    font-weight: 600;
+
+    color: #bdeaff;
+
+    background:
+        rgba(0, 170, 255, 0.08);
+
+    border:
+        1px solid rgba(0, 190, 255, 0.16);
+}
+
+
+.welcomeBadge i {
+
+    color: #7dd3fc;
 
 }
 
-/*=========================================
-Password Toggle
-=========================================*/
 
-.togglePassword{
+.signupHeader h2 {
 
-    position:absolute;
+    font-size: 25px;
 
-    right:14px;
+    line-height: 1.2;
 
-    width:36px;
+    font-weight: 800;
 
-    height:36px;
+    letter-spacing: -0.7px;
+}
 
-    border:none;
 
-    background:none;
+.signupHeader p {
 
-    color:#9fb7ff;
+    margin-top: 8px;
 
-    cursor:pointer;
+    color: var(--muted);
 
-    font-size:17px;
+    font-size: 13px;
 
-    transition:.25s;
+    line-height: 1.5;
+}
+
+
+/* ==========================================================
+   9. SOCIAL LOGIN
+========================================================== */
+
+.socialSignup {
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 10px;
+}
+
+
+.socialBtn {
+
+    position: relative;
+
+    height: 50px;
+
+    border: 1px solid rgba(255,255,255,0.10);
+
+    border-radius: 14px;
+
+    background:
+        rgba(255,255,255,0.045);
+
+    color: #ffffff;
+
+    cursor: pointer;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    gap: 10px;
+
+    font-family: inherit;
+
+    font-size: 13px;
+
+    font-weight: 600;
+
+    transition:
+        transform 0.2s ease,
+        border-color 0.2s ease,
+        background 0.2s ease,
+        box-shadow 0.2s ease;
+
+    overflow: hidden;
+}
+
+
+.socialBtn:hover {
+
+    transform: translateY(-2px);
+
+    background:
+        rgba(255,255,255,0.07);
+
+    border-color:
+        rgba(255,255,255,0.18);
 
 }
 
-.togglePassword:hover{
 
-    color:#fff;
+.socialBtn:active {
 
-    transform:scale(1.1);
-
+    transform: scale(0.98);
 }
 
-/*=========================================
-Username Status
-=========================================*/
 
-.statusText{
+.socialIcon {
 
-    font-size:.82rem;
+    display: flex;
 
-    color:#9fb7ff;
+    align-items: center;
+    justify-content: center;
 
-    margin-left:4px;
-
+    width: 24px;
 }
 
-/*=========================================
-Password Strength
-=========================================*/
 
-.strengthContainer{
-
-    margin-top:8px;
-
-}
-
-.strengthBar{
-
-    width:100%;
-
-    height:6px;
-
-    background:rgba(255,255,255,.08);
-
-    border-radius:100px;
-
-    overflow:hidden;
-
-}
-
-#strengthFill{
-
-    width:0;
-
-    height:100%;
-
-    border-radius:100px;
-
-    background:var(--danger);
-
-    transition:.3s;
-
-}
-
-#strengthText{
-
-    margin-top:8px;
-
-    font-size:.82rem;
-
-    color:var(--text2);
-
-}
-
-/*=========================================
-Responsive
-=========================================*/
-
-@media(max-width:600px){
-
-.signupCard{
-
-padding:28px 20px;
-
-border-radius:22px;
-
-}
-
-.logo{
-
-width:74px;
-
-height:74px;
-
-}
-
-.logoBox h1{
-
-font-size:1.7rem;
-
-}
-
-.inputBox input{
-
-height:52px;
-
-font-size:14px;
-
-}
-
-}
-/*=========================================
-        VIEWORA V3 PREMIUM
-            signup.css
-            PART 3
- Terms • Buttons • Divider • Footer
-=========================================*/
-
-/*=========================================
-Terms
-=========================================*/
-
-.termsBox{
-
-    margin-top:8px;
-
-}
-
-.termsBox label{
-
-    display:flex;
-
-    align-items:flex-start;
-
-    gap:10px;
-
-    font-size:.92rem;
-
-    color:var(--text2);
-
-    line-height:1.6;
-
-}
-
-.termsBox input{
-
-    width:18px;
-
-    height:18px;
-
-    accent-color:var(--primary);
-
-    margin-top:2px;
-
-    cursor:pointer;
-
-}
-
-.termsBox a{
-
-    color:var(--primary);
-
-    text-decoration:none;
-
-    font-weight:600;
-
-}
-
-.termsBox a:hover{
-
-    text-decoration:underline;
-
-}
-
-/*=========================================
-Premium Buttons
-=========================================*/
-
-.signupBtn,
-.googleBtn{
-
-    width:100%;
-
-    height:56px;
-
-    border:none;
-
-    border-radius:16px;
-
-    display:flex;
-
-    align-items:center;
-
-    justify-content:center;
-
-    gap:12px;
-
-    cursor:pointer;
-
-    font-size:16px;
-
-    font-weight:700;
-
-    transition:.3s;
-
-    position:relative;
-
-    overflow:hidden;
-
-}
-
-/*=========================================
-Signup Button
-=========================================*/
-
-.signupBtn{
-
-    background:linear-gradient(
-        135deg,
-        var(--primary),
-        var(--secondary)
-    );
-
-    color:#fff;
+.googleBtn:hover {
 
     box-shadow:
-    0 10px 30px rgba(0,170,255,.35);
+        0 10px 30px rgba(66,133,244,0.13);
+}
+
+
+.googleBtn i {
+
+    font-size: 18px;
+
+    background:
+        linear-gradient(
+            135deg,
+            #4285f4,
+            #34a853,
+            #fbbc05,
+            #ea4335
+        );
+
+    -webkit-background-clip: text;
+
+    background-clip: text;
+
+    color: transparent;
+}
+
+
+.socialRow {
+
+    display: grid;
+
+    grid-template-columns: 1fr 1fr;
+
+    gap: 10px;
+}
+
+
+.socialBtn.compact {
+
+    height: 46px;
+
+    font-size: 12px;
+}
+
+
+.facebookBtn i {
+
+    color: #1877f2;
+
+    font-size: 18px;
+}
+
+
+.xBtn i {
+
+    color: #ffffff;
+
+    font-size: 17px;
+}
+
+
+/* ==========================================================
+   10. DIVIDER
+========================================================== */
+
+.divider {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 12px;
+
+    margin: 24px 0;
 
 }
 
-.signupBtn:hover{
 
-    transform:translateY(-3px);
+.divider span {
+
+    flex: 1;
+
+    height: 1px;
+
+    background:
+        linear-gradient(
+            90deg,
+            transparent,
+            rgba(255,255,255,0.12)
+        );
+}
+
+
+.divider span:last-child {
+
+    background:
+        linear-gradient(
+            90deg,
+            rgba(255,255,255,0.12),
+            transparent
+        );
+}
+
+
+.divider p {
+
+    flex-shrink: 0;
+
+    color: #737986;
+
+    font-size: 10px;
+
+    text-transform: uppercase;
+
+    letter-spacing: 0.8px;
+
+    font-weight: 600;
+}
+
+
+/* ==========================================================
+   11. INPUT GROUP
+========================================================== */
+
+.inputGroup {
+
+    margin-bottom: 17px;
+}
+
+
+.inputGroup label {
+
+    display: block;
+
+    margin-bottom: 7px;
+
+    color: #d9dce3;
+
+    font-size: 12px;
+
+    font-weight: 600;
+}
+
+
+.inputBox {
+
+    position: relative;
+
+    width: 100%;
+
+    height: 53px;
+
+    display: flex;
+
+    align-items: center;
+
+    border-radius: 14px;
+
+    background:
+        rgba(0,0,0,0.28);
+
+    border:
+        1px solid rgba(255,255,255,0.09);
+
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease,
+        background 0.2s ease;
+}
+
+
+.inputBox:focus-within {
+
+    background:
+        rgba(0,0,0,0.40);
+
+    border-color:
+        rgba(0, 180, 255, 0.65);
 
     box-shadow:
-    0 18px 40px rgba(0,170,255,.45);
+        0 0 0 3px rgba(0, 160, 255, 0.08),
+        0 8px 25px rgba(0, 100, 255, 0.06);
+}
+
+
+.inputIcon {
+
+    width: 46px;
 
+    text-align: center;
+
+    color: #6f7785;
+
+    font-size: 14px;
+
+    transition: color 0.2s ease;
 }
 
-.signupBtn:active{
 
-    transform:scale(.98);
+.inputBox:focus-within .inputIcon {
 
+    color: #5fcfff;
 }
+
+
+.inputBox input {
 
-/*=========================================
-Google Button
-=========================================*/
+    width: 100%;
 
-.googleBtn{
+    height: 100%;
 
-    margin-top:14px;
+    border: 0;
 
-    background:rgba(255,255,255,.08);
+    outline: 0;
 
-    border:1px solid rgba(255,255,255,.12);
+    background: transparent;
 
-    color:#fff;
+    color: #ffffff;
 
+    font-family: inherit;
+
+    font-size: 13px;
+
+    font-weight: 500;
+
+    padding: 0 14px 0 0;
+}
+
+
+.inputBox input::placeholder {
+
+    color: #5f6672;
 }
 
-.googleBtn img{
 
-    width:22px;
+.inputBox input:-webkit-autofill,
+.inputBox input:-webkit-autofill:hover,
+.inputBox input:-webkit-autofill:focus {
 
-    height:22px;
+    -webkit-text-fill-color: #ffffff;
 
+    box-shadow:
+        0 0 0 1000px #101015 inset;
+
+    transition:
+        background-color 9999s ease-in-out 0s;
 }
+
 
-.googleBtn:hover{
+/* ==========================================================
+   12. USERNAME
+========================================================== */
 
-    background:rgba(255,255,255,.14);
+.usernamePrefix {
 
-    transform:translateY(-2px);
+    width: 43px;
 
+    text-align: center;
+
+    color: #777f8c;
+
+    font-size: 17px;
+
+    font-weight: 700;
+}
+
+
+.usernamePrefix + input {
+
+    padding-left: 0;
 }
 
-/*=========================================
-Divider
-=========================================*/
 
-.divider{
+.inputStatus {
 
-    display:flex;
+    min-height: 15px;
 
-    align-items:center;
+    margin-top: 5px;
 
-    margin:24px 0 10px;
+    color: #718096;
 
+    font-size: 10px;
+
+    transition: color 0.2s ease;
 }
+
 
-.divider::before,
-.divider::after{
+/* ==========================================================
+   13. PASSWORD TOGGLE
+========================================================== */
 
-    content:"";
+.passwordToggle {
 
-    flex:1;
+    width: 45px;
+    height: 100%;
 
-    height:1px;
+    border: 0;
 
-    background:rgba(255,255,255,.15);
+    outline: 0;
 
+    background: transparent;
+
+    color: #707886;
+
+    cursor: pointer;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    transition: color 0.2s ease;
 }
+
 
-.divider span{
+.passwordToggle:hover {
 
-    margin:0 14px;
+    color: #ffffff;
+}
 
-    color:#9fb7ff;
 
-    font-size:.9rem;
+/* ==========================================================
+   14. PASSWORD STRENGTH
+========================================================== */
 
-    font-weight:600;
+.strengthArea {
 
+    margin-top: 8px;
 }
+
+
+.strengthBar {
 
-/*=========================================
-Login Box
-=========================================*/
+    width: 100%;
 
-.loginBox{
+    height: 4px;
 
-    margin-top:24px;
+    border-radius: 999px;
 
-    text-align:center;
+    background:
+        rgba(255,255,255,0.07);
 
+    overflow: hidden;
 }
 
-.loginBox p{
 
-    color:var(--text2);
+.strengthFill {
 
+    width: 0%;
+
+    height: 100%;
+
+    border-radius: inherit;
+
+    background: #ff4d4d;
+
+    transition:
+        width 0.35s ease,
+        background 0.35s ease;
 }
 
-.loginBox a{
 
-    color:var(--primary);
+#strengthText {
 
-    font-weight:700;
+    display: block;
 
-    text-decoration:none;
+    margin-top: 5px;
 
+    color: #7d8490;
+
+    font-size: 10px;
 }
+
 
-.loginBox a:hover{
+/* ==========================================================
+   15. TERMS
+========================================================== */
 
-    text-decoration:underline;
+.termsArea {
 
+    margin: 5px 0 18px;
 }
 
-/*=========================================
-Footer
-=========================================*/
 
-.footer{
+.checkLabel {
 
-    margin-top:30px;
+    display: flex;
 
-    text-align:center;
+    align-items: flex-start;
 
+    gap: 10px;
+
+    cursor: pointer;
+
+    user-select: none;
 }
+
 
-.footer p{
+.checkLabel input {
 
-    color:#7d8db6;
+    position: absolute;
 
-    font-size:.82rem;
+    opacity: 0;
 
+    pointer-events: none;
 }
-/*=========================================
-        VIEWORA V3 PREMIUM
-            signup.css
-            PART 4
- Loader • Toast • Verify Modal
-=========================================*/
 
-/*=========================================
-Page Loader
-=========================================*/
 
-#pageLoader{
+.customCheck {
 
-    position:fixed;
-    inset:0;
+    flex: 0 0 auto;
 
-    display:flex;
-    flex-direction:column;
-    justify-content:center;
-    align-items:center;
+    width: 18px;
+    height: 18px;
 
-    background:#050816;
+    margin-top: 1px;
 
-    z-index:99999;
+    display: flex;
 
-    transition:.5s;
+    align-items: center;
+    justify-content: center;
 
+    border-radius: 5px;
+
+    border:
+        1px solid rgba(255,255,255,0.18);
+
+    background:
+        rgba(255,255,255,0.035);
+
+    transition:
+        all 0.2s ease;
 }
+
 
-.loaderLogo img{
+.customCheck i {
 
-    width:90px;
-    height:90px;
+    font-size: 10px;
 
-    animation:logoPulse 1.8s infinite;
+    opacity: 0;
 
+    transform: scale(0.5);
+
+    transition: all 0.2s ease;
 }
+
 
-@keyframes logoPulse{
+.checkLabel input:checked + .customCheck {
 
-0%,100%{
+    border-color: transparent;
 
-transform:scale(1);
+    background:
+        linear-gradient(
+            135deg,
+            #008cff,
+            #8b5cf6
+        );
 
+    box-shadow:
+        0 5px 18px rgba(0,130,255,0.25);
 }
 
-50%{
 
-transform:scale(1.08);
+.checkLabel input:checked + .customCheck i {
 
+    opacity: 1;
+
+    transform: scale(1);
 }
+
+
+.termsText {
 
+    color: #818895;
+
+    font-size: 10.5px;
+
+    line-height: 1.55;
 }
+
+
+.termsText a {
 
-#pageLoader h1{
+    color: #63c9ff;
 
-    margin-top:20px;
+    text-decoration: none;
 
-    font-size:2rem;
+    font-weight: 600;
+}
 
-    font-weight:800;
 
-    color:#fff;
+.termsText a:hover {
 
+    text-decoration: underline;
 }
 
-#pageLoader p{
 
-    margin-top:8px;
+/* ==========================================================
+   16. SIGNUP BUTTON
+========================================================== */
 
-    color:#9fb7ff;
+.signupBtn {
 
-}
+    position: relative;
+
+    width: 100%;
+
+    height: 55px;
+
+    border: 0;
 
-.loaderBar{
+    border-radius: 15px;
 
-    width:220px;
+    color: #ffffff;
 
-    height:8px;
+    background:
+        linear-gradient(
+            110deg,
+            #006eff,
+            #704cff,
+            #d82cff
+        );
 
-    background:rgba(255,255,255,.08);
+    background-size: 200% 100%;
 
-    border-radius:100px;
+    font-family: inherit;
 
-    margin-top:25px;
+    font-size: 13px;
 
-    overflow:hidden;
+    font-weight: 700;
 
+    cursor: pointer;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    gap: 9px;
+
+    box-shadow:
+        0 12px 35px rgba(79,70,229,0.25);
+
+    transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease,
+        opacity 0.2s ease,
+        background-position 0.5s ease;
+
+    overflow: hidden;
 }
+
+
+.signupBtn:not(:disabled):hover {
 
-.loaderFill{
+    transform: translateY(-2px);
 
-    width:0;
+    background-position: 100% 0;
 
-    height:100%;
+    box-shadow:
+        0 17px 42px rgba(110,70,255,0.35);
+}
 
-    background:linear-gradient(
-    90deg,
-    #00AAFF,
-    #6A5CFF);
 
-    animation:loading 1.4s linear infinite;
+.signupBtn:not(:disabled):active {
 
+    transform: scale(0.98);
 }
+
 
-@keyframes loading{
+.signupBtn:disabled {
 
-0%{
+    opacity: 0.38;
 
-width:0;
+    cursor: not-allowed;
 
+    box-shadow: none;
 }
 
-100%{
 
-width:100%;
+.btnIcon {
 
+    font-size: 13px;
 }
+
+
+.btnArrow {
 
+    margin-left: 4px;
+
+    font-size: 11px;
+
+    transition: transform 0.2s ease;
 }
 
-/*=========================================
-Loading Overlay
-=========================================*/
 
-#loadingOverlay{
+.signupBtn:hover .btnArrow {
 
-position:fixed;
+    transform: translateX(4px);
+}
 
-inset:0;
 
-display:flex;
+/* ==========================================================
+   17. LOGIN LINK
+========================================================== */
 
-flex-direction:column;
+.loginLink {
 
-justify-content:center;
+    display: flex;
 
-align-items:center;
+    align-items: center;
+    justify-content: center;
 
-background:rgba(0,0,0,.55);
+    gap: 6px;
 
-backdrop-filter:blur(10px);
+    margin-top: 20px;
 
-z-index:9999;
+    font-size: 11px;
 
+    color: #737985;
 }
+
+
+.loginLink a {
 
-.premiumLoader{
+    color: #68cfff;
 
-position:relative;
+    text-decoration: none;
 
-width:80px;
+    font-weight: 700;
+}
+
 
-height:80px;
+.loginLink a:hover {
 
+    text-decoration: underline;
 }
+
+
+/* ==========================================================
+   18. SECURITY NOTE
+========================================================== */
 
-.loaderRing{
+.securityNote {
 
-position:absolute;
+    display: flex;
 
-inset:0;
+    align-items: center;
+    justify-content: center;
 
-border:4px solid transparent;
+    gap: 7px;
+
+    margin-top: 17px;
+
+    color: #555c68;
+
+    font-size: 9px;
+
+    text-align: center;
+}
 
-border-top-color:#00AAFF;
 
-border-radius:50%;
+.securityNote i {
 
-animation:spin 1s linear infinite;
+    color: #00b8ff;
 
+    font-size: 10px;
 }
 
-.delay1{
 
-animation-delay:.15s;
+/* ==========================================================
+   19. FOOTER
+========================================================== */
 
+.signupFooter {
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    gap: 8px;
+
+    margin-top: 20px;
+
+    color: #4f5560;
+
+    font-size: 9px;
+
+    letter-spacing: 0.3px;
+
+    animation: fadeUp 1s ease both;
 }
 
-.delay2{
 
-animation-delay:.3s;
+.footerDot {
 
+    color: #626a77;
 }
+
 
-@keyframes spin{
+/* ==========================================================
+   20. LOADING OVERLAY
+========================================================== */
 
-100%{
+.loadingOverlay {
 
-transform:rotate(360deg);
+    position: fixed;
 
+    inset: 0;
+
+    z-index: 1000;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    padding: 20px;
+
+    background:
+        rgba(0,0,0,0.78);
+
+    backdrop-filter: blur(18px);
+
+    -webkit-backdrop-filter: blur(18px);
 }
+
+
+.loadingOverlay.hidden {
 
+    display: none;
 }
 
-#loadingOverlay p{
 
-margin-top:20px;
+.loadingCard {
 
-color:#fff;
+    width: min(340px, 100%);
 
-font-weight:600;
+    padding: 34px 25px;
 
+    text-align: center;
+
+    border-radius: 24px;
+
+    background:
+        rgba(18,18,24,0.88);
+
+    border:
+        1px solid rgba(255,255,255,0.10);
+
+    box-shadow:
+        0 30px 80px rgba(0,0,0,0.65);
 }
 
-/*=========================================
-Toast
-=========================================*/
 
-#toast{
+.loadingLogo {
 
-position:fixed;
+    position: absolute;
 
-left:50%;
+    width: 46px;
+    height: 46px;
 
-bottom:35px;
+    object-fit: contain;
 
-transform:translateX(-50%) translateY(120px);
+    margin-left: -23px;
 
-background:rgba(20,20,30,.95);
+    margin-top: 23px;
 
-color:#fff;
+    opacity: 0.9;
+}
+
 
-padding:15px 22px;
+.loaderRing {
 
-border-radius:16px;
+    width: 72px;
+    height: 72px;
 
-display:flex;
+    margin: 0 auto 22px;
 
-align-items:center;
+    border-radius: 50%;
 
-gap:10px;
+    border:
+        3px solid rgba(255,255,255,0.08);
 
-box-shadow:0 12px 35px rgba(0,0,0,.4);
+    border-top-color: #168cff;
+
+    border-right-color: #c02cff;
+
+    animation:
+        spinLoader 0.9s linear infinite;
+}
 
-transition:.35s;
 
-z-index:99999;
+@keyframes spinLoader {
 
+    to {
+        transform: rotate(360deg);
+    }
 }
 
-#toast.show{
 
-transform:translateX(-50%) translateY(0);
+.loadingCard h3 {
 
+    font-size: 16px;
+
+    font-weight: 700;
+
+    margin-bottom: 6px;
 }
 
-#toast i{
 
-font-size:22px;
+.loadingCard p {
 
+    color: #737b88;
+
+    font-size: 11px;
 }
+
 
-/*=========================================
-Verify Modal
-=========================================*/
+/* ==========================================================
+   21. MODAL
+========================================================== */
 
-.modal{
+.modal {
 
-position:fixed;
+    position: fixed;
 
-inset:0;
+    inset: 0;
 
-display:flex;
+    z-index: 900;
 
-justify-content:center;
+    display: flex;
 
-align-items:center;
+    align-items: center;
+    justify-content: center;
 
-background:rgba(0,0,0,.6);
+    padding: 20px;
 
-backdrop-filter:blur(10px);
+}
+
 
-z-index:99999;
+.modal.hidden {
 
+    display: none;
 }
 
-.modalCard{
 
-width:90%;
+.modalOverlay {
 
-max-width:420px;
+    position: absolute;
 
-padding:35px;
+    inset: 0;
 
-border-radius:24px;
+    background:
+        rgba(0,0,0,0.78);
 
-text-align:center;
+    backdrop-filter: blur(14px);
 
+    -webkit-backdrop-filter: blur(14px);
 }
 
-.popupIcon{
 
-font-size:60px;
+.modalCard {
 
-color:#00AAFF;
+    position: relative;
 
-margin-bottom:18px;
+    width: min(400px, 100%);
 
-}
+    padding: 30px 25px;
+
+    border-radius: 24px;
+
+    text-align: center;
 
-.modalCard h2{
+    background:
+        linear-gradient(
+            145deg,
+            rgba(25,25,33,0.96),
+            rgba(10,10,14,0.96)
+        );
 
-margin-bottom:12px;
+    border:
+        1px solid rgba(255,255,255,0.10);
 
-font-size:1.8rem;
+    box-shadow:
+        0 30px 90px rgba(0,0,0,0.7);
 
+    animation:
+        modalEnter 0.35s ease both;
 }
 
-.modalCard p{
 
-color:#c8d2ff;
+@keyframes modalEnter {
 
-line-height:1.6;
+    from {
 
-margin-bottom:28px;
+        opacity: 0;
 
-}
+        transform:
+            translateY(15px)
+            scale(0.96);
+
+    }
 
-.modalButtons{
+    to {
 
-display:flex;
+        opacity: 1;
 
-gap:12px;
+        transform:
+            translateY(0)
+            scale(1);
 
+    }
 }
+
+
+.verifyIcon {
 
-.primaryBtn,
-.secondaryBtn{
+    width: 68px;
+    height: 68px;
 
-flex:1;
+    margin: 0 auto 17px;
 
-height:50px;
+    display: flex;
 
-border:none;
+    align-items: center;
+    justify-content: center;
 
-border-radius:14px;
+    border-radius: 20px;
 
-cursor:pointer;
+    color: #72d8ff;
 
-font-weight:700;
+    background:
+        rgba(0,170,255,0.10);
 
-transition:.25s;
+    border:
+        1px solid rgba(0,190,255,0.18);
 
+    box-shadow:
+        0 0 35px rgba(0,170,255,0.10);
 }
 
-.primaryBtn{
 
-background:#00AAFF;
+.verifyIcon i {
 
-color:#fff;
+    font-size: 27px;
+}
+
 
+.modalCard h2 {
+
+    font-size: 21px;
+
+    margin-bottom: 9px;
 }
+
 
-.secondaryBtn{
+.modalCard > p {
 
-background:rgba(255,255,255,.08);
+    color: #858c99;
 
-color:#fff;
+    font-size: 12px;
 
-border:1px solid rgba(255,255,255,.12);
+    line-height: 1.65;
 
+    margin-bottom: 22px;
 }
 
-.primaryBtn:hover,
-.secondaryBtn:hover{
 
-transform:translateY(-2px);
+.verifyActions {
 
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 9px;
 }
-/*=========================================
-        VIEWORA V3 PREMIUM
-            signup.css
-            PART 5 FINAL
- Ripple • Scrollbar • Animations
-=========================================*/
+
+
+.primaryModalBtn,
+.secondaryModalBtn {
 
-/*=========================================
-Ripple Effect
-=========================================*/
+    width: 100%;
 
-.signupBtn,
-.googleBtn{
+    min-height: 48px;
 
-position:relative;
+    border-radius: 13px;
 
-overflow:hidden;
+    font-family: inherit;
 
+    font-size: 12px;
+
+    font-weight: 700;
+
+    cursor: pointer;
+
+    transition:
+        transform 0.2s ease,
+        opacity 0.2s ease;
 }
+
+
+.primaryModalBtn {
 
-.ripple{
+    border: 0;
 
-position:absolute;
+    color: #ffffff;
 
-width:20px;
+    background:
+        linear-gradient(
+            110deg,
+            #0077ff,
+            #7c3cff
+        );
+}
+
 
-height:20px;
+.secondaryModalBtn {
 
-background:rgba(255,255,255,.45);
+    border:
+        1px solid rgba(255,255,255,0.10);
 
-border-radius:50%;
+    color: #dfe3ea;
 
-transform:translate(-50%,-50%) scale(0);
+    background:
+        rgba(255,255,255,0.04);
+}
 
-animation:ripple .6s linear;
 
-pointer-events:none;
+.primaryModalBtn:hover,
+.secondaryModalBtn:hover {
 
+    transform: translateY(-2px);
 }
+
 
-@keyframes ripple{
+.verifyHint {
 
-to{
+    display: flex;
 
-transform:translate(-50%,-50%) scale(18);
+    align-items: flex-start;
 
-opacity:0;
+    justify-content: center;
 
+    gap: 7px;
+
+    margin-top: 17px;
+
+    color: #5e6673;
+
+    font-size: 9px;
+
+    line-height: 1.5;
 }
+
 
+.verifyHint i {
+
+    color: #008cff;
+
+    margin-top: 1px;
 }
+
+
+/* ==========================================================
+   22. TOAST
+========================================================== */
+
+.toast {
+
+    position: fixed;
+
+    left: 50%;
+
+    bottom: 25px;
+
+    z-index: 1200;
 
-/*=========================================
-Hover Animation
-=========================================*/
+    transform:
+        translate(-50%, 25px);
 
-.signupCard{
+    min-width: 220px;
 
-transition:.35s;
+    max-width: calc(100% - 30px);
 
+    padding: 12px 15px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    gap: 9px;
+
+    border-radius: 13px;
+
+    background:
+        rgba(22,22,28,0.94);
+
+    border:
+        1px solid rgba(255,255,255,0.10);
+
+    box-shadow:
+        0 15px 45px rgba(0,0,0,0.45);
+
+    color: #ffffff;
+
+    font-size: 11px;
+
+    font-weight: 600;
+
+    opacity: 0;
+
+    pointer-events: none;
+
+    transition:
+        opacity 0.25s ease,
+        transform 0.25s ease;
+
+    backdrop-filter: blur(18px);
+
+    -webkit-backdrop-filter: blur(18px);
 }
+
+
+.toast.hidden {
 
-.signupCard:hover{
+    display: none;
+}
 
-transform:translateY(-6px);
 
-box-shadow:
+.toast.show {
 
-0 25px 70px rgba(0,170,255,.20);
+    opacity: 1;
 
+    transform:
+        translate(-50%, 0);
 }
+
 
-.logo{
+#toastIcon {
 
-transition:.35s;
+    color: #00d26a;
 
+    font-size: 15px;
 }
+
+
+/* ==========================================================
+   23. NETWORK BANNER
+========================================================== */
+
+.networkBanner {
+
+    position: fixed;
+
+    top: 15px;
+
+    left: 50%;
+
+    z-index: 1300;
+
+    transform: translateX(-50%);
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 8px;
+
+    padding: 10px 15px;
+
+    border-radius: 999px;
+
+    color: #ffffff;
+
+    background:
+        rgba(30,30,35,0.94);
+
+    border:
+        1px solid rgba(255,77,77,0.25);
 
-.logo:hover{
+    box-shadow:
+        0 10px 35px rgba(0,0,0,0.4);
 
-transform:rotate(-5deg) scale(1.08);
+    font-size: 10px;
 
+    font-weight: 600;
+
+    backdrop-filter: blur(15px);
 }
 
-/*=========================================
-Buttons Disabled
-=========================================*/
 
-button:disabled{
+.networkBanner.hidden {
 
-opacity:.6;
+    display: none;
+}
 
-cursor:not-allowed;
 
-filter:grayscale(.2);
+.networkBanner i {
 
+    color: #ff4d4d;
 }
+
+
+/* ==========================================================
+   24. RIPPLE
+========================================================== */
 
-/*=========================================
-Selection
-=========================================*/
+button {
 
-::selection{
+    -webkit-tap-highlight-color: transparent;
+}
+
 
-background:#00AAFF;
+button {
 
-color:#fff;
+    position: relative;
 
+    overflow: hidden;
 }
+
+
+.ripple {
+
+    position: absolute;
 
-/*=========================================
-Scrollbar
-=========================================*/
+    width: 8px;
+    height: 8px;
 
-::-webkit-scrollbar{
+    border-radius: 50%;
 
-width:8px;
+    pointer-events: none;
 
+    background:
+        rgba(255,255,255,0.30);
+
+    transform:
+        translate(-50%, -50%)
+        scale(0);
+
+    animation:
+        rippleEffect 0.6s ease-out;
 }
+
+
+@keyframes rippleEffect {
 
-::-webkit-scrollbar-track{
+    to {
 
-background:#050816;
+        transform:
+            translate(-50%, -50%)
+            scale(35);
 
+        opacity: 0;
+
+    }
 }
 
-::-webkit-scrollbar-thumb{
 
-background:#00AAFF;
+/* ==========================================================
+   25. PAGE ANIMATION
+========================================================== */
 
-border-radius:20px;
+.fadeIn {
 
+    animation:
+        pageFade 0.5s ease both;
 }
+
 
-::-webkit-scrollbar-thumb:hover{
+@keyframes pageFade {
 
-background:#0088ff;
+    from {
+        opacity: 0;
+    }
 
+    to {
+        opacity: 1;
+    }
 }
 
-/*=========================================
-Input Autofill
-=========================================*/
 
-input:-webkit-autofill{
+@keyframes fadeDown {
 
--webkit-box-shadow:
+    from {
 
-0 0 0 1000px
+        opacity: 0;
 
-rgba(255,255,255,.07)
+        transform:
+            translateY(-15px);
 
-inset;
+    }
 
--webkit-text-fill-color:#fff;
+    to {
 
-transition:background-color 9999s;
+        opacity: 1;
 
+        transform:
+            translateY(0);
+
+    }
 }
 
-/*=========================================
-Responsive
-=========================================*/
 
-@media(max-width:480px){
+@keyframes fadeUp {
 
-body{
+    from {
 
-padding:15px;
+        opacity: 0;
 
-}
+        transform:
+            translateY(10px);
+
+    }
 
-.signupCard{
+    to {
 
-padding:24px 18px;
+        opacity: 1;
 
+        transform:
+            translateY(0);
+
+    }
 }
 
-.logo{
 
-width:70px;
+/* ==========================================================
+   26. SCROLLBAR
+========================================================== */
 
-height:70px;
+::-webkit-scrollbar {
 
+    width: 5px;
 }
 
-.logoBox h1{
 
-font-size:1.6rem;
+::-webkit-scrollbar-track {
 
+    background: #050505;
 }
+
 
-.logoBox p{
+::-webkit-scrollbar-thumb {
 
-font-size:.9rem;
+    background:
+        rgba(255,255,255,0.15);
 
+    border-radius: 999px;
 }
 
-.modalButtons{
 
-flex-direction:column;
+::-webkit-scrollbar-thumb:hover {
 
+    background:
+        rgba(255,255,255,0.25);
 }
+
+
+/* ==========================================================
+   27. MOBILE
+========================================================== */
+
+@media (max-width: 520px) {
+
+    .signupPage {
+
+        justify-content: flex-start;
+
+        padding:
+            28px 14px
+            24px;
+    }
+
+
+    .brandArea {
+
+        margin-bottom: 17px;
+    }
+
+
+    .brandLogoWrap {
+
+        width: 62px;
+        height: 62px;
+
+        border-radius: 19px;
+    }
+
+
+    .brandLogo {
+
+        width: 45px;
+        height: 45px;
+    }
+
+
+    .brandArea h1 {
+
+        font-size: 25px;
+    }
+
+
+    .signupCard {
+
+        padding: 25px 18px;
+
+        border-radius: 21px;
+    }
+
+
+    .signupHeader {
+
+        margin-bottom: 21px;
+    }
+
+
+    .signupHeader h2 {
+
+        font-size: 22px;
+    }
+
+
+    .signupHeader p {
+
+        font-size: 11px;
+    }
+
+
+    .socialBtn {
 
-.primaryBtn,
-.secondaryBtn{
+        height: 48px;
+    }
 
-width:100%;
 
+    .inputBox {
+
+        height: 51px;
+    }
+
+
+    .signupBtn {
+
+        height: 53px;
+    }
+
+
+    .signupFooter {
+
+        margin-bottom: 10px;
+    }
+
 }
+
+
+/* ==========================================================
+   28. SMALL MOBILE
+========================================================== */
+
+@media (max-width: 360px) {
+
+    .signupPage {
+
+        padding-left: 10px;
+        padding-right: 10px;
+    }
+
+
+    .signupCard {
+
+        padding:
+            22px 14px;
+    }
+
+
+    .signupHeader h2 {
 
+        font-size: 20px;
+    }
+
+
+    .socialBtn.compact span {
+
+        font-size: 10px;
+    }
+
+
+    .termsText {
+
+        font-size: 9.5px;
+    }
+
 }
+
+
+/* ==========================================================
+   29. DESKTOP LARGE
+========================================================== */
 
-/*=========================================
-Finish
-=========================================*/
+@media (min-width: 900px) {
 
-html,
-body{
+    .signupPage {
 
-min-height:100%;
+        padding-top: 50px;
+        padding-bottom: 50px;
+    }
 
+
+    .signupCard {
+
+        max-width: 500px;
+
+        padding: 35px;
+    }
+
 }
+
+
+/* ==========================================================
+   30. REDUCED MOTION
+========================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+
+    *,
+    *::before,
+    *::after {
+
+        animation-duration: 0.01ms !important;
+
+        animation-iteration-count: 1 !important;
 
-body{
+        transition-duration: 0.01ms !important;
 
-animation:fadeIn .8s ease;
+        scroll-behavior: auto !important;
+    }
 
 }

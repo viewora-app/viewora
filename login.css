@@ -1,1463 +1,1553 @@
-/*=========================================
-        VIEWORA V3 PREMIUM
-            login.css
-            PART 1
- Global • Aurora • Background
-=========================================*/
+/* =========================================================
+   VIEWORA • PREMIUM LOGIN
+   Black + Colourful Glassmorphism
+   Works with login.html
+========================================================= */
 
-/*=========================================
-Reset
-=========================================*/
 
-*{
-margin:0;
-padding:0;
-box-sizing:border-box;
-font-family:"Inter",sans-serif;
+/* =========================================================
+   RESET
+========================================================= */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
 }
 
-html{
-scroll-behavior:smooth;
+:root {
+    --bg: #050509;
+    --bg-soft: #090b14;
+
+    --text: #ffffff;
+    --text-soft: #a7adbd;
+    --text-muted: #72798b;
+
+    --glass: rgba(255, 255, 255, 0.055);
+    --glass-strong: rgba(255, 255, 255, 0.085);
+    --glass-border: rgba(255, 255, 255, 0.12);
+
+    --purple: #8b5cf6;
+    --blue: #3b82f6;
+    --pink: #ec4899;
+    --cyan: #06b6d4;
+    --green: #22c55e;
+    --red: #ef4444;
+
+    --radius-xl: 28px;
+    --radius-lg: 18px;
+    --radius-md: 14px;
+
+    --shadow:
+        0 30px 80px rgba(0, 0, 0, 0.55);
+
+    --transition:
+        0.25s cubic-bezier(.2,.8,.2,1);
 }
 
-body{
-
-min-height:100vh;
-
-background:#050816;
-
-color:#ffffff;
-
-overflow-x:hidden;
-
-display:flex;
-
-justify-content:center;
-
-align-items:center;
-
-position:relative;
-
-padding:25px;
-
+html {
+    min-height: 100%;
+    background: var(--bg);
 }
 
-/*=========================================
-Aurora Background
-=========================================*/
+body {
+    min-height: 100vh;
+    min-height: 100dvh;
 
-.aurora{
+    font-family: "Inter", sans-serif;
 
-position:fixed;
+    color: var(--text);
 
-inset:0;
+    background:
+        radial-gradient(
+            circle at 50% -20%,
+            rgba(139, 92, 246, 0.12),
+            transparent 40%
+        ),
+        #050509;
 
-overflow:hidden;
-
-z-index:-3;
-
+    overflow-x: hidden;
 }
 
-.light{
 
-position:absolute;
+/* =========================================================
+   BUTTON / INPUT
+========================================================= */
 
-width:420px;
-
-height:420px;
-
-border-radius:50%;
-
-filter:blur(120px);
-
-opacity:.55;
-
-animation:float 16s linear infinite;
-
+button,
+input {
+    font: inherit;
 }
 
-.light1{
-
-background:#00AAFF;
-
-top:-80px;
-
-left:-80px;
-
+button {
+    border: 0;
+    outline: 0;
+    cursor: pointer;
 }
 
-.light2{
-
-background:#8A2BE2;
-
-right:-120px;
-
-top:35%;
-
-animation-delay:5s;
-
+input {
+    outline: none;
 }
 
-.light3{
-
-background:#00E5A8;
-
-bottom:-100px;
-
-left:30%;
-
-animation-delay:9s;
-
+a {
+    color: inherit;
+    text-decoration: none;
 }
 
-@keyframes float{
 
-0%{
+/* =========================================================
+   BACKGROUND
+========================================================= */
 
-transform:translate(0,0) scale(1);
+.loginBackground {
+    position: fixed;
+    inset: 0;
 
+    z-index: -10;
+
+    overflow: hidden;
+
+    background:
+        linear-gradient(
+            135deg,
+            #040408 0%,
+            #070914 45%,
+            #040408 100%
+        );
 }
 
-50%{
 
-transform:translate(80px,-60px) scale(1.15);
+/* Colourful glow */
 
+.bgGlow {
+    position: absolute;
+
+    width: 420px;
+    height: 420px;
+
+    border-radius: 50%;
+
+    filter: blur(100px);
+
+    opacity: 0.28;
+
+    pointer-events: none;
 }
 
-100%{
+.glowOne {
+    top: -180px;
+    left: -120px;
 
-transform:translate(0,0) scale(1);
-
+    background: #7c3aed;
 }
 
+.glowTwo {
+    top: 35%;
+    right: -180px;
+
+    background: #06b6d4;
 }
 
-/*=========================================
-Particles Canvas
-=========================================*/
+.glowThree {
+    bottom: -200px;
+    left: 25%;
 
-#particles{
-
-position:fixed;
-
-inset:0;
-
-width:100%;
-
-height:100%;
-
-z-index:-2;
-
-pointer-events:none;
-
+    background: #ec4899;
 }
 
-/*=========================================
-Glass Effect
-=========================================*/
 
-.glass{
+/* Grid */
 
-background:rgba(255,255,255,.08);
+.gridOverlay {
+    position: absolute;
+    inset: 0;
 
-backdrop-filter:blur(22px);
+    opacity: 0.16;
 
--webkit-backdrop-filter:blur(22px);
+    background-image:
+        linear-gradient(
+            rgba(255,255,255,0.035) 1px,
+            transparent 1px
+        ),
+        linear-gradient(
+            90deg,
+            rgba(255,255,255,0.035) 1px,
+            transparent 1px
+        );
 
-border:1px solid rgba(255,255,255,.12);
+    background-size: 45px 45px;
 
-box-shadow:
-
-0 8px 40px rgba(0,0,0,.35);
-
+    mask-image:
+        linear-gradient(
+            to bottom,
+            black,
+            transparent 85%
+        );
 }
 
-/*=========================================
-Animations
-=========================================*/
 
-.hidden{
+/* =========================================================
+   MAIN
+========================================================= */
 
-display:none !important;
+.loginPage {
+    min-height: 100vh;
+    min-height: 100dvh;
 
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 40px 20px;
 }
 
-.fadeIn{
-    animation:fadeIn .4s ease;
+
+/* =========================================================
+   LOGIN CARD
+========================================================= */
+
+.loginCard {
+    position: relative;
+
+    width: min(100%, 470px);
+
+    padding: 38px 34px 30px;
+
+    border: 1px solid var(--glass-border);
+
+    border-radius: var(--radius-xl);
+
+    background:
+        linear-gradient(
+            145deg,
+            rgba(255,255,255,0.095),
+            rgba(255,255,255,0.035)
+        );
+
+    backdrop-filter: blur(28px);
+    -webkit-backdrop-filter: blur(28px);
+
+    box-shadow:
+        var(--shadow),
+        inset 0 1px 0 rgba(255,255,255,0.08);
+
+    overflow: hidden;
+
+    animation:
+        cardEnter 0.7s ease both;
 }
 
-@keyframes fadeIn{
-    from{
-        opacity:0;
+
+/* Top colourful shine */
+
+.loginCard::before {
+    content: "";
+
+    position: absolute;
+
+    top: 0;
+    left: 12%;
+
+    width: 76%;
+    height: 1px;
+
+    background:
+        linear-gradient(
+            90deg,
+            transparent,
+            rgba(139,92,246,.9),
+            rgba(6,182,212,.9),
+            rgba(236,72,153,.9),
+            transparent
+        );
+
+    box-shadow:
+        0 0 25px rgba(139,92,246,.5);
+}
+
+
+/* Decorative glow */
+
+.loginCard::after {
+    content: "";
+
+    position: absolute;
+
+    width: 180px;
+    height: 180px;
+
+    top: -120px;
+    right: -80px;
+
+    border-radius: 50%;
+
+    background: rgba(139,92,246,.12);
+
+    filter: blur(40px);
+
+    pointer-events: none;
+}
+
+
+@keyframes cardEnter {
+
+    from {
+        opacity: 0;
+        transform:
+            translateY(25px)
+            scale(.97);
     }
-    to{
-        opacity:1;
+
+    to {
+        opacity: 1;
+        transform:
+            translateY(0)
+            scale(1);
     }
 }
 
-/*=========================================
-Selection
-=========================================*/
 
-::selection{
+/* =========================================================
+   BRAND
+========================================================= */
 
-background:#00AAFF;
+.brand {
+    display: flex;
+    align-items: center;
 
-color:#fff;
+    gap: 12px;
 
+    margin-bottom: 34px;
 }
-/*=========================================
-        VIEWORA V3 PREMIUM
-            login.css
-            PART 2
- Login Card • Logo • Inputs • Buttons
-=========================================*/
 
-/*=========================================
-Login Wrapper
-=========================================*/
+.brandLogo {
+    width: 48px;
+    height: 48px;
 
-.loginWrapper{
-    width:100%;
-    max-width:430px;
-    margin:auto;
-    display:flex;
-    justify-content:center;
-    align-items:center;
-}
-
-/*=========================================
-Login Card
-=========================================*/
-
-.loginCard{
-
-width:100%;
-
-max-width:430px;
-
-padding:35px 28px;
+    display: grid;
+    place-items: center;
 
-border-radius:24px;
+    border-radius: 15px;
 
-position:relative;
+    background:
+        linear-gradient(
+            135deg,
+            rgba(139,92,246,.25),
+            rgba(6,182,212,.15)
+        );
 
-overflow:hidden;
+    border: 1px solid rgba(255,255,255,.12);
 
-animation:fadeIn .4s ease;
-
+    box-shadow:
+        0 8px 25px rgba(0,0,0,.3);
 }
 
-.loginCard::before{
+.brandLogo img {
+    width: 34px;
+    height: 34px;
 
-content:"";
+    object-fit: contain;
+}
 
-position:absolute;
+.brandText h1 {
+    font-size: 21px;
+    font-weight: 800;
 
-top:0;
+    letter-spacing: -0.7px;
+}
 
-left:0;
+.brandText span {
+    display: block;
 
-width:100%;
+    margin-top: 2px;
 
-height:4px;
+    color: var(--text-muted);
 
-background:linear-gradient(
-90deg,
-#00AAFF,
-#8A2BE2,
-#00E5A8
-);
+    font-size: 10px;
+    font-weight: 600;
 
+    letter-spacing: .6px;
+    text-transform: uppercase;
 }
 
-/*=========================================
-Logo
-=========================================*/
 
-.logoBox{
+/* =========================================================
+   WELCOME
+========================================================= */
 
-text-align:center;
-
-margin-bottom:30px;
-
+.welcome {
+    margin-bottom: 25px;
 }
-
-.logo{
-
-width:90px;
 
-height:90px;
+.premiumBadge {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
 
-border-radius:20px;
+    padding: 7px 11px;
 
-object-fit:cover;
+    border-radius: 999px;
 
-box-shadow:
-0 10px 35px rgba(0,170,255,.35);
+    color: #ddd6fe;
 
-margin-bottom:18px;
+    background:
+        rgba(139,92,246,.11);
 
-transition:.3s;
+    border: 1px solid rgba(139,92,246,.22);
 
+    font-size: 11px;
+    font-weight: 700;
 }
 
-.logo:hover{
-
-transform:scale(1.08) rotate(5deg);
-
+.premiumBadge i {
+    color: #a78bfa;
 }
-
-.logoBox h1{
 
-font-size:30px;
+.welcome h2 {
+    margin-top: 15px;
 
-font-weight:800;
+    font-size: clamp(29px, 7vw, 38px);
 
-margin-bottom:8px;
+    line-height: 1.08;
 
+    letter-spacing: -1.5px;
 }
 
-.logoBox p{
+.welcome h2 span {
+    background:
+        linear-gradient(
+            90deg,
+            #a78bfa,
+            #38bdf8,
+            #f472b6
+        );
 
-color:#b8c2d8;
+    -webkit-background-clip: text;
+    background-clip: text;
 
-font-size:15px;
-
-line-height:1.6;
-
+    color: transparent;
 }
 
-/*=========================================
-Input Group
-=========================================*/
+.welcome p {
+    margin-top: 11px;
 
-.inputGroup{
+    max-width: 380px;
 
-margin-bottom:22px;
+    color: var(--text-soft);
 
+    font-size: 13px;
+    line-height: 1.6;
 }
-
-.inputGroup label{
 
-display:block;
 
-margin-bottom:8px;
+/* =========================================================
+   SOCIAL LOGIN
+========================================================= */
 
-font-size:14px;
+.socialLogin {
+    display: grid;
 
-font-weight:600;
-
-color:#d8e3ff;
-
+    gap: 10px;
 }
 
-.inputBox{
 
-display:flex;
+/* Base social button */
 
-align-items:center;
+.socialBtn {
+    position: relative;
 
-background:rgba(255,255,255,.06);
+    width: 100%;
+    min-height: 52px;
 
-border:1px solid rgba(255,255,255,.12);
+    display: flex;
+    align-items: center;
+    justify-content: center;
 
-border-radius:14px;
+    gap: 12px;
 
-padding:0 16px;
+    padding: 0 18px;
 
-transition:.3s;
+    border-radius: var(--radius-md);
 
-}
+    color: #fff;
 
-.inputBox:focus-within{
+    background:
+        rgba(255,255,255,.055);
 
-border-color:#00AAFF;
+    border: 1px solid rgba(255,255,255,.10);
 
-box-shadow:
-0 0 0 4px rgba(0,170,255,.15);
+    transition:
+        transform var(--transition),
+        background var(--transition),
+        border-color var(--transition),
+        box-shadow var(--transition);
 
+    overflow: hidden;
 }
 
-.inputBox i{
+.socialBtn::before {
+    content: "";
 
-color:#9fb7ff;
+    position: absolute;
+    inset: 0;
 
-font-size:18px;
+    background:
+        linear-gradient(
+            100deg,
+            transparent 20%,
+            rgba(255,255,255,.08),
+            transparent 80%
+        );
 
-margin-right:12px;
+    transform: translateX(-100%);
 
+    transition: transform .6s ease;
 }
-
-.inputBox input{
-
-flex:1;
-
-height:56px;
-
-border:none;
 
-outline:none;
+.socialBtn:hover::before {
+    transform: translateX(100%);
+}
 
-background:transparent;
+.socialBtn:hover {
+    transform: translateY(-2px);
 
-color:#fff;
+    background:
+        rgba(255,255,255,.085);
 
-font-size:15px;
+    border-color:
+        rgba(255,255,255,.18);
 
+    box-shadow:
+        0 10px 30px rgba(0,0,0,.25);
 }
-
-.inputBox input::placeholder{
-
-color:#8f9db7;
 
+.socialBtn:active {
+    transform: scale(.98);
 }
-
-/*=========================================
-Password Toggle
-=========================================*/
-
-.toggleBtn{
-
-background:none;
 
-border:none;
+.socialIcon {
+    width: 25px;
+    height: 25px;
 
-color:#9fb7ff;
+    display: grid;
+    place-items: center;
 
-font-size:18px;
-
-cursor:pointer;
+    font-size: 17px;
+}
 
-padding:8px;
 
-transition:.25s;
+/* Google */
 
+.googleBtn .socialIcon {
+    color: #fff;
 }
-
-.toggleBtn:hover{
 
-color:#00AAFF;
 
-transform:scale(1.1);
+/* Facebook */
 
+.facebookBtn .socialIcon {
+    color: #60a5fa;
 }
 
-/*=========================================
-Buttons
-=========================================*/
 
-.loginBtn,
-.googleBtn{
+/* X */
 
-width:100%;
-
-height:56px;
+.xBtn .socialIcon {
+    color: #fff;
+}
 
-border:none;
 
-border-radius:14px;
+/* =========================================================
+   DIVIDER
+========================================================= */
 
-font-size:16px;
+.divider {
+    display: flex;
+    align-items: center;
 
-font-weight:700;
+    gap: 12px;
 
-cursor:pointer;
+    margin: 24px 0;
+}
 
-display:flex;
+.divider span {
+    flex: 1;
 
-align-items:center;
+    height: 1px;
 
-justify-content:center;
+    background:
+        rgba(255,255,255,.10);
+}
 
-gap:10px;
+.divider p {
+    flex-shrink: 0;
 
-transition:.3s;
+    color: var(--text-muted);
 
-margin-top:16px;
+    font-size: 10px;
+    font-weight: 600;
 
+    text-transform: uppercase;
+    letter-spacing: .7px;
 }
 
-.loginBtn{
 
-background:linear-gradient(
-135deg,
-#00AAFF,
-#0066FF
-);
+/* =========================================================
+   FORM
+========================================================= */
 
-color:#fff;
+.loginForm {
+    display: flex;
+    flex-direction: column;
 
-box-shadow:
-0 12px 30px rgba(0,170,255,.30);
+    gap: 17px;
+}
 
+.inputGroup {
+    width: 100%;
 }
 
-.loginBtn:hover{
+.inputGroup label {
+    display: block;
 
-transform:translateY(-2px);
+    margin-bottom: 8px;
 
-box-shadow:
-0 18px 40px rgba(0,170,255,.40);
+    color: #d7dbe5;
 
+    font-size: 12px;
+    font-weight: 600;
 }
-
-.googleBtn{
-
-background:rgba(255,255,255,.08);
 
-border:1px solid rgba(255,255,255,.12);
+.labelRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
 
-color:#fff;
-
+    gap: 10px;
 }
 
-.googleBtn:hover{
+.forgotBtn {
+    color: #a78bfa;
 
-background:rgba(255,255,255,.14);
+    background: transparent;
 
-transform:translateY(-2px);
+    font-size: 11px;
+    font-weight: 600;
 
+    transition: color .2s ease;
 }
 
-.googleBtn img{
-
-width:22px;
+.forgotBtn:hover {
+    color: #c4b5fd;
+}
 
-height:22px;
 
-border-radius:50%;
+/* =========================================================
+   INPUT
+========================================================= */
 
-object-fit:contain;
+.inputWrapper {
+    position: relative;
 
+    width: 100%;
 }
-/*=========================================
-        VIEWORA V3 PREMIUM
-            login.css
-            PART 3
- Remember • Divider • Footer
- Responsive
-=========================================*/
 
-/*=========================================
-Login Options
-=========================================*/
+.inputWrapper > i {
+    position: absolute;
 
-.loginOptions{
+    left: 16px;
+    top: 50%;
 
-display:flex;
+    transform: translateY(-50%);
 
-justify-content:space-between;
+    color: #777f92;
 
-align-items:center;
+    font-size: 14px;
 
-margin:18px 0 24px;
+    pointer-events: none;
 
-gap:12px;
-
-flex-wrap:wrap;
-
+    transition: color .2s ease;
 }
-
-.rememberBox{
 
-display:flex;
+.inputWrapper input {
+    width: 100%;
+    height: 52px;
 
-align-items:center;
+    padding:
+        0 48px
+        0 43px;
 
-gap:8px;
+    color: #fff;
 
-cursor:pointer;
+    background:
+        rgba(0,0,0,.22);
 
-font-size:14px;
+    border:
+        1px solid rgba(255,255,255,.10);
 
-color:#d8e3ff;
+    border-radius: var(--radius-md);
 
-user-select:none;
+    font-size: 13px;
 
+    transition:
+        border-color .25s ease,
+        background .25s ease,
+        box-shadow .25s ease;
 }
-
-.rememberBox input{
-
-width:18px;
-
-height:18px;
-
-accent-color:#00AAFF;
 
-cursor:pointer;
-
+.inputWrapper input::placeholder {
+    color: #626a7b;
 }
-
-#forgotPassword{
-
-color:#00AAFF;
 
-text-decoration:none;
+.inputWrapper input:focus {
+    background:
+        rgba(0,0,0,.32);
 
-font-size:14px;
+    border-color:
+        rgba(139,92,246,.65);
 
-font-weight:600;
-
-transition:.3s;
-
+    box-shadow:
+        0 0 0 4px rgba(139,92,246,.09);
 }
-
-#forgotPassword:hover{
 
-color:#66cfff;
-
-text-decoration:underline;
-
+.inputWrapper:focus-within > i {
+    color: #a78bfa;
 }
-
-/*=========================================
-Divider
-=========================================*/
-
-.divider{
-
-display:flex;
-
-align-items:center;
-
-justify-content:center;
 
-margin:28px 0;
 
-color:#9fb7ff;
+/* Password toggle */
 
-font-size:14px;
+.passwordToggle {
+    position: absolute;
 
-font-weight:600;
+    right: 10px;
+    top: 50%;
 
-}
-
-.divider::before,
-.divider::after{
-
-content:"";
+    width: 34px;
+    height: 34px;
 
-flex:1;
+    transform: translateY(-50%);
 
-height:1px;
+    display: grid;
+    place-items: center;
 
-background:rgba(255,255,255,.12);
+    border-radius: 10px;
 
-}
+    color: #737b8d;
 
-.divider span{
+    background: transparent;
 
-padding:0 18px;
-
+    transition:
+        color .2s ease,
+        background .2s ease;
 }
-
-/*=========================================
-Signup Box
-=========================================*/
 
-.signupBox{
+.passwordToggle:hover {
+    color: #fff;
 
-margin-top:28px;
-
-text-align:center;
-
+    background:
+        rgba(255,255,255,.07);
 }
-
-.signupBox p{
 
-font-size:15px;
 
-color:#c8d2e8;
+/* =========================================================
+   REMEMBER ME
+========================================================= */
 
+.formOptions {
+    margin-top: -3px;
 }
 
-.signupBox a{
+.rememberOption {
+    position: relative;
 
-color:#00AAFF;
+    display: inline-flex;
+    align-items: center;
 
-font-weight:700;
+    gap: 9px;
 
-text-decoration:none;
+    color: #9299aa;
 
-transition:.3s;
+    font-size: 11px;
 
+    cursor: pointer;
 }
 
-.signupBox a:hover{
+.rememberOption input {
+    position: absolute;
 
-color:#66cfff;
+    opacity: 0;
 
-text-decoration:underline;
-
+    pointer-events: none;
 }
-
-/*=========================================
-Footer
-=========================================*/
 
-.footer{
+.customCheck {
+    width: 17px;
+    height: 17px;
 
-margin-top:30px;
+    display: grid;
+    place-items: center;
 
-padding-top:18px;
+    border-radius: 5px;
 
-border-top:1px solid rgba(255,255,255,.08);
+    border:
+        1px solid rgba(255,255,255,.16);
 
-text-align:center;
+    background:
+        rgba(255,255,255,.035);
 
+    transition:
+        .2s ease;
 }
-
-.footer p{
-
-font-size:13px;
 
-color:#8f9db7;
+.rememberOption input:checked + .customCheck {
+    background:
+        linear-gradient(
+            135deg,
+            #7c3aed,
+            #06b6d4
+        );
 
-line-height:1.8;
+    border-color: transparent;
 
+    box-shadow:
+        0 0 15px rgba(124,58,237,.25);
 }
 
-/*=========================================
-Responsive
-=========================================*/
+.rememberOption input:checked + .customCheck::after {
+    content: "\f00c";
 
-@media (max-width:768px){
+    font-family:
+        "Font Awesome 6 Free";
 
-.loginCard{
+    font-weight: 900;
 
-padding:28px 20px;
+    color: #fff;
 
-border-radius:20px;
-
+    font-size: 9px;
 }
-
-.logo{
-
-width:75px;
 
-height:75px;
 
-}
+/* =========================================================
+   LOGIN BUTTON
+========================================================= */
 
-.logoBox h1{
+.loginBtn {
+    position: relative;
 
-font-size:26px;
+    width: 100%;
+    height: 55px;
 
-}
+    display: flex;
+    align-items: center;
+    justify-content: center;
 
-.loginBtn,
-.googleBtn{
+    gap: 11px;
 
-height:52px;
+    margin-top: 3px;
 
-font-size:15px;
+    border-radius: 15px;
 
-}
+    color: #fff;
 
-}
+    background:
+        linear-gradient(
+            110deg,
+            #7c3aed 0%,
+            #6366f1 45%,
+            #0891b2 100%
+        );
 
-@media (max-width:480px){
+    box-shadow:
+        0 12px 30px rgba(99,102,241,.24);
 
-body{
+    font-size: 13px;
+    font-weight: 700;
 
-padding:14px;
+    overflow: hidden;
 
+    transition:
+        transform .25s ease,
+        box-shadow .25s ease,
+        filter .25s ease;
 }
 
-.loginCard{
+.loginBtn::before {
+    content: "";
 
-padding:22px 16px;
-
-}
+    position: absolute;
 
-.logo{
+    inset: 0;
 
-width:68px;
+    background:
+        linear-gradient(
+            110deg,
+            transparent 20%,
+            rgba(255,255,255,.25),
+            transparent 75%
+        );
 
-height:68px;
+    transform: translateX(-100%);
 
+    transition: transform .65s ease;
 }
 
-.logoBox h1{
-
-font-size:22px;
-
+.loginBtn:hover::before {
+    transform: translateX(100%);
 }
 
-.logoBox p{
+.loginBtn:hover {
+    transform: translateY(-2px);
 
-font-size:13px;
+    box-shadow:
+        0 16px 38px rgba(99,102,241,.32);
 
+    filter: brightness(1.06);
 }
-
-.inputBox input{
-
-font-size:14px;
 
+.loginBtn:active {
+    transform: scale(.98);
 }
 
-.loginOptions{
+.loginBtnIcon {
+    width: 28px;
+    height: 28px;
 
-flex-direction:column;
+    display: grid;
+    place-items: center;
 
-align-items:flex-start;
+    border-radius: 9px;
 
+    background:
+        rgba(255,255,255,.12);
 }
 
-#forgotPassword{
+.loginBtn > i {
+    margin-left: 3px;
 
-margin-top:6px;
-
-}
-
-.footer p{
-
-font-size:12px;
-
-}
-
+    opacity: .8;
 }
-/*=========================================
-        VIEWORA V3 PREMIUM
-            login.css
-            PART 4
- Loader • Toast • Modal • Network
-=========================================*/
 
-/*=========================================
-Loading Overlay
-=========================================*/
 
-#loadingOverlay{
+/* Disabled */
 
-position:fixed;
+.loginBtn:disabled,
+.socialBtn:disabled {
+    opacity: .55;
 
-inset:0;
+    cursor: not-allowed;
 
-display:flex;
-
-flex-direction:column;
+    transform: none;
+}
 
-justify-content:center;
 
-align-items:center;
+/* =========================================================
+   SIGN UP
+========================================================= */
 
-background:rgba(5,8,22,.75);
+.signupText {
+    display: flex;
+    justify-content: center;
+    align-items: center;
 
-backdrop-filter:blur(12px);
+    gap: 6px;
 
--webkit-backdrop-filter:blur(12px);
+    margin-top: 25px;
 
-z-index:99999;
+    color: #777f90;
 
+    font-size: 11px;
 }
 
-.premiumLoader{
+.signupText a {
+    color: #a78bfa;
 
-position:relative;
+    font-weight: 700;
 
-width:80px;
-
-height:80px;
-
+    transition: color .2s ease;
 }
 
-.loaderRing{
+.signupText a:hover {
+    color: #c4b5fd;
+}
 
-position:absolute;
 
-inset:0;
+/* =========================================================
+   TERMS
+========================================================= */
 
-border:4px solid transparent;
+.terms {
+    margin: 19px auto 0;
 
-border-top:4px solid #00AAFF;
+    max-width: 350px;
 
-border-radius:50%;
+    text-align: center;
 
-animation:spin 1s linear infinite;
+    color: #5f6677;
 
+    font-size: 9px;
+    line-height: 1.65;
 }
 
-.delay1{
+.terms a {
+    color: #888fa0;
 
-animation-delay:.15s;
+    text-decoration: underline;
 
+    text-underline-offset: 2px;
 }
-
-.delay2{
 
-animation-delay:.3s;
-
+.terms a:hover {
+    color: #b4bac8;
 }
-
-@keyframes spin{
-
-100%{
 
-transform:rotate(360deg);
 
-}
+/* =========================================================
+   LOADING OVERLAY
+========================================================= */
 
-}
+.loadingOverlay {
+    position: fixed;
 
-#loadingOverlay p{
+    inset: 0;
 
-margin-top:20px;
+    z-index: 9999;
 
-font-size:16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 
-font-weight:600;
+    padding: 20px;
 
-color:#ffffff;
+    background:
+        rgba(2,2,7,.76);
 
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
 }
-
-/*=========================================
-Toast
-=========================================*/
-
-#toast{
-
-position:fixed;
-
-left:50%;
-
-bottom:30px;
-
-transform:translateX(-50%) translateY(120px);
-
-min-width:280px;
-
-max-width:90%;
 
-padding:16px 22px;
-
-display:flex;
-
-align-items:center;
-
-gap:12px;
-
-background:rgba(20,20,30,.95);
-
-border:1px solid rgba(255,255,255,.08);
-
-border-radius:16px;
-
-box-shadow:0 15px 40px rgba(0,0,0,.45);
-
-transition:.35s;
-
-z-index:999999;
-
+.loadingOverlay.hidden {
+    display: none;
 }
 
-#toast.show{
+.loadingCard {
+    width: min(100%, 270px);
 
-transform:translateX(-50%) translateY(0);
+    padding: 30px 24px;
 
-}
+    text-align: center;
 
-#toast i{
+    border-radius: 23px;
 
-font-size:22px;
+    background:
+        rgba(255,255,255,.07);
 
-color:#00d26a;
+    border:
+        1px solid rgba(255,255,255,.12);
 
+    box-shadow:
+        0 25px 70px rgba(0,0,0,.55);
 }
 
-#toast span{
+.loadingLogo {
+    width: 58px;
+    height: 58px;
 
-color:#fff;
+    margin: 0 auto 18px;
 
-font-size:15px;
+    display: grid;
+    place-items: center;
 
-font-weight:600;
+    border-radius: 18px;
 
+    background:
+        linear-gradient(
+            135deg,
+            rgba(139,92,246,.22),
+            rgba(6,182,212,.18)
+        );
 }
-
-/*=========================================
-Modal
-=========================================*/
-
-.modal{
 
-position:fixed;
+.loadingLogo img {
+    width: 40px;
+    height: 40px;
 
-inset:0;
-
-display:flex;
-
-justify-content:center;
-
-align-items:center;
-
-background:rgba(0,0,0,.65);
-
-backdrop-filter:blur(10px);
-
-z-index:99999;
-
+    object-fit: contain;
 }
 
-.modalCard{
+.loader {
+    width: 25px;
+    height: 25px;
 
-width:92%;
+    margin: 0 auto 17px;
 
-max-width:420px;
+    border-radius: 50%;
 
-padding:30px;
+    border:
+        2px solid rgba(255,255,255,.12);
 
-border-radius:24px;
+    border-top-color: #a78bfa;
+    border-right-color: #38bdf8;
 
-text-align:center;
-
+    animation:
+        spin .8s linear infinite;
 }
-
-.popupIcon{
 
-font-size:58px;
-
-color:#00AAFF;
-
-margin-bottom:18px;
-
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
 }
-
-.modalCard h2{
 
-font-size:26px;
-
-margin-bottom:12px;
-
+.loadingCard h3 {
+    font-size: 14px;
 }
-
-.modalCard p{
 
-font-size:15px;
+.loadingCard p {
+    margin-top: 6px;
 
-color:#c9d5ef;
+    color: #777f90;
 
-line-height:1.7;
-
-margin-bottom:22px;
-
+    font-size: 11px;
 }
-
-.modalInput{
 
-width:100%;
 
-height:54px;
+/* =========================================================
+   MODALS
+========================================================= */
 
-padding:0 16px;
+.modal {
+    position: fixed;
 
-background:rgba(255,255,255,.08);
+    inset: 0;
 
-border:1px solid rgba(255,255,255,.12);
+    z-index: 5000;
 
-border-radius:14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 
-outline:none;
-
-color:#fff;
-
-font-size:15px;
-
-margin-bottom:22px;
-
+    padding: 20px;
 }
-
-.modalInput:focus{
-
-border-color:#00AAFF;
-
-box-shadow:0 0 0 4px rgba(0,170,255,.15);
 
+.modal.hidden {
+    display: none;
 }
 
-.modalButtons{
+.modalOverlay {
+    position: absolute;
 
-display:flex;
+    inset: 0;
 
-gap:12px;
+    background:
+        rgba(0,0,0,.72);
 
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
 }
 
-.primaryBtn,
-.secondaryBtn{
+.modalCard {
+    position: relative;
+    z-index: 1;
 
-flex:1;
+    width: min(100%, 400px);
 
-height:50px;
+    padding: 32px 25px 25px;
 
-border:none;
+    border-radius: 24px;
 
-border-radius:14px;
+    background:
+        linear-gradient(
+            145deg,
+            rgba(24,25,38,.96),
+            rgba(10,11,18,.97)
+        );
 
-font-size:15px;
+    border:
+        1px solid rgba(255,255,255,.12);
 
-font-weight:700;
+    box-shadow:
+        0 30px 90px rgba(0,0,0,.65);
 
-cursor:pointer;
-
-transition:.3s;
-
+    animation:
+        modalEnter .25s ease both;
 }
-
-.primaryBtn{
 
-background:linear-gradient(
-135deg,
-#00AAFF,
-#0066FF
-);
+@keyframes modalEnter {
 
-color:#fff;
+    from {
+        opacity: 0;
+        transform: scale(.94) translateY(10px);
+    }
 
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
 }
 
-.primaryBtn:hover{
+.modalClose {
+    position: absolute;
 
-transform:translateY(-2px);
+    top: 13px;
+    right: 13px;
 
-}
+    width: 34px;
+    height: 34px;
 
-.secondaryBtn{
+    display: grid;
+    place-items: center;
 
-background:rgba(255,255,255,.08);
+    border-radius: 10px;
 
-border:1px solid rgba(255,255,255,.12);
+    color: #8d95a6;
 
-color:#fff;
+    background:
+        rgba(255,255,255,.055);
 
+    transition: .2s ease;
 }
 
-.secondaryBtn:hover{
+.modalClose:hover {
+    color: #fff;
 
-background:rgba(255,255,255,.14);
-
+    background:
+        rgba(255,255,255,.10);
 }
 
-/*=========================================
-Network Banner
-=========================================*/
+.modalIcon {
+    width: 55px;
+    height: 55px;
 
-#networkBanner{
+    display: grid;
+    place-items: center;
 
-position:fixed;
+    margin-bottom: 17px;
 
-top:20px;
+    border-radius: 17px;
 
-left:50%;
+    color: #c4b5fd;
 
-transform:translateX(-50%);
+    background:
+        linear-gradient(
+            135deg,
+            rgba(139,92,246,.18),
+            rgba(6,182,212,.12)
+        );
 
-padding:14px 22px;
+    border:
+        1px solid rgba(139,92,246,.22);
 
-display:flex;
+    font-size: 21px;
+}
 
-align-items:center;
+.modalCard h2 {
+    font-size: 22px;
 
-gap:10px;
+    letter-spacing: -.7px;
+}
 
-background:#ff4d4d;
+.modalCard > p {
+    margin: 8px 0 20px;
 
-color:#fff;
+    color: #858c9c;
 
-border-radius:14px;
+    font-size: 12px;
+    line-height: 1.6;
+}
 
-font-weight:600;
+.modalPrimaryBtn {
+    width: 100%;
+    height: 50px;
 
-box-shadow:0 12px 30px rgba(0,0,0,.35);
+    margin-top: 14px;
 
-z-index:999999;
+    border-radius: 13px;
 
-}
+    color: #fff;
 
-#networkBanner i{
+    background:
+        linear-gradient(
+            110deg,
+            #7c3aed,
+            #0891b2
+        );
 
-font-size:18px;
+    font-size: 12px;
+    font-weight: 700;
 
+    transition: .25s ease;
 }
-/*=========================================
-        VIEWORA V3 PREMIUM
-            login.css
-            PART 5 FINAL
- Ripple • Scrollbar • Animations
-=========================================*/
 
-/*=========================================
-Ripple Effect
-=========================================*/
+.modalPrimaryBtn:hover {
+    transform: translateY(-2px);
 
-.loginBtn,
-.googleBtn,
-.primaryBtn,
-.secondaryBtn{
-
-position:relative;
-
-overflow:hidden;
-
+    box-shadow:
+        0 10px 30px rgba(99,102,241,.25);
 }
-
-.ripple{
 
-position:absolute;
 
-width:20px;
+/* =========================================================
+   TOAST
+========================================================= */
 
-height:20px;
+.toast {
+    position: fixed;
 
-border-radius:50%;
+    left: 50%;
+    bottom: 25px;
 
-background:rgba(255,255,255,.45);
+    z-index: 10000;
 
-transform:translate(-50%,-50%) scale(0);
+    min-width: 220px;
+    max-width: calc(100% - 30px);
 
-pointer-events:none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 
-animation:ripple .6s linear;
+    gap: 9px;
 
-}
+    padding: 12px 17px;
 
-@keyframes ripple{
+    border-radius: 14px;
 
-to{
+    color: #fff;
 
-transform:translate(-50%,-50%) scale(18);
+    background:
+        rgba(22,23,33,.92);
 
-opacity:0;
+    border:
+        1px solid rgba(255,255,255,.12);
 
-}
+    box-shadow:
+        0 15px 40px rgba(0,0,0,.45);
 
-}
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
 
-/*=========================================
-Card Hover
-=========================================*/
+    font-size: 11px;
+    font-weight: 600;
 
-.loginCard{
+    transform:
+        translate(-50%, 20px);
 
-transition:.35s ease;
+    opacity: 0;
 
-}
+    pointer-events: none;
 
-.loginCard:hover{
-    transform:none;
+    transition:
+        opacity .25s ease,
+        transform .25s ease;
 }
-
-/*=========================================
-Button Hover
-=========================================*/
-
-.loginBtn:hover,
-.googleBtn:hover,
-.primaryBtn:hover{
 
-filter:brightness(1.08);
+.toast.hidden {
+    display: flex;
 
+    visibility: hidden;
 }
 
-.loginBtn:active,
-.googleBtn:active,
-.primaryBtn:active,
-.secondaryBtn:active{
+.toast.show {
+    visibility: visible;
 
-transform:scale(.98);
+    opacity: 1;
 
+    transform:
+        translate(-50%, 0);
 }
 
-/*=========================================
-Disabled Buttons
-=========================================*/
 
-button:disabled{
+/* =========================================================
+   NETWORK BANNER
+========================================================= */
 
-opacity:.65;
+.networkBanner {
+    position: fixed;
 
-cursor:not-allowed;
+    top: 15px;
+    left: 50%;
 
-filter:grayscale(.2);
+    z-index: 9000;
 
-}
-
-/*=========================================
-Input Autofill
-=========================================*/
-
-input:-webkit-autofill,
-input:-webkit-autofill:hover,
-input:-webkit-autofill:focus{
+    display: flex;
+    align-items: center;
 
--webkit-text-fill-color:#fff;
+    gap: 8px;
 
--webkit-box-shadow:
-0 0 0 1000px
-rgba(255,255,255,.06)
-inset;
+    padding: 9px 14px;
 
-transition:
-background-color 9999s;
+    border-radius: 999px;
 
-}
-
-/*=========================================
-Custom Scrollbar
-=========================================*/
+    color: #fecaca;
 
-::-webkit-scrollbar{
+    background:
+        rgba(127,29,29,.72);
 
-width:8px;
-
-}
+    border:
+        1px solid rgba(248,113,113,.25);
 
-::-webkit-scrollbar-track{
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
 
-background:#050816;
+    font-size: 10px;
+    font-weight: 600;
 
+    transform:
+        translateX(-50%);
 }
 
-::-webkit-scrollbar-thumb{
-
-background:#00AAFF;
-
-border-radius:20px;
-
+.networkBanner.hidden {
+    display: none;
 }
 
-::-webkit-scrollbar-thumb:hover{
 
-background:#0088ff;
+/* =========================================================
+   RIPPLE
+========================================================= */
 
+button {
+    position: relative;
+    overflow: hidden;
 }
 
-/*=========================================
-Focus Ring
-=========================================*/
+.ripple {
+    position: absolute;
 
-button:focus-visible,
-input:focus-visible,
-a:focus-visible{
+    width: 10px;
+    height: 10px;
 
-outline:2px solid #00AAFF;
-
-outline-offset:3px;
-
-}
+    border-radius: 50%;
 
-/*=========================================
-Page Animation
-=========================================*/
+    background:
+        rgba(255,255,255,.35);
 
-body{
+    transform:
+        translate(-50%, -50%)
+        scale(0);
 
-animation:pageFade .7s ease;
+    animation:
+        rippleEffect .6s ease-out;
 
+    pointer-events: none;
 }
 
-@keyframes pageFade{
+@keyframes rippleEffect {
 
-from{
-opacity:0;
-}
-
-to{
-opacity:1;
-}
+    to {
+        transform:
+            translate(-50%, -50%)
+            scale(25);
 
+        opacity: 0;
+    }
 }
 
-/*=========================================
-Floating Animation
-=========================================*/
-
-.logo{
-
-animation:floatLogo 4s ease-in-out infinite;
-
-}
 
-@keyframes floatLogo{
+/* =========================================================
+   MOBILE
+========================================================= */
 
-0%,100%{
+@media (max-width: 600px) {
 
-transform:translateY(0);
+    .loginPage {
+        align-items: flex-start;
 
-}
+        padding:
+            24px 14px
+            30px;
+    }
 
-50%{
+    .loginCard {
+        padding:
+            29px 20px
+            25px;
 
-transform:translateY(-8px);
+        border-radius: 23px;
+    }
 
-}
+    .brand {
+        margin-bottom: 28px;
+    }
 
-}
+    .brandLogo {
+        width: 44px;
+        height: 44px;
+    }
 
-/*=========================================
-Responsive
-=========================================*/
+    .brandLogo img {
+        width: 31px;
+        height: 31px;
+    }
 
-@media(max-width:360px){
+    .welcome h2 {
+        font-size: 30px;
+    }
 
-.loginCard{
+    .socialBtn {
+        min-height: 50px;
+    }
 
-padding:18px 14px;
+    .inputWrapper input {
+        height: 51px;
+    }
 
-}
+    .loginBtn {
+        height: 53px;
+    }
 
-.logo{
+    .bgGlow {
+        width: 280px;
+        height: 280px;
 
-width:60px;
+        filter: blur(80px);
 
-height:60px;
+        opacity: .22;
+    }
 
 }
 
-.logoBox h1{
 
-font-size:20px;
+/* =========================================================
+   SMALL PHONES
+========================================================= */
 
-}
+@media (max-width: 370px) {
 
-.loginBtn,
-.googleBtn{
+    .loginPage {
+        padding:
+            18px 10px
+            25px;
+    }
 
-height:50px;
+    .loginCard {
+        padding:
+            25px 16px
+            22px;
+    }
 
-font-size:14px;
+    .welcome h2 {
+        font-size: 27px;
+    }
 
-}
+    .socialBtn {
+        font-size: 12px;
+    }
 
 }
 
-/*=========================================
-Print
-=========================================*/
 
-@media print{
+/* =========================================================
+   REDUCED MOTION
+========================================================= */
 
-body{
+@media (prefers-reduced-motion: reduce) {
 
-background:#fff;
+    *,
+    *::before,
+    *::after {
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: .01ms !important;
+    }
 
 }
-
-.aurora,
-#particles,
-#pageLoader,
-#loadingOverlay,
-#toast,
-#networkBanner{
-
-display:none !important;
-
-}
-
-}
-
-/*=========================================
-END OF FILE
-=========================================*/

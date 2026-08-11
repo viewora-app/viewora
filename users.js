@@ -1,1345 +1,2118 @@
-/*=========================================
-        VIEWORA USERS V9
-        users.js - PART 1
- Firebase • Authentication • Variables
-=========================================*/
+/* =========================================================
+   VIEWORA • USERS.JS
+   Clean Firebase Users + Search + Follow System
+========================================================= */
 
-"use strict";
+(() => {
 
-console.log("=================================");
-console.log(" VIEWORA USERS V9 ");
-console.log(" Part 1 Loaded");
-console.log("=================================");
+    "use strict";
 
-/*=========================================
-DOM Elements
-=========================================*/
+    /* =====================================================
+       GLOBAL STATE
+    ====================================================== */
 
-const pageLoader=document.getElementById("pageLoader");
-const app=document.getElementById("app");
+    let allUsers = [];
+    let currentUser = null;
+    let selectedUser = null;
+    let currentFilter = "all";
 
-const usersList=document.getElementById("usersList");
-const suggestedUsers=document.getElementById("suggestedUsers");
-const onlineUsers=document.getElementById("onlineUsers");
 
-const searchInput=document.getElementById("searchInput");
-const clearSearch=document.getElementById("clearSearch");
+    /* =====================================================
+       DEFAULT IMAGE
+    ====================================================== */
 
-const totalUsers=document.getElementById("totalUsers");
-const onlineCount=document.getElementById("onlineCount");
+    const DEFAULT_AVATAR =
+        "assets/default-avatar.png";
 
-const profileModal=document.getElementById("profileModal");
 
-const skeleton=document.getElementById("usersSkeleton");
-const emptyState=document.getElementById("emptyState");
+    /* =====================================================
+       DOM
+    ====================================================== */
 
-const toast=document.getElementById("toast");
-const toastText=document.getElementById("toastText");
-const toastIcon=document.getElementById("toastIcon");
+    const searchInput =
+        document.getElementById("searchInput");
 
-const scrollTopBtn=document.getElementById("scrollTopBtn");
+    const usersList =
+        document.getElementById("usersList");
 
-const refreshBtn=document.getElementById("refreshBtn");
-const backBtn=document.getElementById("backBtn");
+    const suggestedUsers =
+        document.getElementById("suggestedUsers");
 
-/*=========================================
-Variables
-=========================================*/
+    const onlineUsers =
+        document.getElementById("onlineUsers");
 
-let currentUser=null;
-let currentProfile=null;
+    const totalUsers =
+        document.getElementById("totalUsers");
 
-let users=[];
-let filteredUsers=[];
+    const totalUsersLabel =
+        document.getElementById("totalUsersLabel");
 
-let following=[];
-let followers=[];
+    const onlineCount =
+        document.getElementById("onlineCount");
 
-let onlineUsersList=[];
+    const onlineCountText =
+        document.getElementById("onlineCountText");
 
-let usersListener=null;
-let onlineListener=null;
+    const emptyState =
+        document.getElementById("emptyState");
 
-let initialized=false;
+    const usersSkeleton =
+        document.getElementById("usersSkeleton");
 
-/*=========================================
-Loader
-=========================================*/
+    const profileModal =
+        document.getElementById("profileModal");
 
-function showLoader(){
+    const modalOverlay =
+        document.getElementById("modalOverlay");
 
-    pageLoader?.classList.remove("hidden");
-    app?.classList.add("hidden");
+    const closeModal =
+        document.getElementById("closeModal");
 
-}
+    const modalAvatar =
+        document.getElementById("modalAvatar");
 
-function hideLoader(){
+    const modalName =
+        document.getElementById("modalName");
 
-    pageLoader?.classList.add("hidden");
-    app?.classList.remove("hidden");
-    app?.classList.add("fadeIn");
+    const modalUsername =
+        document.getElementById("modalUsername");
 
-}
+    const modalBio =
+        document.getElementById("modalBio");
 
-/*=========================================
-Skeleton
-=========================================*/
+    const modalPosts =
+        document.getElementById("modalPosts");
 
-function showSkeleton(){
+    const modalFollowers =
+        document.getElementById("modalFollowers");
 
-    skeleton?.classList.remove("hidden");
-    usersList?.classList.add("hidden");
+    const modalFollowing =
+        document.getElementById("modalFollowing");
 
-}
+    const followBtn =
+        document.getElementById("followBtn");
 
-function hideSkeleton(){
+    const messageBtn =
+        document.getElementById("messageBtn");
 
-    skeleton?.classList.add("hidden");
-    usersList?.classList.remove("hidden");
+    const refreshBtn =
+        document.getElementById("refreshBtn");
 
-}
+    const backBtn =
+        document.getElementById("backBtn");
 
-/*=========================================
-Toast
-=========================================*/
+    const scrollTopBtn =
+        document.getElementById("scrollTopBtn");
 
-function showToast(text,success=true){
+    const addFriendBtn =
+        document.getElementById("addFriendBtn");
 
-    if(!toast) return;
+    const toast =
+        document.getElementById("toast");
 
-    toastText.textContent=text;
+    const toastText =
+        document.getElementById("toastText");
 
-    toastIcon.className=
-    success
-    ?
-    "fa-solid fa-circle-check"
-    :
-    "fa-solid fa-circle-xmark";
+    const toastIcon =
+        document.getElementById("toastIcon");
 
-    toast.style.background=
-    success
-    ?
-    "#16a34a"
-    :
-    "#dc2626";
 
-    toast.classList.remove("hidden");
+    /* =====================================================
+       FIREBASE
+    ====================================================== */
 
-    clearTimeout(window.toastTimer);
+    function getDatabase() {
 
-    window.toastTimer=setTimeout(()=>{
+        if (
+            typeof firebase === "undefined" ||
+            !firebase.apps ||
+            !firebase.apps.length
+        ) {
 
-        toast.classList.add("hidden");
+            console.error(
+                "Firebase is not initialized."
+            );
 
-    },2500);
+            return null;
+        }
 
-}
+        return firebase.database();
+    }
 
-/*=========================================
-Helpers
-=========================================*/
 
-function avatar(url){
+    const db = getDatabase();
 
-    return url || "assets/default-avatar.png";
 
-}
+    /*
+     * IMPORTANT:
+     * usersRef is declared ONLY ONCE.
+     */
 
-function formatNumber(value){
+    const usersRef =
+        db
+            ? db.ref("users")
+            : null;
 
-    value=Number(value)||0;
 
-    if(value>=1000000){
+    /* =====================================================
+       AUTH
+    ====================================================== */
 
-        return (value/1000000).toFixed(1)+"M";
+    function getCurrentUser() {
+
+        if (
+            typeof firebase === "undefined" ||
+            !firebase.auth
+        ) {
+
+            return null;
+        }
+
+        return firebase.auth().currentUser;
+    }
+
+
+    /* =====================================================
+       TOAST
+    ====================================================== */
+
+    function showToast(
+        message,
+        success = true
+    ) {
+
+        if (!toast || !toastText) {
+            return;
+        }
+
+        toastText.textContent =
+            message;
+
+
+        if (toastIcon) {
+
+            toastIcon.className =
+                success
+                    ? "fa-solid fa-circle-check"
+                    : "fa-solid fa-circle-exclamation";
+
+        }
+
+
+        toast.classList.remove(
+            "hidden"
+        );
+
+        toast.classList.add(
+            "show"
+        );
+
+
+        clearTimeout(
+            window.vieworaToastTimer
+        );
+
+
+        window.vieworaToastTimer =
+            setTimeout(() => {
+
+                toast.classList.remove(
+                    "show"
+                );
+
+                setTimeout(() => {
+
+                    toast.classList.add(
+                        "hidden"
+                    );
+
+                }, 300);
+
+            }, 2200);
 
     }
 
-    if(value>=1000){
 
-        return (value/1000).toFixed(1)+"K";
+    /* =====================================================
+       ESCAPE HTML
+    ====================================================== */
+
+    function escapeHTML(value) {
+
+        if (
+            value === undefined ||
+            value === null
+        ) {
+
+            return "";
+        }
+
+        return String(value)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+
+
+    /* =====================================================
+       USER HELPERS
+    ====================================================== */
+
+    function getUserId(user) {
+
+        return (
+            user.uid ||
+            user.id ||
+            user.userId ||
+            ""
+        );
+    }
+
+
+    function getUserName(user) {
+
+        return (
+            user.name ||
+            user.displayName ||
+            user.fullName ||
+            "Viewora User"
+        );
+    }
+
+
+    function getUsername(user) {
+
+        return (
+            user.username ||
+            user.userName ||
+            user.handle ||
+            "username"
+        ).replace(/^@/, "");
+    }
+
+
+    function getAvatar(user) {
+
+        return (
+            user.photoURL ||
+            user.photoUrl ||
+            user.avatar ||
+            user.profilePhoto ||
+            user.profileImage ||
+            DEFAULT_AVATAR
+        );
+    }
+
+
+    function getBio(user) {
+
+        return (
+            user.bio ||
+            "Welcome to Viewora 🚀"
+        );
+    }
+
+
+    function isOnline(user) {
+
+        return (
+            user.online === true ||
+            user.isOnline === true ||
+            user.status === "online"
+        );
+    }
+
+
+    function isCreator(user) {
+
+        return (
+            user.isCreator === true ||
+            user.creator === true ||
+            user.role === "creator"
+        );
+    }
+
+
+    /* =====================================================
+       PRIVATE PROFILE
+    ====================================================== */
+
+    function isPrivateUser(user) {
+
+        return (
+            user.private === true ||
+            user.isPrivate === true ||
+            user.profilePrivate === true ||
+            user.privacy === "private" ||
+            user.profileVisibility === "private"
+        );
+    }
+
+
+    /* =====================================================
+       NORMALIZE USERS
+    ====================================================== */
+
+    function normalizeUsers(snapshot) {
+
+        const result = [];
+
+        snapshot.forEach(child => {
+
+            const data =
+                child.val() || {};
+
+            result.push({
+
+                ...data,
+
+                uid:
+                    data.uid ||
+                    child.key
+
+            });
+
+        });
+
+        return result;
+    }
+
+
+    /* =====================================================
+       LOAD USERS
+    ====================================================== */
+
+    async function loadUsers() {
+
+        if (!usersRef) {
+
+            hideSkeleton();
+
+            showToast(
+                "Firebase database is not connected.",
+                false
+            );
+
+            return;
+        }
+
+
+        showSkeleton();
+
+
+        try {
+
+            const snapshot =
+                await usersRef.once("value");
+
+
+            allUsers =
+                normalizeUsers(snapshot);
+
+
+            currentUser =
+                getCurrentUser();
+
+
+            updateStats();
+
+            renderSuggested();
+
+            renderOnline();
+
+            renderUsers();
+
+
+        } catch (error) {
+
+            console.error(
+                "Viewora users loading error:",
+                error
+            );
+
+            showToast(
+                "Unable to load users.",
+                false
+            );
+
+
+        } finally {
+
+            hideSkeleton();
+
+        }
 
     }
 
-    return value;
 
-}
+    /* =====================================================
+       STATS
+    ====================================================== */
 
-function shuffle(array){
+    function updateStats() {
 
-    return [...array].sort(()=>Math.random()-0.5);
+        const online =
+            allUsers.filter(isOnline);
 
-}
 
-/*=========================================
-Authentication
-=========================================*/
+        if (totalUsers) {
 
-auth.onAuthStateChanged(async(user)=>{
+            totalUsers.textContent =
+                String(allUsers.length);
 
-    if(!user){
+        }
 
-        location.href="login.html";
-        return;
 
-    }
+        if (totalUsersLabel) {
 
-    currentUser=user;
+            totalUsersLabel.textContent =
+                `${allUsers.length} Users`;
 
-    showLoader();
-    showSkeleton();
+        }
 
-    try{
 
-        await loadCurrentUser();
+        if (onlineCount) {
 
-        initializeUsers();
+            onlineCount.textContent =
+                String(online.length);
 
-    }
+        }
 
-    catch(error){
 
-        console.error(error);
+        if (onlineCountText) {
 
-        hideLoader();
+            onlineCountText.textContent =
+                `${online.length} Online`;
 
-        showToast("Unable to load profile",false);
+        }
 
     }
 
-});
 
-/*=========================================
-Load Current User
-=========================================*/
+    /* =====================================================
+       USER CARD
+    ====================================================== */
 
-async function loadCurrentUser(){
+    function createUserCard(
+        user,
+        compact = false
+    ) {
 
-    const snap=
-    await db.ref("users/"+currentUser.uid)
-    .once("value");
+        const uid =
+            getUserId(user);
 
-    if(!snap.exists()){
+        const name =
+            getUserName(user);
 
-        throw new Error("User profile not found");
+        const username =
+            getUsername(user);
+
+        const avatar =
+            getAvatar(user);
+
+        const bio =
+            getBio(user);
+
+        const online =
+            isOnline(user);
+
+        const creator =
+            isCreator(user);
+
+
+        return `
+
+            <article
+                class="userCard ${compact ? "compactCard" : ""}"
+                data-user-id="${escapeHTML(uid)}"
+            >
+
+                <button
+                    type="button"
+                    class="userCardMain"
+                    data-action="profile"
+                    data-user-id="${escapeHTML(uid)}"
+                >
+
+                    <div class="userAvatarWrap">
+
+                        <img
+                            class="userAvatar"
+                            src="${escapeHTML(avatar)}"
+                            alt="${escapeHTML(name)}"
+                            loading="lazy"
+                            onerror="this.src='${DEFAULT_AVATAR}'"
+                        >
+
+                        ${
+                            online
+                                ? `
+                                    <span
+                                        class="userOnlineDot"
+                                    ></span>
+                                `
+                                : ""
+                        }
+
+                    </div>
+
+
+                    <div class="userInfo">
+
+                        <div class="userNameRow">
+
+                            <strong>
+                                ${escapeHTML(name)}
+                            </strong>
+
+                            ${
+                                creator
+                                    ? `
+                                        <span
+                                            class="creatorBadge"
+                                            title="Creator"
+                                        >
+                                            <i
+                                                class="fa-solid fa-star"
+                                            ></i>
+                                        </span>
+                                    `
+                                    : ""
+                            }
+
+                        </div>
+
+
+                        <span
+                            class="userUsername"
+                        >
+                            @${escapeHTML(username)}
+                        </span>
+
+
+                        ${
+                            !compact
+                                ? `
+                                    <p class="userBio">
+                                        ${escapeHTML(bio)}
+                                    </p>
+                                `
+                                : ""
+                        }
+
+                    </div>
+
+                </button>
+
+
+                ${
+                    currentUser &&
+                    uid &&
+                    uid !== currentUser.uid
+                        ? `
+                            <button
+                                type="button"
+                                class="cardFollowBtn"
+                                data-action="follow"
+                                data-user-id="${escapeHTML(uid)}"
+                            >
+                                <span>Follow</span>
+                            </button>
+                        `
+                        : ""
+                }
+
+            </article>
+
+        `;
 
     }
 
-    currentProfile=snap.val();
 
-    following=currentProfile.following || [];
+    /* =====================================================
+       SUGGESTED
+    ====================================================== */
 
-    followers=currentProfile.followers || [];
+    function renderSuggested() {
 
-    if(!Array.isArray(following)){
+        if (!suggestedUsers) {
+            return;
+        }
 
-        following=[];
 
-    }
+        const myUid =
+            currentUser?.uid || "";
 
-    if(!Array.isArray(followers)){
 
-        followers=[];
+        const users =
+            allUsers
+                .filter(
+                    user =>
+                        getUserId(user) !== myUid
+                )
+                .slice(0, 6);
 
-    }
 
-}
+        if (!users.length) {
 
-/*=========================================
-Online Status
-=========================================*/
+            suggestedUsers.innerHTML = `
 
-function updateMyStatus(status){
+                <div class="noUsersMessage">
 
-    if(!currentUser) return;
+                    No suggestions available yet.
 
-    db.ref("users/"+currentUser.uid).update({
+                </div>
 
-        online:status,
+            `;
 
-        lastSeen:Date.now()
+            return;
+        }
 
-    });
 
-}
+        suggestedUsers.innerHTML =
+            users
+                .map(
+                    user =>
+                        createUserCard(
+                            user,
+                            true
+                        )
+                )
+                .join("");
 
-window.addEventListener("load",()=>{
 
-    updateMyStatus(true);
-
-});
-
-window.addEventListener("beforeunload",()=>{
-
-    updateMyStatus(false);
-
-});
-
-/*=========================================
-Internet Status
-=========================================*/
-
-window.addEventListener("online",()=>{
-
-    showToast("Back Online");
-
-});
-
-window.addEventListener("offline",()=>{
-
-    showToast("No Internet",false);
-
-});
-
-/*=========================================
-Initialize
-=========================================*/
-
-function initializeUsers(){
-
-    if(initialized) return;
-
-    initialized=true;
-
-    loadUsers();
-
-    listenOnlineUsers();
-
-    hideSkeleton();
-
-    hideLoader();
-
-}
-
-console.log("✅ users.js Part 1 Ready");
-/*=========================================
-        VIEWORA USERS V9
-        users.js - PART 2
- Load Users • Search • Suggested Users
-=========================================*/
-
-/*=========================================
-Load Users
-=========================================*/
-
-function loadUsers(){
-
-    if(usersListener){
-
-        db.ref("users").off("value",usersListener);
+        refreshFollowButtons();
 
     }
 
-    showLoader();
-    showSkeleton();
 
-    usersListener=(snapshot)=>{
+    /* =====================================================
+       ONLINE
+    ====================================================== */
 
-        users=[];
+    function renderOnline() {
 
-        snapshot.forEach(child=>{
+        if (!onlineUsers) {
+            return;
+        }
 
-            const user=child.val()||{};
 
-            user.uid=child.key;
+        const myUid =
+            currentUser?.uid || "";
 
-            if(currentUser && user.uid===currentUser.uid){
 
-                return;
+        const users =
+            allUsers
+                .filter(user => {
+
+                    return (
+                        isOnline(user) &&
+                        getUserId(user) !== myUid
+                    );
+
+                })
+                .slice(0, 10);
+
+
+        if (!users.length) {
+
+            onlineUsers.innerHTML = `
+
+                <div class="noUsersMessage">
+
+                    <i
+                        class="fa-regular fa-moon"
+                    ></i>
+
+                    No one is online right now.
+
+                </div>
+
+            `;
+
+            return;
+        }
+
+
+        onlineUsers.innerHTML =
+            users
+                .map(
+                    user =>
+                        createUserCard(
+                            user,
+                            true
+                        )
+                )
+                .join("");
+
+
+        refreshFollowButtons();
+
+    }
+
+
+    /* =====================================================
+       ALL USERS
+    ====================================================== */
+
+    function renderUsers() {
+
+        if (!usersList) {
+            return;
+        }
+
+
+        const search =
+            (
+                searchInput?.value ||
+                ""
+            )
+                .trim()
+                .toLowerCase();
+
+
+        const users =
+            allUsers.filter(user => {
+
+                const uid =
+                    getUserId(user);
+
+
+                if (
+                    currentUser &&
+                    uid === currentUser.uid
+                ) {
+
+                    return false;
+
+                }
+
+
+                const name =
+                    getUserName(user)
+                        .toLowerCase();
+
+
+                const username =
+                    getUsername(user)
+                        .toLowerCase();
+
+
+                const bio =
+                    getBio(user)
+                        .toLowerCase();
+
+
+                const matchesSearch =
+                    !search ||
+                    name.includes(search) ||
+                    username.includes(search) ||
+                    bio.includes(search);
+
+
+                if (!matchesSearch) {
+                    return false;
+                }
+
+
+                if (
+                    currentFilter === "online" &&
+                    !isOnline(user)
+                ) {
+
+                    return false;
+
+                }
+
+
+                if (
+                    currentFilter === "creators" &&
+                    !isCreator(user)
+                ) {
+
+                    return false;
+
+                }
+
+
+                return true;
+
+            });
+
+
+        if (!users.length) {
+
+            usersList.innerHTML = "";
+
+
+            if (emptyState) {
+
+                emptyState.classList.remove(
+                    "hidden"
+                );
 
             }
 
-            users.push(user);
+            return;
+        }
 
-        });
 
-        users.sort((a,b)=>{
+        if (emptyState) {
 
-            return (Number(b.followers)||0)-
-                   (Number(a.followers)||0);
+            emptyState.classList.add(
+                "hidden"
+            );
 
-        });
+        }
 
-        filteredUsers=[...users];
 
-        renderSuggestedUsers();
+        usersList.innerHTML =
+            users
+                .map(user =>
+                    createUserCard(user)
+                )
+                .join("");
 
-        renderUsers(filteredUsers);
 
-        updateCounters();
-
-        hideSkeleton();
-
-        hideLoader();
-
-    };
-
-    db.ref("users").on("value",usersListener);
-
-}
-
-/*=========================================
-Update Counters
-=========================================*/
-
-function updateCounters(){
-
-    if(totalUsers){
-
-        totalUsers.textContent=
-
-        users.length+" Users";
+        refreshFollowButtons();
 
     }
 
-    if(onlineCount){
 
-        onlineCount.textContent=
+    /* =====================================================
+       FOLLOW REFERENCES
+    ====================================================== */
 
-        onlineUsersList.length+" Online";
+    function followingPath(uid) {
 
-    }
+        if (
+            !currentUser ||
+            !uid ||
+            !db
+        ) {
 
-}
+            return null;
+        }
 
-/*=========================================
-Search Users
-=========================================*/
 
-searchInput?.addEventListener("input",()=>{
-
-    const keyword=
-
-    searchInput.value
-    .trim()
-    .toLowerCase();
-
-    if(keyword===""){
-
-        filteredUsers=[...users];
+        return db.ref(
+            `users/${currentUser.uid}/following/${uid}`
+        );
 
     }
 
-    else{
 
-        filteredUsers=users.filter(user=>{
+    function followerPath(uid) {
 
-            return(
+        if (
+            !currentUser ||
+            !uid ||
+            !db
+        ) {
 
-                (user.name||"")
-                .toLowerCase()
-                .includes(keyword)
+            return null;
+        }
 
-                ||
 
-                (user.username||"")
-                .toLowerCase()
-                .includes(keyword)
+        return db.ref(
+            `users/${uid}/followers/${currentUser.uid}`
+        );
 
-                ||
+    }
 
-                (user.bio||"")
-                .toLowerCase()
-                .includes(keyword)
 
+    /* =====================================================
+       CHECK FOLLOWING
+    ====================================================== */
+
+    async function isFollowing(uid) {
+
+        if (
+            !currentUser ||
+            !uid ||
+            uid === currentUser.uid
+        ) {
+
+            return false;
+        }
+
+
+        try {
+
+            const ref =
+                followingPath(uid);
+
+
+            if (!ref) {
+                return false;
+            }
+
+
+            const snapshot =
+                await ref.once("value");
+
+
+            return snapshot.exists();
+
+
+        } catch (error) {
+
+            console.error(
+                "Follow check error:",
+                error
+            );
+
+            return false;
+
+        }
+
+    }
+
+
+    /* =====================================================
+       FOLLOW BUTTON UI
+    ====================================================== */
+
+    function setFollowButtonState(
+        uid,
+        following
+    ) {
+
+        document
+            .querySelectorAll(
+                `[data-action="follow"][data-user-id="${CSS.escape(uid)}"]`
+            )
+            .forEach(button => {
+
+                button.classList.toggle(
+                    "following",
+                    following
+                );
+
+
+                button.innerHTML =
+                    following
+                        ? `
+                            <i
+                                class="fa-solid fa-check"
+                            ></i>
+
+                            <span>
+                                Following
+                            </span>
+                        `
+                        : `
+                            <span>
+                                Follow
+                            </span>
+                        `;
+
+            });
+
+
+        if (
+            selectedUser &&
+            getUserId(selectedUser) === uid &&
+            followBtn
+        ) {
+
+            followBtn.classList.toggle(
+                "following",
+                following
+            );
+
+
+            followBtn.innerHTML =
+                following
+                    ? `
+                        <i
+                            class="fa-solid fa-check"
+                        ></i>
+
+                        <span>
+                            Following
+                        </span>
+                    `
+                    : `
+                        <i
+                            class="fa-solid fa-user-plus"
+                        ></i>
+
+                        <span>
+                            Follow
+                        </span>
+                    `;
+
+        }
+
+    }
+
+
+    /* =====================================================
+       REFRESH FOLLOW BUTTONS
+    ====================================================== */
+
+    async function refreshFollowButtons() {
+
+        if (!currentUser) {
+            return;
+        }
+
+
+        const buttons =
+            document.querySelectorAll(
+                '[data-action="follow"]'
+            );
+
+
+        for (const button of buttons) {
+
+            const uid =
+                button.dataset.userId;
+
+
+            if (!uid) {
+                continue;
+            }
+
+
+            const following =
+                await isFollowing(uid);
+
+
+            setFollowButtonState(
+                uid,
+                following
+            );
+
+        }
+
+    }
+
+
+    /* =====================================================
+       FOLLOW / UNFOLLOW
+    ====================================================== */
+
+    async function toggleFollow(
+        uid,
+        button = null
+    ) {
+
+        if (!currentUser) {
+
+            showToast(
+                "Please login first.",
+                false
+            );
+
+            return;
+        }
+
+
+        if (
+            !uid ||
+            uid === currentUser.uid
+        ) {
+
+            return;
+        }
+
+
+        if (button) {
+
+            button.disabled = true;
+
+        }
+
+
+        try {
+
+            const followingRef =
+                followingPath(uid);
+
+            const followerRef =
+                followerPath(uid);
+
+
+            if (
+                !followingRef ||
+                !followerRef
+            ) {
+
+                throw new Error(
+                    "Follow reference unavailable"
+                );
+
+            }
+
+
+            const snapshot =
+                await followingRef.once(
+                    "value"
+                );
+
+
+            const alreadyFollowing =
+                snapshot.exists();
+
+
+            /* =========================================
+               UNFOLLOW
+            ========================================== */
+
+            if (alreadyFollowing) {
+
+                await Promise.all([
+
+                    followingRef.remove(),
+
+                    followerRef.remove()
+
+                ]);
+
+
+                setFollowButtonState(
+                    uid,
+                    false
+                );
+
+
+                showToast(
+                    "Unfollowed"
+                );
+
+
+            }
+
+            /* =========================================
+               FOLLOW
+            ========================================== */
+
+            else {
+
+                const timestamp =
+                    firebase.database
+                        .ServerValue
+                        .TIMESTAMP;
+
+
+                await Promise.all([
+
+                    followingRef.set({
+                        uid: uid,
+                        followedAt: timestamp
+                    }),
+
+                    followerRef.set({
+                        uid:
+                            currentUser.uid,
+                        followedAt:
+                            timestamp
+                    })
+
+                ]);
+
+
+                setFollowButtonState(
+                    uid,
+                    true
+                );
+
+
+                showToast(
+                    "Following"
+                );
+
+            }
+
+
+            await updateFollowerCount(
+                uid,
+                !alreadyFollowing
+            );
+
+
+            /*
+             * Update modal message permission
+             */
+
+            if (
+                selectedUser &&
+                getUserId(selectedUser) === uid
+            ) {
+
+                updateMessageButton();
+
+            }
+
+
+        } catch (error) {
+
+            console.error(
+                "Follow error:",
+                error
+            );
+
+
+            showToast(
+                "Couldn't update follow.",
+                false
+            );
+
+
+        } finally {
+
+            if (button) {
+
+                button.disabled = false;
+
+            }
+
+        }
+
+    }
+
+
+    /* =====================================================
+       FOLLOWER COUNT
+    ====================================================== */
+
+    async function updateFollowerCount(
+        uid,
+        increment
+    ) {
+
+        try {
+
+            const ref =
+                db.ref(
+                    `users/${uid}/followersCount`
+                );
+
+
+            await ref.transaction(
+                current => {
+
+                    const value =
+                        Number(current || 0);
+
+
+                    return increment
+                        ? value + 1
+                        : Math.max(
+                            0,
+                            value - 1
+                        );
+
+                }
+            );
+
+
+        } catch (error) {
+
+            console.warn(
+                "Follower count update failed:",
+                error
+            );
+
+        }
+
+    }
+
+
+    /* =====================================================
+       MESSAGE PERMISSION
+    ====================================================== */
+
+    async function updateMessageButton() {
+
+        if (
+            !selectedUser ||
+            !messageBtn
+        ) {
+
+            return;
+        }
+
+
+        const uid =
+            getUserId(selectedUser);
+
+
+        /* Own profile */
+
+        if (
+            currentUser &&
+            uid === currentUser.uid
+        ) {
+
+            messageBtn.style.display =
+                "none";
+
+            return;
+
+        }
+
+
+        const privateProfile =
+            isPrivateUser(
+                selectedUser
+            );
+
+
+        const following =
+            await isFollowing(uid);
+
+
+        /*
+         * PUBLIC:
+         * Message available.
+         */
+
+        if (!privateProfile) {
+
+            messageBtn.style.display =
+                "inline-flex";
+
+            return;
+
+        }
+
+
+        /*
+         * PRIVATE:
+         * Message only after following.
+         */
+
+        if (following) {
+
+            messageBtn.style.display =
+                "inline-flex";
+
+        } else {
+
+            messageBtn.style.display =
+                "none";
+
+        }
+
+    }
+
+
+    /* =====================================================
+       OPEN PROFILE
+    ====================================================== */
+
+    async function openProfile(uid) {
+
+        const user =
+            allUsers.find(
+                item =>
+                    getUserId(item) === uid
+            );
+
+
+        if (
+            !user ||
+            !profileModal
+        ) {
+
+            return;
+
+        }
+
+
+        selectedUser =
+            user;
+
+
+        const avatar =
+            getAvatar(user);
+
+        const name =
+            getUserName(user);
+
+        const username =
+            getUsername(user);
+
+        const bio =
+            getBio(user);
+
+
+        const followers =
+            Number(
+                user.followersCount ||
+                (
+                    user.followers
+                        ? Object.keys(
+                            user.followers
+                        ).length
+                        : 0
+                )
+            );
+
+
+        const following =
+            Number(
+                user.followingCount ||
+                (
+                    user.following
+                        ? Object.keys(
+                            user.following
+                        ).length
+                        : 0
+                )
+            );
+
+
+        const posts =
+            Number(
+                user.postsCount ||
+                user.postCount ||
+                0
+            );
+
+
+        if (modalAvatar) {
+
+            modalAvatar.src =
+                avatar;
+
+        }
+
+
+        if (modalName) {
+
+            modalName.textContent =
+                name;
+
+        }
+
+
+        if (modalUsername) {
+
+            modalUsername.textContent =
+                `@${username}`;
+
+        }
+
+
+        if (modalBio) {
+
+            modalBio.textContent =
+                bio;
+
+        }
+
+
+        if (modalPosts) {
+
+            modalPosts.textContent =
+                posts;
+
+        }
+
+
+        if (modalFollowers) {
+
+            modalFollowers.textContent =
+                followers;
+
+        }
+
+
+        if (modalFollowing) {
+
+            modalFollowing.textContent =
+                following;
+
+        }
+
+
+        profileModal.classList.remove(
+            "hidden"
+        );
+
+        profileModal.classList.add(
+            "show"
+        );
+
+
+        document.body.classList.add(
+            "modalOpen"
+        );
+
+
+        /* =============================================
+           OWN PROFILE
+        ============================================== */
+
+        if (
+            currentUser &&
+            uid === currentUser.uid
+        ) {
+
+            if (followBtn) {
+
+                followBtn.style.display =
+                    "none";
+
+            }
+
+
+            if (messageBtn) {
+
+                messageBtn.style.display =
+                    "none";
+
+            }
+
+
+            return;
+        }
+
+
+        /* =============================================
+           FOLLOW STATE
+        ============================================== */
+
+        const followingState =
+            await isFollowing(uid);
+
+
+        setFollowButtonState(
+            uid,
+            followingState
+        );
+
+
+        if (followBtn) {
+
+            followBtn.style.display =
+                "inline-flex";
+
+        }
+
+
+        /* =============================================
+           MESSAGE STATE
+        ============================================== */
+
+        await updateMessageButton();
+
+    }
+
+
+    /* =====================================================
+       CLOSE PROFILE
+    ====================================================== */
+
+    function closeProfile() {
+
+        if (!profileModal) {
+            return;
+        }
+
+
+        profileModal.classList.remove(
+            "show"
+        );
+
+
+        setTimeout(() => {
+
+            profileModal.classList.add(
+                "hidden"
+            );
+
+        }, 200);
+
+
+        document.body.classList.remove(
+            "modalOpen"
+        );
+
+
+        selectedUser =
+            null;
+
+    }
+
+
+    /* =====================================================
+       GLOBAL CLICK HANDLER
+    ====================================================== */
+
+    document.addEventListener(
+        "click",
+        event => {
+
+            const follow =
+                event.target.closest(
+                    '[data-action="follow"]'
+                );
+
+
+            if (follow) {
+
+                event.preventDefault();
+
+                event.stopPropagation();
+
+
+                const uid =
+                    follow.dataset.userId;
+
+
+                toggleFollow(
+                    uid,
+                    follow
+                );
+
+
+                return;
+            }
+
+
+            const profile =
+                event.target.closest(
+                    '[data-action="profile"]'
+                );
+
+
+            if (profile) {
+
+                event.preventDefault();
+
+
+                const uid =
+                    profile.dataset.userId;
+
+
+                openProfile(uid);
+
+            }
+
+        }
+    );
+
+
+    /* =====================================================
+       MODAL FOLLOW
+    ====================================================== */
+
+    if (followBtn) {
+
+        followBtn.addEventListener(
+            "click",
+            async () => {
+
+                if (!selectedUser) {
+                    return;
+                }
+
+
+                const uid =
+                    getUserId(
+                        selectedUser
+                    );
+
+
+                await toggleFollow(
+                    uid,
+                    followBtn
+                );
+
+            }
+        );
+
+    }
+
+
+    /* =====================================================
+       MESSAGE
+    ====================================================== */
+
+    if (messageBtn) {
+
+        messageBtn.addEventListener(
+            "click",
+            async () => {
+
+                if (!selectedUser) {
+                    return;
+                }
+
+
+                const uid =
+                    getUserId(
+                        selectedUser
+                    );
+
+
+                if (
+                    !currentUser ||
+                    !uid ||
+                    uid === currentUser.uid
+                ) {
+
+                    return;
+                }
+
+
+                /*
+                 * Private profile:
+                 * must follow first.
+                 */
+
+                if (
+                    isPrivateUser(
+                        selectedUser
+                    )
+                ) {
+
+                    const following =
+                        await isFollowing(
+                            uid
+                        );
+
+
+                    if (!following) {
+
+                        showToast(
+                            "Follow this user to message them.",
+                            false
+                        );
+
+                        return;
+                    }
+
+                }
+
+
+                window.location.href =
+                    `messages.html?user=${encodeURIComponent(uid)}`;
+
+            }
+        );
+
+    }
+
+
+    /* =====================================================
+       CLOSE MODAL
+    ====================================================== */
+
+    if (closeModal) {
+
+        closeModal.addEventListener(
+            "click",
+            closeProfile
+        );
+
+    }
+
+
+    if (modalOverlay) {
+
+        modalOverlay.addEventListener(
+            "click",
+            closeProfile
+        );
+
+    }
+
+
+    document.addEventListener(
+        "keydown",
+        event => {
+
+            if (
+                event.key === "Escape"
+            ) {
+
+                closeProfile();
+
+            }
+
+        }
+    );
+
+
+    /* =====================================================
+       SEARCH
+    ====================================================== */
+
+    if (searchInput) {
+
+        searchInput.addEventListener(
+            "input",
+            renderUsers
+        );
+
+    }
+
+
+    /* =====================================================
+       FILTER
+    ====================================================== */
+
+    document
+        .querySelectorAll(
+            ".filterBtn"
+        )
+        .forEach(button => {
+
+            button.addEventListener(
+                "click",
+                () => {
+
+                    document
+                        .querySelectorAll(
+                            ".filterBtn"
+                        )
+                        .forEach(btn =>
+                            btn.classList.remove(
+                                "active"
+                            )
+                        );
+
+
+                    button.classList.add(
+                        "active"
+                    );
+
+
+                    currentFilter =
+                        button.dataset.filter ||
+                        "all";
+
+
+                    renderUsers();
+
+                }
             );
 
         });
 
-    }
 
-    renderUsers(filteredUsers);
+    /* =====================================================
+       BACK
+    ====================================================== */
 
-});
+    if (backBtn) {
 
-/*=========================================
-Clear Search
-=========================================*/
+        backBtn.addEventListener(
+            "click",
+            () => {
 
-clearSearch?.addEventListener("click",()=>{
+                if (
+                    window.history.length > 1
+                ) {
 
-    searchInput.value="";
+                    window.history.back();
 
-    filteredUsers=[...users];
+                } else {
 
-    renderUsers(filteredUsers);
+                    window.location.href =
+                        "index.html";
 
-});
-
-/*=========================================
-Suggested Users
-=========================================*/
-
-function renderSuggestedUsers(){
-
-    if(!suggestedUsers) return;
-
-    suggestedUsers.innerHTML="";
-
-    shuffle(users)
-
-    .slice(0,8)
-
-    .forEach(user=>{
-
-        suggestedUsers.innerHTML+=`
-
-<div class="suggestCard fadeIn"
-
-onclick="openProfile('${user.uid}')">
-
-<img
-
-src="${avatar(user.photoURL)}"
-
-onerror="this.src='assets/default-avatar.png'">
-
-<h4>
-
-${user.name||"Unknown"}
-
-${user.verified?
-
-'<i class="fa-solid fa-circle-check verified"></i>'
-
-:""}
-
-</h4>
-
-<p>
-
-@${user.username||"user"}
-
-</p>
-
-<button
-
-onclick="event.stopPropagation();
-followUser('${user.uid}')">
-
-${following.includes(user.uid)
-
-?
-
-"Following"
-
-:
-
-"Follow"}
-
-</button>
-
-</div>
-
-`;
-
-    });
-
-}
-
-/*=========================================
-Render Users
-=========================================*/
-
-function renderUsers(list){
-
-    if(!usersList) return;
-
-    usersList.innerHTML="";
-
-    if(list.length===0){
-
-        emptyState?.classList.remove("hidden");
-
-        return;
-
-    }
-
-    emptyState?.classList.add("hidden");
-
-    list.forEach(user=>{
-
-        const isFollowing=
-
-        following.includes(user.uid);
-
-        usersList.innerHTML+=`
-
-<div class="userCard fadeIn"
-
-onclick="openProfile('${user.uid}')">
-
-<img
-
-src="${avatar(user.photoURL)}"
-
-onerror="this.src='assets/default-avatar.png'">
-
-<div class="userInfo">
-
-<h3>
-
-${user.name||"Unknown"}
-
-${user.verified?
-
-'<i class="fa-solid fa-circle-check verified"></i>'
-
-:""}
-
-</h3>
-
-<p>
-
-@${user.username||"user"}
-
-</p>
-
-<div class="userStats">
-
-<span>
-
-${formatNumber(user.followers||0)}
-
-Followers
-
-</span>
-
-<span>
-
-${formatNumber(user.posts||0)}
-
-Posts
-
-</span>
-
-</div>
-
-</div>
-
-<button
-
-class="followBtn"
-
-onclick="event.stopPropagation();
-followUser('${user.uid}')">
-
-${isFollowing
-
-?
-
-"Following"
-
-:
-
-"Follow"}
-
-</button>
-
-</div>
-
-`;
-
-    });
-
-    observeCards();
-
-    lazyLoadImages();
-
-}
-
-/*=========================================
-Refresh List
-=========================================*/
-
-function refreshUsers(){
-
-    renderSuggestedUsers();
-
-    renderUsers(filteredUsers);
-
-    updateCounters();
-
-}
-
-console.log("✅ users.js Part 2 Ready");
-/*=========================================
-        VIEWORA USERS V9
-        users.js - PART 3
- Online Users • Follow • Profile Modal
-=========================================*/
-
-/*=========================================
-Realtime Online Users
-=========================================*/
-
-function listenOnlineUsers(){
-
-    if(onlineListener){
-
-        db.ref("users").off("value",onlineListener);
-
-    }
-
-    onlineListener=(snapshot)=>{
-
-        onlineUsersList=[];
-
-        if(onlineUsers){
-
-            onlineUsers.innerHTML="";
-
-        }
-
-        snapshot.forEach(child=>{
-
-            const user=child.val()||{};
-
-            user.uid=child.key;
-
-            if(currentUser && user.uid===currentUser.uid){
-
-                return;
+                }
 
             }
-
-            if(user.online===true){
-
-                onlineUsersList.push(user);
-
-            }
-
-        });
-
-        onlineUsersList.sort((a,b)=>
-
-            (b.lastSeen||0)-(a.lastSeen||0)
-
         );
 
-        if(onlineUsersList.length===0){
+    }
 
-            onlineUsers.innerHTML=`
 
-            <div class="emptyOnline">
+    /* =====================================================
+       REFRESH
+    ====================================================== */
 
-                <i class="fa-solid fa-user-slash"></i>
+    if (refreshBtn) {
 
-                <p>No users online</p>
+        refreshBtn.addEventListener(
+            "click",
+            async () => {
 
-            </div>
+                refreshBtn.classList.add(
+                    "rotating"
+                );
 
-            `;
 
-        }
+                await loadUsers();
 
-        else{
 
-            onlineUsersList.forEach(user=>{
+                setTimeout(() => {
 
-                onlineUsers.innerHTML+=`
+                    refreshBtn.classList.remove(
+                        "rotating"
+                    );
 
-<div class="onlineUser fadeIn"
+                }, 500);
 
-onclick="openProfile('${user.uid}')">
-
-<div class="onlineAvatar">
-
-<img
-
-src="${avatar(user.photoURL)}"
-
-onerror="this.src='assets/default-avatar.png'">
-
-<span class="onlineDot"></span>
-
-</div>
-
-<h5>
-
-${user.name||"User"}
-
-</h5>
-
-</div>
-
-`;
-
-            });
-
-        }
-
-        updateCounters();
-
-    };
-
-    db.ref("users").on("value",onlineListener);
-
-}
-
-/*=========================================
-Follow / Unfollow
-=========================================*/
-
-async function followUser(uid){
-
-    try{
-
-        const myRef=db.ref("users/"+currentUser.uid);
-
-        const targetRef=db.ref("users/"+uid);
-
-        const mySnap=await myRef.once("value");
-        const me=mySnap.val()||{};
-
-        let myFollowing=me.following||[];
-
-        if(!Array.isArray(myFollowing)){
-
-            myFollowing=[];
-
-        }
-
-        const targetSnap=await targetRef.once("value");
-        const target=targetSnap.val()||{};
-
-        if(myFollowing.includes(uid)){
-
-            myFollowing=myFollowing.filter(id=>id!==uid);
-
-            await myRef.update({
-
-                following:myFollowing
-
-            });
-
-            await targetRef.update({
-
-                followers:Math.max(
-
-                    0,
-
-                    (target.followers||0)-1
-
-                )
-
-            });
-
-            showToast("Unfollowed");
-
-        }
-
-        else{
-
-            myFollowing.push(uid);
-
-            await myRef.update({
-
-                following:myFollowing
-
-            });
-
-            await targetRef.update({
-
-                followers:
-
-                (target.followers||0)+1
-
-            });
-
-            showToast("Following");
-
-        }
-
-        following=myFollowing;
-
-        refreshUsers();
+            }
+        );
 
     }
 
-    catch(error){
 
-        console.error(error);
+    /* =====================================================
+       ADD FRIEND
+    ====================================================== */
 
-        showToast("Something went wrong",false);
+    if (addFriendBtn) {
 
-    }
+        addFriendBtn.addEventListener(
+            "click",
+            () => {
 
-}
+                if (searchInput) {
 
-/*=========================================
-Open Profile Modal
-=========================================*/
+                    window.scrollTo({
+                        top: 0,
+                        behavior: "smooth"
+                    });
 
-function openProfile(uid){
 
-    const user=
+                    setTimeout(() => {
 
-    users.find(item=>item.uid===uid);
+                        searchInput.focus();
 
-    if(!user) return;
+                    }, 350);
 
-    profileModal?.classList.remove("hidden");
+                }
 
-    document.getElementById("modalAvatar").src=
-
-    avatar(user.photoURL);
-
-    document.getElementById("modalName").textContent=
-
-    user.name||"Unknown";
-
-    document.getElementById("modalUsername").textContent=
-
-    "@"+(user.username||"user");
-
-    document.getElementById("modalBio").textContent=
-
-    user.bio||"No bio available.";
-
-    document.getElementById("modalPosts").textContent=
-
-    formatNumber(user.posts||0);
-
-    document.getElementById("modalFollowers").textContent=
-
-    formatNumber(user.followers||0);
-
-    document.getElementById("modalFollowing").textContent=
-
-    formatNumber(user.followingCount||0);
-
-    const followBtn=document.getElementById("followBtn");
-
-    if(following.includes(uid)){
-
-        followBtn.innerHTML=
-
-        '<i class="fa-solid fa-user-check"></i> Following';
+            }
+        );
 
     }
 
-    else{
 
-        followBtn.innerHTML=
+    /* =====================================================
+       SCROLL TOP
+    ====================================================== */
 
-        '<i class="fa-solid fa-user-plus"></i> Follow';
+    window.addEventListener(
+        "scroll",
+        () => {
 
-    }
+            if (!scrollTopBtn) {
+                return;
+            }
 
-    followBtn.onclick=()=>{
 
-        followUser(uid);
+            if (
+                window.scrollY > 400
+            ) {
 
-    };
+                scrollTopBtn.classList.remove(
+                    "hidden"
+                );
 
-    document.getElementById("messageBtn").onclick=()=>{
+            } else {
 
-        location.href="chat.html?uid="+uid;
-
-    };
-
-}
-
-/*=========================================
-Close Modal
-=========================================*/
-
-document.getElementById("closeModal")
-
-?.addEventListener("click",()=>{
-
-    profileModal?.classList.add("hidden");
-
-});
-
-document.querySelector(".modalOverlay")
-
-?.addEventListener("click",()=>{
-
-    profileModal?.classList.add("hidden");
-
-});
-
-/*=========================================
-ESC Key Close
-=========================================*/
-
-document.addEventListener("keydown",e=>{
-
-    if(e.key==="Escape"){
-
-        profileModal?.classList.add("hidden");
-
-    }
-
-});
-
-console.log("✅ users.js Part 3 Ready");
-/*=========================================
-        VIEWORA USERS V9
-        users.js - PART 4 FINAL
- Premium Effects • Performance • Initialize
-=========================================*/
-
-/*=========================================
-Back Button
-=========================================*/
-
-backBtn?.addEventListener("click",()=>{
-
-    history.back();
-
-});
-
-/*=========================================
-Refresh Button
-=========================================*/
-
-refreshBtn?.addEventListener("click",()=>{
-
-    showToast("Refreshing...");
-
-    loadUsers();
-
-});
-
-/*=========================================
-Ripple Effect
-=========================================*/
-
-document.addEventListener("click",e=>{
-
-    const target=e.target.closest("button,a");
-
-    if(!target) return;
-
-    const ripple=document.createElement("span");
-
-    ripple.className="ripple";
-
-    const size=Math.max(
-
-        target.clientWidth,
-
-        target.clientHeight
-
-    );
-
-    const rect=target.getBoundingClientRect();
-
-    ripple.style.width=size+"px";
-    ripple.style.height=size+"px";
-
-    ripple.style.left=
-
-    (e.clientX-rect.left-size/2)+"px";
-
-    ripple.style.top=
-
-    (e.clientY-rect.top-size/2)+"px";
-
-    target.appendChild(ripple);
-
-    setTimeout(()=>{
-
-        ripple.remove();
-
-    },600);
-
-});
-
-/*=========================================
-Pull To Refresh
-=========================================*/
-
-let touchStart=0;
-let pullDistance=0;
-
-window.addEventListener("touchstart",e=>{
-
-    if(window.scrollY===0){
-
-        touchStart=e.touches[0].clientY;
-
-    }
-
-});
-
-window.addEventListener("touchmove",e=>{
-
-    pullDistance=
-
-    e.touches[0].clientY-touchStart;
-
-});
-
-window.addEventListener("touchend",()=>{
-
-    if(pullDistance>120){
-
-        showToast("Refreshing...");
-
-        loadUsers();
-
-    }
-
-    pullDistance=0;
-
-});
-
-/*=========================================
-Lazy Image Loading
-=========================================*/
-
-function lazyLoadImages(){
-
-    const images=document.querySelectorAll("img[data-src]");
-
-    if(images.length===0) return;
-
-    const observer=new IntersectionObserver(entries=>{
-
-        entries.forEach(entry=>{
-
-            if(entry.isIntersecting){
-
-                const img=entry.target;
-
-                img.src=img.dataset.src;
-
-                img.removeAttribute("data-src");
-
-                observer.unobserve(img);
+                scrollTopBtn.classList.add(
+                    "hidden"
+                );
 
             }
 
-        });
+        },
+        {
+            passive: true
+        }
+    );
 
-    });
 
-    images.forEach(img=>observer.observe(img));
+    if (scrollTopBtn) {
 
-}
+        scrollTopBtn.addEventListener(
+            "click",
+            () => {
 
-/*=========================================
-Card Animation
-=========================================*/
+                window.scrollTo({
+                    top: 0,
+                    behavior: "smooth"
+                });
 
-const cardObserver=
+            }
+        );
 
-new IntersectionObserver(entries=>{
+    }
 
-    entries.forEach(entry=>{
 
-        if(entry.isIntersecting){
+    /* =====================================================
+       SKELETON
+    ====================================================== */
 
-            entry.target.classList.add("fadeIn");
+    function showSkeleton() {
 
-            cardObserver.unobserve(entry.target);
+        if (usersSkeleton) {
+
+            usersSkeleton.classList.remove(
+                "hidden"
+            );
 
         }
 
-    });
+    }
 
-},{
-    threshold:.15
-});
 
-function observeCards(){
+    function hideSkeleton() {
 
-    document.querySelectorAll(
+        if (usersSkeleton) {
 
-        ".userCard,.suggestCard,.onlineUser"
+            usersSkeleton.classList.add(
+                "hidden"
+            );
 
-    ).forEach(card=>{
-
-        cardObserver.observe(card);
-
-    });
-
-}
-
-/*=========================================
-Scroll To Top
-=========================================*/
-
-window.addEventListener("scroll",()=>{
-
-    if(window.scrollY>350){
-
-        scrollTopBtn?.classList.remove("hidden");
+        }
 
     }
 
-    else{
 
-        scrollTopBtn?.classList.add("hidden");
+    /* =====================================================
+       AUTH
+    ====================================================== */
 
-    }
+    function initializeAuth() {
 
-});
+        if (
+            typeof firebase === "undefined" ||
+            !firebase.auth
+        ) {
 
-scrollTopBtn?.addEventListener("click",()=>{
+            loadUsers();
 
-    window.scrollTo({
+            return;
+        }
 
-        top:0,
 
-        behavior:"smooth"
+        firebase
+            .auth()
+            .onAuthStateChanged(
+                user => {
 
-    });
+                    currentUser =
+                        user || null;
 
-});
 
-/*=========================================
-Search Animation
-=========================================*/
+                    loadUsers();
 
-searchInput?.addEventListener("focus",()=>{
-
-    document.querySelector(".searchBox")
-
-    ?.classList.add("focused");
-
-});
-
-searchInput?.addEventListener("blur",()=>{
-
-    document.querySelector(".searchBox")
-
-    ?.classList.remove("focused");
-
-});
-
-/*=========================================
-Keyboard Shortcuts
-=========================================*/
-
-document.addEventListener("keydown",e=>{
-
-    if(e.key==="/"){
-
-        e.preventDefault();
-
-        searchInput?.focus();
+                }
+            );
 
     }
 
-});
 
-/*=========================================
-Online / Offline
-=========================================*/
+    /* =====================================================
+       START
+    ====================================================== */
 
-window.addEventListener("online",()=>{
+    initializeAuth();
 
-    showToast("Internet Connected");
-
-    loadUsers();
-
-});
-
-window.addEventListener("offline",()=>{
-
-    showToast("No Internet",false);
-
-});
-
-/*=========================================
-Vibration
-=========================================*/
-
-document.addEventListener("click",e=>{
-
-    if(
-
-        navigator.vibrate &&
-
-        e.target.closest("button,a")
-
-    ){
-
-        navigator.vibrate(10);
-
-    }
-
-});
-
-/*=========================================
-Floating Button
-=========================================*/
-
-document.getElementById("addFriendBtn")
-
-?.addEventListener("click",()=>{
-
-    showToast("Coming Soon",false);
-
-});
-
-/*=========================================
-Cleanup
-=========================================*/
-
-window.addEventListener("beforeunload",()=>{
-
-    if(usersListener){
-
-        db.ref("users")
-
-        .off("value",usersListener);
-
-    }
-
-    if(onlineListener){
-
-        db.ref("users")
-
-        .off("value",onlineListener);
-
-    }
-
-});
-
-/*=========================================
-Initialize Premium Effects
-=========================================*/
-
-window.addEventListener("load",()=>{
-
-    lazyLoadImages();
-
-    observeCards();
-
-    updateMyStatus(true);
-
-    console.log(
-
-        "%cVIEWORA USERS V9 READY",
-
-        "color:#00AAFF;font-size:18px;font-weight:bold"
-
-    );
-
-});
-
-/*=========================================
-Auto Refresh Every 30 Seconds
-=========================================*/
-
-setInterval(()=>{
-
-    if(currentUser){
-
-        loadUsers();
-
-    }
-
-},30000);
-
-/*=========================================
-Finish
-=========================================*/
-
-console.log("✅ Viewora Users V9 Loaded Successfully");
+})();

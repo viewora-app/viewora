@@ -3,497 +3,1103 @@
 
 <head>
 
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8">
 
-<title>Viewora • Users</title>
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    >
 
-<meta name="theme-color" content="#08111f">
+    <meta
+        name="theme-color"
+        content="#070912"
+    >
 
-<meta
-name="description"
-content="Discover creators on Viewora">
+    <meta
+        name="description"
+        content="Discover people and creators on Viewora."
+    >
 
-<link
-rel="icon"
-href="assets/logo.png">
+    <title>Viewora • Discover People</title>
 
-<!-- Google Font -->
 
-<link
-href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
-rel="stylesheet">
+    <!-- =====================================================
+         FONTS
+    ====================================================== -->
 
-<!-- Font Awesome -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
 
-<link
-rel="stylesheet"
-href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+    <link
+        rel="preconnect"
+        href="https://fonts.gstatic.com"
+        crossorigin
+    >
 
-<!-- CSS -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet"
+    >
 
-<link
-rel="stylesheet"
-href="users.css">
 
-<link
-rel="stylesheet"
-href="nav.css">
+    <!-- =====================================================
+         FONT AWESOME
+    ====================================================== -->
+
+    <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
+    >
+
+
+    <!-- =====================================================
+         VIEWORA CSS
+    ====================================================== -->
+
+    <link
+        rel="stylesheet"
+        href="users.css"
+    >
+
+    <link
+        rel="stylesheet"
+        href="nav.css"
+    >
 
 </head>
 
+
 <body>
 
-<!-- Background -->
 
-<div class="bgGlow"></div>
+    <!-- =====================================================
+         BACKGROUND
+    ====================================================== -->
 
-<!-- Loader -->
+    <div class="pageBackground">
 
-<div id="pageLoader">
+        <div class="glow glowOne"></div>
 
-<div class="loader">
+        <div class="glow glowTwo"></div>
 
-<div class="ring"></div>
-
-<div class="ring delay"></div>
-
-</div>
-
-<h2>Loading amazing creators...</h2>
-
-</div>
-
-<!-- =====================================
-            Main App
-====================================== -->
-
-<div id="app" class="hidden">
-
-<!-- =====================================
-              Header
-====================================== -->
-
-<header class="topBar">
-
-<button
-id="backBtn"
-class="iconBtn">
-
-<i class="fa-solid fa-arrow-left"></i>
-
-</button>
-
-<div class="titleArea">
-
-<h2>
-
-<i class="fa-solid fa-users"></i>
-
-Viewora Users
-
-</h2>
-
-<p>
-
-Discover • Follow • Connect
-
-</p>
-
-</div>
-
-<button
-id="refreshBtn"
-class="iconBtn">
-
-<i class="fa-solid fa-rotate"></i>
-
-</button>
-
-</header>
-
-<!-- =====================================
-            Search
-====================================== -->
-
-<section class="searchSection">
-
-<div class="searchBox">
-
-<i class="fa-solid fa-magnifying-glass"></i>
-
-<input
-type="text"
-id="searchInput"
-placeholder="Search creators...">
-
-<button id="clearSearch">
-
-<i class="fa-solid fa-xmark"></i>
-
-</button>
-
-</div>
-
-</section>
-<!-- =====================================
-        Suggested Users
-====================================== -->
-
-<section class="section">
-
-    <div class="sectionHeader">
-
-        <h3>⭐ Suggested For You</h3>
-
-        <button class="seeAllBtn">
-            See All
-        </button>
+        <div class="glow glowThree"></div>
 
     </div>
+
+
+    <!-- =====================================================
+         LOADER
+    ====================================================== -->
 
     <div
-        id="suggestedUsers"
-        class="suggestedContainer">
+        id="pageLoader"
+        class="pageLoader"
+    >
 
-        <!-- Rendered by users.js -->
+        <div class="loaderLogo">
 
-    </div>
+            <div class="loaderRing"></div>
 
-</section>
+            <div class="loaderDot"></div>
 
-<!-- =====================================
-            Online Users
-====================================== -->
+        </div>
 
-<section class="section">
+        <h2>Viewora</h2>
 
-    <div class="sectionHeader">
-
-        <h3>🟢 Online Now</h3>
-
-        <span id="onlineCount">
-            0 Online
-        </span>
+        <p>Discovering people...</p>
 
     </div>
 
-    <div
-        id="onlineUsers"
-        class="onlineContainer">
 
-        <!-- Rendered by users.js -->
+    <!-- =====================================================
+         MAIN APP
+    ====================================================== -->
 
-    </div>
+    <main
+        id="app"
+        class="usersPage hidden"
+    >
 
-</section>
 
-<!-- =====================================
-              All Users
-====================================== -->
+        <!-- =================================================
+             HEADER
+        ================================================== -->
 
-<section class="section">
+        <header class="usersHeader">
 
-    <div class="sectionHeader">
+            <button
+                id="backBtn"
+                class="headerIcon"
+                type="button"
+                aria-label="Go back"
+            >
 
-        <h3>👥 All Users</h3>
+                <i class="fa-solid fa-arrow-left"></i>
 
-        <span id="totalUsers">
-            0 Users
-        </span>
+            </button>
 
-    </div>
 
-    <div
-        id="usersList"
-        class="usersList">
+            <div class="headerBrand">
 
-        <!-- Rendered by users.js -->
+                <div class="brandIcon">
 
-    </div>
+                    <i class="fa-solid fa-users"></i>
 
-</section>
+                </div>
 
-<!-- =====================================
-            Empty State
-====================================== -->
 
-<div
-    id="emptyState"
-    class="hidden">
+                <div class="headerText">
 
-    <div class="emptyIcon">
+                    <h1>Discover</h1>
 
-        <i class="fa-solid fa-user-slash"></i>
+                    <p>People on Viewora</p>
 
-    </div>
+                </div>
 
-    <h2>No Users Found</h2>
+            </div>
 
-    <p>
-        Try searching with another username.
-    </p>
 
-</div>
+            <button
+                id="refreshBtn"
+                class="headerIcon"
+                type="button"
+                aria-label="Refresh"
+            >
 
-<!-- =====================================
-          Skeleton Loader
-====================================== -->
+                <i class="fa-solid fa-rotate"></i>
 
-<div
-    id="usersSkeleton"
-    class="hidden">
+            </button>
 
-    <div class="skeletonCard"></div>
-    <div class="skeletonCard"></div>
-    <div class="skeletonCard"></div>
-    <div class="skeletonCard"></div>
-    <div class="skeletonCard"></div>
+        </header>
 
-</div>
-<!-- =====================================
-        Profile Preview Modal
-====================================== -->
 
-<div id="profileModal" class="modal hidden">
+        <!-- =================================================
+             HERO
+        ================================================== -->
 
-    <div class="modalOverlay"></div>
+        <section class="discoverHero">
 
-    <div class="modalContent">
+            <div class="heroContent">
+
+                <span class="heroBadge">
+
+                    <i class="fa-solid fa-sparkles"></i>
+
+                    Viewora Community
+
+                </span>
+
+
+                <h2>
+                    Find your people.
+                </h2>
+
+
+                <p>
+                    Discover creators, connect with people
+                    and grow your community.
+                </p>
+
+            </div>
+
+
+            <div class="heroVisual">
+
+                <div class="heroCircle heroCircleOne"></div>
+
+                <div class="heroCircle heroCircleTwo"></div>
+
+                <i class="fa-solid fa-user-group"></i>
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================================
+             SEARCH
+        ================================================== -->
+
+        <section class="searchSection">
+
+            <div class="searchBox">
+
+                <div class="searchIcon">
+
+                    <i class="fa-solid fa-magnifying-glass"></i>
+
+                </div>
+
+
+                <input
+                    type="search"
+                    id="searchInput"
+                    placeholder="Search people or usernames..."
+                    autocomplete="off"
+                    spellcheck="false"
+                >
+
+
+                <button
+                    id="clearSearch"
+                    class="clearSearch"
+                    type="button"
+                    aria-label="Clear search"
+                >
+
+                    <i class="fa-solid fa-xmark"></i>
+
+                </button>
+
+            </div>
+
+
+            <div class="searchHint">
+
+                <span>
+                    <i class="fa-solid fa-bolt"></i>
+                    Instant search
+                </span>
+
+                <span>
+                    <i class="fa-solid fa-at"></i>
+                    Username
+                </span>
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================================
+             COMMUNITY STATS
+        ================================================== -->
+
+        <section class="communityStats">
+
+            <div class="statCard">
+
+                <div class="statIcon">
+
+                    <i class="fa-solid fa-users"></i>
+
+                </div>
+
+                <div>
+
+                    <strong id="totalUsers">
+                        0
+                    </strong>
+
+                    <span>Users</span>
+
+                </div>
+
+            </div>
+
+
+            <div class="statCard">
+
+                <div class="statIcon onlineIcon">
+
+                    <span class="onlineDot"></span>
+
+                </div>
+
+                <div>
+
+                    <strong id="onlineCount">
+                        0
+                    </strong>
+
+                    <span>Online</span>
+
+                </div>
+
+            </div>
+
+
+            <div class="statCard">
+
+                <div class="statIcon">
+
+                    <i class="fa-solid fa-user-plus"></i>
+
+                </div>
+
+                <div>
+
+                    <strong>Connect</strong>
+
+                    <span>Grow Together</span>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================================
+             SUGGESTED
+        ================================================== -->
+
+        <section class="usersSection">
+
+            <div class="sectionHeader">
+
+                <div class="sectionHeading">
+
+                    <div class="sectionHeadingIcon">
+
+                        <i class="fa-solid fa-wand-magic-sparkles"></i>
+
+                    </div>
+
+                    <div>
+
+                        <h2>Suggested For You</h2>
+
+                        <p>People you may want to connect with</p>
+
+                    </div>
+
+                </div>
+
+
+                <button
+                    id="suggestedSeeAll"
+                    class="seeAllBtn"
+                    type="button"
+                >
+
+                    See all
+
+                    <i class="fa-solid fa-arrow-right"></i>
+
+                </button>
+
+            </div>
+
+
+            <div
+                id="suggestedUsers"
+                class="suggestedContainer"
+            >
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================================
+             ONLINE
+        ================================================== -->
+
+        <section class="usersSection">
+
+            <div class="sectionHeader">
+
+                <div class="sectionHeading">
+
+                    <div class="sectionHeadingIcon onlineHeading">
+
+                        <span class="onlineDot"></span>
+
+                    </div>
+
+                    <div>
+
+                        <h2>Online Now</h2>
+
+                        <p>People active on Viewora</p>
+
+                    </div>
+
+                </div>
+
+
+                <span class="onlineBadge">
+
+                    <span class="onlineDot"></span>
+
+                    <span id="onlineCountText">
+                        0 Online
+                    </span>
+
+                </span>
+
+            </div>
+
+
+            <div
+                id="onlineUsers"
+                class="onlineContainer"
+            >
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================================
+             ALL USERS
+        ================================================== -->
+
+        <section class="usersSection allUsersSection">
+
+            <div class="sectionHeader">
+
+                <div class="sectionHeading">
+
+                    <div class="sectionHeadingIcon">
+
+                        <i class="fa-solid fa-layer-group"></i>
+
+                    </div>
+
+                    <div>
+
+                        <h2>All Users</h2>
+
+                        <p>Explore the Viewora community</p>
+
+                    </div>
+
+                </div>
+
+
+                <span
+                    id="totalUsersLabel"
+                    class="countBadge"
+                >
+                    0 Users
+                </span>
+
+            </div>
+
+
+            <!-- FILTERS -->
+
+            <div class="userFilters">
+
+                <button
+                    class="filterBtn active"
+                    data-filter="all"
+                    type="button"
+                >
+
+                    <i class="fa-solid fa-users"></i>
+
+                    All
+
+                </button>
+
+
+                <button
+                    class="filterBtn"
+                    data-filter="online"
+                    type="button"
+                >
+
+                    <span class="onlineDot"></span>
+
+                    Online
+
+                </button>
+
+
+                <button
+                    class="filterBtn"
+                    data-filter="creators"
+                    type="button"
+                >
+
+                    <i class="fa-solid fa-star"></i>
+
+                    Creators
+
+                </button>
+
+            </div>
+
+
+            <!-- USER LIST -->
+
+            <div
+                id="usersList"
+                class="usersList"
+            >
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================================
+             EMPTY STATE
+        ================================================== -->
+
+        <section
+            id="emptyState"
+            class="emptyState hidden"
+        >
+
+            <div class="emptyIllustration">
+
+                <div class="emptyCircle">
+
+                    <i class="fa-solid fa-user-slash"></i>
+
+                </div>
+
+            </div>
+
+
+            <h2>No people found</h2>
+
+
+            <p>
+                We couldn't find anyone matching your search.
+                Try another name or username.
+            </p>
+
+
+            <button
+                id="resetSearchBtn"
+                class="resetSearchBtn"
+                type="button"
+            >
+
+                <i class="fa-solid fa-arrow-rotate-left"></i>
+
+                Clear search
+
+            </button>
+
+        </section>
+
+
+        <!-- =================================================
+             SKELETON
+        ================================================== -->
+
+        <section
+            id="usersSkeleton"
+            class="usersSkeleton hidden"
+        >
+
+            <div class="skeletonCard"></div>
+
+            <div class="skeletonCard"></div>
+
+            <div class="skeletonCard"></div>
+
+            <div class="skeletonCard"></div>
+
+        </section>
+
+
+        <!-- =================================================
+             PROFILE MODAL
+        ================================================== -->
+
+        <div
+            id="profileModal"
+            class="modal hidden"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="modalName"
+        >
+
+            <div
+                id="modalOverlay"
+                class="modalOverlay"
+            ></div>
+
+
+            <div class="modalContent">
+
+
+                <!-- CLOSE -->
+
+                <button
+                    id="closeModal"
+                    class="closeBtn"
+                    type="button"
+                    aria-label="Close profile"
+                >
+
+                    <i class="fa-solid fa-xmark"></i>
+
+                </button>
+
+
+                <!-- COVER -->
+
+                <div class="modalCover">
+
+                    <div class="modalCoverGlow"></div>
+
+                </div>
+
+
+                <!-- AVATAR -->
+
+                <div class="modalAvatarWrapper">
+
+                    <img
+                        id="modalAvatar"
+                        class="modalAvatar"
+                        src="assets/default-avatar.png"
+                        alt="Profile"
+                    >
+
+
+                    <span
+                        id="modalOnlineDot"
+                        class="modalOnlineDot"
+                    ></span>
+
+                </div>
+
+
+                <!-- PROFILE INFO -->
+
+                <div class="modalProfileInfo">
+
+                    <h2 id="modalName">
+                        Viewora User
+                    </h2>
+
+
+                    <p
+                        id="modalUsername"
+                        class="modalUsername"
+                    >
+                        @username
+                    </p>
+
+
+                    <div
+                        id="modalPrivacy"
+                        class="modalPrivacy"
+                    >
+
+                        <i class="fa-solid fa-earth-americas"></i>
+
+                        Public profile
+
+                    </div>
+
+
+                    <p
+                        id="modalBio"
+                        class="modalBio"
+                    >
+                        Welcome to Viewora 🚀
+                    </p>
+
+                </div>
+
+
+                <!-- STATS -->
+
+                <div class="profileStats">
+
+                    <div class="profileStat">
+
+                        <strong id="modalPosts">
+                            0
+                        </strong>
+
+                        <span>Posts</span>
+
+                    </div>
+
+
+                    <div class="profileStat">
+
+                        <strong id="modalFollowers">
+                            0
+                        </strong>
+
+                        <span>Followers</span>
+
+                    </div>
+
+
+                    <div class="profileStat">
+
+                        <strong id="modalFollowing">
+                            0
+                        </strong>
+
+                        <span>Following</span>
+
+                    </div>
+
+                </div>
+
+
+                <!-- ACTIONS -->
+
+                <div class="modalButtons">
+
+                    <button
+                        id="followBtn"
+                        class="primaryBtn"
+                        type="button"
+                    >
+
+                        <i class="fa-solid fa-user-plus"></i>
+
+                        <span>Follow</span>
+
+                    </button>
+
+
+                    <button
+                        id="messageBtn"
+                        class="secondaryBtn"
+                        type="button"
+                    >
+
+                        <i class="fa-solid fa-paper-plane"></i>
+
+                        <span>Message</span>
+
+                    </button>
+
+                </div>
+
+
+                <!-- PRIVATE MESSAGE -->
+
+                <div
+                    id="privateMessage"
+                    class="privateMessage hidden"
+                >
+
+                    <i class="fa-solid fa-lock"></i>
+
+                    <span>
+                        This profile is private.
+                        Follow them to connect.
+                    </span>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- =================================================
+             FLOATING BUTTONS
+        ================================================== -->
 
         <button
-            id="closeModal"
-            class="closeBtn">
+            id="scrollTopBtn"
+            class="floatingBtn hidden"
+            type="button"
+            aria-label="Scroll to top"
+        >
 
-            <i class="fa-solid fa-xmark"></i>
+            <i class="fa-solid fa-arrow-up"></i>
 
         </button>
 
-        <img
-            id="modalAvatar"
-            class="modalAvatar"
-            src="assets/default-avatar.png"
-            alt="Profile">
 
-        <h2 id="modalName">
+        <button
+            id="addFriendBtn"
+            class="floatingBtn addBtn"
+            type="button"
+            aria-label="Find people"
+        >
 
-            Viewora User
+            <i class="fa-solid fa-user-plus"></i>
 
-        </h2>
+        </button>
 
-        <p id="modalUsername">
 
-            @username
+        <!-- =================================================
+             TOAST
+        ================================================== -->
 
-        </p>
+        <div
+            id="toast"
+            class="toast hidden"
+            role="status"
+            aria-live="polite"
+        >
 
-        <p id="modalBio">
+            <i
+                id="toastIcon"
+                class="fa-solid fa-circle-check"
+            ></i>
 
-            Welcome to Viewora 🚀
 
-        </p>
-
-        <div class="profileStats">
-
-            <div>
-
-                <h3 id="modalPosts">0</h3>
-
-                <span>Posts</span>
-
-            </div>
-
-            <div>
-
-                <h3 id="modalFollowers">0</h3>
-
-                <span>Followers</span>
-
-            </div>
-
-            <div>
-
-                <h3 id="modalFollowing">0</h3>
-
-                <span>Following</span>
-
-            </div>
+            <span id="toastText">
+                Success
+            </span>
 
         </div>
 
-        <div class="modalButtons">
+    </main>
 
-            <button
-                id="followBtn"
-                class="primaryBtn">
 
-                <i class="fa-solid fa-user-plus"></i>
+    <!-- =====================================================
+         BOTTOM NAV
+    ====================================================== -->
 
-                Follow
+    <nav class="bottomNav">
 
-            </button>
+        <a href="index.html">
 
-            <button
-                id="messageBtn"
-                class="secondaryBtn">
+            <span class="activeIndicator"></span>
 
-                <i class="fa-solid fa-paper-plane"></i>
+            <i class="fa-solid fa-house"></i>
 
-                Message
+            <span>Home</span>
 
-            </button>
+        </a>
 
-        </div>
 
-    </div>
+        <a href="shorts.html">
 
-</div>
+            <span class="activeIndicator"></span>
 
-<!-- =====================================
-        Floating Action Buttons
-====================================== -->
+            <i class="fa-solid fa-play"></i>
 
-<button
-    id="scrollTopBtn"
-    class="floatingBtn hidden">
+            <span>Shorts</span>
 
-    <i class="fa-solid fa-arrow-up"></i>
+        </a>
 
-</button>
 
-<button
-    id="addFriendBtn"
-    class="floatingBtn addBtn">
+        <a
+            href="upload.html"
+            class="uploadNav"
+            aria-label="Create"
+        >
 
-    <i class="fa-solid fa-user-plus"></i>
+            <i class="fa-solid fa-plus"></i>
 
-</button>
+        </a>
 
-<!-- =====================================
-        Premium Toast
-====================================== -->
 
-<div
-    id="toast"
-    class="toast hidden">
+        <a
+            href="users.html"
+            class="active"
+        >
 
-    <i
-        id="toastIcon"
-        class="fa-solid fa-circle-check"></i>
+            <span class="activeIndicator"></span>
 
-    <span id="toastText">
+            <i class="fa-solid fa-users"></i>
 
-        Success
+            <span>Users</span>
 
-    </span>
+        </a>
 
-</div>
-<!-- =====================================
-        Premium Bottom Navigation
-====================================== -->
 
-<nav class="bottomNav">
+        <a href="profile.html">
 
-    <a href="index.html">
+            <span class="activeIndicator"></span>
 
-        <span class="activeIndicator"></span>
+            <i class="fa-solid fa-user"></i>
 
-        <i class="fa-solid fa-house"></i>
+            <span>Profile</span>
 
-        <span>Home</span>
+        </a>
 
-    </a>
+    </nav>
 
-    <a href="shorts.html">
 
-        <span class="activeIndicator"></span>
+    <!-- =====================================================
+         FIREBASE
+    ====================================================== -->
 
-        <i class="fa-solid fa-play"></i>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 
-        <span>Shorts</span>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 
-    </a>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
 
-    <a
-        href="upload.html"
-        class="uploadNav">
 
-        <i class="fa-solid fa-plus"></i>
+    <!-- Firebase Config -->
 
-    </a>
+    <script src="firebase.js"></script>
 
-    <a
-        href="users.html"
-        class="active">
 
-        <span class="activeIndicator"></span>
+    <!-- Navigation -->
 
-        <i class="fa-solid fa-users"></i>
+    <script src="nav.js"></script>
 
-        <span>Users</span>
 
-    </a>
+    <!-- Users Logic -->
 
-    <a href="profile.html">
+    <script src="users.js"></script>
 
-        <span class="activeIndicator"></span>
 
-        <i class="fa-solid fa-user"></i>
+    <!-- =====================================================
+         PAGE STARTUP
+    ====================================================== -->
 
-        <span>Profile</span>
+    <script>
 
-    </a>
+        window.addEventListener("load", () => {
 
-</nav>
+            const loader =
+                document.getElementById("pageLoader");
 
-<!-- =====================================
-            Firebase SDK
-====================================== -->
+            const app =
+                document.getElementById("app");
 
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
 
-<script src="firebase.js"></script>
-<script src="nav.js"></script>
-<script src="users.js"></script>
+            setTimeout(() => {
 
-<!-- =====================================
-            Premium Startup
-====================================== -->
+                if (loader) {
 
-<script>
+                    loader.classList.add("loaded");
 
-window.addEventListener("load",()=>{
+                }
 
-const loader=document.getElementById("pageLoader");
-const app=document.getElementById("app");
 
-setTimeout(()=>{
+                if (app) {
 
-if(loader){
+                    app.classList.remove("hidden");
 
-loader.style.opacity="0";
-loader.style.visibility="hidden";
-loader.style.pointerEvents="none";
+                    app.classList.add("fadeIn");
 
-}
+                }
 
-if(app){
+            }, 700);
 
-app.classList.remove("hidden");
-app.classList.add("fadeIn");
+        });
 
-}
 
-},1000);
+        /* ================================================
+           SEARCH CLEAR
+        ================================================= */
 
-});
+        const searchInput =
+            document.getElementById("searchInput");
 
-</script>
+        const clearSearch =
+            document.getElementById("clearSearch");
 
-</div>
+        const resetSearchBtn =
+            document.getElementById("resetSearchBtn");
+
+
+        function clearUsersSearch() {
+
+            if (!searchInput) return;
+
+            searchInput.value = "";
+
+            searchInput.dispatchEvent(
+                new Event("input")
+            );
+
+            searchInput.focus();
+
+        }
+
+
+        if (clearSearch) {
+
+            clearSearch.addEventListener(
+                "click",
+                clearUsersSearch
+            );
+
+        }
+
+
+        if (resetSearchBtn) {
+
+            resetSearchBtn.addEventListener(
+                "click",
+                clearUsersSearch
+            );
+
+        }
+
+
+        /* ================================================
+           BACKUP COUNT MIRROR
+        ================================================= */
+
+        const onlineCount =
+            document.getElementById("onlineCount");
+
+        const onlineCountText =
+            document.getElementById("onlineCountText");
+
+
+        if (
+            onlineCount &&
+            onlineCountText
+        ) {
+
+            const observer =
+                new MutationObserver(() => {
+
+                    onlineCountText.textContent =
+                        `${onlineCount.textContent} Online`;
+
+                });
+
+
+            observer.observe(
+                onlineCount,
+                {
+                    childList: true,
+                    characterData: true,
+                    subtree: true
+                }
+            );
+
+        }
+
+
+        /* ================================================
+           TOTAL COUNT MIRROR
+        ================================================= */
+
+        const totalUsers =
+            document.getElementById("totalUsers");
+
+        const totalUsersLabel =
+            document.getElementById("totalUsersLabel");
+
+
+        if (
+            totalUsers &&
+            totalUsersLabel
+        ) {
+
+            const observer =
+                new MutationObserver(() => {
+
+                    totalUsersLabel.textContent =
+                        `${totalUsers.textContent} Users`;
+
+                });
+
+
+            observer.observe(
+                totalUsers,
+                {
+                    childList: true,
+                    characterData: true,
+                    subtree: true
+                }
+            );
+
+        }
+
+    </script>
 
 </body>
 

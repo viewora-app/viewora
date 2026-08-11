@@ -40,9 +40,40 @@
 
     <!-- Viewora Chat CSS -->
     <link rel="stylesheet" href="chat.css">
+    <link rel="stylesheet" href="viewora-loader.css">
 </head>
 
 <body>
+
+<!-- =====================================================
+     VIEWORA GLOBAL PREMIUM LOADER
+===================================================== -->
+
+<div id="vieworaGlobalLoader" class="vieworaGlobalLoader" role="status" aria-live="polite" aria-label="Loading Viewora">
+
+    <div class="vieworaLoaderGlow"></div>
+
+    <div class="vieworaLoaderCard">
+
+        <div class="vieworaLoaderLogo">
+            <img
+                src="assets/logo.png"
+                alt="Viewora"
+                draggable="false"
+            >
+        </div>
+
+        <h2>Viewora</h2>
+
+        <p id="vieworaLoaderStatus">
+            Connecting to Viewora...
+        </p>
+
+        <div class="vieworaLoaderSpinner" aria-hidden="true"></div>
+
+    </div>
+
+</div>
 
 <!-- =====================================================
      BACKGROUND
@@ -1292,6 +1323,7 @@
 
 <script src="firebase.js"></script>
 <script src="chat.js"></script>
+<script src="viewora-loader.js"></script>
 
 </body>
 </html>

@@ -1,161 +1,202 @@
-/*=========================================
-        VIEWORA V10 PREMIUM
-            signup.js
-            PART 1
- DOM • Variables • Loader • Toast
-=========================================*/
+/*==========================================================
+        VIEWORA V12 PREMIUM
+        signup.js
+        FINAL • FIREBASE COMPATIBLE
+
+        IMPORTANT:
+        auth          → firebase.js
+        db            → firebase.js
+        googleProvider → firebase.js
+        SERVER_TIME   → firebase.js
+        usernamesRef  → firebase.js
+==========================================================*/
 
 "use strict";
 
-/*=========================================
-Firebase Check
-=========================================*/
+/*==========================================================
+  1. FIREBASE CHECK
+==========================================================*/
 
-if (typeof firebase === "undefined")
+if (typeof firebase === "undefined") {
     throw new Error("Firebase SDK Missing");
+}
 
-if (typeof auth === "undefined")
+if (typeof auth === "undefined") {
     throw new Error("Firebase Auth Missing");
+}
 
-if (typeof db === "undefined")
+if (typeof db === "undefined") {
     throw new Error("Realtime Database Missing");
+}
 
-/*=========================================
-DOM Elements
-=========================================*/
+if (typeof googleProvider === "undefined") {
+    console.warn(
+        "⚠️ googleProvider not found. Google Signup will be disabled."
+    );
+}
+
+
+/*==========================================================
+  2. DOM ELEMENTS
+==========================================================*/
 
 const signupForm =
-document.getElementById("signupForm");
+    document.getElementById("signupForm");
 
 const nameInput =
-document.getElementById("name");
+    document.getElementById("name");
 
 const usernameInput =
-document.getElementById("username");
+    document.getElementById("username");
 
 const emailInput =
-document.getElementById("email");
+    document.getElementById("email");
 
 const passwordInput =
-document.getElementById("password");
+    document.getElementById("password");
 
 const confirmPasswordInput =
-document.getElementById("confirmPassword");
+    document.getElementById("confirmPassword");
 
 const signupBtn =
-document.getElementById("signupBtn");
+    document.getElementById("signupBtn");
 
 const googleSignupBtn =
-document.getElementById("googleSignup");
+    document.getElementById("googleSignup");
 
 const togglePassword =
-document.getElementById("togglePassword");
+    document.getElementById("togglePassword");
 
 const toggleConfirmPassword =
-document.getElementById("toggleConfirmPassword");
+    document.getElementById("toggleConfirmPassword");
 
 const usernameStatus =
-document.getElementById("usernameStatus");
+    document.getElementById("usernameStatus");
 
 const strengthFill =
-document.getElementById("strengthFill");
+    document.getElementById("strengthFill");
 
 const strengthText =
-document.getElementById("strengthText");
+    document.getElementById("strengthText");
 
 const loadingOverlay =
-document.getElementById("loadingOverlay");
+    document.getElementById("loadingOverlay");
 
 const toast =
-document.getElementById("toast");
+    document.getElementById("toast");
 
 const toastIcon =
-document.getElementById("toastIcon");
+    document.getElementById("toastIcon");
 
 const toastText =
-document.getElementById("toastText");
+    document.getElementById("toastText");
 
 const verifyModal =
-document.getElementById("verifyModal");
+    document.getElementById("verifyModal");
 
 const openMailBtn =
-document.getElementById("openMailBtn");
+    document.getElementById("openMailBtn");
 
 const continueBtn =
-document.getElementById("continueBtn");
+    document.getElementById("continueBtn");
 
 const acceptTerms =
-document.getElementById("acceptTerms");
+    document.getElementById("acceptTerms");
 
-/*=========================================
-Variables
-=========================================*/
 
-let usernameAvailable = false;
+/*==========================================================
+  3. STATE
+==========================================================*/
 
 let loading = false;
+let usernameAvailable = false;
 
 let usernameTimer = null;
-
 let toastTimer = null;
 
-/*=========================================
-Loader
-=========================================*/
 
-function showLoading(){
+/*==========================================================
+  4. LOADING
+==========================================================*/
+
+function showLoading(message = "Creating your Viewora account...") {
 
     loading = true;
 
-    if(loadingOverlay)
+    if (loadingOverlay) {
+
         loadingOverlay.classList.remove("hidden");
 
-    if(signupBtn)
-        signupBtn.disabled = true;
+        const loadingText =
+            loadingOverlay.querySelector(
+                ".loadingText"
+            );
 
+        if (loadingText) {
+            loadingText.textContent = message;
+        }
+    }
+
+    if (signupBtn) {
+        signupBtn.disabled = true;
+    }
+
+    if (googleSignupBtn) {
+        googleSignupBtn.disabled = true;
+    }
 }
 
-function hideLoading(){
+
+function hideLoading() {
 
     loading = false;
 
-    if(loadingOverlay)
+    if (loadingOverlay) {
         loadingOverlay.classList.add("hidden");
+    }
 
-    if(signupBtn)
+    if (signupBtn) {
         signupBtn.disabled = false;
+    }
 
+    if (googleSignupBtn) {
+        googleSignupBtn.disabled = false;
+    }
 }
 
-/*=========================================
-Toast
-=========================================*/
 
-function showToast(message,type="success"){
+/*==========================================================
+  5. TOAST
+==========================================================*/
 
-    if(!toast) return;
+function showToast(
+    message,
+    type = "success"
+) {
 
-    toastText.textContent = message;
+    if (!toast) return;
 
-    if(type==="success"){
+    if (toastText) {
+        toastText.textContent = message;
+    }
 
-        toastIcon.className =
-        "fa-solid fa-circle-check";
+    if (toastIcon) {
 
-        toastIcon.style.color = "#00d26a";
+        if (type === "success") {
 
-    }else{
+            toastIcon.className =
+                "fa-solid fa-circle-check";
 
-        toastIcon.className =
-        "fa-solid fa-circle-xmark";
+        } else {
 
-        toastIcon.style.color = "#ff4d4d";
-
+            toastIcon.className =
+                "fa-solid fa-circle-xmark";
+        }
     }
 
     toast.classList.remove("hidden");
 
-    requestAnimationFrame(()=>{
+    requestAnimationFrame(() => {
 
         toast.classList.add("show");
 
@@ -163,1531 +204,1467 @@ function showToast(message,type="success"){
 
     clearTimeout(toastTimer);
 
-    toastTimer = setTimeout(()=>{
+    toastTimer = setTimeout(() => {
 
         toast.classList.remove("show");
 
-        setTimeout(()=>{
+        setTimeout(() => {
 
             toast.classList.add("hidden");
 
-        },300);
+        }, 300);
 
-    },3000);
-
+    }, 3000);
 }
 
-/*=========================================
-Password Toggle
-=========================================*/
 
-function toggleField(input,button){
+/*==========================================================
+  6. PASSWORD VISIBILITY
+==========================================================*/
 
-    if(!input || !button) return;
+function togglePasswordField(
+    input,
+    button
+) {
 
-    if(input.type==="password"){
+    if (!input || !button) return;
 
-        input.type="text";
+    if (input.type === "password") {
+
+        input.type = "text";
 
         button.innerHTML =
-        '<i class="fa-solid fa-eye-slash"></i>';
+            '<i class="fa-solid fa-eye-slash"></i>';
 
-    }else{
+    } else {
 
-        input.type="password";
+        input.type = "password";
 
         button.innerHTML =
-        '<i class="fa-solid fa-eye"></i>';
-
+            '<i class="fa-solid fa-eye"></i>';
     }
-
 }
 
-togglePassword?.addEventListener("click",()=>{
 
-    toggleField(
-        passwordInput,
-        togglePassword
-    );
+togglePassword?.addEventListener(
+    "click",
+    () => {
 
-});
-
-toggleConfirmPassword?.addEventListener("click",()=>{
-
-    toggleField(
-        confirmPasswordInput,
-        toggleConfirmPassword
-    );
-
-});
-
-/*=========================================
-Startup
-=========================================*/
-
-window.addEventListener("load",()=>{
-
-    hideLoading();
-
-    console.log("================================");
-    console.log("🚀 VIEWORA V10 SIGNUP");
-    console.log("✅ Firebase Ready");
-    console.log("✅ Signup Ready");
-    console.log("================================");
-
-});
-/*=========================================
-        VIEWORA V10 PREMIUM
-            signup.js
-            PART 2
- Validation • Password Strength
- Username Availability
-=========================================*/
-
-/*=========================================
-Email Validation
-=========================================*/
-
-function validEmail(email){
-
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-
-}
-
-/*=========================================
-Username Validation
-=========================================*/
-
-function validUsername(username){
-
-    return /^[a-z0-9_]{3,20}$/.test(username);
-
-}
-
-/*=========================================
-Password Strength
-=========================================*/
-
-function updatePasswordStrength(){
-
-    const password=passwordInput.value.trim();
-
-    let score=0;
-
-    if(password.length>=8) score++;
-
-    if(/[A-Z]/.test(password)) score++;
-
-    if(/[a-z]/.test(password)) score++;
-
-    if(/[0-9]/.test(password)) score++;
-
-    if(/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(password)) score++;
-
-    let width="0%";
-    let color="#ff4d4d";
-    let text="Weak";
-
-    if(score===1){
-
-        width="20%";
+        togglePasswordField(
+            passwordInput,
+            togglePassword
+        );
 
     }
-
-    if(score===2){
-
-        width="40%";
-
-        color="#ff9800";
-
-        text="Medium";
-
-    }
-
-    if(score===3){
-
-        width="60%";
-
-        color="#ffc107";
-
-        text="Good";
-
-    }
-
-    if(score===4){
-
-        width="80%";
-
-        color="#00aaff";
-
-        text="Strong";
-
-    }
-
-    if(score===5){
-
-        width="100%";
-
-        color="#00d26a";
-
-        text="Very Strong";
-
-    }
-
-    strengthFill.style.width=width;
-
-    strengthFill.style.background=color;
-
-    strengthText.textContent=
-
-    "Password Strength : "+text;
-
-}
-
-passwordInput.addEventListener(
-
-    "input",
-
-    updatePasswordStrength
-
 );
 
-/*=========================================
-Username Availability
-=========================================*/
 
-async function checkUsernameAvailability(){
+toggleConfirmPassword?.addEventListener(
+    "click",
+    () => {
 
-    let username=
-
-    usernameInput.value
-
-    .trim()
-
-    .toLowerCase()
-
-    .replace(/^@/,"")
-
-    .replace(/[^a-z0-9_]/g,"");
-
-    usernameInput.value=username;
-
-    usernameAvailable=false;
-
-    if(username.length<3){
-
-        usernameStatus.textContent=
-
-        "Minimum 3 characters required";
-
-        usernameStatus.style.color="#ff9800";
-
-        return;
+        togglePasswordField(
+            confirmPasswordInput,
+            toggleConfirmPassword
+        );
 
     }
+);
 
-    usernameStatus.textContent="Checking...";
 
-    usernameStatus.style.color="#00AAFF";
+/*==========================================================
+  7. VALIDATION HELPERS
+==========================================================*/
 
-    try{
+function validEmail(email) {
 
-        const snap=
-
-        await usernameRef(username)
-
-        .once("value");
-
-        if(snap.exists()){
-
-            usernameStatus.textContent=
-
-            "❌ Username already taken";
-
-            usernameStatus.style.color="#ff4d4d";
-
-            usernameAvailable=false;
-
-        }else{
-
-            usernameStatus.textContent=
-
-            "✅ Username available";
-
-            usernameStatus.style.color="#00d26a";
-
-            usernameAvailable=true;
-
-        }
-
-    }
-
-    catch(error){
-
-        console.error(error);
-
-        usernameStatus.textContent=
-
-        "Unable to check username";
-
-        usernameStatus.style.color="#ff9800";
-
-    }
-
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+        .test(email);
 }
 
-/*=========================================
-Debounce
-=========================================*/
 
-usernameInput.addEventListener(
+function validUsername(username) {
 
+    return /^[a-z0-9_]{3,20}$/
+        .test(username);
+}
+
+
+/*==========================================================
+  8. PASSWORD STRENGTH
+==========================================================*/
+
+function updatePasswordStrength() {
+
+    if (!passwordInput) return;
+
+    const password =
+        passwordInput.value;
+
+    let score = 0;
+
+    if (password.length >= 8)
+        score++;
+
+    if (/[A-Z]/.test(password))
+        score++;
+
+    if (/[a-z]/.test(password))
+        score++;
+
+    if (/[0-9]/.test(password))
+        score++;
+
+    if (
+        /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/
+            .test(password)
+    ) {
+        score++;
+    }
+
+    let width = "0%";
+    let text = "Password Strength: Weak";
+
+    if (score === 1) {
+
+        width = "20%";
+        text = "Password Strength: Weak";
+
+    } else if (score === 2) {
+
+        width = "40%";
+        text = "Password Strength: Medium";
+
+    } else if (score === 3) {
+
+        width = "60%";
+        text = "Password Strength: Good";
+
+    } else if (score === 4) {
+
+        width = "80%";
+        text = "Password Strength: Strong";
+
+    } else if (score === 5) {
+
+        width = "100%";
+        text = "Password Strength: Very Strong";
+    }
+
+    if (strengthFill) {
+
+        strengthFill.style.width =
+            width;
+    }
+
+    if (strengthText) {
+
+        strengthText.textContent =
+            text;
+    }
+}
+
+
+passwordInput?.addEventListener(
     "input",
+    updatePasswordStrength
+);
 
-    ()=>{
+
+/*==========================================================
+  9. USERNAME AVAILABILITY
+==========================================================*/
+
+async function checkUsernameAvailability() {
+
+    if (!usernameInput)
+        return;
+
+    let username =
+        usernameInput.value
+            .trim()
+            .toLowerCase()
+            .replace(/^@/, "")
+            .replace(/[^a-z0-9_]/g, "");
+
+    usernameInput.value =
+        username;
+
+    usernameAvailable = false;
+
+    if (username.length < 3) {
+
+        if (usernameStatus) {
+
+            usernameStatus.textContent =
+                "Minimum 3 characters required";
+        }
+
+        return;
+    }
+
+    if (!validUsername(username)) {
+
+        if (usernameStatus) {
+
+            usernameStatus.textContent =
+                "Only letters, numbers and _ allowed";
+        }
+
+        return;
+    }
+
+    if (usernameStatus) {
+
+        usernameStatus.textContent =
+            "Checking username...";
+    }
+
+    try {
+
+        const snapshot =
+            await usernamesRef(username)
+                .once("value");
+
+        if (snapshot.exists()) {
+
+            usernameAvailable = false;
+
+            if (usernameStatus) {
+
+                usernameStatus.textContent =
+                    "❌ Username already taken";
+            }
+
+        } else {
+
+            usernameAvailable = true;
+
+            if (usernameStatus) {
+
+                usernameStatus.textContent =
+                    "✅ Username available";
+            }
+        }
+
+    } catch (error) {
+
+        console.error(
+            "Username check error:",
+            error
+        );
+
+        usernameAvailable = false;
+
+        if (usernameStatus) {
+
+            usernameStatus.textContent =
+                "Unable to check username";
+        }
+    }
+}
+
+
+usernameInput?.addEventListener(
+    "input",
+    () => {
 
         clearTimeout(usernameTimer);
 
-        usernameTimer=setTimeout(
+        usernameAvailable = false;
 
-            checkUsernameAvailability,
-
-            500
-
-        );
-
+        usernameTimer =
+            setTimeout(
+                checkUsernameAvailability,
+                500
+            );
     }
-
 );
 
-/*=========================================
-Form Validation
-=========================================*/
 
-function validateForm(){
+/*==========================================================
+  10. FORM VALIDATION
+==========================================================*/
 
-    const fullName=
+function validateForm() {
 
-    nameInput.value.trim();
+    const fullName =
+        nameInput?.value
+            .trim() || "";
 
-    const username=
+    const username =
+        usernameInput?.value
+            .trim()
+            .toLowerCase() || "";
 
-    usernameInput.value
+    const email =
+        emailInput?.value
+            .trim()
+            .toLowerCase() || "";
 
-    .trim()
+    const password =
+        passwordInput?.value || "";
 
-    .toLowerCase();
+    const confirmPassword =
+        confirmPasswordInput?.value || "";
 
-    const email=
 
-    emailInput.value
-
-    .trim()
-
-    .toLowerCase();
-
-    const password=
-
-    passwordInput.value;
-
-    const confirm=
-
-    confirmPasswordInput.value;
-
-    if(fullName.length<2){
+    if (fullName.length < 2) {
 
         showToast(
-
             "Enter your full name",
-
             "error"
-
         );
 
-        return null;
+        nameInput?.focus();
 
+        return null;
     }
 
-    if(!validUsername(username)){
+
+    if (!validUsername(username)) {
 
         showToast(
-
             "Invalid username",
-
             "error"
-
         );
 
-        return null;
+        usernameInput?.focus();
 
+        return null;
     }
 
-    if(!usernameAvailable){
+
+    if (!usernameAvailable) {
 
         showToast(
-
-            "Username unavailable",
-
+            "Please choose an available username",
             "error"
-
         );
 
-        return null;
+        usernameInput?.focus();
 
+        return null;
     }
 
-    if(!validEmail(email)){
+
+    if (!validEmail(email)) {
 
         showToast(
-
-            "Invalid email",
-
+            "Enter a valid email address",
             "error"
-
         );
 
-        return null;
+        emailInput?.focus();
 
+        return null;
     }
 
-    if(password.length<8){
+
+    if (password.length < 8) {
 
         showToast(
-
             "Password must be at least 8 characters",
-
             "error"
-
         );
 
-        return null;
+        passwordInput?.focus();
 
+        return null;
     }
 
-    if(password!==confirm){
+
+    if (password !== confirmPassword) {
 
         showToast(
-
             "Passwords do not match",
-
             "error"
-
         );
 
-        return null;
+        confirmPasswordInput?.focus();
 
+        return null;
     }
 
-    if(!acceptTerms.checked){
+
+    if (
+        acceptTerms &&
+        !acceptTerms.checked
+    ) {
 
         showToast(
-
-            "Accept Terms & Conditions",
-
+            "Please accept Terms & Conditions",
             "error"
-
         );
 
         return null;
-
     }
 
-    return{
+
+    return {
 
         fullName,
-
         username,
-
         email,
-
         password
 
     };
-
 }
 
-console.log("✅ Signup Part 2 Loaded");
-/*=========================================
-        VIEWORA V10 PREMIUM
-            signup.js
-            PART 3
- Create Account • Save User Data
- Email Verification • Realtime Database
-=========================================*/
 
-/*=========================================
-Create Account
-=========================================*/
+/*==========================================================
+  11. CREATE DEFAULT DATA
+==========================================================*/
 
-async function createAccount(e){
+async function saveNewUser(
+    user,
+    data
+) {
 
-    e.preventDefault();
+    const userData = {
 
-    if(loading) return;
+        uid: user.uid,
 
-    const data = validateForm();
+        name: data.fullName,
 
-    if(!data) return;
+        fullName: data.fullName,
 
-    showLoading();
+        username: data.username,
 
-    try{
+        email: data.email,
 
-        /*=============================
-        Create Firebase Account
-        =============================*/
+        profilePhoto:
+            "assets/default-avatar.png",
+
+        coverPhoto:
+            "assets/default-banner.jpg",
+
+        bio:
+            "Welcome to Viewora 🚀",
+
+        verified: false,
+
+        emailVerified:
+            user.emailVerified,
+
+        accountType:
+            "creator",
+
+        followers: 0,
+
+        following: 0,
+
+        posts: 0,
+
+        videos: 0,
+
+        shorts: 0,
+
+        likes: 0,
+
+        views: 0,
+
+        subscribers: 0,
+
+        online: true,
+
+        createdAt:
+            SERVER_TIME,
+
+        lastLogin:
+            SERVER_TIME,
+
+        lastSeen:
+            SERVER_TIME
+    };
+
+
+    await safeWrite(
+        "users/" + user.uid,
+        userData
+    );
+
+
+    await safeWrite(
+        "settings/" + user.uid,
+        {
+
+            theme: "dark",
+
+            language: "en",
+
+            autoplay: true,
+
+            notifications: true,
+
+            privateAccount: false,
+
+            showEmail: false,
+
+            showOnlineStatus: true,
+
+            showFollowers: true,
+
+            allowMessages: true,
+
+            downloadQuality: "HD"
+        }
+    );
+
+
+    const collections = [
+
+        "followers",
+
+        "following",
+
+        "notifications",
+
+        "savedPosts",
+
+        "history",
+
+        "likes",
+
+        "searchHistory"
+
+    ];
+
+
+    await Promise.all(
+
+        collections.map(
+            collection =>
+                safeWrite(
+                    collection +
+                    "/" +
+                    user.uid,
+                    {}
+                )
+        )
+    );
+
+
+    return true;
+}
+
+
+/*==========================================================
+  12. EMAIL SIGNUP
+==========================================================*/
+
+async function createAccount(event) {
+
+    if (event) {
+        event.preventDefault();
+    }
+
+    if (loading)
+        return;
+
+
+    const data =
+        validateForm();
+
+    if (!data)
+        return;
+
+
+    showLoading(
+        "Creating your Viewora account..."
+    );
+
+
+    let createdUser = null;
+
+
+    try {
+
+        /*------------------------------------------
+          Create Firebase Auth Account
+        ------------------------------------------*/
 
         const credential =
-        await auth.createUserWithEmailAndPassword(
+            await auth
+                .createUserWithEmailAndPassword(
+                    data.email,
+                    data.password
+                );
 
-            data.email,
 
-            data.password
+        createdUser =
+            credential.user;
 
-        );
 
-        const user = credential.user;
+        /*------------------------------------------
+          Firebase Profile
+        ------------------------------------------*/
 
-        /*=============================
-        Update Auth Profile
-        =============================*/
+        await createdUser.updateProfile({
 
-        await user.updateProfile({
+            displayName:
+                data.fullName,
 
-            displayName: data.fullName,
-
-            photoURL: "assets/default-avatar.png"
+            photoURL:
+                "assets/default-avatar.png"
 
         });
 
-        /*=============================
-        Send Verification Email
-        =============================*/
 
-        await user.sendEmailVerification();
+        /*------------------------------------------
+          Reserve Username
+        ------------------------------------------*/
 
-        /*=============================
-        Reserve Username
-        =============================*/
+        const usernameSnapshot =
+            await usernamesRef(
+                data.username
+            ).once("value");
+
+
+        if (usernameSnapshot.exists()) {
+
+            throw new Error(
+                "Username was just taken. Please choose another."
+            );
+        }
+
 
         await safeWrite(
-
             "usernames/" + data.username,
-
-            user.uid
-
+            createdUser.uid
         );
 
-        /*=============================
-        Default User Object
-        =============================*/
 
-        const userData = {
+        /*------------------------------------------
+          Save User Data
+        ------------------------------------------*/
 
-            uid: user.uid,
-
-            fullName: data.fullName,
-
-            username: data.username,
-
-            email: data.email,
-
-            profilePhoto:
-            "assets/default-avatar.png",
-
-            coverPhoto:
-            "assets/default-banner.jpg",
-
-            bio: "Welcome to Viewora 🚀",
-
-            verified: false,
-
-            emailVerified: false,
-
-            followers: 0,
-
-            following: 0,
-
-            posts: 0,
-
-            videos: 0,
-
-            shorts: 0,
-
-            likes: 0,
-
-            online: true,
-
-            accountType: "creator",
-
-            createdAt: serverTime(),
-
-            lastLogin: serverTime(),
-
-            lastSeen: serverTime()
-
-        };
-
-        /*=============================
-        Save User
-        =============================*/
-
-        await safeWrite(
-
-            "users/" + user.uid,
-
-            userData
-
+        await saveNewUser(
+            createdUser,
+            data
         );
 
-        /*=============================
-        Default Settings
-        =============================*/
 
-        await safeWrite(
+        /*------------------------------------------
+          Verification Email
+        ------------------------------------------*/
 
-            "settings/" + user.uid,
+        await createdUser
+            .sendEmailVerification();
 
-            {
-
-                theme: "dark",
-
-                language: "en",
-
-                privateAccount: false,
-
-                notifications: true,
-
-                autoplay: true,
-
-                downloadQuality: "HD"
-
-            }
-
-        );
-
-        /*=============================
-        Create Empty Collections
-        =============================*/
-
-        await Promise.all([
-
-            safeWrite(
-
-                "followers/" + user.uid,
-
-                {}
-
-            ),
-
-            safeWrite(
-
-                "following/" + user.uid,
-
-                {}
-
-            ),
-
-            safeWrite(
-
-                "savedPosts/" + user.uid,
-
-                {}
-
-            ),
-
-            safeWrite(
-
-                "notifications/" + user.uid,
-
-                {}
-
-            )
-
-        ]);
 
         hideLoading();
+
 
         showToast(
-
-            "Account Created Successfully"
-
+            "Account created successfully"
         );
 
-        verifyModal?.classList.remove("hidden");
 
-    }
+        if (verifyModal) {
 
-    catch(error){
+            verifyModal.classList.remove(
+                "hidden"
+            );
+        }
+
+
+    } catch (error) {
+
+        console.error(
+            "Signup error:",
+            error
+        );
+
+
+        /*
+         * Do not automatically delete an Auth
+         * account here because database operations
+         * may fail independently.
+         */
 
         hideLoading();
 
-        console.error(error);
 
-        let message = "Signup Failed";
+        let message =
+            "Signup failed";
 
-        switch(error.code){
+
+        switch (error.code) {
 
             case "auth/email-already-in-use":
 
                 message =
-                "Email already registered";
+                    "Email is already registered";
+
                 break;
+
 
             case "auth/invalid-email":
 
                 message =
-                "Invalid email address";
+                    "Invalid email address";
+
                 break;
+
 
             case "auth/weak-password":
 
                 message =
-                "Password is too weak";
+                    "Password is too weak";
+
                 break;
+
 
             case "auth/network-request-failed":
 
                 message =
-                "No Internet Connection";
+                    "No Internet Connection";
+
                 break;
+
+
+            case "auth/operation-not-allowed":
+
+                message =
+                    "Email signup is disabled in Firebase";
+
+                break;
+
 
             default:
 
-                message = error.message;
-
+                message =
+                    error.message ||
+                    "Signup failed";
         }
 
-        showToast(message,"error");
 
+        showToast(
+            message,
+            "error"
+        );
     }
-
 }
 
-/*=========================================
-Bind Form
-=========================================*/
 
 signupForm?.addEventListener(
-
     "submit",
-
     createAccount
-
 );
 
-console.log("✅ Signup Part 3 Loaded");
-/*=========================================
-        VIEWORA V10 PREMIUM
-            signup.js
-            PART 4
- Google Signup • Email Verification
- Verify Modal • Rollback System
-=========================================*/
 
-/*=========================================
-Google Signup
-=========================================*/
+/*==========================================================
+  13. GOOGLE SIGNUP / LOGIN
+==========================================================*/
 
-googleSignupBtn?.addEventListener("click", async()=>{
-
-    if(loading) return;
-
-    showLoading();
-
-    try{
-
-        const result =
-        await auth.signInWithPopup(
-            googleProvider
-        );
-
-        const user = result.user;
-
-        let username =
-        (user.displayName || "user")
-        .toLowerCase()
-        .replace(/[^a-z0-9]/g,"")
-        .substring(0,15);
-
-        if(username.length<3){
-
-            username="user";
-
-        }
-
-        /*=========================
-        Find Unique Username
-        =========================*/
-
-        let finalUsername=username;
-
-        let count=1;
-
-        while(true){
-
-            const snap=
-
-            await usernameRef(finalUsername)
-
-            .once("value");
-
-            if(!snap.exists()){
-
-                break;
-
-            }
-
-            finalUsername=
-
-            username+count;
-
-            count++;
-
-        }
-
-        /*=========================
-        Save Username
-        =========================*/
-
-        await safeWrite(
-
-            "usernames/"+finalUsername,
-
-            user.uid
-
-        );
-
-        /*=========================
-        Save User
-        =========================*/
-
-        await safeWrite(
-
-            "users/"+user.uid,
-
-            {
-
-                uid:user.uid,
-
-                fullName:
-                user.displayName||"",
-
-                username:finalUsername,
-
-                email:user.email,
-
-                profilePhoto:
-                user.photoURL||
-                "assets/default-avatar.png",
-
-                coverPhoto:
-                "assets/default-banner.jpg",
-
-                bio:"Welcome to Viewora 🚀",
-
-                verified:false,
-
-                emailVerified:true,
-
-                followers:0,
-
-                following:0,
-
-                posts:0,
-
-                videos:0,
-
-                shorts:0,
-
-                likes:0,
-
-                online:true,
-
-                accountType:"creator",
-
-                createdAt:serverTime(),
-
-                lastLogin:serverTime(),
-
-                lastSeen:serverTime()
-
-            }
-
-        );
-
-        hideLoading();
-
-        showToast(
-
-            "Google Signup Successful"
-
-        );
-
-        setTimeout(()=>{
-
-            location.replace("index.html");
-
-        },1000);
-
-    }
-
-    catch(error){
-
-        hideLoading();
-
-        console.error(error);
-
-        showToast(
-
-            error.message,
-
-            "error"
-
-        );
-
-    }
-
-});
-
-/*=========================================
-Open Mail
-=========================================*/
-
-openMailBtn?.addEventListener("click",()=>{
-
-    window.open(
-
-        "https://mail.google.com",
-
-        "_blank"
-
-    );
-
-});
-
-/*=========================================
-Continue Button
-=========================================*/
-
-continueBtn?.addEventListener(
-
+googleSignupBtn?.addEventListener(
     "click",
+    async () => {
 
-    async()=>{
+        if (loading)
+            return;
 
-        const user=
 
-        auth.currentUser;
-
-        if(!user){
+        if (
+            typeof googleProvider ===
+            "undefined"
+        ) {
 
             showToast(
-
-                "Login again",
-
+                "Google login is not configured",
                 "error"
-
             );
 
             return;
-
         }
 
-        await user.reload();
 
-        if(user.emailVerified){
+        showLoading(
+            "Connecting to Google..."
+        );
 
-            await safeUpdate(
 
-                "users/"+user.uid,
+        try {
 
-                {
+            const result =
+                await auth.signInWithPopup(
+                    googleProvider
+                );
 
-                    emailVerified:true
 
+            const user =
+                result.user;
+
+
+            const userRef =
+                db.ref(
+                    "users/" +
+                    user.uid
+                );
+
+
+            const snapshot =
+                await userRef.once(
+                    "value"
+                );
+
+
+            if (!snapshot.exists()) {
+
+                let baseUsername =
+                    (
+                        user.displayName ||
+                        "user"
+                    )
+                        .toLowerCase()
+                        .replace(
+                            /[^a-z0-9]/g,
+                            ""
+                        )
+                        .substring(
+                            0,
+                            15
+                        );
+
+
+                if (
+                    baseUsername.length < 3
+                ) {
+
+                    baseUsername =
+                        "user";
                 }
 
-            );
 
-            showToast(
+                let finalUsername =
+                    baseUsername;
 
-                "Email Verified"
+                let counter = 1;
 
-            );
 
-            setTimeout(()=>{
+                while (
+                    (
+                        await usernamesRef(
+                            finalUsername
+                        ).once("value")
+                    ).exists()
+                ) {
 
-                location.replace(
+                    finalUsername =
+                        baseUsername +
+                        counter;
 
-                    "login.html"
+                    counter++;
+                }
+
+
+                await safeWrite(
+
+                    "usernames/" +
+                    finalUsername,
+
+                    user.uid
 
                 );
 
-            },1000);
 
-        }else{
+                await safeWrite(
+
+                    "users/" +
+                    user.uid,
+
+                    {
+
+                        uid: user.uid,
+
+                        name:
+                            user.displayName ||
+                            "Viewora User",
+
+                        fullName:
+                            user.displayName ||
+                            "Viewora User",
+
+                        username:
+                            finalUsername,
+
+                        email:
+                            user.email || "",
+
+                        profilePhoto:
+                            user.photoURL ||
+                            "assets/default-avatar.png",
+
+                        coverPhoto:
+                            "assets/default-banner.jpg",
+
+                        bio:
+                            "Welcome to Viewora 🚀",
+
+                        verified: false,
+
+                        emailVerified:
+                            true,
+
+                        accountType:
+                            "creator",
+
+                        followers: 0,
+
+                        following: 0,
+
+                        posts: 0,
+
+                        videos: 0,
+
+                        shorts: 0,
+
+                        likes: 0,
+
+                        views: 0,
+
+                        subscribers: 0,
+
+                        online: true,
+
+                        createdAt:
+                            SERVER_TIME,
+
+                        lastLogin:
+                            SERVER_TIME,
+
+                        lastSeen:
+                            SERVER_TIME
+                    }
+                );
+
+
+                await safeWrite(
+
+                    "settings/" +
+                    user.uid,
+
+                    {
+
+                        theme: "dark",
+
+                        language: "en",
+
+                        autoplay: true,
+
+                        notifications: true,
+
+                        privateAccount: false,
+
+                        showEmail: false,
+
+                        showOnlineStatus: true,
+
+                        showFollowers: true,
+
+                        allowMessages: true,
+
+                        downloadQuality: "HD"
+                    }
+                );
+
+
+            } else {
+
+                await safeUpdate(
+
+                    "users/" +
+                    user.uid,
+
+                    {
+
+                        online: true,
+
+                        emailVerified:
+                            true,
+
+                        lastLogin:
+                            SERVER_TIME,
+
+                        lastSeen:
+                            SERVER_TIME
+                    }
+                );
+            }
+
+
+            hideLoading();
+
 
             showToast(
-
-                "Please verify your email first",
-
-                "error"
-
+                "Google signup successful"
             );
 
+
+            setTimeout(
+                () => {
+
+                    location.replace(
+                        "index.html"
+                    );
+
+                },
+                900
+            );
+
+
+        } catch (error) {
+
+            hideLoading();
+
+            console.error(
+                "Google signup:",
+                error
+            );
+
+
+            if (
+                error.code ===
+                "auth/popup-closed-by-user"
+            ) {
+
+                showToast(
+                    "Google sign-in cancelled",
+                    "error"
+                );
+
+                return;
+            }
+
+
+            if (
+                error.code ===
+                "auth/account-exists-with-different-credential"
+            ) {
+
+                showToast(
+                    "An account already exists with this email",
+                    "error"
+                );
+
+                return;
+            }
+
+
+            showToast(
+                error.message ||
+                "Google signup failed",
+                "error"
+            );
         }
-
     }
-
 );
 
-/*=========================================
-Rollback (Production Safety)
-If signup fails after account creation,
-delete the Firebase Auth user.
-=========================================*/
 
-async function rollbackSignup(){
+/*==========================================================
+  14. EMAIL VERIFICATION MODAL
+==========================================================*/
 
-    try{
+openMailBtn?.addEventListener(
+    "click",
+    () => {
 
-        const user=
+        window.open(
+            "https://mail.google.com",
+            "_blank"
+        );
 
-        auth.currentUser;
+    }
+);
 
-        if(user){
 
-            await user.delete();
+continueBtn?.addEventListener(
+    "click",
+    async () => {
 
-            console.log(
+        const user =
+            auth.currentUser;
 
-                "🗑️ Rollback Complete"
 
+        if (!user) {
+
+            showToast(
+                "Please sign in again",
+                "error"
             );
-
-        }
-
-    }
-
-    catch(error){
-
-        console.error(
-
-            "Rollback Failed:",
-
-            error
-
-        );
-
-    }
-
-}
-
-console.log("✅ Signup Part 4 Loaded");
-/*=========================================
-        VIEWORA V10 PREMIUM
-            signup.js
-            PART 5
- Default Profile • User Settings
- Followers • Notifications
- Database Structure
-=========================================*/
-
-/*=========================================
-Create Default User Data
-=========================================*/
-
-async function createDefaultUser(uid,userData){
-
-    try{
-
-        /*=========================
-        User Profile
-        =========================*/
-
-        await safeWrite(
-
-            "users/"+uid,
-
-            {
-
-                uid:uid,
-
-                fullName:userData.fullName,
-
-                username:userData.username,
-
-                email:userData.email,
-
-                profilePhoto:
-                "assets/default-avatar.png",
-
-                coverPhoto:
-                "assets/default-banner.jpg",
-
-                bio:
-                "Welcome to Viewora 🚀",
-
-                verified:false,
-
-                emailVerified:false,
-
-                accountType:"creator",
-
-                gender:"",
-
-                website:"",
-
-                location:"",
-
-                followers:0,
-
-                following:0,
-
-                posts:0,
-
-                videos:0,
-
-                shorts:0,
-
-                likes:0,
-
-                views:0,
-
-                subscribers:0,
-
-                online:true,
-
-                createdAt:serverTime(),
-
-                lastLogin:serverTime(),
-
-                lastSeen:serverTime()
-
-            }
-
-        );
-
-        /*=========================
-        User Settings
-        =========================*/
-
-        await safeWrite(
-
-            "settings/"+uid,
-
-            {
-
-                theme:"dark",
-
-                language:"en",
-
-                autoplay:true,
-
-                notifications:true,
-
-                privateAccount:false,
-
-                showEmail:false,
-
-                showOnlineStatus:true,
-
-                showFollowers:true,
-
-                allowMessages:true,
-
-                downloadQuality:"HD"
-
-            }
-
-        );
-
-        /*=========================
-        Followers
-        =========================*/
-
-        await safeWrite(
-
-            "followers/"+uid,
-
-            {}
-
-        );
-
-        /*=========================
-        Following
-        =========================*/
-
-        await safeWrite(
-
-            "following/"+uid,
-
-            {}
-
-        );
-
-        /*=========================
-        Notifications
-        =========================*/
-
-        await safeWrite(
-
-            "notifications/"+uid,
-
-            {}
-
-        );
-
-        /*=========================
-        Saved Posts
-        =========================*/
-
-        await safeWrite(
-
-            "savedPosts/"+uid,
-
-            {}
-
-        );
-
-        /*=========================
-        Watch History
-        =========================*/
-
-        await safeWrite(
-
-            "history/"+uid,
-
-            {}
-
-        );
-
-        /*=========================
-        User Likes
-        =========================*/
-
-        await safeWrite(
-
-            "likes/"+uid,
-
-            {}
-
-        );
-
-        /*=========================
-        Search History
-        =========================*/
-
-        await safeWrite(
-
-            "searchHistory/"+uid,
-
-            {}
-
-        );
-
-        console.log("✅ Default User Created");
-
-        return true;
-
-    }
-
-    catch(error){
-
-        console.error(error);
-
-        return false;
-
-    }
-
-}
-
-/*=========================================
-Production Database Structure
-
-users/
-settings/
-followers/
-following/
-notifications/
-savedPosts/
-history/
-likes/
-searchHistory/
-posts/
-videos/
-shorts/
-comments/
-messages/
-chatList/
-calls/
-story/
-reports/
-=========================================*/
-
-/*=========================================
-Global Export
-=========================================*/
-
-window.createDefaultUser =
-createDefaultUser;
-
-console.log("✅ Signup Part 5 Loaded");
-/*=========================================
-        VIEWORA V10 PREMIUM
-            signup.js
-            PART 6
- Ripple Effects • Input Animations
- Auto Username • Live Form Events
-=========================================*/
-
-/*=========================================
-Ripple Effect
-=========================================*/
-
-document.querySelectorAll("button").forEach(button=>{
-
-    button.addEventListener("click",function(e){
-
-        const ripple=document.createElement("span");
-
-        ripple.className="ripple";
-
-        const rect=this.getBoundingClientRect();
-
-        ripple.style.left=
-        (e.clientX-rect.left)+"px";
-
-        ripple.style.top=
-        (e.clientY-rect.top)+"px";
-
-        this.appendChild(ripple);
-
-        setTimeout(()=>{
-
-            ripple.remove();
-
-        },600);
-
-    });
-
-});
-
-/*=========================================
-Floating Labels
-=========================================*/
-
-document.querySelectorAll("input").forEach(input=>{
-
-    function update(){
-
-        if(input.value.trim()!==""){
-
-            input.classList.add("filled");
-
-        }else{
-
-            input.classList.remove("filled");
-
-        }
-
-    }
-
-    input.addEventListener("input",update);
-
-    input.addEventListener("blur",update);
-
-    update();
-
-});
-
-/*=========================================
-Auto Username Formatter
-=========================================*/
-
-usernameInput?.addEventListener("input",()=>{
-
-    let value=usernameInput.value
-    .toLowerCase()
-    .replace(/\s+/g,"")
-    .replace(/^@/,"")
-    .replace(/[^a-z0-9_]/g,"");
-
-    if(value.length>20){
-
-        value=value.substring(0,20);
-
-    }
-
-    usernameInput.value=value;
-
-});
-
-/*=========================================
-Auto Email Formatter
-=========================================*/
-
-emailInput?.addEventListener("blur",()=>{
-
-    emailInput.value=
-
-    emailInput.value
-
-    .trim()
-
-    .toLowerCase();
-
-});
-
-/*=========================================
-Auto Name Formatter
-=========================================*/
-
-nameInput?.addEventListener("blur",()=>{
-
-    const words=
-
-    nameInput.value
-
-    .trim()
-
-    .split(/\s+/)
-
-    .map(word=>
-
-        word.charAt(0).toUpperCase()+
-
-        word.slice(1).toLowerCase()
-
-    );
-
-    nameInput.value=
-
-    words.join(" ");
-
-});
-
-/*=========================================
-Confirm Password Check
-=========================================*/
-
-confirmPasswordInput?.addEventListener(
-
-    "input",
-
-    ()=>{
-
-        if(
-
-            confirmPasswordInput.value==="" ||
-
-            passwordInput.value===""
-
-        ){
 
             return;
-
         }
 
-        if(
 
-            passwordInput.value===
+        try {
 
-            confirmPasswordInput.value
+            await user.reload();
 
-        ){
 
-            confirmPasswordInput.style.borderColor=
+            if (
+                user.emailVerified
+            ) {
 
-            "#00d26a";
+                await safeUpdate(
 
-        }else{
+                    "users/" +
+                    user.uid,
 
-            confirmPasswordInput.style.borderColor=
+                    {
 
-            "#ff4d4d";
+                        emailVerified: true,
 
+                        online: true,
+
+                        lastLogin:
+                            SERVER_TIME
+                    }
+                );
+
+
+                showToast(
+                    "Email verified successfully"
+                );
+
+
+                setTimeout(
+                    () => {
+
+                        location.replace(
+                            "login.html"
+                        );
+
+                    },
+                    900
+                );
+
+
+            } else {
+
+                showToast(
+                    "Please verify your email first",
+                    "error"
+                );
+            }
+
+
+        } catch (error) {
+
+            console.error(error);
+
+            showToast(
+                "Unable to check verification",
+                "error"
+            );
         }
-
     }
-
 );
 
-/*=========================================
-Enable / Disable Signup Button
-=========================================*/
 
-function updateSignupButton(){
+/*==========================================================
+  15. EMAIL VERIFICATION CHECK
+==========================================================*/
 
-    const ready=
+async function checkEmailVerification() {
 
-    nameInput.value.trim()!=="" &&
+    const user =
+        auth.currentUser;
 
-    usernameInput.value.trim()!=="" &&
 
-    emailInput.value.trim()!=="" &&
+    if (!user)
+        return false;
 
-    passwordInput.value!=="" &&
 
-    confirmPasswordInput.value!=="" &&
+    try {
 
-    acceptTerms.checked;
+        await user.reload();
 
-    signupBtn.disabled=!ready;
 
+        if (
+            user.emailVerified
+        ) {
+
+            await safeUpdate(
+
+                "users/" +
+                user.uid,
+
+                {
+
+                    emailVerified: true
+                }
+            );
+
+
+            return true;
+        }
+
+
+    } catch (error) {
+
+        console.error(
+            "Verification check:",
+            error
+        );
+    }
+
+
+    return false;
 }
 
-document.querySelectorAll(
 
-    "#name,#username,#email,#password,#confirmPassword"
+document.addEventListener(
+    "visibilitychange",
+    async () => {
 
-).forEach(input=>{
+        if (
+            document.visibilityState ===
+            "visible"
+        ) {
 
-    input.addEventListener(
+            await checkEmailVerification();
+        }
+    }
+);
 
+
+/*==========================================================
+  16. AUTO FORMAT
+==========================================================*/
+
+usernameInput?.addEventListener(
+    "input",
+    () => {
+
+        let value =
+            usernameInput.value
+                .toLowerCase()
+                .replace(/\s+/g, "")
+                .replace(/^@/, "")
+                .replace(
+                    /[^a-z0-9_]/g,
+                    ""
+                )
+                .substring(0, 20);
+
+
+        usernameInput.value =
+            value;
+    }
+);
+
+
+emailInput?.addEventListener(
+    "blur",
+    () => {
+
+        emailInput.value =
+            emailInput.value
+                .trim()
+                .toLowerCase();
+    }
+);
+
+
+nameInput?.addEventListener(
+    "blur",
+    () => {
+
+        const words =
+            nameInput.value
+                .trim()
+                .split(/\s+/)
+                .filter(Boolean)
+                .map(
+                    word =>
+                        word.charAt(0)
+                            .toUpperCase() +
+                        word.slice(1)
+                            .toLowerCase()
+                );
+
+
+        nameInput.value =
+            words.join(" ");
+    }
+);
+
+
+/*==========================================================
+  17. CONFIRM PASSWORD
+==========================================================*/
+
+confirmPasswordInput?.addEventListener(
+    "input",
+    () => {
+
+        if (
+            !confirmPasswordInput.value
+        ) {
+
+            confirmPasswordInput
+                .classList.remove(
+                    "passwordMatch",
+                    "passwordMismatch"
+                );
+
+            return;
+        }
+
+
+        if (
+            passwordInput.value ===
+            confirmPasswordInput.value
+        ) {
+
+            confirmPasswordInput
+                .classList.add(
+                    "passwordMatch"
+                );
+
+            confirmPasswordInput
+                .classList.remove(
+                    "passwordMismatch"
+                );
+
+        } else {
+
+            confirmPasswordInput
+                .classList.add(
+                    "passwordMismatch"
+                );
+
+            confirmPasswordInput
+                .classList.remove(
+                    "passwordMatch"
+                );
+        }
+    }
+);
+
+
+/*==========================================================
+  18. SIGNUP BUTTON STATE
+==========================================================*/
+
+function updateSignupButton() {
+
+    if (!signupBtn)
+        return;
+
+
+    const ready =
+
+        nameInput?.value.trim() !== "" &&
+
+        usernameInput?.value.trim() !== "" &&
+
+        emailInput?.value.trim() !== "" &&
+
+        passwordInput?.value !== "" &&
+
+        confirmPasswordInput?.value !== "" &&
+
+        (
+            !acceptTerms ||
+            acceptTerms.checked
+        );
+
+
+    signupBtn.disabled =
+        !ready;
+}
+
+
+[
+    nameInput,
+    usernameInput,
+    emailInput,
+    passwordInput,
+    confirmPasswordInput
+].forEach(input => {
+
+    input?.addEventListener(
         "input",
-
         updateSignupButton
-
     );
 
 });
 
+
 acceptTerms?.addEventListener(
-
     "change",
-
     updateSignupButton
-
 );
 
-/*=========================================
-Initial State
-=========================================*/
 
-updateSignupButton();
+/*==========================================================
+  19. RIPPLE
+==========================================================*/
 
-console.log("✅ Signup Part 6 Loaded");
-/*=========================================
-        VIEWORA V10 PREMIUM
-            signup.js
-            PART 7
- Auth State • Network Status
- Cleanup • Production Security
-=========================================*/
+document
+    .querySelectorAll("button")
+    .forEach(button => {
 
-/*=========================================
-Network Status
-=========================================*/
+        button.addEventListener(
+            "click",
+            function (event) {
 
-function updateNetworkStatus(){
+                const ripple =
+                    document.createElement(
+                        "span"
+                    );
 
-    if(navigator.onLine){
 
-        showToast("Internet Connected");
+                ripple.className =
+                    "ripple";
 
-    }else{
+
+                const rect =
+                    this.getBoundingClientRect();
+
+
+                ripple.style.left =
+                    (
+                        event.clientX -
+                        rect.left
+                    ) + "px";
+
+
+                ripple.style.top =
+                    (
+                        event.clientY -
+                        rect.top
+                    ) + "px";
+
+
+                this.appendChild(
+                    ripple
+                );
+
+
+                setTimeout(
+                    () => {
+
+                        ripple.remove();
+
+                    },
+                    600
+                );
+            }
+        );
+    });
+
+
+/*==========================================================
+  20. NETWORK STATUS
+==========================================================*/
+
+function updateNetworkStatus() {
+
+    if (!navigator.onLine) {
 
         showToast(
             "No Internet Connection",
@@ -1695,445 +1672,169 @@ function updateNetworkStatus(){
         );
 
     }
-
 }
 
-window.addEventListener(
-    "online",
-    updateNetworkStatus
-);
 
 window.addEventListener(
     "offline",
     updateNetworkStatus
 );
 
-/*=========================================
-Auth State
-=========================================*/
 
-auth.onAuthStateChanged(async(user)=>{
+/*==========================================================
+  21. AUTH STATE
+==========================================================*/
 
-    if(!user){
+auth.onAuthStateChanged(
+    async user => {
 
-        console.log("👤 User Signed Out");
+        if (!user) {
 
-        return;
-
-    }
-
-    try{
-
-        await user.reload();
-
-        await safeUpdate(
-
-            "users/"+user.uid,
-
-            {
-
-                online:true,
-
-                lastLogin:serverTime(),
-
-                emailVerified:user.emailVerified
-
-            }
-
-        );
-
-        console.log(
-
-            "✅ Logged In:",
-
-            user.email
-
-        );
-
-    }
-
-    catch(error){
-
-        console.error(error);
-
-    }
-
-});
-
-/*=========================================
-Email Verification Checker
-=========================================*/
-
-async function checkEmailVerification(){
-
-    const user=auth.currentUser;
-
-    if(!user) return false;
-
-    await user.reload();
-
-    if(user.emailVerified){
-
-        await safeUpdate(
-
-            "users/"+user.uid,
-
-            {
-
-                emailVerified:true
-
-            }
-
-        );
-
-        return true;
-
-    }
-
-    return false;
-
-}
-
-/*=========================================
-Auto Verification Check
-=========================================*/
-
-document.addEventListener(
-
-    "visibilitychange",
-
-    async()=>{
-
-        if(document.visibilityState==="visible"){
-
-            await checkEmailVerification();
-
+            return;
         }
 
-    }
 
-);
+        try {
 
-/*=========================================
-Before Unload
-=========================================*/
+            await user.reload();
 
-window.addEventListener(
 
-    "beforeunload",
-
-    async()=>{
-
-        const user=auth.currentUser;
-
-        if(user){
-
-            try{
+            if (
+                user.emailVerified
+            ) {
 
                 await safeUpdate(
 
-                    "users/"+user.uid,
+                    "users/" +
+                    user.uid,
 
                     {
 
-                        online:false,
+                        online: true,
 
-                        lastSeen:serverTime()
+                        emailVerified:
+                            true,
 
+                        lastLogin:
+                            SERVER_TIME
                     }
-
                 );
-
-            }catch(error){
-
-                console.error(error);
-
             }
 
-        }
-
-    }
-
-);
-
-/*=========================================
-Security
-=========================================*/
-
-window.addEventListener(
-
-    "contextmenu",
-
-    e=>{
-
-        e.preventDefault();
-
-    }
-
-);
-
-window.addEventListener(
-
-    "keydown",
-
-    e=>{
-
-        if(
-
-            e.key==="F12" ||
-
-            (e.ctrlKey && e.shiftKey &&
-            ["I","J","C"].includes(e.key.toUpperCase())) ||
-
-            (e.ctrlKey && e.key.toUpperCase()==="U")
-
-        ){
-
-            e.preventDefault();
-
-        }
-
-    }
-
-);
-
-/*=========================================
-Cleanup
-=========================================*/
-
-window.addEventListener(
-
-    "unload",
-
-    ()=>{
-
-        try{
-
-            db.ref().off();
-
-        }
-
-        catch(error){
-
-            console.error(error);
-
-        }
-
-    }
-
-);
-
-/*=========================================
-Startup
-=========================================*/
-
-window.addEventListener("load",()=>{
-
-    updateNetworkStatus();
-
-    console.log("================================");
-    console.log("🚀 VIEWORA SIGNUP");
-    console.log("✅ Auth State Ready");
-    console.log("✅ Network Ready");
-    console.log("✅ Email Verification Ready");
-    console.log("✅ Production Security Ready");
-    console.log("================================");
-
-});
-
-console.log("✅ Signup Part 7 Loaded");
-/*=========================================
-        VIEWORA V10 PREMIUM
-            signup.js
-            PART 8 FINAL
- Production Utilities • Auto Redirect
- Reset • Cleanup • Startup
-=========================================*/
-
-/*=========================================
-Reset Signup Form
-=========================================*/
-
-function resetSignupForm(){
-
-    signupForm?.reset();
-
-    usernameAvailable=false;
-
-    if(strengthFill){
-
-        strengthFill.style.width="0%";
-
-        strengthFill.style.background="#ff4d4d";
-
-    }
-
-    if(strengthText){
-
-        strengthText.textContent=
-
-        "Password Strength : Weak";
-
-    }
-
-    if(usernameStatus){
-
-        usernameStatus.textContent=
-
-        "Username must be unique";
-
-        usernameStatus.style.color="#9fb7ff";
-
-    }
-
-    updateSignupButton();
-
-}
-
-/*=========================================
-Prevent Double Submit
-=========================================*/
-
-signupForm?.addEventListener(
-
-    "submit",
-
-    ()=>{
-
-        signupBtn.disabled=true;
-
-        setTimeout(()=>{
-
-            signupBtn.disabled=false;
-
-        },3000);
-
-    }
-
-);
-
-/*=========================================
-Auto Redirect
-=========================================*/
-
-auth.onAuthStateChanged(async(user)=>{
-
-    if(!user) return;
-
-    try{
-
-        await user.reload();
-
-        if(user.emailVerified){
-
-            await safeUpdate(
-
-                "users/"+user.uid,
-
-                {
-
-                    emailVerified:true,
-
-                    online:true,
-
-                    lastLogin:serverTime()
-
-                }
-
+        } catch (error) {
+
+            console.error(
+                "Auth state error:",
+                error
             );
-
-            console.log("✅ Verified User");
-
         }
-
     }
-
-    catch(error){
-
-        console.error(error);
-
-    }
-
-});
-
-/*=========================================
-Page Animation
-=========================================*/
-
-window.addEventListener("load",()=>{
-
-    document.body.classList.add("fadeIn");
-
-});
-
-/*=========================================
-Cleanup
-=========================================*/
-
-window.addEventListener(
-
-    "unload",
-
-    ()=>{
-
-        try{
-
-            db.ref().off();
-
-            clearTimeout(usernameTimer);
-
-            clearTimeout(toastTimer);
-
-        }
-
-        catch(error){
-
-            console.error(error);
-
-        }
-
-    }
-
 );
 
-/*=========================================
-Global Utilities
-=========================================*/
 
-window.showLoading=showLoading;
-window.hideLoading=hideLoading;
-window.showToast=showToast;
-window.resetSignupForm=resetSignupForm;
-window.checkEmailVerification=checkEmailVerification;
+/*==========================================================
+  22. PAGE STARTUP
+==========================================================*/
 
-/*=========================================
-Final Startup
-=========================================*/
-
-(async()=>{
-
-    try{
+window.addEventListener(
+    "load",
+    () => {
 
         hideLoading();
 
+        updatePasswordStrength();
+
         updateSignupButton();
 
-        console.log("================================");
-        console.log("🚀 VIEWORA V10 PREMIUM");
-        console.log("✅ Signup System Loaded");
-        console.log("✅ Firebase Connected");
-        console.log("✅ Username System Ready");
-        console.log("✅ Email Verification Ready");
-        console.log("✅ Google Signup Ready");
-        console.log("✅ Production Ready");
-        console.log("================================");
 
+        console.log(
+            "================================"
+        );
+
+        console.log(
+            "🚀 VIEWORA V12 SIGNUP READY"
+        );
+
+        console.log(
+            "✅ Firebase Auth"
+        );
+
+        console.log(
+            "✅ Email Signup"
+        );
+
+        console.log(
+            "✅ Google Signup"
+        );
+
+        console.log(
+            "✅ Username System"
+        );
+
+        console.log(
+            "✅ Password Strength"
+        );
+
+        console.log(
+            "✅ Email Verification"
+        );
+
+        console.log(
+            "================================"
+        );
     }
+);
 
-    catch(error){
 
-        console.error(error);
+/*==========================================================
+  23. GLOBAL EXPORTS
+==========================================================*/
 
-    }
+window.showLoading =
+    showLoading;
 
-})();
+window.hideLoading =
+    hideLoading;
+
+window.showToast =
+    showToast;
+
+window.checkEmailVerification =
+    checkEmailVerification;
+
+window.updatePasswordStrength =
+    updatePasswordStrength;
+
+window.resetSignupForm =
+    function () {
+
+        signupForm?.reset();
+
+        usernameAvailable =
+            false;
+
+        if (strengthFill) {
+
+            strengthFill.style.width =
+                "0%";
+        }
+
+        if (strengthText) {
+
+            strengthText.textContent =
+                "Password Strength: Weak";
+        }
+
+        if (usernameStatus) {
+
+            usernameStatus.textContent =
+                "Username must be unique";
+        }
+
+        updateSignupButton();
+    };
+
+
+console.log(
+    "✅ Viewora signup.js loaded successfully"
+);

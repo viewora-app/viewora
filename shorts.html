@@ -2,511 +2,1144 @@
 <html lang="en">
 
 <head>
+    <meta charset="UTF-8">
 
-<meta charset="UTF-8">
-<meta name="viewport"
-content="width=device-width, initial-scale=1.0">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    >
 
-<title>Viewora • Shorts</title>
+    <meta name="theme-color" content="#050505">
 
-<meta name="theme-color" content="#000000">
+    <meta
+        name="description"
+        content="Viewora Shorts — watch, create and share short videos."
+    >
 
-<link rel="preconnect"
-href="https://fonts.googleapis.com">
+    <title>Viewora • Shorts</title>
 
-<link rel="preconnect"
-href="https://fonts.gstatic.com"
-crossorigin>
+    <!-- =====================================================
+         FONTS
+    ====================================================== -->
 
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
-rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 
-<link rel="stylesheet"
-href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet"
+    >
 
-<link rel="stylesheet"
-href="shorts.css">
-<link rel="stylesheet" href="nav.css">
+    <!-- =====================================================
+         FONT AWESOME
+    ====================================================== -->
+
+    <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
+    >
+
+    <!-- =====================================================
+         VIEWORA CSS
+    ====================================================== -->
+
+    <link rel="stylesheet" href="shorts.css">
+    <link rel="stylesheet" href="nav.css">
 
 </head>
 
+
 <body>
 
-<!-- Background -->
+<!-- =========================================================
+     PAGE LOADER
+========================================================= -->
 
-<div class="bgGlow"></div>
+<div id="pageLoader" class="pageLoader">
 
-<!-- Loader -->
+    <div class="loaderLogo">
 
-<div id="pageLoader">
+        <div class="loaderRing"></div>
 
-<div class="loader">
+        <img
+            src="assets/logo.png"
+            alt="Viewora"
+        >
 
-<div class="ring"></div>
+    </div>
 
-<div class="ring delay"></div>
+    <h2>Viewora Shorts</h2>
 
-</div>
-
-<h2>Loading Shorts...</h2>
-
-</div>
-
-<!-- Main App -->
-
-<div id="app" class="hidden">
-
-<!-- Header -->
-
-<header class="shortsHeader">
-
-<div class="logoArea">
-
-<img src="assets/logo.png"
-class="logo">
-
-<h2>Viewora Shorts</h2>
+    <p>Loading your feed...</p>
 
 </div>
 
-<div class="headerActions">
 
-<button id="cameraBtn">
+<!-- =========================================================
+     MAIN APP
+========================================================= -->
 
-<i class="fa-solid fa-camera"></i>
+<div id="app" class="shortsApp hidden">
 
-</button>
 
-<button id="searchBtn">
+    <!-- =====================================================
+         TOP HEADER
+    ====================================================== -->
 
-<i class="fa-solid fa-magnifying-glass"></i>
+    <header class="shortsHeader">
 
-</button>
+        <button
+            id="backBtn"
+            class="headerIconBtn"
+            type="button"
+            aria-label="Back"
+        >
+            <i class="fa-solid fa-arrow-left"></i>
+        </button>
+
+
+        <div class="shortsBrand">
+
+            <img
+                src="assets/logo.png"
+                class="brandLogo"
+                alt="Viewora"
+            >
+
+            <div class="brandText">
+
+                <h1>Shorts</h1>
+
+                <span>Viewora</span>
+
+            </div>
+
+        </div>
+
+
+        <div class="headerActions">
+
+            <button
+                id="searchBtn"
+                class="headerIconBtn"
+                type="button"
+                aria-label="Search Shorts"
+            >
+                <i class="fa-solid fa-magnifying-glass"></i>
+            </button>
+
+        </div>
+
+    </header>
+
+
+    <!-- =====================================================
+         SEARCH
+    ====================================================== -->
+
+    <div
+        id="shortSearchBox"
+        class="shortSearchBox hidden"
+    >
+
+        <i class="fa-solid fa-magnifying-glass"></i>
+
+        <input
+            id="shortSearchInput"
+            type="search"
+            placeholder="Search Shorts..."
+            autocomplete="off"
+        >
+
+        <button
+            id="closeSearchBtn"
+            type="button"
+            aria-label="Close search"
+        >
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+
+    </div>
+
+
+    <!-- =====================================================
+         SHORTS FEED
+    ====================================================== -->
+
+    <main
+        id="shortsContainer"
+        class="shortsContainer"
+    >
+
+        <!-- Shorts are rendered by shorts.js -->
+
+    </main>
+
+
+    <!-- =====================================================
+         EMPTY STATE
+    ====================================================== -->
+
+    <section
+        id="emptyState"
+        class="emptyState hidden"
+    >
+
+        <div class="emptyIcon">
+
+            <i class="fa-solid fa-clapperboard"></i>
+
+        </div>
+
+        <h2>No Shorts Yet</h2>
+
+        <p>
+            Be the first to share a Short on Viewora.
+        </p>
+
+        <button
+            id="emptyUploadBtn"
+            class="primaryBtn"
+            type="button"
+        >
+
+            <i class="fa-solid fa-plus"></i>
+
+            Create Short
+
+        </button>
+
+    </section>
+
+
+    <!-- =====================================================
+         SKELETON
+    ====================================================== -->
+
+    <div
+        id="shortsSkeleton"
+        class="shortsSkeleton hidden"
+    >
+
+        <div class="skeletonVideo"></div>
+
+    </div>
+
+
+    <!-- =====================================================
+         FIXED CREATE SHORT BUTTON
+    ====================================================== -->
+
+    <button
+        id="uploadShortBtn"
+        class="floatingUploadBtn"
+        type="button"
+        aria-label="Create Short"
+    >
+
+        <span class="uploadPlus">
+
+            <i class="fa-solid fa-plus"></i>
+
+        </span>
+
+        <span class="uploadText">
+            Create
+        </span>
+
+    </button>
+
+
+    <!-- =====================================================
+         COMMENTS MODAL
+    ====================================================== -->
+
+    <div
+        id="commentsModal"
+        class="modal hidden"
+        aria-hidden="true"
+    >
+
+        <div
+            id="commentsOverlay"
+            class="modalOverlay"
+        ></div>
+
+
+        <div class="modalCard commentsCard">
+
+            <div class="modalHeader">
+
+                <div>
+
+                    <h2>
+                        <i class="fa-regular fa-comment"></i>
+                        Comments
+                    </h2>
+
+                    <span id="commentCountText">
+                        Join the conversation
+                    </span>
+
+                </div>
+
+
+                <button
+                    id="closeComments"
+                    class="modalCloseBtn"
+                    type="button"
+                    aria-label="Close comments"
+                >
+
+                    <i class="fa-solid fa-xmark"></i>
+
+                </button>
+
+            </div>
+
+
+            <div
+                id="commentsContainer"
+                class="commentsContainer"
+            >
+
+                <!-- Firebase comments -->
+
+            </div>
+
+
+            <div class="commentComposer">
+
+                <input
+                    id="commentText"
+                    type="text"
+                    maxlength="500"
+                    placeholder="Add a comment..."
+                    autocomplete="off"
+                >
+
+                <button
+                    id="sendComment"
+                    type="button"
+                    aria-label="Send comment"
+                >
+
+                    <i class="fa-solid fa-paper-plane"></i>
+
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- =====================================================
+         SHARE MODAL
+    ====================================================== -->
+
+    <div
+        id="shareModal"
+        class="modal hidden"
+        aria-hidden="true"
+    >
+
+        <div
+            id="shareOverlay"
+            class="modalOverlay"
+        ></div>
+
+
+        <div class="modalCard shareCard">
+
+            <div class="modalHeader">
+
+                <div>
+
+                    <h2>
+                        <i class="fa-solid fa-share-nodes"></i>
+                        Share Short
+                    </h2>
+
+                    <span>
+                        Share it with your friends
+                    </span>
+
+                </div>
+
+
+                <button
+                    id="closeShare"
+                    class="modalCloseBtn"
+                    type="button"
+                    aria-label="Close share"
+                >
+
+                    <i class="fa-solid fa-xmark"></i>
+
+                </button>
+
+            </div>
+
+
+            <div class="shareGrid">
+
+                <button
+                    class="shareItem"
+                    data-share="whatsapp"
+                    type="button"
+                >
+
+                    <i class="fa-brands fa-whatsapp"></i>
+
+                    <span>WhatsApp</span>
+
+                </button>
+
+
+                <button
+                    class="shareItem"
+                    data-share="facebook"
+                    type="button"
+                >
+
+                    <i class="fa-brands fa-facebook"></i>
+
+                    <span>Facebook</span>
+
+                </button>
+
+
+                <button
+                    class="shareItem"
+                    data-share="x"
+                    type="button"
+                >
+
+                    <i class="fa-brands fa-x-twitter"></i>
+
+                    <span>X</span>
+
+                </button>
+
+
+                <button
+                    class="shareItem"
+                    data-share="native"
+                    type="button"
+                >
+
+                    <i class="fa-solid fa-arrow-up-from-bracket"></i>
+
+                    <span>Share</span>
+
+                </button>
+
+
+                <button
+                    class="shareItem"
+                    data-share="copy"
+                    type="button"
+                >
+
+                    <i class="fa-solid fa-link"></i>
+
+                    <span>Copy Link</span>
+
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- =====================================================
+         REPORT MODAL
+    ====================================================== -->
+
+    <div
+        id="reportModal"
+        class="modal hidden"
+        aria-hidden="true"
+    >
+
+        <div
+            id="reportOverlay"
+            class="modalOverlay"
+        ></div>
+
+
+        <div class="modalCard reportCard">
+
+            <div class="modalHeader">
+
+                <div>
+
+                    <h2>
+                        <i class="fa-solid fa-flag"></i>
+                        Report Short
+                    </h2>
+
+                    <span>
+                        Tell us what's wrong
+                    </span>
+
+                </div>
+
+
+                <button
+                    id="closeReport"
+                    class="modalCloseBtn"
+                    type="button"
+                    aria-label="Close report"
+                >
+
+                    <i class="fa-solid fa-xmark"></i>
+
+                </button>
+
+            </div>
+
+
+            <div class="reportOptions">
+
+                <button
+                    class="reportBtn"
+                    data-report="spam"
+                    type="button"
+                >
+
+                    <i class="fa-solid fa-ban"></i>
+
+                    <span>Spam</span>
+
+                </button>
+
+
+                <button
+                    class="reportBtn"
+                    data-report="harassment"
+                    type="button"
+                >
+
+                    <i class="fa-solid fa-user-shield"></i>
+
+                    <span>Harassment</span>
+
+                </button>
+
+
+                <button
+                    class="reportBtn"
+                    data-report="violence"
+                    type="button"
+                >
+
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+
+                    <span>Violence</span>
+
+                </button>
+
+
+                <button
+                    class="reportBtn"
+                    data-report="copyright"
+                    type="button"
+                >
+
+                    <i class="fa-solid fa-copyright"></i>
+
+                    <span>Copyright</span>
+
+                </button>
+
+
+                <button
+                    class="reportBtn"
+                    data-report="other"
+                    type="button"
+                >
+
+                    <i class="fa-solid fa-ellipsis"></i>
+
+                    <span>Other</span>
+
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- =====================================================
+         THREE DOT MENU
+         JS opens this for each Short
+    ====================================================== -->
+
+    <div
+        id="shortMenu"
+        class="shortMenu hidden"
+        aria-hidden="true"
+    >
+
+        <!-- Owner actions -->
+
+        <div
+            id="ownerMenu"
+            class="ownerMenu hidden"
+        >
+
+            <button
+                id="editShortBtn"
+                type="button"
+            >
+
+                <i class="fa-solid fa-pen"></i>
+
+                <span>Edit Short</span>
+
+            </button>
+
+
+            <button
+                id="hideCommentsBtn"
+                type="button"
+            >
+
+                <i class="fa-solid fa-comment-slash"></i>
+
+                <span>Hide Comments</span>
+
+            </button>
+
+
+            <button
+                id="hideShortBtn"
+                type="button"
+            >
+
+                <i class="fa-solid fa-eye-slash"></i>
+
+                <span>Hide Short</span>
+
+            </button>
+
+
+            <button
+                id="deleteShortBtn"
+                class="dangerAction"
+                type="button"
+            >
+
+                <i class="fa-solid fa-trash"></i>
+
+                <span>Delete Short</span>
+
+            </button>
+
+        </div>
+
+
+        <!-- Other users -->
+
+        <div
+            id="viewerMenu"
+            class="viewerMenu hidden"
+        >
+
+            <button
+                id="notInterestedBtn"
+                type="button"
+            >
+
+                <i class="fa-solid fa-eye-slash"></i>
+
+                <span>Not Interested</span>
+
+            </button>
+
+
+            <button
+                id="reportShortBtn"
+                type="button"
+            >
+
+                <i class="fa-solid fa-flag"></i>
+
+                <span>Report Short</span>
+
+            </button>
+
+        </div>
+
+    </div>
+
+
+    <!-- =====================================================
+         TOAST
+    ====================================================== -->
+
+    <div
+        id="toast"
+        class="toast hidden"
+        role="status"
+        aria-live="polite"
+    >
+
+        <i
+            id="toastIcon"
+            class="fa-solid fa-circle-check"
+        ></i>
+
+        <span id="toastText">
+            Success
+        </span>
+
+    </div>
+
+
+    <!-- =====================================================
+         HEART ANIMATION
+    ====================================================== -->
+
+    <div
+        id="heartAnimation"
+        class="heartAnimation hidden"
+    >
+
+        <i class="fa-solid fa-heart"></i>
+
+    </div>
+
+
+    <!-- =====================================================
+         MUSIC ANIMATION
+    ====================================================== -->
+
+    <div
+        id="musicAnimation"
+        class="musicAnimation"
+        aria-hidden="true"
+    >
+
+        <div class="musicDisc">
+
+            <i class="fa-solid fa-music"></i>
+
+        </div>
+
+    </div>
+
+
+    <!-- =====================================================
+         NETWORK STATUS
+    ====================================================== -->
+
+    <div
+        id="networkStatus"
+        class="networkStatus hidden"
+    >
+
+        <i class="fa-solid fa-wifi"></i>
+
+        <span>
+            No Internet Connection
+        </span>
+
+    </div>
 
 </div>
 
-</header>
 
-<!-- Shorts Feed -->
-
-<main id="shortsContainer">
-
-<!-- Firebase shorts load here -->
-
-</main>
-
-<!-- Loading Skeleton -->
-
-<div id="shortsSkeleton">
-
-<div class="shortSkeleton"></div>
-
-</div>
-
-<!-- Scroll Top -->
-
-<button id="scrollTopBtn">
-
-<i class="fa-solid fa-arrow-up"></i>
-
-</button>
-
-<!-- Upload -->
-
-<button id="uploadShortBtn">
-
-<i class="fa-solid fa-plus"></i>
-
-</button>
-
-<!-- Toast -->
-
-<div id="toast"
-class="hidden">
-
-<span id="toastText">
-
-Success
-
-</span>
-
-</div>
-<!-- =========================================
-        VIEWORA SHORTS
-              PART 2
-========================================= -->
-
-<!-- =========================
-Bottom Navigation
-========================= -->
+<!-- =========================================================
+     BOTTOM NAVIGATION
+========================================================= -->
 
 <nav class="bottomNav">
 
-<a href="index.html">
-    <span class="activeIndicator"></span>
-    <i class="fa-solid fa-house"></i>
-    <span>Home</span>
-</a>
+    <a href="index.html">
 
-<a href="shorts.html">
-    <span class="activeIndicator"></span>
-    <i class="fa-solid fa-play"></i>
-    <span>Shorts</span>
-</a>
+        <i class="fa-solid fa-house"></i>
 
-<a href="upload.html" class="uploadNav">
-    <i class="fa-solid fa-plus"></i>
-</a>
+        <span>Home</span>
 
-<a href="users.html">
-    <span class="activeIndicator"></span>
-    <i class="fa-solid fa-users"></i>
-    <span>Users</span>
-</a>
+    </a>
 
-<a href="profile.html">
-    <span class="activeIndicator"></span>
-    <i class="fa-solid fa-user"></i>
-    <span>Profile</span>
-</a>
+
+    <a
+        href="shorts.html"
+        class="active"
+    >
+
+        <i class="fa-solid fa-play"></i>
+
+        <span>Shorts</span>
+
+    </a>
+
+
+    <a
+        href="short_upload.html"
+        class="uploadNav"
+        aria-label="Create Short"
+    >
+
+        <i class="fa-solid fa-plus"></i>
+
+    </a>
+
+
+    <a href="users.html">
+
+        <i class="fa-solid fa-users"></i>
+
+        <span>Users</span>
+
+    </a>
+
+
+    <a href="profile.html">
+
+        <i class="fa-solid fa-user"></i>
+
+        <span>Profile</span>
+
+    </a>
 
 </nav>
 
-<!-- =========================
-Comments Modal
-========================= -->
 
-<div id="commentsModal" class="modal hidden">
-
-<div class="modalCard glass">
-
-<div class="modalHeader">
-
-<h2>💬 Comments</h2>
-
-<button id="closeComments">
-
-<i class="fa-solid fa-xmark"></i>
-
-</button>
-
-</div>
-
-<div id="commentsContainer">
-
-<!-- Firebase Comments -->
-
-</div>
-
-<div class="commentInput">
-
-<input
-type="text"
-id="commentText"
-placeholder="Write a comment...">
-
-<button id="sendComment">
-
-<i class="fa-solid fa-paper-plane"></i>
-
-</button>
-
-</div>
-
-</div>
-
-</div>
-
-<!-- =========================
-Share Modal
-========================= -->
-
-<div id="shareModal" class="modal hidden">
-
-<div class="modalCard glass">
-
-<div class="modalHeader">
-
-<h2>📤 Share</h2>
-
-<button id="closeShare">
-
-<i class="fa-solid fa-xmark"></i>
-
-</button>
-
-</div>
-
-<div class="shareGrid">
-
-<button class="shareItem">
-<i class="fa-brands fa-whatsapp"></i>
-<span>WhatsApp</span>
-</button>
-
-<button class="shareItem">
-<i class="fa-brands fa-facebook"></i>
-<span>Facebook</span>
-</button>
-
-<button class="shareItem">
-<i class="fa-brands fa-instagram"></i>
-<span>Instagram</span>
-</button>
-
-<button class="shareItem">
-<i class="fa-brands fa-x-twitter"></i>
-<span>X</span>
-</button>
-
-<button class="shareItem">
-<i class="fa-solid fa-link"></i>
-<span>Copy Link</span>
-</button>
-
-<button class="shareItem">
-<i class="fa-solid fa-user"></i>
-<span>Send Chat</span>
-</button>
-
-</div>
-
-</div>
-
-</div>
-
-<!-- =========================
-Report Modal
-========================= -->
-
-<div id="reportModal" class="modal hidden">
-
-<div class="modalCard glass">
-
-<h2>⚠ Report Short</h2>
-
-<button class="reportBtn">Spam</button>
-
-<button class="reportBtn">Violence</button>
-
-<button class="reportBtn">Harassment</button>
-
-<button class="reportBtn">Copyright</button>
-
-<button class="reportBtn">Other</button>
-
-<button id="closeReport">
-
-Cancel
-
-</button>
-
-</div>
-
-</div>
-
-<!-- =========================
-Loading Overlay
-========================= -->
-
-<div id="loadingOverlay" class="hidden">
-
-<div class="premiumLoader">
-
-<div class="loaderRing"></div>
-
-<div class="loaderRing delay1"></div>
-
-<div class="loaderRing delay2"></div>
-
-</div>
-
-<p>Loading...</p>
-
-</div>
-<!-- =========================================
-        VIEWORA SHORTS
-             PART 3 FINAL
-========================================= -->
-
-<!-- =========================
-Network Status
-========================= -->
-
-<div id="networkStatus" class="hidden">
-
-<i class="fa-solid fa-wifi"></i>
-
-<span>No Internet Connection</span>
-
-</div>
-
-<!-- =========================
-Update Banner
-========================= -->
-
-<div id="updateBanner" class="hidden">
-
-🔥 New Version Available
-
-<button id="updateBtn">
-
-Update
-
-</button>
-
-</div>
-
-<!-- =========================
-Like Animation
-========================= -->
-
-<div id="heartAnimation" class="hidden">
-
-<i class="fa-solid fa-heart"></i>
-
-</div>
-
-<!-- =========================
-Music Animation
-========================= -->
-
-<div id="musicAnimation">
-
-<i class="fa-solid fa-music"></i>
-
-</div>
-
-<!-- =========================
-Hidden Inputs
-========================= -->
-
-<input
-type="file"
-id="videoInput"
-accept="video/*"
-hidden>
-
-<input
-type="file"
-id="thumbnailInput"
-accept="image/*"
-hidden>
-
-<!-- =========================
-Firebase SDK
-========================= -->
+<!-- =========================================================
+     FIREBASE
+========================================================= -->
 
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
+
+
+<!-- =========================================================
+     VIEWORA FIREBASE CONFIG
+========================================================= -->
 
 <script src="firebase.js"></script>
 
+
+<!-- =========================================================
+     SHORTS JS
+========================================================= -->
+
 <script src="shorts.js"></script>
+
+
+<!-- =========================================================
+     NAVIGATION JS
+========================================================= -->
 
 <script src="nav.js"></script>
 
-<!-- =========================
-Premium Script
-========================= -->
+
+<!-- =========================================================
+     PAGE INITIALIZATION
+========================================================= -->
 
 <script>
 
-// Loader
+document.addEventListener("DOMContentLoaded", () => {
 
-window.addEventListener("load",()=>{
+    const loader =
+        document.getElementById("pageLoader");
 
-const loader=document.getElementById("pageLoader");
+    const app =
+        document.getElementById("app");
 
-const app=document.getElementById("app");
 
-setTimeout(()=>{
+    setTimeout(() => {
 
-loader.style.opacity="0";
+        if (loader) {
+            loader.classList.add("loaded");
+        }
 
-loader.style.pointerEvents="none";
+        if (app) {
 
-setTimeout(()=>{
+            app.classList.remove("hidden");
 
-loader.remove();
+            app.classList.add("fadeIn");
 
-app.classList.remove("hidden");
+        }
 
-app.classList.add("fadeIn");
+    }, 700);
 
-},500);
 
-},1200);
+    /* =====================================================
+       SEARCH OPEN
+    ====================================================== */
+
+    document
+        .getElementById("searchBtn")
+        ?.addEventListener("click", () => {
+
+            const box =
+                document.getElementById(
+                    "shortSearchBox"
+                );
+
+            const input =
+                document.getElementById(
+                    "shortSearchInput"
+                );
+
+
+            box?.classList.toggle("hidden");
+
+
+            if (
+                box &&
+                !box.classList.contains("hidden")
+            ) {
+
+                setTimeout(() => {
+                    input?.focus();
+                }, 100);
+
+            }
+
+        });
+
+
+    /* =====================================================
+       SEARCH CLOSE
+    ====================================================== */
+
+    document
+        .getElementById("closeSearchBtn")
+        ?.addEventListener("click", () => {
+
+            document
+                .getElementById(
+                    "shortSearchBox"
+                )
+                ?.classList.add("hidden");
+
+        });
+
+
+    /* =====================================================
+       BACK
+    ====================================================== */
+
+    document
+        .getElementById("backBtn")
+        ?.addEventListener("click", () => {
+
+            if (
+                window.history.length > 1
+            ) {
+
+                window.history.back();
+
+            } else {
+
+                window.location.href =
+                    "index.html";
+
+            }
+
+        });
+
+
+    /* =====================================================
+       CREATE SHORT
+    ====================================================== */
+
+    const createShort = () => {
+
+        window.location.href =
+            "short_upload.html";
+
+    };
+
+
+    document
+        .getElementById("uploadShortBtn")
+        ?.addEventListener(
+            "click",
+            createShort
+        );
+
+
+    document
+        .getElementById("emptyUploadBtn")
+        ?.addEventListener(
+            "click",
+            createShort
+        );
+
+
+    /* =====================================================
+       COMMENTS CLOSE
+    ====================================================== */
+
+    const closeComments = () => {
+
+        document
+            .getElementById(
+                "commentsModal"
+            )
+            ?.classList.add("hidden");
+
+        document.body.classList.remove(
+            "modalOpen"
+        );
+
+    };
+
+
+    document
+        .getElementById("closeComments")
+        ?.addEventListener(
+            "click",
+            closeComments
+        );
+
+
+    document
+        .getElementById("commentsOverlay")
+        ?.addEventListener(
+            "click",
+            closeComments
+        );
+
+
+    /* =====================================================
+       SHARE CLOSE
+    ====================================================== */
+
+    const closeShare = () => {
+
+        document
+            .getElementById(
+                "shareModal"
+            )
+            ?.classList.add("hidden");
+
+        document.body.classList.remove(
+            "modalOpen"
+        );
+
+    };
+
+
+    document
+        .getElementById("closeShare")
+        ?.addEventListener(
+            "click",
+            closeShare
+        );
+
+
+    document
+        .getElementById("shareOverlay")
+        ?.addEventListener(
+            "click",
+            closeShare
+        );
+
+
+    /* =====================================================
+       REPORT CLOSE
+    ====================================================== */
+
+    const closeReport = () => {
+
+        document
+            .getElementById(
+                "reportModal"
+            )
+            ?.classList.add("hidden");
+
+        document.body.classList.remove(
+            "modalOpen"
+        );
+
+    };
+
+
+    document
+        .getElementById("closeReport")
+        ?.addEventListener(
+            "click",
+            closeReport
+        );
+
+
+    document
+        .getElementById("reportOverlay")
+        ?.addEventListener(
+            "click",
+            closeReport
+        );
+
+
+    /* =====================================================
+       ESCAPE KEY
+    ====================================================== */
+
+    document.addEventListener(
+        "keydown",
+        event => {
+
+            if (
+                event.key !== "Escape"
+            ) {
+                return;
+            }
+
+
+            document
+                .getElementById(
+                    "commentsModal"
+                )
+                ?.classList.add("hidden");
+
+
+            document
+                .getElementById(
+                    "shareModal"
+                )
+                ?.classList.add("hidden");
+
+
+            document
+                .getElementById(
+                    "reportModal"
+                )
+                ?.classList.add("hidden");
+
+
+            document
+                .getElementById(
+                    "shortMenu"
+                )
+                ?.classList.add("hidden");
+
+
+            document.body.classList.remove(
+                "modalOpen"
+            );
+
+        }
+    );
 
 });
-
-// Network
-
-window.addEventListener("offline",()=>{
-
-document
-
-.getElementById("networkStatus")
-
-.classList.remove("hidden");
-
-});
-
-window.addEventListener("online",()=>{
-
-document
-
-.getElementById("networkStatus")
-
-.classList.add("hidden");
-
-});
-
-// Scroll Top
-
-const topBtn=document.getElementById("scrollTopBtn");
-
-window.addEventListener("scroll",()=>{
-
-if(window.scrollY>500){
-
-topBtn.classList.add("show");
-
-}else{
-
-topBtn.classList.remove("show");
-
-}
-
-});
-
-topBtn.onclick=()=>{
-
-window.scrollTo({
-
-top:0,
-
-behavior:"smooth"
-
-});
-
-};
-
-// Upload Button
-
-document
-
-.getElementById("uploadShortBtn")
-
-.onclick=()=>{
-
-location.href="short_upload.html";
-
-};
-
-console.log("✅ Viewora Shorts Loaded");
 
 </script>
 

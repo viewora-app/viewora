@@ -1,185 +1,301 @@
-<!--=========================================
-        VIEWORA V3 PREMIUM
-            login.html
-            PART 1
- Head • Background • Loader
-==========================================-->
-
 <!DOCTYPE html>
 <html lang="en">
 
 <head>
+    <meta charset="UTF-8">
 
-<meta charset="UTF-8">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
 
-<meta
-name="viewport"
-content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#070914">
 
-<meta
-name="theme-color"
-content="#050816">
+    <meta
+        name="description"
+        content="Login to Viewora — World Create Connect."
+    >
 
-<title>Viewora • Login</title>
+    <title>Viewora • Login</title>
 
-<link
-rel="icon"
-href="assets/logo.png">
+    <!-- Google Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 
-<link
-rel="stylesheet"
-href="login.css">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet"
+    >
 
-<link
-rel="preconnect"
-href="https://fonts.googleapis.com">
+    <!-- Font Awesome -->
+    <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
+    >
 
-<link
-rel="preconnect"
-href="https://fonts.gstatic.com"
-crossorigin>
-
-<link
-href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
-rel="stylesheet">
-
-<link
-rel="stylesheet"
-href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
-
+    <!-- Login CSS -->
+    <link rel="stylesheet" href="login.css">
 </head>
 
 <body>
 
-<!--=========================================
-Aurora Background
-==========================================-->
+<!-- =========================================
+     BACKGROUND
+========================================= -->
 
-<div class="aurora">
+<div class="loginBackground">
 
-    <div class="light light1"></div>
+    <div class="bgGlow glowOne"></div>
+    <div class="bgGlow glowTwo"></div>
+    <div class="bgGlow glowThree"></div>
 
-    <div class="light light2"></div>
-
-    <div class="light light3"></div>
-
-</div>
-
-<canvas id="particles"></canvas>
-
-<!--=========================================
-Page Loader
-==========================================-->
-
-<div id="pageLoader">
-
-    <div class="loaderLogo">
-
-        <img
-        src="assets/logo.png"
-        alt="Viewora Logo">
-
-    </div>
-
-    <h1>VIEWORA</h1>
-
-    <p>Connecting Creators with the World</p>
-
-    <div class="loaderBar">
-
-        <div class="loaderFill"></div>
-
-    </div>
+    <div class="gridOverlay"></div>
 
 </div>
 
-<!--=========================================
-Main App
-==========================================-->
 
-<div id="app" class="hidden">
-  <!--=========================================
-        VIEWORA V3 PREMIUM
-            login.html
-            PART 2
- Login Card • Logo • Inputs
-==========================================-->
+<!-- =========================================
+     LOADING
+========================================= -->
 
-<div class="loginWrapper">
+<div
+    id="loadingOverlay"
+    class="loadingOverlay hidden"
+>
 
-    <div class="loginCard glass">
+    <div class="loadingCard">
 
-        <!-- Logo -->
-
-        <div class="logoBox">
+        <div class="loadingLogo">
 
             <img
-            src="assets/logo.png"
-            alt="Viewora"
-            class="logo">
-
-            <h1>Welcome Back</h1>
-
-            <p>Login to continue your Viewora journey</p>
+                src="assets/logo.png"
+                alt="Viewora"
+            >
 
         </div>
 
-        <!-- Login Form -->
+        <div class="loader"></div>
+
+        <h3>Signing you in</h3>
+
+        <p>Please wait...</p>
+
+    </div>
+
+</div>
+
+
+<!-- =========================================
+     MAIN
+========================================= -->
+
+<main class="loginPage">
+
+    <section class="loginCard">
+
+
+        <!-- =================================
+             BRAND
+        ================================== -->
+
+        <div class="brand">
+
+            <div class="brandLogo">
+
+                <img
+                    src="assets/logo.png"
+                    alt="Viewora"
+                >
+
+            </div>
+
+            <div class="brandText">
+
+                <h1>Viewora</h1>
+
+                <span>World • Create • Connect</span>
+
+            </div>
+
+        </div>
+
+
+        <!-- =================================
+             WELCOME
+        ================================== -->
+
+        <div class="welcome">
+
+            <span class="premiumBadge">
+
+                <i class="fa-solid fa-sparkles"></i>
+
+                Welcome back
+
+            </span>
+
+            <h2>
+                Sign in to
+                <span>Viewora</span>
+            </h2>
+
+            <p>
+                Continue your journey and connect
+                with the world.
+            </p>
+
+        </div>
+
+
+        <!-- =================================
+             SOCIAL LOGIN
+        ================================== -->
+
+        <div class="socialLogin">
+
+            <button
+                id="googleLogin"
+                class="socialBtn googleBtn"
+                type="button"
+            >
+
+                <span class="socialIcon">
+                    <i class="fa-brands fa-google"></i>
+                </span>
+
+                <span>
+                    Continue with Google
+                </span>
+
+            </button>
+
+
+            <button
+                id="facebookLogin"
+                class="socialBtn facebookBtn"
+                type="button"
+            >
+
+                <span class="socialIcon">
+                    <i class="fa-brands fa-facebook-f"></i>
+                </span>
+
+                <span>
+                    Continue with Facebook
+                </span>
+
+            </button>
+
+
+            <button
+                id="xLogin"
+                class="socialBtn xBtn"
+                type="button"
+            >
+
+                <span class="socialIcon">
+                    <i class="fa-brands fa-x-twitter"></i>
+                </span>
+
+                <span>
+                    Continue with X
+                </span>
+
+            </button>
+
+        </div>
+
+
+        <!-- =================================
+             DIVIDER
+        ================================== -->
+
+        <div class="divider">
+
+            <span></span>
+
+            <p>or continue with email</p>
+
+            <span></span>
+
+        </div>
+
+
+        <!-- =================================
+             LOGIN FORM
+        ================================== -->
 
         <form
-        id="loginForm"
-        autocomplete="on">
+            id="loginForm"
+            class="loginForm"
+        >
 
-            <!-- Email / Username -->
+
+            <!-- Login -->
 
             <div class="inputGroup">
 
-                <label>
-
+                <label for="loginInput">
                     Email or Username
-
                 </label>
 
-                <div class="inputBox">
+                <div class="inputWrapper">
 
-                    <i class="fa-solid fa-user"></i>
+                    <i class="fa-regular fa-user"></i>
 
                     <input
-                    type="text"
-                    id="loginInput"
-                    placeholder="Enter email or username"
-                    autocomplete="username"
-                    required>
+                        type="text"
+                        id="loginInput"
+                        name="login"
+                        placeholder="Enter email or username"
+                        autocomplete="username"
+                        required
+                    >
 
                 </div>
 
             </div>
 
+
             <!-- Password -->
 
             <div class="inputGroup">
 
-                <label>
+                <div class="labelRow">
 
-                    Password
+                    <label for="password">
+                        Password
+                    </label>
 
-                </label>
+                    <button
+                        id="forgotPassword"
+                        type="button"
+                        class="forgotBtn"
+                    >
+                        Forgot password?
+                    </button>
 
-                <div class="inputBox">
+                </div>
+
+                <div class="inputWrapper">
 
                     <i class="fa-solid fa-lock"></i>
 
                     <input
-                    type="password"
-                    id="password"
-                    placeholder="Enter password"
-                    autocomplete="current-password"
-                    required>
+                        type="password"
+                        id="password"
+                        name="password"
+                        placeholder="Enter your password"
+                        autocomplete="current-password"
+                        required
+                    >
 
                     <button
-                    type="button"
-                    id="togglePassword"
-                    class="toggleBtn">
+                        id="togglePassword"
+                        type="button"
+                        class="passwordToggle"
+                        aria-label="Show password"
+                    >
 
                         <i class="fa-solid fa-eye"></i>
 
@@ -189,327 +305,266 @@ Main App
 
             </div>
 
+
             <!-- Remember -->
 
-            <div class="loginOptions">
+            <div class="formOptions">
 
-                <label class="rememberBox">
+                <label class="rememberOption">
 
                     <input
-                    type="checkbox"
-                    id="rememberMe">
+                        type="checkbox"
+                        id="rememberMe"
+                    >
 
-                    <span>Remember Me</span>
+                    <span class="customCheck"></span>
+
+                    <span>
+                        Remember me
+                    </span>
 
                 </label>
 
-                <a
-                href="#"
-                id="forgotPassword">
-
-                    Forgot Password?
-
-                </a>
-
             </div>
-            <!--=========================================
-        VIEWORA V3 PREMIUM
-            login.html
-            PART 3
- Buttons • Divider • Footer
-==========================================-->
+
 
             <!-- Login Button -->
 
             <button
-            type="submit"
-            id="loginBtn"
-            class="loginBtn">
+                id="loginBtn"
+                class="loginBtn"
+                type="submit"
+            >
 
-                <i class="fa-solid fa-right-to-bracket"></i>
+                <span class="loginBtnIcon">
 
-                <span>Login</span>
+                    <i class="fa-solid fa-arrow-right-to-bracket"></i>
 
-            </button>
+                </span>
 
-            <!-- Divider -->
+                <span>
+                    Sign In
+                </span>
 
-            <div class="divider">
-
-                <span>OR</span>
-
-            </div>
-
-            <!-- Google Login -->
-
-            <button
-            type="button"
-            id="googleLogin"
-            class="googleBtn">
-
-                <img
-                src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
-                alt="Google">
-
-                <span>Continue with Google</span>
+                <i class="fa-solid fa-arrow-right"></i>
 
             </button>
 
         </form>
 
-        <!-- Signup -->
 
-        <div class="signupBox">
+        <!-- =================================
+             SIGN UP
+        ================================== -->
 
-            <p>
+        <div class="signupText">
 
-                Don't have an account?
+            <span>Don't have an account?</span>
 
-                <a href="signup.html">
-
-                    Create Account
-
-                </a>
-
-            </p>
+            <a href="signup.html">
+                Create account
+            </a>
 
         </div>
 
-        <!-- Footer -->
 
-        <div class="footer">
+        <!-- =================================
+             TERMS
+        ================================== -->
 
-            <p>
+        <p class="terms">
 
-                © 2026 Viewora
+            By continuing, you agree to Viewora's
 
-            </p>
+            <a href="terms.html">
+                Terms
+            </a>
 
-            <p>
+            and
 
-                Connecting Creators with the World
+            <a href="privacy.html">
+                Privacy Policy
+            </a>.
 
-            </p>
+        </p>
 
-        </div>
 
-    </div>
+    </section>
 
-</div>
-<!--=========================================
-        VIEWORA V3 PREMIUM
-            login.html
-            PART 4
- Loader • Toast • Modals
-==========================================-->
+</main>
 
-<!--=========================================
-Loading Overlay
-==========================================-->
 
-<div id="loadingOverlay" class="hidden">
-
-    <div class="premiumLoader">
-
-        <div class="loaderRing"></div>
-        <div class="loaderRing delay1"></div>
-        <div class="loaderRing delay2"></div>
-
-    </div>
-
-    <p>Please wait...</p>
-
-</div>
-
-<!--=========================================
-Toast Notification
-==========================================-->
-
-<div id="toast" class="hidden">
-
-    <i
-    id="toastIcon"
-    class="fa-solid fa-circle-check"></i>
-
-    <span id="toastText">
-
-        Success
-
-    </span>
-
-</div>
-
-<!--=========================================
-Forgot Password Modal
-==========================================-->
+<!-- =========================================
+     FORGOT PASSWORD MODAL
+========================================= -->
 
 <div
-id="forgotModal"
-class="modal hidden">
+    id="forgotModal"
+    class="modal hidden"
+>
 
-    <div class="modalCard glass">
+    <div
+        class="modalOverlay"
+        id="forgotOverlay"
+    ></div>
 
-        <div class="popupIcon">
+    <div class="modalCard">
+
+        <button
+            id="closeForgotBtn"
+            class="modalClose"
+            type="button"
+        >
+
+            <i class="fa-solid fa-xmark"></i>
+
+        </button>
+
+        <div class="modalIcon">
 
             <i class="fa-solid fa-key"></i>
 
         </div>
 
-        <h2>Forgot Password?</h2>
+        <h2>Reset Password</h2>
 
         <p>
-
-            Enter your registered email address.
-            We'll send you a password reset link.
-
+            Enter your email and we'll send you
+            a password reset link.
         </p>
 
-        <input
-        type="email"
-        id="resetEmail"
-        class="modalInput"
-        placeholder="Enter your email">
+        <div class="inputWrapper">
 
-        <div class="modalButtons">
+            <i class="fa-regular fa-envelope"></i>
 
-            <button
-            id="sendResetBtn"
-            class="primaryBtn">
-
-                Send Link
-
-            </button>
-
-            <button
-            id="closeForgotBtn"
-            class="secondaryBtn">
-
-                Cancel
-
-            </button>
+            <input
+                type="email"
+                id="resetEmail"
+                placeholder="Enter your email"
+                autocomplete="email"
+            >
 
         </div>
+
+        <button
+            id="sendResetBtn"
+            class="modalPrimaryBtn"
+            type="button"
+        >
+            Send Reset Link
+        </button>
 
     </div>
 
 </div>
 
-<!--=========================================
-Verify Email Modal
-==========================================-->
+
+<!-- =========================================
+     EMAIL VERIFICATION MODAL
+========================================= -->
 
 <div
-id="verifyModal"
-class="modal hidden">
+    id="verifyModal"
+    class="modal hidden"
+>
 
-    <div class="modalCard glass">
+    <div
+        class="modalOverlay"
+        id="verifyOverlay"
+    ></div>
 
-        <div class="popupIcon">
+    <div class="modalCard">
+
+        <button
+            id="closeVerifyBtn"
+            class="modalClose"
+            type="button"
+        >
+
+            <i class="fa-solid fa-xmark"></i>
+
+        </button>
+
+        <div class="modalIcon">
 
             <i class="fa-solid fa-envelope-circle-check"></i>
 
         </div>
 
-        <h2>Email Not Verified</h2>
+        <h2>Verify your email</h2>
 
         <p>
-
-            Please verify your email before
-            logging into Viewora.
-
+            Please verify your email address before
+            signing in to Viewora.
         </p>
 
-        <div class="modalButtons">
-
-            <button
+        <button
             id="resendVerificationBtn"
-            class="primaryBtn">
-
-                Resend Email
-
-            </button>
-
-            <button
-            id="closeVerifyBtn"
-            class="secondaryBtn">
-
-                Close
-
-            </button>
-
-        </div>
+            class="modalPrimaryBtn"
+            type="button"
+        >
+            Resend Verification Email
+        </button>
 
     </div>
 
 </div>
 
-<!--=========================================
-Network Banner
-==========================================-->
+
+<!-- =========================================
+     TOAST
+========================================= -->
 
 <div
-id="networkBanner"
-class="hidden">
+    id="toast"
+    class="toast hidden"
+    role="status"
+    aria-live="polite"
+>
+
+    <i
+        id="toastIcon"
+        class="fa-solid fa-circle-check"
+    ></i>
+
+    <span id="toastText">
+        Success
+    </span>
+
+</div>
+
+
+<!-- =========================================
+     NETWORK
+========================================= -->
+
+<div
+    id="networkBanner"
+    class="networkBanner hidden"
+>
 
     <i class="fa-solid fa-wifi"></i>
 
     <span>
-
         No Internet Connection
-
     </span>
 
 </div>
-<!--=========================================
-        VIEWORA V3 PREMIUM
-            login.html
-            PART 5 FINAL
- Firebase • Scripts • Closing Tags
-==========================================-->
 
-<!-- Firebase SDK -->
+
+<!-- =========================================
+     FIREBASE
+========================================= -->
 
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+
+<!-- Agar Firebase Storage use karna hai -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
 
 <script src="firebase.js"></script>
-
-<!-- Login Script -->
-
 <script src="login.js"></script>
-
-<!-- Premium Startup -->
-
-<script>
-
-window.addEventListener("load",()=>{
-
-    const loader=document.getElementById("pageLoader");
-    const app=document.getElementById("app");
-
-    setTimeout(()=>{
-
-        if(loader){
-
-            loader.style.opacity="0";
-            loader.style.visibility="hidden";
-
-        }
-
-        if(app){
-
-            app.classList.remove("hidden");
-            app.classList.add("fadeIn");
-
-        }
-
-    },1200);
-
-});
-
-</script>
 
 </body>
 </html>

@@ -4,6 +4,7 @@
    VIEWORA • EDIT PROFILE JS
    Profile Photo • Banner • Name • Username • URL
    Gender • Bio • Firebase Realtime Database
+   Cloudinary Image Upload
 ========================================================= */
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -116,6 +117,24 @@ document.addEventListener("DOMContentLoaded", () => {
         "assets/default-banner.jpg";
 
 
+    /* =====================================================
+       CLOUDINARY CONFIGURATION
+    ===================================================== */
+
+    const CLOUDINARY_CLOUD_NAME =
+        "z5m6wjdf";
+
+    const CLOUDINARY_UPLOAD_PRESET =
+        "Viewora-upload";
+
+    const CLOUDINARY_UPLOAD_URL =
+        `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/auto/upload`;
+
+
+    /* =====================================================
+       STATE
+    ===================================================== */
+
     let currentUID = null;
 
     let currentProfile = {};
@@ -130,14 +149,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     /* =====================================================
-       HELPERS
+       TOAST
     ===================================================== */
 
-    function showToast(message, type = "success") {
+    function showToast(
+        message,
+        type = "success"
+    ) {
 
         if (!toast || !toastText) return;
 
-        toastText.textContent = message;
+        toastText.textContent =
+            message;
 
         if (toastIcon) {
 
@@ -145,37 +168,53 @@ document.addEventListener("DOMContentLoaded", () => {
                 type === "error"
                     ? "fa-solid fa-circle-exclamation"
                     : "fa-solid fa-circle-check";
-
         }
 
         toast.classList.remove("hidden");
 
-        clearTimeout(showToast.timer);
+        clearTimeout(
+            showToast.timer
+        );
 
         showToast.timer =
             setTimeout(() => {
 
-                toast.classList.add("hidden");
+                toast.classList.add(
+                    "hidden"
+                );
 
             }, 3000);
     }
 
 
-    function showLoading(title, message) {
+    /* =====================================================
+       LOADING
+    ===================================================== */
+
+    function showLoading(
+        title,
+        message
+    ) {
 
         if (!loadingOverlay) return;
 
         if (loadingTitle) {
+
             loadingTitle.textContent =
-                title || "Saving profile";
+                title ||
+                "Saving profile";
         }
 
         if (loadingText) {
+
             loadingText.textContent =
-                message || "Please wait...";
+                message ||
+                "Please wait...";
         }
 
-        loadingOverlay.classList.remove("hidden");
+        loadingOverlay.classList.remove(
+            "hidden"
+        );
     }
 
 
@@ -183,27 +222,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
         if (!loadingOverlay) return;
 
-        loadingOverlay.classList.add("hidden");
+        loadingOverlay.classList.add(
+            "hidden"
+        );
     }
 
 
-    function escapeHTML(value) {
-
-        if (
-            value === null ||
-            value === undefined
-        ) {
-            return "";
-        }
-
-        return String(value)
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/"/g, "&quot;")
-            .replace(/'/g, "&#039;");
-    }
-
+    /* =====================================================
+       FIREBASE
+    ===================================================== */
 
     function getCurrentUser() {
 
@@ -212,8 +239,8 @@ document.addEventListener("DOMContentLoaded", () => {
             firebase.auth
         ) {
 
-            return firebase.auth().currentUser;
-
+            return firebase.auth()
+                .currentUser;
         }
 
         return null;
@@ -228,7 +255,6 @@ document.addEventListener("DOMContentLoaded", () => {
         ) {
 
             return db;
-
         }
 
         if (
@@ -237,12 +263,15 @@ document.addEventListener("DOMContentLoaded", () => {
         ) {
 
             return firebase.database();
-
         }
 
         return null;
     }
 
+
+    /* =====================================================
+       NORMALIZATION
+    ===================================================== */
 
     function normalizeUsername(value) {
 
@@ -259,10 +288,16 @@ document.addEventListener("DOMContentLoaded", () => {
         return String(value || "")
             .trim()
             .toLowerCase()
-            .replace(/^https?:\/\/[^/]+\//i, "")
+            .replace(
+                /^https?:\/\/[^/]+\//i,
+                ""
+            )
             .replace(/^\/+/, "")
             .replace(/\s+/g, "-")
-            .replace(/[^a-z0-9._-]/g, "")
+            .replace(
+                /[^a-z0-9._-]/g,
+                ""
+            )
             .substring(0, 40);
     }
 
@@ -273,12 +308,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function updateCounters() {
 
-        if (nameCounter && nameInput) {
+        if (
+            nameCounter &&
+            nameInput
+        ) {
 
             nameCounter.textContent =
                 `${nameInput.value.length}/50`;
-
         }
+
 
         if (
             usernameCounter &&
@@ -287,16 +325,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
             usernameCounter.textContent =
                 `${usernameInput.value.length}/30`;
-
         }
 
-        if (bioCounter && bioInput) {
+
+        if (
+            bioCounter &&
+            bioInput
+        ) {
 
             bioCounter.textContent =
                 `${bioInput.value.length}/160`;
-
         }
-
     }
 
 
@@ -310,15 +349,18 @@ document.addEventListener("DOMContentLoaded", () => {
             nameInput?.value.trim() ||
             "Your Name";
 
+
         const username =
             normalizeUsername(
                 usernameInput?.value
             ) ||
             "username";
 
+
         const bio =
             bioInput?.value.trim() ||
-            "Your bio will appear here.";
+            "Your bio will appear here";
+
 
         const profileURL =
             normalizeProfileURL(
@@ -331,7 +373,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
             previewName.textContent =
                 name;
-
         }
 
 
@@ -339,7 +380,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
             previewUsername.textContent =
                 `@${username}`;
-
         }
 
 
@@ -347,7 +387,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
             previewBio.textContent =
                 bio;
-
         }
 
 
@@ -355,7 +394,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
             profileUrlPreview.textContent =
                 profileURL;
-
         }
 
 
@@ -363,17 +401,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
             publicProfileLink.textContent =
                 `viewora.app/${profileURL}`;
-
         }
 
 
         updateCounters();
-
     }
 
 
     /* =====================================================
-       PROFILE PHOTO
+       PROFILE PHOTO SELECT
     ===================================================== */
 
     if (profilePhotoButton) {
@@ -385,12 +421,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (profilePhotoInput) {
 
                     profilePhotoInput.click();
-
                 }
-
             }
         );
-
     }
 
 
@@ -413,8 +446,9 @@ document.addEventListener("DOMContentLoaded", () => {
                         "error"
                     );
 
-                    return;
+                    profilePhotoInput.value = "";
 
+                    return;
                 }
 
 
@@ -431,7 +465,6 @@ document.addEventListener("DOMContentLoaded", () => {
                     profilePhotoInput.value = "";
 
                     return;
-
                 }
 
 
@@ -442,6 +475,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 const reader =
                     new FileReader();
 
+
                 reader.onload =
                     e => {
 
@@ -449,21 +483,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
                             profilePreview.src =
                                 e.target.result;
-
                         }
-
                     };
 
-                reader.readAsDataURL(file);
 
+                reader.readAsDataURL(file);
             }
         );
-
     }
 
 
     /* =====================================================
-       BANNER
+       BANNER SELECT
     ===================================================== */
 
     if (bannerArea) {
@@ -475,11 +506,10 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (bannerInput) {
 
                     bannerInput.click();
-
                 }
-
             }
         );
+
 
         bannerArea.addEventListener(
             "keydown",
@@ -493,12 +523,9 @@ document.addEventListener("DOMContentLoaded", () => {
                     event.preventDefault();
 
                     bannerInput?.click();
-
                 }
-
             }
         );
-
     }
 
 
@@ -521,8 +548,9 @@ document.addEventListener("DOMContentLoaded", () => {
                         "error"
                     );
 
-                    return;
+                    bannerInput.value = "";
 
+                    return;
                 }
 
 
@@ -539,7 +567,6 @@ document.addEventListener("DOMContentLoaded", () => {
                     bannerInput.value = "";
 
                     return;
-
                 }
 
 
@@ -550,6 +577,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 const reader =
                     new FileReader();
 
+
                 reader.onload =
                     e => {
 
@@ -557,16 +585,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
                             bannerPreview.src =
                                 e.target.result;
-
                         }
-
                     };
 
-                reader.readAsDataURL(file);
 
+                reader.readAsDataURL(file);
             }
         );
-
     }
 
 
@@ -587,9 +612,12 @@ document.addEventListener("DOMContentLoaded", () => {
             "input",
             updatePreview
         );
-
     });
 
+
+    /* =====================================================
+       USERNAME CLEANUP
+    ===================================================== */
 
     if (usernameInput) {
 
@@ -600,13 +628,20 @@ document.addEventListener("DOMContentLoaded", () => {
                 usernameInput.value =
                     usernameInput.value
                         .replace(/\s/g, "")
-                        .replace(/[^a-zA-Z0-9._]/g, "");
+                        .replace(
+                            /[^a-zA-Z0-9._]/g,
+                            ""
+                        );
 
+                updatePreview();
             }
         );
-
     }
 
+
+    /* =====================================================
+       PROFILE URL CLEANUP
+    ===================================================== */
 
     if (profileUrlInput) {
 
@@ -619,9 +654,9 @@ document.addEventListener("DOMContentLoaded", () => {
                         profileUrlInput.value
                     );
 
+                updatePreview();
             }
         );
-
     }
 
 
@@ -629,15 +664,17 @@ document.addEventListener("DOMContentLoaded", () => {
        USERNAME VALIDATION
     ===================================================== */
 
-    function validateUsername(username) {
+    function validateUsername(
+        username
+    ) {
 
         if (!username) {
 
             return {
                 valid: false,
-                message: "Username is required."
+                message:
+                    "Username is required."
             };
-
         }
 
 
@@ -645,9 +682,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
             return {
                 valid: false,
-                message: "Minimum 3 characters."
+                message:
+                    "Minimum 3 characters."
             };
-
         }
 
 
@@ -655,9 +692,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
             return {
                 valid: false,
-                message: "Maximum 30 characters."
+                message:
+                    "Maximum 30 characters."
             };
-
         }
 
 
@@ -669,17 +706,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
             return {
                 valid: false,
-                message: "Only letters, numbers, dots and underscores."
+                message:
+                    "Only letters, numbers, dots and underscores."
             };
-
         }
 
 
         return {
             valid: true,
-            message: "Valid username"
+            message:
+                "Valid username"
         };
-
     }
 
 
@@ -703,30 +740,33 @@ document.addEventListener("DOMContentLoaded", () => {
                 ? "valid"
                 : "invalid"
         );
-
     }
 
+
+    /* =====================================================
+       CHECK USERNAME
+    ===================================================== */
 
     async function checkUsernameAvailable(
         username
     ) {
 
         if (
-            username === originalUsername
+            username ===
+            originalUsername
         ) {
 
             return true;
-
         }
 
 
         const database =
             getDatabase();
 
+
         if (!database) {
 
             return true;
-
         }
 
 
@@ -735,7 +775,9 @@ document.addEventListener("DOMContentLoaded", () => {
             const snapshot =
                 await database
                     .ref("users")
-                    .orderByChild("username")
+                    .orderByChild(
+                        "username"
+                    )
                     .equalTo(username)
                     .once("value");
 
@@ -743,23 +785,27 @@ document.addEventListener("DOMContentLoaded", () => {
             if (!snapshot.exists()) {
 
                 return true;
-
             }
 
 
-            let foundOtherUser = false;
+            let foundOtherUser =
+                false;
 
-            snapshot.forEach(child => {
 
-                if (
-                    child.key !== currentUID
-                ) {
+            snapshot.forEach(
+                child => {
 
-                    foundOtherUser = true;
+                    if (
+                        child.key !==
+                        currentUID
+                    ) {
 
+                        foundOtherUser =
+                            true;
+                    }
                 }
+            );
 
-            });
 
             return !foundOtherUser;
 
@@ -771,13 +817,12 @@ document.addEventListener("DOMContentLoaded", () => {
             );
 
             return true;
-
         }
-
     }
 
 
-    let usernameCheckTimer = null;
+    let usernameCheckTimer =
+        null;
 
 
     if (usernameInput) {
@@ -790,6 +835,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     normalizeUsername(
                         usernameInput.value
                     );
+
 
                 const result =
                     validateUsername(
@@ -805,7 +851,6 @@ document.addEventListener("DOMContentLoaded", () => {
                     );
 
                     return;
-
                 }
 
 
@@ -843,16 +888,13 @@ document.addEventListener("DOMContentLoaded", () => {
                                     "✕ Username already taken",
                                     false
                                 );
-
                             }
 
                         },
-                        150
+                        250
                     );
-
             }
         );
-
     }
 
 
@@ -865,6 +907,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const user =
             getCurrentUser();
 
+
         if (!user) {
 
             showToast(
@@ -872,15 +915,18 @@ document.addEventListener("DOMContentLoaded", () => {
                 "error"
             );
 
-            setTimeout(() => {
 
-                location.href =
-                    "login.html";
+            setTimeout(
+                () => {
 
-            }, 1000);
+                    location.href =
+                        "login.html";
+
+                },
+                1000
+            );
 
             return;
-
         }
 
 
@@ -891,6 +937,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const database =
             getDatabase();
 
+
         if (!database) {
 
             showToast(
@@ -899,7 +946,6 @@ document.addEventListener("DOMContentLoaded", () => {
             );
 
             return;
-
         }
 
 
@@ -907,7 +953,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
             const snapshot =
                 await database
-                    .ref(`users/${currentUID}`)
+                    .ref(
+                        `users/${currentUID}`
+                    )
                     .once("value");
 
 
@@ -925,7 +973,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 "✅ Profile loaded"
             );
 
-
         } catch (error) {
 
             console.error(
@@ -933,15 +980,18 @@ document.addEventListener("DOMContentLoaded", () => {
                 error
             );
 
+
             showToast(
                 "Unable to load profile.",
                 "error"
             );
-
         }
-
     }
 
+
+    /* =====================================================
+       FILL PROFILE
+    ===================================================== */
 
     function fillProfile(
         profile,
@@ -990,7 +1040,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
             nameInput.value =
                 name;
-
         }
 
 
@@ -998,7 +1047,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
             usernameInput.value =
                 username;
-
         }
 
 
@@ -1006,7 +1054,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
             profileUrlInput.value =
                 profileURL;
-
         }
 
 
@@ -1014,7 +1061,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
             genderInput.value =
                 gender;
-
         }
 
 
@@ -1022,7 +1068,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
             bioInput.value =
                 bio;
-
         }
 
 
@@ -1039,6 +1084,8 @@ document.addEventListener("DOMContentLoaded", () => {
             profile.banner ||
             profile.bannerUrl ||
             profile.bannerURL ||
+            profile.coverPhoto ||
+            profile.coverPhotoURL ||
             DEFAULT_BANNER;
 
 
@@ -1046,7 +1093,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
             profilePreview.src =
                 photo;
-
         }
 
 
@@ -1054,97 +1100,72 @@ document.addEventListener("DOMContentLoaded", () => {
 
             bannerPreview.src =
                 banner;
-
         }
 
 
         updatePreview();
-
     }
 
 
     /* =====================================================
        CLOUDINARY UPLOAD
-       ===================================================== */
-
-    /*
-       IMPORTANT:
-       If your firebase.js already has a Cloudinary
-       upload helper, this function can use it.
-
-       Otherwise configure these values.
-    */
-
-    const CLOUDINARY_CLOUD_NAME =
-        window.VIEWORA_CLOUDINARY_CLOUD_NAME ||
-        "";
-
-    const CLOUDINARY_UPLOAD_PRESET =
-        window.VIEWORA_CLOUDINARY_UPLOAD_PRESET ||
-        "Viewora-upload";
-
+    ===================================================== */
 
     async function uploadToCloudinary(
         file,
         folder
     ) {
 
-        if (!file) return null;
+        if (!file) {
 
-
-        /*
-          If another Viewora helper exists,
-          use it automatically.
-        */
-
-        if (
-            typeof window.uploadToCloudinary ===
-            "function" &&
-            window.uploadToCloudinary !==
-            uploadToCloudinary
-        ) {
-
-            return await window.uploadToCloudinary(
-                file,
-                folder
-            );
-
+            return null;
         }
 
 
         if (!CLOUDINARY_CLOUD_NAME) {
 
             throw new Error(
-                "Cloudinary cloud name is not configured."
+                "Cloudinary cloud name is missing."
             );
+        }
 
+
+        if (!CLOUDINARY_UPLOAD_PRESET) {
+
+            throw new Error(
+                "Cloudinary upload preset is missing."
+            );
         }
 
 
         const formData =
             new FormData();
 
+
         formData.append(
             "file",
             file
         );
+
 
         formData.append(
             "upload_preset",
             CLOUDINARY_UPLOAD_PRESET
         );
 
-        formData.append(
-            "folder",
-            folder
-        );
+
+        if (folder) {
+
+            formData.append(
+                "folder",
+                folder
+            );
+        }
 
 
         const response =
             await fetch(
-                `https://api.cloudinary.com/v1_1/${encodeURIComponent(
-                    CLOUDINARY_CLOUD_NAME
-                )}/image/upload`,
+                CLOUDINARY_UPLOAD_URL,
                 {
                     method: "POST",
                     body: formData
@@ -1152,17 +1173,39 @@ document.addEventListener("DOMContentLoaded", () => {
             );
 
 
-        if (!response.ok) {
+        let data = {};
 
-            throw new Error(
-                "Cloudinary upload failed."
+        try {
+
+            data =
+                await response.json();
+
+        } catch (error) {
+
+            console.error(
+                "Cloudinary response parse error:",
+                error
             );
-
         }
 
 
-        const data =
-            await response.json();
+        if (!response.ok) {
+
+            console.error(
+                "Cloudinary error:",
+                data
+            );
+
+
+            const message =
+                data?.error?.message ||
+                "Cloudinary upload failed.";
+
+
+            throw new Error(
+                message
+            );
+        }
 
 
         if (!data.secure_url) {
@@ -1170,12 +1213,16 @@ document.addEventListener("DOMContentLoaded", () => {
             throw new Error(
                 "Cloudinary did not return an image URL."
             );
-
         }
 
 
-        return data.secure_url;
+        console.log(
+            "✅ Cloudinary upload successful:",
+            data.secure_url
+        );
 
+
+        return data.secure_url;
     }
 
 
@@ -1200,7 +1247,6 @@ document.addEventListener("DOMContentLoaded", () => {
             );
 
             return;
-
         }
 
 
@@ -1216,12 +1262,12 @@ document.addEventListener("DOMContentLoaded", () => {
             );
 
             return;
-
         }
 
 
         const name =
-            nameInput?.value.trim() || "";
+            nameInput?.value.trim() ||
+            "";
 
 
         const username =
@@ -1238,16 +1284,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
         const gender =
-            genderInput?.value || "";
+            genderInput?.value ||
+            "";
 
 
         const bio =
-            bioInput?.value.trim() || "";
+            bioInput?.value.trim() ||
+            "";
 
 
-        /* ===============================================
+        /* =================================================
            VALIDATION
-        =============================================== */
+        ================================================= */
 
         if (!name) {
 
@@ -1259,15 +1307,18 @@ document.addEventListener("DOMContentLoaded", () => {
             nameInput?.focus();
 
             return;
-
         }
 
 
         const usernameValidation =
-            validateUsername(username);
+            validateUsername(
+                username
+            );
 
 
-        if (!usernameValidation.valid) {
+        if (
+            !usernameValidation.valid
+        ) {
 
             showToast(
                 usernameValidation.message,
@@ -1277,7 +1328,6 @@ document.addEventListener("DOMContentLoaded", () => {
             usernameInput?.focus();
 
             return;
-
         }
 
 
@@ -1291,7 +1341,6 @@ document.addEventListener("DOMContentLoaded", () => {
             profileUrlInput?.focus();
 
             return;
-
         }
 
 
@@ -1309,7 +1358,6 @@ document.addEventListener("DOMContentLoaded", () => {
             profileUrlInput?.focus();
 
             return;
-
         }
 
 
@@ -1320,14 +1368,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
             saveProfileBtn.disabled =
                 true;
-
         }
+
 
         if (saveTopBtn) {
 
             saveTopBtn.disabled =
                 true;
-
         }
 
 
@@ -1339,9 +1386,9 @@ document.addEventListener("DOMContentLoaded", () => {
             );
 
 
-            /* =========================================
-               CHECK USERNAME
-            ========================================= */
+            /* =============================================
+               USERNAME CHECK
+            ============================================= */
 
             const usernameAvailable =
                 await checkUsernameAvailable(
@@ -1354,14 +1401,18 @@ document.addEventListener("DOMContentLoaded", () => {
                 throw new Error(
                     "This username is already taken."
                 );
-
             }
 
+
+            /* =============================================
+               CURRENT IMAGE URLS
+            ============================================= */
 
             let profilePhotoURL =
                 currentProfile.profilePhoto ||
                 currentProfile.profilePhotoURL ||
                 currentProfile.photoURL ||
+                currentProfile.avatar ||
                 user.photoURL ||
                 DEFAULT_AVATAR;
 
@@ -1370,18 +1421,20 @@ document.addEventListener("DOMContentLoaded", () => {
                 currentProfile.banner ||
                 currentProfile.bannerUrl ||
                 currentProfile.bannerURL ||
+                currentProfile.coverPhoto ||
+                currentProfile.coverPhotoURL ||
                 DEFAULT_BANNER;
 
 
-            /* =========================================
+            /* =============================================
                PROFILE PHOTO UPLOAD
-            ========================================= */
+            ============================================= */
 
             if (selectedProfileFile) {
 
                 showLoading(
                     "Uploading profile photo",
-                    "Almost there..."
+                    "Uploading image to Cloudinary..."
                 );
 
 
@@ -1396,21 +1449,19 @@ document.addEventListener("DOMContentLoaded", () => {
 
                     profilePhotoURL =
                         uploadedPhoto;
-
                 }
-
             }
 
 
-            /* =========================================
+            /* =============================================
                BANNER UPLOAD
-            ========================================= */
+            ============================================= */
 
             if (selectedBannerFile) {
 
                 showLoading(
                     "Uploading banner",
-                    "Updating your profile cover..."
+                    "Uploading banner to Cloudinary..."
                 );
 
 
@@ -1425,15 +1476,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
                     bannerURL =
                         uploadedBanner;
-
                 }
-
             }
 
 
-            /* =========================================
-               PROFILE DATA
-            ========================================= */
+            /* =============================================
+               SAVE FIREBASE DATABASE
+            ============================================= */
 
             showLoading(
                 "Saving profile",
@@ -1442,7 +1491,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
             const now =
-                firebase.database.ServerValue.TIMESTAMP;
+                firebase.database
+                    .ServerValue
+                    .TIMESTAMP;
 
 
             const profileData = {
@@ -1497,30 +1548,36 @@ document.addEventListener("DOMContentLoaded", () => {
                 bannerURL:
                     bannerURL,
 
+                coverPhoto:
+                    bannerURL,
+
+                coverPhotoURL:
+                    bannerURL,
+
                 updatedAt:
                     now
-
             };
 
 
-            /* =========================================
-               UPDATE USER PROFILE
-            ========================================= */
-
             await database
-                .ref(`users/${currentUID}`)
-                .update(profileData);
+                .ref(
+                    `users/${currentUID}`
+                )
+                .update(
+                    profileData
+                );
 
 
-            /* =========================================
-               OPTIONAL PUBLIC PROFILE INDEX
-            ========================================= */
+            /* =============================================
+               PROFILE URL INDEX
+            ============================================= */
 
             await database
                 .ref(
                     `profileUrls/${profileURL}`
                 )
                 .set({
+
                     uid:
                         currentUID,
 
@@ -1532,9 +1589,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 });
 
 
-            /* =========================================
+            /* =============================================
                USERNAME INDEX
-            ========================================= */
+            ============================================= */
 
             await database
                 .ref(
@@ -1545,10 +1602,13 @@ document.addEventListener("DOMContentLoaded", () => {
                 );
 
 
-            currentProfile =
-                {
-                    ...profileData
-                };
+            /* =============================================
+               UPDATE LOCAL STATE
+            ============================================= */
+
+            currentProfile = {
+                ...profileData
+            };
 
 
             originalUsername =
@@ -1558,6 +1618,7 @@ document.addEventListener("DOMContentLoaded", () => {
             selectedProfileFile =
                 null;
 
+
             selectedBannerFile =
                 null;
 
@@ -1566,14 +1627,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 profilePhotoInput.value =
                     "";
-
             }
+
 
             if (bannerInput) {
 
                 bannerInput.value =
                     "";
-
             }
 
 
@@ -1585,14 +1645,21 @@ document.addEventListener("DOMContentLoaded", () => {
             );
 
 
-            setTimeout(() => {
+            /* =============================================
+               REDIRECT
+            ============================================= */
 
-                location.href =
-                    `profile.html?uid=${encodeURIComponent(
-                        currentUID
-                    )}`;
+            setTimeout(
+                () => {
 
-            }, 900);
+                    location.href =
+                        `profile.html?uid=${encodeURIComponent(
+                            currentUID
+                        )}`;
+
+                },
+                900
+            );
 
 
         } catch (error) {
@@ -1621,7 +1688,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 saveProfileBtn.disabled =
                     false;
-
             }
 
 
@@ -1629,11 +1695,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 saveTopBtn.disabled =
                     false;
-
             }
-
         }
-
     }
 
 
@@ -1647,7 +1710,6 @@ document.addEventListener("DOMContentLoaded", () => {
             "click",
             saveProfile
         );
-
     }
 
 
@@ -1657,7 +1719,6 @@ document.addEventListener("DOMContentLoaded", () => {
             "click",
             saveProfile
         );
-
     }
 
 
@@ -1688,27 +1749,25 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 try {
 
-                    await navigator.clipboard.writeText(
-                        url
-                    );
+                    await navigator.clipboard
+                        .writeText(url);
 
 
                     showToast(
                         "Profile link copied!"
                     );
 
-
                 } catch (error) {
-
-                    /* Fallback */
 
                     const textarea =
                         document.createElement(
                             "textarea"
                         );
 
+
                     textarea.value =
                         url;
+
 
                     textarea.style.position =
                         "fixed";
@@ -1716,15 +1775,19 @@ document.addEventListener("DOMContentLoaded", () => {
                     textarea.style.opacity =
                         "0";
 
+
                     document.body.appendChild(
                         textarea
                     );
 
+
                     textarea.select();
+
 
                     document.execCommand(
                         "copy"
                     );
+
 
                     textarea.remove();
 
@@ -1732,17 +1795,14 @@ document.addEventListener("DOMContentLoaded", () => {
                     showToast(
                         "Profile link copied!"
                     );
-
                 }
-
             }
         );
-
     }
 
 
     /* =====================================================
-       BACK
+       BACK BUTTON
     ===================================================== */
 
     if (backBtn) {
@@ -1764,12 +1824,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
                     location.href =
                         "profile.html";
-
                 }
-
             }
         );
-
     }
 
 
@@ -1789,9 +1846,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 event.preventDefault();
 
                 event.returnValue = "";
-
             }
-
         }
     );
 
@@ -1813,7 +1868,6 @@ document.addEventListener("DOMContentLoaded", () => {
             );
 
             return;
-
         }
 
 
@@ -1830,14 +1884,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
                         location.href =
                             "login.html";
-
                     }
-
                 }
             );
-
     }
 
+
+    /* =====================================================
+       START
+    ===================================================== */
 
     waitForAuth();
 

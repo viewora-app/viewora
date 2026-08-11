@@ -1,0 +1,857 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">
+
+<meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+>
+
+<meta name="theme-color" content="#070912">
+
+<meta
+    name="description"
+    content="Create and upload your Viewora Short."
+>
+
+<title>Viewora • Create Short</title>
+
+<!-- Google Font -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+
+<link
+    rel="preconnect"
+    href="https://fonts.gstatic.com"
+    crossorigin
+>
+
+<link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+    rel="stylesheet"
+>
+
+<!-- Font Awesome -->
+<link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
+>
+
+<!-- CSS -->
+<link rel="stylesheet" href="short_upload.css">
+
+</head><body><!-- =========================
+     BACKGROUND
+========================== -->
+
+<div class="uploadBackground">
+
+    <div class="uploadGlow glowOne"></div>
+
+    <div class="uploadGlow glowTwo"></div>
+
+    <div class="uploadGlow glowThree"></div>
+
+</div>
+
+
+<!-- =========================
+     PAGE LOADER
+========================== -->
+
+<div id="pageLoader" class="pageLoader">
+
+    <div class="loaderLogo">
+
+        <div class="loaderRing"></div>
+
+        <div class="loaderDot"></div>
+
+    </div>
+
+    <h2>Viewora</h2>
+
+    <p>Preparing creator studio...</p>
+
+</div>
+
+
+<!-- =========================
+     MAIN
+========================== -->
+
+<main id="app" class="uploadPage hidden">
+
+
+    <!-- =========================
+         HEADER
+    ========================== -->
+
+    <header class="uploadHeader">
+
+        <button
+            id="backBtn"
+            class="headerBtn"
+            type="button"
+            aria-label="Go back"
+        >
+
+            <i class="fa-solid fa-arrow-left"></i>
+
+        </button>
+
+
+        <div class="headerTitle">
+
+            <div class="headerIcon">
+
+                <i class="fa-solid fa-clapperboard"></i>
+
+            </div>
+
+            <div>
+
+                <h1>Create Short</h1>
+
+                <p>Share your moment</p>
+
+            </div>
+
+        </div>
+
+
+        <div class="headerPremium">
+
+            <i class="fa-solid fa-sparkles"></i>
+
+        </div>
+
+    </header>
+
+
+    <!-- =========================
+         CREATOR HERO
+    ========================== -->
+
+    <section class="creatorHero">
+
+        <div class="heroText">
+
+            <span class="premiumBadge">
+
+                <i class="fa-solid fa-bolt"></i>
+
+                Viewora Creator
+
+            </span>
+
+            <h2>
+                Create something
+                <span>unforgettable.</span>
+            </h2>
+
+            <p>
+                Upload a vertical video and share it
+                with the Viewora community.
+            </p>
+
+        </div>
+
+
+        <div class="heroIcon">
+
+            <i class="fa-solid fa-play"></i>
+
+        </div>
+
+    </section>
+
+
+    <!-- =========================
+         VIDEO SELECT
+    ========================== -->
+
+    <section class="uploadSection">
+
+        <div class="sectionTitle">
+
+            <div>
+
+                <h2>Video</h2>
+
+                <p>Choose your Short video</p>
+
+            </div>
+
+            <span class="requiredBadge">
+                Required
+            </span>
+
+        </div>
+
+
+        <div
+            id="videoDropZone"
+            class="mediaPicker"
+        >
+
+            <input
+                type="file"
+                id="videoInput"
+                accept="video/*"
+                hidden
+            >
+
+
+            <div
+                id="videoPreview"
+                class="videoPreview hidden"
+            >
+
+                <video
+                    id="previewVideo"
+                    controls
+                    playsinline
+                ></video>
+
+                <button
+                    id="removeVideoBtn"
+                    class="removeMediaBtn"
+                    type="button"
+                >
+
+                    <i class="fa-solid fa-xmark"></i>
+
+                </button>
+
+            </div>
+
+
+            <div
+                id="videoPlaceholder"
+                class="mediaPlaceholder"
+            >
+
+                <div class="mediaIcon">
+
+                    <i class="fa-solid fa-cloud-arrow-up"></i>
+
+                </div>
+
+                <h3>
+                    Select your video
+                </h3>
+
+                <p>
+                    MP4, MOV or WebM
+                </p>
+
+                <span class="selectMediaBtn">
+                    Choose Video
+                </span>
+
+            </div>
+
+        </div>
+
+
+        <div
+            id="videoInfo"
+            class="mediaInfo hidden"
+        >
+
+            <span id="videoName">
+                Video
+            </span>
+
+            <span id="videoSize">
+                0 MB
+            </span>
+
+        </div>
+
+    </section>
+
+
+    <!-- =========================
+         THUMBNAIL
+    ========================== -->
+
+    <section class="uploadSection">
+
+        <div class="sectionTitle">
+
+            <div>
+
+                <h2>Thumbnail</h2>
+
+                <p>Optional cover image</p>
+
+            </div>
+
+            <span class="optionalBadge">
+                Optional
+            </span>
+
+        </div>
+
+
+        <div
+            id="thumbnailDropZone"
+            class="thumbnailPicker"
+        >
+
+            <input
+                type="file"
+                id="thumbnailInput"
+                accept="image/*"
+                hidden
+            >
+
+
+            <div
+                id="thumbnailPreview"
+                class="thumbnailPreview hidden"
+            >
+
+                <img
+                    id="previewThumbnail"
+                    src=""
+                    alt="Thumbnail preview"
+                >
+
+                <button
+                    id="removeThumbnailBtn"
+                    class="removeMediaBtn"
+                    type="button"
+                >
+
+                    <i class="fa-solid fa-xmark"></i>
+
+                </button>
+
+            </div>
+
+
+            <div
+                id="thumbnailPlaceholder"
+                class="thumbnailPlaceholder"
+            >
+
+                <i class="fa-regular fa-image"></i>
+
+                <span>
+                    Add thumbnail
+                </span>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- =========================
+         DETAILS
+    ========================== -->
+
+    <section class="uploadSection detailsSection">
+
+        <div class="sectionTitle">
+
+            <div>
+
+                <h2>Details</h2>
+
+                <p>Tell people about your Short</p>
+
+            </div>
+
+        </div>
+
+
+        <!-- Caption -->
+
+        <div class="inputGroup">
+
+            <label for="captionInput">
+                Caption
+            </label>
+
+            <textarea
+                id="captionInput"
+                maxlength="2200"
+                rows="4"
+                placeholder="Write a caption..."
+            ></textarea>
+
+            <div class="characterCount">
+
+                <span id="captionCount">
+                    0
+                </span>
+
+                / 2200
+
+            </div>
+
+        </div>
+
+
+        <!-- Music -->
+
+        <div class="inputGroup">
+
+            <label for="musicInput">
+
+                <i class="fa-solid fa-music"></i>
+
+                Music / Audio
+
+            </label>
+
+            <input
+                type="text"
+                id="musicInput"
+                maxlength="100"
+                placeholder="Original Audio"
+            >
+
+        </div>
+
+    </section>
+
+
+    <!-- =========================
+         VISIBILITY
+    ========================== -->
+
+    <section class="uploadSection">
+
+        <div class="sectionTitle">
+
+            <div>
+
+                <h2>Visibility</h2>
+
+                <p>Who can watch your Short?</p>
+
+            </div>
+
+        </div>
+
+
+        <div class="visibilityOptions">
+
+
+            <label class="visibilityOption active">
+
+                <input
+                    type="radio"
+                    name="visibility"
+                    value="public"
+                    checked
+                >
+
+                <div class="visibilityIcon">
+
+                    <i class="fa-solid fa-earth-americas"></i>
+
+                </div>
+
+                <div>
+
+                    <strong>Public</strong>
+
+                    <span>
+                        Everyone on Viewora
+                    </span>
+
+                </div>
+
+                <i class="fa-solid fa-circle-check checkIcon"></i>
+
+            </label>
+
+
+            <label class="visibilityOption">
+
+                <input
+                    type="radio"
+                    name="visibility"
+                    value="followers"
+                >
+
+                <div class="visibilityIcon">
+
+                    <i class="fa-solid fa-users"></i>
+
+                </div>
+
+                <div>
+
+                    <strong>Followers</strong>
+
+                    <span>
+                        Only your followers
+                    </span>
+
+                </div>
+
+                <i class="fa-solid fa-circle-check checkIcon"></i>
+
+            </label>
+
+
+            <label class="visibilityOption">
+
+                <input
+                    type="radio"
+                    name="visibility"
+                    value="private"
+                >
+
+                <div class="visibilityIcon">
+
+                    <i class="fa-solid fa-lock"></i>
+
+                </div>
+
+                <div>
+
+                    <strong>Private</strong>
+
+                    <span>
+                        Only you
+                    </span>
+
+                </div>
+
+                <i class="fa-solid fa-circle-check checkIcon"></i>
+
+            </label>
+
+        </div>
+
+    </section>
+
+
+    <!-- =========================
+         UPLOAD PROGRESS
+    ========================== -->
+
+    <section
+        id="uploadProgress"
+        class="uploadProgress hidden"
+    >
+
+        <div class="progressHeader">
+
+            <div>
+
+                <strong id="progressTitle">
+                    Uploading...
+                </strong>
+
+                <span id="progressStatus">
+                    Preparing video
+                </span>
+
+            </div>
+
+            <strong id="progressPercent">
+                0%
+            </strong>
+
+        </div>
+
+
+        <div class="progressTrack">
+
+            <div
+                id="progressBar"
+                class="progressBar"
+            ></div>
+
+        </div>
+
+    </section>
+
+
+    <!-- =========================
+         ACTIONS
+    ========================== -->
+
+    <section class="publishSection">
+
+        <button
+            id="publishBtn"
+            class="publishBtn"
+            type="button"
+        >
+
+            <span class="publishIcon">
+
+                <i class="fa-solid fa-cloud-arrow-up"></i>
+
+            </span>
+
+            <span>
+                Publish Short
+            </span>
+
+            <i class="fa-solid fa-arrow-right"></i>
+
+        </button>
+
+
+        <p class="publishNote">
+
+            <i class="fa-solid fa-shield-halved"></i>
+
+            Your video will be securely uploaded
+            and processed.
+
+        </p>
+
+    </section>
+
+
+    <!-- =========================
+         TOAST
+    ========================== -->
+
+    <div
+        id="toast"
+        class="toast hidden"
+        role="status"
+        aria-live="polite"
+    >
+
+        <i
+            id="toastIcon"
+            class="fa-solid fa-circle-check"
+        ></i>
+
+        <span id="toastText">
+            Success
+        </span>
+
+    </div>
+
+
+</main>
+
+
+<!-- =========================
+     BOTTOM NAV
+========================== -->
+
+<nav class="bottomNav">
+
+    <a href="index.html">
+
+        <i class="fa-solid fa-house"></i>
+
+        <span>Home</span>
+
+    </a>
+
+
+    <a
+        href="shorts.html"
+        class="active"
+    >
+
+        <i class="fa-solid fa-play"></i>
+
+        <span>Shorts</span>
+
+    </a>
+
+
+    <a
+        href="short_upload.html"
+        class="uploadNav active"
+        aria-label="Create Short"
+    >
+
+        <i class="fa-solid fa-plus"></i>
+
+    </a>
+
+
+    <a href="users.html">
+
+        <i class="fa-solid fa-users"></i>
+
+        <span>Users</span>
+
+    </a>
+
+
+    <a href="profile.html">
+
+        <i class="fa-solid fa-user"></i>
+
+        <span>Profile</span>
+
+    </a>
+
+</nav>
+
+
+<!-- =========================
+     FIREBASE
+========================== -->
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+
+
+<!-- Firebase Config -->
+
+<script src="firebase.js"></script>
+
+
+<!-- Navigation -->
+
+<script src="nav.js"></script>
+
+
+<!-- Upload Logic -->
+
+<script src="short_upload.js"></script>
+
+
+<!-- =========================
+     PAGE START
+========================== -->
+
+<script>
+
+    window.addEventListener("load", () => {
+
+        const loader =
+            document.getElementById("pageLoader");
+
+        const app =
+            document.getElementById("app");
+
+        setTimeout(() => {
+
+            if (loader) {
+
+                loader.classList.add("loaded");
+
+            }
+
+            if (app) {
+
+                app.classList.remove("hidden");
+
+                app.classList.add("fadeIn");
+
+            }
+
+        }, 700);
+
+    });
+
+
+    /* =========================
+       CAPTION COUNT
+    ========================== */
+
+    const captionInput =
+        document.getElementById("captionInput");
+
+    const captionCount =
+        document.getElementById("captionCount");
+
+    if (captionInput && captionCount) {
+
+        captionInput.addEventListener(
+            "input",
+            () => {
+
+                captionCount.textContent =
+                    captionInput.value.length;
+
+            }
+        );
+
+    }
+
+
+    /* =========================
+       VISIBILITY
+    ========================== */
+
+    document
+        .querySelectorAll(".visibilityOption")
+        .forEach(option => {
+
+            option.addEventListener(
+                "click",
+                () => {
+
+                    document
+                        .querySelectorAll(
+                            ".visibilityOption"
+                        )
+                        .forEach(item =>
+                            item.classList.remove(
+                                "active"
+                            )
+                        );
+
+                    option.classList.add(
+                        "active"
+                    );
+
+                    const radio =
+                        option.querySelector(
+                            "input"
+                        );
+
+                    if (radio) {
+                        radio.checked = true;
+                    }
+
+                }
+            );
+
+        });
+
+
+    /* =========================
+       BACK
+    ========================== */
+
+    document
+        .getElementById("backBtn")
+        ?.addEventListener(
+            "click",
+            () => {
+
+                if (
+                    window.history.length > 1
+                ) {
+
+                    window.history.back();
+
+                } else {
+
+                    location.href =
+                        "shorts.html";
+
+                }
+
+            }
+        );
+
+</script>
+
+</body>
+</html>

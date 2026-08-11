@@ -3,558 +3,733 @@
 
 <head>
 
-<meta charset="UTF-8">
+    <meta charset="UTF-8">
 
-<meta name="viewport"
-content="width=device-width, initial-scale=1.0">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    >
 
-<title>Viewora • Create Account</title>
+    <meta
+        name="theme-color"
+        content="#050505"
+    >
 
-<meta name="theme-color" content="#00AAFF">
+    <meta
+        name="description"
+        content="Create your Viewora account"
+    >
 
-<meta name="description"
-content="Create your Viewora account">
+    <title>Viewora • Create Account</title>
 
-<link rel="icon"
-href="assets/logo.png">
 
-<!-- Google Font -->
+    <!-- =====================================================
+         GOOGLE FONT
+    ====================================================== -->
 
-<link rel="preconnect"
-href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
 
-<link rel="preconnect"
-href="https://fonts.gstatic.com"
-crossorigin>
+    <link
+        rel="preconnect"
+        href="https://fonts.gstatic.com"
+        crossorigin
+    >
 
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
-rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet"
+    >
 
-<!-- Font Awesome -->
 
-<link rel="stylesheet"
-href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+    <!-- =====================================================
+         FONT AWESOME
+    ====================================================== -->
 
-<!-- CSS -->
+    <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
+    >
 
-<link rel="stylesheet"
-href="signup.css">
+
+    <!-- =====================================================
+         VIEWORA SIGNUP CSS
+    ====================================================== -->
+
+    <link
+        rel="stylesheet"
+        href="signup.css"
+    >
 
 </head>
 
+
 <body>
 
-<!-- =====================================
-        Animated Background
-===================================== -->
 
-<div class="aurora">
+<!-- =========================================================
+     BACKGROUND
+========================================================= -->
 
-    <div class="light light1"></div>
+<div class="backgroundGlow glowOne"></div>
+<div class="backgroundGlow glowTwo"></div>
+<div class="backgroundGlow glowThree"></div>
 
-    <div class="light light2"></div>
 
-    <div class="light light3"></div>
+<!-- =========================================================
+     MAIN
+========================================================= -->
 
-</div>
+<main class="signupPage">
 
-<div id="particles"></div>
 
-<!-- =====================================
-        Premium Loader
-===================================== -->
+    <!-- =====================================================
+         BRAND
+    ====================================================== -->
 
-<div id="pageLoader">
+    <div class="brandArea">
 
-    <div class="loaderLogo">
-
-        <img
-        src="assets/logo.png"
-        alt="Viewora Logo">
-
-    </div>
-
-    <h1>Viewora</h1>
-
-    <p>Create Your Account</p>
-
-    <div class="loaderBar">
-
-        <div class="loaderFill"></div>
-
-    </div>
-
-</div>
-
-<!-- =====================================
-        Main App
-===================================== -->
-
-<div id="app" class="hidden">
-
-    <div class="signupCard glass">
-
-        <!-- Logo -->
-
-        <div class="logoBox">
+        <div class="brandLogoWrap">
 
             <img
-            src="assets/logo.png"
-            class="logo"
-            alt="Viewora">
+                src="assets/logo.png"
+                alt="Viewora"
+                class="brandLogo"
+            >
 
-            <h1>Create Account</h1>
+        </div>
+
+        <h1>Viewora</h1>
+
+        <p>
+            Create • Connect • Share
+        </p>
+
+    </div>
+
+
+    <!-- =====================================================
+         SIGNUP CARD
+    ====================================================== -->
+
+    <section class="signupCard">
+
+
+        <!-- =================================================
+             HEADER
+        ================================================== -->
+
+        <div class="signupHeader">
+
+            <span class="welcomeBadge">
+                <i class="fa-solid fa-sparkles"></i>
+                Welcome to Viewora
+            </span>
+
+            <h2>
+                Create your account
+            </h2>
 
             <p>
-
-                Join millions of creators on Viewora
-
+                Join the next generation of social connection.
             </p>
 
         </div>
 
-        <!-- Signup Form Starts Here -->
 
-        <form
-        id="signupForm"
-        autocomplete="off">
-          <!-- =====================================
-        Full Name
-===================================== -->
+        <!-- =================================================
+             SOCIAL SIGNUP
+        ================================================== -->
 
-<div class="inputGroup">
+        <div class="socialSignup">
 
-    <label>Full Name</label>
 
-    <div class="inputBox">
+            <!-- Google -->
 
-        <i class="fa-solid fa-user"></i>
+            <button
+                type="button"
+                id="googleSignup"
+                class="socialBtn googleBtn"
+            >
 
-        <input
-            type="text"
-            id="name"
-            placeholder="Enter your full name"
-            maxlength="40"
-            autocomplete="name"
-            required>
+                <span class="socialIcon">
+                    <i class="fa-brands fa-google"></i>
+                </span>
 
-    </div>
+                <span>
+                    Continue with Google
+                </span>
 
-</div>
+            </button>
 
-<!-- =====================================
-        Username
-===================================== -->
 
-<div class="inputGroup">
+            <div class="socialRow">
 
-    <label>Username</label>
 
-    <div class="inputBox">
+                <!-- Facebook -->
 
-        <i class="fa-solid fa-at"></i>
+                <button
+                    type="button"
+                    id="facebookSignup"
+                    class="socialBtn compact facebookBtn"
+                    aria-label="Continue with Facebook"
+                >
 
-        <input
-            type="text"
-            id="username"
-            placeholder="Choose a unique username"
-            maxlength="20"
-            autocomplete="username"
-            required>
+                    <i class="fa-brands fa-facebook-f"></i>
 
-    </div>
+                    <span>
+                        Facebook
+                    </span>
 
-    <small
-        id="usernameStatus"
-        class="statusText">
+                </button>
 
-        Username must be unique
 
-    </small>
+                <!-- X -->
 
-</div>
+                <button
+                    type="button"
+                    id="xSignup"
+                    class="socialBtn compact xBtn"
+                    aria-label="Continue with X"
+                >
 
-<!-- =====================================
-        Email Address
-===================================== -->
+                    <i class="fa-brands fa-x-twitter"></i>
 
-<div class="inputGroup">
+                    <span>
+                        X
+                    </span>
 
-    <label>Email Address</label>
+                </button>
 
-    <div class="inputBox">
-
-        <i class="fa-solid fa-envelope"></i>
-
-        <input
-            type="email"
-            id="email"
-            placeholder="Enter your email address"
-            autocomplete="email"
-            required>
-
-    </div>
-
-</div>
-<!-- =====================================
-        Password
-===================================== -->
-
-<div class="inputGroup">
-
-    <label>Password</label>
-
-    <div class="inputBox">
-
-        <i class="fa-solid fa-lock"></i>
-
-        <input
-            type="password"
-            id="password"
-            placeholder="Create a strong password"
-            autocomplete="new-password"
-            required>
-
-        <button
-            type="button"
-            id="togglePassword"
-            class="togglePassword">
-
-            <i class="fa-solid fa-eye"></i>
-
-        </button>
-
-    </div>
-
-    <div class="strengthContainer">
-
-        <div class="strengthBar">
-
-            <div id="strengthFill"></div>
+            </div>
 
         </div>
 
-        <p id="strengthText">
 
-            Password Strength : Weak
+        <!-- =================================================
+             DIVIDER
+        ================================================== -->
 
+        <div class="divider">
+
+            <span></span>
+
+            <p>or create with email</p>
+
+            <span></span>
+
+        </div>
+
+
+        <!-- =================================================
+             SIGNUP FORM
+        ================================================== -->
+
+        <form
+            id="signupForm"
+            novalidate
+        >
+
+
+            <!-- =============================================
+                 FULL NAME
+            ============================================== -->
+
+            <div class="inputGroup">
+
+                <label for="name">
+                    Full Name
+                </label>
+
+                <div class="inputBox">
+
+                    <i class="fa-solid fa-user inputIcon"></i>
+
+                    <input
+                        type="text"
+                        id="name"
+                        name="name"
+                        placeholder="Enter your full name"
+                        autocomplete="name"
+                        maxlength="60"
+                        required
+                    >
+
+                </div>
+
+            </div>
+
+
+            <!-- =============================================
+                 USERNAME
+            ============================================== -->
+
+            <div class="inputGroup">
+
+                <label for="username">
+                    Username
+                </label>
+
+                <div class="inputBox">
+
+                    <span class="usernamePrefix">
+                        @
+                    </span>
+
+                    <input
+                        type="text"
+                        id="username"
+                        name="username"
+                        placeholder="yourusername"
+                        autocomplete="username"
+                        maxlength="20"
+                        spellcheck="false"
+                        required
+                    >
+
+                </div>
+
+                <div
+                    id="usernameStatus"
+                    class="inputStatus"
+                >
+                    Username must be unique
+                </div>
+
+            </div>
+
+
+            <!-- =============================================
+                 EMAIL
+            ============================================== -->
+
+            <div class="inputGroup">
+
+                <label for="email">
+                    Email Address
+                </label>
+
+                <div class="inputBox">
+
+                    <i class="fa-solid fa-envelope inputIcon"></i>
+
+                    <input
+                        type="email"
+                        id="email"
+                        name="email"
+                        placeholder="you@example.com"
+                        autocomplete="email"
+                        required
+                    >
+
+                </div>
+
+            </div>
+
+
+            <!-- =============================================
+                 PASSWORD
+            ============================================== -->
+
+            <div class="inputGroup">
+
+                <label for="password">
+                    Password
+                </label>
+
+                <div class="inputBox">
+
+                    <i class="fa-solid fa-lock inputIcon"></i>
+
+                    <input
+                        type="password"
+                        id="password"
+                        name="password"
+                        placeholder="Create a strong password"
+                        autocomplete="new-password"
+                        minlength="8"
+                        required
+                    >
+
+                    <button
+                        type="button"
+                        id="togglePassword"
+                        class="passwordToggle"
+                        aria-label="Show password"
+                    >
+
+                        <i class="fa-solid fa-eye"></i>
+
+                    </button>
+
+                </div>
+
+
+                <!-- Password Strength -->
+
+                <div class="strengthArea">
+
+                    <div class="strengthBar">
+
+                        <div
+                            id="strengthFill"
+                            class="strengthFill"
+                        ></div>
+
+                    </div>
+
+                    <span id="strengthText">
+                        Password Strength : Weak
+                    </span>
+
+                </div>
+
+            </div>
+
+
+            <!-- =============================================
+                 CONFIRM PASSWORD
+            ============================================== -->
+
+            <div class="inputGroup">
+
+                <label for="confirmPassword">
+                    Confirm Password
+                </label>
+
+                <div class="inputBox">
+
+                    <i class="fa-solid fa-shield-halved inputIcon"></i>
+
+                    <input
+                        type="password"
+                        id="confirmPassword"
+                        name="confirmPassword"
+                        placeholder="Confirm your password"
+                        autocomplete="new-password"
+                        minlength="8"
+                        required
+                    >
+
+                    <button
+                        type="button"
+                        id="toggleConfirmPassword"
+                        class="passwordToggle"
+                        aria-label="Show confirmation password"
+                    >
+
+                        <i class="fa-solid fa-eye"></i>
+
+                    </button>
+
+                </div>
+
+            </div>
+
+
+            <!-- =============================================
+                 TERMS
+            ============================================== -->
+
+            <div class="termsArea">
+
+                <label class="checkLabel">
+
+                    <input
+                        type="checkbox"
+                        id="acceptTerms"
+                        required
+                    >
+
+                    <span class="customCheck">
+                        <i class="fa-solid fa-check"></i>
+                    </span>
+
+                    <span class="termsText">
+
+                        I agree to the
+                        <a href="terms.html">
+                            Terms
+                        </a>
+
+                        and
+
+                        <a href="privacy.html">
+                            Privacy Policy
+                        </a>
+
+                    </span>
+
+                </label>
+
+            </div>
+
+
+            <!-- =============================================
+                 SIGNUP BUTTON
+            ============================================== -->
+
+            <button
+                type="submit"
+                id="signupBtn"
+                class="signupBtn"
+                disabled
+            >
+
+                <span class="btnIcon">
+                    <i class="fa-solid fa-user-plus"></i>
+                </span>
+
+                <span>
+                    Create Viewora Account
+                </span>
+
+                <i class="fa-solid fa-arrow-right btnArrow"></i>
+
+            </button>
+
+
+        </form>
+
+
+        <!-- =================================================
+             LOGIN LINK
+        ================================================== -->
+
+        <div class="loginLink">
+
+            <span>
+                Already have an account?
+            </span>
+
+            <a href="login.html">
+                Log in
+            </a>
+
+        </div>
+
+
+        <!-- =================================================
+             SECURITY NOTE
+        ================================================== -->
+
+        <div class="securityNote">
+
+            <i class="fa-solid fa-shield-halved"></i>
+
+            <span>
+                Your account information is securely protected.
+            </span>
+
+        </div>
+
+    </section>
+
+
+    <!-- =====================================================
+         FOOTER
+    ====================================================== -->
+
+    <footer class="signupFooter">
+
+        <span>
+            © 2026 Viewora
+        </span>
+
+        <span class="footerDot">•</span>
+
+        <span>
+            World • Create • Connect
+        </span>
+
+    </footer>
+
+
+</main>
+
+
+<!-- =========================================================
+     LOADING OVERLAY
+========================================================= -->
+
+<div
+    id="loadingOverlay"
+    class="loadingOverlay hidden"
+>
+
+    <div class="loadingCard">
+
+        <div class="loaderRing"></div>
+
+        <img
+            src="assets/logo.png"
+            alt="Viewora"
+            class="loadingLogo"
+        >
+
+        <h3>
+            Creating your account
+        </h3>
+
+        <p>
+            Please wait...
         </p>
 
     </div>
 
 </div>
 
-<!-- =====================================
-        Confirm Password
-===================================== -->
 
-<div class="inputGroup">
-
-    <label>Confirm Password</label>
-
-    <div class="inputBox">
-
-        <i class="fa-solid fa-lock"></i>
-
-        <input
-            type="password"
-            id="confirmPassword"
-            placeholder="Confirm your password"
-            autocomplete="new-password"
-            required>
-
-        <button
-            type="button"
-            id="toggleConfirmPassword"
-            class="togglePassword">
-
-            <i class="fa-solid fa-eye"></i>
-
-        </button>
-
-    </div>
-
-</div>
-
-<!-- =====================================
-        Terms & Conditions
-===================================== -->
-
-<div class="termsBox">
-
-    <label>
-
-        <input
-            type="checkbox"
-            id="acceptTerms"
-            required>
-
-        <span>
-
-            I agree to the
-
-            <a href="terms.html">
-
-                Terms & Conditions
-
-            </a>
-
-            and
-
-            <a href="privacy.html">
-
-                Privacy Policy
-
-            </a>
-
-        </span>
-
-    </label>
-
-</div>
-
-<!-- =====================================
-        Create Account Button
-===================================== -->
-
-<button
-    type="submit"
-    id="signupBtn"
-    class="signupBtn">
-
-    <i class="fa-solid fa-user-plus"></i>
-
-    <span>Create Account</span>
-
-</button>
-
-<!-- =====================================
-        Divider
-===================================== -->
-
-<div class="divider">
-
-    <span>OR</span>
-
-</div>
-
-<!-- =====================================
-        Google Signup
-===================================== -->
-
-<button
-    type="button"
-    id="googleSignup"
-    class="googleBtn">
-
-    <img
-        src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
-        width="22"
-        height="22"
-        alt="Google">
-
-    <span>
-
-        Continue with Google
-
-    </span>
-
-</button>
-<!-- =====================================
-        Login Link
-===================================== -->
-
-<div class="loginBox">
-
-    <p>
-
-        Already have an account?
-
-        <a href="login.html">
-
-            Login
-
-        </a>
-
-    </p>
-
-</div>
-
-<!-- =====================================
-        Footer
-===================================== -->
-
-<div class="footer">
-
-    <p>
-
-        © 2026 Viewora • Connect • Create • Inspire
-
-    </p>
-
-</div>
-
-</form>
-
-</div>
-
-</div>
-
-<!-- =====================================
-        Loading Overlay
-===================================== -->
-
-<div id="loadingOverlay" class="hidden">
-
-    <div class="premiumLoader">
-
-        <div class="loaderRing"></div>
-
-        <div class="loaderRing delay1"></div>
-
-        <div class="loaderRing delay2"></div>
-
-    </div>
-
-    <p>
-
-        Creating your account...
-
-    </p>
-
-</div>
-
-<!-- =====================================
-        Toast Notification
-===================================== -->
-
-<div id="toast" class="hidden">
-
-    <i
-        id="toastIcon"
-        class="fa-solid fa-circle-check">
-    </i>
-
-    <span id="toastText">
-
-        Account Created Successfully
-
-    </span>
-
-</div>
-
-<!-- =====================================
-        Verify Email Modal
-===================================== -->
+<!-- =========================================================
+     VERIFY EMAIL MODAL
+========================================================= -->
 
 <div
     id="verifyModal"
-    class="modal hidden">
+    class="modal hidden"
+    aria-hidden="true"
+>
 
-    <div class="modalCard glass">
+    <div class="modalOverlay"></div>
 
-        <div class="popupIcon">
+
+    <div class="modalCard">
+
+
+        <div class="verifyIcon">
 
             <i class="fa-solid fa-envelope-circle-check"></i>
 
         </div>
 
+
         <h2>
-
-            Verify Your Email
-
+            Verify your email
         </h2>
 
+
         <p>
-
             We've sent a verification link to your email address.
-
-            Please verify your email before logging in to Viewora.
-
+            Verify your account before continuing to Viewora.
         </p>
 
-        <div class="modalButtons">
+
+        <div class="verifyActions">
+
 
             <button
+                type="button"
                 id="openMailBtn"
-                type="button"
-                class="primaryBtn">
+                class="primaryModalBtn"
+            >
 
-                Open Mail
+                <i class="fa-solid fa-envelope-open-text"></i>
+
+                Open Email
 
             </button>
+
 
             <button
-                id="continueBtn"
                 type="button"
-                class="secondaryBtn">
+                id="continueBtn"
+                class="secondaryModalBtn"
+            >
 
-                I've Verified
+                I've Verified My Email
 
             </button>
+
+        </div>
+
+
+        <div class="verifyHint">
+
+            <i class="fa-solid fa-circle-info"></i>
+
+            <span>
+                After verification, return here and continue.
+            </span>
 
         </div>
 
     </div>
 
 </div>
-<!-- =====================================
-        Firebase SDK (Compat v10)
-===================================== -->
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
+
+
+<!-- =========================================================
+     TOAST
+========================================================= -->
+
+<div
+    id="toast"
+    class="toast hidden"
+    role="status"
+    aria-live="polite"
+>
+
+    <i
+        id="toastIcon"
+        class="fa-solid fa-circle-check"
+    ></i>
+
+    <span id="toastText">
+        Success
+    </span>
+
+</div>
+
+
+<!-- =========================================================
+     NETWORK BANNER
+========================================================= -->
+
+<div
+    id="networkBanner"
+    class="networkBanner hidden"
+>
+
+    <i class="fa-solid fa-wifi"></i>
+
+    <span>
+        No Internet Connection
+    </span>
+
+</div>
+
+
+<!-- =========================================================
+     FIREBASE SDK
+========================================================= -->
+
+<script
+    src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"
+></script>
+
+<script
+    src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"
+></script>
+
+<script
+    src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"
+></script>
+
+
+<!-- =========================================================
+     VIEWORA FIREBASE
+     IMPORTANT:
+     firebase.js MUST LOAD BEFORE signup.js
+========================================================= -->
 
 <script src="firebase.js"></script>
 
-<!-- =====================================
-        Signup Script
-===================================== -->
+
+<!-- =========================================================
+     SIGNUP LOGIC
+========================================================= -->
 
 <script src="signup.js"></script>
 
-<!-- =====================================
-        Premium Loader
-===================================== -->
-
-<script>
-
-window.addEventListener("load", () => {
-
-    setTimeout(() => {
-
-        const loader =
-        document.getElementById("pageLoader");
-
-        const app =
-        document.getElementById("app");
-
-        if (loader) {
-
-            loader.style.opacity = "0";
-            loader.style.pointerEvents = "none";
-
-            setTimeout(() => {
-
-                loader.style.display = "none";
-
-            }, 500);
-
-        }
-
-        if (app) {
-
-            app.classList.remove("hidden");
-            app.classList.add("fadeIn");
-
-        }
-
-    }, 1200);
-
-});
-
-</script>
 
 </body>
 

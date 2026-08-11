@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
 
     <meta charset="UTF-8">
@@ -21,7 +22,11 @@
 
     <title>Viewora • Edit Profile</title>
 
-    <!-- Google Font -->
+
+    <!-- ==================================================
+         GOOGLE FONT
+    =================================================== -->
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 
@@ -30,28 +35,42 @@
         rel="stylesheet"
     >
 
-    <!-- Font Awesome -->
+
+    <!-- ==================================================
+         FONT AWESOME
+    =================================================== -->
+
     <link
         rel="stylesheet"
         href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
     >
 
-    <!-- Viewora CSS -->
-    <link rel="stylesheet" href="edit_profile.css">
+
+    <!-- ==================================================
+         VIEWORA CSS
+    =================================================== -->
+
+    <link
+        rel="stylesheet"
+        href="edit_profile.css"
+    >
 
 </head>
 
+
 <body>
 
-    <!-- ==========================================
-         PAGE
-    =========================================== -->
+
+    <!-- ==================================================
+         MAIN PAGE
+    =================================================== -->
 
     <main class="editPage">
 
-        <!-- ======================================
+
+        <!-- ==================================================
              HEADER
-        ======================================= -->
+        =================================================== -->
 
         <header class="editHeader">
 
@@ -61,13 +80,22 @@
                 id="backBtn"
                 aria-label="Go back"
             >
+
                 <i class="fa-solid fa-arrow-left"></i>
+
             </button>
 
+
             <div class="headerTitle">
+
                 <h1>Edit Profile</h1>
-                <span>Customize your Viewora profile</span>
+
+                <span>
+                    Customize your Viewora profile
+                </span>
+
             </div>
+
 
             <button
                 type="button"
@@ -75,19 +103,25 @@
                 id="saveTopBtn"
                 aria-label="Save profile"
             >
+
                 <i class="fa-solid fa-check"></i>
+
             </button>
 
         </header>
 
 
-        <!-- ======================================
+
+        <!-- ==================================================
              PROFILE PREVIEW
-        ======================================= -->
+        =================================================== -->
 
         <section class="profilePreview glass">
 
-            <!-- Banner -->
+
+            <!-- ==================================================
+                 BANNER
+            =================================================== -->
 
             <div
                 class="bannerArea"
@@ -102,24 +136,42 @@
                     class="bannerPreview"
                     src="assets/default-banner.jpg"
                     alt="Profile banner"
+                    draggable="false"
                 >
 
-                <div class="bannerOverlay">
+
+                <!-- Banner overlay -->
+
+                <div
+                    class="bannerOverlay"
+                    aria-hidden="true"
+                >
 
                     <div class="changeBannerIcon">
+
                         <i class="fa-solid fa-camera"></i>
+
                     </div>
 
-                    <span>Change banner</span>
+                    <span>
+                        Change banner
+                    </span>
 
                 </div>
 
-                <div class="bannerGradient"></div>
+
+                <div
+                    class="bannerGradient"
+                    aria-hidden="true"
+                ></div>
 
             </div>
 
 
-            <!-- Profile Photo -->
+
+            <!-- ==================================================
+                 PROFILE PHOTO
+            =================================================== -->
 
             <div class="profilePhotoWrapper">
 
@@ -135,9 +187,14 @@
                         class="profilePreview"
                         src="assets/default-avatar.png"
                         alt="Profile photo"
+                        draggable="false"
                     >
 
-                    <span class="photoCamera">
+
+                    <span
+                        class="photoCamera"
+                        aria-hidden="true"
+                    >
 
                         <i class="fa-solid fa-camera"></i>
 
@@ -148,15 +205,22 @@
             </div>
 
 
+
+            <!-- ==================================================
+                 PREVIEW INFORMATION
+            =================================================== -->
+
             <div class="previewInfo">
 
                 <h2 id="previewName">
                     Your Name
                 </h2>
 
+
                 <p id="previewUsername">
                     @username
                 </p>
+
 
                 <p
                     id="previewBio"
@@ -170,9 +234,10 @@
         </section>
 
 
-        <!-- ======================================
+
+        <!-- ==================================================
              HIDDEN FILE INPUTS
-        ======================================= -->
+        =================================================== -->
 
         <input
             type="file"
@@ -180,6 +245,7 @@
             accept="image/jpeg,image/png,image/webp,image/jpg"
             hidden
         >
+
 
         <input
             type="file"
@@ -189,27 +255,44 @@
         >
 
 
-        <!-- ======================================
+
+        <!-- ==================================================
              PROFILE INFORMATION
-        ======================================= -->
+        =================================================== -->
 
         <section class="formSection">
+
+
+            <!-- Section title -->
 
             <div class="sectionTitle">
 
                 <div class="sectionIcon">
+
                     <i class="fa-solid fa-user"></i>
+
                 </div>
 
+
                 <div>
-                    <h2>Profile Information</h2>
-                    <p>Tell people about yourself</p>
+
+                    <h2>
+                        Profile Information
+                    </h2>
+
+                    <p>
+                        Tell people about yourself
+                    </p>
+
                 </div>
 
             </div>
 
 
-            <!-- Name -->
+
+            <!-- ==================================================
+                 NAME
+            =================================================== -->
 
             <div class="formGroup">
 
@@ -217,9 +300,11 @@
                     Name
                 </label>
 
+
                 <div class="inputBox">
 
                     <i class="fa-regular fa-id-card"></i>
+
 
                     <input
                         type="text"
@@ -231,11 +316,13 @@
 
                 </div>
 
+
                 <div class="fieldBottom">
 
                     <span>
                         This is the name people see on your profile.
                     </span>
+
 
                     <small id="nameCounter">
                         0/50
@@ -246,7 +333,10 @@
             </div>
 
 
-            <!-- Username -->
+
+            <!-- ==================================================
+                 USERNAME
+            =================================================== -->
 
             <div class="formGroup">
 
@@ -254,9 +344,13 @@
                     Username
                 </label>
 
+
                 <div class="inputBox usernameBox">
 
-                    <span class="inputPrefix">@</span>
+                    <span class="inputPrefix">
+                        @
+                    </span>
+
 
                     <input
                         type="text"
@@ -268,18 +362,22 @@
                         spellcheck="false"
                     >
 
+
                     <span
                         id="usernameStatus"
                         class="inputStatus"
+                        aria-live="polite"
                     ></span>
 
                 </div>
+
 
                 <div class="fieldBottom">
 
                     <span>
                         Letters, numbers, dots and underscores.
                     </span>
+
 
                     <small id="usernameCounter">
                         0/30
@@ -290,7 +388,10 @@
             </div>
 
 
-            <!-- Profile URL -->
+
+            <!-- ==================================================
+                 PROFILE URL
+            =================================================== -->
 
             <div class="formGroup">
 
@@ -298,9 +399,11 @@
                     Profile URL
                 </label>
 
+
                 <div class="inputBox">
 
                     <i class="fa-solid fa-link"></i>
+
 
                     <input
                         type="text"
@@ -313,11 +416,13 @@
 
                 </div>
 
+
                 <div class="urlPreview">
 
                     <span>
                         viewora.app/
                     </span>
+
 
                     <strong id="profileUrlPreview">
                         your-profile
@@ -325,14 +430,20 @@
 
                 </div>
 
+
                 <div class="fieldHint">
+
                     Your custom Viewora profile link.
+
                 </div>
 
             </div>
 
 
-            <!-- Gender -->
+
+            <!-- ==================================================
+                 GENDER
+            =================================================== -->
 
             <div class="formGroup">
 
@@ -340,9 +451,11 @@
                     Gender
                 </label>
 
+
                 <div class="selectBox">
 
                     <i class="fa-solid fa-venus-mars"></i>
+
 
                     <select id="genderInput">
 
@@ -368,20 +481,28 @@
 
                     </select>
 
-                    <i class="fa-solid fa-chevron-down selectArrow"></i>
+
+                    <i
+                        class="fa-solid fa-chevron-down selectArrow"
+                        aria-hidden="true"
+                    ></i>
 
                 </div>
 
             </div>
 
 
-            <!-- Bio -->
+
+            <!-- ==================================================
+                 BIO
+            =================================================== -->
 
             <div class="formGroup">
 
                 <label for="bioInput">
                     Bio
                 </label>
+
 
                 <div class="textareaBox">
 
@@ -394,11 +515,13 @@
 
                 </div>
 
+
                 <div class="fieldBottom">
 
                     <span>
                         Keep it short and personal.
                     </span>
+
 
                     <small id="bioCounter">
                         0/160
@@ -411,9 +534,10 @@
         </section>
 
 
-        <!-- ======================================
-             PROFILE LINK CARD
-        ======================================= -->
+
+        <!-- ==================================================
+             PUBLIC PROFILE LINK
+        =================================================== -->
 
         <section class="profileLinkCard glass">
 
@@ -423,15 +547,20 @@
 
             </div>
 
+
             <div class="linkContent">
 
-                <h3>Your public profile</h3>
+                <h3>
+                    Your public profile
+                </h3>
+
 
                 <p id="publicProfileLink">
                     viewora.app/username
                 </p>
 
             </div>
+
 
             <button
                 type="button"
@@ -447,9 +576,10 @@
         </section>
 
 
-        <!-- ======================================
+
+        <!-- ==================================================
              SAVE AREA
-        ======================================= -->
+        =================================================== -->
 
         <section class="saveSection">
 
@@ -460,16 +590,21 @@
             >
 
                 <span class="saveIcon">
+
                     <i class="fa-solid fa-check"></i>
+
                 </span>
+
 
                 <span>
                     Save Profile
                 </span>
 
+
                 <i class="fa-solid fa-arrow-right"></i>
 
             </button>
+
 
             <p>
                 Your profile changes will be visible after saving.
@@ -480,13 +615,14 @@
     </main>
 
 
-    <!-- ==========================================
+
+    <!-- ==================================================
          TOAST
-    =========================================== -->
+    =================================================== -->
 
     <div
         id="toast"
-        class="toast"
+        class="toast hidden"
         role="status"
         aria-live="polite"
     >
@@ -496,6 +632,7 @@
             class="fa-solid fa-circle-check"
         ></i>
 
+
         <span id="toastText">
             Profile updated
         </span>
@@ -503,9 +640,10 @@
     </div>
 
 
-    <!-- ==========================================
+
+    <!-- ==================================================
          LOADING OVERLAY
-    =========================================== -->
+    =================================================== -->
 
     <div
         id="loadingOverlay"
@@ -516,9 +654,11 @@
 
             <div class="loadingSpinner"></div>
 
+
             <h3 id="loadingTitle">
                 Saving profile
             </h3>
+
 
             <p id="loadingText">
                 Please wait...
@@ -529,9 +669,10 @@
     </div>
 
 
-    <!-- ==========================================
+
+    <!-- ==================================================
          FIREBASE
-    =========================================== -->
+    =================================================== -->
 
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 
@@ -539,12 +680,23 @@
 
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
 
-    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
+
+
+    <!-- ==================================================
+         VIEWORA FIREBASE CONFIG
+    =================================================== -->
 
     <script src="firebase.js"></script>
 
-    <!-- Edit Profile Logic -->
-    <script src="edit_profile.js"></script>
+
+
+    <!-- ==================================================
+         EDIT PROFILE LOGIC
+    =================================================== -->
+
+    <script src="edit-profile.js"></script>
+
 
 </body>
+
 </html>

@@ -1,1205 +1,1301 @@
-/*=========================================
-        VIEWORA SHORTS V1.0
-            shorts.css
-              PART 1
-=========================================*/
+/* =========================================================
+   VIEWORA • SHORTS.CSS
+   Premium • Clean • Mobile First • Shorts Feed
+========================================================= */
 
-/* =========================
-Reset
-========================= */
+:root {
+    --bg: #050505;
+    --surface: rgba(18, 18, 22, .78);
+    --surface-strong: rgba(25, 25, 30, .94);
+    --text: #fff;
+    --muted: rgba(255,255,255,.65);
+    --soft: rgba(255,255,255,.12);
+    --border: rgba(255,255,255,.14);
+    --accent: #7c5cff;
+    --accent-2: #a855f7;
+    --danger: #ff4d67;
+    --success: #35d07f;
+    --nav-height: 68px;
+    --header-height: 64px;
+}
 
-*{
-margin:0;
-padding:0;
-box-sizing:border-box;
-font-family:'Inter',sans-serif;
--webkit-tap-highlight-color:transparent;
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    -webkit-tap-highlight-color: transparent;
 }
 
 html,
-body{
-
-width:100%;
-height:100%;
-overflow:hidden;
-
-background:#000;
-color:#fff;
-
+body {
+    width: 100%;
+    height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Inter", sans-serif;
+    overflow: hidden;
 }
 
-/* =========================
-Scrollbar
-========================= */
-
-::-webkit-scrollbar{
-display:none;
+body {
+    overscroll-behavior: none;
 }
-
-/* =========================
-Background Glow
-========================= */
-
-.bgGlow{
-
-position:fixed;
-inset:0;
-z-index:-5;
-
-background:
-
-radial-gradient(circle at top,#4f46e522,transparent 40%),
-
-radial-gradient(circle at bottom,#06b6d422,transparent 45%),
-
-#000;
 
+button,
+input {
+    font: inherit;
 }
 
-/* =========================
-Main App
-========================= */
-
-#app{
-
-width:100%;
-height:100vh;
-
-overflow-y:auto;
-
-scroll-snap-type:y mandatory;
-
-scroll-behavior:smooth;
-
+button {
+    border: 0;
+    cursor: pointer;
+    color: inherit;
 }
 
-.hidden{
-
-display:none !important;
-
+.hidden {
+    display: none !important;
 }
 
-.fadeIn{
 
-animation:fadeIn .5s ease;
+/* =========================================================
+   APP
+========================================================= */
 
+.shortsApp {
+    position: fixed;
+    inset: 0 0 var(--nav-height) 0;
+    overflow: hidden;
+    background: #000;
 }
-
-@keyframes fadeIn{
-
-from{
-
-opacity:0;
-
-transform:translateY(15px);
 
+.shortsApp.fadeIn {
+    animation: appFade .45s ease both;
 }
 
-to{
+@keyframes appFade {
+    from {
+        opacity: 0;
+        transform: scale(.99);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
 
-opacity:1;
 
-transform:translateY(0);
+/* =========================================================
+   LOADER
+========================================================= */
 
+.pageLoader {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    background:
+        radial-gradient(circle at 50% 40%, rgba(124,92,255,.16), transparent 32%),
+        #050505;
+    transition: opacity .45s ease, visibility .45s ease;
 }
 
+.pageLoader.loaded {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
 }
-
-/* =========================
-Premium Loader
-========================= */
-
-#pageLoader{
-
-position:fixed;
-
-inset:0;
-
-background:#000;
-
-display:flex;
-
-flex-direction:column;
-
-justify-content:center;
-
-align-items:center;
-
-z-index:999999;
-
-transition:.5s;
 
+.loaderLogo {
+    width: 68px;
+    height: 68px;
+    border-radius: 22px;
+    overflow: hidden;
+    position: relative;
+    display: grid;
+    place-items: center;
+    background: rgba(255,255,255,.08);
+    border: 1px solid rgba(255,255,255,.14);
 }
 
-.loader{
-
-position:relative;
-
-width:80px;
-
-height:80px;
-
-margin-bottom:25px;
-
+.loaderLogo img {
+    width: 70%;
+    height: 70%;
+    object-fit: contain;
 }
-
-.ring{
-
-position:absolute;
-
-width:80px;
-
-height:80px;
-
-border-radius:50%;
-
-border:4px solid transparent;
-
-border-top-color:#00bfff;
 
-animation:spin 1s linear infinite;
-
+.loaderRing {
+    position: absolute;
+    width: 78px;
+    height: 78px;
+    border: 2px solid transparent;
+    border-top-color: var(--accent);
+    border-right-color: var(--accent-2);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
 }
-
-.delay{
 
-animation-delay:.35s;
-
-border-top-color:#7c3aed;
-
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
 }
-
-@keyframes spin{
 
-100%{
+.pageLoader h2 {
+    font-size: 20px;
+    font-weight: 800;
+}
 
-transform:rotate(360deg);
+.pageLoader p {
+    color: var(--muted);
+    font-size: 13px;
+}
+
+
+/* =========================================================
+   HEADER
+========================================================= */
 
+.shortsHeader {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: var(--header-height);
+    z-index: 30;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 14px;
+    background: linear-gradient(
+        to bottom,
+        rgba(0,0,0,.72),
+        rgba(0,0,0,.2),
+        transparent
+    );
+    pointer-events: none;
 }
 
+.shortsHeader > * {
+    pointer-events: auto;
 }
-
-#pageLoader h2{
-
-font-size:22px;
 
-font-weight:700;
-
-margin-bottom:10px;
-
+.headerIconBtn {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    background: rgba(0,0,0,.36);
+    border: 1px solid rgba(255,255,255,.12);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    font-size: 17px;
+    transition: .2s ease;
 }
-
-#pageLoader p{
 
-font-size:14px;
-
-color:#aaa;
-
+.headerIconBtn:active {
+    transform: scale(.9);
 }
-
-/* =========================
-Header
-========================= */
-
-.shortsHeader{
-
-position:fixed;
-
-top:0;
-
-left:0;
-
-right:0;
-
-height:70px;
-
-padding:0 18px;
-
-display:flex;
-
-align-items:center;
 
-justify-content:space-between;
-
-background:linear-gradient(
-
-180deg,
-
-rgba(0,0,0,.65),
-
-transparent
-
-);
-
-z-index:999;
-
+.shortsBrand {
+    display: flex;
+    align-items: center;
+    gap: 9px;
 }
-
-.logoArea{
-
-display:flex;
 
-align-items:center;
-
-gap:12px;
-
+.brandLogo {
+    width: 35px;
+    height: 35px;
+    object-fit: contain;
+    border-radius: 10px;
 }
-
-.logo{
 
-width:42px;
-
-height:42px;
-
-border-radius:50%;
-
-object-fit:cover;
-
+.shortsBrand h1 {
+    font-size: 17px;
+    line-height: 18px;
+    font-weight: 800;
 }
-
-.logoArea h2{
-
-font-size:20px;
 
-font-weight:700;
-
+.shortsBrand span {
+    display: block;
+    margin-top: 2px;
+    color: var(--muted);
+    font-size: 10px;
 }
-
-.headerActions{
-
-display:flex;
 
-gap:14px;
-
+.headerActions {
+    display: flex;
+    gap: 8px;
 }
-
-.headerActions button{
-
-width:45px;
 
-height:45px;
 
-border:none;
+/* =========================================================
+   SEARCH
+========================================================= */
 
-border-radius:50%;
-
-background:rgba(255,255,255,.12);
-
-color:#fff;
-
-font-size:18px;
-
-backdrop-filter:blur(15px);
-
-cursor:pointer;
-
-transition:.25s;
-
+.shortSearchBox {
+    position: absolute;
+    top: 66px;
+    left: 14px;
+    right: 14px;
+    z-index: 50;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 12px;
+    border-radius: 16px;
+    background: rgba(20,20,24,.92);
+    border: 1px solid var(--border);
+    box-shadow: 0 15px 45px rgba(0,0,0,.4);
+    backdrop-filter: blur(20px);
 }
-
-.headerActions button:hover{
 
-transform:scale(1.08);
-
-background:#2563eb;
-
+.shortSearchBox > i {
+    color: var(--muted);
 }
-
-/* =========================
-Shorts Container
-========================= */
 
-#shortsContainer{
-
-width:100%;
-
-height:100%;
-
+.shortSearchBox input {
+    min-width: 0;
+    flex: 1;
+    color: #fff;
+    background: transparent;
+    border: 0;
+    outline: none;
+    font-size: 14px;
 }
-
-/* =========================
-Single Short
-========================= */
-
-.shortCard{
-
-position:relative;
 
-width:100%;
-
-height:100vh;
-
-overflow:hidden;
-
-scroll-snap-align:start;
-
-background:#000;
-
+.shortSearchBox input::placeholder {
+    color: rgba(255,255,255,.4);
 }
-
-.shortVideo{
 
-width:100%;
-
-height:100%;
-
-object-fit:cover;
-
-background:#000;
-
+.shortSearchBox button {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: rgba(255,255,255,.08);
 }
-/*=========================================
-        VIEWORA SHORTS V1.0
-            PART 2
-  Overlay • Actions • User • Caption
-=========================================*/
-
-/* =========================
-Overlay
-========================= */
-
-.shortOverlay{
 
-position:absolute;
-left:0;
-right:0;
-bottom:0;
 
-padding:22px;
+/* =========================================================
+   SHORTS FEED
+========================================================= */
 
-display:flex;
-justify-content:space-between;
-align-items:flex-end;
-
-background:linear-gradient(
-transparent,
-rgba(0,0,0,.85)
-);
-
+.shortsContainer {
+    width: 100%;
+    height: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scroll-snap-type: y mandatory;
+    scrollbar-width: none;
+    background: #000;
 }
-
-/* =========================
-Left Content
-========================= */
 
-.shortInfo{
-
-flex:1;
-padding-right:15px;
-
+.shortsContainer::-webkit-scrollbar {
+    display: none;
 }
-
-.userRow{
 
-display:flex;
-align-items:center;
-gap:12px;
-margin-bottom:14px;
-
+.shortCard {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    min-height: 100%;
+    overflow: hidden;
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
+    background: #000;
 }
-
-.userAvatar{
-
-width:52px;
-height:52px;
 
-border-radius:50%;
-object-fit:cover;
-
-border:2px solid #fff;
-
+.shortVideo {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    background: #000;
 }
 
-.userDetails{
 
-display:flex;
-flex-direction:column;
+/* =========================================================
+   VIDEO GRADIENT
+========================================================= */
 
+.shortGradient {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+        linear-gradient(
+            to bottom,
+            rgba(0,0,0,.58) 0%,
+            transparent 22%,
+            transparent 55%,
+            rgba(0,0,0,.2) 70%,
+            rgba(0,0,0,.82) 100%
+        );
 }
-
-.username{
 
-font-size:17px;
-font-weight:700;
 
-display:flex;
-align-items:center;
-gap:6px;
+/* =========================================================
+   OVERLAY
+========================================================= */
 
+.shortOverlay {
+    position: absolute;
+    inset: 0;
+    z-index: 5;
+    pointer-events: none;
 }
 
-.verified{
-
-color:#3b82f6;
-font-size:15px;
-
+.shortInfo {
+    position: absolute;
+    left: 15px;
+    right: 78px;
+    bottom: 24px;
+    pointer-events: auto;
 }
-
-.uploadTime{
 
-font-size:13px;
-color:#d0d0d0;
 
-margin-top:3px;
+/* =========================================================
+   USER ROW
+========================================================= */
 
+.userRow {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
 }
-
-/* =========================
-Follow Button
-========================= */
-
-.followBtn{
-
-margin-left:12px;
 
-padding:8px 18px;
-
-border:none;
-border-radius:30px;
-
-background:#ffffff;
-color:#000;
-
-font-weight:700;
-
-cursor:pointer;
-
-transition:.3s;
-
+.shortProfileBtn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    max-width: calc(100% - 75px);
+    background: transparent;
+    text-align: left;
 }
-
-.followBtn:hover{
-
-background:#2563eb;
-color:#fff;
 
-transform:scale(1.05);
-
+.userAvatar {
+    width: 47px;
+    height: 47px;
+    min-width: 47px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid rgba(255,255,255,.92);
+    box-shadow: 0 4px 18px rgba(0,0,0,.4);
 }
-
-/* =========================
-Caption
-========================= */
-
-.shortCaption{
 
-font-size:15px;
-
-line-height:1.6;
-
-margin-bottom:12px;
-
-word-break:break-word;
-
+.userDetails {
+    min-width: 0;
 }
-
-.shortCaption a{
-
-color:#4ea8ff;
 
-text-decoration:none;
-
-font-weight:600;
-
+.username {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    max-width: 170px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    font-size: 15px;
+    font-weight: 800;
 }
-
-/* =========================
-Music
-========================= */
-
-.musicRow{
-
-display:flex;
-
-align-items:center;
 
-gap:8px;
-
-font-size:14px;
-
-color:#fff;
-
-opacity:.95;
-
+.verified {
+    flex-shrink: 0;
+    color: #4da6ff;
+    font-size: 12px;
 }
-
-.musicRow i{
-
-animation:musicSpin 4s linear infinite;
 
+.uploadTime {
+    margin-top: 3px;
+    color: rgba(255,255,255,.65);
+    font-size: 11px;
 }
 
-@keyframes musicSpin{
 
-100%{
+/* =========================================================
+   FOLLOW BUTTON
+========================================================= */
 
-transform:rotate(360deg);
-
+.followBtn {
+    flex-shrink: 0;
+    min-width: 72px;
+    height: 31px;
+    padding: 0 13px;
+    border-radius: 10px;
+    background: rgba(255,255,255,.96);
+    color: #080808;
+    font-size: 12px;
+    font-weight: 800;
+    box-shadow: 0 6px 20px rgba(0,0,0,.25);
+    transition: .2s ease;
 }
 
+.followBtn:active {
+    transform: scale(.94);
 }
-
-/* =========================
-Right Actions
-========================= */
-
-.shortActions{
-
-display:flex;
-
-flex-direction:column;
-
-align-items:center;
 
-gap:20px;
-
-margin-left:15px;
-
+.followBtn.following {
+    color: #fff;
+    background: rgba(255,255,255,.12);
+    border: 1px solid rgba(255,255,255,.24);
+    backdrop-filter: blur(12px);
 }
-
-.actionBtn{
-
-display:flex;
-
-flex-direction:column;
-
-align-items:center;
 
-gap:5px;
 
-background:none;
+/* =========================================================
+   CAPTION
+========================================================= */
 
-border:none;
-
-color:#fff;
-
-cursor:pointer;
-
-transition:.25s;
-
+.shortCaption {
+    max-width: 100%;
+    margin-bottom: 9px;
+    color: #fff;
+    font-size: 14px;
+    line-height: 20px;
+    font-weight: 500;
+    text-shadow: 0 2px 10px rgba(0,0,0,.65);
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    overflow: hidden;
 }
 
-.actionBtn:hover{
 
-transform:scale(1.12);
+/* =========================================================
+   MUSIC
+========================================================= */
 
+.musicRow {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    max-width: 220px;
+    color: rgba(255,255,255,.88);
+    font-size: 12px;
+    font-weight: 600;
 }
-
-.actionBtn i{
-
-font-size:30px;
 
-text-shadow:0 3px 12px rgba(0,0,0,.45);
-
+.musicRow i {
+    font-size: 11px;
+    animation: musicFloat 1.5s ease-in-out infinite;
 }
-
-.actionBtn span{
 
-font-size:13px;
-
-font-weight:600;
-
+.musicRow span {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
 }
-
-/* =========================
-Liked
-========================= */
 
-.actionBtn.liked i{
-
-color:#ff2d55;
-
-animation:likePop .35s ease;
-
+@keyframes musicFloat {
+    0%,100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-2px);
+    }
 }
 
-@keyframes likePop{
 
-0%{
+/* =========================================================
+   RIGHT ACTIONS
+========================================================= */
 
-transform:scale(.5);
-
+.shortActions {
+    position: absolute;
+    right: 10px;
+    bottom: 23px;
+    width: 54px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    pointer-events: auto;
 }
-
-60%{
-
-transform:scale(1.3);
 
+.actionBtn {
+    width: 50px;
+    min-height: 48px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    background: transparent;
+    color: #fff;
+    text-shadow: 0 2px 8px rgba(0,0,0,.6);
+    transition: transform .18s ease;
 }
 
-100%{
-
-transform:scale(1);
-
+.actionBtn:active {
+    transform: scale(.84);
 }
 
+.actionBtn i {
+    font-size: 25px;
 }
-
-/* =========================
-Profile Disc
-========================= */
-
-.profileDisc{
-
-width:58px;
-
-height:58px;
 
-border-radius:50%;
-
-overflow:hidden;
-
-border:3px solid #fff;
-
-animation:discSpin 8s linear infinite;
-
+.actionBtn span {
+    max-width: 52px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    font-size: 10px;
+    font-weight: 700;
 }
-
-.profileDisc img{
-
-width:100%;
-height:100%;
 
-object-fit:cover;
-
+.likeBtn.liked {
+    color: #ff4964;
 }
-
-@keyframes discSpin{
-
-100%{
 
-transform:rotate(360deg);
-
+.likeBtn.liked i {
+    animation: likePop .25s ease;
 }
 
+@keyframes likePop {
+    0% {
+        transform: scale(.7);
+    }
+    70% {
+        transform: scale(1.2);
+    }
+    100% {
+        transform: scale(1);
+    }
 }
-/*=========================================
-        VIEWORA SHORTS V1.0
-          PART 3 (FINAL)
-=========================================*/
-
-/* =========================
-Bottom Navigation
-========================= */
-
-.bottomNav{
-
-position:fixed;
-left:0;
-right:0;
-bottom:0;
-
-height:72px;
-
-display:flex;
-justify-content:space-around;
-align-items:center;
-
-background:rgba(0,0,0,.72);
-
-backdrop-filter:blur(20px);
-
-border-top:1px solid rgba(255,255,255,.08);
 
-z-index:9999;
-
+.saveBtn.saved {
+    color: #fff;
 }
-
-.bottomNav a{
-
-display:flex;
-flex-direction:column;
-align-items:center;
-
-gap:5px;
-
-text-decoration:none;
-
-color:#bdbdbd;
 
-font-size:12px;
 
-transition:.3s;
+/* =========================================================
+   VIEW COUNT
+========================================================= */
 
+.viewCount {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    color: rgba(255,255,255,.75);
+    font-size: 10px;
+    font-weight: 700;
 }
 
-.bottomNav a i{
-
-font-size:22px;
-
+.viewCount i {
+    font-size: 10px;
 }
 
-.bottomNav a.active{
 
-color:#00bfff;
+/* =========================================================
+   PROFILE MUSIC DISC
+========================================================= */
 
+.profileDisc {
+    width: 43px;
+    height: 43px;
+    padding: 3px;
+    border-radius: 50%;
+    background: rgba(255,255,255,.16);
+    border: 1px solid rgba(255,255,255,.3);
+    animation: discSpin 5s linear infinite;
 }
-
-.bottomNav a:hover{
 
-transform:translateY(-3px);
-
-color:#fff;
-
+.profileDisc img {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
 }
-
-/* =========================
-Upload Button
-========================= */
 
-#uploadShortBtn{
-
-position:fixed;
-
-right:20px;
-bottom:95px;
-
-width:62px;
-height:62px;
-
-border:none;
-border-radius:50%;
-
-background:linear-gradient(135deg,#2563eb,#06b6d4);
-
-color:#fff;
-
-font-size:24px;
-
-cursor:pointer;
-
-box-shadow:0 10px 35px rgba(37,99,235,.45);
-
-animation:floatBtn 2.2s infinite;
-
-z-index:9999;
-
+@keyframes discSpin {
+    to {
+        transform: rotate(360deg);
+    }
 }
 
-@keyframes floatBtn{
 
-0%,100%{
+/* =========================================================
+   FLOATING CREATE
+========================================================= */
 
-transform:translateY(0);
-
+.floatingUploadBtn {
+    position: absolute;
+    right: 15px;
+    top: 74px;
+    z-index: 40;
+    height: 42px;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 0 12px 0 7px;
+    border-radius: 14px;
+    color: #fff;
+    background: rgba(15,15,20,.72);
+    border: 1px solid rgba(255,255,255,.16);
+    box-shadow: 0 10px 30px rgba(0,0,0,.35);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    font-size: 12px;
+    font-weight: 800;
+    transition: .2s ease;
 }
-
-50%{
 
-transform:translateY(-8px);
-
+.floatingUploadBtn:active {
+    transform: scale(.93);
 }
 
+.uploadPlus {
+    width: 29px;
+    height: 29px;
+    display: grid;
+    place-items: center;
+    border-radius: 9px;
+    background: linear-gradient(
+        135deg,
+        var(--accent),
+        var(--accent-2)
+    );
 }
-
-/* =========================
-Scroll Top
-========================= */
-
-#scrollTopBtn{
-
-position:fixed;
-
-left:20px;
-bottom:95px;
-
-width:55px;
-height:55px;
-
-border:none;
-border-radius:50%;
-
-background:#151515;
-
-color:#fff;
 
-font-size:20px;
-
-display:none;
-
-cursor:pointer;
-
-z-index:9999;
-
+.uploadPlus i {
+    font-size: 12px;
 }
-
-#scrollTopBtn.show{
-
-display:flex;
 
-justify-content:center;
-align-items:center;
 
-animation:fadeIn .35s;
+/* =========================================================
+   MUSIC ANIMATION
+========================================================= */
 
+.musicAnimation {
+    position: absolute;
+    left: 16px;
+    bottom: 20px;
+    z-index: 15;
+    pointer-events: none;
 }
-
-/* =========================
-Toast
-========================= */
-
-#toast{
-
-position:fixed;
-
-left:50%;
-bottom:160px;
-
-transform:translateX(-50%);
-
-padding:14px 24px;
 
-border-radius:40px;
-
-background:rgba(20,20,20,.92);
-
-backdrop-filter:blur(18px);
-
-font-size:15px;
-
-color:#fff;
-
-z-index:99999;
-
+.musicDisc {
+    width: 38px;
+    height: 38px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: rgba(15,15,15,.75);
+    border: 1px solid rgba(255,255,255,.15);
+    box-shadow: 0 8px 25px rgba(0,0,0,.35);
+    animation: discSpin 4s linear infinite;
 }
-
-/* =========================
-Modal
-========================= */
-
-.modal{
-
-position:fixed;
-
-inset:0;
-
-background:rgba(0,0,0,.72);
-
-display:flex;
 
-justify-content:center;
-align-items:flex-end;
-
-z-index:99999;
-
+.musicDisc i {
+    font-size: 14px;
 }
-
-.modalCard{
-
-width:100%;
-
-max-height:80vh;
 
-background:#101010;
 
-border-radius:25px 25px 0 0;
+/* =========================================================
+   HEART ANIMATION
+========================================================= */
 
-padding:20px;
-
-overflow:auto;
-
-animation:slideUp .3s ease;
-
+.heartAnimation {
+    position: absolute;
+    inset: 0;
+    z-index: 100;
+    display: grid;
+    place-items: center;
+    pointer-events: none;
 }
-
-@keyframes slideUp{
-
-from{
-
-transform:translateY(100%);
 
+.heartAnimation i {
+    color: #ff4964;
+    font-size: 105px;
+    filter: drop-shadow(0 8px 30px rgba(255,60,90,.35));
 }
 
-to{
-
-transform:translateY(0);
-
+.heartAnimation.heartPop i {
+    animation: heartPop .7s cubic-bezier(.2,.8,.2,1);
 }
 
+@keyframes heartPop {
+    0% {
+        opacity: 0;
+        transform: scale(.3);
+    }
+    25% {
+        opacity: 1;
+        transform: scale(1.25);
+    }
+    60% {
+        opacity: 1;
+        transform: scale(.95);
+    }
+    100% {
+        opacity: 0;
+        transform: scale(1.05);
+    }
 }
-
-/* =========================
-Comments
-========================= */
 
-.commentInput{
 
-display:flex;
+/* =========================================================
+   EMPTY STATE
+========================================================= */
 
-gap:10px;
-
-margin-top:18px;
-
+.emptyState {
+    position: absolute;
+    inset: 0;
+    z-index: 20;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 30px;
+    text-align: center;
+    background:
+        radial-gradient(
+            circle at center,
+            rgba(124,92,255,.13),
+            transparent 42%
+        ),
+        #050505;
 }
-
-.commentInput input{
-
-flex:1;
-
-padding:14px;
-
-border:none;
-
-border-radius:30px;
-
-background:#1d1d1d;
-
-color:#fff;
 
+.emptyIcon {
+    width: 76px;
+    height: 76px;
+    display: grid;
+    place-items: center;
+    margin-bottom: 18px;
+    border-radius: 24px;
+    background: rgba(124,92,255,.12);
+    border: 1px solid rgba(124,92,255,.24);
 }
 
-.commentInput button{
-
-width:55px;
-
-border:none;
-
-border-radius:50%;
-
-background:#2563eb;
-
-color:#fff;
-
-font-size:18px;
-
-cursor:pointer;
-
+.emptyIcon i {
+    font-size: 30px;
+    color: #a98cff;
 }
-
-/* =========================
-Share Grid
-========================= */
-
-.shareGrid{
-
-display:grid;
-
-grid-template-columns:repeat(3,1fr);
 
-gap:18px;
-
-margin-top:20px;
-
+.emptyState h2 {
+    font-size: 23px;
+    font-weight: 800;
 }
-
-.shareItem{
-
-padding:18px;
-
-border:none;
-
-border-radius:18px;
-
-background:#1b1b1b;
-
-color:#fff;
-
-cursor:pointer;
-
-display:flex;
-
-flex-direction:column;
-
-align-items:center;
 
-gap:10px;
-
-transition:.25s;
-
+.emptyState p {
+    max-width: 300px;
+    margin: 9px 0 20px;
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 20px;
 }
-
-.shareItem:hover{
 
-background:#2563eb;
-
-transform:translateY(-4px);
-
+.primaryBtn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 45px;
+    padding: 0 18px;
+    border-radius: 13px;
+    color: #fff;
+    background: linear-gradient(
+        135deg,
+        var(--accent),
+        var(--accent-2)
+    );
+    font-weight: 800;
 }
 
-/* =========================
-Skeleton
-========================= */
 
-.shortSkeleton{
+/* =========================================================
+   SKELETON
+========================================================= */
 
-width:100%;
+.shortsSkeleton {
+    position: absolute;
+    inset: 0;
+    z-index: 25;
+    background: #090909;
+}
 
-height:100vh;
+.skeletonVideo {
+    width: 100%;
+    height: 100%;
+    background:
+        linear-gradient(
+            100deg,
+            #090909 20%,
+            #171717 40%,
+            #090909 60%
+        );
+    background-size: 300% 100%;
+    animation: skeletonMove 1.3s infinite;
+}
 
-background:
+@keyframes skeletonMove {
+    to {
+        background-position: -300% 0;
+    }
+}
 
-linear-gradient(
 
-90deg,
+/* =========================================================
+   MODALS
+========================================================= */
 
-#111 25%,
+.modal {
+    position: fixed;
+    inset: 0;
+    z-index: 500;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+}
 
-#222 50%,
+.modalOverlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,.68);
+    backdrop-filter: blur(5px);
+}
 
-#111 75%
+.modalCard {
+    position: relative;
+    width: min(100%, 560px);
+    max-height: 82vh;
+    overflow: hidden;
+    border-radius: 24px 24px 0 0;
+    background: #151519;
+    border: 1px solid rgba(255,255,255,.1);
+    box-shadow: 0 -20px 70px rgba(0,0,0,.55);
+    animation: modalUp .28s ease;
+}
 
-);
+@keyframes modalUp {
+    from {
+        opacity: 0;
+        transform: translateY(35px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
 
-background-size:400% 100%;
+.modalHeader {
+    min-height: 66px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 17px;
+    border-bottom: 1px solid rgba(255,255,255,.08);
+}
 
-animation:skeleton 1.3s infinite;
+.modalHeader h2 {
+    font-size: 17px;
+    font-weight: 800;
+}
 
+.modalHeader span {
+    display: block;
+    margin-top: 3px;
+    color: var(--muted);
+    font-size: 11px;
 }
 
-@keyframes skeleton{
+.modalCloseBtn {
+    width: 36px;
+    height: 36px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: rgba(255,255,255,.08);
+}
 
-0%{
 
-background-position:100% 0;
+/* =========================================================
+   COMMENTS
+========================================================= */
 
+.commentsContainer {
+    max-height: 52vh;
+    overflow-y: auto;
+    padding: 8px 15px 15px;
 }
 
-100%{
+.commentsContainer::-webkit-scrollbar {
+    width: 4px;
+}
 
-background-position:-100% 0;
+.commentsContainer::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,.15);
+    border-radius: 10px;
+}
 
+.commentItem {
+    display: flex;
+    gap: 10px;
+    padding: 12px 0;
 }
 
+.commentItem > img {
+    width: 36px;
+    height: 36px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    object-fit: cover;
 }
 
-/* =========================
-Network Status
-========================= */
+.commentBody {
+    min-width: 0;
+}
 
-#networkStatus{
+.commentBody strong {
+    font-size: 12px;
+}
 
-position:fixed;
+.commentBody p {
+    margin-top: 4px;
+    color: rgba(255,255,255,.86);
+    font-size: 13px;
+    line-height: 18px;
+    word-break: break-word;
+}
 
-top:80px;
-left:50%;
+.commentBody small {
+    display: block;
+    margin-top: 4px;
+    color: rgba(255,255,255,.42);
+    font-size: 10px;
+}
 
-transform:translateX(-50%);
+.commentComposer {
+    display: flex;
+    gap: 8px;
+    padding: 12px;
+    border-top: 1px solid rgba(255,255,255,.08);
+    background: rgba(0,0,0,.15);
+}
 
-padding:12px 20px;
+.commentComposer input {
+    min-width: 0;
+    flex: 1;
+    height: 43px;
+    padding: 0 14px;
+    color: #fff;
+    outline: none;
+    border: 1px solid rgba(255,255,255,.1);
+    border-radius: 13px;
+    background: rgba(255,255,255,.06);
+}
 
-border-radius:30px;
+.commentComposer button {
+    width: 43px;
+    height: 43px;
+    border-radius: 13px;
+    background: linear-gradient(
+        135deg,
+        var(--accent),
+        var(--accent-2)
+    );
+}
 
-background:#ff3b30;
 
-color:#fff;
+/* =========================================================
+   SHARE
+========================================================= */
 
-font-size:14px;
+.shareCard {
+    padding-bottom: 20px;
+}
 
-z-index:99999;
+.shareGrid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    padding: 18px;
+}
 
+.shareItem {
+    min-height: 80px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border-radius: 16px;
+    color: #fff;
+    background: rgba(255,255,255,.06);
+    border: 1px solid rgba(255,255,255,.08);
+    transition: .2s ease;
 }
 
-/* =========================
-Music Animation
-========================= */
+.shareItem:active {
+    transform: scale(.94);
+}
 
-#musicAnimation{
+.shareItem i {
+    font-size: 23px;
+}
 
-position:fixed;
+.shareItem span {
+    font-size: 10px;
+    font-weight: 700;
+}
 
-bottom:185px;
-right:26px;
 
-font-size:24px;
+/* =========================================================
+   REPORT
+========================================================= */
 
-animation:musicFloat 2s infinite;
+.reportOptions {
+    display: flex;
+    flex-direction: column;
+    padding: 10px 15px 18px;
+}
 
-opacity:.8;
+.reportBtn {
+    min-height: 50px;
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    padding: 0 5px;
+    color: rgba(255,255,255,.9);
+    background: transparent;
+    border-bottom: 1px solid rgba(255,255,255,.06);
+    text-align: left;
+}
 
+.reportBtn i {
+    width: 25px;
+    text-align: center;
+    color: var(--muted);
 }
 
-@keyframes musicFloat{
+.reportBtn:last-child {
+    border-bottom: 0;
+}
 
-0%,100%{
 
-transform:translateY(0);
+/* =========================================================
+   OWNER MENU
+========================================================= */
 
+.shortMenu {
+    position: fixed;
+    right: 14px;
+    bottom: 92px;
+    z-index: 600;
+    width: 210px;
+    overflow: hidden;
+    padding: 7px;
+    border-radius: 18px;
+    background: rgba(22,22,27,.96);
+    border: 1px solid rgba(255,255,255,.12);
+    box-shadow: 0 20px 55px rgba(0,0,0,.5);
+    backdrop-filter: blur(20px);
+    animation: menuIn .2s ease;
 }
 
-50%{
+@keyframes menuIn {
+    from {
+        opacity: 0;
+        transform: translateY(8px) scale(.96);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
 
-transform:translateY(-8px);
+.shortMenu button {
+    width: 100%;
+    height: 46px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0 12px;
+    border-radius: 12px;
+    color: rgba(255,255,255,.9);
+    background: transparent;
+    text-align: left;
+    font-size: 13px;
+    font-weight: 600;
+}
 
+.shortMenu button:active {
+    background: rgba(255,255,255,.08);
 }
 
+.shortMenu button i {
+    width: 20px;
+    text-align: center;
+    color: var(--muted);
 }
 
-/* =========================
-Heart Animation
-========================= */
+.shortMenu .dangerAction {
+    color: var(--danger);
+}
 
-#heartAnimation{
+.shortMenu .dangerAction i {
+    color: var(--danger);
+}
 
-position:fixed;
 
-top:50%;
-left:50%;
+/* =========================================================
+   TOAST
+========================================================= */
 
-transform:translate(-50%,-50%);
+.toast {
+    position: fixed;
+    left: 50%;
+    bottom: 85px;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    max-width: calc(100% - 30px);
+    padding: 11px 15px;
+    border-radius: 14px;
+    background: rgba(25,25,30,.94);
+    border: 1px solid rgba(255,255,255,.12);
+    box-shadow: 0 15px 40px rgba(0,0,0,.45);
+    backdrop-filter: blur(18px);
+    transform: translate(-50%, 15px);
+    opacity: 0;
+    pointer-events: none;
+    transition: .25s ease;
+    font-size: 12px;
+    font-weight: 700;
+}
 
-font-size:110px;
+.toast.show {
+    opacity: 1;
+    transform: translate(-50%, 0);
+}
 
-color:#ff2d55;
+.toast i {
+    color: var(--success);
+}
 
-pointer-events:none;
 
-animation:heartPop .7s ease;
+/* =========================================================
+   NETWORK
+========================================================= */
 
+.networkStatus {
+    position: fixed;
+    top: 72px;
+    left: 50%;
+    z-index: 800;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 8px 13px;
+    border-radius: 12px;
+    background: rgba(35,35,38,.94);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    transform: translateX(-50%);
 }
 
-@keyframes heartPop{
 
-0%{
+/* =========================================================
+   BODY MODAL STATE
+========================================================= */
 
-opacity:0;
-transform:translate(-50%,-50%) scale(.3);
-
+body.modalOpen {
+    overflow: hidden;
 }
 
-50%{
 
-opacity:1;
-transform:translate(-50%,-50%) scale(1.25);
-
-}
+/* =========================================================
+   RESPONSIVE
+========================================================= */
 
-100%{
+@media (min-width: 700px) {
 
-opacity:0;
-transform:translate(-50%,-50%) scale(1);
+    .shortsApp {
+        inset: 0;
+        width: min(100%, 480px);
+        left: 50%;
+        right: auto;
+        transform: translateX(-50%);
+        border-left: 1px solid rgba(255,255,255,.08);
+        border-right: 1px solid rgba(255,255,255,.08);
+    }
 
-}
+    .bottomNav {
+        display: none !important;
+    }
 
-}
+    .shortInfo {
+        bottom: 32px;
+        left: 18px;
+    }
 
-/* =========================
-Responsive
-========================= */
+    .shortActions {
+        bottom: 30px;
+    }
 
-@media(max-width:768px){
+    .floatingUploadBtn {
+        right: 16px;
+    }
+}
 
-.logoArea h2{
 
-font-size:18px;
+/* =========================================================
+   SMALL PHONES
+========================================================= */
 
-}
+@media (max-height: 650px) {
 
-.shortCaption{
+    .shortInfo {
+        bottom: 16px;
+    }
 
-font-size:14px;
+    .shortActions {
+        bottom: 14px;
+        gap: 8px;
+    }
 
-}
+    .actionBtn {
+        min-height: 42px;
+    }
 
-.actionBtn i{
+    .actionBtn i {
+        font-size: 21px;
+    }
 
-font-size:28px;
+    .profileDisc {
+        width: 36px;
+        height: 36px;
+    }
 
+    .userAvatar {
+        width: 42px;
+        height: 42px;
+        min-width: 42px;
+    }
 }
 
-.followBtn{
 
-padding:7px 15px;
+/* =========================================================
+   REDUCED MOTION
+========================================================= */
 
-}
+@media (prefers-reduced-motion: reduce) {
 
+    *,
+    *::before,
+    *::after {
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        scroll-behavior: auto !important;
+        transition-duration: .01ms !important;
+    }
 }
