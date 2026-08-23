@@ -1,0 +1,1639 @@
+/* ==========================================================
+   VIEWORA CALL
+   PREMIUM V2
+   Voice + Video Call UI
+========================================================== */
+
+:root {
+    --call-bg: #050507;
+    --call-surface: rgba(20, 20, 25, 0.72);
+    --call-surface-strong: rgba(28, 28, 35, 0.9);
+    --call-border: rgba(255, 255, 255, 0.1);
+
+    --call-text: #ffffff;
+    --call-muted: rgba(255, 255, 255, 0.62);
+
+    --call-accent: #8b5cf6;
+    --call-accent-2: #ec4899;
+
+    --call-danger: #ff3b5f;
+    --call-success: #22c55e;
+
+    --blur: 24px;
+
+    --safe-top: env(safe-area-inset-top);
+    --safe-bottom: env(safe-area-inset-bottom);
+}
+
+
+/* ==========================================================
+   RESET
+========================================================== */
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    -webkit-tap-highlight-color: transparent;
+}
+
+
+html,
+body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
+
+body {
+    background: var(--call-bg);
+    color: var(--call-text);
+
+    font-family:
+        Inter,
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        Roboto,
+        Arial,
+        sans-serif;
+
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+}
+
+
+button {
+    border: 0;
+    outline: 0;
+    font: inherit;
+    cursor: pointer;
+}
+
+
+img,
+video {
+    display: block;
+}
+
+
+/* ==========================================================
+   GLOBAL HIDDEN
+========================================================== */
+
+.hidden {
+    display: none !important;
+}
+
+
+/* ==========================================================
+   ROOT
+========================================================== */
+
+.call-page {
+    position: relative;
+
+    width: 100%;
+    height: 100dvh;
+
+    min-height: 100vh;
+
+    overflow: hidden;
+
+    background:
+        radial-gradient(
+            circle at 50% 25%,
+            rgba(139, 92, 246, 0.18),
+            transparent 35%
+        ),
+        #050507;
+}
+
+
+/* ==========================================================
+   CALL APP
+========================================================== */
+
+.call-app {
+    position: relative;
+
+    width: 100%;
+    height: 100%;
+
+    overflow: hidden;
+
+    background: #050507;
+}
+
+
+/* ==========================================================
+   REMOTE VIDEO
+========================================================== */
+
+.remote-video {
+    position: absolute;
+
+    inset: 0;
+
+    width: 100%;
+    height: 100%;
+
+    object-fit: cover;
+
+    background: #08080b;
+
+    z-index: 1;
+}
+
+
+/* ==========================================================
+   REMOTE AUDIO
+========================================================== */
+
+#remoteAudio {
+    display: none;
+}
+
+
+/* ==========================================================
+   REMOTE PLACEHOLDER
+========================================================== */
+
+.remote-placeholder {
+    position: absolute;
+
+    inset: 0;
+
+    z-index: 2;
+
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+
+    justify-content: center;
+
+    text-align: center;
+
+    padding: 30px;
+
+    background:
+        radial-gradient(
+            circle at center,
+            rgba(139, 92, 246, 0.20),
+            transparent 34%
+        ),
+        radial-gradient(
+            circle at 70% 80%,
+            rgba(236, 72, 153, 0.12),
+            transparent 30%
+        ),
+        #08080c;
+}
+
+
+.remote-placeholder-glow {
+    position: absolute;
+
+    width: 340px;
+    height: 340px;
+
+    border-radius: 50%;
+
+    background:
+        radial-gradient(
+            circle,
+            rgba(139, 92, 246, 0.22),
+            transparent 65%
+        );
+
+    filter: blur(18px);
+
+    animation:
+        callGlow 4s ease-in-out infinite;
+}
+
+
+@keyframes callGlow {
+
+    0%,
+    100% {
+        transform: scale(0.92);
+        opacity: 0.65;
+    }
+
+    50% {
+        transform: scale(1.08);
+        opacity: 1;
+    }
+}
+
+
+/* ==========================================================
+   REMOTE AVATAR
+========================================================== */
+
+.remote-avatar-wrap {
+    position: relative;
+
+    width: 126px;
+    height: 126px;
+
+    z-index: 2;
+
+    border-radius: 50%;
+
+    padding: 4px;
+
+    background:
+        linear-gradient(
+            135deg,
+            var(--call-accent),
+            var(--call-accent-2)
+        );
+
+    box-shadow:
+        0 0 0 8px rgba(255,255,255,0.035),
+        0 20px 70px rgba(0,0,0,0.45);
+}
+
+
+.remote-avatar-wrap img {
+    width: 100%;
+    height: 100%;
+
+    border-radius: 50%;
+
+    object-fit: cover;
+
+    background: #18181c;
+
+    border: 3px solid #09090c;
+}
+
+
+/* ==========================================================
+   ONLINE DOT
+========================================================== */
+
+.online-dot {
+    position: absolute;
+
+    right: 6px;
+    bottom: 8px;
+
+    width: 20px;
+    height: 20px;
+
+    border-radius: 50%;
+
+    background: var(--call-success);
+
+    border: 4px solid #09090c;
+
+    box-shadow:
+        0 0 18px rgba(34,197,94,0.65);
+}
+
+
+/* ==========================================================
+   REMOTE NAME
+========================================================== */
+
+.remote-placeholder h2 {
+    position: relative;
+
+    z-index: 2;
+
+    margin-top: 24px;
+
+    font-size: 24px;
+
+    font-weight: 750;
+
+    letter-spacing: -0.4px;
+}
+
+
+.remote-placeholder p {
+    position: relative;
+
+    z-index: 2;
+
+    margin-top: 6px;
+
+    color: var(--call-muted);
+
+    font-size: 14px;
+}
+
+
+/* ==========================================================
+   TOP BAR
+========================================================== */
+
+.call-topbar {
+    position: absolute;
+
+    top: 0;
+    left: 0;
+    right: 0;
+
+    z-index: 20;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    padding:
+        calc(16px + var(--safe-top))
+        18px
+        16px;
+
+    background:
+        linear-gradient(
+            to bottom,
+            rgba(0,0,0,0.55),
+            transparent
+        );
+}
+
+
+.call-top-info {
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+
+    gap: 4px;
+
+    min-width: 0;
+}
+
+
+.call-top-info strong {
+    max-width: 210px;
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+
+    white-space: nowrap;
+
+    font-size: 15px;
+
+    font-weight: 700;
+}
+
+
+.call-status {
+    color: rgba(255,255,255,0.62);
+
+    font-size: 12px;
+
+    font-weight: 500;
+}
+
+
+/* ==========================================================
+   ICON BUTTON
+========================================================== */
+
+.icon-btn {
+    width: 42px;
+    height: 42px;
+
+    display: grid;
+    place-items: center;
+
+    border-radius: 50%;
+
+    color: #fff;
+
+    background:
+        rgba(20,20,25,0.55);
+
+    border: 1px solid var(--call-border);
+
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+
+    transition:
+        transform .2s ease,
+        background .2s ease;
+}
+
+
+.icon-btn:hover {
+    background:
+        rgba(255,255,255,0.12);
+}
+
+
+.icon-btn:active {
+    transform: scale(.92);
+}
+
+
+/* ==========================================================
+   CALL DURATION
+========================================================== */
+
+.call-duration {
+    position: absolute;
+
+    top:
+        calc(80px + var(--safe-top));
+
+    left: 50%;
+
+    transform: translateX(-50%);
+
+    z-index: 18;
+
+    padding: 7px 13px;
+
+    border-radius: 999px;
+
+    color: rgba(255,255,255,0.82);
+
+    background:
+        rgba(0,0,0,0.30);
+
+    border:
+        1px solid rgba(255,255,255,0.08);
+
+    backdrop-filter: blur(16px);
+
+    font-size: 12px;
+
+    font-variant-numeric: tabular-nums;
+}
+
+
+/* ==========================================================
+   LOCAL VIDEO
+========================================================== */
+
+.local-video-wrap {
+    position: absolute;
+
+    top:
+        calc(86px + var(--safe-top));
+
+    right: 18px;
+
+    z-index: 30;
+
+    width: min(30vw, 180px);
+
+    aspect-ratio: 9 / 16;
+
+    overflow: hidden;
+
+    border-radius: 18px;
+
+    background: #111;
+
+    border:
+        1px solid rgba(255,255,255,0.18);
+
+    box-shadow:
+        0 18px 50px rgba(0,0,0,0.45);
+
+    animation:
+        previewIn .3s ease;
+}
+
+
+@keyframes previewIn {
+
+    from {
+        opacity: 0;
+        transform: translateY(-10px) scale(.96);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+
+}
+
+
+.local-video {
+    width: 100%;
+    height: 100%;
+
+    object-fit: cover;
+
+    transform: scaleX(-1);
+
+    background: #101014;
+}
+
+
+.local-video-label {
+    position: absolute;
+
+    left: 8px;
+    bottom: 8px;
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 5px;
+
+    padding: 5px 8px;
+
+    border-radius: 8px;
+
+    background:
+        rgba(0,0,0,0.45);
+
+    backdrop-filter: blur(10px);
+
+    font-size: 10px;
+
+    color: rgba(255,255,255,0.85);
+}
+
+
+/* ==========================================================
+   CONNECTING OVERLAY
+========================================================== */
+
+.connecting-overlay {
+    position: absolute;
+
+    inset: 0;
+
+    z-index: 15;
+
+    display: grid;
+
+    place-items: center;
+
+    pointer-events: none;
+}
+
+
+.connecting-card {
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+
+    gap: 9px;
+
+    padding: 22px 28px;
+
+    border-radius: 22px;
+
+    background:
+        rgba(10,10,14,0.52);
+
+    border:
+        1px solid rgba(255,255,255,0.08);
+
+    backdrop-filter: blur(22px);
+
+    -webkit-backdrop-filter: blur(22px);
+
+    box-shadow:
+        0 25px 80px rgba(0,0,0,0.32);
+}
+
+
+.connecting-card strong {
+    font-size: 14px;
+
+    font-weight: 650;
+}
+
+
+.connecting-card small {
+    color: var(--call-muted);
+
+    font-size: 11px;
+}
+
+
+/* ==========================================================
+   CONNECTING DOTS
+========================================================== */
+
+.connecting-spinner {
+    display: flex;
+
+    gap: 5px;
+
+    margin-bottom: 3px;
+}
+
+
+.connecting-spinner span {
+    width: 7px;
+    height: 7px;
+
+    border-radius: 50%;
+
+    background: #fff;
+
+    animation:
+        connectDot 1.2s infinite ease-in-out;
+}
+
+
+.connecting-spinner span:nth-child(2) {
+    animation-delay: .15s;
+}
+
+
+.connecting-spinner span:nth-child(3) {
+    animation-delay: .30s;
+}
+
+
+@keyframes connectDot {
+
+    0%,
+    80%,
+    100% {
+        transform: scale(.55);
+        opacity: .35;
+    }
+
+    40% {
+        transform: scale(1);
+        opacity: 1;
+    }
+
+}
+
+
+/* ==========================================================
+   CALL CONTROLS
+========================================================== */
+
+.call-controls {
+    position: absolute;
+
+    left: 50%;
+    bottom: 0;
+
+    transform: translateX(-50%);
+
+    z-index: 40;
+
+    width: 100%;
+
+    display: flex;
+
+    align-items: flex-end;
+
+    justify-content: center;
+
+    gap: 18px;
+
+    padding:
+        24px
+        18px
+        calc(22px + var(--safe-bottom));
+
+    background:
+        linear-gradient(
+            to top,
+            rgba(0,0,0,0.72),
+            transparent
+        );
+}
+
+
+.call-control {
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+
+    gap: 7px;
+
+    color: #fff;
+
+    background: transparent;
+
+    min-width: 54px;
+
+    transition:
+        transform .2s ease;
+}
+
+
+.call-control:active {
+    transform: scale(.9);
+}
+
+
+.control-icon {
+    width: 54px;
+    height: 54px;
+
+    display: grid;
+
+    place-items: center;
+
+    border-radius: 50%;
+
+    background:
+        rgba(25,25,30,0.76);
+
+    border:
+        1px solid rgba(255,255,255,0.12);
+
+    backdrop-filter: blur(18px);
+
+    box-shadow:
+        0 10px 35px rgba(0,0,0,0.25);
+
+    font-size: 18px;
+
+    transition:
+        background .2s ease,
+        transform .2s ease;
+}
+
+
+.call-control small {
+    font-size: 10px;
+
+    color:
+        rgba(255,255,255,0.72);
+
+    font-weight: 500;
+}
+
+
+.call-control.active .control-icon {
+    background:
+        rgba(255,255,255,0.92);
+
+    color: #111;
+}
+
+
+/* ==========================================================
+   END CALL
+========================================================== */
+
+.end-call-control .control-icon {
+    width: 60px;
+    height: 60px;
+
+    background:
+        var(--call-danger);
+
+    box-shadow:
+        0 10px 35px
+        rgba(255,59,95,0.28);
+
+    transform:
+        rotate(135deg);
+}
+
+
+.end-call-control .control-icon i {
+    transform:
+        rotate(-135deg);
+}
+
+
+.end-call-control small {
+    color:
+        rgba(255,255,255,0.72);
+}
+
+
+/* ==========================================================
+   INCOMING CALL
+========================================================== */
+
+.incoming-call-screen {
+    position: fixed;
+
+    inset: 0;
+
+    z-index: 100;
+
+    overflow: hidden;
+
+    background: #07070b;
+}
+
+
+.incoming-background {
+    position: absolute;
+
+    inset: -80px;
+
+    background:
+        radial-gradient(
+            circle at 50% 35%,
+            rgba(139,92,246,.28),
+            transparent 28%
+        ),
+        radial-gradient(
+            circle at 20% 75%,
+            rgba(236,72,153,.18),
+            transparent 25%
+        ),
+        #07070b;
+
+    filter: blur(8px);
+
+    animation:
+        incomingBg 7s ease-in-out infinite alternate;
+}
+
+
+@keyframes incomingBg {
+
+    from {
+        transform: scale(1);
+    }
+
+    to {
+        transform: scale(1.08);
+    }
+
+}
+
+
+.incoming-content {
+    position: relative;
+
+    z-index: 2;
+
+    width: 100%;
+    height: 100%;
+
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+
+    justify-content: center;
+
+    text-align: center;
+
+    padding: 30px;
+}
+
+
+.incoming-avatar-wrap {
+    position: relative;
+
+    width: 140px;
+    height: 140px;
+
+    display: grid;
+
+    place-items: center;
+
+    margin-bottom: 28px;
+}
+
+
+.incoming-avatar-ring {
+    position: absolute;
+
+    inset: 0;
+
+    border-radius: 50%;
+
+    border:
+        1px solid
+        rgba(255,255,255,.32);
+
+    animation:
+        incomingRing 2s ease-out infinite;
+}
+
+
+@keyframes incomingRing {
+
+    0% {
+        transform: scale(.82);
+        opacity: 1;
+    }
+
+    100% {
+        transform: scale(1.45);
+        opacity: 0;
+    }
+
+}
+
+
+.incoming-avatar {
+    width: 108px;
+    height: 108px;
+
+    object-fit: cover;
+
+    border-radius: 50%;
+
+    border: 4px solid rgba(255,255,255,.9);
+
+    box-shadow:
+        0 20px 70px rgba(0,0,0,.5);
+}
+
+
+.incoming-label {
+    color:
+        rgba(255,255,255,.58);
+
+    font-size: 13px;
+
+    margin-bottom: 8px;
+}
+
+
+.incoming-content h1 {
+    font-size: 30px;
+
+    line-height: 1.1;
+
+    font-weight: 800;
+
+    letter-spacing: -.7px;
+}
+
+
+.incoming-content > p:not(.incoming-label) {
+    margin-top: 7px;
+
+    color:
+        rgba(255,255,255,.56);
+
+    font-size: 14px;
+}
+
+
+.incoming-type {
+    display: flex;
+
+    align-items: center;
+
+    gap: 8px;
+
+    margin-top: 18px;
+
+    padding: 9px 15px;
+
+    border-radius: 999px;
+
+    background:
+        rgba(255,255,255,.07);
+
+    border:
+        1px solid rgba(255,255,255,.08);
+
+    backdrop-filter: blur(14px);
+
+    color:
+        rgba(255,255,255,.82);
+
+    font-size: 12px;
+}
+
+
+/* ==========================================================
+   INCOMING ACTIONS
+========================================================== */
+
+.incoming-actions {
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    gap: 65px;
+
+    margin-top: 65px;
+}
+
+
+.incoming-action {
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+
+    gap: 10px;
+
+    color: #fff;
+
+    background: transparent;
+}
+
+
+.incoming-action span {
+    width: 66px;
+    height: 66px;
+
+    display: grid;
+
+    place-items: center;
+
+    border-radius: 50%;
+
+    font-size: 22px;
+
+    box-shadow:
+        0 15px 40px rgba(0,0,0,.3);
+
+    transition:
+        transform .2s ease;
+}
+
+
+.incoming-action:active span {
+    transform: scale(.9);
+}
+
+
+.incoming-action small {
+    font-size: 11px;
+
+    color:
+        rgba(255,255,255,.7);
+}
+
+
+.reject-action span {
+    background:
+        var(--call-danger);
+
+    transform:
+        rotate(135deg);
+}
+
+
+.reject-action span i {
+    transform:
+        rotate(-135deg);
+}
+
+
+.accept-action span {
+    background:
+        var(--call-success);
+
+    animation:
+        acceptPulse 1.8s infinite;
+}
+
+
+@keyframes acceptPulse {
+
+    0%,
+    100% {
+        box-shadow:
+            0 0 0 0
+            rgba(34,197,94,.35);
+    }
+
+    50% {
+        box-shadow:
+            0 0 0 16px
+            rgba(34,197,94,0);
+    }
+
+}
+
+
+/* ==========================================================
+   CALL ENDED
+========================================================== */
+
+.call-ended-screen {
+    position: fixed;
+
+    inset: 0;
+
+    z-index: 200;
+
+    display: grid;
+
+    place-items: center;
+
+    padding: 25px;
+
+    background:
+        radial-gradient(
+            circle at center,
+            rgba(139,92,246,.14),
+            transparent 40%
+        ),
+        #07070b;
+}
+
+
+.ended-card {
+    width: min(100%, 360px);
+
+    padding: 38px 28px;
+
+    text-align: center;
+
+    border-radius: 28px;
+
+    background:
+        rgba(20,20,26,.72);
+
+    border:
+        1px solid rgba(255,255,255,.09);
+
+    backdrop-filter: blur(24px);
+
+    box-shadow:
+        0 30px 90px rgba(0,0,0,.4);
+}
+
+
+.ended-icon {
+    width: 72px;
+    height: 72px;
+
+    display: grid;
+
+    place-items: center;
+
+    margin: 0 auto 20px;
+
+    border-radius: 50%;
+
+    background:
+        rgba(255,59,95,.12);
+
+    color:
+        var(--call-danger);
+
+    font-size: 25px;
+}
+
+
+.ended-card h1 {
+    font-size: 24px;
+
+    font-weight: 750;
+}
+
+
+.ended-card p {
+    margin-top: 8px;
+
+    color:
+        var(--call-muted);
+
+    font-size: 13px;
+
+    line-height: 1.5;
+}
+
+
+.ended-button {
+    display: inline-flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    gap: 9px;
+
+    margin-top: 25px;
+
+    min-height: 48px;
+
+    padding: 0 22px;
+
+    border-radius: 14px;
+
+    color: #fff;
+
+    background:
+        linear-gradient(
+            135deg,
+            var(--call-accent),
+            var(--call-accent-2)
+        );
+
+    box-shadow:
+        0 12px 35px
+        rgba(139,92,246,.22);
+
+    font-weight: 650;
+
+    transition:
+        transform .2s ease;
+}
+
+
+.ended-button:active {
+    transform: scale(.96);
+}
+
+
+/* ==========================================================
+   TOAST
+========================================================== */
+
+.call-toast {
+    position: fixed;
+
+    left: 50%;
+
+    bottom:
+        calc(105px + var(--safe-bottom));
+
+    transform:
+        translateX(-50%);
+
+    z-index: 500;
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 9px;
+
+    max-width:
+        calc(100% - 30px);
+
+    padding: 12px 16px;
+
+    border-radius: 14px;
+
+    background:
+        rgba(25,25,30,.88);
+
+    border:
+        1px solid rgba(255,255,255,.1);
+
+    backdrop-filter: blur(20px);
+
+    box-shadow:
+        0 15px 50px rgba(0,0,0,.35);
+
+    color: #fff;
+
+    font-size: 12px;
+
+    animation:
+        toastIn .25s ease;
+}
+
+
+.call-toast i {
+    color:
+        #a78bfa;
+}
+
+
+@keyframes toastIn {
+
+    from {
+        opacity: 0;
+        transform:
+            translate(-50%, 10px);
+    }
+
+    to {
+        opacity: 1;
+        transform:
+            translate(-50%, 0);
+    }
+
+}
+
+
+/* ==========================================================
+   ERROR SCREEN
+========================================================== */
+
+.call-error-screen {
+    position: fixed;
+
+    inset: 0;
+
+    z-index: 300;
+
+    display: grid;
+
+    place-items: center;
+
+    padding: 25px;
+
+    background: #07070b;
+}
+
+
+.error-card {
+    width: min(100%, 360px);
+
+    padding: 35px 28px;
+
+    text-align: center;
+
+    border-radius: 26px;
+
+    background:
+        rgba(20,20,26,.8);
+
+    border:
+        1px solid rgba(255,255,255,.08);
+
+    backdrop-filter: blur(22px);
+}
+
+
+.error-icon {
+    width: 65px;
+    height: 65px;
+
+    display: grid;
+
+    place-items: center;
+
+    margin: 0 auto 18px;
+
+    border-radius: 50%;
+
+    background:
+        rgba(255,193,7,.1);
+
+    color:
+        #fbbf24;
+
+    font-size: 23px;
+}
+
+
+.error-card h2 {
+    font-size: 22px;
+}
+
+
+.error-card p {
+    margin-top: 8px;
+
+    color:
+        var(--call-muted);
+
+    font-size: 13px;
+
+    line-height: 1.5;
+}
+
+
+/* ==========================================================
+   DESKTOP
+========================================================== */
+
+@media (min-width: 768px) {
+
+    .call-app {
+        max-width: 100%;
+    }
+
+
+    .call-controls {
+        gap: 24px;
+    }
+
+
+    .control-icon {
+        width: 58px;
+        height: 58px;
+    }
+
+
+    .local-video-wrap {
+        width: 190px;
+        height: 270px;
+
+        right: 28px;
+
+        top:
+            calc(95px + var(--safe-top));
+
+        border-radius: 20px;
+    }
+
+}
+
+
+/* ==========================================================
+   SMALL MOBILE
+========================================================== */
+
+@media (max-width: 420px) {
+
+    .call-controls {
+        gap: 9px;
+
+        padding-left: 10px;
+        padding-right: 10px;
+    }
+
+
+    .call-control {
+        min-width: 50px;
+    }
+
+
+    .control-icon {
+        width: 48px;
+        height: 48px;
+
+        font-size: 16px;
+    }
+
+
+    .end-call-control .control-icon {
+        width: 55px;
+        height: 55px;
+    }
+
+
+    .call-control small {
+        font-size: 9px;
+    }
+
+
+    .local-video-wrap {
+        width: 105px;
+
+        top:
+            calc(82px + var(--safe-top));
+
+        right: 12px;
+
+        border-radius: 15px;
+    }
+
+
+    .incoming-actions {
+        gap: 48px;
+
+        margin-top: 55px;
+    }
+
+
+    .incoming-action span {
+        width: 61px;
+        height: 61px;
+    }
+
+
+    .incoming-content h1 {
+        font-size: 27px;
+    }
+
+}
+
+
+/* ==========================================================
+   VERY SMALL DEVICES
+========================================================== */
+
+@media (max-width: 350px) {
+
+    .call-controls {
+        gap: 5px;
+    }
+
+
+    .control-icon {
+        width: 44px;
+        height: 44px;
+
+        font-size: 14px;
+    }
+
+
+    .end-call-control .control-icon {
+        width: 50px;
+        height: 50px;
+    }
+
+
+    .call-control small {
+        display: none;
+    }
+
+}
+
+
+/* ==========================================================
+   LANDSCAPE MOBILE
+========================================================== */
+
+@media (
+    max-height: 500px
+) and (
+    orientation: landscape
+) {
+
+    .call-controls {
+        padding-top: 10px;
+
+        padding-bottom:
+            calc(10px + var(--safe-bottom));
+    }
+
+
+    .control-icon {
+        width: 45px;
+        height: 45px;
+    }
+
+
+    .local-video-wrap {
+        width: 110px;
+        height: 150px;
+
+        top: 70px;
+    }
+
+
+    .incoming-avatar-wrap {
+        width: 90px;
+        height: 90px;
+
+        margin-bottom: 12px;
+    }
+
+
+    .incoming-avatar {
+        width: 70px;
+        height: 70px;
+    }
+
+
+    .incoming-actions {
+        margin-top: 20px;
+    }
+
+}
+
+
+/* ==========================================================
+   REDUCED MOTION
+========================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+
+    *,
+    *::before,
+    *::after {
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: .01ms !important;
+    }
+
+}
+
+
+/* ==========================================================
+   SELECTION
+========================================================== */
+
+::selection {
+    background:
+        rgba(139,92,246,.35);
+
+    color: #fff;
+}
+
+
+/* ==========================================================
+   SCROLLBAR
+========================================================== */
+
+::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+}

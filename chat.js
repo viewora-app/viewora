@@ -1,285 +1,702 @@
-/* =========================================================
-   VIEWORA PREMIUM CHAT V3
-   Firebase Realtime Database - Firebase v8 Compatible
-   Cloudinary Media Upload
-   Clean / Scoped / Duplicate-Safe
-========================================================= */
+"use strict";
 
-(function VIEWORA_CHAT_BOOT() {
+/*
+============================================================
+ VIEWORA CHAT — PREMIUM PRODUCTION CHAT ENGINE
+ -----------------------------------------------------------
+ Firebase Realtime Database
+ Firebase Auth
+ Cloudinary via media-upload.js
 
-    /* =====================================================
-       DUPLICATE SCRIPT LOAD PROTECTION
-    ===================================================== */
+ Compatible with:
+    chat.html
+    firebase.js
+    media-upload.js
+    call.js
 
-    if (window.__VIEWORA_CHAT_V3_LOADED__) {
-        console.warn(
-            "%cVIEWORA CHAT: duplicate script ignored.",
-            "color:#ff9800;font-weight:800"
-        );
+ Features:
+    • Realtime 1-to-1 messaging
+    • Text messages
+    • Image / Video / Audio / Document
+    • Cloudinary upload
+    • Upload progress + speed
+    • Reply
+    • Edit
+    • Delete for me
+    • Delete for everyone
+    • Reactions
+    • Pin
+    • Copy
+    • Message info
+    • Search
+    • Typing indicator
+    • Online status
+    • Read receipts
+    • Emoji
+    • Voice recording
+    • Profile
+    • Media viewer
+    • Toasts
+    • Premium UI hooks
+
+ IMPORTANT:
+    firebase.js must expose:
+        auth
+        db
+
+ URL PARAMETERS:
+    chat.html?uid=OTHER_USER_UID
+
+ Optional:
+    chat.html?uid=OTHER_USER_UID&name=John&photo=URL
+============================================================
+*/
+
+(() => {
+
+    /* ======================================================
+       DOUBLE INITIALIZATION PROTECTION
+    ====================================================== */
+
+    if (window.__VIEWORA_CHAT_INITIALIZED__) {
+        console.warn("VIEWORA Chat already initialized.");
         return;
     }
 
-    window.__VIEWORA_CHAT_V3_LOADED__ = true;
+    window.__VIEWORA_CHAT_INITIALIZED__ = true;
 
-    "use strict";
 
-    console.clear();
-
-    console.log(
-        "%cVIEWORA CHAT V3",
-        "color:#00e5ff;font-size:18px;font-weight:800"
-    );
-
-    /* =====================================================
-       CLOUDINARY
-    ===================================================== */
-
-    const CLOUDINARY_CLOUD_NAME = "z5m6wjdf";
-    const CLOUDINARY_UPLOAD_PRESET = "Viewora-upload";
-
-    const CLOUDINARY_UPLOAD_URL =
-        "https://api.cloudinary.com/v1_1/" +
-        CLOUDINARY_CLOUD_NAME +
-        "/auto/upload";
-
-    /* =====================================================
+    /* ======================================================
        FIREBASE CHECK
-    ===================================================== */
-
-    if (typeof firebase === "undefined") {
-        console.error("Viewora Chat: Firebase SDK missing.");
-        return;
-    }
+    ====================================================== */
 
     if (
-        typeof auth === "undefined" ||
-        typeof db === "undefined"
+        typeof window.auth === "undefined" ||
+        typeof window.db === "undefined"
     ) {
         console.error(
-            "Viewora Chat: Firebase Auth/Database missing."
+            "Viewora Chat: Firebase auth/db not found."
         );
+
+        showEarlyError(
+            "Firebase is not connected."
+        );
+
         return;
     }
 
-    /* =====================================================
-       DOM HELPER
-    ===================================================== */
+
+    /* ======================================================
+       DOM HELPERS
+    ====================================================== */
 
     const $ = id =>
         document.getElementById(id);
 
-    /* =====================================================
-       DOM
-    ===================================================== */
+    const qs = selector =>
+        document.querySelector(selector);
 
-    const loadingOverlay = $("loadingOverlay");
-    const loadingText = $("loadingText");
-    const app = $("app");
 
-    const backBtn = $("backBtn");
-    const profileBtn = $("profileBtn");
+    /* ======================================================
+       DOM REFERENCES
+    ====================================================== */
 
-    const chatName = $("chatName");
-    const chatStatus = $("chatStatus");
-    const chatPhoto = $("chatPhoto");
-    const onlineDot = $("onlineDot");
+    const loadingOverlay =
+        $("loadingOverlay");
 
-    const searchBtn = $("searchBtn");
-    const searchBar = $("searchBar");
-    const searchInput = $("searchInput");
-    const closeSearch = $("closeSearch");
+    const loadingText =
+        $("loadingText");
 
-    const voiceCallBtn = $("voiceCallBtn");
-    const videoCallBtn = $("videoCallBtn");
-    const menuBtn = $("menuBtn");
-    const chatMenu = $("chatMenu");
+    const app =
+        $("app");
 
-    const chatContainer = $("chatContainer");
-    const messagesList = $("messagesList");
+    const backBtn =
+        $("backBtn");
 
-    const typingIndicator = $("typingIndicator");
-    const typingPhoto = $("typingPhoto");
-    const typingText = $("typingText");
+    const profileBtn =
+        $("profileBtn");
 
-    const scrollBottomBtn = $("scrollBottomBtn");
+    const chatPhoto =
+        $("chatPhoto");
 
-    const replyPreview = $("replyPreview");
-    const replyUser = $("replyUser");
-    const replyText = $("replyText");
-    const closeReplyPreview = $("closeReplyPreview");
+    const chatName =
+        $("chatName");
 
-    const reactionBar = $("reactionBar");
-    const messageMenu = $("messageMenu");
+    const chatStatus =
+        $("chatStatus");
 
-    const messageInput = $("messageInput");
-    const sendBtn = $("sendBtn");
-    const attachBtn = $("attachBtn");
-    const emojiBtn = $("emojiBtn");
-    const cameraBtn = $("cameraBtn");
-    const voiceBtn = $("voiceBtn");
+    const onlineDot =
+        $("onlineDot");
 
-    const emojiPanel = $("emojiPanel");
+    const verifiedBadge =
+        $("verifiedBadge");
 
-    const attachmentSheet = $("attachmentSheet");
-    const closeAttachmentBtn = $("closeAttachmentBtn");
+    const searchBtn =
+        $("searchBtn");
 
-    const galleryBtn = $("galleryBtn");
-    const cameraAttachmentBtn = $("cameraAttachmentBtn");
-    const videoBtn = $("videoBtn");
-    const audioBtn = $("audioBtn");
-    const documentBtn = $("documentBtn");
+    const menuBtn =
+        $("menuBtn");
 
-    const imagePicker = $("imagePicker");
-    const videoPicker = $("videoPicker");
-    const audioPicker = $("audioPicker");
-    const documentPicker = $("documentPicker");
-    const cameraPicker = $("cameraPicker");
+    const voiceCallBtn =
+        $("voiceCallBtn");
 
-    const mediaPreviewModal = $("mediaPreviewModal");
-    const previewImage = $("previewImage");
-    const previewVideo = $("previewVideo");
-    const previewAudioBox = $("previewAudioBox");
-    const previewAudio = $("previewAudio");
-    const previewAudioName = $("previewAudioName");
-    const previewFileBox = $("previewFileBox");
-    const previewFileName = $("previewFileName");
-    const previewFileSize = $("previewFileSize");
-    const mediaCaption = $("mediaCaption");
+    const videoCallBtn =
+        $("videoCallBtn");
 
-    const closePreviewBtn = $("closePreviewBtn");
-    const cancelMediaBtn = $("cancelMediaBtn");
-    const sendMediaBtn = $("sendMediaBtn");
+    const searchBar =
+        $("searchBar");
 
-    const imageViewer = $("imageViewer");
-    const viewerImage = $("viewerImage");
+    const searchInput =
+        $("searchInput");
 
-    const videoViewer = $("videoViewer");
-    const viewerVideo = $("viewerVideo");
-    const closeViewerBtn = $("closeViewerBtn");
-    const closeVideoViewerBtn = $("closeVideoViewerBtn");
+    const closeSearch =
+        $("closeSearch");
 
-    const profileModal = $("profileModal");
-    const profileImage = $("profileImage");
-    const profileName = $("profileName");
-    const profileUsername = $("profileUsername");
-    const profileStatus = $("profileStatus");
-    const closeProfileBtn = $("closeProfileBtn");
+    const chatMenu =
+        $("chatMenu");
 
-    const deleteModal = $("deleteModal");
-    const deleteForMeBtn = $("deleteForMeBtn");
-    const deleteForEveryoneBtn = $("deleteForEveryoneBtn");
-    const cancelDeleteBtn = $("cancelDeleteBtn");
+    const menuMuteBtn =
+        $("menuMuteBtn");
 
-    const messageInfoModal = $("messageInfoModal");
-    const sentTime = $("sentTime");
-    const deliveredTime = $("deliveredTime");
-    const seenTime = $("seenTime");
-    const closeInfoBtn = $("closeInfoBtn");
+    const menuSearchBtn =
+        $("menuSearchBtn");
 
-    const recordOverlay = $("recordOverlay");
-    const recordTime = $("recordTime");
-    const cancelRecordingBtn = $("cancelRecordingBtn");
-    const stopRecordingBtn = $("stopRecordingBtn");
+    const menuDeleteChatBtn =
+        $("menuDeleteChatBtn");
 
-    const uploadOverlay = $("uploadOverlay");
-    const uploadFileName = $("uploadFileName");
-    const uploadProgressBar = $("uploadProgressBar");
-    const uploadPercent = $("uploadPercent");
-    const uploadSpeed = $("uploadSpeed");
-    const cancelUploadBtn = $("cancelUploadBtn");
+    const chatContainer =
+        $("chatContainer");
 
-    const toast = $("toast");
-    const toastIcon = $("toastIcon");
-    const toastText = $("toastText");
+    const messagesList =
+        $("messagesList");
 
-    /* =====================================================
+    const typingIndicator =
+        $("typingIndicator");
+
+    const typingPhoto =
+        $("typingPhoto");
+
+    const typingText =
+        $("typingText");
+
+    const scrollBottomBtn =
+        $("scrollBottomBtn");
+
+    const reactionBar =
+        $("reactionBar");
+
+    const replyPreview =
+        $("replyPreview");
+
+    const replyUser =
+        $("replyUser");
+
+    const replyText =
+        $("replyText");
+
+    const closeReplyPreview =
+        $("closeReplyPreview");
+
+    const attachBtn =
+        $("attachBtn");
+
+    const messageInput =
+        $("messageInput");
+
+    const emojiBtn =
+        $("emojiBtn");
+
+    const cameraBtn =
+        $("cameraBtn");
+
+    const voiceBtn =
+        $("voiceBtn");
+
+    const sendBtn =
+        $("sendBtn");
+
+    const emojiPanel =
+        $("emojiPanel");
+
+    const attachmentSheet =
+        $("attachmentSheet");
+
+    const attachmentOverlay =
+        qs(".attachmentOverlay");
+
+    const closeAttachmentBtn =
+        $("closeAttachmentBtn");
+
+    const galleryBtn =
+        $("galleryBtn");
+
+    const cameraAttachmentBtn =
+        $("cameraAttachmentBtn");
+
+    const videoBtn =
+        $("videoBtn");
+
+    const audioBtn =
+        $("audioBtn");
+
+    const documentBtn =
+        $("documentBtn");
+
+    const imagePicker =
+        $("imagePicker");
+
+    const videoPicker =
+        $("videoPicker");
+
+    const audioPicker =
+        $("audioPicker");
+
+    const documentPicker =
+        $("documentPicker");
+
+    const cameraPicker =
+        $("cameraPicker");
+
+    const mediaPreviewModal =
+        $("mediaPreviewModal");
+
+    const previewImage =
+        $("previewImage");
+
+    const previewVideo =
+        $("previewVideo");
+
+    const previewAudioBox =
+        $("previewAudioBox");
+
+    const previewAudio =
+        $("previewAudio");
+
+    const previewAudioName =
+        $("previewAudioName");
+
+    const previewFileBox =
+        $("previewFileBox");
+
+    const previewFileName =
+        $("previewFileName");
+
+    const previewFileSize =
+        $("previewFileSize");
+
+    const mediaCaption =
+        $("mediaCaption");
+
+    const closePreviewBtn =
+        $("closePreviewBtn");
+
+    const cancelMediaBtn =
+        $("cancelMediaBtn");
+
+    const sendMediaBtn =
+        $("sendMediaBtn");
+
+    const imageViewer =
+        $("imageViewer");
+
+    const viewerImage =
+        $("viewerImage");
+
+    const closeViewerBtn =
+        $("closeViewerBtn");
+
+    const videoViewer =
+        $("videoViewer");
+
+    const viewerVideo =
+        $("viewerVideo");
+
+    const closeVideoViewerBtn =
+        $("closeVideoViewerBtn");
+
+    const profileModal =
+        $("profileModal");
+
+    const profileImage =
+        $("profileImage");
+
+    const profileName =
+        $("profileName");
+
+    const profileUsername =
+        $("profileUsername");
+
+    const profileStatus =
+        $("profileStatus");
+
+    const closeProfileBtn =
+        $("closeProfileBtn");
+
+    const deleteModal =
+        $("deleteModal");
+
+    const deleteForMeBtn =
+        $("deleteForMeBtn");
+
+    const deleteForEveryoneBtn =
+        $("deleteForEveryoneBtn");
+
+    const cancelDeleteBtn =
+        $("cancelDeleteBtn");
+
+    const messageInfoModal =
+        $("messageInfoModal");
+
+    const closeInfoBtn =
+        $("closeInfoBtn");
+
+    const sentTime =
+        $("sentTime");
+
+    const deliveredTime =
+        $("deliveredTime");
+
+    const seenTime =
+        $("seenTime");
+
+    const messageMenu =
+        $("messageMenu");
+
+    const replyMessageBtn =
+        $("replyMessageBtn");
+
+    const copyMessageBtn =
+        $("copyMessageBtn");
+
+    const reactMessageBtn =
+        $("reactMessageBtn");
+
+    const editMessageBtn =
+        $("editMessageBtn");
+
+    const pinMessageBtn =
+        $("pinMessageBtn");
+
+    const infoMessageBtn =
+        $("infoMessageBtn");
+
+    const deleteMessageBtn =
+        $("deleteMessageBtn");
+
+    const recordOverlay =
+        $("recordOverlay");
+
+    const recordTime =
+        $("recordTime");
+
+    const cancelRecordingBtn =
+        $("cancelRecordingBtn");
+
+    const stopRecordingBtn =
+        $("stopRecordingBtn");
+
+    const uploadOverlay =
+        $("uploadOverlay");
+
+    const uploadFileName =
+        $("uploadFileName");
+
+    const uploadProgressBar =
+        $("uploadProgressBar");
+
+    const uploadPercent =
+        $("uploadPercent");
+
+    const uploadSpeed =
+        $("uploadSpeed");
+
+    const cancelUploadBtn =
+        $("cancelUploadBtn");
+
+    const toast =
+        $("toast");
+
+    const toastIcon =
+        $("toastIcon");
+
+    const toastText =
+        $("toastText");
+
+
+    /* ======================================================
+       CONSTANTS
+    ====================================================== */
+
+    const DEFAULT_AVATAR =
+        "assets/default-avatar.png";
+
+    const MAX_MESSAGE_LENGTH =
+        5000;
+
+    const TYPING_TIMEOUT =
+        2500;
+
+    const SCROLL_THRESHOLD =
+        180;
+
+    const CHAT_PARAM =
+        "uid";
+
+
+    /* ======================================================
        STATE
-    ===================================================== */
+    ====================================================== */
 
-    let currentUser = null;
-    let currentProfile = {};
+    const state = {
 
-    let otherUID = null;
-    let otherProfile = {};
+        currentUser: null,
 
-    let chatId = null;
+        otherUser: {
+            uid: "",
+            name: "Viewora User",
+            username: "@user",
+            photo: DEFAULT_AVATAR,
+            verified: false,
+            online: false,
+            lastSeen: null
+        },
 
-    let messagesRef = null;
-    let messagesListener = null;
+        chatId: "",
 
-    let otherUserRef = null;
-    let otherUserListener = null;
+        messages: new Map(),
 
-    let typingRef = null;
-    let typingListener = null;
+        currentMessageId: null,
 
-    /*
-       IMPORTANT:
-       These variables are now inside the private IIFE.
-       They cannot collide with another global blockedRef.
-    */
-    let blockedRef = null;
-    let blockedListener = null;
+        selectedMessage: null,
 
-    let selectedMessageId = null;
-    let selectedMessageData = null;
+        replyTo: null,
 
-    let replyingTo = null;
+        editingMessageId: null,
 
-    let selectedMediaFile = null;
-    let selectedMediaType = null;
-    let selectedMediaObjectURL = null;
+        pendingMedia: null,
 
-    let uploadXHR = null;
+        uploadTask: null,
 
-    let mediaRecorder = null;
-    let recordedChunks = [];
-    let recordingTimer = null;
-    let recordingSeconds = 0;
+        uploadCancelled: false,
 
-    let typingTimer = null;
+        typingTimer: null,
 
-    let initialized = false;
-    let lastNotificationMessageId = null;
-let notificationAudioContext = null;
-let notificationUnlocked = false;
+        typingActive: false,
 
-    /* =====================================================
-       GLOBAL LOCAL STATE
-    ===================================================== */
+        recording: false,
 
-    function setBlockedState(value) {
-        window.vieworaBlocked = value === true;
+        mediaRecorder: null,
+
+        recordChunks: [],
+
+        recordStartedAt: 0,
+
+        recordTimer: null,
+
+        isNearBottom: true,
+
+        searchTerm: "",
+
+        muted: false,
+
+        listeners: [],
+
+        userListener: null,
+
+        presenceListener: null,
+
+        typingListener: null,
+
+        messagesListener: null,
+
+        toastTimer: null
+
+    };
+
+
+    /* ======================================================
+       URL PARAMS
+    ====================================================== */
+
+    const params =
+        new URLSearchParams(
+            window.location.search
+        );
+
+    const targetUid =
+        params.get(CHAT_PARAM);
+
+
+    /* ======================================================
+       VALIDATE CHAT USER
+    ====================================================== */
+
+    if (!targetUid) {
+
+        hideLoading();
+
+        showToast(
+            "Chat user not found.",
+            "error"
+        );
+
+        setTimeout(() => {
+
+            if (
+                document.referrer &&
+                document.referrer !== window.location.href
+            ) {
+                window.history.back();
+            }
+
+        }, 1000);
+
+        return;
     }
 
-    function getBlockedState() {
-        return window.vieworaBlocked === true;
+
+    /* ======================================================
+       UTILITY FUNCTIONS
+    ====================================================== */
+
+    function escapeHTML(value) {
+
+        return String(value ?? "")
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
     }
 
-    /* =====================================================
-       URL
-    ===================================================== */
 
-    function getOtherUID() {
+    function safeURL(url) {
 
-        const params =
-            new URLSearchParams(
-                window.location.search
-            );
+        const value =
+            String(url || "").trim();
 
-        return (
-            params.get("uid") ||
-            params.get("userId") ||
-            params.get("to") ||
-            null
+        if (!value) {
+            return "";
+        }
+
+        if (
+            value.startsWith("https://") ||
+            value.startsWith("http://")
+        ) {
+            return value;
+        }
+
+        return "";
+    }
+
+
+    function formatTime(timestamp) {
+
+        if (!timestamp) {
+            return "";
+        }
+
+        const date =
+            new Date(timestamp);
+
+        if (
+            Number.isNaN(
+                date.getTime()
+            )
+        ) {
+            return "";
+        }
+
+        return date.toLocaleTimeString(
+            [],
+            {
+                hour: "2-digit",
+                minute: "2-digit"
+            }
         );
     }
 
-    /* =====================================================
-       CHAT ID
-    ===================================================== */
 
-    function makeChatId(uid1, uid2) {
+    function formatDate(timestamp) {
+
+        if (!timestamp) {
+            return "";
+        }
+
+        const date =
+            new Date(timestamp);
+
+        if (
+            Number.isNaN(
+                date.getTime()
+            )
+        ) {
+            return "";
+        }
+
+        return date.toLocaleDateString(
+            [],
+            {
+                day: "numeric",
+                month: "short",
+                year: "numeric"
+            }
+        );
+    }
+
+
+    function formatFileSize(bytes) {
+
+        const size =
+            Number(bytes || 0);
+
+        if (size <= 0) {
+            return "0 KB";
+        }
+
+        if (size < 1024) {
+            return `${size} B`;
+        }
+
+        if (size < 1024 * 1024) {
+            return `${(
+                size / 1024
+            ).toFixed(1)} KB`;
+        }
+
+        if (size < 1024 * 1024 * 1024) {
+            return `${(
+                size /
+                1024 /
+                1024
+            ).toFixed(1)} MB`;
+        }
+
+        return `${(
+            size /
+            1024 /
+            1024 /
+            1024
+        ).toFixed(1)} GB`;
+    }
+
+
+    function normalizeUsername(value) {
+
+        const text =
+            String(value || "").trim();
+
+        if (!text) {
+            return "@user";
+        }
+
+        return text.startsWith("@")
+            ? text
+            : `@${text}`;
+    }
+
+
+    function getChatId(uid1, uid2) {
 
         return [
             String(uid1),
@@ -289,2148 +706,1453 @@ let notificationUnlocked = false;
             .join("_");
     }
 
-    /* =====================================================
+
+    function showEarlyError(message) {
+
+        const text =
+            document.createElement("div");
+
+        text.style.cssText = `
+            position:fixed;
+            inset:0;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            padding:24px;
+            background:#08090d;
+            color:#fff;
+            font-family:Inter,Arial,sans-serif;
+            text-align:center;
+            z-index:999999;
+        `;
+
+        text.textContent =
+            message;
+
+        document.body.appendChild(text);
+    }
+
+
+    function hideLoading() {
+
+        if (!loadingOverlay) {
+            return;
+        }
+
+        loadingOverlay.classList.add(
+            "hidden"
+        );
+
+        if (app) {
+            app.classList.remove(
+                "hidden"
+            );
+        }
+    }
+
+
+    function setLoadingText(text) {
+
+        if (loadingText) {
+            loadingText.textContent =
+                text;
+        }
+    }
+
+
+    /* ======================================================
        TOAST
-    ===================================================== */
+    ====================================================== */
 
     function showToast(
         message,
         type = "success"
     ) {
 
-        if (!toast || !toastText) {
-            console.log(message);
+        if (!toast) {
             return;
         }
 
-        toastText.textContent =
-            String(message);
+        if (state.toastTimer) {
+            clearTimeout(
+                state.toastTimer
+            );
+        }
+
+        if (toastText) {
+            toastText.textContent =
+                message;
+        }
 
         if (toastIcon) {
 
-            toastIcon.className =
-                type === "error"
-                    ? "fa-solid fa-circle-exclamation"
-                    : type === "warning"
-                        ? "fa-solid fa-triangle-exclamation"
-                        : "fa-solid fa-circle-check";
+            const icon =
+                toastIcon.querySelector("i");
+
+            if (icon) {
+
+                icon.className =
+                    type === "error"
+                        ? "fa-solid fa-circle-exclamation"
+                        : type === "warning"
+                            ? "fa-solid fa-triangle-exclamation"
+                            : "fa-solid fa-circle-check";
+            }
         }
 
         toast.classList.remove(
             "hidden"
         );
 
-        clearTimeout(
-            window.__vieworaToastTimer
-        );
-
-        window.__vieworaToastTimer =
+        state.toastTimer =
             setTimeout(() => {
 
                 toast.classList.add(
                     "hidden"
                 );
 
-            }, 2500);
+            }, 2800);
     }
 
-    /* =====================================================
-       LOADING
-    ===================================================== */
 
-    function showLoading(
-        text = "Loading chat..."
-    ) {
+    /* ======================================================
+       FIREBASE SERVER TIME
+    ====================================================== */
 
-        if (loadingText) {
-            loadingText.textContent =
-                text;
+    function serverTimestamp() {
+
+        if (
+            window.firebase &&
+            firebase.database &&
+            firebase.database.ServerValue
+        ) {
+            return firebase.database.ServerValue.TIMESTAMP;
         }
 
-        loadingOverlay?.classList.remove(
-            "hidden"
+        return Date.now();
+    }
+
+
+    /* ======================================================
+       DATABASE PATHS
+    ====================================================== */
+
+    function messagesRef() {
+
+        return db.ref(
+            `vieworaChats/${state.chatId}/messages`
         );
     }
 
-    function hideLoading() {
 
-        loadingOverlay?.classList.add(
-            "hidden"
-        );
+    function chatRef() {
 
-        app?.classList.remove(
-            "hidden"
+        return db.ref(
+            `vieworaChats/${state.chatId}`
         );
     }
 
-    /* =====================================================
-       AUTH
-    ===================================================== */
 
-    auth.onAuthStateChanged(
-        async user => {
+    function typingRef(uid) {
 
-            if (!user) {
-
-                location.replace(
-                    "login.html"
-                );
-
-                return;
-            }
-
-            currentUser = user;
-
-            otherUID =
-                getOtherUID();
-
-            if (!otherUID) {
-
-                hideLoading();
-
-                showToast(
-                    "Chat user not found.",
-                    "error"
-                );
-
-                return;
-            }
-
-            if (
-                otherUID ===
-                currentUser.uid
-            ) {
-
-                hideLoading();
-
-                showToast(
-                    "You cannot chat with yourself.",
-                    "warning"
-                );
-
-                return;
-            }
-
-            chatId =
-                makeChatId(
-                    currentUser.uid,
-                    otherUID
-                );
-
-            try {
-
-                showLoading(
-                    "Connecting to chat..."
-                );
-
-                await loadCurrentUser();
-
-                await loadOtherUser();
-
-                await ensureChatExists();
-
-                setupOtherUserListener();
-
-                setupTypingListener();
-
-                setupBlockedListener();
-
-                setupMessagesListener();
-
-                setupPresence();
-
-                await markChatAsRead();
-
-                setupBrowserNotifications();
-
-                addSafetyMenuItems();
-
-                hideLoading();
-
-                initialized = true;
-
-                console.log(
-                    "%cViewora Chat Ready",
-                    "color:#00e676;font-weight:bold"
-                );
-
-            } catch (error) {
-
-                console.error(
-                    "CHAT INIT ERROR:",
-                    error
-                );
-
-                hideLoading();
-
-                showToast(
-                    "Unable to load chat.",
-                    "error"
-                );
-            }
-        }
-    );
-
-    /* =====================================================
-       LOAD CURRENT USER
-    ===================================================== */
-
-    async function loadCurrentUser() {
-
-        const snapshot =
-            await db
-                .ref(
-                    "users/" +
-                    currentUser.uid
-                )
-                .once("value");
-
-        currentProfile =
-            snapshot.exists()
-                ? snapshot.val() || {}
-                : {};
+        return db.ref(
+            `vieworaChats/${state.chatId}/typing/${uid}`
+        );
     }
 
-    /* =====================================================
+
+    /* ======================================================
        LOAD OTHER USER
-    ===================================================== */
+    ====================================================== */
 
     async function loadOtherUser() {
 
-        const snapshot =
-            await db
-                .ref(
-                    "users/" +
-                    otherUID
-                )
-                .once("value");
+        const fallbackName =
+            params.get("name");
 
-        if (!snapshot.exists()) {
-            throw new Error(
-                "Other user does not exist"
-            );
+        const fallbackPhoto =
+            params.get("photo");
+
+        if (fallbackName) {
+            state.otherUser.name =
+                fallbackName;
         }
 
-        otherProfile =
-            snapshot.val() || {};
+        if (fallbackPhoto) {
+            state.otherUser.photo =
+                safeURL(fallbackPhoto) ||
+                DEFAULT_AVATAR;
+        }
 
-        renderOtherUser();
+        try {
+
+            const snapshot =
+                await db.ref(
+                    `users/${targetUid}`
+                ).once("value");
+
+            const user =
+                snapshot.val();
+
+            if (user) {
+
+                state.otherUser.uid =
+                    targetUid;
+
+                state.otherUser.name =
+                    user.displayName ||
+                    user.name ||
+                    user.fullName ||
+                    fallbackName ||
+                    "Viewora User";
+
+                state.otherUser.username =
+                    normalizeUsername(
+                        user.username ||
+                        user.userName ||
+                        user.handle
+                    );
+
+                state.otherUser.photo =
+                    safeURL(
+                        user.photoURL ||
+                        user.photo ||
+                        user.profilePhoto ||
+                        user.avatar
+                    ) ||
+                    fallbackPhoto ||
+                    DEFAULT_AVATAR;
+
+                state.otherUser.verified =
+                    Boolean(
+                        user.verified ||
+                        user.isVerified
+                    );
+
+                state.otherUser.online =
+                    Boolean(
+                        user.online ||
+                        user.isOnline
+                    );
+
+                state.otherUser.lastSeen =
+                    user.lastSeen ||
+                    null;
+
+            } else {
+
+                state.otherUser.uid =
+                    targetUid;
+            }
+
+        } catch (error) {
+
+            console.warn(
+                "Unable to load user profile:",
+                error
+            );
+
+            state.otherUser.uid =
+                targetUid;
+        }
+
+        renderHeader();
     }
 
-    /* =====================================================
-       OTHER USER HEADER
-    ===================================================== */
 
-    function renderOtherUser() {
+    /* ======================================================
+       RENDER HEADER
+    ====================================================== */
 
-        const name =
-            otherProfile.name ||
-            otherProfile.fullName ||
-            otherProfile.displayName ||
-            otherProfile.username ||
-            "User";
+    function renderHeader() {
 
-        const username =
-            otherProfile.username ||
-            "user";
-
-        const photo =
-            otherProfile.profilePhoto ||
-            otherProfile.photoURL ||
-            otherProfile.avatar ||
-            "assets/default-avatar.png";
+        const user =
+            state.otherUser;
 
         if (chatName) {
             chatName.textContent =
-                name;
+                user.name;
         }
 
         if (chatPhoto) {
             chatPhoto.src =
-                photo;
+                user.photo ||
+                DEFAULT_AVATAR;
         }
 
         if (typingPhoto) {
             typingPhoto.src =
-                photo;
+                user.photo ||
+                DEFAULT_AVATAR;
         }
 
         if (profileImage) {
             profileImage.src =
-                photo;
+                user.photo ||
+                DEFAULT_AVATAR;
         }
 
         if (profileName) {
             profileName.textContent =
-                name;
+                user.name;
         }
 
         if (profileUsername) {
-
             profileUsername.textContent =
-                "@" +
-                String(username)
-                    .replace(/^@/, "");
+                user.username;
         }
 
-        updatePresenceUI(
-            otherProfile.online === true,
-            otherProfile.lastSeen
-        );
-    }
+        if (verifiedBadge) {
 
-    /* =====================================================
-       OTHER USER LISTENER
-    ===================================================== */
-
-    function setupOtherUserListener() {
-
-        cleanupOtherUserListener();
-
-        otherUserRef =
-            db.ref(
-                "users/" +
-                otherUID
-            );
-
-        otherUserListener =
-            snapshot => {
-
-                if (!snapshot.exists()) {
-                    return;
-                }
-
-                otherProfile =
-                    snapshot.val() || {};
-
-                renderOtherUser();
-            };
-
-        otherUserRef.on(
-            "value",
-            otherUserListener
-        );
-    }
-
-    function cleanupOtherUserListener() {
-
-        if (
-            otherUserRef &&
-            otherUserListener
-        ) {
-
-            otherUserRef.off(
-                "value",
-                otherUserListener
+            verifiedBadge.classList.toggle(
+                "hidden",
+                !user.verified
             );
         }
 
-        otherUserRef = null;
-        otherUserListener = null;
+        updatePresenceUI();
     }
 
-    /* =====================================================
+
+    /* ======================================================
        PRESENCE
-    ===================================================== */
+    ====================================================== */
 
-    function setupPresence() {
+    function updatePresenceUI() {
 
-        const userRef =
-            db.ref(
-                "users/" +
-                currentUser.uid
+        const online =
+            Boolean(
+                state.otherUser.online
             );
 
-        userRef.update({
-
-            online: true,
-
-            lastSeen:
-                firebase.database
-                    .ServerValue
-                    .TIMESTAMP
-
-        }).catch(
-            console.error
-        );
-
-        userRef
-            .onDisconnect()
-            .update({
-
-                online: false,
-
-                lastSeen:
-                    firebase.database
-                        .ServerValue
-                        .TIMESTAMP
-            });
-    }
-
-    function updatePresenceUI(
-        online,
-        lastSeen
-    ) {
+        if (onlineDot) {
+            onlineDot.classList.toggle(
+                "hidden",
+                !online
+            );
+        }
 
         if (chatStatus) {
 
-            chatStatus.textContent =
-                online
-                    ? "Online"
-                    : formatLastSeen(lastSeen);
-        }
+            if (online) {
 
-        onlineDot?.classList.toggle(
-            "hidden",
-            !online
-        );
+                chatStatus.textContent =
+                    "Active now";
+
+            } else if (
+                state.otherUser.lastSeen
+            ) {
+
+                chatStatus.textContent =
+                    `Last seen ${formatTime(
+                        state.otherUser.lastSeen
+                    )}`;
+
+            } else {
+
+                chatStatus.textContent =
+                    "Offline";
+            }
+        }
 
         if (profileStatus) {
 
             profileStatus.textContent =
                 online
-                    ? "Online"
-                    : formatLastSeen(lastSeen);
+                    ? "Active now"
+                    : state.otherUser.lastSeen
+                        ? `Last seen ${formatDate(
+                            state.otherUser.lastSeen
+                        )}`
+                        : "Offline";
         }
     }
 
-    function formatLastSeen(
-        timestamp
-    ) {
 
-        if (!timestamp) {
-            return "Offline";
-        }
+    /* ======================================================
+       WATCH PRESENCE
+    ====================================================== */
 
-        const diff =
-            Date.now() -
-            Number(timestamp);
-
-        if (diff < 60000) {
-            return "Last seen just now";
-        }
-
-        if (diff < 3600000) {
-
-            return (
-                "Last seen " +
-                Math.floor(
-                    diff / 60000
-                ) +
-                "m ago"
-            );
-        }
-
-        return (
-            "Last seen " +
-            new Date(timestamp)
-                .toLocaleTimeString(
-                    [],
-                    {
-                        hour: "2-digit",
-                        minute: "2-digit"
-                    }
-                )
-        );
-    }
-
-    /* =====================================================
-       ENSURE CHAT
-    ===================================================== */
-
-    async function ensureChatExists() {
+    function watchPresence() {
 
         const ref =
             db.ref(
-                "chats/" +
-                chatId
+                `users/${targetUid}`
             );
 
-        const snapshot =
-            await ref.once(
-                "value"
-            );
+        const callback =
+            snapshot => {
 
-        if (!snapshot.exists()) {
-
-            await ref.set({
-
-                type: "private",
-
-                createdAt:
-                    firebase.database
-                        .ServerValue
-                        .TIMESTAMP,
-
-                members: {
-
-                    [currentUser.uid]: true,
-
-                    [otherUID]: true
-                }
-            });
-        }
-    }
-
-    /* =====================================================
-       MESSAGE LISTENER
-    ===================================================== */
-
-/* =====================================================
-   MESSAGE LISTENER + NEW MESSAGE NOTIFICATION
-===================================================== */
-
-function setupMessagesListener() {
-
-    cleanupMessagesListener();
-
-    messagesRef =
-        db
-            .ref(
-                "chats/" +
-                chatId +
-                "/messages"
-            )
-            .limitToLast(200);
-
-    /*
-       First snapshot ko old messages maana jayega.
-       Isse chat open karte hi purane messages ki
-       notification nahi aayegi.
-    */
-
-    let firstSnapshot = true;
-
-    messagesListener =
-        snapshot => {
-
-            if (!messagesList) {
-                return;
-            }
-
-            messagesList.innerHTML = "";
-
-            if (!snapshot.exists()) {
-
-                renderEmptyChat();
-
-                firstSnapshot = false;
-
-                return;
-            }
-
-            snapshot.forEach(
-                child => {
-
-                    const message =
-                        child.val() || {};
-
-                    /*
-                       Deleted only-for-me messages
-                       hide karo.
-                    */
-
-                    if (
-                        message.deletedFor &&
-                        message.deletedFor[
-                            currentUser.uid
-                        ]
-                    ) {
-                        return;
-                    }
-
-                    renderMessage(
-                        child.key,
-                        message
-                    );
-                }
-            );
-
-            /*
-               New incoming message detect karo.
-            */
-
-            if (!firstSnapshot) {
-
-                const lastChild =
+                const user =
                     snapshot.val();
 
-                /*
-                   Firebase snapshot ko children me
-                   iterate karke latest message nikalo.
-                */
-
-                let latestId = null;
-                let latestMessage = null;
-
-                snapshot.forEach(
-                    child => {
-
-                        latestId =
-                            child.key;
-
-                        latestMessage =
-                            child.val() || {};
-                    }
-                );
-
-                if (
-                    latestId &&
-                    latestMessage &&
-                    latestMessage.uid !==
-                        currentUser.uid
-                ) {
-
-                    handleIncomingMessageNotification(
-                        latestId,
-                        latestMessage
-                    );
-                }
-            }
-
-            firstSnapshot = false;
-
-            markIncomingMessagesSeen(
-                snapshot
-            );
-
-            requestAnimationFrame(
-                () => {
-                    scrollToBottom(false);
-                }
-            );
-        };
-
-    messagesRef.on(
-        "value",
-        messagesListener,
-        error => {
-
-            console.error(
-                "Messages listener:",
-                error
-            );
-
-            showToast(
-                "Unable to sync messages.",
-                "error"
-            );
-        }
-    );
-}
-    /* =====================================================
-       EMPTY CHAT
-    ===================================================== */
-
-    function renderEmptyChat() {
-
-        if (!messagesList) {
-            return;
-        }
-
-        const empty =
-            document.createElement(
-                "div"
-            );
-
-        empty.className =
-            "vieworaEmptyChat";
-
-        empty.innerHTML = `
-            <div class="emptyChatIcon">
-                <i class="fa-regular fa-comments"></i>
-            </div>
-
-            <strong>Start the conversation</strong>
-
-            <span>
-                Send a message to
-                ${escapeHTML(
-                    otherProfile.name ||
-                    otherProfile.username ||
-                    "this user"
-                )}
-            </span>
-        `;
-
-        messagesList.appendChild(
-            empty
-        );
-    }
-
-    /* =====================================================
-       RENDER MESSAGE
-    ===================================================== */
-
-    function renderMessage(
-        messageId,
-        message
-    ) {
-
-        if (!messagesList) {
-            return;
-        }
-
-        const mine =
-            message.uid ===
-            currentUser.uid;
-
-        const row =
-            document.createElement(
-                "div"
-            );
-
-        row.className =
-            "messageRow " +
-            (mine
-                ? "sent"
-                : "received");
-
-        row.dataset.messageId =
-            messageId;
-
-        const wrapper =
-            document.createElement(
-                "div"
-            );
-
-        wrapper.className =
-            "messageWrapper";
-
-        /* REPLY */
-
-        if (message.replyTo) {
-
-            const reply =
-                document.createElement(
-                    "div"
-                );
-
-            reply.className =
-                "messageReply";
-
-            reply.innerHTML = `
-                <strong>
-                    ${escapeHTML(
-                        message.replyTo.username ||
-                        "Reply"
-                    )}
-                </strong>
-
-                <span>
-                    ${escapeHTML(
-                        message.replyTo.text ||
-                        "[Media]"
-                    )}
-                </span>
-            `;
-
-            wrapper.appendChild(
-                reply
-            );
-        }
-
-        /* DELETED */
-
-        if (message.deleted) {
-
-            const bubble =
-                document.createElement(
-                    "div"
-                );
-
-            bubble.className =
-                "messageBubble deletedMessage";
-
-            bubble.textContent =
-                "Message deleted";
-
-            wrapper.appendChild(
-                bubble
-            );
-
-        } else {
-
-            /* TEXT */
-
-            if (
-                message.type === "text" &&
-                message.text
-            ) {
-
-                const bubble =
-                    document.createElement(
-                        "div"
-                    );
-
-                bubble.className =
-                    "messageBubble";
-
-                bubble.textContent =
-                    message.text;
-
-                if (message.edited) {
-
-                    const edited =
-                        document.createElement(
-                            "small"
-                        );
-
-                    edited.className =
-                        "editedLabel";
-
-                    edited.textContent =
-                        "edited";
-
-                    bubble.appendChild(
-                        edited
-                    );
+                if (!user) {
+                    return;
                 }
 
-                wrapper.appendChild(
-                    bubble
-                );
-            }
-
-            /* IMAGE */
-
-            if (
-                message.type === "image" &&
-                message.url
-            ) {
-
-                const media =
-                    document.createElement(
-                        "div"
+                state.otherUser.online =
+                    Boolean(
+                        user.online ||
+                        user.isOnline
                     );
 
-                media.className =
-                    "messageMedia";
-
-                const image =
-                    document.createElement(
-                        "img"
-                    );
-
-                image.src =
-                    message.url;
-
-                image.loading =
-                    "lazy";
-
-                image.alt =
-                    "Image";
-
-                image.addEventListener(
-                    "click",
-                    () => openImage(
-                        message.url
-                    )
-                );
-
-                media.appendChild(
-                    image
-                );
-
-                wrapper.appendChild(
-                    media
-                );
-            }
-
-            /* VIDEO */
-
-            if (
-                message.type === "video" &&
-                message.url
-            ) {
-
-                const media =
-                    document.createElement(
-                        "div"
-                    );
-
-                media.className =
-                    "messageMedia";
-
-                const video =
-                    document.createElement(
-                        "video"
-                    );
-
-                video.src =
-                    message.url;
-
-                video.controls =
-                    true;
-
-                video.playsInline =
-                    true;
-
-                video.preload =
-                    "metadata";
-
-                media.appendChild(
-                    video
-                );
-
-                wrapper.appendChild(
-                    media
-                );
-            }
-
-            /* AUDIO */
-
-            if (
-                message.type === "audio" &&
-                message.url
-            ) {
-
-                const audio =
-                    document.createElement(
-                        "audio"
-                    );
-
-                audio.src =
-                    message.url;
-
-                audio.controls =
-                    true;
-
-                wrapper.appendChild(
-                    audio
-                );
-            }
-
-            /* FILE */
-
-            if (
-                message.type === "file" &&
-                message.url
-            ) {
-
-                const file =
-                    document.createElement(
-                        "a"
-                    );
-
-                file.href =
-                    message.url;
-
-                file.target =
-                    "_blank";
-
-                file.rel =
-                    "noopener noreferrer";
-
-                file.className =
-                    "messageFile";
-
-                file.innerHTML = `
-                    <i class="fa-solid fa-file"></i>
-                    <span>
-                        ${escapeHTML(
-                            message.fileName ||
-                            "File"
-                        )}
-                    </span>
-                `;
-
-                wrapper.appendChild(
-                    file
-                );
-            }
-        }
-
-        /* CAPTION */
-
-        if (
-            message.caption &&
-            !message.deleted
-        ) {
-
-            const caption =
-                document.createElement(
-                    "div"
-                );
-
-            caption.className =
-                "messageCaption";
-
-            caption.textContent =
-                message.caption;
-
-            wrapper.appendChild(
-                caption
-            );
-        }
-
-        /* META */
-
-        const meta =
-            document.createElement(
-                "div"
-            );
-
-        meta.className =
-            "messageMeta";
-
-        const time =
-            document.createElement(
-                "span"
-            );
-
-        time.textContent =
-            formatTime(
-                message.createdAt
-            );
-
-        meta.appendChild(
-            time
-        );
-
-        if (mine) {
-
-            const status =
-                document.createElement(
-                    "span"
-                );
-
-            status.className =
-                "messageStatus";
-
-            status.innerHTML =
-                message.seen
-                    ? '<i class="fa-solid fa-check-double"></i>'
-                    : '<i class="fa-solid fa-check"></i>';
-
-            meta.appendChild(
-                status
-            );
-        }
-
-        wrapper.appendChild(
-            meta
-        );
-
-        /* REACTIONS */
-
-        if (message.reactions) {
-
-            const reactions =
-                document.createElement(
-                    "div"
-                );
-
-            reactions.className =
-                "messageReactions";
-
-            Object.entries(
-                message.reactions
-            ).forEach(
-                ([uid, emoji]) => {
-
-                    const chip =
-                        document.createElement(
-                            "button"
-                        );
-
-                    chip.type =
-                        "button";
-
-                    chip.textContent =
-                        emoji;
-
-                    chip.addEventListener(
-                        "click",
-                        () => reactToMessage(
-                            messageId,
-                            emoji
-                        )
-                    );
-
-                    reactions.appendChild(
-                        chip
-                    );
-                }
-            );
-
-            wrapper.appendChild(
-                reactions
-            );
-        }
-
-        row.appendChild(
-            wrapper
-        );
-
-        messagesList.appendChild(
-            row
-        );
-
-        /* RIGHT CLICK */
-
-        row.addEventListener(
-            "contextmenu",
-            event => {
-
-                event.preventDefault();
-
-                openMessageMenu(
-                    messageId,
-                    message,
-                    event.clientX,
-                    event.clientY
-                );
-            }
-        );
-
-        /* LONG PRESS */
-
-        let pressTimer = null;
-
-        row.addEventListener(
-            "touchstart",
-            () => {
-
-                clearTimeout(
-                    pressTimer
-                );
-
-                pressTimer =
-                    setTimeout(
-                        () => {
-
-                            const rect =
-                                row.getBoundingClientRect();
-
-                            openMessageMenu(
-                                messageId,
-                                message,
-                                rect.left +
-                                rect.width / 2,
-                                rect.top
-                            );
-
-                        },
-                        550
-                    );
-            },
-            {
-                passive: true
-            }
-        );
-
-        row.addEventListener(
-            "touchend",
-            () => {
-
-                clearTimeout(
-                    pressTimer
-                );
-            },
-            {
-                passive: true
-            }
-        );
-
-        row.addEventListener(
-            "touchmove",
-            () => {
-
-                clearTimeout(
-                    pressTimer
-                );
-            },
-            {
-                passive: true
-            }
-        );
-    }
-
-    /* =====================================================
-       SEND TEXT
-    ===================================================== */
-
-    sendBtn?.addEventListener(
-        "click",
-        sendTextMessage
-    );
-
-    messageInput?.addEventListener(
-        "keydown",
-        event => {
-
-            if (
-                event.key === "Enter" &&
-                !event.shiftKey
-            ) {
-
-                event.preventDefault();
-
-                sendTextMessage();
-            }
-        }
-    );
-
-    async function sendTextMessage() {
-
-        const text =
-            messageInput?.value
-                ?.trim() || "";
-
-        if (!text) {
-            return;
-        }
-
-        if (
-            !currentUser ||
-            !chatId
-        ) {
-            return;
-        }
-
-        if (getBlockedState()) {
-
-            showToast(
-                "You cannot message this user.",
-                "warning"
-            );
-
-            return;
-        }
-
-        try {
-
-            const messageRef =
-                db
-                    .ref(
-                        `chats/${chatId}/messages`
-                    )
-                    .push();
-
-            const message = {
-
-                uid:
-                    currentUser.uid,
-
-                username:
-                    currentProfile.username ||
-                    currentUser.displayName ||
-                    "user",
-
-                type:
-                    "text",
-
-                text:
-                    text,
-
-                createdAt:
-                    firebase.database
-                        .ServerValue
-                        .TIMESTAMP,
-
-                seen:
-                    false
+                state.otherUser.lastSeen =
+                    user.lastSeen ||
+                    state.otherUser.lastSeen;
+
+                updatePresenceUI();
             };
 
-            addReplyData(
-                message
-            );
+        ref.on(
+            "value",
+            callback
+        );
 
-            await messageRef.set(
-                message
-            );
-
-            await updateChatList(
-                getMessagePreview(
-                    message
-                )
-            );
-
-            if (messageInput) {
-                messageInput.value = "";
-            }
-
-            autoResizeInput();
-
-            cancelReply();
-
-            stopTyping();
-
-            scrollToBottom();
-
-        } catch (error) {
-
-            console.error(
-                "SEND ERROR:",
-                error
-            );
-
-            showToast(
-                "Message could not be sent.",
-                "error"
-            );
-        }
+        state.presenceListener = {
+            ref,
+            callback
+        };
     }
 
-    /* =====================================================
-       REPLY
-    ===================================================== */
 
-    function addReplyData(
-        message
-    ) {
+    /* ======================================================
+       OWN PRESENCE
+    ====================================================== */
 
-        if (!replyingTo) {
+    function setOwnPresence() {
+
+        if (!state.currentUser) {
             return;
         }
 
-        message.replyTo = {
+        const uid =
+            state.currentUser.uid;
 
-            messageId:
-                replyingTo.id,
-
-            username:
-                replyingTo.username ||
-                "User",
-
-            text:
-                replyingTo.text ||
-                "[Media]"
-        };
-    }
-
-    function startReply(
-        messageId,
-        message
-    ) {
-
-        replyingTo = {
-
-            id:
-                messageId,
-
-            username:
-                message.username ||
-                (
-                    message.uid ===
-                    currentUser.uid
-                        ? "You"
-                        : otherProfile.name ||
-                          "User"
-                ),
-
-            text:
-                message.text ||
-                getMessagePreview(message)
-        };
-
-        if (replyUser) {
-            replyUser.textContent =
-                replyingTo.username;
-        }
-
-        if (replyText) {
-            replyText.textContent =
-                replyingTo.text;
-        }
-
-        replyPreview?.classList.remove(
-            "hidden"
-        );
-
-        messageInput?.focus();
-
-        closeMessageMenu();
-    }
-
-    function cancelReply() {
-
-        replyingTo = null;
-
-        replyPreview?.classList.add(
-            "hidden"
-        );
-    }
-
-    closeReplyPreview?.addEventListener(
-        "click",
-        cancelReply
-    );
-
-    /* =====================================================
-       CHAT LIST
-    ===================================================== */
-
-    async function updateChatList(
-        preview
-    ) {
-
-        const timestamp =
-            firebase.database
-                .ServerValue
-                .TIMESTAMP;
-
-        const myProfile =
-            currentProfile || {};
-
-        const other =
-            otherProfile || {};
-
-        const updates = {};
-
-        const otherName =
-            other.name ||
-            other.displayName ||
-            other.username ||
-            "User";
-
-        const myName =
-            myProfile.name ||
-            myProfile.displayName ||
-            myProfile.username ||
-            "User";
-
-        const otherPhoto =
-            other.profilePhoto ||
-            other.photoURL ||
-            other.avatar ||
-            "";
-
-        const myPhoto =
-            myProfile.profilePhoto ||
-            myProfile.photoURL ||
-            myProfile.avatar ||
-            "";
-
-        /* SENDER */
-
-        updates[
-            `userChats/${currentUser.uid}/${chatId}`
-        ] = {
-
-            chatId:
-                chatId,
-
-            userId:
-                otherUID,
-
-            name:
-                otherName,
-
-            username:
-                other.username || "",
-
-            photoURL:
-                otherPhoto,
-
-            lastMessage:
-                preview,
-
-            lastMessageTime:
-                timestamp,
-
-            unread:
-                0,
-
-            online:
-                other.online === true
-        };
-
-        /* RECEIVER */
-
-        const receiverRef =
+        const ref =
             db.ref(
-                `userChats/${otherUID}/${chatId}`
+                `users/${uid}`
             );
 
-        const receiverSnapshot =
-            await receiverRef.once(
-                "value"
-            );
+        const connectedRef =
+            db.ref(".info/connected");
 
-        const oldReceiver =
-            receiverSnapshot.val() || {};
-
-        updates[
-            `userChats/${otherUID}/${chatId}`
-        ] = {
-
-            chatId:
-                chatId,
-
-            userId:
-                currentUser.uid,
-
-            name:
-                myName,
-
-            username:
-                myProfile.username ||
-                "",
-
-            photoURL:
-                myPhoto,
-
-            lastMessage:
-                preview,
-
-            lastMessageTime:
-                timestamp,
-
-            unread:
-                Number(
-                    oldReceiver.unread || 0
-                ) + 1,
-
-            online:
-                currentUser.online === true
-        };
-
-        await db
-            .ref()
-            .update(
-                updates
-            );
-    }
-
-    /* =====================================================
-       MESSAGE PREVIEW
-    ===================================================== */
-
-    function getMessagePreview(
-        message
-    ) {
-
-        switch (
-            message.type
-        ) {
-
-            case "text":
-                return (
-                    message.text ||
-                    "New message"
-                );
-
-            case "image":
-                return "📷 Photo";
-
-            case "video":
-                return "🎥 Video";
-
-            case "audio":
-                return "🎵 Audio";
-
-            case "file":
-                return "📎 File";
-
-            default:
-                return "New message";
-        }
-    }
-
-    /* =====================================================
-       MARK CHAT READ
-    ===================================================== */
-
-    async function markChatAsRead() {
-
-        if (
-            !currentUser ||
-            !chatId
-        ) {
-            return;
-        }
-
-        try {
-
-            await db
-                .ref(
-                    `userChats/${currentUser.uid}/${chatId}/unread`
-                )
-                .set(0);
-
-        } catch (error) {
-
-            console.warn(
-                "markChatAsRead:",
-                error
-            );
-        }
-    }
-
-    /* =====================================================
-       MARK INCOMING SEEN
-    ===================================================== */
-
-    function markIncomingMessagesSeen(
-        snapshot
-    ) {
-
-        if (!currentUser) {
-            return;
-        }
-
-        const updates = {};
-
-        snapshot.forEach(
-            child => {
-
-                const message =
-                    child.val() || {};
+        const callback =
+            snapshot => {
 
                 if (
-                    message.uid !==
-                        currentUser.uid &&
-                    !message.seen &&
-                    !message.deleted
+                    snapshot.val() !== true
                 ) {
-
-                    updates[
-                        `chats/${chatId}/messages/${child.key}/seen`
-                    ] = true;
+                    return;
                 }
-            }
+
+                const presenceRef =
+                    ref;
+
+                presenceRef.update({
+                    online: true,
+                    isOnline: true
+                });
+
+                presenceRef.onDisconnect()
+                    .update({
+                        online: false,
+                        isOnline: false,
+                        lastSeen:
+                            serverTimestamp()
+                    });
+            };
+
+        connectedRef.on(
+            "value",
+            callback
         );
 
-        if (
-            Object.keys(updates).length
-        ) {
-
-            db.ref()
-                .update(updates)
-                .catch(
-                    console.error
-                );
-        }
+        state.userListener = {
+            ref: connectedRef,
+            callback
+        };
     }
 
-    /* =====================================================
-       TYPING
-    ===================================================== */
 
-    function setupTypingListener() {
+    /* ======================================================
+       CREATE CHAT META
+    ====================================================== */
 
-        cleanupTypingListener();
+    async function ensureChat() {
 
-        typingRef =
-            db.ref(
-                `typing/${chatId}/${otherUID}`
-            );
+        const now =
+            serverTimestamp();
 
-        typingListener =
+        const updates = {};
+
+        updates[
+            `vieworaChats/${state.chatId}/participants/${state.currentUser.uid}`
+        ] = true;
+
+        updates[
+            `vieworaChats/${state.chatId}/participants/${targetUid}`
+        ] = true;
+
+        updates[
+            `vieworaChats/${state.chatId}/updatedAt`
+        ] = now;
+
+        updates[
+            `vieworaChats/${state.chatId}/participantData/${state.currentUser.uid}/name`
+        ] =
+            state.currentUser.displayName ||
+            state.currentUser.email ||
+            "Viewora User";
+
+        updates[
+            `vieworaChats/${state.chatId}/participantData/${targetUid}/name`
+        ] =
+            state.otherUser.name;
+
+        await db.ref().update(
+            updates
+        );
+    }
+
+
+    /* ======================================================
+       MESSAGE LISTENER
+    ====================================================== */
+
+    function listenMessages() {
+
+        const ref =
+            messagesRef();
+
+        const callback =
             snapshot => {
 
                 const data =
                     snapshot.val();
 
+                if (!data) {
+
+                    state.messages.clear();
+
+                    renderMessages();
+
+                    return;
+                }
+
+                state.messages.clear();
+
+                Object.entries(data)
+                    .forEach(
+                        ([id, message]) => {
+
+                            if (!message) {
+                                return;
+                            }
+
+                            state.messages.set(
+                                id,
+                                {
+                                    ...message,
+                                    id
+                                }
+                            );
+                        }
+                    );
+
+                renderMessages();
+
+                markIncomingAsSeen();
+            };
+
+        ref.on(
+            "value",
+            callback
+        );
+
+        state.messagesListener = {
+            ref,
+            callback
+        };
+    }
+
+
+    /* ======================================================
+       SORT MESSAGES
+    ====================================================== */
+
+    function sortedMessages() {
+
+        return Array.from(
+            state.messages.values()
+        )
+            .sort(
+                (a, b) =>
+                    Number(
+                        a.createdAt || 0
+                    ) -
+                    Number(
+                        b.createdAt || 0
+                    )
+            );
+    }
+
+
+    /* ======================================================
+       MESSAGE TYPE
+    ====================================================== */
+
+    function messageKind(message) {
+
+        if (
+            message.deletedForEveryone
+        ) {
+            return "deleted";
+        }
+
+        if (
+            message.type === "image"
+        ) {
+            return "image";
+        }
+
+        if (
+            message.type === "video"
+        ) {
+            return "video";
+        }
+
+        if (
+            message.type === "audio"
+        ) {
+            return "audio";
+        }
+
+        if (
+            message.type === "file" ||
+            message.type === "document"
+        ) {
+            return "file";
+        }
+
+        return "text";
+    }
+
+
+    /* ======================================================
+       RENDER MESSAGES
+    ====================================================== */
+
+    function renderMessages() {
+
+        if (!messagesList) {
+            return;
+        }
+
+        const wasNearBottom =
+            isNearBottom();
+
+        const previousScroll =
+            chatContainer
+                ? chatContainer.scrollTop
+                : 0;
+
+        const list =
+            sortedMessages();
+
+        if (!list.length) {
+
+            messagesList.innerHTML = `
+                <div class="emptyChatState">
+                    <div class="emptyChatIcon">
+                        <i class="fa-regular fa-comments"></i>
+                    </div>
+                    <h3>Start a conversation</h3>
+                    <p>Send a message to ${escapeHTML(
+                        state.otherUser.name
+                    )}</p>
+                </div>
+            `;
+
+            return;
+        }
+
+        let html = "";
+
+        let previousDate = "";
+
+        list.forEach(
+            message => {
+
+                const dateKey =
+                    message.createdAt
+                        ? formatDate(
+                            message.createdAt
+                        )
+                        : "";
+
                 if (
-                    data &&
-                    data.typing === true
+                    dateKey &&
+                    dateKey !== previousDate
                 ) {
 
-                    if (typingText) {
+                    html += `
+                        <div class="messageDateDivider">
+                            <span>${escapeHTML(
+                                dateKey
+                            )}</span>
+                        </div>
+                    `;
 
-                        typingText.textContent =
-                            (
-                                otherProfile.name ||
-                                otherProfile.username ||
-                                "User"
-                            ) +
-                            " is typing...";
+                    previousDate =
+                        dateKey;
+                }
+
+                html +=
+                    renderMessage(
+                        message
+                    );
+            }
+        );
+
+        messagesList.innerHTML =
+            html;
+
+        bindMessageElements();
+
+        applySearchHighlight();
+
+        if (wasNearBottom) {
+
+            requestAnimationFrame(
+                scrollToBottom
+            );
+
+        } else if (chatContainer) {
+
+            chatContainer.scrollTop =
+                previousScroll;
+        }
+    }
+
+
+    /* ======================================================
+       RENDER SINGLE MESSAGE
+    ====================================================== */
+
+    function renderMessage(message) {
+
+        const mine =
+            message.senderId ===
+            state.currentUser.uid;
+
+        const kind =
+            messageKind(message);
+
+        const deleted =
+            kind === "deleted";
+
+        const edited =
+            Boolean(message.edited);
+
+        const pinned =
+            Boolean(message.pinned);
+
+        const time =
+            formatTime(
+                message.createdAt
+            );
+
+        const status =
+            mine
+                ? renderStatus(
+                    message
+                )
+                : "";
+
+        const reactionHTML =
+            renderReactions(
+                message
+            );
+
+        const replyHTML =
+            renderReplyPreview(
+                message.replyTo
+            );
+
+        let content = "";
+
+        if (deleted) {
+
+            content = `
+                <div class="deletedMessage">
+                    <i class="fa-solid fa-ban"></i>
+                    <span>
+                        This message was deleted
+                    </span>
+                </div>
+            `;
+
+        } else if (kind === "image") {
+
+            content = `
+                <button
+                    class="mediaMessage imageMessage"
+                    data-action="image"
+                    data-id="${escapeHTML(message.id)}"
+                    type="button"
+                >
+                    <img
+                        src="${escapeHTML(
+                            safeURL(message.url)
+                        )}"
+                        alt="${escapeHTML(
+                            message.caption ||
+                            "Image"
+                        )}"
+                        loading="lazy"
+                    >
+                    ${
+                        message.caption
+                            ? `<span class="mediaCaption">
+                                ${formatText(
+                                    message.caption
+                                )}
+                               </span>`
+                            : ""
+                    }
+                </button>
+            `;
+
+        } else if (kind === "video") {
+
+            content = `
+                <button
+                    class="mediaMessage videoMessage"
+                    data-action="video"
+                    data-id="${escapeHTML(message.id)}"
+                    type="button"
+                >
+                    <div class="videoThumb">
+                        <video
+                            src="${escapeHTML(
+                                safeURL(message.url)
+                            )}"
+                            preload="metadata"
+                            muted
+                            playsinline
+                        ></video>
+                        <span class="playOverlay">
+                            <i class="fa-solid fa-play"></i>
+                        </span>
+                    </div>
+
+                    ${
+                        message.caption
+                            ? `<span class="mediaCaption">
+                                ${formatText(
+                                    message.caption
+                                )}
+                               </span>`
+                            : ""
+                    }
+                </button>
+            `;
+
+        } else if (kind === "audio") {
+
+            content = `
+                <div class="audioMessage">
+                    <div class="audioIcon">
+                        <i class="fa-solid fa-music"></i>
+                    </div>
+                    <div class="audioContent">
+                        <strong>
+                            ${escapeHTML(
+                                message.fileName ||
+                                "Voice message"
+                            )}
+                        </strong>
+                        <audio
+                            controls
+                            preload="metadata"
+                            src="${escapeHTML(
+                                safeURL(message.url)
+                            )}"
+                        ></audio>
+                    </div>
+                </div>
+            `;
+
+        } else if (kind === "file") {
+
+            content = `
+                <a
+                    class="fileMessage"
+                    href="${escapeHTML(
+                        safeURL(message.url)
+                    )}"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                >
+                    <span class="fileMessageIcon">
+                        <i class="fa-solid fa-file"></i>
+                    </span>
+
+                    <span class="fileMessageInfo">
+                        <strong>
+                            ${escapeHTML(
+                                message.fileName ||
+                                "Document"
+                            )}
+                        </strong>
+
+                        <small>
+                            ${escapeHTML(
+                                formatFileSize(
+                                    message.fileSize
+                                )
+                            )}
+                        </small>
+                    </span>
+
+                    <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                </a>
+            `;
+
+        } else {
+
+            content = `
+                <div class="textMessage">
+                    ${formatText(
+                        message.text || ""
+                    )}
+                </div>
+            `;
+        }
+
+        return `
+            <article
+                class="messageRow ${
+                    mine
+                        ? "mine"
+                        : "theirs"
+                } ${
+                    pinned
+                        ? "isPinned"
+                        : ""
+                }"
+                data-message-id="${escapeHTML(
+                    message.id
+                )}"
+            >
+
+                <div
+                    class="messageBubble"
+                    data-message-id="${escapeHTML(
+                        message.id
+                    )}"
+                    data-mine="${mine ? "1" : "0"}"
+                >
+
+                    ${
+                        pinned
+                            ? `
+                                <div class="pinnedLabel">
+                                    <i class="fa-solid fa-thumbtack"></i>
+                                    Pinned
+                                </div>
+                              `
+                            : ""
                     }
 
-                    typingIndicator?.classList.remove(
-                        "hidden"
+                    ${replyHTML}
+
+                    ${content}
+
+                    ${
+                        edited
+                            ? `
+                                <span class="editedLabel">
+                                    edited
+                                </span>
+                              `
+                            : ""
+                    }
+
+                    <div class="messageMeta">
+
+                        <time>
+                            ${escapeHTML(time)}
+                        </time>
+
+                        ${status}
+
+                    </div>
+
+                    ${reactionHTML}
+
+                </div>
+
+            </article>
+        `;
+    }
+
+
+    /* ======================================================
+       FORMAT TEXT
+    ====================================================== */
+
+    function formatText(text) {
+
+        let safe =
+            escapeHTML(text);
+
+        if (state.searchTerm) {
+
+            const term =
+                escapeRegExp(
+                    state.searchTerm
+                );
+
+            if (term) {
+
+                const regex =
+                    new RegExp(
+                        `(${term})`,
+                        "gi"
                     );
 
-                } else {
-
-                    typingIndicator?.classList.add(
-                        "hidden"
+                safe =
+                    safe.replace(
+                        regex,
+                        "<mark>$1</mark>"
                     );
+            }
+        }
+
+        return safe
+            .replace(/\n/g, "<br>");
+    }
+
+
+    function escapeRegExp(value) {
+
+        return String(value)
+            .replace(
+                /[.*+?^${}()|[\]\\]/g,
+                "\\$&"
+            );
+    }
+
+
+    /* ======================================================
+       REPLY PREVIEW
+    ====================================================== */
+
+    function renderReplyPreview(reply) {
+
+        if (!reply) {
+            return "";
+        }
+
+        return `
+            <div class="messageReplyPreview">
+
+                <strong>
+                    ${escapeHTML(
+                        reply.senderName ||
+                        "Message"
+                    )}
+                </strong>
+
+                <span>
+                    ${escapeHTML(
+                        reply.text ||
+                        reply.fileName ||
+                        "Media"
+                    )}
+                </span>
+
+            </div>
+        `;
+    }
+
+
+    /* ======================================================
+       MESSAGE STATUS
+    ====================================================== */
+
+    function renderStatus(message) {
+
+        if (message.seenAt) {
+
+            return `
+                <span
+                    class="messageStatus seen"
+                    title="Seen"
+                >
+                    <i class="fa-solid fa-check-double"></i>
+                </span>
+            `;
+        }
+
+        if (message.deliveredAt) {
+
+            return `
+                <span
+                    class="messageStatus delivered"
+                    title="Delivered"
+                >
+                    <i class="fa-solid fa-check-double"></i>
+                </span>
+            `;
+        }
+
+        return `
+            <span
+                class="messageStatus sent"
+                title="Sent"
+            >
+                <i class="fa-solid fa-check"></i>
+            </span>
+        `;
+    }
+
+
+    /* ======================================================
+       REACTIONS
+    ====================================================== */
+
+    function renderReactions(message) {
+
+        const reactions =
+            message.reactions;
+
+        if (
+            !reactions ||
+            typeof reactions !== "object"
+        ) {
+            return "";
+        }
+
+        const counts = {};
+
+        Object.values(reactions)
+            .forEach(reaction => {
+
+                if (!reaction) {
+                    return;
                 }
-            };
 
-        typingRef.on(
-            "value",
-            typingListener
-        );
-    }
-
-    function cleanupTypingListener() {
-
-        if (
-            typingRef &&
-            typingListener
-        ) {
-
-            typingRef.off(
-                "value",
-                typingListener
-            );
-        }
-
-        typingRef = null;
-        typingListener = null;
-    }
-
-    messageInput?.addEventListener(
-        "input",
-        () => {
-
-            autoResizeInput();
-
-            if (
-                currentUser &&
-                chatId &&
-                !getBlockedState()
-            ) {
-
-                setTyping(true);
-
-                clearTimeout(
-                    typingTimer
-                );
-
-                typingTimer =
-                    setTimeout(
-                        stopTyping,
-                        1400
-                    );
-            }
-        }
-    );
-
-    function setTyping(
-        value
-    ) {
-
-        if (
-            !currentUser ||
-            !chatId
-        ) {
-            return;
-        }
-
-        db.ref(
-            `typing/${chatId}/${currentUser.uid}`
-        ).set({
-
-            typing:
-                value,
-
-            username:
-                currentProfile.username ||
-                currentUser.displayName ||
-                "user",
-
-            timestamp:
-                firebase.database
-                    .ServerValue
-                    .TIMESTAMP
-
-        }).catch(
-            console.error
-        );
-    }
-
-    function stopTyping() {
-
-        clearTimeout(
-            typingTimer
-        );
-
-        if (
-            currentUser &&
-            chatId
-        ) {
-
-            db.ref(
-                `typing/${chatId}/${currentUser.uid}`
-            )
-                .remove()
-                .catch(
-                    console.error
-                );
-        }
-    }
-
-    /* =====================================================
-       BLOCK SYSTEM
-    ===================================================== */
-
-    function setupBlockedListener() {
-
-        cleanupBlockedListener();
-
-        blockedRef =
-            db.ref(
-                `blocks/${currentUser.uid}/${otherUID}`
-            );
-
-        blockedListener =
-            snapshot => {
-
-                const blocked =
-                    snapshot.val() === true;
-
-                updateBlockedUI(
-                    blocked
-                );
-            };
-
-        blockedRef.on(
-            "value",
-            blockedListener,
-            error => {
-
-                console.error(
-                    "Block listener:",
-                    error
-                );
-            }
-        );
-    }
-
-    function cleanupBlockedListener() {
-
-        if (
-            blockedRef &&
-            blockedListener
-        ) {
-
-            blockedRef.off(
-                "value",
-                blockedListener
-            );
-        }
-
-        blockedRef = null;
-        blockedListener = null;
-    }
-
-    function isBlocked() {
-        return getBlockedState();
-    }
-
-    function updateBlockedUI(
-        blocked
-    ) {
-
-        setBlockedState(
-            blocked
-        );
-
-        if (messageInput) {
-
-            messageInput.disabled =
-                blocked;
-
-            messageInput.placeholder =
-                blocked
-                    ? "You blocked this user"
-                    : "Message...";
-        }
-
-        if (sendBtn) {
-            sendBtn.disabled =
-                blocked;
-        }
-
-        if (attachBtn) {
-            attachBtn.disabled =
-                blocked;
-        }
-
-        if (cameraBtn) {
-            cameraBtn.disabled =
-                blocked;
-        }
-
-        if (voiceBtn) {
-            voiceBtn.disabled =
-                blocked;
-        }
-
-        const blockButton =
-            $("dynamicBlockBtn");
-
-        if (blockButton) {
-
-            blockButton.innerHTML =
-                blocked
-                    ? '<i class="fa-solid fa-unlock"></i><span>Unblock User</span>'
-                    : '<i class="fa-solid fa-ban"></i><span>Block User</span>';
-        }
-    }
-
-    async function toggleBlock() {
-
-        if (
-            !currentUser ||
-            !otherUID
-        ) {
-            return;
-        }
-
-        try {
-
-            const myBlockRef =
-                db.ref(
-                    `blocks/${currentUser.uid}/${otherUID}`
-                );
-
-            const snapshot =
-                await myBlockRef.once(
-                    "value"
-                );
-
-            const blocked =
-                snapshot.val() === true;
-
-            if (blocked) {
-
-                await myBlockRef.remove();
-
-                await db
-                    .ref(
-                        `blocks/${otherUID}/${currentUser.uid}`
-                    )
-                    .remove();
-
-                showToast(
-                    "User unblocked"
-                );
-
-            } else {
-
-                await myBlockRef.set(
-                    true
-                );
-
-                await db
-                    .ref(
-                        `blocks/${otherUID}/${currentUser.uid}`
-                    )
-                    .set(true);
-
-                stopTyping();
-
-                showToast(
-                    "User blocked"
-                );
-            }
-
-            closeChatMenu();
-
-        } catch (error) {
-
-            console.error(
-                "BLOCK ERROR:",
-                error
-            );
-
-            showToast(
-                "Unable to update block status.",
-                "error"
-            );
-        }
-    }
-
-    /* =====================================================
-       REPORT
-    ===================================================== */
-
-    async function reportUser() {
-
-        const reason =
-            window.prompt(
-                "Why do you want to report this user?"
-            );
-
-        if (
-            !reason ||
-            !reason.trim()
-        ) {
-            return;
-        }
-
-        try {
-
-            const reportRef =
-                db
-                    .ref("reports")
-                    .push();
-
-            await reportRef.set({
-
-                reporter:
-                    currentUser.uid,
-
-                reportedUser:
-                    otherUID,
-
-                chatId:
-                    chatId,
-
-                reason:
-                    reason.trim(),
-
-                createdAt:
-                    firebase.database
-                        .ServerValue
-                        .TIMESTAMP,
-
-                status:
-                    "pending"
+                counts[reaction] =
+                    (counts[reaction] || 0) + 1;
             });
 
-            showToast(
-                "Report submitted"
-            );
+        const entries =
+            Object.entries(counts);
 
-            closeChatMenu();
-
-        } catch (error) {
-
-            console.error(
-                "REPORT ERROR:",
-                error
-            );
-
-            showToast(
-                "Could not submit report.",
-                "error"
-            );
+        if (!entries.length) {
+            return "";
         }
+
+        return `
+            <div class="messageReactions">
+
+                ${entries
+                    .map(
+                        ([emoji, count]) => `
+                            <button
+                                type="button"
+                                class="reactionChip"
+                                data-reaction="${escapeHTML(
+                                    emoji
+                                )}"
+                            >
+                                <span>${escapeHTML(
+                                    emoji
+                                )}</span>
+                                <small>${count}</small>
+                            </button>
+                        `
+                    )
+                    .join("")}
+
+            </div>
+        `;
     }
 
-    /* =====================================================
-       SAFETY MENU
-    ===================================================== */
 
-    function addSafetyMenuItems() {
+    /* ======================================================
+       BIND MESSAGE EVENTS
+    ====================================================== */
 
-        if (!chatMenu) {
+    function bindMessageElements() {
+
+        if (!messagesList) {
             return;
         }
 
-        let block =
-            $("dynamicBlockBtn");
+        messagesList
+            .querySelectorAll(
+                ".messageBubble"
+            )
+            .forEach(
+                element => {
 
-        if (!block) {
+                    element.addEventListener(
+                        "contextmenu",
+                        event => {
 
-            block =
-                document.createElement(
-                    "button"
-                );
+                            event.preventDefault();
 
-            block.id =
-                "dynamicBlockBtn";
+                            const id =
+                                element.dataset.messageId;
 
-            block.className =
-                "menuItem danger";
+                            openMessageMenu(
+                                id,
+                                event.clientX,
+                                event.clientY
+                            );
+                        }
+                    );
 
-            block.type =
-                "button";
+                    let pressTimer =
+                        null;
 
-            block.addEventListener(
-                "click",
-                toggleBlock
+                    element.addEventListener(
+                        "touchstart",
+                        event => {
+
+                            const touch =
+                                event.touches[0];
+
+                            pressTimer =
+                                setTimeout(
+                                    () => {
+
+                                        openMessageMenu(
+                                            element.dataset.messageId,
+                                            touch.clientX,
+                                            touch.clientY
+                                        );
+
+                                    },
+                                    550
+                                );
+                        },
+                        {
+                            passive: true
+                        }
+                    );
+
+                    element.addEventListener(
+                        "touchend",
+                        () => {
+
+                            if (pressTimer) {
+                                clearTimeout(
+                                    pressTimer
+                                );
+                            }
+                        }
+                    );
+
+                    element.addEventListener(
+                        "touchmove",
+                        () => {
+
+                            if (pressTimer) {
+                                clearTimeout(
+                                    pressTimer
+                                );
+                            }
+                        },
+                        {
+                            passive: true
+                        }
+                    );
+                }
             );
 
-            chatMenu.appendChild(
-                block
-            );
-        }
 
-        let report =
-            $("dynamicReportBtn");
+        messagesList
+            .querySelectorAll(
+                "[data-action='image']"
+            )
+            .forEach(
+                element => {
 
-        if (!report) {
+                    element.addEventListener(
+                        "click",
+                        () => {
 
-            report =
-                document.createElement(
-                    "button"
-                );
+                            const message =
+                                state.messages.get(
+                                    element.dataset.id
+                                );
 
-            report.id =
-                "dynamicReportBtn";
-
-            report.className =
-                "menuItem danger";
-
-            report.type =
-                "button";
-
-            report.innerHTML =
-                '<i class="fa-solid fa-flag"></i>' +
-                '<span>Report User</span>';
-
-            report.addEventListener(
-                "click",
-                reportUser
+                            if (message) {
+                                openImageViewer(
+                                    message.url
+                                );
+                            }
+                        }
+                    );
+                }
             );
 
-            chatMenu.appendChild(
-                report
-            );
-        }
 
-        updateBlockedUI(
-            isBlocked()
-        );
+        messagesList
+            .querySelectorAll(
+                "[data-action='video']"
+            )
+            .forEach(
+                element => {
+
+                    element.addEventListener(
+                        "click",
+                        () => {
+
+                            const message =
+                                state.messages.get(
+                                    element.dataset.id
+                                );
+
+                            if (message) {
+                                openVideoViewer(
+                                    message.url
+                                );
+                            }
+                        }
+                    );
+                }
+            );
+
+
+        messagesList
+            .querySelectorAll(
+                ".reactionChip"
+            )
+            .forEach(
+                element => {
+
+                    element.addEventListener(
+                        "click",
+                        event => {
+
+                            event.stopPropagation();
+
+                            const bubble =
+                                element.closest(
+                                    ".messageBubble"
+                                );
+
+                            if (!bubble) {
+                                return;
+                            }
+
+                            toggleReaction(
+                                bubble.dataset.messageId,
+                                element.dataset.reaction
+                            );
+                        }
+                    );
+                }
+            );
     }
 
-    /* =====================================================
+
+    /* ======================================================
        MESSAGE MENU
-    ===================================================== */
+    ====================================================== */
 
     function openMessageMenu(
-        id,
-        message,
+        messageId,
         x,
         y
     ) {
 
-        selectedMessageId =
-            id;
+        const message =
+            state.messages.get(
+                messageId
+            );
 
-        selectedMessageData =
+        if (!message) {
+            return;
+        }
+
+        state.selectedMessage =
             message;
+
+        state.currentMessageId =
+            messageId;
 
         if (!messageMenu) {
             return;
         }
 
-        messageMenu.classList.remove(
-            "hidden"
-        );
+        const mine =
+            message.senderId ===
+            state.currentUser.uid;
+
+        if (editMessageBtn) {
+
+            editMessageBtn.classList.toggle(
+                "hidden",
+                !mine ||
+                message.type !== "text" ||
+                Boolean(
+                    message.deletedForEveryone
+                )
+            );
+        }
+
+        if (deleteMessageBtn) {
+            deleteMessageBtn.classList.remove(
+                "hidden"
+            );
+        }
+
+        if (messageMenu.style.position !== "fixed") {
+
+            messageMenu.style.position =
+                "fixed";
+        }
 
         const width =
-            messageMenu.offsetWidth ||
             220;
 
         const height =
-            messageMenu.offsetHeight ||
-            300;
+            Math.min(
+                messageMenu.scrollHeight || 400,
+                420
+            );
 
         let left =
-            Math.min(
-                x,
-                window.innerWidth -
-                width -
-                12
-            );
+            Number(x || 0);
 
         let top =
-            Math.min(
-                y,
+            Number(y || 0);
+
+        if (
+            left + width >
+            window.innerWidth - 12
+        ) {
+            left =
+                window.innerWidth -
+                width -
+                12;
+        }
+
+        if (
+            top + height >
+            window.innerHeight - 12
+        ) {
+            top =
                 window.innerHeight -
                 height -
-                12
-            );
+                12;
+        }
 
         left =
             Math.max(
@@ -2445,177 +2167,718 @@ function setupMessagesListener() {
             );
 
         messageMenu.style.left =
-            left + "px";
+            `${left}px`;
 
         messageMenu.style.top =
-            top + "px";
-    }
+            `${top}px`;
 
-    function closeMessageMenu() {
-
-        messageMenu?.classList.add(
+        messageMenu.classList.remove(
             "hidden"
         );
     }
 
-    /* =====================================================
-       MESSAGE MENU ACTIONS
-    ===================================================== */
 
-    $("replyMessageBtn")?.addEventListener(
-        "click",
-        () => {
+    function closeMessageMenu() {
 
-            if (
-                selectedMessageId &&
-                selectedMessageData
-            ) {
-
-                startReply(
-                    selectedMessageId,
-                    selectedMessageData
-                );
-            }
-        }
-    );
-
-    $("copyMessageBtn")?.addEventListener(
-        "click",
-        async () => {
-
-            const text =
-                selectedMessageData?.text;
-
-            if (!text) {
-
-                showToast(
-                    "Nothing to copy.",
-                    "warning"
-                );
-
-                closeMessageMenu();
-
-                return;
-            }
-
-            try {
-
-                await navigator.clipboard.writeText(
-                    text
-                );
-
-                showToast(
-                    "Message copied"
-                );
-
-            } catch (error) {
-
-                console.error(
-                    error
-                );
-
-                showToast(
-                    "Copy failed.",
-                    "error"
-                );
-            }
-
-            closeMessageMenu();
-        }
-    );
-
-    $("reactMessageBtn")?.addEventListener(
-        "click",
-        () => {
-
-            reactionBar?.classList.remove(
+        if (messageMenu) {
+            messageMenu.classList.add(
                 "hidden"
             );
-
-            closeMessageMenu();
         }
-    );
+    }
 
-    $("editMessageBtn")?.addEventListener(
-        "click",
-        editSelectedMessage
-    );
 
-    $("deleteMessageBtn")?.addEventListener(
-        "click",
-        () => {
+    /* ======================================================
+       REPLY
+    ====================================================== */
 
-            deleteModal?.classList.remove(
+    function startReply(message) {
+
+        if (!message) {
+            return;
+        }
+
+        state.replyTo = {
+            id: message.id,
+            senderId: message.senderId,
+            senderName:
+                message.senderId ===
+                state.currentUser.uid
+                    ? "You"
+                    : state.otherUser.name,
+            text:
+                message.text ||
+                message.caption ||
+                message.fileName ||
+                "Media",
+            type:
+                message.type ||
+                "text"
+        };
+
+        state.editingMessageId =
+            null;
+
+        if (replyUser) {
+            replyUser.textContent =
+                state.replyTo.senderName;
+        }
+
+        if (replyText) {
+            replyText.textContent =
+                state.replyTo.text;
+        }
+
+        if (replyPreview) {
+            replyPreview.classList.remove(
                 "hidden"
             );
-
-            closeMessageMenu();
         }
-    );
 
-    $("pinMessageBtn")?.addEventListener(
-        "click",
-        pinSelectedMessage
-    );
+        closeMessageMenu();
 
-    $("infoMessageBtn")?.addEventListener(
-        "click",
-        showMessageInfo
-    );
+        messageInput?.focus();
+    }
 
-    /* =====================================================
-       REACTIONS
-    ===================================================== */
 
-    reactionBar?.querySelectorAll(
-        "button"
-    ).forEach(
-        button => {
+    function clearReply() {
 
-            button.addEventListener(
-                "click",
-                () => {
+        state.replyTo =
+            null;
 
-                    const emoji =
-                        button.textContent
-                            .trim();
-
-                    if (
-                        selectedMessageId
-                    ) {
-
-                        reactToMessage(
-                            selectedMessageId,
-                            emoji
-                        );
-                    }
-
-                    reactionBar.classList.add(
-                        "hidden"
-                    );
-                }
+        if (replyPreview) {
+            replyPreview.classList.add(
+                "hidden"
             );
         }
-    );
+    }
 
-    async function reactToMessage(
-        messageId,
-        emoji
-    ) {
+
+    /* ======================================================
+       EDIT
+    ====================================================== */
+
+    function startEdit(message) {
+
+        if (!message) {
+            return;
+        }
 
         if (
-            !currentUser ||
-            !chatId
+            message.senderId !==
+            state.currentUser.uid
         ) {
+            return;
+        }
+
+        if (
+            message.type &&
+            message.type !== "text"
+        ) {
+            showToast(
+                "Only text messages can be edited.",
+                "warning"
+            );
+
+            return;
+        }
+
+        state.editingMessageId =
+            message.id;
+
+        state.replyTo =
+            null;
+
+        if (replyPreview) {
+            replyPreview.classList.add(
+                "hidden"
+            );
+        }
+
+        if (messageInput) {
+
+            messageInput.value =
+                message.text || "";
+
+            messageInput.focus();
+
+            autoResizeInput();
+
+            try {
+                messageInput.setSelectionRange(
+                    messageInput.value.length,
+                    messageInput.value.length
+                );
+            } catch (_) {}
+        }
+
+        closeMessageMenu();
+    }
+
+
+    async function saveEditedMessage() {
+
+        const id =
+            state.editingMessageId;
+
+        if (!id) {
+            return false;
+        }
+
+        const message =
+            state.messages.get(id);
+
+        if (!message) {
+            return false;
+        }
+
+        const text =
+            String(
+                messageInput?.value || ""
+            ).trim();
+
+        if (!text) {
+            showToast(
+                "Message cannot be empty.",
+                "warning"
+            );
+
+            return false;
+        }
+
+        if (
+            text.length >
+            MAX_MESSAGE_LENGTH
+        ) {
+            showToast(
+                "Message is too long.",
+                "warning"
+            );
+
+            return false;
+        }
+
+        try {
+
+            await messagesRef()
+                .child(id)
+                .update({
+                    text,
+                    edited: true,
+                    editedAt:
+                        serverTimestamp()
+                });
+
+            state.editingMessageId =
+                null;
+
+            messageInput.value = "";
+
+            autoResizeInput();
+
+            updateComposerMode();
+
+            showToast(
+                "Message edited."
+            );
+
+            return true;
+
+        } catch (error) {
+
+            console.error(
+                "Edit message error:",
+                error
+            );
+
+            showToast(
+                "Unable to edit message.",
+                "error"
+            );
+
+            return false;
+        }
+    }
+
+
+    /* ======================================================
+       SEND TEXT
+    ====================================================== */
+
+    async function sendText() {
+
+        if (!state.currentUser) {
+            return;
+        }
+
+        if (state.editingMessageId) {
+
+            await saveEditedMessage();
+
+            return;
+        }
+
+        const text =
+            String(
+                messageInput?.value || ""
+            ).trim();
+
+        if (!text) {
+            return;
+        }
+
+        if (
+            text.length >
+            MAX_MESSAGE_LENGTH
+        ) {
+            showToast(
+                "Message is too long.",
+                "warning"
+            );
+
+            return;
+        }
+
+        const messageRef =
+            messagesRef().push();
+
+        const message = {
+
+            id:
+                messageRef.key,
+
+            senderId:
+                state.currentUser.uid,
+
+            receiverId:
+                targetUid,
+
+            type:
+                "text",
+
+            text,
+
+            createdAt:
+                serverTimestamp(),
+
+            deliveredAt:
+                null,
+
+            seenAt:
+                null,
+
+            edited:
+                false,
+
+            pinned:
+                false,
+
+            deletedForEveryone:
+                false
+
+        };
+
+        if (state.replyTo) {
+
+            message.replyTo =
+                {
+                    ...state.replyTo
+                };
+        }
+
+        try {
+
+            await messageRef.set(
+                message
+            );
+
+            messageInput.value =
+                "";
+
+            autoResizeInput();
+
+            clearReply();
+
+            setTyping(false);
+
+            updateComposerMode();
+
+            requestAnimationFrame(
+                scrollToBottom
+            );
+
+        } catch (error) {
+
+            console.error(
+                "Send message error:",
+                error
+            );
+
+            showToast(
+                "Message could not be sent.",
+                "error"
+            );
+        }
+    }
+
+
+    /* ======================================================
+       MARK DELIVERED / SEEN
+    ====================================================== */
+
+    async function markIncomingAsSeen() {
+
+        if (!state.currentUser) {
+            return;
+        }
+
+        const updates = {};
+
+        state.messages.forEach(
+            message => {
+
+                if (
+                    message.senderId ===
+                    state.currentUser.uid
+                ) {
+                    return;
+                }
+
+                if (
+                    message.seenAt
+                ) {
+                    return;
+                }
+
+                updates[
+                    `${message.id}/deliveredAt`
+                ] =
+                    message.deliveredAt ||
+                    serverTimestamp();
+
+                if (
+                    state.isNearBottom
+                ) {
+                    updates[
+                        `${message.id}/seenAt`
+                    ] =
+                        serverTimestamp();
+                }
+            }
+        );
+
+        if (!Object.keys(updates).length) {
             return;
         }
 
         try {
 
-            const ref =
-                db.ref(
-                    `chats/${chatId}/messages/${messageId}/reactions/${currentUser.uid}`
+            await messagesRef()
+                .update(
+                    updates
                 );
+
+        } catch (error) {
+
+            console.warn(
+                "Read receipt error:",
+                error
+            );
+        }
+    }
+
+
+    /* ======================================================
+       DELETE MESSAGE
+    ====================================================== */
+
+    function openDeleteModal() {
+
+        if (!state.selectedMessage) {
+            return;
+        }
+
+        closeMessageMenu();
+
+        if (deleteModal) {
+            deleteModal.classList.remove(
+                "hidden"
+            );
+        }
+    }
+
+
+    function closeDeleteModal() {
+
+        if (deleteModal) {
+            deleteModal.classList.add(
+                "hidden"
+            );
+        }
+    }
+
+
+    async function deleteForMe() {
+
+        const message =
+            state.selectedMessage;
+
+        if (!message) {
+            return;
+        }
+
+        try {
+
+            await db.ref(
+                `vieworaChats/${state.chatId}/userDeleted/${state.currentUser.uid}/${message.id}`
+            ).set(
+                true
+            );
+
+            closeDeleteModal();
+
+            showToast(
+                "Message deleted for you."
+            );
+
+            await loadUserDeleted();
+
+        } catch (error) {
+
+            console.error(
+                "Delete for me error:",
+                error
+            );
+
+            showToast(
+                "Unable to delete message.",
+                "error"
+            );
+        }
+    }
+
+
+    async function deleteForEveryone() {
+
+        const message =
+            state.selectedMessage;
+
+        if (!message) {
+            return;
+        }
+
+        if (
+            message.senderId !==
+            state.currentUser.uid
+        ) {
+            showToast(
+                "You can only delete your own message for everyone.",
+                "warning"
+            );
+
+            closeDeleteModal();
+
+            return;
+        }
+
+        try {
+
+            await messagesRef()
+                .child(message.id)
+                .update({
+                    deletedForEveryone:
+                        true,
+
+                    deletedAt:
+                        serverTimestamp(),
+
+                    text:
+                        "",
+
+                    caption:
+                        ""
+                });
+
+            closeDeleteModal();
+
+            showToast(
+                "Message deleted for everyone."
+            );
+
+        } catch (error) {
+
+            console.error(
+                "Delete for everyone error:",
+                error
+            );
+
+            showToast(
+                "Unable to delete message.",
+                "error"
+            );
+        }
+    }
+
+
+    /* ======================================================
+       USER DELETED MESSAGES
+    ====================================================== */
+
+    async function loadUserDeleted() {
+
+        if (!state.currentUser) {
+            return;
+        }
+
+        try {
+
+            const snapshot =
+                await db.ref(
+                    `vieworaChats/${state.chatId}/userDeleted/${state.currentUser.uid}`
+                ).once("value");
+
+            const deleted =
+                snapshot.val() || {};
+
+            deleted &&
+                Object.keys(deleted)
+                    .forEach(id => {
+                        state.messages.delete(
+                            id
+                        );
+                    });
+
+            renderMessages();
+
+        } catch (error) {
+
+            console.warn(
+                "User deleted messages error:",
+                error
+            );
+        }
+    }
+
+
+    /* ======================================================
+       COPY MESSAGE
+    ====================================================== */
+
+    async function copySelectedMessage() {
+
+        const message =
+            state.selectedMessage;
+
+        closeMessageMenu();
+
+        if (!message) {
+            return;
+        }
+
+        const text =
+            message.text ||
+            message.caption ||
+            message.fileName ||
+            message.url ||
+            "";
+
+        if (!text) {
+
+            showToast(
+                "Nothing to copy.",
+                "warning"
+            );
+
+            return;
+        }
+
+        try {
+
+            if (
+                navigator.clipboard &&
+                navigator.clipboard.writeText
+            ) {
+
+                await navigator.clipboard
+                    .writeText(
+                        text
+                    );
+
+            } else {
+
+                const textarea =
+                    document.createElement(
+                        "textarea"
+                    );
+
+                textarea.value =
+                    text;
+
+                textarea.style.position =
+                    "fixed";
+
+                textarea.style.opacity =
+                    "0";
+
+                document.body.appendChild(
+                    textarea
+                );
+
+                textarea.select();
+
+                document.execCommand(
+                    "copy"
+                );
+
+                textarea.remove();
+            }
+
+            showToast(
+                "Copied to clipboard."
+            );
+
+        } catch (error) {
+
+            console.warn(
+                "Copy error:",
+                error
+            );
+
+            showToast(
+                "Could not copy message.",
+                "error"
+            );
+        }
+    }
+
+
+    /* ======================================================
+       REACTION
+    ====================================================== */
+
+    async function toggleReaction(
+        messageId,
+        emoji
+    ) {
+
+        if (
+            !state.currentUser ||
+            !messageId ||
+            !emoji
+        ) {
+            return;
+        }
+
+        const uid =
+            state.currentUser.uid;
+
+        const ref =
+            messagesRef()
+                .child(messageId)
+                .child("reactions")
+                .child(uid);
+
+        try {
 
             const snapshot =
                 await ref.once(
@@ -2623,6 +2886,7 @@ function setupMessagesListener() {
                 );
 
             if (
+                snapshot.exists() &&
                 snapshot.val() === emoji
             ) {
 
@@ -2638,152 +2902,62 @@ function setupMessagesListener() {
         } catch (error) {
 
             console.error(
-                "REACTION ERROR:",
-                error
-            );
-        }
-    }
-
-    /* =====================================================
-       EDIT MESSAGE
-    ===================================================== */
-
-    async function editSelectedMessage() {
-
-        closeMessageMenu();
-
-        if (
-            !selectedMessageId ||
-            !selectedMessageData
-        ) {
-            return;
-        }
-
-        if (
-            selectedMessageData.uid !==
-            currentUser.uid
-        ) {
-
-            showToast(
-                "You can edit only your messages.",
-                "warning"
-            );
-
-            return;
-        }
-
-        if (
-            selectedMessageData.type !==
-            "text"
-        ) {
-
-            showToast(
-                "Only text messages can be edited.",
-                "warning"
-            );
-
-            return;
-        }
-
-        const newText =
-            window.prompt(
-                "Edit message:",
-                selectedMessageData.text ||
-                ""
-            );
-
-        if (
-            newText === null ||
-            !newText.trim()
-        ) {
-            return;
-        }
-
-        try {
-
-            const cleanText =
-                newText.trim();
-
-            await db
-                .ref(
-                    `chats/${chatId}/messages/${selectedMessageId}`
-                )
-                .update({
-
-                    text:
-                        cleanText,
-
-                    edited:
-                        true,
-
-                    editedAt:
-                        firebase.database
-                            .ServerValue
-                            .TIMESTAMP
-                });
-
-            await db
-                .ref(
-                    `userChats/${currentUser.uid}/${chatId}/lastMessage`
-                )
-                .set(
-                    cleanText
-                );
-
-            await db
-                .ref(
-                    `userChats/${otherUID}/${chatId}/lastMessage`
-                )
-                .set(
-                    cleanText
-                );
-
-            showToast(
-                "Message edited"
-            );
-
-        } catch (error) {
-
-            console.error(
-                "EDIT ERROR:",
+                "Reaction error:",
                 error
             );
 
             showToast(
-                "Unable to edit message.",
+                "Unable to react.",
                 "error"
             );
         }
     }
 
-    /* =====================================================
-       PIN
-    ===================================================== */
 
-    async function pinSelectedMessage() {
+    /* ======================================================
+       PIN MESSAGE
+    ====================================================== */
+
+    async function togglePin() {
+
+        const message =
+            state.selectedMessage;
 
         closeMessageMenu();
 
-        if (!selectedMessageId) {
+        if (!message) {
             return;
         }
 
         try {
 
-            await db
-                .ref(
-                    `chats/${chatId}/messages/${selectedMessageId}/pinned`
-                )
-                .set(true);
+            await messagesRef()
+                .child(message.id)
+                .update({
+                    pinned:
+                        !message.pinned,
+
+                    pinnedBy:
+                        !message.pinned
+                            ? state.currentUser.uid
+                            : null,
+
+                    pinnedAt:
+                        !message.pinned
+                            ? serverTimestamp()
+                            : null
+                });
 
             showToast(
-                "Message pinned"
+                message.pinned
+                    ? "Message unpinned."
+                    : "Message pinned."
             );
 
         } catch (error) {
 
             console.error(
-                "PIN ERROR:",
+                "Pin error:",
                 error
             );
 
@@ -2794,38 +2968,52 @@ function setupMessagesListener() {
         }
     }
 
-    /* =====================================================
-       MESSAGE INFO
-    ===================================================== */
 
-    function showMessageInfo() {
+    /* ======================================================
+       MESSAGE INFO
+    ====================================================== */
+
+    function openMessageInfo() {
+
+        const message =
+            state.selectedMessage;
 
         closeMessageMenu();
 
-        if (
-            !selectedMessageData
-        ) {
+        if (!message) {
             return;
         }
 
         if (sentTime) {
-
             sentTime.textContent =
-                formatDateTime(
-                    selectedMessageData.createdAt
-                );
+                message.createdAt
+                    ? `${formatDate(
+                        message.createdAt
+                    )} ${formatTime(
+                        message.createdAt
+                    )}`
+                    : "—";
         }
 
         if (deliveredTime) {
             deliveredTime.textContent =
-                "Delivered";
+                message.deliveredAt
+                    ? `${formatDate(
+                        message.deliveredAt
+                    )} ${formatTime(
+                        message.deliveredAt
+                    )}`
+                    : "Not delivered";
         }
 
         if (seenTime) {
-
             seenTime.textContent =
-                selectedMessageData.seen
-                    ? "Seen"
+                message.seenAt
+                    ? `${formatDate(
+                        message.seenAt
+                    )} ${formatTime(
+                        message.seenAt
+                    )}`
                     : "Not seen";
         }
 
@@ -2834,330 +3022,289 @@ function setupMessagesListener() {
         );
     }
 
-    closeInfoBtn?.addEventListener(
-        "click",
-        () => {
 
-            messageInfoModal?.classList.add(
-                "hidden"
-            );
-        }
-    );
-
-    /* =====================================================
-       DELETE FOR ME
-    ===================================================== */
-
-    deleteForMeBtn?.addEventListener(
-        "click",
-        async () => {
-
-            if (!selectedMessageId) {
-                return;
-            }
-
-            try {
-
-                await db
-                    .ref(
-                        `chats/${chatId}/messages/${selectedMessageId}/deletedFor/${currentUser.uid}`
-                    )
-                    .set(true);
-
-                deleteModal?.classList.add(
-                    "hidden"
-                );
-
-                showToast(
-                    "Deleted for you"
-                );
-
-            } catch (error) {
-
-                console.error(
-                    "DELETE FOR ME:",
-                    error
-                );
-
-                showToast(
-                    "Unable to delete message.",
-                    "error"
-                );
-            }
-        }
-    );
-
-    /* =====================================================
-       DELETE FOR EVERYONE
-    ===================================================== */
-
-    deleteForEveryoneBtn?.addEventListener(
-        "click",
-        async () => {
-
-            if (
-                !selectedMessageId ||
-                !selectedMessageData
-            ) {
-                return;
-            }
-
-            if (
-                selectedMessageData.uid !==
-                currentUser.uid
-            ) {
-
-                showToast(
-                    "You can delete only your messages.",
-                    "warning"
-                );
-
-                return;
-            }
-
-            try {
-
-                await db
-                    .ref(
-                        `chats/${chatId}/messages/${selectedMessageId}`
-                    )
-                    .update({
-
-                        deleted:
-                            true,
-
-                        text:
-                            "Message deleted",
-
-                        url:
-                            null,
-
-                        deletedAt:
-                            firebase.database
-                                .ServerValue
-                                .TIMESTAMP
-                    });
-
-                deleteModal?.classList.add(
-                    "hidden"
-                );
-
-                showToast(
-                    "Message deleted"
-                );
-
-            } catch (error) {
-
-                console.error(
-                    "DELETE ERROR:",
-                    error
-                );
-
-                showToast(
-                    "Unable to delete message.",
-                    "error"
-                );
-            }
-        }
-    );
-
-    cancelDeleteBtn?.addEventListener(
-        "click",
-        () => {
-
-            deleteModal?.classList.add(
-                "hidden"
-            );
-        }
-    );
-
-    /* =====================================================
+    /* ======================================================
        SEARCH
-    ===================================================== */
+    ====================================================== */
 
-    searchBtn?.addEventListener(
-        "click",
-        () => {
+    function openSearch() {
 
-            searchBar?.classList.toggle(
-                "hidden"
-            );
+        closeMenus();
 
-            if (
-                !searchBar?.classList.contains(
-                    "hidden"
-                )
-            ) {
+        searchBar?.classList.remove(
+            "hidden"
+        );
 
-                searchInput?.focus();
-            }
+        searchInput?.focus();
+    }
+
+
+    function closeSearchBar() {
+
+        searchBar?.classList.add(
+            "hidden"
+        );
+
+        if (searchInput) {
+            searchInput.value = "";
         }
-    );
 
-    closeSearch?.addEventListener(
-        "click",
-        () => {
+        state.searchTerm =
+            "";
 
-            searchBar?.classList.add(
-                "hidden"
-            );
+        renderMessages();
+    }
 
-            if (searchInput) {
-                searchInput.value = "";
-            }
 
-            clearMessageSearch();
+    function applySearchHighlight() {
+
+        if (!state.searchTerm) {
+            return;
         }
-    );
 
-    searchInput?.addEventListener(
-        "input",
-        () => {
+        const term =
+            state.searchTerm
+                .toLowerCase();
 
-            const keyword =
-                searchInput.value
-                    .toLowerCase()
-                    .trim();
-
-            document
-                .querySelectorAll(
-                    ".messageRow"
-                )
-                .forEach(
-                    row => {
-
-                        const text =
-                            row.textContent
-                                .toLowerCase();
-
-                        row.style.display =
-                            !keyword ||
-                            text.includes(
-                                keyword
-                            )
-                                ? ""
-                                : "none";
-                    }
-                );
+        if (!messagesList) {
+            return;
         }
-    );
 
-    function clearMessageSearch() {
-
-        document
-            .querySelectorAll(
+        const rows =
+            messagesList.querySelectorAll(
                 ".messageRow"
-            )
-            .forEach(
-                row => {
-                    row.style.display =
-                        "";
+            );
+
+        let firstMatch =
+            null;
+
+        rows.forEach(
+            row => {
+
+                const message =
+                    state.messages.get(
+                        row.dataset.messageId
+                    );
+
+                if (!message) {
+                    return;
                 }
+
+                const text =
+                    (
+                        message.text ||
+                        message.caption ||
+                        message.fileName ||
+                        ""
+                    )
+                        .toLowerCase();
+
+                const match =
+                    text.includes(term);
+
+                row.classList.toggle(
+                    "searchMatch",
+                    match
+                );
+
+                if (
+                    match &&
+                    !firstMatch
+                ) {
+                    firstMatch =
+                        row;
+                }
+            }
+        );
+
+        if (firstMatch) {
+
+            firstMatch.scrollIntoView({
+                behavior: "smooth",
+                block: "center"
+            });
+        }
+    }
+
+
+    /* ======================================================
+       TYPING
+    ====================================================== */
+
+    function setTyping(active) {
+
+        if (!state.currentUser) {
+            return;
+        }
+
+        if (
+            state.typingActive ===
+            active
+        ) {
+            return;
+        }
+
+        state.typingActive =
+            active;
+
+        typingRef(
+            state.currentUser.uid
+        ).set(
+            active
+                ? {
+                    active: true,
+                    updatedAt:
+                        serverTimestamp()
+                }
+                : null
+        ).catch(
+            error => console.warn(
+                "Typing update error:",
+                error
+            )
+        );
+    }
+
+
+    function handleTyping() {
+
+        setTyping(true);
+
+        if (state.typingTimer) {
+            clearTimeout(
+                state.typingTimer
+            );
+        }
+
+        state.typingTimer =
+            setTimeout(
+                () => {
+                    setTyping(false);
+                },
+                TYPING_TIMEOUT
             );
     }
 
-    /* =====================================================
-       EMOJI
-    ===================================================== */
 
-    emojiBtn?.addEventListener(
-        "click",
-        event => {
+    function listenTyping() {
 
-            event.stopPropagation();
-
-            emojiPanel?.classList.toggle(
-                "hidden"
+        const ref =
+            typingRef(
+                targetUid
             );
-        }
-    );
 
-    emojiPanel?.querySelectorAll(
-        "button"
-    ).forEach(
-        button => {
+        const callback =
+            snapshot => {
 
-            button.addEventListener(
-                "click",
-                () => {
+                const value =
+                    snapshot.val();
 
-                    if (!messageInput) {
-                        return;
-                    }
+                const active =
+                    Boolean(
+                        value &&
+                        value.active
+                    );
 
-                    const start =
-                        messageInput.selectionStart ??
-                        messageInput.value.length;
-
-                    const end =
-                        messageInput.selectionEnd ??
-                        start;
-
-                    const value =
-                        messageInput.value;
-
-                    const emoji =
-                        button.textContent;
-
-                    messageInput.value =
-                        value.slice(
-                            0,
-                            start
-                        ) +
-                        emoji +
-                        value.slice(
-                            end
-                        );
-
-                    messageInput.focus();
-
-                    const position =
-                        start +
-                        emoji.length;
-
-                    messageInput.selectionStart =
-                        position;
-
-                    messageInput.selectionEnd =
-                        position;
-
-                    autoResizeInput();
+                if (typingIndicator) {
+                    typingIndicator.classList.toggle(
+                        "hidden",
+                        !active
+                    );
                 }
-            );
-        }
-    );
 
-    /* =====================================================
-       ATTACHMENT SHEET
-    ===================================================== */
+                if (
+                    active &&
+                    typingText
+                ) {
+                    typingText.textContent =
+                        `${state.otherUser.name} is typing...`;
+                }
+            };
 
-    attachBtn?.addEventListener(
-        "click",
-        () => {
-
-            if (getBlockedState()) {
-                return;
-            }
-
-            attachmentSheet?.classList.remove(
-                "hidden"
-            );
-        }
-    );
-
-    closeAttachmentBtn?.addEventListener(
-        "click",
-        closeAttachmentSheet
-    );
-
-    document
-        .querySelector(
-            ".attachmentOverlay"
-        )
-        ?.addEventListener(
-            "click",
-            closeAttachmentSheet
+        ref.on(
+            "value",
+            callback
         );
+
+        state.typingListener = {
+            ref,
+            callback
+        };
+    }
+
+
+    /* ======================================================
+       EMOJI
+    ====================================================== */
+
+    function toggleEmojiPanel() {
+
+        emojiPanel?.classList.toggle(
+            "hidden"
+        );
+    }
+
+
+    function insertEmoji(emoji) {
+
+        if (!messageInput) {
+            return;
+        }
+
+        const start =
+            messageInput.selectionStart ??
+            messageInput.value.length;
+
+        const end =
+            messageInput.selectionEnd ??
+            messageInput.value.length;
+
+        const value =
+            messageInput.value;
+
+        messageInput.value =
+            value.slice(
+                0,
+                start
+            ) +
+            emoji +
+            value.slice(
+                end
+            );
+
+        const cursor =
+            start +
+            emoji.length;
+
+        messageInput.focus();
+
+        try {
+
+            messageInput.setSelectionRange(
+                cursor,
+                cursor
+            );
+
+        } catch (_) {}
+
+        autoResizeInput();
+        handleTyping();
+    }
+
+
+    /* ======================================================
+       ATTACHMENT SHEET
+    ====================================================== */
+
+    function openAttachmentSheet() {
+
+        closeMenus();
+
+        attachmentSheet?.classList.remove(
+            "hidden"
+        );
+    }
+
 
     function closeAttachmentSheet() {
 
@@ -3166,307 +3313,149 @@ function setupMessagesListener() {
         );
     }
 
-    /* =====================================================
-       MEDIA PICKERS
-    ===================================================== */
 
-    galleryBtn?.addEventListener(
-        "click",
-        () => {
+    /* ======================================================
+       FILE PICKERS
+    ====================================================== */
 
-            closeAttachmentSheet();
-
-            imagePicker?.click();
-        }
-    );
-
-    cameraBtn?.addEventListener(
-        "click",
-        () => {
-
-            if (getBlockedState()) {
-                return;
-            }
-
-            cameraPicker?.click();
-        }
-    );
-
-    cameraAttachmentBtn?.addEventListener(
-        "click",
-        () => {
-
-            closeAttachmentSheet();
-
-            cameraPicker?.click();
-        }
-    );
-
-    videoBtn?.addEventListener(
-        "click",
-        () => {
-
-            closeAttachmentSheet();
-
-            videoPicker?.click();
-        }
-    );
-
-    audioBtn?.addEventListener(
-        "click",
-        () => {
-
-            closeAttachmentSheet();
-
-            audioPicker?.click();
-        }
-    );
-
-    documentBtn?.addEventListener(
-        "click",
-        () => {
-
-            closeAttachmentSheet();
-
-            documentPicker?.click();
-        }
-    );
-
-    imagePicker?.addEventListener(
-        "change",
-        () => {
-
-            prepareMedia(
-                imagePicker.files?.[0],
-                "image"
-            );
-
-            imagePicker.value = "";
-        }
-    );
-
-    cameraPicker?.addEventListener(
-        "change",
-        () => {
-
-            prepareMedia(
-                cameraPicker.files?.[0],
-                "image"
-            );
-
-            cameraPicker.value = "";
-        }
-    );
-
-    videoPicker?.addEventListener(
-        "change",
-        () => {
-
-            prepareMedia(
-                videoPicker.files?.[0],
-                "video"
-            );
-
-            videoPicker.value = "";
-        }
-    );
-
-    audioPicker?.addEventListener(
-        "change",
-        () => {
-
-            prepareMedia(
-                audioPicker.files?.[0],
-                "audio"
-            );
-
-            audioPicker.value = "";
-        }
-    );
-
-    documentPicker?.addEventListener(
-        "change",
-        () => {
-
-            prepareMedia(
-                documentPicker.files?.[0],
-                "file"
-            );
-
-            documentPicker.value = "";
-        }
-    );
-
-    /* =====================================================
-       MEDIA PREVIEW
-    ===================================================== */
-
-    function prepareMedia(
-        file,
-        type
+    function openPicker(
+        picker
     ) {
+
+        if (!picker) {
+            return;
+        }
+
+        closeAttachmentSheet();
+
+        picker.value =
+            "";
+
+        picker.click();
+    }
+
+
+    /* ======================================================
+       FILE SELECTED
+    ====================================================== */
+
+    function handleFileSelected(
+        event
+    ) {
+
+        const input =
+            event.target;
+
+        const file =
+            input?.files?.[0];
 
         if (!file) {
             return;
         }
 
-        if (getBlockedState()) {
+        openMediaPreview(
+            file
+        );
+    }
 
-            showToast(
-                "You blocked this user.",
-                "warning"
-            );
 
-            return;
-        }
+    /* ======================================================
+       MEDIA PREVIEW
+    ====================================================== */
 
-        /*
-           Basic safety limits.
-        */
+    function openMediaPreview(file) {
 
-        const maxImage =
-            20 * 1024 * 1024;
-
-        const maxVideo =
-            1024 * 1024 * 1024;
-
-        const maxAudio =
-            100 * 1024 * 1024;
-
-        const maxFile =
-            100 * 1024 * 1024;
-
-        if (
-            type === "image" &&
-            file.size > maxImage
-        ) {
-
-            showToast(
-                "Image must be under 20 MB.",
-                "warning"
-            );
-
-            return;
-        }
-
-        if (
-            type === "video" &&
-            file.size > maxVideo
-        ) {
-
-            showToast(
-                "Video must be under 1 GB.",
-                "warning"
-            );
-
-            return;
-        }
-
-        if (
-            type === "audio" &&
-            file.size > maxAudio
-        ) {
-
-            showToast(
-                "Audio file is too large.",
-                "warning"
-            );
-
-            return;
-        }
-
-        if (
-            type === "file" &&
-            file.size > maxFile
-        ) {
-
-            showToast(
-                "File must be under 100 MB.",
-                "warning"
-            );
-
-            return;
-        }
-
-        selectedMediaFile =
+        state.pendingMedia =
             file;
 
-        selectedMediaType =
-            type;
+        hidePreviewElements();
 
-        releaseMediaObjectURL();
-
-        hideAllPreviews();
-
-        selectedMediaObjectURL =
-            URL.createObjectURL(
-                file
-            );
+        const type =
+            String(
+                file.type || ""
+            ).toLowerCase();
 
         if (
-            type === "image" &&
-            previewImage
+            type.startsWith(
+                "image/"
+            )
         ) {
 
+            const url =
+                URL.createObjectURL(
+                    file
+                );
+
             previewImage.src =
-                selectedMediaObjectURL;
+                url;
+
+            previewImage.dataset.objectUrl =
+                url;
 
             previewImage.classList.remove(
                 "hidden"
             );
-        }
 
-        if (
-            type === "video" &&
-            previewVideo
+        } else if (
+            type.startsWith(
+                "video/"
+            )
         ) {
 
+            const url =
+                URL.createObjectURL(
+                    file
+                );
+
             previewVideo.src =
-                selectedMediaObjectURL;
+                url;
+
+            previewVideo.dataset.objectUrl =
+                url;
 
             previewVideo.classList.remove(
                 "hidden"
             );
-        }
 
-        if (type === "audio") {
+        } else if (
+            type.startsWith(
+                "audio/"
+            )
+        ) {
 
-            previewAudioBox?.classList.remove(
+            const url =
+                URL.createObjectURL(
+                    file
+                );
+
+            previewAudio.src =
+                url;
+
+            previewAudioName.textContent =
+                file.name;
+
+            previewAudioBox.classList.remove(
                 "hidden"
             );
 
-            if (previewAudio) {
-                previewAudio.src =
-                    selectedMediaObjectURL;
-            }
+        } else {
 
-            if (previewAudioName) {
-                previewAudioName.textContent =
-                    file.name;
-            }
-        }
+            previewFileName.textContent =
+                file.name;
 
-        if (type === "file") {
+            previewFileSize.textContent =
+                formatFileSize(
+                    file.size
+                );
 
-            previewFileBox?.classList.remove(
+            previewFileBox.classList.remove(
                 "hidden"
             );
-
-            if (previewFileName) {
-                previewFileName.textContent =
-                    file.name;
-            }
-
-            if (previewFileSize) {
-                previewFileSize.textContent =
-                    formatBytes(
-                        file.size
-                    );
-            }
         }
 
         if (mediaCaption) {
-            mediaCaption.value = "";
+            mediaCaption.value =
+                "";
         }
 
         mediaPreviewModal?.classList.remove(
@@ -3474,176 +3463,253 @@ function setupMessagesListener() {
         );
     }
 
-    function hideAllPreviews() {
 
-        previewImage?.classList.add(
-            "hidden"
-        );
+    function hidePreviewElements() {
 
-        previewVideo?.classList.add(
-            "hidden"
-        );
+        [
+            previewImage,
+            previewVideo,
+            previewAudioBox,
+            previewFileBox
+        ]
+            .forEach(
+                element => {
 
-        previewAudioBox?.classList.add(
-            "hidden"
-        );
+                    if (!element) {
+                        return;
+                    }
 
-        previewFileBox?.classList.add(
-            "hidden"
-        );
-    }
+                    element.classList.add(
+                        "hidden"
+                    );
+                }
+            );
 
-    function releaseMediaObjectURL() {
-
-        if (
-            selectedMediaObjectURL
-        ) {
-
-            try {
-
-                URL.revokeObjectURL(
-                    selectedMediaObjectURL
-                );
-
-            } catch (error) {
-                console.warn(error);
-            }
+        if (previewImage) {
+            previewImage.src =
+                "";
         }
-
-        selectedMediaObjectURL =
-            null;
-    }
-
-    function closeMediaPreview() {
-
-        mediaPreviewModal?.classList.add(
-            "hidden"
-        );
 
         if (previewVideo) {
             previewVideo.pause();
-            previewVideo.src = "";
+
+            previewVideo.src =
+                "";
         }
 
         if (previewAudio) {
             previewAudio.pause();
-            previewAudio.src = "";
+
+            previewAudio.src =
+                "";
         }
-
-        if (previewImage) {
-            previewImage.src = "";
-        }
-
-        releaseMediaObjectURL();
-
-        selectedMediaFile =
-            null;
-
-        selectedMediaType =
-            null;
-
-        hideAllPreviews();
     }
 
-    closePreviewBtn?.addEventListener(
-        "click",
-        closeMediaPreview
-    );
 
-    cancelMediaBtn?.addEventListener(
-        "click",
-        closeMediaPreview
-    );
-
-    /* =====================================================
-       CLOUDINARY MEDIA SEND
-    ===================================================== */
-
-    sendMediaBtn?.addEventListener(
-        "click",
-        sendSelectedMedia
-    );
-
-    async function sendSelectedMedia() {
+    function closeMediaPreview() {
 
         if (
-            !selectedMediaFile ||
-            !selectedMediaType
+            previewImage?.dataset.objectUrl
         ) {
+
+            URL.revokeObjectURL(
+                previewImage.dataset.objectUrl
+            );
+
+            delete previewImage.dataset.objectUrl;
+        }
+
+        if (
+            previewVideo?.dataset.objectUrl
+        ) {
+
+            URL.revokeObjectURL(
+                previewVideo.dataset.objectUrl
+            );
+
+            delete previewVideo.dataset.objectUrl;
+        }
+
+        previewAudio?.pause();
+
+        previewVideo?.pause();
+
+        hidePreviewElements();
+
+        state.pendingMedia =
+            null;
+
+        mediaPreviewModal?.classList.add(
+            "hidden"
+        );
+    }
+
+
+    /* ======================================================
+       SEND MEDIA
+    ====================================================== */
+
+    async function sendPendingMedia() {
+
+        const file =
+            state.pendingMedia;
+
+        if (!file) {
             return;
         }
 
-        if (getBlockedState()) {
+        if (
+            !window.VieworaMediaUpload ||
+            typeof window.VieworaMediaUpload.upload !==
+            "function"
+        ) {
 
             showToast(
-                "You blocked this user.",
+                "Media uploader is not loaded.",
+                "error"
+            );
+
+            return;
+        }
+
+        const caption =
+            String(
+                mediaCaption?.value || ""
+            ).trim();
+
+        const size =
+            Number(
+                file.size || 0
+            );
+
+        /*
+         * Basic practical limits.
+         * Cloudinary itself may allow more depending
+         * on the account, but this keeps chat stable.
+         */
+
+        const maxSize =
+            100 * 1024 * 1024;
+
+        if (size > maxSize) {
+
+            showToast(
+                "File is larger than 100 MB.",
                 "warning"
             );
 
             return;
         }
 
+        const type =
+            String(
+                file.type || ""
+            ).toLowerCase();
+
+        let messageType =
+            "file";
+
+        if (
+            type.startsWith("image/")
+        ) {
+            messageType =
+                "image";
+
+        } else if (
+            type.startsWith("video/")
+        ) {
+            messageType =
+                "video";
+
+        } else if (
+            type.startsWith("audio/")
+        ) {
+            messageType =
+                "audio";
+        }
+
+        closeMediaPreview();
+
+        openUploadOverlay(
+            file
+        );
+
+        state.uploadCancelled =
+            false;
+
         try {
 
-            const file =
-                selectedMediaFile;
-
-            const type =
-                selectedMediaType;
-
-            const caption =
-                mediaCaption?.value
-                    ?.trim() || "";
-
-            closeMediaPreview();
-
-            showUpload(
-                file.name
-            );
-
             const result =
-                await uploadToCloudinary(
-                    file
-                );
+                await window.VieworaMediaUpload
+                    .upload(
+                        file,
+                        {
+                            onProgress:
+                                percent => {
+
+                                    updateUploadProgress(
+                                        percent
+                                    );
+                                },
+
+                            onSpeed:
+                                speed => {
+
+                                    if (
+                                        uploadSpeed
+                                    ) {
+                                        uploadSpeed.textContent =
+                                            speed;
+                                    }
+                                }
+                        }
+                    );
+
+            if (
+                state.uploadCancelled
+            ) {
+                return;
+            }
 
             if (
                 !result ||
-                !result.secure_url
+                !result.url
             ) {
                 throw new Error(
-                    "Cloudinary did not return a secure URL."
+                    "Cloudinary did not return a valid URL."
                 );
             }
 
             const messageRef =
-                db
-                    .ref(
-                        `chats/${chatId}/messages`
-                    )
-                    .push();
+                messagesRef().push();
 
             const message = {
 
-                uid:
-                    currentUser.uid,
+                id:
+                    messageRef.key,
 
-                username:
-                    currentProfile.username ||
-                    currentUser.displayName ||
-                    "user",
+                senderId:
+                    state.currentUser.uid,
+
+                receiverId:
+                    targetUid,
 
                 type:
-                    type,
+                    messageType,
 
                 url:
-                    result.secure_url,
+                    result.url,
+
+                secure_url:
+                    result.secure_url ||
+                    result.url,
 
                 publicId:
                     result.public_id ||
                     "",
 
-                resourceType:
-                    result.resource_type ||
+                format:
+                    result.format ||
                     "",
 
                 fileName:
@@ -3652,338 +3718,183 @@ function setupMessagesListener() {
                 fileSize:
                     file.size,
 
-                caption:
-                    caption,
+                mimeType:
+                    file.type,
+
+                caption,
+
+                width:
+                    result.width ||
+                    null,
+
+                height:
+                    result.height ||
+                    null,
+
+                duration:
+                    result.duration ||
+                    null,
 
                 createdAt:
-                    firebase.database
-                        .ServerValue
-                        .TIMESTAMP,
+                    serverTimestamp(),
 
-                seen:
+                deliveredAt:
+                    null,
+
+                seenAt:
+                    null,
+
+                edited:
+                    false,
+
+                pinned:
+                    false,
+
+                deletedForEveryone:
                     false
             };
 
-            addReplyData(
-                message
-            );
+            if (state.replyTo) {
+
+                message.replyTo =
+                    {
+                        ...state.replyTo
+                    };
+            }
 
             await messageRef.set(
                 message
             );
 
-            await updateChatList(
-                getMessagePreview(
-                    message
-                )
-            );
+            clearReply();
 
-            hideUpload();
+            hideUploadOverlay();
 
             showToast(
-                "Media sent"
+                "Media sent."
             );
 
-            scrollToBottom();
+            requestAnimationFrame(
+                scrollToBottom
+            );
 
         } catch (error) {
 
             console.error(
-                "MEDIA SEND ERROR:",
+                "Media upload/send error:",
                 error
             );
 
-            hideUpload();
+            hideUploadOverlay();
 
-            showToast(
-                error?.message ||
-                "Media upload failed.",
-                "error"
-            );
+            if (
+                !state.uploadCancelled
+            ) {
+
+                showToast(
+                    error?.message ||
+                    "Media upload failed.",
+                    "error"
+                );
+            }
+        } finally {
+
+            state.uploadTask =
+                null;
         }
     }
 
-    /* =====================================================
-       CLOUDINARY UPLOAD
-    ===================================================== */
 
-    function uploadToCloudinary(
-        file
-    ) {
-
-        return new Promise(
-            (resolve, reject) => {
-
-                const xhr =
-                    new XMLHttpRequest();
-
-                uploadXHR =
-                    xhr;
-
-                const formData =
-                    new FormData();
-
-                formData.append(
-                    "file",
-                    file
-                );
-
-                formData.append(
-                    "upload_preset",
-                    CLOUDINARY_UPLOAD_PRESET
-                );
-
-                xhr.open(
-                    "POST",
-                    CLOUDINARY_UPLOAD_URL,
-                    true
-                );
-
-                const started =
-                    Date.now();
-
-                xhr.upload.onprogress =
-                    event => {
-
-                        if (
-                            !event.lengthComputable
-                        ) {
-                            return;
-                        }
-
-                        const percent =
-                            Math.round(
-                                (
-                                    event.loaded /
-                                    event.total
-                                ) *
-                                100
-                            );
-
-                        const elapsed =
-                            (
-                                Date.now() -
-                                started
-                            ) / 1000;
-
-                        const speed =
-                            elapsed > 0
-                                ? event.loaded /
-                                  elapsed
-                                : 0;
-
-                        if (uploadProgressBar) {
-
-                            uploadProgressBar.style.width =
-                                percent +
-                                "%";
-                        }
-
-                        if (uploadPercent) {
-
-                            uploadPercent.textContent =
-                                percent +
-                                "%";
-                        }
-
-                        if (uploadSpeed) {
-
-                            uploadSpeed.textContent =
-                                formatBytes(
-                                    speed
-                                ) +
-                                "/s";
-                        }
-                    };
-
-                xhr.onload =
-                    () => {
-
-                        uploadXHR =
-                            null;
-
-                        if (
-                            xhr.status >= 200 &&
-                            xhr.status < 300
-                        ) {
-
-                            try {
-
-                                const data =
-                                    JSON.parse(
-                                        xhr.responseText
-                                    );
-
-                                resolve(
-                                    data
-                                );
-
-                            } catch (error) {
-
-                                reject(
-                                    new Error(
-                                        "Invalid Cloudinary response."
-                                    )
-                                );
-                            }
-
-                        } else {
-
-                            let message =
-                                "Cloudinary HTTP " +
-                                xhr.status;
-
-                            try {
-
-                                const data =
-                                    JSON.parse(
-                                        xhr.responseText
-                                    );
-
-                                message =
-                                    data?.error?.message ||
-                                    message;
-
-                            } catch (_) {}
-
-                            reject(
-                                new Error(
-                                    message
-                                )
-                            );
-                        }
-                    };
-
-                xhr.onerror =
-                    () => {
-
-                        uploadXHR =
-                            null;
-
-                        reject(
-                            new Error(
-                                "Network error during upload."
-                            )
-                        );
-                    };
-
-                xhr.onabort =
-                    () => {
-
-                        uploadXHR =
-                            null;
-
-                        reject(
-                            new Error(
-                                "Upload cancelled."
-                            )
-                        );
-                    };
-
-                xhr.send(
-                    formData
-                );
-            }
-        );
-    }
-
-    /* =====================================================
+    /* ======================================================
        UPLOAD UI
-    ===================================================== */
+    ====================================================== */
 
-    function showUpload(
-        fileName
-    ) {
+    function openUploadOverlay(file) {
 
-        uploadOverlay?.classList.remove(
-            "hidden"
-        );
+        if (uploadOverlay) {
+            uploadOverlay.classList.remove(
+                "hidden"
+            );
+        }
 
         if (uploadFileName) {
             uploadFileName.textContent =
-                fileName;
+                file?.name ||
+                "Preparing file...";
         }
+
+        updateUploadProgress(
+            0
+        );
+
+        if (uploadSpeed) {
+            uploadSpeed.textContent =
+                "—";
+        }
+    }
+
+
+    function updateUploadProgress(
+        percent
+    ) {
+
+        const value =
+            Math.max(
+                0,
+                Math.min(
+                    100,
+                    Number(percent || 0)
+                )
+            );
 
         if (uploadProgressBar) {
             uploadProgressBar.style.width =
-                "0%";
+                `${value}%`;
         }
 
         if (uploadPercent) {
             uploadPercent.textContent =
-                "0%";
-        }
-
-        if (uploadSpeed) {
-            uploadSpeed.textContent =
-                "0 B/s";
+                `${Math.round(value)}%`;
         }
     }
 
-    function hideUpload() {
+
+    function hideUploadOverlay() {
 
         uploadOverlay?.classList.add(
             "hidden"
         );
     }
 
-    cancelUploadBtn?.addEventListener(
-        "click",
-        () => {
 
-            if (uploadXHR) {
-                uploadXHR.abort();
-            }
+    function cancelUpload() {
 
-            hideUpload();
+        /*
+         * Current media-upload.js returns a Promise
+         * and does not expose its internal XHR task.
+         *
+         * So we safely mark the current operation as
+         * cancelled. The upload itself cannot be aborted
+         * by this version of media-upload.js.
+         */
 
-            showToast(
-                "Upload cancelled",
-                "warning"
-            );
-        }
-    );
+        state.uploadCancelled =
+            true;
 
-    /* =====================================================
-       CAMERA
-    ===================================================== */
+        hideUploadOverlay();
 
-    function cameraSupported() {
-
-        return (
-            "mediaDevices" in navigator &&
-            "getUserMedia" in
-                navigator.mediaDevices
+        showToast(
+            "Upload cancelled.",
+            "warning"
         );
     }
 
-    console.log(
-        "Camera input:",
-        !!cameraPicker,
-        "MediaDevices:",
-        cameraSupported()
-    );
 
-    /* =====================================================
+    /* ======================================================
        VOICE RECORDING
-    ===================================================== */
-
-    voiceBtn?.addEventListener(
-        "click",
-        startRecording
-    );
+    ====================================================== */
 
     async function startRecording() {
-
-        if (getBlockedState()) {
-
-            showToast(
-                "You blocked this user.",
-                "warning"
-            );
-
-            return;
-        }
 
         if (
             !navigator.mediaDevices ||
@@ -3991,10 +3902,14 @@ function setupMessagesListener() {
         ) {
 
             showToast(
-                "Microphone not supported.",
+                "Microphone is not supported.",
                 "error"
             );
 
+            return;
+        }
+
+        if (state.recording) {
             return;
         }
 
@@ -4006,69 +3921,69 @@ function setupMessagesListener() {
                         audio: true
                     });
 
-            recordedChunks = [];
-
             let mimeType =
-                "audio/webm";
+                "";
 
             if (
                 window.MediaRecorder &&
-                MediaRecorder.isTypeSupported(
-                    "audio/webm;codecs=opus"
-                )
+                MediaRecorder.isTypeSupported
             ) {
 
+                const candidates = [
+                    "audio/webm;codecs=opus",
+                    "audio/webm",
+                    "audio/mp4"
+                ];
+
                 mimeType =
-                    "audio/webm;codecs=opus";
+                    candidates.find(
+                        type =>
+                            MediaRecorder.isTypeSupported(
+                                type
+                            )
+                    ) || "";
             }
 
-            mediaRecorder =
-                new MediaRecorder(
-                    stream,
-                    {
-                        mimeType:
+            const recorder =
+                mimeType
+                    ? new MediaRecorder(
+                        stream,
+                        {
                             mimeType
-                    }
-                );
+                        }
+                    )
+                    : new MediaRecorder(
+                        stream
+                    );
 
-            mediaRecorder.ondataavailable =
+            state.mediaRecorder =
+                recorder;
+
+            state.recordChunks =
+                [];
+
+            state.recording =
+                true;
+
+            state.recordStartedAt =
+                Date.now();
+
+            recorder.ondataavailable =
                 event => {
 
                     if (
                         event.data &&
-                        event.data.size
+                        event.data.size > 0
                     ) {
 
-                        recordedChunks.push(
-                            event.data
-                        );
+                        state.recordChunks
+                            .push(
+                                event.data
+                            );
                     }
                 };
 
-            mediaRecorder.onerror =
-                event => {
-
-                    console.error(
-                        "Recorder error:",
-                        event
-                    );
-
-                    stream
-                        .getTracks()
-                        .forEach(
-                            track =>
-                                track.stop()
-                        );
-
-                    hideRecording();
-
-                    showToast(
-                        "Voice recording failed.",
-                        "error"
-                    );
-                };
-
-            mediaRecorder.onstop =
+            recorder.onstop =
                 async () => {
 
                     stream
@@ -4078,381 +3993,274 @@ function setupMessagesListener() {
                                 track.stop()
                         );
 
-                    const finalType =
-                        mediaRecorder.mimeType ||
-                        "audio/webm";
+                    if (
+                        !state.recordChunks.length
+                    ) {
+                        resetRecording();
+                        return;
+                    }
 
                     const blob =
                         new Blob(
-                            recordedChunks,
+                            state.recordChunks,
                             {
                                 type:
-                                    finalType
+                                    recorder.mimeType ||
+                                    "audio/webm"
                             }
                         );
 
-                    hideRecording();
+                    resetRecording();
 
-                    if (
-                        blob.size > 0
-                    ) {
+                    const extension =
+                        blob.type.includes(
+                            "mp4"
+                        )
+                            ? "m4a"
+                            : "webm";
 
-                        await sendRecordedAudio(
-                            blob
+                    const file =
+                        new File(
+                            [
+                                blob
+                            ],
+                            `viewora-voice-${Date.now()}.${extension}`,
+                            {
+                                type:
+                                    blob.type
+                            }
                         );
-                    }
+
+                    openMediaPreview(
+                        file
+                    );
                 };
 
-            mediaRecorder.start();
+            recorder.onerror =
+                error => {
 
-            recordingSeconds =
-                0;
+                    console.error(
+                        "Recorder error:",
+                        error
+                    );
 
-            updateRecordingTime();
+                    stream
+                        .getTracks()
+                        .forEach(
+                            track =>
+                                track.stop()
+                        );
 
-            recordingTimer =
-                setInterval(
-                    () => {
+                    resetRecording();
 
-                        recordingSeconds++;
+                    showToast(
+                        "Voice recording failed.",
+                        "error"
+                    );
+                };
 
-                        updateRecordingTime();
-
-                    },
-                    1000
-                );
-
-            recordOverlay?.classList.remove(
-                "hidden"
+            recorder.start(
+                250
             );
+
+            openRecordingUI();
 
         } catch (error) {
 
             console.error(
-                "MIC ERROR:",
+                "Microphone error:",
                 error
             );
 
             showToast(
-                "Microphone permission denied.",
+                "Microphone permission is required.",
                 "error"
             );
         }
     }
 
+
     function stopRecording() {
 
+        const recorder =
+            state.mediaRecorder;
+
         if (
-            mediaRecorder &&
-            mediaRecorder.state !==
+            !recorder ||
+            recorder.state ===
             "inactive"
         ) {
-
-            mediaRecorder.stop();
+            return;
         }
+
+        recorder.stop();
     }
 
-    function hideRecording() {
 
-        clearInterval(
-            recordingTimer
+    function cancelRecording() {
+
+        const recorder =
+            state.mediaRecorder;
+
+        if (recorder) {
+
+            try {
+
+                if (
+                    recorder.state !==
+                    "inactive"
+                ) {
+                    recorder.ondataavailable =
+                        null;
+
+                    recorder.onstop =
+                        null;
+
+                    recorder.stop();
+                }
+
+            } catch (_) {}
+        }
+
+        resetRecording();
+
+        showToast(
+            "Recording cancelled.",
+            "warning"
         );
+    }
 
-        recordingTimer =
+
+    function resetRecording() {
+
+        state.recording =
+            false;
+
+        state.mediaRecorder =
             null;
+
+        state.recordChunks =
+            [];
+
+        if (state.recordTimer) {
+
+            clearInterval(
+                state.recordTimer
+            );
+
+            state.recordTimer =
+                null;
+        }
+
+        if (recordTime) {
+            recordTime.textContent =
+                "00:00";
+        }
 
         recordOverlay?.classList.add(
             "hidden"
         );
     }
 
+
+    function openRecordingUI() {
+
+        recordOverlay?.classList.remove(
+            "hidden"
+        );
+
+        updateRecordingTime();
+
+        state.recordTimer =
+            setInterval(
+                updateRecordingTime,
+                1000
+            );
+    }
+
+
     function updateRecordingTime() {
 
-        const minutes =
-            Math.floor(
-                recordingSeconds /
-                60
-            )
-                .toString()
-                .padStart(
-                    2,
-                    "0"
-                );
-
-        const seconds =
-            (
-                recordingSeconds %
-                60
-            )
-                .toString()
-                .padStart(
-                    2,
-                    "0"
-                );
-
-        if (recordTime) {
-
-            recordTime.textContent =
-                minutes +
-                ":" +
-                seconds;
-        }
-    }
-
-    stopRecordingBtn?.addEventListener(
-        "click",
-        stopRecording
-    );
-
-    cancelRecordingBtn?.addEventListener(
-        "click",
-        cancelRecording
-    );
-
-    function cancelRecording() {
-
-        clearInterval(
-            recordingTimer
-        );
-
         if (
-            mediaRecorder &&
-            mediaRecorder.state !==
-            "inactive"
+            !state.recording ||
+            !recordTime
         ) {
-
-            const recorder =
-                mediaRecorder;
-
-            recorder.onstop =
-                () => {
-
-                    try {
-
-                        recorder.stream
-                            ?.getTracks()
-                            .forEach(
-                                track =>
-                                    track.stop()
-                            );
-
-                    } catch (error) {
-
-                        console.warn(
-                            error
-                        );
-                    }
-                };
-
-            recorder.stop();
-
-        } else {
-
-            hideRecording();
-        }
-
-        recordedChunks = [];
-
-        hideRecording();
-
-        showToast(
-            "Recording cancelled",
-            "warning"
-        );
-    }
-
-    async function sendRecordedAudio(
-        blob
-    ) {
-
-        if (getBlockedState()) {
             return;
         }
 
-        try {
-
-            showUpload(
-                "Voice message"
+        const seconds =
+            Math.floor(
+                (
+                    Date.now() -
+                    state.recordStartedAt
+                ) / 1000
             );
 
-            const file =
-                new File(
-                    [blob],
-                    "voice-message.webm",
-                    {
-                        type:
-                            blob.type ||
-                            "audio/webm"
-                    }
-                );
-
-            const result =
-                await uploadToCloudinary(
-                    file
-                );
-
-            if (
-                !result?.secure_url
-            ) {
-                throw new Error(
-                    "Voice upload failed."
-                );
-            }
-
-            const message = {
-
-                uid:
-                    currentUser.uid,
-
-                username:
-                    currentProfile.username ||
-                    currentUser.displayName ||
-                    "user",
-
-                type:
-                    "audio",
-
-                url:
-                    result.secure_url,
-
-                publicId:
-                    result.public_id ||
-                    "",
-
-                resourceType:
-                    result.resource_type ||
-                    "",
-
-                fileName:
-                    file.name,
-
-                fileSize:
-                    file.size,
-
-                createdAt:
-                    firebase.database
-                        .ServerValue
-                        .TIMESTAMP,
-
-                seen:
-                    false
-            };
-
-            addReplyData(
-                message
+        const mins =
+            Math.floor(
+                seconds / 60
             );
 
-            const ref =
-                db
-                    .ref(
-                        `chats/${chatId}/messages`
-                    )
-                    .push();
+        const secs =
+            seconds % 60;
 
-            await ref.set(
-                message
-            );
-
-            await updateChatList(
-                "🎵 Voice message"
-            );
-
-            hideUpload();
-
-            showToast(
-                "Voice message sent"
-            );
-
-            scrollToBottom();
-
-        } catch (error) {
-
-            console.error(
-                "VOICE SEND ERROR:",
-                error
-            );
-
-            hideUpload();
-
-            showToast(
-                "Voice message failed.",
-                "error"
-            );
-        }
+        recordTime.textContent =
+            `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
     }
 
-    /* =====================================================
+
+    /* ======================================================
        IMAGE VIEWER
-    ===================================================== */
+    ====================================================== */
 
-    function openImage(
-        url
-    ) {
+    function openImageViewer(url) {
 
-        if (
-            !imageViewer ||
-            !viewerImage
-        ) {
+        const safe =
+            safeURL(url);
+
+        if (!safe) {
             return;
         }
 
         viewerImage.src =
-            url;
+            safe;
 
-        imageViewer.classList.remove(
+        imageViewer?.classList.remove(
             "hidden"
         );
     }
 
-    closeViewerBtn?.addEventListener(
-        "click",
-        closeImageViewer
-    );
-
-    imageViewer?.addEventListener(
-        "click",
-        event => {
-
-            if (
-                event.target ===
-                imageViewer
-            ) {
-
-                closeImageViewer();
-            }
-        }
-    );
 
     function closeImageViewer() {
+
+        if (viewerImage) {
+            viewerImage.src =
+                "";
+        }
 
         imageViewer?.classList.add(
             "hidden"
         );
-
-        if (viewerImage) {
-            viewerImage.src = "";
-        }
     }
 
-    /* =====================================================
+
+    /* ======================================================
        VIDEO VIEWER
-    ===================================================== */
+    ====================================================== */
 
-    function openVideo(
-        url
-    ) {
+    function openVideoViewer(url) {
 
-        if (
-            !videoViewer ||
-            !viewerVideo
-        ) {
+        const safe =
+            safeURL(url);
+
+        if (!safe) {
             return;
         }
 
         viewerVideo.src =
-            url;
+            safe;
 
-        videoViewer.classList.remove(
+        videoViewer?.classList.remove(
             "hidden"
         );
 
@@ -4462,80 +4270,257 @@ function setupMessagesListener() {
             );
     }
 
-    closeVideoViewerBtn?.addEventListener(
-        "click",
-        closeVideoViewer
-    );
 
     function closeVideoViewer() {
+
+        viewerVideo?.pause();
+
+        if (viewerVideo) {
+            viewerVideo.src =
+                "";
+        }
 
         videoViewer?.classList.add(
             "hidden"
         );
+    }
 
-        if (viewerVideo) {
 
-            viewerVideo.pause();
+    /* ======================================================
+       PROFILE
+    ====================================================== */
 
-            viewerVideo.removeAttribute(
-                "src"
+    function openProfile() {
+
+        renderHeader();
+
+        profileModal?.classList.remove(
+            "hidden"
+        );
+    }
+
+
+    function closeProfile() {
+
+        profileModal?.classList.add(
+            "hidden"
+        );
+    }
+
+
+    /* ======================================================
+       MENU
+    ====================================================== */
+
+    function toggleChatMenu() {
+
+        if (!chatMenu) {
+            return;
+        }
+
+        chatMenu.classList.toggle(
+            "hidden"
+        );
+    }
+
+
+    function closeMenus() {
+
+        chatMenu?.classList.add(
+            "hidden"
+        );
+
+        closeMessageMenu();
+
+        reactionBar?.classList.add(
+            "hidden"
+        );
+    }
+
+
+    /* ======================================================
+       CHAT DELETE
+    ====================================================== */
+
+    async function deleteChat() {
+
+        const confirmed =
+            window.confirm(
+                "Delete this chat for you?"
             );
 
-            viewerVideo.load();
+        if (!confirmed) {
+            return;
+        }
+
+        try {
+
+            await db.ref(
+                `vieworaChats/${state.chatId}/userDeleted/${state.currentUser.uid}/chat`
+            ).set(
+                true
+            );
+
+            showToast(
+                "Chat removed for you."
+            );
+
+            setTimeout(
+                () => {
+
+                    if (
+                        document.referrer
+                    ) {
+                        window.history.back();
+                    }
+
+                },
+                700
+            );
+
+        } catch (error) {
+
+            console.error(
+                "Delete chat error:",
+                error
+            );
+
+            showToast(
+                "Unable to delete chat.",
+                "error"
+            );
         }
     }
 
-    /* =====================================================
-       SCROLL
-    ===================================================== */
 
-    function scrollToBottom(
-        smooth = true
-    ) {
+    /* ======================================================
+       MUTE
+    ====================================================== */
+
+    async function toggleMute() {
+
+        state.muted =
+            !state.muted;
+
+        if (menuMuteBtn) {
+
+            const span =
+                menuMuteBtn.querySelector(
+                    "span"
+                );
+
+            const icon =
+                menuMuteBtn.querySelector(
+                    "i"
+                );
+
+            if (span) {
+                span.textContent =
+                    state.muted
+                        ? "Unmute notifications"
+                        : "Mute notifications";
+            }
+
+            if (icon) {
+                icon.className =
+                    state.muted
+                        ? "fa-solid fa-bell"
+                        : "fa-solid fa-bell-slash";
+            }
+        }
+
+        try {
+
+            await db.ref(
+                `vieworaChats/${state.chatId}/muted/${state.currentUser.uid}`
+            ).set(
+                state.muted
+            );
+
+            showToast(
+                state.muted
+                    ? "Notifications muted."
+                    : "Notifications unmuted."
+            );
+
+        } catch (error) {
+
+            console.warn(
+                "Mute save error:",
+                error
+            );
+        }
+    }
+
+
+    /* ======================================================
+       SCROLL
+    ====================================================== */
+
+    function isNearBottom() {
+
+        if (!chatContainer) {
+            return true;
+        }
+
+        const distance =
+            chatContainer.scrollHeight -
+            chatContainer.scrollTop -
+            chatContainer.clientHeight;
+
+        return (
+            distance <=
+            SCROLL_THRESHOLD
+        );
+    }
+
+
+    function scrollToBottom() {
 
         if (!chatContainer) {
             return;
         }
 
         chatContainer.scrollTo({
-
             top:
                 chatContainer.scrollHeight,
-
             behavior:
-                smooth
-                    ? "smooth"
-                    : "auto"
+                "smooth"
         });
+
+        state.isNearBottom =
+            true;
+
+        scrollBottomBtn?.classList.add(
+            "hidden"
+        );
+
+        markIncomingAsSeen();
     }
 
-    chatContainer?.addEventListener(
-        "scroll",
-        () => {
 
-            const distance =
-                chatContainer.scrollHeight -
-                chatContainer.scrollTop -
-                chatContainer.clientHeight;
+    function handleScroll() {
 
-            scrollBottomBtn?.classList.toggle(
+        state.isNearBottom =
+            isNearBottom();
+
+        if (scrollBottomBtn) {
+
+            scrollBottomBtn.classList.toggle(
                 "hidden",
-                distance < 300
+                state.isNearBottom
             );
         }
-    );
 
-    scrollBottomBtn?.addEventListener(
-        "click",
-        () => {
-
-            scrollToBottom();
+        if (state.isNearBottom) {
+            markIncomingAsSeen();
         }
-    );
+    }
 
-    /* =====================================================
-       INPUT RESIZE
-    ===================================================== */
+
+    /* ======================================================
+       INPUT
+    ====================================================== */
 
     function autoResizeInput() {
 
@@ -4547,1039 +4532,1046 @@ function setupMessagesListener() {
             "auto";
 
         messageInput.style.height =
-            Math.min(
+            `${Math.min(
                 messageInput.scrollHeight,
                 140
-            ) +
-            "px";
+            )}px`;
     }
 
-    /* =====================================================
-       PROFILE
-    ===================================================== */
 
-    profileBtn?.addEventListener(
-        "click",
-        () => {
+    function updateComposerMode() {
 
-            renderOtherUser();
+        if (!sendBtn) {
+            return;
+        }
 
-            profileModal?.classList.remove(
+        if (state.editingMessageId) {
+
+            sendBtn.innerHTML =
+                `<i class="fa-solid fa-check"></i>`;
+
+            sendBtn.setAttribute(
+                "aria-label",
+                "Save edit"
+            );
+
+        } else {
+
+            sendBtn.innerHTML =
+                `<i class="fa-solid fa-paper-plane"></i>`;
+
+            sendBtn.setAttribute(
+                "aria-label",
+                "Send message"
+            );
+        }
+    }
+
+
+    /* ======================================================
+       KEYBOARD
+    ====================================================== */
+
+    function handleInputKeydown(
+        event
+    ) {
+
+        if (
+            event.key === "Enter" &&
+            !event.shiftKey
+        ) {
+
+            event.preventDefault();
+
+            sendText();
+        }
+    }
+
+
+    /* ======================================================
+       GLOBAL CLICK
+    ====================================================== */
+
+    function handleDocumentClick(
+        event
+    ) {
+
+        const target =
+            event.target;
+
+        if (
+            messageMenu &&
+            !messageMenu.contains(target) &&
+            !target.closest(".messageBubble")
+        ) {
+            closeMessageMenu();
+        }
+
+        if (
+            chatMenu &&
+            !chatMenu.contains(target) &&
+            !target.closest("#menuBtn")
+        ) {
+            chatMenu.classList.add(
                 "hidden"
             );
         }
-    );
+    }
 
-    closeProfileBtn?.addEventListener(
-        "click",
-        () => {
 
-            profileModal?.classList.add(
-                "hidden"
-            );
-        }
-    );
+    /* ======================================================
+       EVENT BINDINGS
+    ====================================================== */
 
-    /* =====================================================
-       CHAT MENU
-    ===================================================== */
+    function bindEvents() {
 
-    menuBtn?.addEventListener(
-        "click",
-        event => {
-
-            event.stopPropagation();
-
-            addSafetyMenuItems();
-
-            chatMenu?.classList.toggle(
-                "hidden"
-            );
-        }
-    );
-
-    function closeChatMenu() {
-
-        chatMenu?.classList.add(
-            "hidden"
+        backBtn?.addEventListener(
+            "click",
+            () => {
+                window.history.back();
+            }
         );
-    }
 
-    document.addEventListener(
-        "click",
-        event => {
 
-            if (
-                chatMenu &&
-                !chatMenu.contains(
-                    event.target
-                ) &&
-                event.target !== menuBtn
-            ) {
+        profileBtn?.addEventListener(
+            "click",
+            openProfile
+        );
 
-                closeChatMenu();
+
+        closeProfileBtn?.addEventListener(
+            "click",
+            closeProfile
+        );
+
+
+        searchBtn?.addEventListener(
+            "click",
+            openSearch
+        );
+
+
+        closeSearch?.addEventListener(
+            "click",
+            closeSearchBar
+        );
+
+
+        menuSearchBtn?.addEventListener(
+            "click",
+            () => {
+
+                chatMenu?.classList.add(
+                    "hidden"
+                );
+
+                openSearch();
             }
+        );
 
-            if (
-                messageMenu &&
-                !messageMenu.contains(
-                    event.target
-                )
-            ) {
 
-                closeMessageMenu();
+        searchInput?.addEventListener(
+            "input",
+            () => {
+
+                state.searchTerm =
+                    String(
+                        searchInput.value ||
+                        ""
+                    ).trim();
+
+                renderMessages();
             }
+        );
 
-            if (
-                emojiPanel &&
-                !emojiPanel.contains(
-                    event.target
-                ) &&
-                event.target !== emojiBtn
-            ) {
 
-                emojiPanel.classList.add(
+        menuBtn?.addEventListener(
+            "click",
+            event => {
+
+                event.stopPropagation();
+
+                toggleChatMenu();
+            }
+        );
+
+
+        menuMuteBtn?.addEventListener(
+            "click",
+            toggleMute
+        );
+
+
+        menuDeleteChatBtn?.addEventListener(
+            "click",
+            deleteChat
+        );
+
+
+        attachBtn?.addEventListener(
+            "click",
+            openAttachmentSheet
+        );
+
+
+        attachmentOverlay?.addEventListener(
+            "click",
+            closeAttachmentSheet
+        );
+
+
+        closeAttachmentBtn?.addEventListener(
+            "click",
+            closeAttachmentSheet
+        );
+
+
+        galleryBtn?.addEventListener(
+            "click",
+            () => openPicker(
+                imagePicker
+            )
+        );
+
+
+        cameraAttachmentBtn?.addEventListener(
+            "click",
+            () => openPicker(
+                cameraPicker
+            )
+        );
+
+
+        cameraBtn?.addEventListener(
+            "click",
+            () => openPicker(
+                cameraPicker
+            )
+        );
+
+
+        videoBtn?.addEventListener(
+            "click",
+            () => openPicker(
+                videoPicker
+            )
+        );
+
+
+        audioBtn?.addEventListener(
+            "click",
+            () => openPicker(
+                audioPicker
+            )
+        );
+
+
+        documentBtn?.addEventListener(
+            "click",
+            () => openPicker(
+                documentPicker
+            )
+        );
+
+
+        imagePicker?.addEventListener(
+            "change",
+            handleFileSelected
+        );
+
+
+        videoPicker?.addEventListener(
+            "change",
+            handleFileSelected
+        );
+
+
+        audioPicker?.addEventListener(
+            "change",
+            handleFileSelected
+        );
+
+
+        documentPicker?.addEventListener(
+            "change",
+            handleFileSelected
+        );
+
+
+        cameraPicker?.addEventListener(
+            "change",
+            handleFileSelected
+        );
+
+
+        closePreviewBtn?.addEventListener(
+            "click",
+            closeMediaPreview
+        );
+
+
+        cancelMediaBtn?.addEventListener(
+            "click",
+            closeMediaPreview
+        );
+
+
+        sendMediaBtn?.addEventListener(
+            "click",
+            sendPendingMedia
+        );
+
+
+        emojiBtn?.addEventListener(
+            "click",
+            toggleEmojiPanel
+        );
+
+
+        emojiPanel?.querySelectorAll(
+            ".emojiGrid span"
+        ).forEach(
+            element => {
+
+                element.addEventListener(
+                    "click",
+                    () => {
+
+                        insertEmoji(
+                            element.textContent
+                        );
+                    }
+                );
+            }
+        );
+
+
+        messageInput?.addEventListener(
+            "input",
+            () => {
+
+                autoResizeInput();
+
+                if (
+                    messageInput.value.trim()
+                ) {
+                    handleTyping();
+                } else {
+                    setTyping(false);
+                }
+            }
+        );
+
+
+        messageInput?.addEventListener(
+            "keydown",
+            handleInputKeydown
+        );
+
+
+        sendBtn?.addEventListener(
+            "click",
+            sendText
+        );
+
+
+        voiceBtn?.addEventListener(
+            "click",
+            () => {
+
+                if (state.recording) {
+                    stopRecording();
+                } else {
+                    startRecording();
+                }
+            }
+        );
+
+
+        cancelRecordingBtn?.addEventListener(
+            "click",
+            cancelRecording
+        );
+
+
+        stopRecordingBtn?.addEventListener(
+            "click",
+            stopRecording
+        );
+
+
+        scrollBottomBtn?.addEventListener(
+            "click",
+            scrollToBottom
+        );
+
+
+        chatContainer?.addEventListener(
+            "scroll",
+            handleScroll,
+            {
+                passive: true
+            }
+        );
+
+
+        closeViewerBtn?.addEventListener(
+            "click",
+            closeImageViewer
+        );
+
+
+        imageViewer?.addEventListener(
+            "click",
+            event => {
+
+                if (
+                    event.target ===
+                    imageViewer
+                ) {
+                    closeImageViewer();
+                }
+            }
+        );
+
+
+        closeVideoViewerBtn?.addEventListener(
+            "click",
+            closeVideoViewer
+        );
+
+
+        videoViewer?.addEventListener(
+            "click",
+            event => {
+
+                if (
+                    event.target ===
+                    videoViewer
+                ) {
+                    closeVideoViewer();
+                }
+            }
+        );
+
+
+        closeReplyPreview?.addEventListener(
+            "click",
+            clearReply
+        );
+
+
+        closeDeleteModal?.addEventListener?.(
+            "click",
+            closeDeleteModal
+        );
+
+
+        cancelDeleteBtn?.addEventListener(
+            "click",
+            closeDeleteModal
+        );
+
+
+        deleteForMeBtn?.addEventListener(
+            "click",
+            deleteForMe
+        );
+
+
+        deleteForEveryoneBtn?.addEventListener(
+            "click",
+            deleteForEveryone
+        );
+
+
+        closeInfoBtn?.addEventListener(
+            "click",
+            () => {
+                messageInfoModal?.classList.add(
                     "hidden"
                 );
             }
-        }
-    );
+        );
 
-    /* =====================================================
-       MUTE
-    ===================================================== */
 
-    $("menuMuteBtn")?.addEventListener(
-        "click",
-        async () => {
+        replyMessageBtn?.addEventListener(
+            "click",
+            () => {
 
-            if (
-                !currentUser ||
-                !chatId
-            ) {
-                return;
+                const message =
+                    state.selectedMessage;
+
+                closeMessageMenu();
+
+                startReply(
+                    message
+                );
             }
+        );
 
-            try {
 
-                const ref =
-                    db.ref(
-                        `userChats/${currentUser.uid}/${chatId}/muted`
+        copyMessageBtn?.addEventListener(
+            "click",
+            copySelectedMessage
+        );
+
+
+        reactMessageBtn?.addEventListener(
+            "click",
+            () => {
+
+                const rect =
+                    messageMenu?.getBoundingClientRect();
+
+                closeMessageMenu();
+
+                if (reactionBar) {
+
+                    reactionBar.style.position =
+                        "fixed";
+
+                    if (rect) {
+
+                        reactionBar.style.left =
+                            `${Math.max(
+                                10,
+                                Math.min(
+                                    rect.left,
+                                    window.innerWidth - 310
+                                )
+                            )}px`;
+
+                        reactionBar.style.top =
+                            `${Math.max(
+                                10,
+                                rect.top - 60
+                            )}px`;
+                    }
+
+                    reactionBar.classList.remove(
+                        "hidden"
                     );
-
-                const snapshot =
-                    await ref.once(
-                        "value"
-                    );
-
-                const muted =
-                    snapshot.val() === true;
-
-                await ref.set(
-                    !muted
-                );
-
-                showToast(
-                    muted
-                        ? "Chat unmuted"
-                        : "Chat muted"
-                );
-
-                closeChatMenu();
-
-            } catch (error) {
-
-                console.error(
-                    "MUTE ERROR:",
-                    error
-                );
-
-                showToast(
-                    "Unable to update mute status.",
-                    "error"
-                );
+                }
             }
-        }
-    );
+        );
 
-    /* =====================================================
-       DELETE CHAT
-    ===================================================== */
 
-    $("menuDeleteChatBtn")?.addEventListener(
-        "click",
-        async () => {
+        reactionBar?.querySelectorAll(
+            "button"
+        ).forEach(
+            button => {
 
-            const ok =
-                window.confirm(
-                    "Delete this conversation from your chat list?"
-                );
-
-            if (!ok) {
-                return;
-            }
-
-            try {
-
-                await db
-                    .ref(
-                        `userChats/${currentUser.uid}/${chatId}`
-                    )
-                    .remove();
-
-                showToast(
-                    "Chat removed"
-                );
-
-                setTimeout(
+                button.addEventListener(
+                    "click",
                     () => {
 
-                        location.href =
-                            "messages.html";
+                        if (
+                            state.currentMessageId
+                        ) {
 
-                    },
-                    600
-                );
+                            toggleReaction(
+                                state.currentMessageId,
+                                button.textContent.trim()
+                            );
+                        }
 
-            } catch (error) {
-
-                console.error(
-                    "DELETE CHAT:",
-                    error
-                );
-
-                showToast(
-                    "Unable to delete chat.",
-                    "error"
+                        reactionBar.classList.add(
+                            "hidden"
+                        );
+                    }
                 );
             }
-        }
-    );
+        );
 
-    /* =====================================================
-       BACK
-    ===================================================== */
 
-    backBtn?.addEventListener(
-        "click",
-        () => {
+        editMessageBtn?.addEventListener(
+            "click",
+            () => {
 
-            if (
-                document.referrer
-            ) {
+                const message =
+                    state.selectedMessage;
 
-                history.back();
+                closeMessageMenu();
 
-            } else {
-
-                location.href =
-                    "messages.html";
-            }
-        }
-    );
-
-    /* =====================================================
-       CALL BUTTONS
-    ===================================================== */
-
-    voiceCallBtn?.addEventListener(
-        "click",
-        () => {
-
-            showToast(
-                "Voice calling is coming soon.",
-                "warning"
-            );
-        }
-    );
-
-    videoCallBtn?.addEventListener(
-        "click",
-        () => {
-
-            showToast(
-                "Video calling is coming soon.",
-                "warning"
-            );
-        }
-    );
-
-    /* =====================================================
-       FORWARD
-    ===================================================== */
-
-    $("forwardMessageBtn")?.addEventListener(
-        "click",
-        () => {
-
-            showToast(
-                "Forward system is coming soon.",
-                "warning"
-            );
-
-            closeMessageMenu();
-        }
-    );
-
-    /* =====================================================
-       FORMAT
-    ===================================================== */
-
-    function formatTime(
-        timestamp
-    ) {
-
-        if (!timestamp) {
-            return "";
-        }
-
-        return new Date(
-            Number(timestamp)
-        ).toLocaleTimeString(
-            [],
-            {
-                hour:
-                    "2-digit",
-
-                minute:
-                    "2-digit"
+                startEdit(
+                    message
+                );
             }
         );
-    }
 
-    function formatDateTime(
-        timestamp
-    ) {
 
-        if (!timestamp) {
-            return "--";
-        }
+        pinMessageBtn?.addEventListener(
+            "click",
+            togglePin
+        );
 
-        return new Date(
-            Number(timestamp)
-        ).toLocaleString(
-            [],
-            {
-                dateStyle:
-                    "medium",
 
-                timeStyle:
-                    "short"
+        infoMessageBtn?.addEventListener(
+            "click",
+            openMessageInfo
+        );
+
+
+        deleteMessageBtn?.addEventListener(
+            "click",
+            openDeleteModal
+        );
+
+
+        cancelUploadBtn?.addEventListener(
+            "click",
+            cancelUpload
+        );
+
+
+        voiceCallBtn?.addEventListener(
+            "click",
+            () => {
+
+                if (
+                    typeof window.VieworaStartVoiceCall ===
+                    "function"
+                ) {
+
+                    window.VieworaStartVoiceCall(
+                        targetUid
+                    );
+
+                } else if (
+                    typeof window.startVoiceCall ===
+                    "function"
+                ) {
+
+                    window.startVoiceCall(
+                        targetUid
+                    );
+
+                } else {
+
+                    showToast(
+                        "Voice call module is not ready.",
+                        "warning"
+                    );
+                }
             }
         );
-    }
 
-    function formatBytes(
-        bytes
-    ) {
 
-        if (
-            !Number.isFinite(bytes) ||
-            bytes <= 0
-        ) {
+        videoCallBtn?.addEventListener(
+            "click",
+            () => {
 
-            return "0 B";
-        }
+                if (
+                    typeof window.VieworaStartVideoCall ===
+                    "function"
+                ) {
 
-        const units = [
-            "B",
-            "KB",
-            "MB",
-            "GB"
-        ];
+                    window.VieworaStartVideoCall(
+                        targetUid
+                    );
 
-        const index =
-            Math.min(
-                Math.floor(
-                    Math.log(bytes) /
-                    Math.log(1024)
-                ),
-                units.length - 1
-            );
+                } else if (
+                    typeof window.startVideoCall ===
+                    "function"
+                ) {
 
-        const value =
-            bytes /
-            Math.pow(
-                1024,
-                index
-            );
+                    window.startVideoCall(
+                        targetUid
+                    );
 
-        return (
-            value.toFixed(
-                index === 0
-                    ? 0
-                    : 2
-            ) +
-            " " +
-            units[index]
+                } else {
+
+                    showToast(
+                        "Video call module is not ready.",
+                        "warning"
+                    );
+                }
+            }
         );
-    }
 
-    /* =====================================================
-       ESCAPE HTML
-    ===================================================== */
-
-    function escapeHTML(
-        value
-    ) {
-
-        return String(
-            value ?? ""
-        )
-            .replace(
-                /&/g,
-                "&amp;"
-            )
-            .replace(
-                /</g,
-                "&lt;"
-            )
-            .replace(
-                />/g,
-                "&gt;"
-            )
-            .replace(
-                /"/g,
-                "&quot;"
-            )
-            .replace(
-                /'/g,
-                "&#039;"
-            );
-    }
-
-/* =====================================================
-   BROWSER NOTIFICATIONS + SOUND
-===================================================== */
-
-function setupBrowserNotifications() {
-
-    /*
-       Notification API supported nahi hai
-       to silently skip.
-    */
-
-    if (
-        !("Notification" in window)
-    ) {
-        return;
-    }
-
-    /*
-       User ke first interaction par permission
-       request karenge.
-    */
-
-    if (
-        Notification.permission ===
-        "default"
-    ) {
 
         document.addEventListener(
             "click",
-            unlockNotificationSystem,
-            {
-                once: true
+            handleDocumentClick
+        );
+
+
+        document.addEventListener(
+            "keydown",
+            event => {
+
+                if (
+                    event.key === "Escape"
+                ) {
+
+                    closeMessageMenu();
+
+                    chatMenu?.classList.add(
+                        "hidden"
+                    );
+
+                    reactionBar?.classList.add(
+                        "hidden"
+                    );
+                }
             }
         );
     }
 
-    /*
-       Agar permission pehle se granted hai,
-       sound system ko unlock karne ki
-       koshish karo.
-    */
 
-    if (
-        Notification.permission ===
-        "granted"
-    ) {
+    /* ======================================================
+       FIX: CLOSE DELETE MODAL
+    ====================================================== */
 
-        unlockNotificationSound();
+    function bindModalBackdrops() {
+
+        document
+            .querySelectorAll(
+                ".modalBackdrop"
+            )
+            .forEach(
+                backdrop => {
+
+                    backdrop.addEventListener(
+                        "click",
+                        () => {
+
+                            const modal =
+                                backdrop.closest(
+                                    ".modal"
+                                );
+
+                            modal?.classList.add(
+                                "hidden"
+                            );
+                        }
+                    );
+                }
+            );
     }
-}
 
 
-/* =====================================================
-   NOTIFICATION PERMISSION
-===================================================== */
+    /* ======================================================
+       LOAD MUTE STATE
+    ====================================================== */
 
-async function requestNotificationPermission() {
+    async function loadMuteState() {
 
-    try {
+        try {
 
-        if (
-            !("Notification" in window)
-        ) {
-            return;
-        }
+            const snapshot =
+                await db.ref(
+                    `vieworaChats/${state.chatId}/muted/${state.currentUser.uid}`
+                ).once("value");
 
-        if (
-            Notification.permission ===
-            "default"
-        ) {
-
-            const permission =
-                await Notification.requestPermission();
-
-            if (
-                permission ===
-                "granted"
-            ) {
-
-                unlockNotificationSound();
-
-                console.log(
-                    "Viewora notifications enabled."
+            state.muted =
+                Boolean(
+                    snapshot.val()
                 );
+
+            if (menuMuteBtn) {
+
+                const span =
+                    menuMuteBtn.querySelector(
+                        "span"
+                    );
+
+                const icon =
+                    menuMuteBtn.querySelector(
+                        "i"
+                    );
+
+                if (span) {
+                    span.textContent =
+                        state.muted
+                            ? "Unmute notifications"
+                            : "Mute notifications";
+                }
+
+                if (icon) {
+                    icon.className =
+                        state.muted
+                            ? "fa-solid fa-bell"
+                            : "fa-solid fa-bell-slash";
+                }
             }
+
+        } catch (error) {
+
+            console.warn(
+                "Mute state error:",
+                error
+            );
         }
+    }
 
-    } catch (error) {
 
-        console.warn(
-            "Notification permission:",
-            error
+    /* ======================================================
+       AUTH INITIALIZATION
+    ====================================================== */
+
+    function waitForAuth() {
+
+        return new Promise(
+            resolve => {
+
+                let finished =
+                    false;
+
+                const unsubscribe =
+                    auth.onAuthStateChanged(
+                        user => {
+
+                            if (finished) {
+                                return;
+                            }
+
+                            finished =
+                                true;
+
+                            try {
+                                unsubscribe();
+                            } catch (_) {}
+
+                            resolve(
+                                user
+                            );
+                        }
+                    );
+            }
         );
     }
-}
 
 
-/* =====================================================
-   UNLOCK NOTIFICATION SYSTEM
-===================================================== */
+    /* ======================================================
+       INITIALIZE
+    ====================================================== */
 
-async function unlockNotificationSystem() {
+    async function initialize() {
 
-    try {
+        try {
 
-        if (
-            "Notification" in window &&
-            Notification.permission ===
-            "default"
-        ) {
+            setLoadingText(
+                "Checking account..."
+            );
 
-            const permission =
-                await Notification.requestPermission();
+            const user =
+                await waitForAuth();
 
-            if (
-                permission !==
-                "granted"
-            ) {
+            if (!user) {
+
+                hideLoading();
+
+                showToast(
+                    "Please login to use chat.",
+                    "warning"
+                );
+
                 return;
             }
-        }
 
-        unlockNotificationSound();
+            state.currentUser =
+                user;
 
-    } catch (error) {
-
-        console.warn(
-            "Notification unlock:",
-            error
-        );
-    }
-}
-
-
-/* =====================================================
-   NOTIFICATION SOUND
-===================================================== */
-
-function unlockNotificationSound() {
-
-    if (notificationUnlocked) {
-        return;
-    }
-
-    try {
-
-        const AudioContext =
-            window.AudioContext ||
-            window.webkitAudioContext;
-
-        if (!AudioContext) {
-            return;
-        }
-
-        notificationAudioContext =
-            notificationAudioContext ||
-            new AudioContext();
-
-        /*
-           Browser ke autoplay restriction ko
-           user interaction ke waqt unlock karte hain.
-        */
-
-        if (
-            notificationAudioContext.state ===
-            "suspended"
-        ) {
-
-            notificationAudioContext
-                .resume()
-                .catch(
-                    () => {}
+            state.chatId =
+                getChatId(
+                    user.uid,
+                    targetUid
                 );
-        }
 
-        notificationUnlocked =
-            true;
-
-    } catch (error) {
-
-        console.warn(
-            "Notification sound unavailable:",
-            error
-        );
-    }
-}
-
-
-/* =====================================================
-   PLAY MESSAGE SOUND
-===================================================== */
-
-function playMessageNotificationSound() {
-
-    try {
-
-        const AudioContext =
-            window.AudioContext ||
-            window.webkitAudioContext;
-
-        if (!AudioContext) {
-            return;
-        }
-
-        notificationAudioContext =
-            notificationAudioContext ||
-            new AudioContext();
-
-        const ctx =
-            notificationAudioContext;
-
-        if (
-            ctx.state ===
-            "suspended"
-        ) {
-
-            ctx.resume()
-                .catch(
-                    () => {}
-                );
-        }
-
-        const now =
-            ctx.currentTime;
-
-        /*
-           Premium two-tone notification sound.
-        */
-
-        const oscillator =
-            ctx.createOscillator();
-
-        const gain =
-            ctx.createGain();
-
-        oscillator.type =
-            "sine";
-
-        oscillator.frequency.setValueAtTime(
-            880,
-            now
-        );
-
-        oscillator.frequency.setValueAtTime(
-            1174,
-            now + 0.09
-        );
-
-        gain.gain.setValueAtTime(
-            0.0001,
-            now
-        );
-
-        gain.gain.exponentialRampToValueAtTime(
-            0.16,
-            now + 0.015
-        );
-
-        gain.gain.exponentialRampToValueAtTime(
-            0.0001,
-            now + 0.32
-        );
-
-        oscillator.connect(
-            gain
-        );
-
-        gain.connect(
-            ctx.destination
-        );
-
-        oscillator.start(
-            now
-        );
-
-        oscillator.stop(
-            now + 0.34
-        );
-
-    } catch (error) {
-
-        console.warn(
-            "Notification sound error:",
-            error
-        );
-    }
-}
-
-
-/* =====================================================
-   MESSAGE PREVIEW FOR NOTIFICATION
-===================================================== */
-
-function getNotificationPreview(
-    message
-) {
-
-    if (!message) {
-        return "New message";
-    }
-
-    if (
-        message.deleted
-    ) {
-        return "Message deleted";
-    }
-
-    switch (
-        message.type
-    ) {
-
-        case "text":
-            return (
-                message.text ||
-                "New message"
+            setLoadingText(
+                "Loading conversation..."
             );
 
-        case "image":
-            return "📷 Photo";
+            await loadOtherUser();
 
-        case "video":
-            return "🎥 Video";
+            await ensureChat();
 
-        case "audio":
-            return "🎵 Voice message";
+            await loadMuteState();
 
-        case "file":
-            return (
-                "📎 " +
-                (
-                    message.fileName ||
-                    "File"
-                )
+            setOwnPresence();
+
+            watchPresence();
+
+            listenMessages();
+
+            listenTyping();
+
+            bindEvents();
+
+            bindModalBackdrops();
+
+            autoResizeInput();
+
+            updateComposerMode();
+
+            hideLoading();
+
+            setTimeout(
+                () => {
+
+                    scrollToBottom();
+
+                },
+                120
             );
 
-        default:
-            return "New message";
-    }
-}
-
-
-/* =====================================================
-   HANDLE INCOMING MESSAGE
-===================================================== */
-
-async function handleIncomingMessageNotification(
-    messageId,
-    message
-) {
-
-    if (
-        !currentUser ||
-        !message ||
-        !messageId
-    ) {
-        return;
-    }
-
-    /*
-       Apne message ko ignore karo.
-    */
-
-    if (
-        message.uid ===
-        currentUser.uid
-    ) {
-        return;
-    }
-
-    /*
-       Duplicate notification protection.
-    */
-
-    if (
-        lastNotificationMessageId ===
-        messageId
-    ) {
-        return;
-    }
-
-    lastNotificationMessageId =
-        messageId;
-
-    /*
-       Chat muted hai ya nahi check karo.
-    */
-
-    let muted = false;
-
-    try {
-
-        const muteSnapshot =
-            await db
-                .ref(
-                    `userChats/${currentUser.uid}/${chatId}/muted`
-                )
-                .once(
-                    "value"
-                );
-
-        muted =
-            muteSnapshot.val() === true;
-
-    } catch (error) {
-
-        console.warn(
-            "Mute check failed:",
-            error
-        );
-    }
-
-    if (muted) {
-        return;
-    }
-
-    /*
-       Agar user isi chat me actively present hai,
-       notification mat dikhao.
-    */
-
-    const chatIsActive =
-        document.visibilityState ===
-            "visible" &&
-        document.hasFocus();
-
-    if (chatIsActive) {
-        return;
-    }
-
-    /*
-       Sound
-    */
-
-    playMessageNotificationSound();
-
-    /*
-       Browser notification
-    */
-
-    showIncomingBrowserNotification(
-        message
-    );
-}
-
-
-/* =====================================================
-   SHOW BROWSER NOTIFICATION
-===================================================== */
-
-function showIncomingBrowserNotification(
-    message
-) {
-
-    if (
-        !("Notification" in window)
-    ) {
-        return;
-    }
-
-    if (
-        Notification.permission !==
-        "granted"
-    ) {
-        return;
-    }
-
-    const senderName =
-        otherProfile.name ||
-        otherProfile.fullName ||
-        otherProfile.displayName ||
-        otherProfile.username ||
-        "Viewora User";
-
-    const preview =
-        getNotificationPreview(
-            message
-        );
-
-    try {
-
-        const notification =
-            new Notification(
-                senderName,
+            console.log(
+                "Viewora Chat initialized.",
                 {
-                    body:
-                        preview,
-
-                    icon:
-                        otherProfile.profilePhoto ||
-                        otherProfile.photoURL ||
-                        otherProfile.avatar ||
-                        "assets/logo.png",
-
-                    badge:
-                        "assets/logo.png",
-
-                    tag:
-                        "viewora-chat-" +
-                        chatId,
-
-                    renotify:
-                        true,
-
-                    silent:
-                        true
+                    chatId:
+                        state.chatId,
+                    user:
+                        user.uid,
+                    otherUser:
+                        targetUid
                 }
             );
 
-        /*
-           Notification click →
-           Viewora chat window active.
-        */
+        } catch (error) {
 
-        notification.onclick =
-            () => {
+            console.error(
+                "Viewora Chat initialization error:",
+                error
+            );
 
-                window.focus();
+            hideLoading();
 
-                notification.close();
-            };
-
-        /*
-           Auto close
-        */
-
-        setTimeout(
-            () => {
-
-                try {
-                    notification.close();
-                } catch (_) {}
-
-            },
-            6000
-        );
-
-    } catch (error) {
-
-        console.warn(
-            "Browser notification failed:",
-            error
-        );
+            showToast(
+                error?.message ||
+                "Unable to open chat.",
+                "error"
+            );
+        }
     }
-}
-    /* =====================================================
+
+
+    /* ======================================================
        CLEANUP
-    ===================================================== */
+    ====================================================== */
 
     function cleanup() {
 
-        stopTyping();
+        try {
 
-        cleanupMessagesListener();
+            if (
+                state.messagesListener
+            ) {
 
-        cleanupOtherUserListener();
-
-        cleanupTypingListener();
-
-        cleanupBlockedListener();
-
-        releaseMediaObjectURL();
-
-        if (uploadXHR) {
-
-            try {
-                uploadXHR.abort();
-            } catch (_) {}
-        }
-
-        if (
-            currentUser &&
-            currentUser.uid
-        ) {
-
-            db.ref(
-                `users/${currentUser.uid}`
-            )
-                .update({
-
-                    online:
-                        false,
-
-                    lastSeen:
-                        firebase.database
-                            .ServerValue
-                            .TIMESTAMP
-
-                })
-                .catch(
-                    console.error
+                state.messagesListener.ref.off(
+                    "value",
+                    state.messagesListener.callback
                 );
+            }
+
+            if (
+                state.typingListener
+            ) {
+
+                state.typingListener.ref.off(
+                    "value",
+                    state.typingListener.callback
+                );
+            }
+
+            if (
+                state.presenceListener
+            ) {
+
+                state.presenceListener.ref.off(
+                    "value",
+                    state.presenceListener.callback
+                );
+            }
+
+            if (
+                state.userListener
+            ) {
+
+                state.userListener.ref.off(
+                    "value",
+                    state.userListener.callback
+                );
+            }
+
+            if (
+                state.typingTimer
+            ) {
+
+                clearTimeout(
+                    state.typingTimer
+                );
+            }
+
+            if (
+                state.recordTimer
+            ) {
+
+                clearInterval(
+                    state.recordTimer
+                );
+            }
+
+            if (
+                state.typingActive &&
+                state.currentUser
+            ) {
+
+                typingRef(
+                    state.currentUser.uid
+                ).remove();
+            }
+
+        } catch (error) {
+
+            console.warn(
+                "Chat cleanup error:",
+                error
+            );
         }
     }
+
 
     window.addEventListener(
         "beforeunload",
         cleanup
     );
 
-    /* =====================================================
-       SAFETY TIMEOUT
-    ===================================================== */
 
-    setTimeout(
-        () => {
+    /* ======================================================
+       PUBLIC API
+    ====================================================== */
 
-            if (!initialized) {
+    window.VieworaChat = {
 
-                hideLoading();
+        state,
 
-                console.warn(
-                    "Viewora Chat safety timeout."
-                );
-            }
+        sendText,
 
-        },
-        8000
-    );
+        openSearch,
 
-    /* =====================================================
-       INITIAL UI
-    ===================================================== */
+        openAttachmentSheet,
 
-    hideAllPreviews();
+        openProfile,
 
-    closeChatMenu();
+        startReply,
 
-    closeMessageMenu();
+        startEdit,
 
-    console.log(
-        "%cVIEWORA CHAT V3 READY",
-        "color:#00e676;font-size:18px;font-weight:800"
-    );
+        scrollToBottom,
+
+        showToast,
+
+        getChatId
+
+    };
+
+
+    /* ======================================================
+       START
+    ====================================================== */
+
+    initialize();
 
 })();

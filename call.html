@@ -1,0 +1,1156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    >
+
+    <meta
+        name="theme-color"
+        content="#0b0b10"
+    >
+
+    <title>Viewora Call</title>
+
+    <!-- =====================================================
+         FONT AWESOME
+    ====================================================== -->
+    <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
+    >
+
+    <!-- =====================================================
+         CALL CSS
+    ====================================================== -->
+    <link
+        rel="stylesheet"
+        href="call.css"
+    >
+</head>
+
+<body>
+
+<!-- ========================================================
+     CALL ROOT
+========================================================= -->
+
+<div
+    id="callPage"
+    class="call-page"
+>
+
+    <!-- ====================================================
+         REMOTE CALL AREA
+    ===================================================== -->
+
+    <main
+        id="callApp"
+        class="call-app"
+    >
+
+        <!-- Remote video -->
+
+        <video
+            id="remoteVideo"
+            class="remote-video"
+            autoplay
+            playsinline
+            webkit-playsinline
+        ></video>
+
+
+        <!-- Remote audio for voice calls -->
+
+        <audio
+            id="remoteAudio"
+            autoplay
+        ></audio>
+
+
+        <!-- Remote placeholder -->
+
+        <div
+            id="remotePlaceholder"
+            class="remote-placeholder"
+        >
+
+            <div class="remote-placeholder-glow"></div>
+
+            <div class="remote-avatar-wrap">
+
+                <img
+                    id="remoteAvatar"
+                    src="assets/default-avatar.png"
+                    alt="User"
+                >
+
+                <span
+                    id="remoteOnlineDot"
+                    class="online-dot"
+                ></span>
+
+            </div>
+
+            <h2 id="remoteName">
+                Viewora User
+            </h2>
+
+            <p id="remoteUsername"></p>
+
+        </div>
+
+
+        <!-- =================================================
+             TOP BAR
+        ================================================== -->
+
+        <header class="call-topbar">
+
+            <button
+                id="minimizeCallBtn"
+                class="icon-btn"
+                type="button"
+                aria-label="Minimize call"
+            >
+                <i class="fa-solid fa-chevron-down"></i>
+            </button>
+
+
+            <div class="call-top-info">
+
+                <strong id="topCallName">
+                    Viewora Call
+                </strong>
+
+                <span
+                    id="callStatus"
+                    class="call-status"
+                >
+                    Connecting...
+                </span>
+
+            </div>
+
+
+            <button
+                id="speakerBtn"
+                class="icon-btn"
+                type="button"
+                aria-label="Speaker"
+            >
+                <i class="fa-solid fa-volume-high"></i>
+            </button>
+
+        </header>
+
+
+        <!-- =================================================
+             CALL DURATION
+        ================================================== -->
+
+        <div
+            id="callDuration"
+            class="call-duration"
+        >
+            00:00
+        </div>
+
+
+        <!-- =================================================
+             LOCAL VIDEO
+        ================================================== -->
+
+        <div
+            id="localVideoWrap"
+            class="local-video-wrap hidden"
+        >
+
+            <video
+                id="localVideo"
+                class="local-video"
+                autoplay
+                muted
+                playsinline
+                webkit-playsinline
+            ></video>
+
+
+            <div class="local-video-label">
+                <i class="fa-solid fa-video"></i>
+                You
+            </div>
+
+        </div>
+
+
+        <!-- =================================================
+             CONNECTING OVERLAY
+        ================================================== -->
+
+        <div
+            id="connectingOverlay"
+            class="connecting-overlay"
+        >
+
+            <div class="connecting-card">
+
+                <div class="connecting-spinner">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+
+                <strong id="connectingText">
+                    Connecting...
+                </strong>
+
+                <small>
+                    Securing your call
+                </small>
+
+            </div>
+
+        </div>
+
+
+        <!-- =================================================
+             CALL CONTROLS
+        ================================================== -->
+
+        <div class="call-controls">
+
+            <!-- Microphone -->
+
+            <button
+                id="muteBtn"
+                class="call-control"
+                type="button"
+                aria-label="Mute microphone"
+            >
+
+                <span class="control-icon">
+                    <i
+                        id="muteIcon"
+                        class="fa-solid fa-microphone"
+                    ></i>
+                </span>
+
+                <small>
+                    Mute
+                </small>
+
+            </button>
+
+
+            <!-- Camera -->
+
+            <button
+                id="cameraBtn"
+                class="call-control video-only-control"
+                type="button"
+                aria-label="Camera"
+            >
+
+                <span class="control-icon">
+                    <i
+                        id="cameraIcon"
+                        class="fa-solid fa-video"
+                    ></i>
+                </span>
+
+                <small>
+                    Camera
+                </small>
+
+            </button>
+
+
+            <!-- Flip camera -->
+
+            <button
+                id="flipCameraBtn"
+                class="call-control video-only-control"
+                type="button"
+                aria-label="Flip camera"
+            >
+
+                <span class="control-icon">
+                    <i class="fa-solid fa-camera-rotate"></i>
+                </span>
+
+                <small>
+                    Flip
+                </small>
+
+            </button>
+
+
+            <!-- Speaker -->
+
+            <button
+                id="callSpeakerBtn"
+                class="call-control"
+                type="button"
+                aria-label="Speaker"
+            >
+
+                <span class="control-icon">
+                    <i
+                        id="callSpeakerIcon"
+                        class="fa-solid fa-volume-high"
+                    ></i>
+                </span>
+
+                <small>
+                    Speaker
+                </small>
+
+            </button>
+
+
+            <!-- End call -->
+
+            <button
+                id="endCallBtn"
+                class="call-control end-call-control"
+                type="button"
+                aria-label="End call"
+            >
+
+                <span class="control-icon">
+                    <i class="fa-solid fa-phone-slash"></i>
+                </span>
+
+                <small>
+                    End
+                </small>
+
+            </button>
+
+        </div>
+
+    </main>
+
+
+    <!-- ====================================================
+         INCOMING CALL
+    ===================================================== -->
+
+    <section
+        id="incomingCallScreen"
+        class="incoming-call-screen hidden"
+    >
+
+        <div class="incoming-background"></div>
+
+
+        <div class="incoming-content">
+
+            <!-- Caller avatar -->
+
+            <div class="incoming-avatar-wrap">
+
+                <div class="incoming-avatar-ring"></div>
+
+                <img
+                    id="incomingAvatar"
+                    src="assets/default-avatar.png"
+                    alt="Caller"
+                    class="incoming-avatar"
+                >
+
+            </div>
+
+
+            <!-- Caller information -->
+
+            <p class="incoming-label">
+                Incoming
+            </p>
+
+            <h1 id="incomingName">
+                Viewora User
+            </h1>
+
+            <p id="incomingUsername">
+                @user
+            </p>
+
+
+            <!-- Call type -->
+
+            <div
+                id="incomingType"
+                class="incoming-type"
+            >
+                <i class="fa-solid fa-phone"></i>
+                Voice Call
+            </div>
+
+
+            <!-- Incoming buttons -->
+
+            <div class="incoming-actions">
+
+                <button
+                    id="rejectCallBtn"
+                    class="incoming-action reject-action"
+                    type="button"
+                >
+
+                    <span>
+                        <i class="fa-solid fa-phone-slash"></i>
+                    </span>
+
+                    <small>
+                        Decline
+                    </small>
+
+                </button>
+
+
+                <button
+                    id="acceptCallBtn"
+                    class="incoming-action accept-action"
+                    type="button"
+                >
+
+                    <span>
+                        <i class="fa-solid fa-phone"></i>
+                    </span>
+
+                    <small>
+                        Accept
+                    </small>
+
+                </button>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- ====================================================
+         CALL ENDED
+    ===================================================== -->
+
+    <section
+        id="callEndedScreen"
+        class="call-ended-screen hidden"
+    >
+
+        <div class="ended-card">
+
+            <div class="ended-icon">
+                <i class="fa-solid fa-phone-slash"></i>
+            </div>
+
+
+            <h1>
+                Call Ended
+            </h1>
+
+
+            <p id="endedText">
+                The call has ended.
+            </p>
+
+
+            <button
+                id="backHomeBtn"
+                class="ended-button"
+                type="button"
+            >
+                <i class="fa-solid fa-arrow-left"></i>
+                Back
+            </button>
+
+        </div>
+
+    </section>
+
+
+    <!-- ====================================================
+         TOAST
+    ===================================================== -->
+
+    <div
+        id="callToast"
+        class="call-toast hidden"
+        role="status"
+        aria-live="polite"
+    >
+
+        <i class="fa-solid fa-circle-info"></i>
+
+        <span id="callToastText">
+            Something went wrong.
+        </span>
+
+    </div>
+
+
+    <!-- ====================================================
+         CALL ERROR
+    ===================================================== -->
+
+    <div
+        id="callErrorScreen"
+        class="call-error-screen hidden"
+    >
+
+        <div class="error-card">
+
+            <div class="error-icon">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+            </div>
+
+            <h2>
+                Call unavailable
+            </h2>
+
+            <p id="callErrorText">
+                Unable to connect the call.
+            </p>
+
+            <button
+                id="retryCallBtn"
+                class="ended-button"
+                type="button"
+            >
+                Try Again
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+  <!-- =====================================================
+     VIEWORA INCOMING CALL RINGTONE
+====================================================== -->
+
+<audio
+    id="incomingCallRingtone"
+    preload="auto"
+    loop
+>
+    <source
+        src="assets/call-ringtone.mp3"
+        type="audio/mpeg"
+    >
+</audio>
+
+
+<!-- ========================================================
+     FIREBASE SDK
+========================================================= -->
+
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+<script src="firebase.js"></script>
+<script src="call.js"></script>
+  
+<!-- ========================================================
+     PREMIUM CALL UI CONTROLLER
+========================================================= -->
+
+<script>
+
+"use strict";
+
+(() => {
+
+    const $ = id =>
+        document.getElementById(id);
+
+
+    /* =====================================================
+       TOAST
+    ===================================================== */
+
+    window.showCallToast = function(message) {
+
+        const toast =
+            $("callToast");
+
+        const text =
+            $("callToastText");
+
+
+        if (!toast || !text) {
+            return;
+        }
+
+
+        text.textContent =
+            message;
+
+
+        toast.classList.remove(
+            "hidden"
+        );
+
+
+        clearTimeout(
+            window.__VIEWORA_TOAST_TIMER__
+        );
+
+
+        window.__VIEWORA_TOAST_TIMER__ =
+            setTimeout(() => {
+
+                toast.classList.add(
+                    "hidden"
+                );
+
+            }, 2800);
+
+    };
+
+
+    /* =====================================================
+       MUTE
+    ===================================================== */
+
+    const muteBtn =
+        $("muteBtn");
+
+    const muteIcon =
+        $("muteIcon");
+
+
+    let muted = false;
+
+
+    if (muteBtn) {
+
+        muteBtn.addEventListener(
+            "click",
+            () => {
+
+                const stream =
+                    window.localStream;
+
+
+                if (!stream) {
+
+                    showCallToast(
+                        "Microphone is not ready."
+                    );
+
+                    return;
+
+                }
+
+
+                const tracks =
+                    stream.getAudioTracks();
+
+
+                if (!tracks.length) {
+
+                    showCallToast(
+                        "No microphone found."
+                    );
+
+                    return;
+
+                }
+
+
+                muted =
+                    !muted;
+
+
+                tracks.forEach(
+                    track => {
+
+                        track.enabled =
+                            !muted;
+
+                    }
+                );
+
+
+                muteBtn.classList.toggle(
+                    "active",
+                    muted
+                );
+
+
+                if (muteIcon) {
+
+                    muteIcon.className =
+                        muted
+                            ? "fa-solid fa-microphone-slash"
+                            : "fa-solid fa-microphone";
+
+                }
+
+            }
+        );
+
+    }
+
+
+    /* =====================================================
+       CAMERA
+    ===================================================== */
+
+    const cameraBtn =
+        $("cameraBtn");
+
+    const cameraIcon =
+        $("cameraIcon");
+
+
+    let cameraOff = false;
+
+
+    if (cameraBtn) {
+
+        cameraBtn.addEventListener(
+            "click",
+            () => {
+
+                const stream =
+                    window.localStream;
+
+
+                if (!stream) {
+
+                    showCallToast(
+                        "Camera is not ready."
+                    );
+
+                    return;
+
+                }
+
+
+                const tracks =
+                    stream.getVideoTracks();
+
+
+                if (!tracks.length) {
+
+                    showCallToast(
+                        "Camera is unavailable."
+                    );
+
+                    return;
+
+                }
+
+
+                cameraOff =
+                    !cameraOff;
+
+
+                tracks.forEach(
+                    track => {
+
+                        track.enabled =
+                            !cameraOff;
+
+                    }
+                );
+
+
+                cameraBtn.classList.toggle(
+                    "active",
+                    cameraOff
+                );
+
+
+                if (cameraIcon) {
+
+                    cameraIcon.className =
+                        cameraOff
+                            ? "fa-solid fa-video-slash"
+                            : "fa-solid fa-video";
+
+                }
+
+            }
+        );
+
+    }
+
+
+    /* =====================================================
+       SPEAKER
+    ===================================================== */
+
+    const speakerButtons = [
+        $("speakerBtn"),
+        $("callSpeakerBtn")
+    ];
+
+
+    let speakerOn = true;
+
+
+    speakerButtons.forEach(
+        button => {
+
+            if (!button) {
+                return;
+            }
+
+
+            button.addEventListener(
+                "click",
+                () => {
+
+                    speakerOn =
+                        !speakerOn;
+
+
+                    const audio =
+                        $("remoteAudio");
+
+                    const video =
+                        $("remoteVideo");
+
+
+                    if (audio) {
+
+                        audio.muted =
+                            !speakerOn;
+
+                    }
+
+
+                    if (video) {
+
+                        video.muted =
+                            !speakerOn;
+
+                    }
+
+
+                    speakerButtons
+                        .forEach(
+                            btn => {
+
+                                btn.classList.toggle(
+                                    "active",
+                                    !speakerOn
+                                );
+
+                            }
+                        );
+
+                }
+            );
+
+        }
+    );
+
+
+    /* =====================================================
+       FLIP CAMERA
+    ===================================================== */
+
+    const flipButton =
+        $("flipCameraBtn");
+
+
+    let usingFrontCamera =
+        true;
+
+
+    if (flipButton) {
+
+        flipButton.addEventListener(
+            "click",
+            async () => {
+
+                const stream =
+                    window.localStream;
+
+
+                if (!stream) {
+                    return;
+                }
+
+
+                const videoTracks =
+                    stream.getVideoTracks();
+
+
+                if (!videoTracks.length) {
+                    return;
+                }
+
+
+                usingFrontCamera =
+                    !usingFrontCamera;
+
+
+                const oldTrack =
+                    videoTracks[0];
+
+
+                try {
+
+                    const newStream =
+                        await navigator
+                            .mediaDevices
+                            .getUserMedia({
+
+                                audio: false,
+
+                                video: {
+
+                                    facingMode:
+                                        usingFrontCamera
+                                            ? "user"
+                                            : "environment"
+
+                                }
+
+                            });
+
+
+                    const newTrack =
+                        newStream
+                            .getVideoTracks()[0];
+
+
+                    const pc =
+                        window.VieworaCall
+                            ?.getPeerConnection
+                            ? window.VieworaCall
+                                .getPeerConnection()
+                            : null;
+
+
+                    if (pc) {
+
+                        const sender =
+                            pc
+                                .getSenders()
+                                .find(
+                                    item =>
+                                        item.track &&
+                                        item.track.kind ===
+                                        "video"
+                                );
+
+
+                        if (sender) {
+
+                            await sender
+                                .replaceTrack(
+                                    newTrack
+                                );
+
+                        }
+
+                    }
+
+
+                    oldTrack.stop();
+
+
+                    const audioTracks =
+                        stream
+                            .getAudioTracks();
+
+
+                    const replacement =
+                        new MediaStream([
+                            ...audioTracks,
+                            newTrack
+                        ]);
+
+
+                    window.localStream =
+                        replacement;
+
+
+                    const localVideo =
+                        $("localVideo");
+
+
+                    if (localVideo) {
+
+                        localVideo.srcObject =
+                            replacement;
+
+                    }
+
+
+                } catch (error) {
+
+                    console.error(
+                        "Camera flip error:",
+                        error
+                    );
+
+
+                    showCallToast(
+                        "Unable to switch camera."
+                    );
+
+                }
+
+            }
+        );
+
+    }
+
+
+    /* =====================================================
+       BACK AFTER END
+    ===================================================== */
+
+    const backButton =
+        $("backHomeBtn");
+
+
+    if (backButton) {
+
+        backButton.addEventListener(
+            "click",
+            () => {
+
+                if (
+                    document.referrer &&
+                    document.referrer !==
+                    window.location.href
+                ) {
+
+                    window.history.back();
+
+                } else {
+
+                    window.location.href =
+                        "index.html";
+
+                }
+
+            }
+        );
+
+    }
+
+
+    /* =====================================================
+       RETRY
+    ===================================================== */
+
+    const retryButton =
+        $("retryCallBtn");
+
+
+    if (retryButton) {
+
+        retryButton.addEventListener(
+            "click",
+            () => {
+
+                $("callErrorScreen")
+                    ?.classList
+                    .add("hidden");
+
+                location.reload();
+
+            }
+        );
+
+    }
+
+
+    /* =====================================================
+       SYNC NAME
+    ===================================================== */
+
+    const observer =
+        new MutationObserver(
+            () => {
+
+                const name =
+                    $("remoteName")?.textContent;
+
+
+                const topName =
+                    $("topCallName");
+
+
+                if (
+                    name &&
+                    topName
+                ) {
+
+                    topName.textContent =
+                        name;
+
+                }
+
+            }
+        );
+
+
+    const remoteName =
+        $("remoteName");
+
+
+    if (remoteName) {
+
+        observer.observe(
+            remoteName,
+            {
+                childList: true,
+                characterData: true,
+                subtree: true
+            }
+        );
+
+    }
+
+
+    /* =====================================================
+       MOBILE BACK PROTECTION
+    ===================================================== */
+
+    window.addEventListener(
+        "popstate",
+        event => {
+
+            if (
+                window.VieworaCall &&
+                typeof window.VieworaCall.endCall ===
+                "function"
+            ) {
+
+                window.VieworaCall.endCall()
+                    .catch(
+                        () => {}
+                    );
+
+            }
+
+        }
+    );
+
+
+})();
+
+</script>
+
+</body>
+</html>

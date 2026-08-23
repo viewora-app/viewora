@@ -8,157 +8,98 @@
         content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
     >
 
-    <title>Messages • Viewora</title>
-
-    <meta name="theme-color" content="#07070c">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-
-    <link rel="icon" href="assets/logo.png">
-
-    <!-- =====================================================
-         FONTS
-    ====================================================== -->
-
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-
-    <link
-        rel="preconnect"
-        href="https://fonts.gstatic.com"
-        crossorigin
+    <meta
+        name="theme-color"
+        content="#08090d"
     >
 
-    <link
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
-        rel="stylesheet"
+    <meta
+        name="description"
+        content="VIEWORA Messages — World • Create • Connect"
     >
 
-    <!-- =====================================================
-         ICONS
-    ====================================================== -->
+    <title>Messages • VIEWORA</title>
 
+    <!-- Font Awesome -->
     <link
         rel="stylesheet"
-        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
     >
 
-    <!-- =====================================================
-         PAGE CSS
-    ====================================================== -->
-
-    <link rel="stylesheet" href="messages.css">
+    <!-- VIEWORA Messages CSS -->
+    <link
+        rel="stylesheet"
+        href="messages.css"
+    >
 </head>
-
 
 <body>
 
-<!-- =====================================================
-     PREMIUM BACKGROUND
+<!-- ======================================================
+     LOADING OVERLAY
 ====================================================== -->
 
-<div class="background">
+<div
+    id="loadingOverlay"
+    class="loadingOverlay"
+>
 
-    <div class="aurora auroraOne"></div>
-    <div class="aurora auroraTwo"></div>
-    <div class="aurora auroraThree"></div>
+    <div class="loadingGlass">
 
-    <div class="ambientGlow glowOne"></div>
-    <div class="ambientGlow glowTwo"></div>
-
-    <div class="noise"></div>
-
-</div>
-
-
-<!-- =====================================================
-     PAGE LOADER
-====================================================== -->
-
-<div id="loadingOverlay" class="loadingOverlay">
-
-    <div class="loadingCard">
-
-        <div class="loadingLogoWrap">
-
-            <div class="loadingRing"></div>
-
-            <img
-                src="assets/logo.png"
-                class="loadingLogo"
-                alt="Viewora"
-            >
-
+        <div class="loadingLogo">
+            <span>V</span>
         </div>
 
-        <div class="loadingTitle">
-            VIEWORA
-        </div>
+        <div class="loadingSpinner"></div>
 
-        <div class="loadingSubtitle">
-            Loading messages
-        </div>
+        <strong>VIEWORA</strong>
 
-        <div class="loadingLine">
-
-            <div class="loadingProgress"></div>
-
-        </div>
-
-        <div class="loadingDots">
-            <span></span>
-            <span></span>
-            <span></span>
-        </div>
+        <small>Loading messages...</small>
 
     </div>
 
 </div>
 
 
-<!-- =====================================================
+<!-- ======================================================
      APP
 ====================================================== -->
 
-<div id="app" class="app hidden">
+<main
+    id="app"
+    class="app hidden"
+>
 
-
-    <!-- =================================================
+    <!-- ==================================================
          HEADER
     ================================================== -->
 
-    <header class="topHeader">
+    <header class="messagesHeader">
 
         <div class="headerLeft">
 
-            <button
-                id="backBtn"
-                class="headerButton"
-                type="button"
-                aria-label="Back"
-            >
-                <i class="fa-solid fa-arrow-left"></i>
-            </button>
-
+            <div class="vieworaMark">
+                <span>V</span>
+            </div>
 
             <div class="headerTitle">
 
-                <div class="titleRow">
+                <h1>Messages</h1>
 
-                    <h1>Messages</h1>
+                <div class="headerMeta">
 
-                    <!-- GLOBAL UNREAD -->
-                    <span
-                        id="messageBadge"
-                        class="globalMessageBadge hidden"
-                    >
-                        0
+                    <span id="connectionStatus">
+                        Connecting...
+                    </span>
+
+                    <span class="headerDot">•</span>
+
+                    <span>
+                        <span id="chatCount">0</span>
+                        chats
                     </span>
 
                 </div>
-
-                <span id="connectionStatus">
-                    Connecting...
-                </span>
 
             </div>
 
@@ -169,9 +110,9 @@
 
             <button
                 id="refreshBtn"
-                class="headerButton"
+                class="iconButton"
                 type="button"
-                aria-label="Refresh"
+                aria-label="Refresh messages"
             >
                 <i class="fa-solid fa-rotate"></i>
             </button>
@@ -179,11 +120,11 @@
 
             <button
                 id="newChatBtn"
-                class="headerButton primaryHeaderButton"
+                class="headerNewButton"
                 type="button"
-                aria-label="New chat"
             >
                 <i class="fa-solid fa-pen"></i>
+                <span>New</span>
             </button>
 
         </div>
@@ -191,7 +132,7 @@
     </header>
 
 
-    <!-- =================================================
+    <!-- ==================================================
          SEARCH
     ================================================== -->
 
@@ -199,17 +140,14 @@
 
         <div class="searchBox">
 
-            <div class="searchIcon">
-
-                <i class="fa-solid fa-magnifying-glass"></i>
-
-            </div>
+            <i class="fa-solid fa-magnifying-glass searchIcon"></i>
 
             <input
                 id="searchInput"
                 type="search"
-                autocomplete="off"
                 placeholder="Search messages..."
+                autocomplete="off"
+                spellcheck="false"
             >
 
             <button
@@ -226,419 +164,253 @@
     </section>
 
 
-    <!-- =================================================
+    <!-- ==================================================
          FILTERS
     ================================================== -->
 
-    <nav
-        class="filters"
-        aria-label="Message filters"
-    >
+    <section class="filterSection">
 
-        <button
-            class="filter filterChip active"
-            data-filter="all"
-            type="button"
-        >
-            <span>All</span>
-        </button>
+        <div class="filterScroller">
 
-
-        <button
-            class="filter filterChip"
-            data-filter="unread"
-            type="button"
-        >
-            <span>Unread</span>
-
-            <span
-                id="unreadBadge"
-                class="filterBadge hidden"
+            <button
+                class="filter active"
+                data-filter="all"
+                type="button"
             >
-                0
-            </span>
+                <i class="fa-solid fa-inbox"></i>
+                All
+            </button>
 
-        </button>
-
-
-        <button
-            class="filter filterChip"
-            data-filter="online"
-            type="button"
-        >
-            <span class="onlineFilterDot"></span>
-            <span>Online</span>
-        </button>
-
-
-        <button
-            class="filter filterChip"
-            data-filter="pinned"
-            type="button"
-        >
-            <i class="fa-solid fa-thumbtack"></i>
-            <span>Pinned</span>
-        </button>
-
-    </nav>
-
-
-    <!-- =================================================
-         MAIN
-    ================================================== -->
-
-    <main class="messagesMain">
-
-
-        <!-- =============================================
-             PINNED
-        ============================================== -->
-
-        <section
-            id="pinnedSection"
-            class="chatSection hidden"
-        >
-
-            <div class="sectionHeader">
-
-                <div class="sectionHeading">
-
-                    <div class="sectionIcon">
-                        <i class="fa-solid fa-thumbtack"></i>
-                    </div>
-
-                    <span>Pinned</span>
-
-                </div>
-
-            </div>
-
-
-            <div
-                id="pinnedChatList"
-                class="chatList"
-            ></div>
-
-        </section>
-
-
-        <!-- =============================================
-             RECENT
-        ============================================== -->
-
-        <section class="chatSection recentSection">
-
-            <div class="sectionHeader">
-
-                <div>
-
-                    <div class="sectionHeading">
-
-                        <span>Recent Messages</span>
-
-                    </div>
-
-                    <div class="sectionSubheading">
-                        Your latest conversations
-                    </div>
-
-                </div>
-
+            <button
+                class="filter"
+                data-filter="unread"
+                type="button"
+            >
+                <i class="fa-solid fa-envelope"></i>
+                Unread
 
                 <span
-                    id="chatCount"
-                    class="chatCount"
+                    id="unreadBadge"
+                    class="filterBadge hidden"
                 >
                     0
                 </span>
 
-            </div>
+            </button>
 
-
-            <!-- =========================================
-                 SKELETON
-            ========================================== -->
-
-            <div
-                id="chatSkeleton"
-                class="chatSkeleton"
+            <button
+                class="filter"
+                data-filter="online"
+                type="button"
             >
+                <span class="filterOnlineDot"></span>
+                Online
+            </button>
 
-                <div class="skeletonItem">
-
-                    <div class="skeletonAvatar"></div>
-
-                    <div class="skeletonText">
-
-                        <div class="skeletonLine title"></div>
-
-                        <div class="skeletonLine message"></div>
-
-                    </div>
-
-                </div>
-
-
-                <div class="skeletonItem">
-
-                    <div class="skeletonAvatar"></div>
-
-                    <div class="skeletonText">
-
-                        <div class="skeletonLine title"></div>
-
-                        <div class="skeletonLine message"></div>
-
-                    </div>
-
-                </div>
-
-
-                <div class="skeletonItem">
-
-                    <div class="skeletonAvatar"></div>
-
-                    <div class="skeletonText">
-
-                        <div class="skeletonLine title"></div>
-
-                        <div class="skeletonLine message"></div>
-
-                    </div>
-
-                </div>
-
-
-                <div class="skeletonItem">
-
-                    <div class="skeletonAvatar"></div>
-
-                    <div class="skeletonText">
-
-                        <div class="skeletonLine title"></div>
-
-                        <div class="skeletonLine message"></div>
-
-                    </div>
-
-                </div>
-
-            </div>
-
-
-            <!-- =========================================
-                 REAL CHAT LIST
-            ========================================== -->
-
-            <div
-                id="chatList"
-                class="chatList hidden"
-            ></div>
-
-
-            <!-- =========================================
-                 EMPTY STATE
-            ========================================== -->
-
-            <div
-                id="emptyChats"
-                class="emptyState hidden"
+            <button
+                class="filter"
+                data-filter="pinned"
+                type="button"
             >
+                <i class="fa-solid fa-thumbtack"></i>
+                Pinned
+            </button>
 
-                <div class="emptyOrb">
+        </div>
 
-                    <div class="emptyIcon">
-
-                        <i class="fa-regular fa-comments"></i>
-
-                    </div>
-
-                </div>
+    </section>
 
 
-                <span class="emptyEyebrow">
-                    VIEWORA MESSAGES
-                </span>
-
-
-                <h2>
-                    No conversations yet
-                </h2>
-
-
-                <p>
-                    Start a conversation with someone
-                    and your messages will appear here.
-                </p>
-
-
-                <button
-                    id="startChatBtn"
-                    class="startChatButton"
-                    type="button"
-                >
-                    <i class="fa-solid fa-plus"></i>
-                    <span>Start a Chat</span>
-                </button>
-
-            </div>
-
-        </section>
-
-    </main>
-
-
-    <!-- =================================================
-         NEW CHAT MODAL
+    <!-- ==================================================
+         STORIES / ONLINE PEOPLE STRIP
     ================================================== -->
 
-    <div
-        id="newChatModal"
-        class="modal hidden"
-    >
+    <section class="onlineStrip">
+
+        <div class="sectionHeading">
+
+            <div>
+                <span class="sectionEyebrow">
+                    CONNECT
+                </span>
+
+                <h2>Online now</h2>
+            </div>
+
+            <span class="onlineLive">
+                <span></span>
+                LIVE
+            </span>
+
+        </div>
+
+        <div class="onlinePeople">
+
+            <div class="onlinePerson staticPerson">
+
+                <div class="onlineAvatarRing">
+
+                    <div class="onlineAvatar">
+                        <i class="fa-solid fa-user"></i>
+                    </div>
+
+                    <span></span>
+
+                </div>
+
+                <small>You</small>
+
+            </div>
+
+            <div class="onlineHint">
+                <i class="fa-solid fa-bolt"></i>
+                Start a conversation
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- ==================================================
+         CHAT AREA
+    ================================================== -->
+
+    <section class="chatSection">
+
+        <div class="chatSectionHeader">
+
+            <div>
+
+                <span class="sectionEyebrow">
+                    INBOX
+                </span>
+
+                <h2>Your conversations</h2>
+
+            </div>
+
+            <span class="secureLabel">
+                <i class="fa-solid fa-lock"></i>
+                Private
+            </span>
+
+        </div>
+
+
+        <!-- ==============================================
+             SKELETON
+        =============================================== -->
 
         <div
-            class="modalBackdrop"
-            id="newChatBackdrop"
+            id="chatSkeleton"
+            class="chatSkeleton"
+        >
+
+            <div class="skeletonChat">
+                <div class="skeletonCircle"></div>
+
+                <div class="skeletonContent">
+                    <div class="skeletonLine large"></div>
+                    <div class="skeletonLine small"></div>
+                </div>
+
+                <div class="skeletonTime"></div>
+            </div>
+
+            <div class="skeletonChat">
+                <div class="skeletonCircle"></div>
+
+                <div class="skeletonContent">
+                    <div class="skeletonLine large"></div>
+                    <div class="skeletonLine small"></div>
+                </div>
+
+                <div class="skeletonTime"></div>
+            </div>
+
+            <div class="skeletonChat">
+                <div class="skeletonCircle"></div>
+
+                <div class="skeletonContent">
+                    <div class="skeletonLine large"></div>
+                    <div class="skeletonLine small"></div>
+                </div>
+
+                <div class="skeletonTime"></div>
+            </div>
+
+            <div class="skeletonChat">
+                <div class="skeletonCircle"></div>
+
+                <div class="skeletonContent">
+                    <div class="skeletonLine large"></div>
+                    <div class="skeletonLine small"></div>
+                </div>
+
+                <div class="skeletonTime"></div>
+            </div>
+
+        </div>
+
+
+        <!-- ==============================================
+             CHAT LIST
+        =============================================== -->
+
+        <div
+            id="chatList"
+            class="chatList"
         ></div>
 
 
-        <div class="modalCard">
+        <!-- ==============================================
+             EMPTY
+        =============================================== -->
 
+        <div
+            id="emptyChats"
+            class="emptyChats hidden"
+        >
 
-            <!-- MODAL HEADER -->
+            <div class="emptyIllustration">
 
-            <div class="modalHeader">
-
-                <div>
-
-                    <span class="modalEyebrow">
-                        VIEWORA
-                    </span>
-
-                    <h2>
-                        New Conversation
-                    </h2>
-
-                    <p>
-                        Find someone to message
-                    </p>
-
+                <div class="emptyBubble bubbleOne">
+                    <i class="fa-regular fa-comment"></i>
                 </div>
 
-
-                <button
-                    id="closeNewChat"
-                    class="modalClose"
-                    type="button"
-                    aria-label="Close"
-                >
-                    <i class="fa-solid fa-xmark"></i>
-                </button>
-
-            </div>
-
-
-            <!-- SEARCH -->
-
-            <div class="modalSearch">
-
-                <i class="fa-solid fa-magnifying-glass"></i>
-
-                <input
-                    id="newChatSearch"
-                    type="search"
-                    autocomplete="off"
-                    placeholder="Search people..."
-                >
-
-            </div>
-
-
-            <!-- LOADING USERS -->
-
-            <div
-                id="usersLoading"
-                class="usersLoading hidden"
-            >
-
-                <div class="miniSpinner"></div>
-
-                <span>
-                    Finding people...
-                </span>
-
-            </div>
-
-
-            <!-- USERS -->
-
-            <div
-                id="newChatUserList"
-                class="newChatUserList"
-            ></div>
-
-
-            <!-- EMPTY USERS -->
-
-            <div
-                id="emptyUsers"
-                class="emptyUsers hidden"
-            >
-
-                <div class="emptyUserIcon">
-
-                    <i class="fa-regular fa-user"></i>
-
+                <div class="emptyBubble bubbleTwo">
+                    <i class="fa-solid fa-heart"></i>
                 </div>
 
-                <h3>
-                    No users found
-                </h3>
-
-                <p>
-                    Try another username.
-                </p>
+                <div class="emptyBubble mainBubble">
+                    <i class="fa-solid fa-paper-plane"></i>
+                </div>
 
             </div>
 
-        </div>
+            <h3>No conversations yet</h3>
 
-    </div>
-
-
-    <!-- =================================================
-         TOAST
-    ================================================== -->
-
-    <div
-        id="toast"
-        class="toast hidden"
-    >
-
-        <div class="toastIcon">
-
-            <i class="fa-solid fa-check"></i>
-
-        </div>
-
-
-        <div class="toastContent">
-
-            <strong>
-                Viewora
-            </strong>
-
-            <p id="toastText">
-                Done
+            <p>
+                Connect with people and start
+                your first conversation on VIEWORA.
             </p>
 
+            <button
+                id="startChatBtn"
+                class="primaryButton"
+                type="button"
+            >
+                <i class="fa-solid fa-plus"></i>
+                Start a conversation
+            </button>
+
         </div>
 
-    </div>
+    </section>
 
 
-    <!-- =================================================
+    <!-- ==================================================
          NEW MESSAGE FAB
     ================================================== -->
 
@@ -653,163 +425,194 @@
 
         <i class="fa-solid fa-pen"></i>
 
+        <span class="fabText">
+            New message
+        </span>
+
     </button>
 
-
-    <!-- =================================================
-         REFRESH INDICATOR
-    ================================================== -->
-
-    <div
-        id="refreshIndicator"
-        class="refreshIndicator hidden"
-    >
-
-        <div class="miniSpinner"></div>
-
-        <span>
-            Updating...
-        </span>
-
-    </div>
+</main>
 
 
-    <!-- =================================================
-         CONNECTION BANNER
-    ================================================== -->
+<!-- ======================================================
+     NEW CHAT MODAL
+====================================================== -->
+
+<div
+    id="newChatModal"
+    class="newChatModal hidden"
+>
 
     <div
-        id="connectionBanner"
-        class="connectionBanner hidden"
-    >
+        id="newChatBackdrop"
+        class="newChatBackdrop"
+    ></div>
 
-        <i class="fa-solid fa-wifi"></i>
 
-        <span>
-            Connection restored
-        </span>
+    <div class="newChatCard">
+
+        <!-- Header -->
+
+        <div class="newChatHeader">
+
+            <div>
+
+                <span class="sectionEyebrow">
+                    VIEWORA
+                </span>
+
+                <h2>New message</h2>
+
+            </div>
+
+            <button
+                id="closeNewChat"
+                class="modalClose"
+                type="button"
+                aria-label="Close"
+            >
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+        </div>
+
+
+        <!-- Search -->
+
+        <div class="newChatSearchBox">
+
+            <i class="fa-solid fa-magnifying-glass"></i>
+
+            <input
+                id="newChatSearch"
+                type="search"
+                placeholder="Search people..."
+                autocomplete="off"
+                spellcheck="false"
+            >
+
+        </div>
+
+
+        <!-- People -->
+
+        <div class="newChatPeopleHeader">
+
+            <span>
+                People
+            </span>
+
+            <span class="peopleHint">
+                Choose someone to chat with
+            </span>
+
+        </div>
+
+
+        <div
+            id="usersLoading"
+            class="usersLoading hidden"
+        >
+
+            <div class="miniSpinner"></div>
+
+            <span>
+                Finding people...
+            </span>
+
+        </div>
+
+
+        <div
+            id="newChatUserList"
+            class="newChatUserList"
+        ></div>
+
+
+        <div
+            id="emptyUsers"
+            class="emptyUsers hidden"
+        >
+
+            <div class="emptyUserIcon">
+                <i class="fa-solid fa-user-slash"></i>
+            </div>
+
+            <strong>No people found</strong>
+
+            <span>
+                Try another name or username.
+            </span>
+
+        </div>
 
     </div>
-
 
 </div>
 
 
-<!-- =====================================================
-     FIREBASE SDK
+<!-- ======================================================
+     TOAST
 ====================================================== -->
 
-<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+<div
+    id="toast"
+    class="toast hidden"
+    role="status"
+    aria-live="polite"
+>
 
-<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+    <div class="toastIcon">
 
-<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-database-compat.js"></script>
+        <i class="fa-solid fa-check"></i>
 
-<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-storage-compat.js"></script>
+    </div>
+
+    <span id="toastText">
+        Done
+    </span>
+
+</div>
 
 
-<!-- =====================================================
-     VIEWORA FIREBASE CONFIG
+<!-- ======================================================
+     GLOBAL MESSAGE BADGE
 ====================================================== -->
 
+<span
+    id="messageBadge"
+    class="globalMessageBadge hidden"
+>
+    0
+</span>
+
+
+<!-- ======================================================
+     FIREBASE
+     
+     Keep your existing Firebase SDK initialization.
+     If firebase.js already loads these scripts, don't
+     duplicate them.
+====================================================== -->
+
+<script
+    src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"
+></script>
+
+<script
+    src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"
+></script>
+
+<script
+    src="https://www.gstatic.com/firebasejs/10.12.5/firebase-database-compat.js"
+></script>
+
+
+<!-- Your Firebase configuration -->
 <script src="firebase.js"></script>
 
-
-<!-- =====================================================
-     VIEWORA MESSAGES LOGIC
-====================================================== -->
-
+<!-- Messages logic -->
 <script src="messages.js"></script>
-
-
-<!-- =====================================================
-     BACK BUTTON
-====================================================== -->
-
-<script>
-(function () {
-
-    const backBtn = document.getElementById("backBtn");
-
-    if (!backBtn) return;
-
-    backBtn.addEventListener("click", function () {
-
-        if (document.referrer) {
-            history.back();
-        } else {
-            location.href = "index.html";
-        }
-
-    });
-
-})();
-</script>
-
-
-<!-- =====================================================
-     PREMIUM INTERACTION
-====================================================== -->
-
-<script>
-(function () {
-
-    document.addEventListener("click", function (event) {
-
-        const button = event.target.closest(
-            ".headerButton, .filterChip, .startChatButton, .newMessageFab"
-        );
-
-        if (!button) return;
-
-        button.classList.remove("clickPulse");
-
-        requestAnimationFrame(function () {
-            button.classList.add("clickPulse");
-        });
-
-    });
-
-
-    window.addEventListener("online", function () {
-
-        const banner = document.getElementById("connectionBanner");
-
-        if (!banner) return;
-
-        banner.classList.remove("hidden");
-
-        const text = banner.querySelector("span");
-
-        if (text) {
-            text.textContent = "Connection restored";
-        }
-
-        setTimeout(function () {
-            banner.classList.add("hidden");
-        }, 2200);
-
-    });
-
-
-    window.addEventListener("offline", function () {
-
-        const banner = document.getElementById("connectionBanner");
-
-        if (!banner) return;
-
-        banner.classList.remove("hidden");
-
-        const text = banner.querySelector("span");
-
-        if (text) {
-            text.textContent = "You're offline";
-        }
-
-    });
-
-})();
-</script>
 
 </body>
 </html>

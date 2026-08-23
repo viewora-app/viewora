@@ -1,0 +1,1872 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <meta
+        name="theme-color"
+        content="#050816"
+    >
+
+    <meta
+        name="description"
+        content="Viewora Admin Dashboard"
+    >
+
+    <title>Viewora • Admin Panel</title>
+
+    <link
+        rel="icon"
+        href="assets/logo.png"
+    >
+
+    <!-- Google Font -->
+
+    <link
+        rel="preconnect"
+        href="https://fonts.googleapis.com"
+    >
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet"
+    >
+
+    <!-- Font Awesome -->
+
+    <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
+    >
+
+    <!-- Admin CSS -->
+
+    <link
+        rel="stylesheet"
+        href="admin-panel.css"
+    >
+
+</head>
+
+
+<body>
+
+
+<!-- =====================================================
+     BACKGROUND
+===================================================== -->
+
+<div class="adminBackground">
+
+    <div class="glow glowOne"></div>
+
+    <div class="glow glowTwo"></div>
+
+    <div class="gridBackground"></div>
+
+</div>
+
+
+<!-- =====================================================
+     APP
+===================================================== -->
+
+<div id="adminApp">
+
+
+<!-- =====================================================
+     SIDEBAR
+===================================================== -->
+
+<aside
+    id="adminSidebar"
+    class="adminSidebar"
+>
+
+
+    <!-- BRAND -->
+
+    <div class="sidebarBrand">
+
+        <img
+            src="assets/logo.png"
+            alt="Viewora"
+        >
+
+        <div>
+
+            <strong>VIEWORA</strong>
+
+            <span>ADMIN</span>
+
+        </div>
+
+    </div>
+
+
+    <!-- ADMIN PROFILE -->
+
+    <div class="adminProfile">
+
+        <div class="adminAvatar">
+
+            <i class="fa-solid fa-shield-halved"></i>
+
+        </div>
+
+        <div class="adminProfileInfo">
+
+            <strong id="adminName">
+                Viewora Admin
+            </strong>
+
+            <span id="adminEmail">
+                Admin Account
+            </span>
+
+        </div>
+
+        <span class="onlineDot"></span>
+
+    </div>
+
+
+    <!-- NAVIGATION -->
+
+    <nav class="adminNav">
+
+
+        <div class="navLabel">
+            MAIN
+        </div>
+
+
+        <button
+            class="navItem active"
+            data-section="dashboard"
+        >
+
+            <i class="fa-solid fa-chart-pie"></i>
+
+            <span>Dashboard</span>
+
+        </button>
+
+
+        <button
+            class="navItem"
+            data-section="users"
+        >
+
+            <i class="fa-solid fa-users"></i>
+
+            <span>Users</span>
+
+            <b id="userNavCount">
+                0
+            </b>
+
+        </button>
+
+
+        <button
+            class="navItem"
+            data-section="posts"
+        >
+
+            <i class="fa-solid fa-photo-film"></i>
+
+            <span>Content</span>
+
+        </button>
+
+
+        <button
+            class="navItem"
+            data-section="reports"
+        >
+
+            <i class="fa-solid fa-flag"></i>
+
+            <span>Reports</span>
+
+            <b
+                id="reportNavCount"
+                class="dangerCount"
+            >
+                0
+            </b>
+
+        </button>
+
+
+        <div class="navLabel">
+            PLATFORM
+        </div>
+
+
+        <button
+            class="navItem"
+            data-section="live"
+        >
+
+            <i class="fa-solid fa-tower-broadcast"></i>
+
+            <span>Live</span>
+
+            <b
+                id="liveNavCount"
+                class="liveCount"
+            >
+                0
+            </b>
+
+        </button>
+
+
+        <button
+            class="navItem"
+            data-section="verification"
+        >
+
+            <i class="fa-solid fa-circle-check"></i>
+
+            <span>Verification</span>
+
+        </button>
+
+
+        <button
+            class="navItem"
+            data-section="analytics"
+        >
+
+            <i class="fa-solid fa-chart-line"></i>
+
+            <span>Analytics</span>
+
+        </button>
+
+
+        <div class="navLabel">
+            SYSTEM
+        </div>
+
+
+        <button
+            class="navItem"
+            data-section="settings"
+        >
+
+            <i class="fa-solid fa-gear"></i>
+
+            <span>Settings</span>
+
+        </button>
+
+
+    </nav>
+
+
+    <!-- SIDEBAR BOTTOM -->
+
+    <div class="sidebarBottom">
+
+
+        <button
+            id="openVieworaBtn"
+            class="sidebarAction"
+        >
+
+            <i class="fa-solid fa-arrow-up-right-from-square"></i>
+
+            <span>Open Viewora</span>
+
+        </button>
+
+
+        <button
+            id="adminLogoutBtn"
+            class="sidebarAction logoutAction"
+        >
+
+            <i class="fa-solid fa-right-from-bracket"></i>
+
+            <span>Logout</span>
+
+        </button>
+
+
+    </div>
+
+
+</aside>
+
+
+<!-- =====================================================
+     MAIN AREA
+===================================================== -->
+
+<main class="adminMain">
+
+
+    <!-- =================================================
+         TOP BAR
+    ================================================== -->
+
+    <header class="adminHeader">
+
+
+        <div class="headerLeft">
+
+
+            <button
+                id="sidebarToggle"
+                class="headerIcon"
+            >
+
+                <i class="fa-solid fa-bars"></i>
+
+            </button>
+
+
+            <div>
+
+                <h1 id="pageTitle">
+                    Dashboard
+                </h1>
+
+                <p id="pageSubtitle">
+                    Welcome back, Admin
+                </p>
+
+            </div>
+
+
+        </div>
+
+
+        <div class="headerRight">
+
+
+            <!-- SEARCH -->
+
+            <div class="adminSearch">
+
+                <i class="fa-solid fa-magnifying-glass"></i>
+
+                <input
+                    id="globalSearch"
+                    type="search"
+                    placeholder="Search users, posts..."
+                >
+
+            </div>
+
+
+            <!-- NOTIFICATION -->
+
+            <button
+                id="notificationBtn"
+                class="headerIcon notificationButton"
+            >
+
+                <i class="fa-regular fa-bell"></i>
+
+                <span
+                    id="notificationBadge"
+                    class="notificationBadge"
+                >
+                    0
+                </span>
+
+            </button>
+
+
+            <!-- PROFILE -->
+
+            <button
+                id="profileButton"
+                class="headerProfile"
+            >
+
+                <span class="profileAvatar">
+
+                    <i class="fa-solid fa-user-shield"></i>
+
+                </span>
+
+                <span class="profileText">
+
+                    <strong>
+                        Admin
+                    </strong>
+
+                    <small>
+                        Administrator
+                    </small>
+
+                </span>
+
+                <i class="fa-solid fa-chevron-down"></i>
+
+            </button>
+
+
+        </div>
+
+
+    </header>
+
+
+    <!-- =================================================
+         CONTENT
+    ================================================== -->
+
+    <div class="adminContent">
+
+
+<!-- =====================================================
+     DASHBOARD
+===================================================== -->
+
+<section
+    id="dashboardSection"
+    class="adminSection activeSection"
+>
+
+
+    <!-- WELCOME -->
+
+    <div class="welcomeCard">
+
+        <div>
+
+            <span class="welcomeBadge">
+
+                <i class="fa-solid fa-shield-halved"></i>
+
+                ADMIN CONTROL CENTER
+
+            </span>
+
+            <h2>
+                Welcome to Viewora Control Center
+            </h2>
+
+            <p>
+                Manage your community, content,
+                reports and platform activity from one place.
+            </p>
+
+        </div>
+
+
+        <div class="welcomeIcon">
+
+            <i class="fa-solid fa-layer-group"></i>
+
+        </div>
+
+    </div>
+
+
+    <!-- STATS -->
+
+    <div class="statsGrid">
+
+
+        <div class="statCard">
+
+            <div class="statTop">
+
+                <span class="statIcon usersIcon">
+                    <i class="fa-solid fa-users"></i>
+                </span>
+
+                <span
+                    id="usersGrowth"
+                    class="growth positive"
+                >
+                    +0%
+                </span>
+
+            </div>
+
+            <span class="statLabel">
+                Total Users
+            </span>
+
+            <strong id="totalUsers">
+                0
+            </strong>
+
+            <p>
+                Registered accounts
+            </p>
+
+        </div>
+
+
+        <div class="statCard">
+
+            <div class="statTop">
+
+                <span class="statIcon postsIcon">
+                    <i class="fa-solid fa-photo-film"></i>
+                </span>
+
+                <span
+                    id="postsGrowth"
+                    class="growth positive"
+                >
+                    +0%
+                </span>
+
+            </div>
+
+            <span class="statLabel">
+                Total Content
+            </span>
+
+            <strong id="totalPosts">
+                0
+            </strong>
+
+            <p>
+                Posts & videos
+            </p>
+
+        </div>
+
+
+        <div class="statCard">
+
+            <div class="statTop">
+
+                <span class="statIcon viewsIcon">
+                    <i class="fa-solid fa-eye"></i>
+                </span>
+
+                <span
+                    id="viewsGrowth"
+                    class="growth positive"
+                >
+                    +0%
+                </span>
+
+            </div>
+
+            <span class="statLabel">
+                Total Views
+            </span>
+
+            <strong id="totalViews">
+                0
+            </strong>
+
+            <p>
+                Platform views
+            </p>
+
+        </div>
+
+
+        <div class="statCard">
+
+            <div class="statTop">
+
+                <span class="statIcon liveIcon">
+                    <i class="fa-solid fa-tower-broadcast"></i>
+                </span>
+
+                <span
+                    id="liveGrowth"
+                    class="growth"
+                >
+                    Live
+                </span>
+
+            </div>
+
+            <span class="statLabel">
+                Live Now
+            </span>
+
+            <strong id="liveNow">
+                0
+            </strong>
+
+            <p>
+                Active broadcasts
+            </p>
+
+        </div>
+
+
+    </div>
+
+
+    <!-- DASHBOARD GRID -->
+
+    <div class="dashboardGrid">
+
+
+        <!-- RECENT USERS -->
+
+        <div class="panelCard">
+
+
+            <div class="panelHeader">
+
+                <div>
+
+                    <h3>
+                        Recent Users
+                    </h3>
+
+                    <p>
+                        Latest registrations
+                    </p>
+
+                </div>
+
+                <button
+                    class="viewAllBtn"
+                    data-target="users"
+                >
+                    View All
+                </button>
+
+            </div>
+
+
+            <div
+                id="recentUsers"
+                class="userList"
+            >
+
+                <div class="emptyState">
+
+                    <i class="fa-solid fa-users"></i>
+
+                    <span>
+                        No users yet
+                    </span>
+
+                </div>
+
+            </div>
+
+
+        </div>
+
+
+        <!-- REPORTS -->
+
+        <div class="panelCard">
+
+
+            <div class="panelHeader">
+
+                <div>
+
+                    <h3>
+                        Pending Reports
+                    </h3>
+
+                    <p>
+                        Needs your attention
+                    </p>
+
+                </div>
+
+                <button
+                    class="viewAllBtn"
+                    data-target="reports"
+                >
+                    View All
+                </button>
+
+            </div>
+
+
+            <div
+                id="recentReports"
+                class="reportList"
+            >
+
+                <div class="emptyState">
+
+                    <i class="fa-solid fa-shield-check"></i>
+
+                    <span>
+                        No pending reports
+                    </span>
+
+                </div>
+
+            </div>
+
+
+        </div>
+
+
+    </div>
+
+
+    <!-- QUICK ACTIONS -->
+
+    <div class="panelCard quickActionsCard">
+
+
+        <div class="panelHeader">
+
+            <div>
+
+                <h3>
+                    Quick Actions
+                </h3>
+
+                <p>
+                    Frequently used admin tools
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <div class="quickActions">
+
+
+            <button
+                class="quickAction"
+                data-section="users"
+            >
+
+                <span>
+                    <i class="fa-solid fa-user-plus"></i>
+                </span>
+
+                <strong>
+                    Manage Users
+                </strong>
+
+                <small>
+                    Accounts & roles
+                </small>
+
+            </button>
+
+
+            <button
+                class="quickAction"
+                data-section="posts"
+            >
+
+                <span>
+                    <i class="fa-solid fa-photo-film"></i>
+                </span>
+
+                <strong>
+                    Manage Content
+                </strong>
+
+                <small>
+                    Posts & videos
+                </small>
+
+            </button>
+
+
+            <button
+                class="quickAction"
+                data-section="reports"
+            >
+
+                <span>
+                    <i class="fa-solid fa-flag"></i>
+                </span>
+
+                <strong>
+                    Review Reports
+                </strong>
+
+                <small>
+                    Moderation queue
+                </small>
+
+            </button>
+
+
+            <button
+                class="quickAction"
+                data-section="analytics"
+            >
+
+                <span>
+                    <i class="fa-solid fa-chart-line"></i>
+                </span>
+
+                <strong>
+                    Analytics
+                </strong>
+
+                <small>
+                    Platform insights
+                </small>
+
+            </button>
+
+
+        </div>
+
+
+    </div>
+
+
+</section>
+
+
+<!-- =====================================================
+     USERS
+===================================================== -->
+
+<section
+    id="usersSection"
+    class="adminSection"
+>
+
+
+    <div class="sectionHeader">
+
+        <div>
+
+            <h2>
+                Users
+            </h2>
+
+            <p>
+                Manage Viewora accounts and permissions.
+            </p>
+
+        </div>
+
+        <button
+            id="refreshUsersBtn"
+            class="secondaryBtn"
+        >
+
+            <i class="fa-solid fa-rotate"></i>
+
+            Refresh
+
+        </button>
+
+    </div>
+
+
+    <div class="filterBar">
+
+
+        <div class="tableSearch">
+
+            <i class="fa-solid fa-magnifying-glass"></i>
+
+            <input
+                id="userSearch"
+                type="search"
+                placeholder="Search users..."
+            >
+
+        </div>
+
+
+        <select id="userRoleFilter">
+
+            <option value="all">
+                All Roles
+            </option>
+
+            <option value="user">
+                Users
+            </option>
+
+            <option value="admin">
+                Admins
+            </option>
+
+            <option value="creator">
+                Creators
+            </option>
+
+        </select>
+
+
+        <select id="userStatusFilter">
+
+            <option value="all">
+                All Status
+            </option>
+
+            <option value="active">
+                Active
+            </option>
+
+            <option value="blocked">
+                Blocked
+            </option>
+
+        </select>
+
+
+    </div>
+
+
+    <div class="tableCard">
+
+        <div class="tableResponsive">
+
+            <table>
+
+                <thead>
+
+                    <tr>
+
+                        <th>User</th>
+
+                        <th>Role</th>
+
+                        <th>Status</th>
+
+                        <th>Joined</th>
+
+                        <th>Actions</th>
+
+                    </tr>
+
+                </thead>
+
+                <tbody id="usersTableBody">
+
+                    <tr>
+
+                        <td colspan="5">
+
+                            <div class="tableEmpty">
+
+                                <i class="fa-solid fa-users"></i>
+
+                                <span>
+                                    Loading users...
+                                </span>
+
+                            </div>
+
+                        </td>
+
+                    </tr>
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+
+</section>
+
+
+<!-- =====================================================
+     CONTENT
+===================================================== -->
+
+<section
+    id="postsSection"
+    class="adminSection"
+>
+
+
+    <div class="sectionHeader">
+
+        <div>
+
+            <h2>
+                Content Management
+            </h2>
+
+            <p>
+                Review and manage posts, shorts and videos.
+            </p>
+
+        </div>
+
+
+        <button
+            id="refreshPostsBtn"
+            class="secondaryBtn"
+        >
+
+            <i class="fa-solid fa-rotate"></i>
+
+            Refresh
+
+        </button>
+
+    </div>
+
+
+    <div class="contentFilters">
+
+
+        <button
+            class="contentFilter active"
+            data-content-filter="all"
+        >
+            All
+        </button>
+
+
+        <button
+            class="contentFilter"
+            data-content-filter="post"
+        >
+            <i class="fa-solid fa-image"></i>
+            Posts
+        </button>
+
+
+        <button
+            class="contentFilter"
+            data-content-filter="short"
+        >
+            <i class="fa-solid fa-bolt"></i>
+            Shorts
+        </button>
+
+
+        <button
+            class="contentFilter"
+            data-content-filter="video"
+        >
+            <i class="fa-solid fa-video"></i>
+            Videos
+        </button>
+
+
+    </div>
+
+
+    <div
+        id="contentGrid"
+        class="contentGrid"
+    >
+
+        <div class="largeEmptyState">
+
+            <i class="fa-solid fa-photo-film"></i>
+
+            <h3>
+                No content available
+            </h3>
+
+            <p>
+                Published content will appear here.
+            </p>
+
+        </div>
+
+    </div>
+
+
+</section>
+
+
+<!-- =====================================================
+     REPORTS
+===================================================== -->
+
+<section
+    id="reportsSection"
+    class="adminSection"
+>
+
+
+    <div class="sectionHeader">
+
+        <div>
+
+            <h2>
+                Reports & Moderation
+            </h2>
+
+            <p>
+                Review community reports and platform violations.
+            </p>
+
+        </div>
+
+
+        <select id="reportFilter">
+
+            <option value="pending">
+                Pending
+            </option>
+
+            <option value="resolved">
+                Resolved
+            </option>
+
+            <option value="all">
+                All Reports
+            </option>
+
+        </select>
+
+    </div>
+
+
+    <div
+        id="reportsContainer"
+        class="reportsContainer"
+    >
+
+        <div class="largeEmptyState">
+
+            <i class="fa-solid fa-flag"></i>
+
+            <h3>
+                No reports
+            </h3>
+
+            <p>
+                Reported content will appear here.
+            </p>
+
+        </div>
+
+    </div>
+
+
+</section>
+
+
+<!-- =====================================================
+     LIVE
+===================================================== -->
+
+<section
+    id="liveSection"
+    class="adminSection"
+>
+
+
+    <div class="sectionHeader">
+
+        <div>
+
+            <h2>
+                Live Control
+            </h2>
+
+            <p>
+                Monitor active Viewora broadcasts.
+            </p>
+
+        </div>
+
+
+        <span class="liveStatusBadge">
+
+            <span></span>
+
+            LIVE MONITOR
+
+        </span>
+
+    </div>
+
+
+    <div
+        id="liveStreamsContainer"
+        class="liveGrid"
+    >
+
+        <div class="largeEmptyState">
+
+            <i class="fa-solid fa-tower-broadcast"></i>
+
+            <h3>
+                No active streams
+            </h3>
+
+            <p>
+                Active live broadcasts will appear here.
+            </p>
+
+        </div>
+
+    </div>
+
+
+</section>
+
+
+<!-- =====================================================
+     VERIFICATION
+===================================================== -->
+
+<section
+    id="verificationSection"
+    class="adminSection"
+>
+
+
+    <div class="sectionHeader">
+
+        <div>
+
+            <h2>
+                Creator Verification
+            </h2>
+
+            <p>
+                Review creator verification requests.
+            </p>
+
+        </div>
+
+    </div>
+
+
+    <div
+        id="verificationContainer"
+        class="verificationList"
+    >
+
+        <div class="largeEmptyState">
+
+            <i class="fa-solid fa-circle-check"></i>
+
+            <h3>
+                No pending requests
+            </h3>
+
+            <p>
+                Verification requests will appear here.
+            </p>
+
+        </div>
+
+    </div>
+
+
+</section>
+
+
+<!-- =====================================================
+     ANALYTICS
+===================================================== -->
+
+<section
+    id="analyticsSection"
+    class="adminSection"
+>
+
+
+    <div class="sectionHeader">
+
+        <div>
+
+            <h2>
+                Platform Analytics
+            </h2>
+
+            <p>
+                Viewora growth and engagement overview.
+            </p>
+
+        </div>
+
+
+        <select id="analyticsPeriod">
+
+            <option value="7">
+                Last 7 Days
+            </option>
+
+            <option value="30">
+                Last 30 Days
+            </option>
+
+            <option value="90">
+                Last 90 Days
+            </option>
+
+            <option value="365">
+                Last Year
+            </option>
+
+        </select>
+
+    </div>
+
+
+    <div class="analyticsCards">
+
+
+        <div class="analyticsCard">
+
+            <span>
+                New Users
+            </span>
+
+            <strong id="analyticsUsers">
+                0
+            </strong>
+
+            <small>
+                This period
+            </small>
+
+        </div>
+
+
+        <div class="analyticsCard">
+
+            <span>
+                New Posts
+            </span>
+
+            <strong id="analyticsPosts">
+                0
+            </strong>
+
+            <small>
+                This period
+            </small>
+
+        </div>
+
+
+        <div class="analyticsCard">
+
+            <span>
+                Engagement
+            </span>
+
+            <strong id="analyticsEngagement">
+                0%
+            </strong>
+
+            <small>
+                Average
+            </small>
+
+        </div>
+
+
+        <div class="analyticsCard">
+
+            <span>
+                Reports
+            </span>
+
+            <strong id="analyticsReports">
+                0
+            </strong>
+
+            <small>
+                This period
+            </small>
+
+        </div>
+
+
+    </div>
+
+
+    <div class="chartCard">
+
+        <div class="panelHeader">
+
+            <div>
+
+                <h3>
+                    Platform Activity
+                </h3>
+
+                <p>
+                    User and content activity
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <div
+            id="activityChart"
+            class="activityChart"
+        >
+
+            <div class="chartEmpty">
+
+                <i class="fa-solid fa-chart-line"></i>
+
+                <span>
+                    Analytics data will appear here
+                </span>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+</section>
+
+
+<!-- =====================================================
+     SETTINGS
+===================================================== -->
+
+<section
+    id="settingsSection"
+    class="adminSection"
+>
+
+
+    <div class="sectionHeader">
+
+        <div>
+
+            <h2>
+                Admin Settings
+            </h2>
+
+            <p>
+                Configure your Viewora administration environment.
+            </p>
+
+        </div>
+
+    </div>
+
+
+    <div class="settingsGrid">
+
+
+        <div class="settingsCard">
+
+            <div class="settingsCardIcon">
+
+                <i class="fa-solid fa-shield-halved"></i>
+
+            </div>
+
+            <div>
+
+                <h3>
+                    Security
+                </h3>
+
+                <p>
+                    Admin authentication and access controls.
+                </p>
+
+            </div>
+
+            <button
+                class="settingsArrow"
+                data-setting="security"
+            >
+
+                <i class="fa-solid fa-chevron-right"></i>
+
+            </button>
+
+        </div>
+
+
+        <div class="settingsCard">
+
+            <div class="settingsCardIcon">
+
+                <i class="fa-solid fa-bell"></i>
+
+            </div>
+
+            <div>
+
+                <h3>
+                    Notifications
+                </h3>
+
+                <p>
+                    Configure admin alerts and notifications.
+                </p>
+
+            </div>
+
+            <button
+                class="settingsArrow"
+                data-setting="notifications"
+            >
+
+                <i class="fa-solid fa-chevron-right"></i>
+
+            </button>
+
+        </div>
+
+
+        <div class="settingsCard">
+
+            <div class="settingsCardIcon">
+
+                <i class="fa-solid fa-database"></i>
+
+            </div>
+
+            <div>
+
+                <h3>
+                    Database
+                </h3>
+
+                <p>
+                    View your Firebase connection status.
+                </p>
+
+            </div>
+
+            <span
+                id="databaseStatus"
+                class="systemStatus"
+            >
+
+                Checking...
+
+            </span>
+
+        </div>
+
+
+        <div class="settingsCard">
+
+            <div class="settingsCardIcon">
+
+                <i class="fa-solid fa-server"></i>
+
+            </div>
+
+            <div>
+
+                <h3>
+                    Platform Status
+                </h3>
+
+                <p>
+                    Current Viewora system status.
+                </p>
+
+            </div>
+
+            <span class="systemStatus online">
+
+                Operational
+
+            </span>
+
+        </div>
+
+
+    </div>
+
+
+</section>
+
+
+    </div>
+
+</main>
+
+
+</div>
+
+
+<!-- =====================================================
+     MOBILE OVERLAY
+===================================================== -->
+
+<div
+    id="sidebarOverlay"
+    class="sidebarOverlay"
+></div>
+
+
+<!-- =====================================================
+     USER ACTION MODAL
+===================================================== -->
+
+<div
+    id="userModal"
+    class="adminModal hidden"
+>
+
+
+    <div class="modalBackdrop"></div>
+
+
+    <div class="modalCard">
+
+
+        <button
+            id="closeUserModal"
+            class="modalClose"
+        >
+
+            <i class="fa-solid fa-xmark"></i>
+
+        </button>
+
+
+        <div class="modalIcon">
+
+            <i class="fa-solid fa-user-shield"></i>
+
+        </div>
+
+
+        <h2 id="userModalTitle">
+            User Actions
+        </h2>
+
+
+        <p id="userModalDescription">
+            Manage this account.
+        </p>
+
+
+        <div
+            id="userModalActions"
+            class="modalActions"
+        >
+
+            <button
+                id="viewUserBtn"
+                class="modalAction"
+            >
+
+                <i class="fa-solid fa-user"></i>
+
+                View Profile
+
+            </button>
+
+
+            <button
+                id="changeRoleBtn"
+                class="modalAction"
+            >
+
+                <i class="fa-solid fa-user-gear"></i>
+
+                Change Role
+
+            </button>
+
+
+            <button
+                id="blockUserBtn"
+                class="modalAction danger"
+            >
+
+                <i class="fa-solid fa-ban"></i>
+
+                Block User
+
+            </button>
+
+        </div>
+
+
+    </div>
+
+</div>
+
+
+<!-- =====================================================
+     CONFIRM MODAL
+===================================================== -->
+
+<div
+    id="confirmModal"
+    class="adminModal hidden"
+>
+
+
+    <div class="modalBackdrop"></div>
+
+
+    <div class="modalCard confirmCard">
+
+
+        <div class="confirmIcon">
+
+            <i class="fa-solid fa-triangle-exclamation"></i>
+
+        </div>
+
+
+        <h2 id="confirmTitle">
+            Are you sure?
+        </h2>
+
+
+        <p id="confirmText">
+            This action cannot be undone.
+        </p>
+
+
+        <div class="confirmButtons">
+
+
+            <button
+                id="confirmCancelBtn"
+                class="secondaryBtn"
+            >
+                Cancel
+            </button>
+
+
+            <button
+                id="confirmActionBtn"
+                class="dangerBtn"
+            >
+                Confirm
+            </button>
+
+
+        </div>
+
+
+    </div>
+
+</div>
+
+
+<!-- =====================================================
+     NOTIFICATION PANEL
+===================================================== -->
+
+<div
+    id="notificationPanel"
+    class="notificationPanel hidden"
+>
+
+
+    <div class="notificationHeader">
+
+        <div>
+
+            <h3>
+                Notifications
+            </h3>
+
+            <span>
+                Admin alerts
+            </span>
+
+        </div>
+
+
+        <button
+            id="closeNotificationBtn"
+            class="smallIcon"
+        >
+
+            <i class="fa-solid fa-xmark"></i>
+
+        </button>
+
+    </div>
+
+
+    <div
+        id="notificationList"
+        class="notificationList"
+    >
+
+        <div class="notificationEmpty">
+
+            <i class="fa-regular fa-bell-slash"></i>
+
+            <span>
+                No new notifications
+            </span>
+
+        </div>
+
+    </div>
+
+
+</div>
+
+
+<!-- =====================================================
+     TOAST
+===================================================== -->
+
+<div
+    id="adminToast"
+    class="adminToast"
+>
+
+    <i
+        id="adminToastIcon"
+        class="fa-solid fa-circle-check"
+    ></i>
+
+    <span id="adminToastText">
+        Done
+    </span>
+
+</div>
+
+
+<!-- =====================================================
+     FIREBASE
+===================================================== -->
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+
+
+<!-- Firebase Config -->
+
+<script src="firebase.js"></script>
+
+
+<!-- Admin Logic -->
+
+<script src="admin-panel.js"></script>
+
+
+</body>
+</html>

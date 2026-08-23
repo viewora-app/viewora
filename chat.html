@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
 
@@ -9,13 +8,22 @@
         content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
     >
 
+    <meta
+        name="theme-color"
+        content="#08090d"
+    >
+
+    <meta
+        name="description"
+        content="Viewora premium private chat"
+    >
+
     <title>Chat • Viewora</title>
 
-    <meta name="theme-color" content="#0a0a0f">
+    <!-- =====================================================
+         FONTS
+    ====================================================== -->
 
-    <link rel="icon" href="assets/logo.png">
-
-    <!-- Google Font -->
     <link
         rel="preconnect"
         href="https://fonts.googleapis.com"
@@ -28,153 +36,147 @@
     >
 
     <link
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
         rel="stylesheet"
     >
 
-    <!-- Font Awesome -->
+    <!-- =====================================================
+         FONT AWESOME
+    ====================================================== -->
+
     <link
         rel="stylesheet"
-        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
     >
 
-    <!-- Viewora Chat CSS -->
-    <link rel="stylesheet" href="chat.css">
-    <link rel="stylesheet" href="viewora-loader.css">
+    <!-- =====================================================
+         CHAT CSS
+    ====================================================== -->
+
+    <link
+        rel="stylesheet"
+        href="chat.css"
+    >
 </head>
 
 <body>
 
-<!-- =====================================================
-     VIEWORA GLOBAL PREMIUM LOADER
-===================================================== -->
-
-<div id="vieworaGlobalLoader" class="vieworaGlobalLoader" role="status" aria-live="polite" aria-label="Loading Viewora">
-
-    <div class="vieworaLoaderGlow"></div>
-
-    <div class="vieworaLoaderCard">
-
-        <div class="vieworaLoaderLogo">
-            <img
-                src="assets/logo.png"
-                alt="Viewora"
-                draggable="false"
-            >
-        </div>
-
-        <h2>Viewora</h2>
-
-        <p id="vieworaLoaderStatus">
-            Connecting to Viewora...
-        </p>
-
-        <div class="vieworaLoaderSpinner" aria-hidden="true"></div>
-
-    </div>
-
-</div>
-
-<!-- =====================================================
+<!-- =========================================================
      BACKGROUND
-===================================================== -->
+========================================================= -->
 
-<div class="aurora">
+<div class="aurora" aria-hidden="true">
+
     <div class="auroraBlob blob1"></div>
     <div class="auroraBlob blob2"></div>
     <div class="auroraBlob blob3"></div>
-    <div class="auroraBlob blob4"></div>
+
 </div>
 
-<canvas id="particles"></canvas>
 
-<div class="noiseLayer"></div>
+<!-- =========================================================
+     LOADING
+========================================================= -->
 
-
-<!-- =====================================================
-     LOADING SCREEN
-===================================================== -->
-
-<div id="loadingOverlay" class="loadingOverlay">
+<div
+    id="loadingOverlay"
+    class="loadingOverlay"
+>
 
     <div class="loadingCard">
 
         <div class="loadingLogo">
-            <img
-                src="assets/logo.png"
-                alt="Viewora"
-            >
+            <span>V</span>
         </div>
 
-        <h2>Viewora</h2>
+        <div class="loadingSpinner"></div>
+
+        <strong>
+            Viewora
+        </strong>
 
         <p id="loadingText">
-            Loading chat...
+            Connecting to chat...
         </p>
-
-        <div class="loadingSpinner"></div>
 
     </div>
 
 </div>
 
 
-<!-- =====================================================
+<!-- =========================================================
      APP
-===================================================== -->
+========================================================= -->
 
-<div id="app" class="app hidden">
+<main
+    id="app"
+    class="app hidden"
+>
 
 
-    <!-- =================================================
-         HEADER
-    ================================================== -->
+    <!-- =====================================================
+         CHAT HEADER
+    ====================================================== -->
 
-    <header class="chatHeader glass">
+    <header class="chatHeader">
 
         <div class="headerLeft">
 
             <button
                 id="backBtn"
-                class="iconBtn"
+                class="iconButton"
                 type="button"
-                aria-label="Go back"
+                aria-label="Back"
             >
                 <i class="fa-solid fa-arrow-left"></i>
             </button>
 
 
-            <!-- USER -->
             <button
                 id="profileBtn"
-                class="userHeader"
+                class="chatIdentity"
                 type="button"
             >
 
-                <div class="profileWrapper">
+                <div class="headerAvatar">
 
                     <img
                         id="chatPhoto"
                         src="assets/default-avatar.png"
-                        class="chatPhoto"
                         alt="Profile"
                     >
 
                     <span
                         id="onlineDot"
-                        class="onlineDot"
+                        class="onlineDot hidden"
                     ></span>
 
                 </div>
 
 
-                <div class="userInfo">
+                <div class="headerUserInfo">
 
-                    <h2 id="chatName">
-                        Loading...
-                    </h2>
+                    <div class="headerNameRow">
 
-                    <span id="chatStatus">
+                        <h1 id="chatName">
+                            Viewora User
+                        </h1>
+
+                        <span
+    id="verifiedBadge"
+    class="verifiedBadge hidden"
+    aria-label="Verified account"
+    title="Verified account"
+>
+    <i class="fa-solid fa-check"></i>
+                        </span>
+
+                    </div>
+
+                    <span
+                        id="chatStatus"
+                        class="chatStatus"
+                    >
                         Connecting...
                     </span>
 
@@ -185,42 +187,51 @@
         </div>
 
 
-        <!-- HEADER ACTIONS -->
+        <div class="headerActions">
 
-        <div class="headerRight">
+            <!-- Search -->
 
             <button
                 id="searchBtn"
-                class="iconBtn"
+                class="iconButton"
                 type="button"
-                aria-label="Search"
+                aria-label="Search messages"
             >
                 <i class="fa-solid fa-magnifying-glass"></i>
             </button>
 
+
+            <!-- Voice Call -->
+
             <button
                 id="voiceCallBtn"
-                class="iconBtn"
+                class="iconButton callButton"
                 type="button"
                 aria-label="Voice call"
             >
                 <i class="fa-solid fa-phone"></i>
             </button>
 
+
+            <!-- Video Call -->
+
             <button
                 id="videoCallBtn"
-                class="iconBtn"
+                class="iconButton callButton"
                 type="button"
                 aria-label="Video call"
             >
                 <i class="fa-solid fa-video"></i>
             </button>
 
+
+            <!-- More -->
+
             <button
                 id="menuBtn"
-                class="iconBtn"
+                class="iconButton"
                 type="button"
-                aria-label="More"
+                aria-label="More options"
             >
                 <i class="fa-solid fa-ellipsis-vertical"></i>
             </button>
@@ -230,71 +241,47 @@
     </header>
 
 
-    <!-- =================================================
+    <!-- =====================================================
          SEARCH BAR
-    ================================================== -->
+    ====================================================== -->
 
     <div
         id="searchBar"
-        class="searchBar glass hidden"
+        class="chatSearchBar hidden"
     >
 
-        <i class="fa-solid fa-magnifying-glass"></i>
+        <div class="searchInputWrap">
 
-        <input
-            id="searchInput"
-            type="search"
-            placeholder="Search messages..."
-            autocomplete="off"
-        >
+            <i class="fa-solid fa-magnifying-glass"></i>
 
-        <button
-            id="closeSearch"
-            class="iconBtn"
-            type="button"
-            aria-label="Close search"
-        >
-            <i class="fa-solid fa-xmark"></i>
-        </button>
+            <input
+                id="searchInput"
+                type="search"
+                placeholder="Search messages..."
+                autocomplete="off"
+            >
+
+            <button
+                id="closeSearch"
+                type="button"
+                aria-label="Close search"
+            >
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+        </div>
 
     </div>
 
 
-    <!-- =================================================
+    <!-- =====================================================
          CHAT MENU
-    ================================================== -->
+    ====================================================== -->
 
     <div
         id="chatMenu"
-        class="chatMenu glass hidden"
+        class="chatMenu hidden"
     >
-
-        <button
-            id="menuProfileBtn"
-            class="menuItem"
-            type="button"
-        >
-            <i class="fa-solid fa-user"></i>
-            <span>View Profile</span>
-        </button>
-
-        <button
-            id="menuMediaBtn"
-            class="menuItem"
-            type="button"
-        >
-            <i class="fa-solid fa-photo-film"></i>
-            <span>Media</span>
-        </button>
-
-        <button
-            id="menuPinnedBtn"
-            class="menuItem"
-            type="button"
-        >
-            <i class="fa-solid fa-thumbtack"></i>
-            <span>Pinned Messages</span>
-        </button>
 
         <button
             id="menuMuteBtn"
@@ -302,8 +289,19 @@
             type="button"
         >
             <i class="fa-solid fa-bell-slash"></i>
-            <span>Mute</span>
+            <span>Mute notifications</span>
         </button>
+
+
+        <button
+            id="menuSearchBtn"
+            class="menuItem"
+            type="button"
+        >
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <span>Search</span>
+        </button>
+
 
         <button
             id="menuDeleteChatBtn"
@@ -311,102 +309,126 @@
             type="button"
         >
             <i class="fa-solid fa-trash"></i>
-            <span>Delete Chat</span>
+            <span>Delete chat</span>
         </button>
 
     </div>
 
 
-    <!-- =================================================
+    <!-- =====================================================
          CHAT BODY
-    ================================================== -->
+    ====================================================== -->
 
-    <main
+    <section
         id="chatContainer"
         class="chatContainer"
     >
 
-        <!-- TYPING -->
+        <div
+            id="messagesList"
+            class="messagesList"
+        >
+            <!-- Firebase messages render here -->
+        </div>
+
+
+        <!-- =================================================
+             TYPING INDICATOR
+        ================================================== -->
 
         <div
             id="typingIndicator"
             class="typingIndicator hidden"
         >
 
-            <img
-                id="typingPhoto"
-                src="assets/default-avatar.png"
-                class="typingAvatar"
-                alt=""
-            >
+            <div class="typingAvatar">
 
-            <div class="typingBubble">
-                <span></span>
-                <span></span>
-                <span></span>
+                <img
+                    id="typingPhoto"
+                    src="assets/default-avatar.png"
+                    alt=""
+                >
+
             </div>
 
-            <small id="typingText">
-                Typing...
-            </small>
+            <div class="typingBubble">
+
+                <span></span>
+                <span></span>
+                <span></span>
+
+            </div>
+
+            <span
+                id="typingText"
+                class="typingText"
+            >
+                typing...
+            </span>
 
         </div>
 
 
-        <!-- DATE -->
+        <!-- =================================================
+             SCROLL BOTTOM
+        ================================================== -->
 
-        <div class="dateDivider">
-            <span>Today</span>
-        </div>
+        <button
+            id="scrollBottomBtn"
+            class="scrollBottomBtn hidden"
+            type="button"
+            aria-label="Scroll to latest"
+        >
+            <i class="fa-solid fa-chevron-down"></i>
+        </button>
+
+    </section>
 
 
-        <!-- MESSAGES -->
+    <!-- =====================================================
+         REACTION BAR
+    ====================================================== -->
 
-        <div id="messagesList"></div>
-
-    </main>
-
-
-    <!-- =================================================
-         SCROLL TO BOTTOM
-    ================================================== -->
-
-    <button
-        id="scrollBottomBtn"
-        class="scrollBottomBtn hidden"
-        type="button"
-        aria-label="Scroll to bottom"
+    <div
+        id="reactionBar"
+        class="reactionBar hidden"
     >
-        <i class="fa-solid fa-arrow-down"></i>
-    </button>
+
+        <button type="button">❤️</button>
+        <button type="button">😂</button>
+        <button type="button">😍</button>
+        <button type="button">😮</button>
+        <button type="button">😢</button>
+        <button type="button">👍</button>
+
+    </div>
 
 
-    <!-- =================================================
+    <!-- =====================================================
          REPLY PREVIEW
-    ================================================== -->
+    ====================================================== -->
 
     <div
         id="replyPreview"
-        class="replyPreview hidden"
+        class="replyPreviewBar hidden"
     >
 
-        <div class="replyLine"></div>
+        <div class="replyAccent"></div>
 
-        <div class="replyInfo">
+        <div class="replyPreviewContent">
 
             <strong id="replyUser">
-                Replying...
+                Reply
             </strong>
 
-            <p id="replyText">
-                Message preview...
-            </p>
+            <span id="replyText">
+                Message
+            </span>
 
         </div>
 
         <button
             id="closeReplyPreview"
-            class="replyClose"
             type="button"
             aria-label="Cancel reply"
         >
@@ -416,631 +438,564 @@
     </div>
 
 
-    <!-- =================================================
-         MESSAGE REACTION BAR
-    ================================================== -->
+    <!-- =====================================================
+         MESSAGE INPUT
+    ====================================================== -->
 
-    <div
-        id="reactionBar"
-        class="reactionBar hidden"
-    >
+    <footer class="composer">
 
-        <button type="button">❤️</button>
-        <button type="button">😂</button>
-        <button type="button">👍</button>
-        <button type="button">😮</button>
-        <button type="button">😢</button>
-        <button type="button">🔥</button>
-        <button type="button">👏</button>
-
-    </div>
+        <div class="composerInner">
 
 
-    <!-- =================================================
-         MESSAGE ACTION MENU
-    ================================================== -->
-
-    <div
-        id="messageMenu"
-        class="messageMenu glass hidden"
-    >
-
-        <button
-            id="replyMessageBtn"
-            class="menuItem"
-            type="button"
-        >
-            <i class="fa-solid fa-reply"></i>
-            <span>Reply</span>
-        </button>
-
-        <button
-            id="copyMessageBtn"
-            class="menuItem"
-            type="button"
-        >
-            <i class="fa-regular fa-copy"></i>
-            <span>Copy</span>
-        </button>
-
-        <button
-            id="forwardMessageBtn"
-            class="menuItem"
-            type="button"
-        >
-            <i class="fa-solid fa-share"></i>
-            <span>Forward</span>
-        </button>
-
-        <button
-            id="reactMessageBtn"
-            class="menuItem"
-            type="button"
-        >
-            <i class="fa-regular fa-face-smile"></i>
-            <span>React</span>
-        </button>
-
-        <button
-            id="editMessageBtn"
-            class="menuItem"
-            type="button"
-        >
-            <i class="fa-solid fa-pen"></i>
-            <span>Edit</span>
-        </button>
-
-        <button
-            id="pinMessageBtn"
-            class="menuItem"
-            type="button"
-        >
-            <i class="fa-solid fa-thumbtack"></i>
-            <span>Pin Message</span>
-        </button>
-
-        <button
-            id="infoMessageBtn"
-            class="menuItem"
-            type="button"
-        >
-            <i class="fa-solid fa-circle-info"></i>
-            <span>Message Info</span>
-        </button>
-
-        <button
-            id="deleteMessageBtn"
-            class="menuItem danger"
-            type="button"
-        >
-            <i class="fa-solid fa-trash"></i>
-            <span>Delete</span>
-        </button>
-
-    </div>
-
-
-    <!-- =================================================
-         CHAT INPUT
-    ================================================== -->
-
-    <footer class="chatInputWrapper glass">
-
-        <!-- ATTACH -->
-
-        <button
-            id="attachBtn"
-            class="inputBtn"
-            type="button"
-            aria-label="Attach"
-        >
-            <i class="fa-solid fa-plus"></i>
-        </button>
-
-
-        <!-- INPUT BOX -->
-
-        <div class="messageInputBox">
+            <!-- Attach -->
 
             <button
-                id="emojiBtn"
-                class="emojiBtn"
+                id="attachBtn"
+                class="composerButton"
                 type="button"
-                aria-label="Emoji"
+                aria-label="Attach"
             >
-                😊
+                <i class="fa-solid fa-plus"></i>
             </button>
 
-            <textarea
-                id="messageInput"
-                rows="1"
-                maxlength="5000"
-                placeholder="Message..."
-                autocomplete="off"
-            ></textarea>
+
+            <!-- Text Area -->
+
+            <div class="messageInputShell">
+
+                <textarea
+                    id="messageInput"
+                    rows="1"
+                    maxlength="5000"
+                    placeholder="Message..."
+                    autocomplete="off"
+                    spellcheck="true"
+                ></textarea>
+
+
+                <button
+                    id="emojiBtn"
+                    class="insideInputButton"
+                    type="button"
+                    aria-label="Emoji"
+                >
+                    <i class="fa-regular fa-face-smile"></i>
+                </button>
+
+            </div>
+
+
+            <!-- Camera -->
 
             <button
                 id="cameraBtn"
-                class="cameraBtn"
+                class="composerButton"
                 type="button"
                 aria-label="Camera"
             >
                 <i class="fa-solid fa-camera"></i>
             </button>
 
+
+            <!-- Voice -->
+
+            <button
+                id="voiceBtn"
+                class="composerButton voiceComposerButton"
+                type="button"
+                aria-label="Voice message"
+            >
+                <i class="fa-solid fa-microphone"></i>
+            </button>
+
+
+            <!-- Send -->
+
+            <button
+                id="sendBtn"
+                class="sendButton"
+                type="button"
+                aria-label="Send message"
+            >
+                <i class="fa-solid fa-paper-plane"></i>
+            </button>
+
         </div>
-
-
-        <!-- VOICE -->
-
-        <button
-            id="voiceBtn"
-            class="inputBtn"
-            type="button"
-            aria-label="Voice message"
-        >
-            <i class="fa-solid fa-microphone"></i>
-        </button>
-
-
-        <!-- SEND -->
-
-        <button
-            id="sendBtn"
-            class="sendBtn"
-            type="button"
-            aria-label="Send message"
-        >
-            <i class="fa-solid fa-paper-plane"></i>
-        </button>
 
     </footer>
 
 
-    <!-- =================================================
-         EMOJI PANEL
-    ================================================== -->
+</main>
 
-    <div
-        id="emojiPanel"
-        class="emojiPanel hidden"
-    >
 
-        <div class="emojiGrid">
+<!-- =========================================================
+     EMOJI PANEL
+========================================================= -->
 
-            <button type="button">😀</button>
-            <button type="button">😁</button>
-            <button type="button">😂</button>
-            <button type="button">🤣</button>
-            <button type="button">😊</button>
-            <button type="button">😍</button>
-            <button type="button">🥰</button>
-            <button type="button">😘</button>
-            <button type="button">😎</button>
-            <button type="button">🤩</button>
-            <button type="button">🤔</button>
-            <button type="button">😭</button>
-            <button type="button">😡</button>
-            <button type="button">🥳</button>
-            <button type="button">👍</button>
-            <button type="button">👎</button>
-            <button type="button">👏</button>
-            <button type="button">🙏</button>
-            <button type="button">🔥</button>
-            <button type="button">💯</button>
-            <button type="button">❤️</button>
-            <button type="button">💙</button>
-            <button type="button">💚</button>
-            <button type="button">💜</button>
-            <button type="button">🖤</button>
-            <button type="button">🤍</button>
-            <button type="button">✨</button>
-            <button type="button">🎉</button>
-            <button type="button">🚀</button>
-            <button type="button">😇</button>
+<section
+    id="emojiPanel"
+    class="emojiPanel hidden"
+>
 
-        </div>
+    <div class="emojiPanelHeader">
 
-    </div>
-
-
-    <!-- =================================================
-         ATTACHMENT SHEET
-    ================================================== -->
-
-    <div
-        id="attachmentSheet"
-        class="attachmentSheet hidden"
-    >
-
-        <div class="attachmentOverlay"></div>
-
-        <div class="attachmentCard glass">
-
-            <div class="attachmentHeader">
-                <strong>Share with chat</strong>
-
-                <button
-                    id="closeAttachmentBtn"
-                    class="iconBtn"
-                    type="button"
-                >
-                    <i class="fa-solid fa-xmark"></i>
-                </button>
-            </div>
-
-
-            <div class="attachmentGrid">
-
-                <!-- PHOTO -->
-
-                <button
-                    id="galleryBtn"
-                    class="attachmentItem"
-                    type="button"
-                >
-                    <span class="attachmentIcon">
-                        <i class="fa-solid fa-image"></i>
-                    </span>
-
-                    <span>Photo</span>
-                </button>
-
-
-                <!-- CAMERA -->
-
-                <button
-                    id="cameraAttachmentBtn"
-                    class="attachmentItem"
-                    type="button"
-                >
-                    <span class="attachmentIcon">
-                        <i class="fa-solid fa-camera"></i>
-                    </span>
-
-                    <span>Camera</span>
-                </button>
-
-
-                <!-- VIDEO -->
-
-                <button
-                    id="videoBtn"
-                    class="attachmentItem"
-                    type="button"
-                >
-                    <span class="attachmentIcon">
-                        <i class="fa-solid fa-video"></i>
-                    </span>
-
-                    <span>Video</span>
-                </button>
-
-
-                <!-- DOCUMENT -->
-
-                <button
-                    id="documentBtn"
-                    class="attachmentItem"
-                    type="button"
-                >
-                    <span class="attachmentIcon">
-                        <i class="fa-solid fa-file"></i>
-                    </span>
-
-                    <span>Document</span>
-                </button>
-
-
-                <!-- AUDIO -->
-
-                <button
-                    id="audioBtn"
-                    class="attachmentItem"
-                    type="button"
-                >
-                    <span class="attachmentIcon">
-                        <i class="fa-solid fa-music"></i>
-                    </span>
-
-                    <span>Audio</span>
-                </button>
-
-
-                <!-- LOCATION -->
-
-                <button
-                    id="locationBtn"
-                    class="attachmentItem"
-                    type="button"
-                >
-                    <span class="attachmentIcon">
-                        <i class="fa-solid fa-location-dot"></i>
-                    </span>
-
-                    <span>Location</span>
-                </button>
-
-
-                <!-- CONTACT -->
-
-                <button
-                    id="contactBtn"
-                    class="attachmentItem"
-                    type="button"
-                >
-                    <span class="attachmentIcon">
-                        <i class="fa-solid fa-address-book"></i>
-                    </span>
-
-                    <span>Contact</span>
-                </button>
-
-            </div>
-
-        </div>
-
-    </div>
-
-
-    <!-- =================================================
-         FILE INPUTS
-    ================================================== -->
-
-    <input
-        id="imagePicker"
-        type="file"
-        accept="image/*"
-        hidden
-    >
-
-    <input
-        id="videoPicker"
-        type="file"
-        accept="video/*"
-        hidden
-    >
-
-    <input
-        id="audioPicker"
-        type="file"
-        accept="audio/*"
-        hidden
-    >
-
-    <input
-        id="documentPicker"
-        type="file"
-        hidden
-    >
-
-    <input
-        id="cameraPicker"
-        type="file"
-        accept="image/*"
-        capture="environment"
-        hidden
-    >
-
-
-    <!-- =================================================
-         MEDIA PREVIEW MODAL
-    ================================================== -->
-
-    <div
-        id="mediaPreviewModal"
-        class="mediaPreviewModal hidden"
-    >
-
-        <div class="previewOverlay"></div>
-
-        <div class="previewContent glass">
-
-            <div class="previewHeader">
-
-                <h3 id="previewTitle">
-                    Send Media
-                </h3>
-
-                <button
-                    id="closePreviewBtn"
-                    class="iconBtn"
-                    type="button"
-                >
-                    <i class="fa-solid fa-xmark"></i>
-                </button>
-
-            </div>
-
-
-            <!-- IMAGE -->
-
-            <img
-                id="previewImage"
-                class="previewImage hidden"
-                src=""
-                alt="Preview"
-            >
-
-
-            <!-- VIDEO -->
-
-            <video
-                id="previewVideo"
-                class="previewVideo hidden"
-                controls
-                playsinline
-                preload="metadata"
-            ></video>
-
-
-            <!-- AUDIO -->
-
-            <div
-                id="previewAudioBox"
-                class="previewAudioBox hidden"
-            >
-
-                <div class="audioPreviewIcon">
-                    <i class="fa-solid fa-music"></i>
-                </div>
-
-                <strong id="previewAudioName">
-                    Audio
-                </strong>
-
-                <audio
-                    id="previewAudio"
-                    controls
-                ></audio>
-
-            </div>
-
-
-            <!-- FILE -->
-
-            <div
-                id="previewFileBox"
-                class="previewFileBox hidden"
-            >
-
-                <i class="fa-solid fa-file"></i>
-
-                <div>
-                    <strong id="previewFileName">
-                        File
-                    </strong>
-
-                    <small id="previewFileSize">
-                        0 KB
-                    </small>
-                </div>
-
-            </div>
-
-
-            <!-- CAPTION -->
-
-            <textarea
-                id="mediaCaption"
-                rows="2"
-                maxlength="2000"
-                placeholder="Add a message..."
-            ></textarea>
-
-
-            <div class="previewActions">
-
-                <button
-                    id="cancelMediaBtn"
-                    class="secondaryBtn"
-                    type="button"
-                >
-                    Cancel
-                </button>
-
-                <button
-                    id="sendMediaBtn"
-                    class="primaryBtn"
-                    type="button"
-                >
-                    <i class="fa-solid fa-paper-plane"></i>
-                    Send
-                </button>
-
-            </div>
-
-        </div>
-
-    </div>
-
-
-    <!-- =================================================
-         FULL SCREEN IMAGE VIEWER
-    ================================================== -->
-
-    <div
-        id="imageViewer"
-        class="imageViewer hidden"
-    >
+        <strong>
+            Emojis
+        </strong>
 
         <button
-            id="closeViewerBtn"
-            class="viewerClose"
             type="button"
+            onclick="
+                document
+                    .getElementById('emojiPanel')
+                    .classList.add('hidden')
+            "
         >
             <i class="fa-solid fa-xmark"></i>
         </button>
 
-        <img
-            id="viewerImage"
-            src=""
-            alt="Image"
-        >
-
     </div>
 
 
-    <!-- =================================================
-         VIDEO VIEWER
-    ================================================== -->
+    <div class="emojiGrid">
 
-    <div
-        id="videoViewer"
-        class="videoViewer hidden"
-    >
+        <span>😀</span>
+        <span>😃</span>
+        <span>😄</span>
+        <span>😁</span>
+        <span>😆</span>
+        <span>😅</span>
+        <span>😂</span>
+        <span>🤣</span>
 
-        <button
-            id="closeVideoViewerBtn"
-            class="viewerClose"
-            type="button"
-        >
-            <i class="fa-solid fa-xmark"></i>
-        </button>
+        <span>😊</span>
+        <span>😇</span>
+        <span>🙂</span>
+        <span>🙃</span>
+        <span>😉</span>
+        <span>😌</span>
+        <span>😍</span>
+        <span>🥰</span>
 
-        <video
-            id="viewerVideo"
-            controls
-            playsinline
-        ></video>
+        <span>😘</span>
+        <span>😎</span>
+        <span>🤩</span>
+        <span>🥳</span>
+        <span>😏</span>
+        <span>😢</span>
+        <span>😭</span>
+        <span>😡</span>
+
+        <span>👍</span>
+        <span>👎</span>
+        <span>👏</span>
+        <span>🙏</span>
+        <span>❤️</span>
+        <span>🔥</span>
+        <span>✨</span>
+        <span>💯</span>
 
     </div>
 
+</section>
 
-    <!-- =================================================
-         PROFILE MODAL
-    ================================================== -->
 
-    <div
-        id="profileModal"
-        class="profileModal hidden"
-    >
+<!-- =========================================================
+     ATTACHMENT SHEET
+========================================================= -->
 
-        <div class="modalOverlay"></div>
+<section
+    id="attachmentSheet"
+    class="attachmentSheet hidden"
+>
 
-        <div class="profileCard glass">
+    <div class="attachmentOverlay"></div>
+
+
+    <div class="attachmentCard">
+
+        <div class="sheetHandle"></div>
+
+        <div class="sheetHeader">
+
+            <strong>
+                Share with this chat
+            </strong>
 
             <button
-                id="closeProfileBtn"
-                class="profileClose"
+                id="closeAttachmentBtn"
                 type="button"
             >
                 <i class="fa-solid fa-xmark"></i>
             </button>
 
-            <img
-                id="profileImage"
-                src="assets/default-avatar.png"
-                class="profileImage"
-                alt="Profile"
+        </div>
+
+
+        <div class="attachmentGrid">
+
+            <button
+                id="galleryBtn"
+                class="attachmentOption"
+                type="button"
             >
 
+                <span class="attachmentIcon gallery">
+                    <i class="fa-solid fa-image"></i>
+                </span>
+
+                <strong>
+                    Gallery
+                </strong>
+
+            </button>
+
+
+            <button
+                id="cameraAttachmentBtn"
+                class="attachmentOption"
+                type="button"
+            >
+
+                <span class="attachmentIcon camera">
+                    <i class="fa-solid fa-camera"></i>
+                </span>
+
+                <strong>
+                    Camera
+                </strong>
+
+            </button>
+
+
+            <button
+                id="videoBtn"
+                class="attachmentOption"
+                type="button"
+            >
+
+                <span class="attachmentIcon video">
+                    <i class="fa-solid fa-video"></i>
+                </span>
+
+                <strong>
+                    Video
+                </strong>
+
+            </button>
+
+
+            <button
+                id="audioBtn"
+                class="attachmentOption"
+                type="button"
+            >
+
+                <span class="attachmentIcon audio">
+                    <i class="fa-solid fa-music"></i>
+                </span>
+
+                <strong>
+                    Audio
+                </strong>
+
+            </button>
+
+
+            <button
+                id="documentBtn"
+                class="attachmentOption"
+                type="button"
+            >
+
+                <span class="attachmentIcon document">
+                    <i class="fa-solid fa-file"></i>
+                </span>
+
+                <strong>
+                    Document
+                </strong>
+
+            </button>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- =========================================================
+     HIDDEN FILE PICKERS
+========================================================= -->
+
+<input
+    id="imagePicker"
+    type="file"
+    accept="image/*"
+    hidden
+>
+
+<input
+    id="videoPicker"
+    type="file"
+    accept="video/*"
+    hidden
+>
+
+<input
+    id="audioPicker"
+    type="file"
+    accept="audio/*"
+    hidden
+>
+
+<input
+    id="documentPicker"
+    type="file"
+    accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip,.rar"
+    hidden
+>
+
+<input
+    id="cameraPicker"
+    type="file"
+    accept="image/*"
+    capture="environment"
+    hidden
+>
+
+
+<!-- =========================================================
+     MEDIA PREVIEW MODAL
+========================================================= -->
+
+<section
+    id="mediaPreviewModal"
+    class="modal hidden"
+>
+
+    <div class="modalBackdrop"></div>
+
+
+    <div class="mediaPreviewCard">
+
+        <div class="modalHeader">
+
+            <strong>
+                Preview
+            </strong>
+
+            <button
+                id="closePreviewBtn"
+                type="button"
+            >
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+        </div>
+
+
+        <div class="mediaPreviewBody">
+
+            <img
+                id="previewImage"
+                class="mediaPreviewElement hidden"
+                alt="Preview"
+            >
+
+
+            <video
+                id="previewVideo"
+                class="mediaPreviewElement hidden"
+                controls
+                playsinline
+            ></video>
+
+
+            <div
+                id="previewAudioBox"
+                class="previewFileCard hidden"
+            >
+
+                <div class="previewFileIcon">
+                    <i class="fa-solid fa-music"></i>
+                </div>
+
+                <div>
+
+                    <strong id="previewAudioName">
+                        Audio
+                    </strong>
+
+                    <audio
+                        id="previewAudio"
+                        controls
+                    ></audio>
+
+                </div>
+
+            </div>
+
+
+            <div
+                id="previewFileBox"
+                class="previewFileCard hidden"
+            >
+
+                <div class="previewFileIcon">
+                    <i class="fa-solid fa-file"></i>
+                </div>
+
+                <div>
+
+                    <strong id="previewFileName">
+                        File
+                    </strong>
+
+                    <span id="previewFileSize">
+                        0 KB
+                    </span>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="mediaCaptionWrap">
+
+            <textarea
+                id="mediaCaption"
+                rows="2"
+                maxlength="1000"
+                placeholder="Add a caption..."
+            ></textarea>
+
+        </div>
+
+
+        <div class="modalActions">
+
+            <button
+                id="cancelMediaBtn"
+                class="secondaryButton"
+                type="button"
+            >
+                Cancel
+            </button>
+
+            <button
+                id="sendMediaBtn"
+                class="primaryButton"
+                type="button"
+            >
+                <i class="fa-solid fa-paper-plane"></i>
+                Send
+            </button>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- =========================================================
+     IMAGE VIEWER
+========================================================= -->
+
+<section
+    id="imageViewer"
+    class="viewer hidden"
+>
+
+    <button
+        id="closeViewerBtn"
+        class="viewerClose"
+        type="button"
+    >
+        <i class="fa-solid fa-xmark"></i>
+    </button>
+
+    <img
+        id="viewerImage"
+        src=""
+        alt="Image"
+    >
+
+</section>
+
+
+<!-- =========================================================
+     VIDEO VIEWER
+========================================================= -->
+
+<section
+    id="videoViewer"
+    class="viewer hidden"
+>
+
+    <button
+        id="closeVideoViewerBtn"
+        class="viewerClose"
+        type="button"
+    >
+        <i class="fa-solid fa-xmark"></i>
+    </button>
+
+    <video
+        id="viewerVideo"
+        controls
+        autoplay
+        playsinline
+    ></video>
+
+</section>
+
+
+<!-- =========================================================
+     PROFILE MODAL
+========================================================= -->
+
+<section
+    id="profileModal"
+    class="modal hidden"
+>
+
+    <div class="modalBackdrop"></div>
+
+
+    <div class="profileCard">
+
+        <button
+            id="closeProfileBtn"
+            class="modalClose"
+            type="button"
+        >
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+
+
+        <div class="profileHero">
+
+            <div class="profileAvatar">
+
+                <img
+                    id="profileImage"
+                    src="assets/default-avatar.png"
+                    alt="Profile"
+                >
+
+            </div>
+
             <h2 id="profileName">
-                User Name
+                Viewora User
             </h2>
 
             <p id="profileUsername">
-                @username
+                @user
             </p>
 
             <span
@@ -1054,45 +1009,59 @@
 
     </div>
 
+</section>
 
-    <!-- =================================================
-         DELETE MODAL
-    ================================================== -->
 
-    <div
-        id="deleteModal"
-        class="deleteModal hidden"
-    >
+<!-- =========================================================
+     DELETE MESSAGE MODAL
+========================================================= -->
 
-        <div class="modalOverlay"></div>
+<section
+    id="deleteModal"
+    class="modal hidden"
+>
 
-        <div class="deleteCard glass">
+    <div class="modalBackdrop"></div>
 
-            <h2>Delete Message?</h2>
 
-            <p>
-                Choose how you want to delete this message.
-            </p>
+    <div class="confirmCard">
+
+        <div class="confirmIcon dangerIcon">
+
+            <i class="fa-solid fa-trash"></i>
+
+        </div>
+
+        <h2>
+            Delete message?
+        </h2>
+
+        <p>
+            Choose how you want to remove this message.
+        </p>
+
+
+        <div class="confirmActions">
 
             <button
                 id="deleteForMeBtn"
-                class="modalBtn"
+                class="secondaryButton"
                 type="button"
             >
-                Delete for Me
+                Delete for me
             </button>
 
             <button
                 id="deleteForEveryoneBtn"
-                class="modalBtn danger"
+                class="dangerButton"
                 type="button"
             >
-                Delete for Everyone
+                Delete for everyone
             </button>
 
             <button
                 id="cancelDeleteBtn"
-                class="modalBtn secondary"
+                class="textButton"
                 type="button"
             >
                 Cancel
@@ -1102,128 +1071,79 @@
 
     </div>
 
-
-    <!-- =================================================
-         FORWARD MODAL
-    ================================================== -->
-
-    <div
-        id="forwardModal"
-        class="forwardModal hidden"
-    >
-
-        <div class="modalOverlay"></div>
-
-        <div class="forwardCard glass">
-
-            <div class="forwardHeader">
-
-                <h2>Forward Message</h2>
-
-                <button
-                    id="closeForwardBtn"
-                    class="iconBtn"
-                    type="button"
-                >
-                    <i class="fa-solid fa-xmark"></i>
-                </button>
-
-            </div>
-
-            <div
-                id="forwardUserList"
-                class="forwardUserList"
-            ></div>
-
-        </div>
-
-    </div>
+</section>
 
 
-    <!-- =================================================
-         MESSAGE INFO
-    ================================================== -->
+<!-- =========================================================
+     MESSAGE INFO MODAL
+========================================================= -->
 
-    <div
-        id="messageInfoModal"
-        class="messageInfoModal hidden"
-    >
+<section
+    id="messageInfoModal"
+    class="modal hidden"
+>
 
-        <div class="modalOverlay"></div>
+    <div class="modalBackdrop"></div>
 
-        <div class="infoCard glass">
 
-            <h2>Message Info</h2>
+    <div class="infoCard">
 
-            <div class="infoRow">
-                <span>Sent</span>
-                <strong id="sentTime">--</strong>
-            </div>
+        <div class="modalHeader">
 
-            <div class="infoRow">
-                <span>Delivered</span>
-                <strong id="deliveredTime">--</strong>
-            </div>
-
-            <div class="infoRow">
-                <span>Seen</span>
-                <strong id="seenTime">--</strong>
-            </div>
+            <strong>
+                Message info
+            </strong>
 
             <button
                 id="closeInfoBtn"
-                class="primaryBtn"
                 type="button"
             >
-                OK
+                <i class="fa-solid fa-xmark"></i>
             </button>
 
         </div>
 
-    </div>
 
+        <div class="infoRows">
 
-    <!-- =================================================
-         VOICE RECORDING
-    ================================================== -->
+            <div class="infoRow">
 
-    <div
-        id="recordOverlay"
-        class="recordOverlay hidden"
-    >
+                <span>
+                    <i class="fa-solid fa-paper-plane"></i>
+                    Sent
+                </span>
 
-        <div class="recordCard glass">
+                <strong id="sentTime">
+                    —
+                </strong>
 
-            <div class="recordPulse"></div>
-
-            <div class="recordIcon">
-                <i class="fa-solid fa-microphone"></i>
             </div>
 
-            <h3>Recording...</h3>
 
-            <p id="recordTime">
-                00:00
-            </p>
+            <div class="infoRow">
 
-            <div class="recordActions">
+                <span>
+                    <i class="fa-solid fa-check"></i>
+                    Delivered
+                </span>
 
-                <button
-                    id="cancelRecordingBtn"
-                    class="secondaryBtn"
-                    type="button"
-                >
-                    Cancel
-                </button>
+                <strong id="deliveredTime">
+                    —
+                </strong>
 
-                <button
-                    id="stopRecordingBtn"
-                    class="primaryBtn"
-                    type="button"
-                >
-                    <i class="fa-solid fa-stop"></i>
-                    Stop
-                </button>
+            </div>
+
+
+            <div class="infoRow">
+
+                <span>
+                    <i class="fa-solid fa-check-double"></i>
+                    Seen
+                </span>
+
+                <strong id="seenTime">
+                    —
+                </strong>
 
             </div>
 
@@ -1231,99 +1151,244 @@
 
     </div>
 
+</section>
 
-    <!-- =================================================
-         UPLOAD OVERLAY
-    ================================================== -->
 
-    <div
-        id="uploadOverlay"
-        class="uploadOverlay hidden"
+<!-- =========================================================
+     MESSAGE CONTEXT MENU
+========================================================= -->
+
+<div
+    id="messageMenu"
+    class="messageMenu hidden"
+>
+
+    <button
+        id="replyMessageBtn"
+        class="menuItem"
+        type="button"
     >
-
-        <div class="uploadCard glass">
-
-            <div class="uploadIcon">
-                <i class="fa-solid fa-cloud-arrow-up"></i>
-            </div>
-
-            <h3 id="uploadTitle">
-                Uploading...
-            </h3>
-
-            <p id="uploadFileName">
-                Preparing file...
-            </p>
-
-            <div class="uploadProgress">
-
-                <div
-                    id="uploadProgressBar"
-                    class="uploadProgressBar"
-                ></div>
-
-            </div>
-
-            <div class="uploadStats">
-
-                <span id="uploadPercent">
-                    0%
-                </span>
-
-                <span id="uploadSpeed">
-                    0 MB/s
-                </span>
-
-            </div>
-
-            <button
-                id="cancelUploadBtn"
-                class="secondaryBtn"
-                type="button"
-            >
-                Cancel Upload
-            </button>
-
-        </div>
-
-    </div>
+        <i class="fa-solid fa-reply"></i>
+        <span>Reply</span>
+    </button>
 
 
-    <!-- =================================================
-         TOAST
-    ================================================== -->
-
-    <div
-        id="toast"
-        class="toast hidden"
+    <button
+        id="copyMessageBtn"
+        class="menuItem"
+        type="button"
     >
+        <i class="fa-regular fa-copy"></i>
+        <span>Copy</span>
+    </button>
 
-        <i
-            id="toastIcon"
-            class="fa-solid fa-circle-check"
-        ></i>
 
-        <span id="toastText">
-            Done
-        </span>
+    <button
+        id="reactMessageBtn"
+        class="menuItem"
+        type="button"
+    >
+        <i class="fa-regular fa-face-smile"></i>
+        <span>React</span>
+    </button>
 
-    </div>
+
+    <button
+        id="editMessageBtn"
+        class="menuItem"
+        type="button"
+    >
+        <i class="fa-solid fa-pen"></i>
+        <span>Edit</span>
+    </button>
+
+
+    <button
+        id="pinMessageBtn"
+        class="menuItem"
+        type="button"
+    >
+        <i class="fa-solid fa-thumbtack"></i>
+        <span>Pin</span>
+    </button>
+
+
+    <button
+        id="infoMessageBtn"
+        class="menuItem"
+        type="button"
+    >
+        <i class="fa-solid fa-circle-info"></i>
+        <span>Info</span>
+    </button>
+
+
+    <button
+        id="deleteMessageBtn"
+        class="menuItem danger"
+        type="button"
+    >
+        <i class="fa-solid fa-trash"></i>
+        <span>Delete</span>
+    </button>
 
 </div>
 
 
-<!-- =====================================================
-     FIREBASE
-===================================================== -->
+<!-- =========================================================
+     VOICE RECORDING OVERLAY
+========================================================= -->
 
+<section
+    id="recordOverlay"
+    class="recordOverlay hidden"
+>
+
+    <div class="recordCard">
+
+        <div class="recordPulse">
+
+            <i class="fa-solid fa-microphone"></i>
+
+        </div>
+
+        <strong>
+            Recording voice message
+        </strong>
+
+        <span id="recordTime">
+            00:00
+        </span>
+
+
+        <div class="recordActions">
+
+            <button
+                id="cancelRecordingBtn"
+                class="secondaryButton"
+                type="button"
+            >
+                Cancel
+            </button>
+
+            <button
+                id="stopRecordingBtn"
+                class="dangerButton"
+                type="button"
+            >
+                <i class="fa-solid fa-stop"></i>
+                Stop
+            </button>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- =========================================================
+     UPLOAD OVERLAY
+========================================================= -->
+
+<section
+    id="uploadOverlay"
+    class="uploadOverlay hidden"
+>
+
+    <div class="uploadCard">
+
+        <div class="uploadIcon">
+            <i class="fa-solid fa-cloud-arrow-up"></i>
+        </div>
+
+        <strong>
+            Uploading
+        </strong>
+
+        <span id="uploadFileName">
+            Preparing file...
+        </span>
+
+
+        <div class="progressTrack">
+
+            <div
+                id="uploadProgressBar"
+                class="progressBar"
+                style="width:0%"
+            ></div>
+
+        </div>
+
+
+        <div class="uploadStats">
+
+            <span id="uploadPercent">
+                0%
+            </span>
+
+            <span id="uploadSpeed">
+                —
+            </span>
+
+        </div>
+
+
+        <button
+            id="cancelUploadBtn"
+            class="secondaryButton"
+            type="button"
+        >
+            Cancel upload
+        </button>
+
+    </div>
+
+</section>
+
+
+<!-- =========================================================
+     TOAST
+========================================================= -->
+
+<div
+    id="toast"
+    class="toast hidden"
+>
+
+    <div
+        id="toastIcon"
+        class="toastIcon"
+    >
+        <i class="fa-solid fa-circle-check"></i>
+    </div>
+
+    <span id="toastText">
+        Done
+    </span>
+
+</div>
+
+
+<!-- =========================================================
+     FIREBASE
+     IMPORTANT:
+     firebase.js should initialize:
+     auth
+     db
+========================================================= -->
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
 
 <script src="firebase.js"></script>
-<script src="chat.js"></script>
-<script src="viewora-loader.js"></script>
 
+<script src="media-upload.js"></script>
+
+<script src="call.js"></script>
+
+<script src="chat.js"></script>
+  
 </body>
 </html>

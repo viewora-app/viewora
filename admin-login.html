@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <meta
+        name="theme-color"
+        content="#050816"
+    >
+
+    <meta
+        name="description"
+        content="Viewora Admin Panel Login"
+    >
+
+    <title>Viewora • Admin Login</title>
+
+    <link
+        rel="icon"
+        href="assets/logo.png"
+    >
+
+    <!-- Google Font -->
+    <link
+        rel="preconnect"
+        href="https://fonts.googleapis.com"
+    >
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet"
+    >
+
+    <!-- Font Awesome -->
+    <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
+    >
+
+    <!-- Admin Login CSS -->
+    <link
+        rel="stylesheet"
+        href="admin-login.css"
+    >
+
+</head>
+
+
+<body>
+
+    <!-- =====================================================
+         BACKGROUND
+    ====================================================== -->
+
+    <div class="background">
+
+        <div class="glow glowOne"></div>
+
+        <div class="glow glowTwo"></div>
+
+        <div class="grid"></div>
+
+    </div>
+
+
+    <!-- =====================================================
+         LOGIN PAGE
+    ====================================================== -->
+
+    <main class="loginPage">
+
+        <section class="loginCard">
+
+            <!-- BRAND -->
+
+            <div class="brand">
+
+                <div class="brandLogo">
+
+                    <img
+                        src="assets/logo.png"
+                        alt="Viewora"
+                    >
+
+                </div>
+
+                <div class="brandText">
+
+                    <h1>VIEWORA</h1>
+
+                    <span>
+                        ADMIN CONTROL
+                    </span>
+
+                </div>
+
+            </div>
+
+
+            <!-- SECURITY BADGE -->
+
+            <div class="securityBadge">
+
+                <span class="securityIcon">
+
+                    <i class="fa-solid fa-shield-halved"></i>
+
+                </span>
+
+                <span>
+                    Secure Administrator Access
+                </span>
+
+            </div>
+
+
+            <!-- HEADING -->
+
+            <div class="loginHeading">
+
+                <h2>
+                    Welcome back
+                </h2>
+
+                <p>
+                    Sign in to manage Viewora securely.
+                </p>
+
+            </div>
+
+
+            <!-- =================================================
+                 LOGIN FORM
+            ================================================== -->
+
+            <form
+                id="adminLoginForm"
+                autocomplete="on"
+            >
+
+                <!-- EMAIL -->
+
+                <div class="formGroup">
+
+                    <label for="adminEmail">
+
+                        <i class="fa-regular fa-envelope"></i>
+
+                        Admin Email
+
+                    </label>
+
+                    <div class="inputBox">
+
+                        <i
+                            class="fa-regular fa-envelope inputIcon"
+                        ></i>
+
+                        <input
+                            type="email"
+                            id="adminEmail"
+                            name="email"
+                            placeholder="Enter admin email"
+                            autocomplete="username"
+                            required
+                        >
+
+                    </div>
+
+                </div>
+
+
+                <!-- PASSWORD -->
+
+                <div class="formGroup">
+
+                    <label for="adminPassword">
+
+                        <i class="fa-solid fa-lock"></i>
+
+                        Password
+
+                    </label>
+
+                    <div class="inputBox">
+
+                        <i
+                            class="fa-solid fa-lock inputIcon"
+                        ></i>
+
+                        <input
+                            type="password"
+                            id="adminPassword"
+                            name="password"
+                            placeholder="Enter password"
+                            autocomplete="current-password"
+                            required
+                        >
+
+                        <button
+                            type="button"
+                            id="togglePassword"
+                            class="passwordToggle"
+                            aria-label="Show password"
+                        >
+
+                            <i class="fa-regular fa-eye"></i>
+
+                        </button>
+
+                    </div>
+
+                </div>
+
+
+                <!-- OPTIONS -->
+
+                <div class="loginOptions">
+
+                    <label class="rememberMe">
+
+                        <input
+                            type="checkbox"
+                            id="rememberAdmin"
+                        >
+
+                        <span class="customCheck"></span>
+
+                        <span>
+                            Remember me
+                        </span>
+
+                    </label>
+
+
+                    <button
+                        type="button"
+                        id="forgotPasswordBtn"
+                        class="forgotBtn"
+                    >
+                        Forgot password?
+                    </button>
+
+                </div>
+
+
+                <!-- ERROR -->
+
+                <div
+                    id="loginError"
+                    class="message errorMessage hidden"
+                    role="alert"
+                >
+
+                    <i
+                        class="fa-solid fa-circle-exclamation"
+                    ></i>
+
+                    <span id="loginErrorText">
+                        Unable to sign in.
+                    </span>
+
+                </div>
+
+
+                <!-- LOGIN BUTTON -->
+
+                <button
+                    type="submit"
+                    id="loginBtn"
+                    class="loginBtn"
+                >
+
+                    <span
+                        id="loginBtnLoader"
+                        class="buttonLoader hidden"
+                    ></span>
+
+                    <i
+                        id="loginBtnIcon"
+                        class="fa-solid fa-arrow-right-to-bracket"
+                    ></i>
+
+                    <span id="loginBtnText">
+                        Sign in to Admin
+                    </span>
+
+                </button>
+
+            </form>
+
+
+            <!-- ADMIN NOTICE -->
+
+            <div class="adminNotice">
+
+                <div class="noticeIcon">
+
+                    <i class="fa-solid fa-user-shield"></i>
+
+                </div>
+
+                <div>
+
+                    <strong>
+                        Authorized access only
+                    </strong>
+
+                    <p>
+                        This area is restricted to
+                        Viewora administrators.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <!-- FOOTER -->
+
+            <footer class="loginFooter">
+
+                <span>
+                    ©
+                    <span id="currentYear"></span>
+                    Viewora
+                </span>
+
+                <span class="footerDot">
+                    •
+                </span>
+
+                <span>
+                    Admin Console
+                </span>
+
+            </footer>
+
+        </section>
+
+    </main>
+
+
+    <!-- =====================================================
+         FORGOT PASSWORD MODAL
+    ====================================================== -->
+
+    <div
+        id="forgotModal"
+        class="modal hidden"
+    >
+
+        <div class="modalOverlay"></div>
+
+        <div class="modalCard">
+
+            <button
+                type="button"
+                id="closeForgotModal"
+                class="modalClose"
+                aria-label="Close"
+            >
+
+                <i class="fa-solid fa-xmark"></i>
+
+            </button>
+
+
+            <div class="modalIcon">
+
+                <i class="fa-solid fa-key"></i>
+
+            </div>
+
+
+            <h2>
+                Reset password
+            </h2>
+
+
+            <p>
+                Enter your administrator email and we'll
+                send a password reset link.
+            </p>
+
+
+            <div class="inputBox">
+
+                <i
+                    class="fa-regular fa-envelope inputIcon"
+                ></i>
+
+                <input
+                    type="email"
+                    id="resetEmail"
+                    placeholder="Admin email"
+                    autocomplete="email"
+                >
+
+            </div>
+
+
+            <div
+                id="resetMessage"
+                class="resetMessage hidden"
+            ></div>
+
+
+            <button
+                type="button"
+                id="sendResetBtn"
+                class="resetBtn"
+            >
+
+                <i class="fa-solid fa-paper-plane"></i>
+
+                <span>
+                    Send Reset Link
+                </span>
+
+            </button>
+
+        </div>
+
+    </div>
+
+
+    <!-- =====================================================
+         AUTH LOADER
+    ====================================================== -->
+
+    <div
+        id="authLoader"
+        class="authLoader hidden"
+    >
+
+        <div class="loaderRing">
+
+            <span></span>
+
+        </div>
+
+        <h3>
+            Verifying access
+        </h3>
+
+        <p>
+            Please wait...
+        </p>
+
+    </div>
+
+
+    <!-- =====================================================
+         FIREBASE SDK
+    ====================================================== -->
+
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+
+
+    <!-- =====================================================
+         VIEWORA FIREBASE CORE
+    ====================================================== -->
+
+    <script src="firebase.js"></script>
+
+
+    <!-- =====================================================
+         ADMIN LOGIN LOGIC
+    ====================================================== -->
+
+    <script src="admin-login.js"></script>
+
+
+    <!-- =====================================================
+         YEAR + PASSWORD UI
+    ====================================================== -->
+
+    <script>
+
+        document.addEventListener(
+            "DOMContentLoaded",
+            function () {
+
+                /* =========================
+                   CURRENT YEAR
+                ========================= */
+
+                const year =
+                    document.getElementById(
+                        "currentYear"
+                    );
+
+                if (year) {
+
+                    year.textContent =
+                        new Date().getFullYear();
+
+                }
+
+
+                /* =========================
+                   PASSWORD TOGGLE
+                ========================= */
+
+                const password =
+                    document.getElementById(
+                        "adminPassword"
+                    );
+
+                const toggle =
+                    document.getElementById(
+                        "togglePassword"
+                    );
+
+                if (
+                    password &&
+                    toggle
+                ) {
+
+                    toggle.addEventListener(
+                        "click",
+                        function () {
+
+                            const isPassword =
+                                password.type ===
+                                "password";
+
+                            password.type =
+                                isPassword
+                                    ? "text"
+                                    : "password";
+
+
+                            const icon =
+                                toggle.querySelector(
+                                    "i"
+                                );
+
+                            if (icon) {
+
+                                icon.className =
+                                    isPassword
+                                        ? "fa-regular fa-eye-slash"
+                                        : "fa-regular fa-eye";
+
+                            }
+
+
+                            toggle.setAttribute(
+                                "aria-label",
+                                isPassword
+                                    ? "Hide password"
+                                    : "Show password"
+                            );
+
+                        }
+                    );
+
+                }
+
+            }
+        );
+
+    </script>
+
+</body>
+
+</html>

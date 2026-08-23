@@ -1,15 +1,13 @@
 "use strict";
 
 /* =========================================================
-   VIEWORA MESSAGES V2 FINAL
-   Clean Realtime Chat List + Unread System
+   VIEWORA MESSAGES — PREMIUM V3
+   Realtime • Search • Unread • Long Press Actions
 ========================================================= */
 
-console.clear();
-
 console.log(
-    "%cVIEWORA • MESSAGES V2 FINAL",
-    "color:#00E5FF;font-size:18px;font-weight:800"
+    "%cVIEWORA • MESSAGES V3",
+    "color:#00e5ff;font-size:18px;font-weight:800"
 );
 
 
@@ -26,7 +24,7 @@ if (typeof auth === "undefined") {
 }
 
 if (typeof db === "undefined") {
-    throw new Error("Firebase Realtime Database Missing");
+    throw new Error("Firebase Database Missing");
 }
 
 
@@ -45,6 +43,14 @@ let messagesInitialized = false;
 
 let messagesChatsRef = null;
 let messagesChatsValueListener = null;
+
+let messagesToastTimer = null;
+
+let longPressTimer = null;
+let longPressTriggered = false;
+let activeActionChat = null;
+
+const LONG_PRESS_TIME = 550;
 
 
 /* =========================================================
@@ -127,7 +133,6 @@ function messagesShowLoading() {
 
 }
 
-
 function messagesHideLoading() {
 
     if (messagesLoading) {
@@ -136,7 +141,6 @@ function messagesHideLoading() {
 
 }
 
-
 function messagesShowSkeleton() {
 
     if (messagesSkeleton) {
@@ -144,7 +148,6 @@ function messagesShowSkeleton() {
     }
 
 }
-
 
 function messagesHideSkeleton() {
 
@@ -159,9 +162,7 @@ function messagesHideSkeleton() {
    TOAST
 ========================================================= */
 
-let messagesToastTimer = null;
-
-function messagesToast(text) {
+function messagesToast(text, type = "success") {
 
     const toast =
         document.getElementById("toast");
@@ -169,25 +170,38 @@ function messagesToast(text) {
     const toastText =
         document.getElementById("toastText");
 
+    const toastIcon =
+        toast
+            ? toast.querySelector(".toastIcon i")
+            : null;
+
     if (!toast || !toastText) {
         return;
     }
 
-    toastText.textContent =
-        text || "";
+    toastText.textContent = text || "";
+
+    if (toastIcon) {
+
+        toastIcon.className =
+            type === "error"
+                ? "fa-solid fa-triangle-exclamation"
+                : type === "warning"
+                    ? "fa-solid fa-circle-exclamation"
+                    : "fa-solid fa-check";
+
+    }
 
     toast.classList.remove("hidden");
 
-    clearTimeout(
-        messagesToastTimer
-    );
+    clearTimeout(messagesToastTimer);
 
     messagesToastTimer =
         setTimeout(function () {
 
             toast.classList.add("hidden");
 
-        }, 2500);
+        }, 2400);
 
 }
 
@@ -202,26 +216,17 @@ function messagesUpdateConnection() {
         return;
     }
 
-    if (navigator.onLine) {
-
-        messagesConnection.textContent =
-            "🟢 Online";
-
-    } else {
-
-        messagesConnection.textContent =
-            "🔴 Offline";
-
-    }
+    messagesConnection.textContent =
+        navigator.onLine
+            ? "🟢 Online"
+            : "🔴 Offline";
 
 }
-
 
 window.addEventListener(
     "online",
     messagesUpdateConnection
 );
-
 
 window.addEventListener(
     "offline",
@@ -270,23 +275,13 @@ auth.onAuthStateChanged(
 
         if (!user) {
 
-            location.replace(
-                "login.html"
-            );
+            location.replace("login.html");
 
             return;
         }
 
-        messagesUser =
-            user;
-
-        messagesUID =
-            user.uid;
-
-        console.log(
-            "VIEWORA USER:",
-            messagesUID
-        );
+        messagesUser = user;
+        messagesUID = user.uid;
 
         messagesUpdateConnection();
 
@@ -306,76 +301,51 @@ async function messagesInitialize() {
         return;
     }
 
-    messagesInitialized = true;
-
     messagesShowLoading();
     messagesShowSkeleton();
 
     try {
 
-        console.log(
-            "Loading Viewora messages..."
-        );
-
-
         await messagesLoadUser();
 
-
         messagesListenConnection();
-
-
         messagesListenChats();
 
-
-        /*
-         * IMPORTANT:
-         * Page should never remain stuck
-         * on loading.
-         */
-
-        messagesHideSkeleton();
-        messagesHideLoading();
-
-
         if (messagesApp) {
-
-            messagesApp.classList.remove(
-                "hidden"
-            );
-
+            messagesApp.classList.remove("hidden");
         }
 
+        messagesInitialized = true;
 
         console.log(
             "%cVIEWORA MESSAGES READY",
-            "color:#00E676;font-size:18px;font-weight:800"
+            "color:#00e676;font-size:18px;font-weight:800"
         );
-
 
     } catch (error) {
 
         console.error(
-            "MESSAGES ERROR:",
+            "MESSAGES INITIALIZATION ERROR:",
             error
         );
 
+        // IMPORTANT:
+        // Allow initialization to retry after failure.
+        messagesInitialized = false;
+
+        messagesToast(
+            "Unable to load messages",
+            "error"
+        );
+
+        if (messagesApp) {
+            messagesApp.classList.remove("hidden");
+        }
+
+    } finally {
 
         messagesHideSkeleton();
         messagesHideLoading();
-
-
-        if (messagesApp) {
-
-            messagesApp.classList.remove(
-                "hidden"
-            );
-
-        }
-
-
-        messagesToast(
-            "Unable to load messages"
-        );
 
     }
 
@@ -383,55 +353,32 @@ async function messagesInitialize() {
 
 
 /* =========================================================
-   LOAD USER
+   LOAD CURRENT USER
 ========================================================= */
 
 async function messagesLoadUser() {
 
     if (!messagesUID) {
-        throw new Error(
-            "Current UID Missing"
-        );
+        throw new Error("Current UID Missing");
     }
-
 
     const userRef =
-        db.ref(
-            "users/" +
-            messagesUID
-        );
-
+        db.ref("users/" + messagesUID);
 
     const snapshot =
-        await userRef.once(
-            "value"
-        );
+        await userRef.once("value");
 
-
-    if (snapshot.exists()) {
-
-        messagesUserData =
-            snapshot.val() || {};
-
-    } else {
-
-        messagesUserData = {};
-
-    }
-
-
-    /*
-     * Online status
-     */
+    messagesUserData =
+        snapshot.exists()
+            ? snapshot.val() || {}
+            : {};
 
     userRef.update({
 
         online: true,
 
         lastSeen:
-            firebase.database
-                .ServerValue
-                .TIMESTAMP
+            firebase.database.ServerValue.TIMESTAMP
 
     }).catch(function(error) {
 
@@ -442,39 +389,27 @@ async function messagesLoadUser() {
 
     });
 
-
-    /*
-     * Offline status
-     */
-
     userRef.onDisconnect().update({
 
         online: false,
 
         lastSeen:
-            firebase.database
-                .ServerValue
-                .TIMESTAMP
+            firebase.database.ServerValue.TIMESTAMP
 
     }).catch(function(error) {
 
         console.warn(
-            "onDisconnect failed:",
+            "Disconnect update failed:",
             error
         );
 
     });
 
-
-    console.log(
-        "User loaded"
-    );
-
 }
 
 
 /* =========================================================
-   REALTIME USER CHATS
+   REALTIME CHATS
 ========================================================= */
 
 function messagesListenChats() {
@@ -483,21 +418,7 @@ function messagesListenChats() {
         return;
     }
 
-
-    /*
-     * Remove old listener if any
-     */
-
     messagesRemoveChatListener();
-
-
-    /*
-     * EXACT DATABASE PATH
-     *
-     * userChats/
-     *     CURRENT_UID/
-     *         CHAT_ID/
-     */
 
     messagesChatsRef =
         db.ref(
@@ -505,12 +426,10 @@ function messagesListenChats() {
             messagesUID
         );
 
-
     messagesChatsValueListener =
         function(snapshot) {
 
             const newChats = [];
-
 
             if (snapshot.exists()) {
 
@@ -520,62 +439,36 @@ function messagesListenChats() {
                         const chat =
                             child.val() || {};
 
-
                         chat.chatId =
                             child.key;
 
-
-                        newChats.push(
-                            chat
-                        );
+                        newChats.push(chat);
 
                     }
                 );
 
             }
 
-
-            messagesChats =
-                newChats;
-
+            messagesChats = newChats;
 
             messagesSortChats();
 
-
             messagesUpdateUnread();
-
 
             messagesRender();
 
         };
-
-
-    /*
-     * ONE VALUE LISTENER
-     *
-     * This is enough for:
-     * - new messages
-     * - unread count
-     * - latest message
-     * - online state
-     * - new conversations
-     */
 
     messagesChatsRef.on(
         "value",
         messagesChatsValueListener
     );
 
-
-    console.log(
-        "Realtime userChats listener started"
-    );
-
 }
 
 
 /* =========================================================
-   REMOVE CHAT LISTENER
+   REMOVE LISTENER
 ========================================================= */
 
 function messagesRemoveChatListener() {
@@ -592,9 +485,7 @@ function messagesRemoveChatListener() {
 
     }
 
-
     messagesChatsRef = null;
-
     messagesChatsValueListener = null;
 
 }
@@ -609,13 +500,27 @@ function messagesSortChats() {
     messagesChats.sort(
         function(a, b) {
 
+            /*
+             * Pinned chats first
+             */
+
+            if (
+                a.pinned === true &&
+                b.pinned !== true
+            ) {
+                return -1;
+            }
+
+            if (
+                b.pinned === true &&
+                a.pinned !== true
+            ) {
+                return 1;
+            }
+
             return (
-                Number(
-                    b.lastMessageTime || 0
-                ) -
-                Number(
-                    a.lastMessageTime || 0
-                )
+                Number(b.lastMessageTime || 0) -
+                Number(a.lastMessageTime || 0)
             );
 
         }
@@ -632,22 +537,18 @@ function messagesUpdateUnread() {
 
     let totalUnread = 0;
 
-
     messagesChats.forEach(
         function(chat) {
 
+            if (chat.muted === true) {
+                return;
+            }
+
             totalUnread +=
-                Number(
-                    chat.unread || 0
-                );
+                Number(chat.unread || 0);
 
         }
     );
-
-
-    /*
-     * Unread filter badge
-     */
 
     if (messagesUnreadBadge) {
 
@@ -672,17 +573,10 @@ function messagesUpdateUnread() {
 
     }
 
-
-    /*
-     * Optional global badge.
-     * Works if HTML has messageBadge.
-     */
-
     const globalBadge =
         document.getElementById(
             "messageBadge"
         );
-
 
     if (globalBadge) {
 
@@ -711,7 +605,7 @@ function messagesUpdateUnread() {
 
 
 /* =========================================================
-   SEARCH + FILTER
+   FILTER
 ========================================================= */
 
 function messagesGetFilteredChats() {
@@ -719,18 +613,12 @@ function messagesGetFilteredChats() {
     let result =
         messagesChats.slice();
 
-
     const keyword =
         messagesSearch
             ? messagesSearch.value
                 .toLowerCase()
                 .trim()
             : "";
-
-
-    /*
-     * Search
-     */
 
     if (keyword) {
 
@@ -743,18 +631,15 @@ function messagesGetFilteredChats() {
                             chat.name || ""
                         ).toLowerCase();
 
-
                     const username =
                         String(
                             chat.username || ""
                         ).toLowerCase();
 
-
                     const lastMessage =
                         String(
                             chat.lastMessage || ""
                         ).toLowerCase();
-
 
                     return (
                         name.includes(keyword) ||
@@ -767,15 +652,7 @@ function messagesGetFilteredChats() {
 
     }
 
-
-    /*
-     * Filter
-     */
-
-    if (
-        messagesFilter ===
-        "unread"
-    ) {
+    if (messagesFilter === "unread") {
 
         result =
             result.filter(
@@ -790,131 +667,33 @@ function messagesGetFilteredChats() {
 
     }
 
-
-    if (
-        messagesFilter ===
-        "online"
-    ) {
+    if (messagesFilter === "online") {
 
         result =
             result.filter(
                 function(chat) {
 
-                    return (
-                        chat.online === true
-                    );
+                    return chat.online === true;
 
                 }
             );
 
     }
 
-
-    if (
-        messagesFilter ===
-        "pinned"
-    ) {
+    if (messagesFilter === "pinned") {
 
         result =
             result.filter(
                 function(chat) {
 
-                    return (
-                        chat.pinned === true
-                    );
+                    return chat.pinned === true;
 
                 }
             );
 
     }
-
 
     return result;
-
-}
-
-
-/* =========================================================
-   RENDER
-========================================================= */
-
-function messagesRender() {
-
-    if (!messagesChatList) {
-        return;
-    }
-
-
-    const result =
-        messagesGetFilteredChats();
-
-
-    messagesChatList.innerHTML =
-        "";
-
-
-    /*
-     * Count
-     */
-
-    if (messagesChatCount) {
-
-        messagesChatCount.textContent =
-            messagesChats.length;
-
-    }
-
-
-    /*
-     * Empty
-     */
-
-    if (result.length === 0) {
-
-        messagesChatList.classList.add(
-            "hidden"
-        );
-
-
-        if (messagesEmpty) {
-
-            messagesEmpty.classList.remove(
-                "hidden"
-            );
-
-        }
-
-
-        return;
-    }
-
-
-    if (messagesEmpty) {
-
-        messagesEmpty.classList.add(
-            "hidden"
-        );
-
-    }
-
-
-    messagesChatList.classList.remove(
-        "hidden"
-    );
-
-
-    result.forEach(
-        function(chat) {
-
-            messagesChatList.appendChild(
-                messagesCreateCard(chat)
-            );
-
-        }
-    );
-
-
-    messagesAnimateCards();
 
 }
 
@@ -926,30 +705,13 @@ function messagesRender() {
 function messagesEscape(value) {
 
     return String(
-        value == null
-            ? ""
-            : value
+        value == null ? "" : value
     )
-        .replace(
-            /&/g,
-            "&amp;"
-        )
-        .replace(
-            /</g,
-            "&lt;"
-        )
-        .replace(
-            />/g,
-            "&gt;"
-        )
-        .replace(
-            /"/g,
-            "&quot;"
-        )
-        .replace(
-            /'/g,
-            "&#039;"
-        );
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
 
 }
 
@@ -964,27 +726,15 @@ function messagesTime(timestamp) {
         return "";
     }
 
-
     const date =
-        new Date(
-            Number(timestamp)
-        );
+        new Date(Number(timestamp));
 
-
-    if (
-        isNaN(
-            date.getTime()
-        )
-    ) {
-
+    if (isNaN(date.getTime())) {
         return "";
-
     }
-
 
     const now =
         new Date();
-
 
     if (
         date.toDateString() ===
@@ -1001,12 +751,74 @@ function messagesTime(timestamp) {
 
     }
 
-
     return date.toLocaleDateString(
         [],
         {
             day: "2-digit",
             month: "short"
+        }
+    );
+
+}
+
+
+/* =========================================================
+   RENDER
+========================================================= */
+
+function messagesRender() {
+
+    if (!messagesChatList) {
+        return;
+    }
+
+    const result =
+        messagesGetFilteredChats();
+
+    messagesChatList.innerHTML = "";
+
+    if (messagesChatCount) {
+
+        messagesChatCount.textContent =
+            messagesChats.length;
+
+    }
+
+    if (result.length === 0) {
+
+        messagesChatList.classList.add(
+            "hidden"
+        );
+
+        if (messagesEmpty) {
+            messagesEmpty.classList.remove(
+                "hidden"
+            );
+        }
+
+        return;
+
+    }
+
+    if (messagesEmpty) {
+
+        messagesEmpty.classList.add(
+            "hidden"
+        );
+
+    }
+
+    messagesChatList.classList.remove(
+        "hidden"
+    );
+
+    result.forEach(
+        function(chat) {
+
+            messagesChatList.appendChild(
+                messagesCreateCard(chat)
+            );
+
         }
     );
 
@@ -1020,35 +832,25 @@ function messagesTime(timestamp) {
 function messagesCreateCard(chat) {
 
     const card =
-        document.createElement(
-            "div"
-        );
+        document.createElement("div");
 
-
-    card.className =
-        "chatCard";
-
+    card.className = "chatCard";
 
     card.dataset.chatid =
         chat.chatId || "";
 
-
     card.dataset.userid =
         chat.userId || "";
 
-
     const name =
         messagesEscape(
-            chat.name ||
-            "Unknown User"
+            chat.name || "Unknown User"
         );
-
 
     const photo =
         chat.photoURL ||
         chat.profilePhoto ||
         "assets/default-avatar.png";
-
 
     const preview =
         messagesEscape(
@@ -1056,16 +858,17 @@ function messagesCreateCard(chat) {
             "Start chatting..."
         );
 
-
     const unread =
-        Number(
-            chat.unread || 0
-        );
+        Number(chat.unread || 0);
 
+    const muted =
+        chat.muted === true;
+
+    const pinned =
+        chat.pinned === true;
 
     const unreadHTML =
         unread > 0
-
             ? `
                 <div class="unreadBadge">
                     ${
@@ -1075,19 +878,32 @@ function messagesCreateCard(chat) {
                     }
                 </div>
               `
-
             : "";
-
 
     const onlineHTML =
         chat.online === true
-
-            ? `
-                <span class="onlineDot"></span>
-              `
-
+            ? `<span class="onlineDot"></span>`
             : "";
 
+    const muteHTML =
+        muted
+            ? `
+                <span class="chatMuteIcon"
+                      title="Muted">
+                    <i class="fa-solid fa-bell-slash"></i>
+                </span>
+              `
+            : "";
+
+    const pinHTML =
+        pinned
+            ? `
+                <span class="chatPinIcon"
+                      title="Pinned">
+                    <i class="fa-solid fa-thumbtack"></i>
+                </span>
+              `
+            : "";
 
     card.innerHTML = `
 
@@ -1104,14 +920,20 @@ function messagesCreateCard(chat) {
 
         </div>
 
-
         <div class="chatInfo">
 
             <div class="chatTop">
 
-                <h3 class="chatName">
-                    ${name}
-                </h3>
+                <div class="chatNameWrap">
+
+                    <h3 class="chatName">
+                        ${name}
+                    </h3>
+
+                    ${pinHTML}
+                    ${muteHTML}
+
+                </div>
 
                 <span class="chatTime">
                     ${messagesTime(
@@ -1120,7 +942,6 @@ function messagesCreateCard(chat) {
                 </span>
 
             </div>
-
 
             <div class="chatBottom">
 
@@ -1136,37 +957,53 @@ function messagesCreateCard(chat) {
 
     `;
 
-
-    /*
-     * UNREAD VISUAL
-     */
-
     if (unread > 0) {
 
-        card.classList.add(
-            "unread"
-        );
+        card.classList.add("unread");
+
+    }
+
+    if (muted) {
+
+        card.classList.add("muted");
+
+    }
+
+    if (pinned) {
+
+        card.classList.add("pinned");
 
     }
 
 
-    /*
-     * OPEN CHAT
-     */
+    /* =====================================================
+       NORMAL CLICK
+    ================================================== */
 
     card.addEventListener(
         "click",
-        function() {
+        function(event) {
+
+            if (longPressTriggered) {
+
+                longPressTriggered = false;
+
+                event.preventDefault();
+
+                return;
+
+            }
 
             if (!chat.userId) {
 
                 messagesToast(
-                    "User information missing"
+                    "User information missing",
+                    "error"
                 );
 
                 return;
-            }
 
+            }
 
             location.href =
                 "chat.html?uid=" +
@@ -1178,58 +1015,394 @@ function messagesCreateCard(chat) {
     );
 
 
+    /* =====================================================
+       LONG PRESS
+    ================================================== */
+
+    messagesAttachLongPress(
+        card,
+        chat
+    );
+
+
+    /* =====================================================
+       RIGHT CLICK DESKTOP
+    ================================================== */
+
+    card.addEventListener(
+        "contextmenu",
+        function(event) {
+
+            event.preventDefault();
+
+            messagesOpenActionSheet(
+                chat
+            );
+
+        }
+    );
+
+
     return card;
 
 }
 
 
 /* =========================================================
-   CARD ANIMATION
+   LONG PRESS
 ========================================================= */
 
-let messagesFirstRender = true;
+function messagesAttachLongPress(
+    element,
+    chat
+) {
 
-function messagesAnimateCards() {
+    let startX = 0;
+    let startY = 0;
 
-    const cards =
-        document.querySelectorAll(
-            ".chatCard"
-        );
+    function start(event) {
 
+        if (
+            event.target.closest("button") ||
+            event.target.closest("a")
+        ) {
+            return;
+        }
 
-    if (!messagesFirstRender) {
+        longPressTriggered = false;
 
-        cards.forEach(
-            function(card) {
+        const point =
+            event.touches
+                ? event.touches[0]
+                : event;
 
-                card.classList.add(
-                    "show"
-                );
+        startX = point.clientX;
+        startY = point.clientY;
 
-            }
-        );
+        clearTimeout(longPressTimer);
 
-        return;
+        longPressTimer =
+            setTimeout(
+                function() {
+
+                    longPressTriggered = true;
+
+                    if (navigator.vibrate) {
+                        navigator.vibrate(35);
+                    }
+
+                    element.classList.add(
+                        "longPressed"
+                    );
+
+                    messagesOpenActionSheet(
+                        chat
+                    );
+
+                    setTimeout(
+                        function() {
+
+                            element.classList.remove(
+                                "longPressed"
+                            );
+
+                        },
+                        350
+                    );
+
+                },
+                LONG_PRESS_TIME
+            );
 
     }
 
 
-    messagesFirstRender =
-        false;
+    function move(event) {
+
+        const point =
+            event.touches
+                ? event.touches[0]
+                : event;
+
+        const dx =
+            Math.abs(
+                point.clientX - startX
+            );
+
+        const dy =
+            Math.abs(
+                point.clientY - startY
+            );
+
+        if (dx > 12 || dy > 12) {
+
+            clearTimeout(
+                longPressTimer
+            );
+
+        }
+
+    }
 
 
-    cards.forEach(
-        function(card, index) {
+    function end() {
 
-            setTimeout(
-                function() {
+        clearTimeout(
+            longPressTimer
+        );
 
-                    card.classList.add(
-                        "show"
-                    );
+    }
 
-                },
-                index * 45
+
+    element.addEventListener(
+        "touchstart",
+        start,
+        {
+            passive: true
+        }
+    );
+
+    element.addEventListener(
+        "touchmove",
+        move,
+        {
+            passive: true
+        }
+    );
+
+    element.addEventListener(
+        "touchend",
+        end,
+        {
+            passive: true
+        }
+    );
+
+    element.addEventListener(
+        "touchcancel",
+        end,
+        {
+            passive: true
+        }
+    );
+
+}
+
+
+/* =========================================================
+   PREMIUM ACTION SHEET
+========================================================= */
+
+function messagesCreateActionSheet() {
+
+    if (
+        document.getElementById(
+            "messageActionSheet"
+        )
+    ) {
+        return;
+    }
+
+    const sheet =
+        document.createElement("div");
+
+    sheet.id =
+        "messageActionSheet";
+
+    sheet.className =
+        "messageActionSheet hidden";
+
+    sheet.innerHTML = `
+
+        <div
+            class="messageActionBackdrop"
+            data-action="close"
+        ></div>
+
+        <div class="messageActionCard">
+
+            <div class="messageActionHandle"></div>
+
+            <div class="messageActionHeader">
+
+                <div class="messageActionAvatar">
+                    <img
+                        id="actionUserPhoto"
+                        src="assets/default-avatar.png"
+                        alt=""
+                    >
+                </div>
+
+                <div class="messageActionUser">
+
+                    <strong id="actionUserName">
+                        User
+                    </strong>
+
+                    <span id="actionUserUsername">
+                        @user
+                    </span>
+
+                </div>
+
+                <button
+                    type="button"
+                    class="messageActionClose"
+                    data-action="close"
+                    aria-label="Close"
+                >
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+
+            </div>
+
+
+            <div class="messageActionList">
+
+                <button
+                    type="button"
+                    class="messageActionItem"
+                    data-action="pin"
+                >
+                    <span class="actionIcon">
+                        <i class="fa-solid fa-thumbtack"></i>
+                    </span>
+
+                    <span class="actionText">
+                        <strong id="actionPinText">
+                            Pin chat
+                        </strong>
+
+                        <small>
+                            Keep this conversation at the top
+                        </small>
+                    </span>
+                </button>
+
+
+                <button
+                    type="button"
+                    class="messageActionItem"
+                    data-action="mute"
+                >
+                    <span class="actionIcon">
+                        <i class="fa-solid fa-bell-slash"></i>
+                    </span>
+
+                    <span class="actionText">
+                        <strong id="actionMuteText">
+                            Mute
+                        </strong>
+
+                        <small>
+                            Stop notifications for this chat
+                        </small>
+                    </span>
+                </button>
+
+
+                <button
+                    type="button"
+                    class="messageActionItem"
+                    data-action="mark"
+                >
+                    <span class="actionIcon">
+                        <i class="fa-solid fa-envelope-open"></i>
+                    </span>
+
+                    <span class="actionText">
+                        <strong id="actionMarkText">
+                            Mark as read
+                        </strong>
+
+                        <small>
+                            Clear unread messages
+                        </small>
+                    </span>
+                </button>
+
+
+                <button
+                    type="button"
+                    class="messageActionItem danger"
+                    data-action="delete"
+                >
+                    <span class="actionIcon">
+                        <i class="fa-solid fa-trash"></i>
+                    </span>
+
+                    <span class="actionText">
+                        <strong>
+                            Delete chat
+                        </strong>
+
+                        <small>
+                            Remove this chat from your inbox
+                        </small>
+                    </span>
+                </button>
+
+
+                <button
+                    type="button"
+                    class="messageActionItem danger"
+                    data-action="block"
+                >
+                    <span class="actionIcon">
+                        <i class="fa-solid fa-ban"></i>
+                    </span>
+
+                    <span class="actionText">
+                        <strong id="actionBlockText">
+                            Block user
+                        </strong>
+
+                        <small>
+                            Prevent messaging with this user
+                        </small>
+                    </span>
+                </button>
+
+            </div>
+
+        </div>
+
+    `;
+
+    document.body.appendChild(sheet);
+
+
+    sheet.addEventListener(
+        "click",
+        function(event) {
+
+            const actionButton =
+                event.target.closest(
+                    "[data-action]"
+                );
+
+            if (!actionButton) {
+                return;
+            }
+
+            const action =
+                actionButton.dataset.action;
+
+            if (action === "close") {
+
+                messagesCloseActionSheet();
+
+                return;
+
+            }
+
+            if (!activeActionChat) {
+                return;
+            }
+
+            messagesHandleChatAction(
+                action,
+                activeActionChat
             );
 
         }
@@ -1238,8 +1411,524 @@ function messagesAnimateCards() {
 }
 
 
+function messagesOpenActionSheet(chat) {
+
+    messagesCreateActionSheet();
+
+    activeActionChat = chat;
+
+    const sheet =
+        document.getElementById(
+            "messageActionSheet"
+        );
+
+    if (!sheet) {
+        return;
+    }
+
+    const photo =
+        chat.photoURL ||
+        chat.profilePhoto ||
+        "assets/default-avatar.png";
+
+    const name =
+        document.getElementById(
+            "actionUserName"
+        );
+
+    const username =
+        document.getElementById(
+            "actionUserUsername"
+        );
+
+    const photoElement =
+        document.getElementById(
+            "actionUserPhoto"
+        );
+
+    const pinText =
+        document.getElementById(
+            "actionPinText"
+        );
+
+    const muteText =
+        document.getElementById(
+            "actionMuteText"
+        );
+
+    const markText =
+        document.getElementById(
+            "actionMarkText"
+        );
+
+    const blockText =
+        document.getElementById(
+            "actionBlockText"
+        );
+
+    if (name) {
+        name.textContent =
+            chat.name || "Unknown User";
+    }
+
+    if (username) {
+        username.textContent =
+            chat.username
+                ? "@" + chat.username
+                : "";
+    }
+
+    if (photoElement) {
+        photoElement.src = photo;
+
+        photoElement.onerror =
+            function() {
+                this.src =
+                    "assets/default-avatar.png";
+            };
+    }
+
+    if (pinText) {
+
+        pinText.textContent =
+            chat.pinned === true
+                ? "Unpin chat"
+                : "Pin chat";
+
+    }
+
+    if (muteText) {
+
+        muteText.textContent =
+            chat.muted === true
+                ? "Unmute"
+                : "Mute";
+
+    }
+
+    if (markText) {
+
+        markText.textContent =
+            Number(chat.unread || 0) > 0
+                ? "Mark as read"
+                : "Mark as unread";
+
+    }
+
+    if (blockText) {
+
+        blockText.textContent =
+            chat.blocked === true
+                ? "Unblock user"
+                : "Block user";
+
+    }
+
+    sheet.classList.remove("hidden");
+
+    requestAnimationFrame(
+        function() {
+
+            sheet.classList.add("show");
+
+        }
+    );
+
+}
+
+
+function messagesCloseActionSheet() {
+
+    const sheet =
+        document.getElementById(
+            "messageActionSheet"
+        );
+
+    if (!sheet) {
+        return;
+    }
+
+    sheet.classList.remove("show");
+
+    setTimeout(
+        function() {
+
+            sheet.classList.add("hidden");
+
+        },
+        260
+    );
+
+    activeActionChat = null;
+
+}
+
+
 /* =========================================================
-   SEARCH EVENTS
+   ACTION HANDLER
+========================================================= */
+
+async function messagesHandleChatAction(
+    action,
+    chat
+) {
+
+    if (!messagesUID || !chat.chatId) {
+        return;
+    }
+
+    switch (action) {
+
+        case "pin":
+
+            await messagesTogglePin(chat);
+
+            break;
+
+
+        case "mute":
+
+            await messagesToggleMute(chat);
+
+            break;
+
+
+        case "mark":
+
+            await messagesToggleRead(chat);
+
+            break;
+
+
+        case "delete":
+
+            await messagesDeleteChat(chat);
+
+            break;
+
+
+        case "block":
+
+            await messagesToggleBlock(chat);
+
+            break;
+
+    }
+
+}
+
+
+/* =========================================================
+   PIN
+========================================================= */
+
+async function messagesTogglePin(chat) {
+
+    const newValue =
+        chat.pinned !== true;
+
+    try {
+
+        await db.ref(
+            "userChats/" +
+            messagesUID +
+            "/" +
+            chat.chatId
+        ).update({
+
+            pinned: newValue
+
+        });
+
+        messagesCloseActionSheet();
+
+        messagesToast(
+            newValue
+                ? "Chat pinned"
+                : "Chat unpinned"
+        );
+
+    } catch (error) {
+
+        console.error(
+            "Pin error:",
+            error
+        );
+
+        messagesToast(
+            "Unable to update pin",
+            "error"
+        );
+
+    }
+
+}
+
+
+/* =========================================================
+   MUTE
+========================================================= */
+
+async function messagesToggleMute(chat) {
+
+    const newValue =
+        chat.muted !== true;
+
+    try {
+
+        await db.ref(
+            "userChats/" +
+            messagesUID +
+            "/" +
+            chat.chatId
+        ).update({
+
+            muted: newValue
+
+        });
+
+        messagesCloseActionSheet();
+
+        messagesToast(
+            newValue
+                ? "Chat muted"
+                : "Chat unmuted"
+        );
+
+    } catch (error) {
+
+        console.error(
+            "Mute error:",
+            error
+        );
+
+        messagesToast(
+            "Unable to update mute",
+            "error"
+        );
+
+    }
+
+}
+
+
+/* =========================================================
+   READ / UNREAD
+========================================================= */
+
+async function messagesToggleRead(chat) {
+
+    const currentlyUnread =
+        Number(chat.unread || 0) > 0;
+
+    try {
+
+        await db.ref(
+            "userChats/" +
+            messagesUID +
+            "/" +
+            chat.chatId
+        ).update({
+
+            unread:
+                currentlyUnread
+                    ? 0
+                    : 1
+
+        });
+
+        messagesCloseActionSheet();
+
+        messagesToast(
+            currentlyUnread
+                ? "Marked as read"
+                : "Marked as unread"
+        );
+
+    } catch (error) {
+
+        console.error(
+            "Read state error:",
+            error
+        );
+
+        messagesToast(
+            "Unable to update message state",
+            "error"
+        );
+
+    }
+
+}
+
+
+/* =========================================================
+   DELETE CHAT
+========================================================= */
+
+async function messagesDeleteChat(chat) {
+
+    const confirmed =
+        window.confirm(
+            "Delete this conversation from your messages?"
+        );
+
+    if (!confirmed) {
+        return;
+    }
+
+    try {
+
+        messagesCloseActionSheet();
+
+        messagesShowLoading();
+
+        /*
+         * Deletes only YOUR inbox entry.
+         *
+         * The actual chat remains available
+         * for the other participant.
+         */
+
+        await db.ref(
+            "userChats/" +
+            messagesUID +
+            "/" +
+            chat.chatId
+        ).remove();
+
+        messagesHideLoading();
+
+        messagesToast(
+            "Chat deleted"
+        );
+
+    } catch (error) {
+
+        console.error(
+            "Delete chat error:",
+            error
+        );
+
+        messagesHideLoading();
+
+        messagesToast(
+            "Unable to delete chat",
+            "error"
+        );
+
+    }
+
+}
+
+
+/* =========================================================
+   BLOCK / UNBLOCK
+========================================================= */
+
+async function messagesToggleBlock(chat) {
+
+    if (!chat.userId) {
+
+        messagesToast(
+            "User information missing",
+            "error"
+        );
+
+        return;
+
+    }
+
+    const currentlyBlocked =
+        chat.blocked === true;
+
+    if (!currentlyBlocked) {
+
+        const confirmed =
+            window.confirm(
+                "Block this user? You can unblock them later."
+            );
+
+        if (!confirmed) {
+            return;
+        }
+
+    }
+
+    try {
+
+        /*
+         * Personal block record.
+         */
+
+        await db.ref(
+            "blocks/" +
+            messagesUID +
+            "/" +
+            chat.userId
+        ).set(
+            currentlyBlocked
+                ? null
+                : {
+                    blockedAt:
+                        firebase.database
+                            .ServerValue
+                            .TIMESTAMP,
+
+                    userId:
+                        chat.userId,
+
+                    name:
+                        chat.name ||
+                        "Unknown User"
+                }
+        );
+
+
+        /*
+         * Local chat state.
+         */
+
+        await db.ref(
+            "userChats/" +
+            messagesUID +
+            "/" +
+            chat.chatId
+        ).update({
+
+            blocked:
+                !currentlyBlocked
+
+        });
+
+
+        messagesCloseActionSheet();
+
+        messagesToast(
+            currentlyBlocked
+                ? "User unblocked"
+                : "User blocked"
+        );
+
+    } catch (error) {
+
+        console.error(
+            "Block error:",
+            error
+        );
+
+        messagesToast(
+            "Unable to update block",
+            "error"
+        );
+
+    }
+
+}
+
+
+/* =========================================================
+   SEARCH
 ========================================================= */
 
 if (messagesSearch) {
@@ -1249,28 +1938,16 @@ if (messagesSearch) {
         function() {
 
             const value =
-                messagesSearch.value
-                    .trim();
-
+                messagesSearch.value.trim();
 
             if (messagesClearSearch) {
 
-                if (value) {
-
-                    messagesClearSearch.classList.remove(
-                        "hidden"
-                    );
-
-                } else {
-
-                    messagesClearSearch.classList.add(
-                        "hidden"
-                    );
-
-                }
+                messagesClearSearch.classList.toggle(
+                    "hidden",
+                    !value
+                );
 
             }
-
 
             messagesRender();
 
@@ -1287,17 +1964,12 @@ if (messagesClearSearch) {
         function() {
 
             if (messagesSearch) {
-
-                messagesSearch.value =
-                    "";
-
+                messagesSearch.value = "";
             }
-
 
             messagesClearSearch.classList.add(
                 "hidden"
             );
-
 
             messagesRender();
 
@@ -1312,9 +1984,7 @@ if (messagesClearSearch) {
 ========================================================= */
 
 document
-    .querySelectorAll(
-        ".filter"
-    )
+    .querySelectorAll(".filter")
     .forEach(
         function(button) {
 
@@ -1323,9 +1993,7 @@ document
                 function() {
 
                     document
-                        .querySelectorAll(
-                            ".filter"
-                        )
+                        .querySelectorAll(".filter")
                         .forEach(
                             function(item) {
 
@@ -1336,16 +2004,13 @@ document
                             }
                         );
 
-
                     button.classList.add(
                         "active"
                     );
 
-
                     messagesFilter =
                         button.dataset.filter ||
                         "all";
-
 
                     messagesRender();
 
@@ -1370,27 +2035,19 @@ if (messagesRefresh) {
                 return;
             }
 
-
             messagesRefresh.classList.add(
                 "loading"
             );
 
-
             try {
 
                 const snapshot =
-                    await db
-                        .ref(
-                            "userChats/" +
-                            messagesUID
-                        )
-                        .once(
-                            "value"
-                        );
-
+                    await db.ref(
+                        "userChats/" +
+                        messagesUID
+                    ).once("value");
 
                 const newChats = [];
-
 
                 if (snapshot.exists()) {
 
@@ -1400,24 +2057,17 @@ if (messagesRefresh) {
                             const chat =
                                 child.val() || {};
 
-
                             chat.chatId =
                                 child.key;
 
-
-                            newChats.push(
-                                chat
-                            );
+                            newChats.push(chat);
 
                         }
                     );
 
                 }
 
-
-                messagesChats =
-                    newChats;
-
+                messagesChats = newChats;
 
                 messagesSortChats();
 
@@ -1425,20 +2075,17 @@ if (messagesRefresh) {
 
                 messagesRender();
 
-
                 messagesToast(
                     "Messages refreshed"
                 );
 
-
             } catch (error) {
 
-                console.error(
-                    error
-                );
+                console.error(error);
 
                 messagesToast(
-                    "Refresh failed"
+                    "Refresh failed",
+                    "error"
                 );
 
             } finally {
@@ -1465,11 +2112,9 @@ function messagesOpenModal() {
         return;
     }
 
-
     messagesModal.classList.remove(
         "hidden"
     );
-
 
     requestAnimationFrame(
         function() {
@@ -1480,7 +2125,6 @@ function messagesOpenModal() {
 
         }
     );
-
 
     messagesLoadUsers("");
 
@@ -1493,11 +2137,9 @@ function messagesCloseModal() {
         return;
     }
 
-
     messagesModal.classList.remove(
         "show"
     );
-
 
     setTimeout(
         function() {
@@ -1522,7 +2164,6 @@ if (messagesNewChat) {
 
 }
 
-
 if (messagesFab) {
 
     messagesFab.addEventListener(
@@ -1531,7 +2172,6 @@ if (messagesFab) {
     );
 
 }
-
 
 if (messagesStartChat) {
 
@@ -1542,7 +2182,6 @@ if (messagesStartChat) {
 
 }
 
-
 if (messagesModalClose) {
 
     messagesModalClose.addEventListener(
@@ -1551,7 +2190,6 @@ if (messagesModalClose) {
     );
 
 }
-
 
 if (messagesModalBackdrop) {
 
@@ -1569,7 +2207,6 @@ if (messagesModalBackdrop) {
 
 let messagesUserSearchTimer = null;
 
-
 if (messagesUserSearch) {
 
     messagesUserSearch.addEventListener(
@@ -1579,7 +2216,6 @@ if (messagesUserSearch) {
             clearTimeout(
                 messagesUserSearchTimer
             );
-
 
             messagesUserSearchTimer =
                 setTimeout(
@@ -1604,13 +2240,10 @@ if (messagesUserSearch) {
    LOAD USERS
 ========================================================= */
 
-async function messagesLoadUsers(
-    keyword
-) {
+async function messagesLoadUsers(keyword) {
 
     keyword =
         keyword || "";
-
 
     if (messagesUsersLoading) {
 
@@ -1620,7 +2253,6 @@ async function messagesLoadUsers(
 
     }
 
-
     if (messagesEmptyUsers) {
 
         messagesEmptyUsers.classList.add(
@@ -1629,22 +2261,16 @@ async function messagesLoadUsers(
 
     }
 
-
     if (messagesUserList) {
 
-        messagesUserList.innerHTML =
-            "";
+        messagesUserList.innerHTML = "";
 
     }
-
 
     try {
 
         const snapshot =
-            await db
-                .ref("users")
-                .once("value");
-
+            await db.ref("users").once("value");
 
         if (messagesUsersLoading) {
 
@@ -1654,60 +2280,44 @@ async function messagesLoadUsers(
 
         }
 
-
         if (!snapshot.exists()) {
 
             if (messagesEmptyUsers) {
-
                 messagesEmptyUsers.classList.remove(
                     "hidden"
                 );
-
             }
 
             return;
 
         }
 
+        let found = 0;
 
-        let found =
-            0;
-
+        const search =
+            keyword.toLowerCase();
 
         snapshot.forEach(
             function(child) {
 
-                const uid =
-                    child.key;
+                const uid = child.key;
 
                 const user =
                     child.val() || {};
 
-
-                if (
-                    uid === messagesUID
-                ) {
-
+                if (uid === messagesUID) {
                     return;
-
                 }
-
-
-                const search =
-                    keyword.toLowerCase();
-
 
                 const name =
                     String(
                         user.name || ""
                     ).toLowerCase();
 
-
                 const username =
                     String(
                         user.username || ""
                     ).toLowerCase();
-
 
                 if (
                     search &&
@@ -1719,9 +2329,7 @@ async function messagesLoadUsers(
 
                 }
 
-
                 found++;
-
 
                 if (messagesUserList) {
 
@@ -1736,7 +2344,6 @@ async function messagesLoadUsers(
 
             }
         );
-
 
         if (
             found === 0 &&
@@ -1756,7 +2363,6 @@ async function messagesLoadUsers(
             error
         );
 
-
         if (messagesUsersLoading) {
 
             messagesUsersLoading.classList.add(
@@ -1765,9 +2371,9 @@ async function messagesLoadUsers(
 
         }
 
-
         messagesToast(
-            "Unable to load users"
+            "Unable to load users",
+            "error"
         );
 
     }
@@ -1779,26 +2385,17 @@ async function messagesLoadUsers(
    USER CARD
 ========================================================= */
 
-function messagesCreateUserCard(
-    uid,
-    user
-) {
+function messagesCreateUserCard(uid, user) {
 
     const card =
-        document.createElement(
-            "div"
-        );
+        document.createElement("div");
 
-
-    card.className =
-        "userCard";
-
+    card.className = "userCard";
 
     const photo =
         user.photoURL ||
         user.profilePhoto ||
         "assets/default-avatar.png";
-
 
     card.innerHTML = `
 
@@ -1819,25 +2416,21 @@ function messagesCreateUserCard(
 
         </div>
 
-
         <div class="userDetails">
 
             <h3>
                 ${messagesEscape(
-                    user.name ||
-                    "Unknown"
+                    user.name || "Unknown"
                 )}
             </h3>
 
             <p>
                 @${messagesEscape(
-                    user.username ||
-                    "user"
+                    user.username || "user"
                 )}
             </p>
 
         </div>
-
 
         <button
             class="startChatBtn"
@@ -1847,7 +2440,6 @@ function messagesCreateUserCard(
         </button>
 
     `;
-
 
     card.addEventListener(
         "click",
@@ -1860,7 +2452,6 @@ function messagesCreateUserCard(
 
         }
     );
-
 
     return card;
 
@@ -1876,24 +2467,13 @@ async function messagesCreateChat(
     otherUser
 ) {
 
-    if (
-        !messagesUID ||
-        !otherUID
-    ) {
-
+    if (!messagesUID || !otherUID) {
         return;
-
     }
-
 
     try {
 
         messagesShowLoading();
-
-
-        /*
-         * SAME CHAT ID
-         */
 
         const chatID =
             [
@@ -1903,23 +2483,14 @@ async function messagesCreateChat(
                 .sort()
                 .join("_");
 
-
         const chatRef =
             db.ref(
                 "chats/" +
                 chatID
             );
 
-
         const chatSnapshot =
-            await chatRef.once(
-                "value"
-            );
-
-
-        /*
-         * MAIN CHAT
-         */
+            await chatRef.once("value");
 
         if (!chatSnapshot.exists()) {
 
@@ -1944,128 +2515,103 @@ async function messagesCreateChat(
 
         }
 
+        await db.ref(
+            "userChats/" +
+            messagesUID +
+            "/" +
+            chatID
+        ).update({
 
-        /*
-         * MY CHAT ENTRY
-         */
+            chatId: chatID,
 
-        await db
-            .ref(
-                "userChats/" +
-                messagesUID +
-                "/" +
-                chatID
-            )
-            .update({
+            userId: otherUID,
 
-                chatId:
-                    chatID,
+            name:
+                otherUser.name ||
+                "Unknown",
 
-                userId:
-                    otherUID,
+            username:
+                otherUser.username ||
+                "",
 
-                name:
-                    otherUser.name ||
-                    "Unknown",
+            photoURL:
+                otherUser.photoURL ||
+                otherUser.profilePhoto ||
+                "",
 
-                username:
-                    otherUser.username ||
-                    "",
+            lastMessage: "",
 
-                photoURL:
-                    otherUser.photoURL ||
-                    otherUser.profilePhoto ||
-                    "",
+            lastMessageTime:
+                firebase.database
+                    .ServerValue
+                    .TIMESTAMP,
 
-                lastMessage:
-                    "",
+            unread: 0,
 
-                lastMessageTime:
-                    firebase.database
-                        .ServerValue
-                        .TIMESTAMP,
+            online:
+                otherUser.online === true,
 
-                unread:
-                    0,
+            pinned: false,
 
-                online:
-                    otherUser.online === true
+            muted: false,
 
-            });
+            blocked: false
 
+        });
 
-        /*
-         * MY USER DATA
-         */
 
         const mySnapshot =
-            await db
-                .ref(
-                    "users/" +
-                    messagesUID
-                )
-                .once(
-                    "value"
-                );
-
+            await db.ref(
+                "users/" +
+                messagesUID
+            ).once("value");
 
         const me =
             mySnapshot.val() || {};
 
 
-        /*
-         * RECEIVER CHAT ENTRY
-         */
+        await db.ref(
+            "userChats/" +
+            otherUID +
+            "/" +
+            chatID
+        ).update({
 
-        await db
-            .ref(
-                "userChats/" +
-                otherUID +
-                "/" +
-                chatID
-            )
-            .update({
+            chatId: chatID,
 
-                chatId:
-                    chatID,
+            userId: messagesUID,
 
-                userId:
-                    messagesUID,
+            name:
+                me.name ||
+                "Unknown",
 
-                name:
-                    me.name ||
-                    "Unknown",
+            username:
+                me.username ||
+                "",
 
-                username:
-                    me.username ||
-                    "",
+            photoURL:
+                me.photoURL ||
+                me.profilePhoto ||
+                "",
 
-                photoURL:
-                    me.photoURL ||
-                    me.profilePhoto ||
-                    "",
+            lastMessage: "",
 
-                lastMessage:
-                    "",
+            lastMessageTime:
+                firebase.database
+                    .ServerValue
+                    .TIMESTAMP,
 
-                lastMessageTime:
-                    firebase.database
-                        .ServerValue
-                        .TIMESTAMP,
+            unread: 0,
 
-                unread:
-                    0,
+            online:
+                me.online === true
 
-                online:
-                    me.online === true
-
-            });
+        });
 
 
         messagesCloseModal();
 
         messagesHideLoading();
-
 
         setTimeout(
             function() {
@@ -2077,9 +2623,8 @@ async function messagesCreateChat(
                     );
 
             },
-            200
+            180
         );
-
 
     } catch (error) {
 
@@ -2088,17 +2633,36 @@ async function messagesCreateChat(
             error
         );
 
-
         messagesHideLoading();
 
-
         messagesToast(
-            "Failed to create chat"
+            "Failed to create chat",
+            "error"
         );
 
     }
 
 }
+
+
+/* =========================================================
+   ACTION SHEET ESC / BACKDROP
+========================================================= */
+
+document.addEventListener(
+    "keydown",
+    function(event) {
+
+        if (event.key === "Escape") {
+
+            messagesCloseActionSheet();
+
+            messagesCloseModal();
+
+        }
+
+    }
+);
 
 
 /* =========================================================
@@ -2111,6 +2675,10 @@ window.addEventListener(
 
         messagesRemoveChatListener();
 
+        clearTimeout(
+            longPressTimer
+        );
+
     }
 );
 
@@ -2120,6 +2688,6 @@ window.addEventListener(
 ========================================================= */
 
 console.log(
-    "%cVIEWORA MESSAGES V2 FINAL LOADED",
-    "color:#00E676;font-size:18px;font-weight:800"
+    "%cVIEWORA MESSAGES V3 LOADED",
+    "color:#00e676;font-size:18px;font-weight:800"
 );
