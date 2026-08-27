@@ -1,729 +1,634 @@
-/*=========================================
-      SPLASH.CSS PART 2
-      Logo • Text • Loader
-=========================================*/
+/* =========================================================
+   VIEWORA — PREMIUM SPLASH SCREEN (v2)
+   ========================================================= */
 
-/*==========================
-      Splash Container
-==========================*/
-
-.splash{
-
-position:absolute;
-
-top:50%;
-left:50%;
-
-transform:translate(-50%,-50%);
-
-width:100%;
-max-width:420px;
-
-padding:40px 30px;
-
-display:flex;
-
-flex-direction:column;
-
-align-items:center;
-
-justify-content:center;
-
-text-align:center;
-
-z-index:10;
-
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
 }
 
-/*==========================
-      Logo Box
-==========================*/
-
-.logoBox{
-
-position:relative;
-
-width:170px;
-height:170px;
-
-display:flex;
-
-justify-content:center;
-align-items:center;
-
-margin-bottom:30px;
-
-animation:logoFloat 3s ease-in-out infinite;
-
+:root {
+    --bg: #050507;
+    --text: #ffffff;
+    --muted: rgba(255, 255, 255, 0.58);
+    --accent1: #7e57ff;
+    --accent2: #00d5ff;
+    --accent3: #ff3b9d;
+    --glass: rgba(255, 255, 255, 0.055);
+    --border: rgba(255, 255, 255, 0.10);
 }
 
-.logo{
-
-width:120px;
-height:120px;
-
-object-fit:contain;
-
-position:relative;
-
-z-index:2;
-
-filter:drop-shadow(0 0 25px rgba(99,102,241,.6));
-
-animation:logoPop 1.2s ease;
-
+html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
 }
 
-.logoGlow{
-
-position:absolute;
-
-width:160px;
-height:160px;
-
-border-radius:50%;
-
-background:radial-gradient(
-circle,
-rgba(99,102,241,.45),
-transparent 70%
-);
-
-animation:glowPulse 2s infinite;
-
+body {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background:
+        radial-gradient(circle at 50% 45%, #15151d 0%, #09090d 42%, #050507 75%, #020203 100%);
+    color: var(--text);
+    font-family: "Inter", sans-serif;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
 }
 
-@keyframes logoFloat{
 
-0%,100%{
+/* =========================================================
+   BACKGROUND GRADIENT + MESH
+   ========================================================= */
 
-transform:translateY(0);
-
+.gradient {
+    position: fixed;
+    inset: -25%;
+    background:
+        radial-gradient(circle at 20% 20%, rgba(117, 78, 255, 0.28), transparent 34%),
+        radial-gradient(circle at 80% 25%, rgba(0, 210, 255, 0.20), transparent 32%),
+        radial-gradient(circle at 50% 90%, rgba(255, 0, 128, 0.16), transparent 38%),
+        radial-gradient(circle at 70% 60%, rgba(126, 87, 255, 0.12), transparent 40%);
+    filter: blur(50px);
+    animation: gradientMove 14s ease-in-out infinite alternate;
+    pointer-events: none;
 }
 
-50%{
-
-transform:translateY(-12px);
-
+.mesh {
+    position: fixed;
+    inset: 0;
+    background-image:
+        linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);
+    background-size: 60px 60px;
+    mask-image: radial-gradient(ellipse at center, black 20%, transparent 75%);
+    -webkit-mask-image: radial-gradient(ellipse at center, black 20%, transparent 75%);
+    pointer-events: none;
+    opacity: 0.6;
+    animation: meshPulse 8s ease-in-out infinite;
 }
 
+@keyframes gradientMove {
+    0%   { transform: scale(1) rotate(0deg); }
+    50%  { transform: scale(1.1) rotate(4deg); }
+    100% { transform: scale(1.18) rotate(-4deg); }
 }
 
-@keyframes glowPulse{
-
-0%,100%{
-
-transform:scale(1);
-
-opacity:.7;
-
+@keyframes meshPulse {
+    0%, 100% { opacity: 0.4; }
+    50%      { opacity: 0.7; }
 }
 
-50%{
 
-transform:scale(1.2);
+/* =========================================================
+   GLOW BLOBS
+   ========================================================= */
 
-opacity:1;
-
+.blob {
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(90px);
+    opacity: 0.25;
+    pointer-events: none;
+    animation: blobFloat 12s ease-in-out infinite;
 }
 
+.blob1 {
+    width: 320px; height: 320px;
+    top: -120px; left: -120px;
+    background: #7657ff;
 }
 
-@keyframes logoPop{
-
-0%{
-
-transform:scale(.3) rotate(-30deg);
-
-opacity:0;
-
+.blob2 {
+    width: 280px; height: 280px;
+    right: -140px; top: 15%;
+    background: #00cfff;
+    animation-delay: -4s;
 }
 
-70%{
-
-transform:scale(1.08);
-
+.blob3 {
+    width: 300px; height: 300px;
+    bottom: -160px; left: 30%;
+    background: #ff238d;
+    animation-delay: -7s;
 }
 
-100%{
-
-transform:scale(1);
-
-opacity:1;
-
+.blob4 {
+    width: 220px; height: 220px;
+    top: 40%; left: 60%;
+    background: #a78bfa;
+    opacity: 0.15;
+    animation-delay: -2s;
 }
 
+@keyframes blobFloat {
+    0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+    33%      { transform: translate3d(40px, -30px, 0) scale(1.15); }
+    66%      { transform: translate3d(-25px, 20px, 0) scale(0.95); }
 }
 
-/*==========================
-      Brand Name
-==========================*/
 
-.brand{
+/* =========================================================
+   PARTICLES
+   ========================================================= */
 
-font-size:48px;
-
-font-weight:800;
-
-background:linear-gradient(
-90deg,
-#ffffff,
-#a5b4fc,
-#38bdf8
-);
-
--webkit-background-clip:text;
--webkit-text-fill-color:transparent;
-
-letter-spacing:2px;
-
-margin-bottom:10px;
-
-animation:fadeUp 1s ease;
-
+.particles {
+    position: fixed;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
 }
 
-.tagline{
-
- -size:16px;
-
-color:#cbd5e1;
-
-letter-spacing:1px;
-
-margin-bottom:40px;
-
-animation:fadeUp 1.2s ease;
-
+.particles span {
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.55);
+    box-shadow: 0 0 12px rgba(255, 255, 255, 0.35);
+    animation: particleFloat 8s linear infinite;
 }
 
-/*==========================
-      Loader
-==========================*/
+/* Colored particles */
+.particles span:nth-child(3n)   { background: rgba(126, 87, 255, 0.7); box-shadow: 0 0 14px rgba(126, 87, 255, 0.5); }
+.particles span:nth-child(3n+1) { background: rgba(0, 213, 255, 0.65); box-shadow: 0 0 14px rgba(0, 213, 255, 0.45); }
+.particles span:nth-child(3n+2) { background: rgba(255, 59, 157, 0.6); box-shadow: 0 0 14px rgba(255, 59, 157, 0.4); }
 
-.loader{
-
-width:260px;
-height:8px;
-
-background:rgba(255,255,255,.08);
-
-border-radius:50px;
-
-overflow:hidden;
-
-margin-bottom:18px;
-
-border:1px solid rgba(255,255,255,.08);
-
+@keyframes particleFloat {
+    0%   { opacity: 0; transform: translateY(40px) scale(0.5); }
+    15%  { opacity: 0.9; }
+    50%  { transform: translateY(-30px) scale(1.1); }
+    85%  { opacity: 0.3; }
+    100% { opacity: 0; transform: translateY(-90px) scale(0.3); }
 }
 
-.loaderFill{
 
-width:0%;
+/* =========================================================
+   FLYING DRAGON
+   ========================================================= */
 
-height:100%;
-
-border-radius:50px;
-
-background:linear-gradient(
-90deg,
-#6366f1,
-#8b5cf6,
-#06b6d4
-);
-
-animation:loadingBar 3s linear forwards;
-
+.dragon-orbit {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    width: 280px;
+    height: 280px;
+    margin: -140px 0 0 -140px;
+    pointer-events: none;
+    z-index: 5;
+    animation: orbitSpin 9s linear infinite;
 }
 
-@keyframes loadingBar{
-
-0%{
-
-width:0;
-
+.dragon {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    font-size: 32px;
+    transform: translateX(-50%);
+    filter: drop-shadow(0 0 12px rgba(255, 100, 180, 0.7));
+    animation: dragonBounce 1.8s ease-in-out infinite;
+    will-change: transform;
 }
 
-100%{
-
-width:100%;
-
+@keyframes orbitSpin {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
 }
 
+@keyframes dragonBounce {
+    0%, 100% { transform: translateX(-50%) translateY(0) scale(1) rotate(-8deg); }
+    50%      { transform: translateX(-50%) translateY(-8px) scale(1.08) rotate(8deg); }
 }
 
-#loadingText{
 
-font-size:14px;
+/* =========================================================
+   SPLASH CONTAINER
+   ========================================================= */
 
-color:#94a3b8;
-
-letter-spacing:.5px;
-
-animation:blink 1.2s infinite;
-
+.splash {
+    position: relative;
+    z-index: 10;
+    width: min(90%, 440px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    animation: splashEnter 1.2s cubic-bezier(.16, 1, .3, 1) both;
 }
 
-@keyframes blink{
-
-0%,100%{
-
-opacity:1;
-
+@keyframes splashEnter {
+    from {
+        opacity: 0;
+        transform: translateY(30px) scale(0.94);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
 }
 
-50%{
 
-opacity:.45;
+/* =========================================================
+   LOGO + RINGS
+   ========================================================= */
 
+.logoBox {
+    position: relative;
+    width: 130px;
+    height: 130px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 28px;
 }
 
+.logoGlow {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border-radius: 36px;
+    background: linear-gradient(135deg, rgba(126, 87, 255, 0.7), rgba(0, 207, 255, 0.5), rgba(255, 35, 141, 0.6));
+    filter: blur(28px);
+    opacity: 0.75;
+    animation: logoGlowPulse 3.2s ease-in-out infinite;
 }
 
-/*==========================
-      Version
-==========================*/
-
-.version{
-
-margin-top:35px;
-
-padding:8px 18px;
-
-border-radius:30px;
-
-background:rgba(255,255,255,.06);
-
-border:1px solid rgba(255,255,255,.08);
-
-font-size:13px;
-
-color:#cbd5e1;
-
-backdrop-filter:blur(15px);
-
+@keyframes logoGlowPulse {
+    0%, 100% { transform: scale(0.88); opacity: 0.5; }
+    50%      { transform: scale(1.18); opacity: 0.9; }
 }
 
-/*==========================
-      Fade Animation
-==========================*/
-
-@keyframes fadeUp{
-
-from{
-
-opacity:0;
-
-transform:translateY(30px);
-
+/* Orbiting rings */
+.logoRing {
+    position: absolute;
+    border-radius: 50%;
+    border: 1.5px solid transparent;
+    pointer-events: none;
 }
 
-to{
-
-opacity:1;
-
-transform:translateY(0);
-
+.logoRing1 {
+    inset: -12px;
+    border-color: rgba(126, 87, 255, 0.35);
+    animation: ringSpin 6s linear infinite;
 }
 
-}
-/*=========================================
-      SPLASH.CSS PART 3
- Responsive • Utilities • Premium Effects
-=========================================*/
-
-/*==========================
- Floating Particles
-==========================*/
-
-.particles span{
-
-position:absolute;
-
-width:8px;
-height:8px;
-
-border-radius:50%;
-
-background:rgba(255,255,255,.25);
-
-animation:particleFloat linear infinite;
-
+.logoRing2 {
+    inset: -26px;
+    border-color: rgba(0, 213, 255, 0.25);
+    border-style: dashed;
+    animation: ringSpin 10s linear infinite reverse;
 }
 
-.particles span:nth-child(1){left:8%;animation:12s particleFloat infinite;}
-.particles span:nth-child(2){left:22%;animation:16s particleFloat infinite;}
-.particles span:nth-child(3){left:36%;animation:13s particleFloat infinite;}
-.particles span:nth-child(4){left:50%;animation:18s particleFloat infinite;}
-.particles span:nth-child(5){left:65%;animation:14s particleFloat infinite;}
-.particles span:nth-child(6){left:80%;animation:17s particleFloat infinite;}
-.particles span:nth-child(7){left:90%;animation:15s particleFloat infinite;}
-.particles span:nth-child(8){left:45%;animation:20s particleFloat infinite;}
-
-@keyframes particleFloat{
-
-0%{
-
-transform:
-translateY(100vh)
-scale(.3);
-
-opacity:0;
-
+.logoRing3 {
+    inset: -40px;
+    border-color: rgba(255, 59, 157, 0.18);
+    animation: ringSpin 14s linear infinite;
 }
 
-20%{
-
-opacity:1;
-
+@keyframes ringSpin {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
 }
 
-100%{
-
-transform:
-translateY(-120px)
-scale(1.5);
-
-opacity:0;
-
+/* Glass frame */
+.logoBox::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 36px;
+    background: linear-gradient(145deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.03));
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.18),
+        0 24px 80px rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
 }
 
+.logo {
+    position: relative;
+    z-index: 2;
+    width: 86px;
+    height: 86px;
+    object-fit: contain;
+    border-radius: 24px;
+    user-select: none;
+    -webkit-user-drag: none;
+    filter: drop-shadow(0 10px 22px rgba(0, 0, 0, 0.4));
+    animation: logoFloat 4.5s ease-in-out infinite;
 }
 
-/*==========================
- Glass Shine
-==========================*/
-
-.logoBox::after{
-
-content:"";
-
-position:absolute;
-
-top:-30%;
-
-left:-120%;
-
-width:60%;
-
-height:180%;
-
-background:linear-gradient(
-90deg,
-transparent,
-rgba(255,255,255,.4),
-transparent
-);
-
-transform:rotate(25deg);
-
-animation:shine 4s infinite;
-
+@keyframes logoFloat {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    50%      { transform: translateY(-7px) rotate(1.5deg); }
 }
 
-@keyframes shine{
 
-100%{
+/* =========================================================
+   BRAND (letter by letter)
+   ========================================================= */
 
-left:180%;
-
+.brand {
+    display: flex;
+    justify-content: center;
+    gap: 1px;
+    font-size: clamp(44px, 12vw, 62px);
+    line-height: 1;
+    font-weight: 800;
+    letter-spacing: -2.6px;
+    margin-bottom: 14px;
 }
 
+.brand .letter {
+    display: inline-block;
+    background: linear-gradient(110deg, #ffffff 8%, #e7e3ff 38%, #a995ff 62%, #ffffff 92%);
+    background-size: 220% auto;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation:
+        brandShine 5.5s linear infinite,
+        letterPop 0.7s cubic-bezier(.16, 1, .3, 1) both;
 }
 
-/*==========================
- Fade Out Animation
-==========================*/
+.brand .letter:nth-child(1) { animation-delay: 0.08s, 0.15s; }
+.brand .letter:nth-child(2) { animation-delay: 0.08s, 0.22s; }
+.brand .letter:nth-child(3) { animation-delay: 0.08s, 0.29s; }
+.brand .letter:nth-child(4) { animation-delay: 0.08s, 0.36s; }
+.brand .letter:nth-child(5) { animation-delay: 0.08s, 0.43s; }
+.brand .letter:nth-child(6) { animation-delay: 0.08s, 0.50s; }
+.brand .letter:nth-child(7) { animation-delay: 0.08s, 0.57s; }
 
-.fadeOut{
-
-animation:splashFade .8s forwards;
-
+@keyframes brandShine {
+    0%   { background-position: 200% center; }
+    100% { background-position: -20% center; }
 }
 
-@keyframes splashFade{
-
-to{
-
-opacity:0;
-
-visibility:hidden;
-
-transform:scale(1.05);
-
+@keyframes letterPop {
+    from {
+        opacity: 0;
+        transform: translateY(18px) scale(0.8);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
 }
 
+
+/* =========================================================
+   TAGLINE
+   ========================================================= */
+
+.tagline {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 2.6px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 44px;
 }
 
-/*==========================
- Utility Classes
-==========================*/
-
-.hidden{
-
-display:none !important;
-
+.tagline .tag-item {
+    opacity: 0;
+    animation: tagFade 0.6s ease forwards;
 }
 
-.center{
+.tagline .tag-item:nth-child(1) { animation-delay: 0.7s; }
+.tagline .tag-item:nth-child(3) { animation-delay: 0.85s; }
+.tagline .tag-item:nth-child(5) { animation-delay: 1.0s; }
 
-display:flex;
-
-justify-content:center;
-
-align-items:center;
-
+.tagline .dot {
+    color: rgba(255, 255, 255, 0.28);
+    opacity: 0;
+    animation: tagFade 0.5s ease forwards;
 }
 
-/*==========================
- Responsive
-==========================*/
+.tagline .dot:nth-child(2) { animation-delay: 0.78s; }
+.tagline .dot:nth-child(4) { animation-delay: 0.93s; }
 
-@media(max-width:768px){
-
-.logo{
-
-width:105px;
-height:105px;
-
+@keyframes tagFade {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
 }
 
-.logoBox{
 
-width:150px;
-height:150px;
+/* =========================================================
+   LOADER
+   ========================================================= */
 
+.loader-wrap {
+    position: relative;
+    width: min(290px, 74vw);
 }
 
-.brand{
-
-font-size:40px;
-
+.loader {
+    position: relative;
+    width: 100%;
+    height: 5px;
+    overflow: hidden;
+    border-radius: 100px;
+    background: rgba(255, 255, 255, 0.08);
+    box-shadow:
+        inset 0 0 10px rgba(0, 0, 0, 0.4),
+        0 0 24px rgba(120, 90, 255, 0.1);
 }
 
-.loader{
-
-width:220px;
-
+.loaderFill {
+    position: relative;
+    width: 0%;
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, #7357ff, #00d5ff, #ff3b9d, #7357ff);
+    background-size: 300% 100%;
+    box-shadow:
+        0 0 16px rgba(130, 100, 255, 0.75),
+        0 0 30px rgba(0, 210, 255, 0.3);
+    animation: loaderGradient 2.2s linear infinite;
+    transition: width 0.15s ease-out;
 }
 
+.loader-glow {
+    position: absolute;
+    top: -6px;
+    left: 0;
+    width: 40px;
+    height: 16px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(180, 140, 255, 0.6), transparent 70%);
+    filter: blur(6px);
+    opacity: 0;
+    pointer-events: none;
+    transition: left 0.15s ease-out, opacity 0.3s;
 }
 
-@media(max-width:480px){
-
-.splash{
-
-padding:20px;
-
+@keyframes loaderGradient {
+    0%   { background-position: 0% center; }
+    100% { background-position: 300% center; }
 }
 
-.logo{
 
-width:90px;
-height:90px;
+/* =========================================================
+   LOADING TEXT
+   ========================================================= */
 
+#loadingText {
+    margin-top: 16px;
+    min-height: 18px;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.42);
+    animation: textPulse 1.7s ease-in-out infinite;
 }
 
-.logoBox{
-
-width:130px;
-height:130px;
-
+@keyframes textPulse {
+    0%, 100% { opacity: 0.4; }
+    50%      { opacity: 1; }
 }
 
-.brand{
 
-font-size:34px;
+/* =========================================================
+   VERSION
+   ========================================================= */
 
+.version {
+    position: fixed;
+    bottom: 28px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 2.2px;
+    color: rgba(255, 255, 255, 0.2);
+    white-space: nowrap;
+    animation: versionFade 1.4s ease 1.1s both;
 }
 
-.tagline{
-
-font-size:14px;
-
+@keyframes versionFade {
+    from { opacity: 0; transform: translateX(-50%) translateY(10px); }
+    to   { opacity: 1; transform: translateX(-50%) translateY(0); }
 }
 
-.loader{
 
-width:180px;
+/* =========================================================
+   VIGNETTE
+   ========================================================= */
 
+body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background: radial-gradient(circle at center, transparent 40%, rgba(0, 0, 0, 0.5) 100%);
+    z-index: 1;
 }
 
-.version{
 
-font-size:12px;
+/* =========================================================
+   MOBILE
+   ========================================================= */
 
-padding:6px 14px;
+@media (max-width: 480px) {
+    .logoBox {
+        width: 110px;
+        height: 110px;
+        margin-bottom: 22px;
+    }
 
+    .logo {
+        width: 74px;
+        height: 74px;
+        border-radius: 20px;
+    }
+
+    .logoBox::before {
+        border-radius: 30px;
+    }
+
+    .logoRing1 { inset: -10px; }
+    .logoRing2 { inset: -22px; }
+    .logoRing3 { inset: -34px; }
+
+    .brand {
+        font-size: 48px;
+        letter-spacing: -2.2px;
+    }
+
+    .tagline {
+        font-size: 11px;
+        letter-spacing: 2px;
+        margin-bottom: 36px;
+    }
+
+    .dragon-orbit {
+        width: 230px;
+        height: 230px;
+        margin: -115px 0 0 -115px;
+    }
+
+    .dragon {
+        font-size: 26px;
+    }
+
+    .version {
+        bottom: 22px;
+    }
 }
 
+
+/* =========================================================
+   VERY SMALL HEIGHT
+   ========================================================= */
+
+@media (max-height: 650px) {
+    .logoBox {
+        width: 90px;
+        height: 90px;
+        margin-bottom: 16px;
+    }
+
+    .logo {
+        width: 62px;
+        height: 62px;
+    }
+
+    .brand {
+        font-size: 40px;
+        margin-bottom: 8px;
+    }
+
+    .tagline {
+        margin-bottom: 24px;
+    }
+
+    .dragon-orbit {
+        width: 200px;
+        height: 200px;
+        margin: -100px 0 0 -100px;
+    }
+
+    .dragon {
+        font-size: 22px;
+    }
 }
 
-/*==========================
- End
-==========================*/
 
-body{
+/* =========================================================
+   REDUCED MOTION
+   ========================================================= */
 
-overflow:hidden;
-
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        scroll-behavior: auto !important;
+    }
 }
-/*=========================================
-        SPLASH.JS
-        Viewora Premium Splash
-=========================================*/
-
-//==============================
-// Loading Text Animation
-//==============================
-
-const loadingText =
-document.getElementById("loadingText");
-
-const texts = [
-
-"Initializing...",
-
-"Loading Assets...",
-
-"Connecting Firebase...",
-
-"Preparing Viewora...",
-
-"Almost Ready..."
-
-];
-
-let index = 0;
-
-setInterval(()=>{
-
-index++;
-
-if(index>=texts.length){
-
-index=0;
-
-}
-
-loadingText.textContent=texts[index];
-
-},700);
-
-//==============================
-// Logo Click Animation
-//==============================
-
-const logo=
-
-document.querySelector(".logo");
-
-logo.addEventListener("click",()=>{
-
-logo.style.transform="scale(1.15) rotate(12deg)";
-
-setTimeout(()=>{
-
-logo.style.transform="";
-
-},350);
-
-});
-
-//==============================
-// Splash Fade
-//==============================
-
-function hideSplash(){
-
-document
-.querySelector(".splash")
-.classList.add("fadeOut");
-
-setTimeout(()=>{
-
-// Redirect
-
-location.href="index.html";
-
-},900);
-
-}
-
-//==============================
-// Firebase Auth Check
-//==============================
-
-if(window.firebase){
-
-firebase.auth().onAuthStateChanged(user=>{
-
-setTimeout(()=>{
-
-if(user){
-
-location.href="index.html";
-
-}else{
-
-location.href="login.html";
-
-}
-
-},3000);
-
-});
-
-}else{
-
-setTimeout(hideSplash,3000);
-
-}
-
-//==============================
-// Keyboard Skip
-//==============================
-
-document.addEventListener("keydown",e=>{
-
-if(e.key==="Enter"){
-
-hideSplash();
-
-}
-
-});
-
-//==============================
-// Double Tap Skip
-//==============================
-
-let tap=0;
-
-document.body.addEventListener("click",()=>{
-
-tap++;
-
-if(tap>=2){
-
-hideSplash();
-
-}
-
-setTimeout(()=>{
-
-tap=0;
-
-},500);
-
-});
-
-//==============================
-// Console
-//==============================
-
-console.log(
-"%cViewora V1.0 Started 🚀",
-"color:#6366f1;font-size:18px;font-weight:bold;"
-);

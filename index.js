@@ -1,27 +1,35 @@
 "use strict";
 
-/* =========================================================
-   VIEWORA INDEX.JS
-   Home Feed • Posts • Images • Videos • Likes • Comments
-========================================================= */
+/*
+============================================================
+ VIEWORA — INDEX.JS
+ Premium Home Feed
+ Firebase Realtime Database
+ Cloudinary Media URLs
+============================================================
+*/
 
-document.addEventListener("DOMContentLoaded", () => {
+(() => {
 
-    console.log("🚀 Viewora Index JS Started");
+    /* ======================================================
+       PREVENT DOUBLE INITIALIZATION
+    ====================================================== */
 
-    const feed = document.getElementById("feedContainer");
-
-    if (!feed) {
-        console.error("❌ feedContainer not found");
+    if (window.__VIEWORA_INDEX_INITIALIZED__) {
+        console.warn("Viewora index.js already initialized.");
         return;
     }
 
-    /* =====================================================
+    window.__VIEWORA_INDEX_INITIALIZED__ = true;
+
+
+    /* ======================================================
        HELPERS
-    ===================================================== */
+    ====================================================== */
 
-    function escapeHTML(value) {
+    const $ = (id) => document.getElementById(id);
 
+    const escapeHTML = (value) => {
         if (value === null || value === undefined) return "";
 
         return String(value)
@@ -30,437 +38,703 @@ document.addEventListener("DOMContentLoaded", () => {
             .replace(/>/g, "&gt;")
             .replace(/"/g, "&quot;")
             .replace(/'/g, "&#039;");
-    }
+    };
 
 
-    function getMediaURL(post) {
+    const safeURL = (value) => {
+        if (!value) return "";
 
-        /*
-          Different possible field names supported
-        */
+        try {
+            const url = new URL(value, window.location.href);
 
-        const url =
-            post.mediaUrl ||
-            post.imageUrl ||
-            post.imageURL ||
-            post.photoUrl ||
-            post.photoURL ||
-            post.fileUrl ||
-            post.fileURL ||
-            post.cloudinaryUrl ||
-            post.url ||
-            post.image ||
-            post.media ||
-            "";
+            if (
+                url.protocol === "https:" ||
+                url.protocol === "http:"
+            ) {
+                return url.href;
+            }
 
-        return typeof url === "string" ? url.trim() : "";
-    }
+            return "";
+        } catch {
+            return "";
+        }
+    };
 
 
-    function getPostText(post) {
+    const formatCount = (number) => {
 
-        return (
-            post.caption ||
-            post.text ||
-            post.content ||
-            post.description ||
-            post.title ||
-            ""
-        );
-    }
+        number = Number(number || 0);
 
-
-    function getPostType(post) {
-
-        const type =
-            post.type ||
-            post.postType ||
-            post.mediaType ||
-            "";
-
-        return String(type).toLowerCase();
-    }
-
-
-    function isVideo(post) {
-
-        const type = getPostType(post);
-
-        if (
-            type === "video" ||
-            type === "long" ||
-            type === "short" ||
-            type === "reel"
-        ) {
-            return true;
+        if (number >= 1000000) {
+            return (number / 1000000).toFixed(1).replace(".0", "") + "M";
         }
 
-        const url = getMediaURL(post).toLowerCase();
+        if (number >= 1000) {
+            return (number / 1000).toFixed(1).replace(".0", "") + "K";
+        }
 
-        return (
-            url.includes(".mp4") ||
-            url.includes(".webm") ||
-            url.includes(".mov") ||
-            url.includes("video/upload")
-        );
-    }
+        return String(number);
+    };
 
 
-    function formatTime(timestamp) {
+    const formatTime = (timestamp) => {
 
         if (!timestamp) return "Just now";
 
-        let date;
+        const time = Number(timestamp);
 
-        if (typeof timestamp === "number") {
+        if (!time) return "Just now";
 
-            date = new Date(timestamp);
+        const diff = Date.now() - time;
 
-        } else {
+        const minute = 60000;
+        const hour = minute * 60;
+        const day = hour * 24;
 
-            date = new Date(timestamp);
-
-        }
-
-        if (isNaN(date.getTime())) {
+        if (diff < minute) {
             return "Just now";
         }
 
-        const now = Date.now();
-
-        const diff = now - date.getTime();
-
-        const seconds = Math.floor(diff / 1000);
-        const minutes = Math.floor(seconds / 60);
-        const hours = Math.floor(minutes / 60);
-        const days = Math.floor(hours / 24);
-
-        if (seconds < 60) {
-            return "Just now";
+        if (diff < hour) {
+            return Math.floor(diff / minute) + "m";
         }
 
-        if (minutes < 60) {
-            return `${minutes}m`;
+        if (diff < day) {
+            return Math.floor(diff / hour) + "h";
         }
 
-        if (hours < 24) {
-            return `${hours}h`;
+        if (diff < day * 7) {
+            return Math.floor(diff / day) + "d";
         }
 
-        if (days < 7) {
-            return `${days}d`;
-        }
-
-        return date.toLocaleDateString();
-    }
+        return new Date(time).toLocaleDateString();
+    };
 
 
-    function getUserName(post) {
+    const getAvatar = (data) => {
 
-        return (
-            post.username ||
-            post.userName ||
-            post.authorUsername ||
-            post.name ||
-            post.fullName ||
-            "Viewora User"
+        const url =
+            data?.userPhoto ||
+            data?.photoURL ||
+            data?.avatar ||
+            data?.profilePhoto ||
+            "assets/default-avatar.png";
+
+        return safeURL(url) || "assets/default-avatar.png";
+    };
+
+
+    const getMediaURL = (data) => {
+
+        return safeURL(
+            data?.imageUrl ||
+            data?.mediaUrl ||
+            data?.image ||
+            data?.photoURL ||
+            data?.photo ||
+            ""
         );
-    }
+    };
 
 
-    function getUserPhoto(post) {
+    const getVideoURL = (data) => {
 
-        return (
-            post.profilePhoto ||
-            post.profilePhotoURL ||
-            post.photoURL ||
-            post.avatar ||
-            "assets/default-avatar.png"
+        return safeURL(
+            data?.videoUrl ||
+            data?.videoURL ||
+            data?.mediaUrl ||
+            data?.mediaURL ||
+            ""
         );
+    };
+
+
+    const getThumbnailURL = (data) => {
+
+        return safeURL(
+            data?.thumbnailUrl ||
+            data?.thumbnailURL ||
+            data?.thumbnail ||
+            data?.coverUrl ||
+            data?.imageUrl ||
+            ""
+        );
+    };
+
+
+    /* ======================================================
+       FIREBASE
+    ====================================================== */
+
+    function getDatabase() {
+
+        if (window.firebaseDB) {
+            return window.firebaseDB;
+        }
+
+        if (typeof firebase !== "undefined") {
+
+            try {
+                return firebase.database();
+            } catch (error) {
+                console.error(
+                    "Firebase database unavailable:",
+                    error
+                );
+            }
+
+        }
+
+        return null;
     }
 
 
-    /* =====================================================
-       LOAD POSTS
-    ===================================================== */
+    const db = getDatabase();
 
-    async function loadPosts() {
 
-        feed.innerHTML = `
-            <div class="feedLoading">
-                <div class="premiumLoader">
-                    <div class="loaderRing"></div>
-                    <div class="loaderRing"></div>
-                    <div class="loaderRing"></div>
-                </div>
-                <p>Loading Viewora...</p>
+    if (!db) {
+
+        console.error(
+            "Viewora: Firebase Database not found."
+        );
+
+        return;
+    }
+
+
+    /* ======================================================
+       DOM
+    ====================================================== */
+
+    const feedContainer = $("feedContainer");
+    const feedSkeleton = $("feedSkeleton");
+
+    const longVideoContainer =
+        $("longVideoContainer");
+
+    const videoSkeleton =
+        $("videoSkeleton");
+
+    const searchInput =
+        $("searchInput");
+
+    const searchResults =
+        $("searchResults");
+
+
+    /* ======================================================
+       LOADING
+    ====================================================== */
+
+    function hideSkeleton(element) {
+
+        if (!element) return;
+
+        element.style.display = "none";
+    }
+
+
+    function showEmpty(container, icon, title, text) {
+
+        if (!container) return;
+
+        container.innerHTML = `
+
+            <div class="emptyState">
+
+                <i class="${escapeHTML(icon)}"></i>
+
+                <h3>
+                    ${escapeHTML(title)}
+                </h3>
+
+                <p>
+                    ${escapeHTML(text)}
+                </p>
+
             </div>
+
         `;
-
-        try {
-
-            if (
-                typeof db === "undefined" ||
-                typeof postsRef !== "function"
-            ) {
-
-                throw new Error(
-                    "Firebase database is not available"
-                );
-
-            }
-
-            const snapshot =
-                await postsRef()
-                    .orderByChild("createdAt")
-                    .once("value");
-
-            const posts = [];
-
-            snapshot.forEach(child => {
-
-                const data = child.val() || {};
-
-                posts.push({
-
-                    id: child.key,
-
-                    ...data
-
-                });
-
-            });
-
-
-            /* Newest first */
-
-            posts.reverse();
-
-
-            if (!posts.length) {
-
-                feed.innerHTML = `
-                    <div class="emptyFeed glass">
-
-                        <div class="emptyIcon">
-                            <i class="fa-regular fa-images"></i>
-                        </div>
-
-                        <h2>No posts yet</h2>
-
-                        <p>
-                            Be the first person to share something
-                            with the Viewora community.
-                        </p>
-
-                        <button
-                            class="primaryBtn"
-                            onclick="location.href='upload.html'"
-                        >
-                            <i class="fa-solid fa-plus"></i>
-                            Create Post
-                        </button>
-
-                    </div>
-                `;
-
-                return;
-            }
-
-
-            feed.innerHTML = "";
-
-            posts.forEach(post => {
-
-                feed.insertAdjacentHTML(
-                    "beforeend",
-                    createPostHTML(post)
-                );
-
-            });
-
-
-            attachPostEvents();
-
-            console.log(
-                `✅ ${posts.length} posts loaded`
-            );
-
-        } catch (error) {
-
-            console.error(
-                "❌ Feed loading error:",
-                error
-            );
-
-            feed.innerHTML = `
-                <div class="emptyFeed glass">
-
-                    <div class="emptyIcon error">
-                        <i class="fa-solid fa-triangle-exclamation"></i>
-                    </div>
-
-                    <h2>Unable to load posts</h2>
-
-                    <p>
-                        Please check your internet connection
-                        and try again.
-                    </p>
-
-                    <button
-                        class="primaryBtn"
-                        id="retryFeed"
-                    >
-                        <i class="fa-solid fa-rotate"></i>
-                        Retry
-                    </button>
-
-                </div>
-            `;
-
-            const retry =
-                document.getElementById("retryFeed");
-
-            if (retry) {
-
-                retry.onclick = loadPosts;
-
-            }
-
-        }
-
     }
 
 
-    /* =====================================================
-       CREATE POST HTML
-    ===================================================== */
+    /* ======================================================
+       POST CARD
+    ====================================================== */
 
-    function createPostHTML(post) {
+    function createPostCard(id, data) {
 
-        const mediaURL =
-            getMediaURL(post);
+        const avatar =
+            getAvatar(data);
 
-        const caption =
-            getPostText(post);
+        const media =
+            getMediaURL(data);
 
         const username =
-            getUserName(post);
+            escapeHTML(
+                data.username ||
+                data.displayName ||
+                "Viewora User"
+            );
 
-        const profilePhoto =
-            getUserPhoto(post);
-
-        const video =
-            isVideo(post);
+        const caption =
+            escapeHTML(
+                data.caption ||
+                data.description ||
+                ""
+            );
 
         const likes =
-            Number(post.likesCount || post.likes || 0);
+            formatCount(
+                data.likesCount ||
+                data.likes ||
+                0
+            );
 
         const comments =
-            Number(post.commentsCount || post.comments || 0);
+            formatCount(
+                data.commentsCount ||
+                data.comments ||
+                0
+            );
 
         const views =
-            Number(post.views || post.viewCount || 0);
+            formatCount(
+                data.views ||
+                0
+            );
 
-        let mediaHTML = "";
-
-
-        /* ===============================================
-           MEDIA
-        =============================================== */
-
-        if (mediaURL) {
-
-            if (video) {
-
-                mediaHTML = `
-                    <div class="postMedia videoMedia">
-
-                        <video
-                            class="feedVideo"
-                            src="${escapeHTML(mediaURL)}"
-                            controls
-                            playsinline
-                            preload="metadata"
-                        ></video>
-
-                    </div>
-                `;
-
-            } else {
-
-                mediaHTML = `
-                    <div class="postMedia imageMedia">
-
-                        <img
-                            class="feedImage"
-                            src="${escapeHTML(mediaURL)}"
-                            alt="Viewora post"
-                            loading="lazy"
-                            onclick="openVieworaImage('${escapeHTML(mediaURL)}')"
-                            onerror="this.style.display='none'; this.parentElement.classList.add('mediaError');"
-                        >
-
-                        <div class="mediaErrorMessage">
-                            <i class="fa-regular fa-image"></i>
-                            <span>Image unavailable</span>
-                        </div>
-
-                    </div>
-                `;
-
-            }
-
-        }
+        const time =
+            formatTime(
+                data.createdAt ||
+                data.timestamp ||
+                data.time
+            );
 
 
-        /* ===============================================
-           USER INFO
-        =============================================== */
+        const article =
+            document.createElement("article");
 
-        return `
 
-        <article
-            class="postCard glass"
-            data-post-id="${escapeHTML(post.id)}"
-        >
+        article.className =
+            "vieworaPostCard";
+
+
+        article.dataset.postId =
+            id;
+
+
+        article.innerHTML = `
 
             <div class="postHeader">
 
-                <div
+                <button
                     class="postUser"
-                    onclick="location.href='profile.html?uid=${encodeURIComponent(post.uid || post.userId || "")}'"
+                    type="button"
+                    data-user-id="${escapeHTML(
+                        data.uid ||
+                        data.userId ||
+                        ""
+                    )}"
                 >
 
                     <img
-                        class="postAvatar"
-                        src="${escapeHTML(profilePhoto)}"
+                        src="${escapeHTML(avatar)}"
                         alt="${escapeHTML(username)}"
-                        onerror="this.src='assets/default-avatar.png'"
+                        class="postAvatar"
+                        loading="lazy"
                     >
 
-                    <div class="postUserInfo">
+                    <span class="postUserInfo">
 
-                        <h3>
-                            ${escapeHTML(username)}
+                        <strong>
+                            ${username}
+                        </strong>
 
-                            ${
-                                post.verified === true
-                                ? `
-                                    <i
-                                        class="fa-solid fa-circle-check verifiedBadge"
-                                    ></i>
-                                  `
-                                : ""
-                            }
+                        <small>
+                            ${escapeHTML(time)}
+                        </small>
 
-                        </h3>
+                    </span>
+
+                </button>
+
+                <button
+                    class="postMore"
+                    type="button"
+                    aria-label="More options"
+                >
+                    <i class="fa-solid fa-ellipsis"></i>
+                </button>
+
+            </div>
+
+
+            ${
+                media
+                    ? `
+                        <div class="postMediaWrap">
+
+                            <img
+                                src="${escapeHTML(media)}"
+                                alt="Viewora post"
+                                class="postMedia"
+                                loading="lazy"
+                                data-view-image="${escapeHTML(media)}"
+                            >
+
+                        </div>
+                      `
+                    : ""
+            }
+
+
+            ${
+                caption
+                    ? `
+                        <div class="postCaption">
+
+                            ${caption}
+
+                        </div>
+                      `
+                    : ""
+            }
+
+
+            <div class="postActions">
+
+                <button
+                    type="button"
+                    class="postAction"
+                    data-action="like"
+                >
+                    <i class="fa-regular fa-heart"></i>
+
+                    <span>
+                        ${likes}
+                    </span>
+                </button>
+
+
+                <button
+                    type="button"
+                    class="postAction"
+                    data-action="comment"
+                >
+                    <i class="fa-regular fa-comment"></i>
+
+                    <span>
+                        ${comments}
+                    </span>
+                </button>
+
+
+                <button
+                    type="button"
+                    class="postAction"
+                    data-action="share"
+                >
+                    <i class="fa-regular fa-paper-plane"></i>
+                </button>
+
+
+                <button
+                    type="button"
+                    class="postAction saveAction"
+                    data-action="save"
+                >
+                    <i class="fa-regular fa-bookmark"></i>
+                </button>
+
+            </div>
+
+
+            <div class="postStats">
+
+                <span>
+                    ${views} views
+                </span>
+
+            </div>
+
+        `;
+
+
+        return article;
+    }
+
+
+    /* ======================================================
+       RENDER POSTS
+    ====================================================== */
+
+    function renderPosts(snapshot) {
+
+        if (!feedContainer) return;
+
+        feedContainer.innerHTML = "";
+
+        const posts = [];
+
+
+        snapshot.forEach((child) => {
+
+            const data =
+                child.val() || {};
+
+
+            /*
+             * Only normal posts.
+             * Videos/shorts are ignored here.
+             */
+
+            const type =
+                String(
+                    data.type ||
+                    "post"
+                ).toLowerCase();
+
+
+            if (
+                type === "post" ||
+                type === "image" ||
+                type === "photo" ||
+                !data.type
+            ) {
+
+                posts.push({
+                    id: child.key,
+                    data
+                });
+
+            }
+
+        });
+
+
+        posts.sort((a, b) => {
+
+            const timeA =
+                Number(
+                    a.data.createdAt ||
+                    a.data.timestamp ||
+                    0
+                );
+
+            const timeB =
+                Number(
+                    b.data.createdAt ||
+                    b.data.timestamp ||
+                    0
+                );
+
+            return timeB - timeA;
+
+        });
+
+
+        hideSkeleton(feedSkeleton);
+
+
+        if (!posts.length) {
+
+            showEmpty(
+                feedContainer,
+                "fa-regular fa-images",
+                "No posts yet",
+                "When people share posts, they will appear here."
+            );
+
+            return;
+        }
+
+
+        const fragment =
+            document.createDocumentFragment();
+
+
+        posts.forEach((post) => {
+
+            fragment.appendChild(
+                createPostCard(
+                    post.id,
+                    post.data
+                )
+            );
+
+        });
+
+
+        feedContainer.appendChild(fragment);
+
+
+        bindPostEvents();
+
+    }
+
+
+    /* ======================================================
+       LOAD POSTS
+    ====================================================== */
+
+    function loadPosts() {
+
+        if (!feedContainer) return;
+
+
+        if (feedSkeleton) {
+            feedSkeleton.style.display = "";
+        }
+
+
+        db.ref("posts")
+            .on(
+                "value",
+                renderPosts,
+                (error) => {
+
+                    console.error(
+                        "Viewora posts error:",
+                        error
+                    );
+
+                    hideSkeleton(feedSkeleton);
+
+                    showEmpty(
+                        feedContainer,
+                        "fa-solid fa-triangle-exclamation",
+                        "Unable to load posts",
+                        "Please check your Firebase connection."
+                    );
+
+                }
+            );
+
+    }
+
+
+    /* ======================================================
+       LONG VIDEO CARD
+    ====================================================== */
+
+    function createVideoCard(id, data) {
+
+        const video =
+            getVideoURL(data);
+
+        const thumbnail =
+            getThumbnailURL(data);
+
+        const avatar =
+            getAvatar(data);
+
+        const title =
+            escapeHTML(
+                data.title ||
+                data.caption ||
+                "Untitled video"
+            );
+
+        const username =
+            escapeHTML(
+                data.username ||
+                data.displayName ||
+                "Viewora User"
+            );
+
+        const views =
+            formatCount(
+                data.views ||
+                0
+            );
+
+        const time =
+            formatTime(
+                data.createdAt ||
+                data.timestamp ||
+                data.time
+            );
+
+
+        const card =
+            document.createElement("article");
+
+
+        card.className =
+            "longVideoCard";
+
+
+        card.dataset.videoId =
+            id;
+
+
+        card.innerHTML = `
+
+            <div
+                class="videoThumbnailWrap"
+                data-video-id="${escapeHTML(id)}"
+            >
+
+                ${
+                    thumbnail
+                        ? `
+                            <img
+                                src="${escapeHTML(thumbnail)}"
+                                class="videoThumbnail"
+                                alt="${title}"
+                                loading="lazy"
+                            >
+                          `
+                        : `
+                            <div class="videoThumbnailFallback">
+                                <i class="fa-solid fa-play"></i>
+                            </div>
+                          `
+                }
+
+
+                <span class="videoPlayButton">
+
+                    <i class="fa-solid fa-play"></i>
+
+                </span>
+
+            </div>
+
+
+            <div class="videoInfo">
+
+                <img
+                    src="${escapeHTML(avatar)}"
+                    alt="${username}"
+                    class="videoAvatar"
+                    loading="lazy"
+                >
+
+
+                <div class="videoMeta">
+
+                    <h3>
+                        ${title}
+                    </h3>
+
+                    <div class="videoSubMeta">
 
                         <span>
-                            ${formatTime(
-                                post.createdAt ||
-                                post.timestamp
-                            )}
+                            ${username}
+                        </span>
+
+                        <span>•</span>
+
+                        <span>
+                            ${views} views
+                        </span>
+
+                        <span>•</span>
+
+                        <span>
+                            ${escapeHTML(time)}
                         </span>
 
                     </div>
@@ -469,196 +743,198 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
                 <button
-                    class="postMore"
-                    data-post-id="${escapeHTML(post.id)}"
+                    class="videoMore"
+                    type="button"
                     aria-label="More"
                 >
 
-                    <i class="fa-solid fa-ellipsis"></i>
+                    <i class="fa-solid fa-ellipsis-vertical"></i>
 
                 </button>
 
             </div>
-
-
-            ${
-                caption
-                ? `
-                    <div class="postContent">
-                        <p>${escapeHTML(caption)}</p>
-                    </div>
-                  `
-                : ""
-            }
-
-
-            ${mediaHTML}
-
-
-            <div class="postStats">
-
-                <span>
-                    <i class="fa-regular fa-heart"></i>
-                    <b class="likeCount">${likes}</b>
-                </span>
-
-                <span>
-                    <i class="fa-regular fa-comment"></i>
-                    <b>${comments}</b>
-                </span>
-
-                <span>
-                    <i class="fa-regular fa-eye"></i>
-                    <b>${views}</b>
-                </span>
-
-            </div>
-
-
-            <div class="postActions">
-
-                <button
-                    class="postAction likeButton"
-                    data-post-id="${escapeHTML(post.id)}"
-                >
-
-                    <i class="fa-regular fa-heart"></i>
-
-                    <span>Like</span>
-
-                </button>
-
-
-                <button
-                    class="postAction commentButton"
-                    data-post-id="${escapeHTML(post.id)}"
-                >
-
-                    <i class="fa-regular fa-comment"></i>
-
-                    <span>Comment</span>
-
-                </button>
-
-
-                <button
-                    class="postAction shareButton"
-                    data-post-id="${escapeHTML(post.id)}"
-                >
-
-                    <i class="fa-solid fa-share"></i>
-
-                    <span>Share</span>
-
-                </button>
-
-
-                <button
-                    class="postAction saveButton"
-                    data-post-id="${escapeHTML(post.id)}"
-                >
-
-                    <i class="fa-regular fa-bookmark"></i>
-
-                    <span>Save</span>
-
-                </button>
-
-            </div>
-
-        </article>
 
         `;
+
+
+        return card;
+    }
+
+
+    /* ======================================================
+       RENDER LONG VIDEOS
+    ====================================================== */
+
+    function renderLongVideos(snapshot) {
+
+        if (!longVideoContainer) return;
+
+        longVideoContainer.innerHTML = "";
+
+        const videos = [];
+
+
+        snapshot.forEach((child) => {
+
+            const data =
+                child.val() || {};
+
+
+            const type =
+                String(
+                    data.type ||
+                    ""
+                ).toLowerCase();
+
+
+            if (
+                type === "video" ||
+                type === "long_video" ||
+                type === "long-video" ||
+                Boolean(
+                    data.videoUrl ||
+                    data.videoURL
+                )
+            ) {
+
+                videos.push({
+                    id: child.key,
+                    data
+                });
+
+            }
+
+        });
+
+
+        videos.sort((a, b) => {
+
+            const timeA =
+                Number(
+                    a.data.createdAt ||
+                    a.data.timestamp ||
+                    0
+                );
+
+            const timeB =
+                Number(
+                    b.data.createdAt ||
+                    b.data.timestamp ||
+                    0
+                );
+
+            return timeB - timeA;
+
+        });
+
+
+        hideSkeleton(videoSkeleton);
+
+
+        if (!videos.length) {
+
+            showEmpty(
+                longVideoContainer,
+                "fa-solid fa-video",
+                "No long videos yet",
+                "Long videos will appear here."
+            );
+
+            return;
+        }
+
+
+        const fragment =
+            document.createDocumentFragment();
+
+
+        videos.forEach((video) => {
+
+            fragment.appendChild(
+                createVideoCard(
+                    video.id,
+                    video.data
+                )
+            );
+
+        });
+
+
+        longVideoContainer.appendChild(fragment);
+
+
+        bindVideoEvents();
 
     }
 
 
-    /* =====================================================
-       EVENTS
-    ===================================================== */
+    /* ======================================================
+       LOAD LONG VIDEOS
+    ====================================================== */
 
-    function attachPostEvents() {
+    function loadLongVideos() {
 
-        /* ===============================================
-           LIKE
-        =============================================== */
+        if (!longVideoContainer) return;
 
-        document
-            .querySelectorAll(".likeButton")
-            .forEach(button => {
 
-                button.addEventListener(
+        db.ref("posts")
+            .on(
+                "value",
+                renderLongVideos,
+                (error) => {
+
+                    console.error(
+                        "Viewora videos error:",
+                        error
+                    );
+
+                    hideSkeleton(videoSkeleton);
+
+                }
+            );
+
+    }
+
+
+    /* ======================================================
+       POST EVENTS
+    ====================================================== */
+
+    function bindPostEvents() {
+
+        if (!feedContainer) return;
+
+
+        feedContainer
+            .querySelectorAll(
+                "[data-view-image]"
+            )
+            .forEach((image) => {
+
+                image.addEventListener(
                     "click",
-                    async function () {
+                    () => {
 
-                        const postId =
-                            this.dataset.postId;
+                        const url =
+                            image.dataset.viewImage;
 
-                        if (!postId) return;
+                        const viewer =
+                            $("imageViewer");
 
-                        const uid =
-                            typeof getUID === "function"
-                            ? getUID()
-                            : null;
+                        const viewerImage =
+                            $("viewerImage");
 
-                        if (!uid) {
+                        if (
+                            viewer &&
+                            viewerImage &&
+                            url
+                        ) {
 
-                            location.href =
-                                "login.html";
+                            viewerImage.src =
+                                url;
 
-                            return;
-
-                        }
-
-                        const likeRef =
-                            db.ref(
-                                `likes/${postId}/${uid}`
-                            );
-
-                        try {
-
-                            const snap =
-                                await likeRef.once(
-                                    "value"
-                                );
-
-                            if (snap.exists()) {
-
-                                await likeRef.remove();
-
-                                this.classList.remove(
-                                    "liked"
-                                );
-
-                                this.querySelector(
-                                    "i"
-                                ).className =
-                                    "fa-regular fa-heart";
-
-                            } else {
-
-                                await likeRef.set({
-                                    uid: uid,
-                                    createdAt:
-                                        SERVER_TIME
-                                });
-
-                                this.classList.add(
-                                    "liked"
-                                );
-
-                                this.querySelector(
-                                    "i"
-                                ).className =
-                                    "fa-solid fa-heart";
-
-                            }
-
-                        } catch (error) {
-
-                            console.error(
-                                "Like error:",
-                                error
+                            viewer.classList.remove(
+                                "hidden"
                             );
 
                         }
@@ -669,46 +945,27 @@ document.addEventListener("DOMContentLoaded", () => {
             });
 
 
-        /* ===============================================
-           COMMENTS
-        =============================================== */
-
-        document
-            .querySelectorAll(".commentButton")
-            .forEach(button => {
+        feedContainer
+            .querySelectorAll(
+                '[data-action="share"]'
+            )
+            .forEach((button) => {
 
                 button.addEventListener(
                     "click",
-                    function () {
+                    async () => {
+
+                        const card =
+                            button.closest(
+                                ".vieworaPostCard"
+                            );
 
                         const postId =
-                            this.dataset.postId;
-
-                        openComments(postId);
-
-                    }
-                );
-
-            });
-
-
-        /* ===============================================
-           SHARE
-        =============================================== */
-
-        document
-            .querySelectorAll(".shareButton")
-            .forEach(button => {
-
-                button.addEventListener(
-                    "click",
-                    async function () {
-
-                        const postId =
-                            this.dataset.postId;
+                            card?.dataset.postId;
 
                         const shareURL =
-                            `${location.origin}${location.pathname}?post=${encodeURIComponent(postId)}`;
+                            `${location.origin}${location.pathname}?post=${encodeURIComponent(postId || "")}`;
+
 
                         try {
 
@@ -717,26 +974,22 @@ document.addEventListener("DOMContentLoaded", () => {
                             ) {
 
                                 await navigator.share({
-
                                     title:
                                         "Viewora Post",
-
-                                    text:
-                                        "Check this post on Viewora",
-
                                     url:
                                         shareURL
-
                                 });
 
-                            } else {
+                            } else if (
+                                navigator.clipboard
+                            ) {
 
                                 await navigator.clipboard.writeText(
                                     shareURL
                                 );
 
                                 showToast(
-                                    "Link copied!"
+                                    "Post link copied"
                                 );
 
                             }
@@ -744,89 +997,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         } catch (error) {
 
                             console.log(
-                                "Share cancelled"
-                            );
-
-                        }
-
-                    }
-                );
-
-            });
-
-
-        /* ===============================================
-           SAVE
-        =============================================== */
-
-        document
-            .querySelectorAll(".saveButton")
-            .forEach(button => {
-
-                button.addEventListener(
-                    "click",
-                    async function () {
-
-                        const uid =
-                            typeof getUID === "function"
-                            ? getUID()
-                            : null;
-
-                        const postId =
-                            this.dataset.postId;
-
-                        if (!uid) {
-
-                            location.href =
-                                "login.html";
-
-                            return;
-
-                        }
-
-                        try {
-
-                            const ref =
-                                db.ref(
-                                    `savedPosts/${uid}/${postId}`
-                                );
-
-                            const snap =
-                                await ref.once("value");
-
-                            if (snap.exists()) {
-
-                                await ref.remove();
-
-                                this.querySelector(
-                                    "i"
-                                ).className =
-                                    "fa-regular fa-bookmark";
-
-                            } else {
-
-                                await ref.set({
-
-                                    postId:
-                                        postId,
-
-                                    savedAt:
-                                        SERVER_TIME
-
-                                });
-
-                                this.querySelector(
-                                    "i"
-                                ).className =
-                                    "fa-solid fa-bookmark";
-
-                            }
-
-                        } catch (error) {
-
-                            console.error(
-                                "Save error:",
-                                error
+                                "Share cancelled."
                             );
 
                         }
@@ -839,66 +1010,129 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
 
-    /* =====================================================
-       IMAGE VIEWER
-    ===================================================== */
+    /* ======================================================
+       VIDEO EVENTS
+    ====================================================== */
 
-    window.openVieworaImage =
-        function (url) {
+    function bindVideoEvents() {
 
-            const viewer =
-                document.getElementById(
-                    "imageViewer"
+        if (!longVideoContainer) return;
+
+
+        longVideoContainer
+            .querySelectorAll(
+                ".videoThumbnailWrap"
+            )
+            .forEach((thumbnail) => {
+
+                thumbnail.addEventListener(
+                    "click",
+                    () => {
+
+                        const card =
+                            thumbnail.closest(
+                                ".longVideoCard"
+                            );
+
+                        if (!card) return;
+
+                        const id =
+                            card.dataset.videoId;
+
+                        const videoViewer =
+                            $("videoViewer");
+
+                        const viewerVideo =
+                            $("viewerVideo");
+
+
+                        if (
+                            !videoViewer ||
+                            !viewerVideo
+                        ) {
+                            return;
+                        }
+
+
+                        db.ref(
+                            "posts/" + id
+                        )
+                        .once("value")
+                        .then((snapshot) => {
+
+                            const data =
+                                snapshot.val() ||
+                                {};
+
+                            const url =
+                                getVideoURL(data);
+
+
+                            if (!url) {
+
+                                showToast(
+                                    "Video unavailable"
+                                );
+
+                                return;
+                            }
+
+
+                            viewerVideo.src =
+                                url;
+
+                            videoViewer.classList.remove(
+                                "hidden"
+                            );
+
+                            viewerVideo.play()
+                                .catch(() => {});
+
+                        })
+                        .catch((error) => {
+
+                            console.error(
+                                "Video open error:",
+                                error
+                            );
+
+                        });
+
+                    }
                 );
 
-            const image =
-                document.getElementById(
-                    "viewerImage"
-                );
+            });
 
-            if (!viewer || !image) {
+    }
 
-                window.open(url, "_blank");
 
-                return;
-
-            }
-
-            image.src = url;
-
-            viewer.classList.remove(
-                "hidden"
-            );
-
-        };
-
+    /* ======================================================
+       IMAGE VIEWER CLOSE
+    ====================================================== */
 
     const closeViewer =
-        document.getElementById(
-            "closeViewer"
-        );
+        $("closeViewer");
 
-    if (closeViewer) {
+
+    const imageViewer =
+        $("imageViewer");
+
+
+    if (
+        closeViewer &&
+        imageViewer
+    ) {
 
         closeViewer.addEventListener(
             "click",
             () => {
 
-                const viewer =
-                    document.getElementById(
-                        "imageViewer"
-                    );
+                imageViewer.classList.add(
+                    "hidden"
+                );
 
                 const image =
-                    document.getElementById(
-                        "viewerImage"
-                    );
-
-                if (viewer) {
-                    viewer.classList.add(
-                        "hidden"
-                    );
-                }
+                    $("viewerImage");
 
                 if (image) {
                     image.src = "";
@@ -910,157 +1144,46 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
 
-    /* =====================================================
-       COMMENTS MODAL
-    ===================================================== */
+    /* ======================================================
+       VIDEO VIEWER CLOSE
+    ====================================================== */
 
-    async function openComments(postId) {
-
-        const modal =
-            document.getElementById(
-                "commentModal"
-            );
-
-        const container =
-            document.getElementById(
-                "commentsContainer"
-            );
-
-        if (!modal || !container) return;
-
-        modal.classList.remove(
-            "hidden"
-        );
-
-        container.innerHTML = `
-            <div class="commentsLoading">
-                Loading comments...
-            </div>
-        `;
-
-        try {
-
-            const snapshot =
-                await commentsRef(postId)
-                    .orderByChild("createdAt")
-                    .once("value");
-
-            container.innerHTML = "";
-
-            if (!snapshot.exists()) {
-
-                container.innerHTML = `
-                    <div class="commentsEmpty">
-                        No comments yet.
-                        <br>
-                        Be the first to comment.
-                    </div>
-                `;
-
-                return;
-
-            }
-
-            const comments = [];
-
-            snapshot.forEach(child => {
-
-                comments.push({
-
-                    id: child.key,
-
-                    ...child.val()
-
-                });
-
-            });
-
-            comments.forEach(comment => {
-
-                container.insertAdjacentHTML(
-                    "beforeend",
-                    `
-                    <div class="commentItem">
-
-                        <img
-                            src="${
-                                escapeHTML(
-                                    comment.profilePhoto ||
-                                    comment.photoURL ||
-                                    "assets/default-avatar.png"
-                                )
-                            }"
-                            onerror="this.src='assets/default-avatar.png'"
-                        >
-
-                        <div>
-
-                            <b>
-                                ${escapeHTML(
-                                    comment.username ||
-                                    comment.name ||
-                                    "Viewora User"
-                                )}
-                            </b>
-
-                            <p>
-                                ${escapeHTML(
-                                    comment.text ||
-                                    comment.comment ||
-                                    ""
-                                )}
-                            </p>
-
-                            <small>
-                                ${formatTime(
-                                    comment.createdAt
-                                )}
-                            </small>
-
-                        </div>
-
-                    </div>
-                    `
-                );
-
-            });
-
-        } catch (error) {
-
-            console.error(
-                "Comments error:",
-                error
-            );
-
-            container.innerHTML = `
-                <div class="commentsEmpty">
-                    Unable to load comments.
-                </div>
-            `;
-
-        }
-
-    }
+    const closeVideo =
+        $("closeVideo");
 
 
-    const closeComment =
-        document.getElementById(
-            "closeComment"
-        );
+    const videoViewer =
+        $("videoViewer");
 
-    if (closeComment) {
 
-        closeComment.addEventListener(
+    const viewerVideo =
+        $("viewerVideo");
+
+
+    if (
+        closeVideo &&
+        videoViewer
+    ) {
+
+        closeVideo.addEventListener(
             "click",
             () => {
 
-                document
-                    .getElementById(
-                        "commentModal"
-                    )
-                    ?.classList.add(
-                        "hidden"
+                videoViewer.classList.add(
+                    "hidden"
+                );
+
+                if (viewerVideo) {
+
+                    viewerVideo.pause();
+
+                    viewerVideo.removeAttribute(
+                        "src"
                     );
+
+                    viewerVideo.load();
+
+                }
 
             }
         );
@@ -1068,83 +1191,224 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
 
-    /* =====================================================
+    /* ======================================================
        TOAST
-    ===================================================== */
+    ====================================================== */
+
+    let toastTimer = null;
+
 
     function showToast(message) {
 
         const toast =
-            document.getElementById(
-                "toast"
-            );
+            $("toast");
 
-        const text =
-            document.getElementById(
-                "toastText"
-            );
+        const toastText =
+            $("toastText");
 
-        if (!toast || !text) return;
 
-        text.textContent =
+        if (!toast || !toastText) return;
+
+
+        toastText.textContent =
             message;
+
 
         toast.classList.remove(
             "hidden"
         );
 
-        setTimeout(() => {
 
-            toast.classList.add(
-                "hidden"
+        clearTimeout(
+            toastTimer
+        );
+
+
+        toastTimer =
+            setTimeout(
+                () => {
+
+                    toast.classList.add(
+                        "hidden"
+                    );
+
+                },
+                2200
             );
-
-        }, 2200);
 
     }
 
 
-    window.vieworaToast =
-        showToast;
-
-
-    /* =====================================================
+    /* ======================================================
        SEARCH
-    ===================================================== */
+    ====================================================== */
 
-    const searchInput =
-        document.getElementById(
-            "searchInput"
-        );
+    let allUsersCache = null;
+
+
+    function loadUsersForSearch() {
+
+        if (allUsersCache) {
+            return Promise.resolve(
+                allUsersCache
+            );
+        }
+
+
+        return db.ref("users")
+            .once("value")
+            .then((snapshot) => {
+
+                const users = [];
+
+
+                snapshot.forEach((child) => {
+
+                    users.push({
+                        id: child.key,
+                        data:
+                            child.val() || {}
+                    });
+
+                });
+
+
+                allUsersCache =
+                    users;
+
+
+                return users;
+
+            });
+
+    }
+
+
+    function renderSearchResults(query) {
+
+        if (!searchResults) return;
+
+
+        query =
+            String(query || "")
+                .trim()
+                .toLowerCase();
+
+
+        if (!query) {
+
+            searchResults.innerHTML =
+                "";
+
+            return;
+        }
+
+
+        loadUsersForSearch()
+            .then((users) => {
+
+                const matches =
+                    users
+                        .filter((item) => {
+
+                            const name =
+                                String(
+                                    item.data.username ||
+                                    item.data.displayName ||
+                                    ""
+                                )
+                                .toLowerCase();
+
+                            return name.includes(
+                                query
+                            );
+
+                        })
+                        .slice(0, 10);
+
+
+                if (!matches.length) {
+
+                    searchResults.innerHTML = `
+
+                        <div class="emptyState">
+
+                            <i class="fa-solid fa-user-slash"></i>
+
+                            <p>
+                                No users found
+                            </p>
+
+                        </div>
+
+                    `;
+
+                    return;
+                }
+
+
+                searchResults.innerHTML =
+                    matches
+                        .map((item) => {
+
+                            const name =
+                                escapeHTML(
+                                    item.data.username ||
+                                    item.data.displayName ||
+                                    "User"
+                                );
+
+                            const avatar =
+                                getAvatar(
+                                    item.data
+                                );
+
+
+                            return `
+
+                                <a
+                                    href="profile.html?uid=${encodeURIComponent(item.id)}"
+                                    class="searchUser"
+                                >
+
+                                    <img
+                                        src="${escapeHTML(avatar)}"
+                                        alt="${name}"
+                                    >
+
+                                    <span>
+                                        ${name}
+                                    </span>
+
+                                </a>
+
+                            `;
+
+                        })
+                        .join("");
+
+            })
+            .catch((error) => {
+
+                console.error(
+                    "Search error:",
+                    error
+                );
+
+            });
+
+    }
+
 
     if (searchInput) {
 
         searchInput.addEventListener(
             "input",
-            function () {
+            () => {
 
-                const query =
-                    this.value
-                        .trim()
-                        .toLowerCase();
-
-                document
-                    .querySelectorAll(
-                        ".postCard"
-                    )
-                    .forEach(card => {
-
-                        const text =
-                            card.textContent
-                                .toLowerCase();
-
-                        card.style.display =
-                            !query ||
-                            text.includes(query)
-                            ? ""
-                            : "none";
-
-                    });
+                renderSearchResults(
+                    searchInput.value
+                );
 
             }
         );
@@ -1152,10 +1416,239 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
 
-    /* =====================================================
+    /* ======================================================
+       CATEGORY FILTER
+       Sends event to feed.
+    ====================================================== */
+
+    window.addEventListener(
+        "viewora:category-change",
+        (event) => {
+
+            const category =
+                event.detail?.category ||
+                "all";
+
+
+            document
+                .querySelectorAll(
+                    ".vieworaPostCard, .longVideoCard"
+                )
+                .forEach((card) => {
+
+                    if (
+                        category === "all"
+                    ) {
+
+                        card.style.display =
+                            "";
+
+                        return;
+                    }
+
+
+                    /*
+                     * Category filtering is handled
+                     * from dataset when available.
+                     */
+
+                    const itemCategory =
+                        String(
+                            card.dataset.category ||
+                            ""
+                        )
+                        .toLowerCase();
+
+
+                    if (
+                        itemCategory &&
+                        itemCategory !== category
+                    ) {
+
+                        card.style.display =
+                            "none";
+
+                    } else {
+
+                        card.style.display =
+                            "";
+
+                    }
+
+                });
+
+        }
+    );
+
+
+    /* ======================================================
+       STORIES
+    ====================================================== */
+
+    function loadStories() {
+
+        const container =
+            $("firebaseStories");
+
+
+        if (!container) return;
+
+
+        db.ref("stories")
+            .on(
+                "value",
+                (snapshot) => {
+
+                    container.innerHTML =
+                        "";
+
+
+                    const stories = [];
+
+
+                    snapshot.forEach((child) => {
+
+                        const data =
+                            child.val() ||
+                            {};
+
+
+                        stories.push({
+                            id: child.key,
+                            data
+                        });
+
+                    });
+
+
+                    stories.sort(
+                        (a, b) =>
+                            Number(
+                                b.data.createdAt ||
+                                b.data.timestamp ||
+                                0
+                            ) -
+                            Number(
+                                a.data.createdAt ||
+                                a.data.timestamp ||
+                                0
+                            )
+                    );
+
+
+                    stories
+                        .slice(0, 20)
+                        .forEach((story) => {
+
+                            const data =
+                                story.data;
+
+
+                            const avatar =
+                                getAvatar(
+                                    data
+                                );
+
+
+                            const username =
+                                escapeHTML(
+                                    data.username ||
+                                    data.displayName ||
+                                    "User"
+                                );
+
+
+                            const button =
+                                document.createElement(
+                                    "button"
+                                );
+
+
+                            button.type =
+                                "button";
+
+
+                            button.className =
+                                "storyCard";
+
+
+                            button.innerHTML = `
+
+                                <div class="storyImageWrap">
+
+                                    <img
+                                        src="${escapeHTML(avatar)}"
+                                        alt="${username}"
+                                        class="storyImage"
+                                        loading="lazy"
+                                    >
+
+                                </div>
+
+                                <span class="storyName">
+                                    ${username}
+                                </span>
+
+                            `;
+
+
+                            container.appendChild(
+                                button
+                            );
+
+                        });
+
+                },
+                (error) => {
+
+                    console.error(
+                        "Stories error:",
+                        error
+                    );
+
+                }
+            );
+
+    }
+
+
+    /* ======================================================
        START
-    ===================================================== */
+    ====================================================== */
 
-    loadPosts();
+    function initialize() {
 
-});
+        console.log(
+            "Viewora Index initialized."
+        );
+
+
+        loadPosts();
+
+        loadLongVideos();
+
+        loadStories();
+
+    }
+
+
+    if (
+        document.readyState ===
+        "loading"
+    ) {
+
+        document.addEventListener(
+            "DOMContentLoaded",
+            initialize,
+            {
+                once: true
+            }
+        );
+
+    } else {
+
+        initialize();
+
+    }
+
+})();

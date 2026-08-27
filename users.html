@@ -2,7 +2,6 @@
 <html lang="en">
 
 <head>
-
     <meta charset="UTF-8">
 
     <meta
@@ -16,142 +15,121 @@
     >
 
     <meta
-        name="description"
-        content="Discover people and creators on Viewora."
+        name="color-scheme"
+        content="dark"
     >
 
-    <title>Viewora • Discover People</title>
-
-
-    <!-- =====================================================
-         FONTS
-    ====================================================== -->
-
-    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <title>Viewora • Discover</title>
 
     <link
-        rel="preconnect"
-        href="https://fonts.gstatic.com"
-        crossorigin
+        rel="icon"
+        href="assets/logo.png"
     >
-
-    <link
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
-        rel="stylesheet"
-    >
-
-
-    <!-- =====================================================
-         FONT AWESOME
-    ====================================================== -->
-
-    <link
-        rel="stylesheet"
-        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
-    >
-
-
-    <!-- =====================================================
-         VIEWORA CSS
-    ====================================================== -->
 
     <link
         rel="stylesheet"
         href="users.css"
     >
 
-    <link
-        rel="stylesheet"
-        href="nav.css"
-    >
-
+  
 </head>
 
 
 <body>
 
-
     <!-- =====================================================
-         BACKGROUND
-    ====================================================== -->
-
-    <div class="pageBackground">
-
-        <div class="glow glowOne"></div>
-
-        <div class="glow glowTwo"></div>
-
-        <div class="glow glowThree"></div>
-
-    </div>
-
-
-    <!-- =====================================================
-         LOADER
-    ====================================================== -->
-
-    <div
-        id="pageLoader"
-        class="pageLoader"
-    >
-
-        <div class="loaderLogo">
-
-            <div class="loaderRing"></div>
-
-            <div class="loaderDot"></div>
-
-        </div>
-
-        <h2>Viewora</h2>
-
-        <p>Discovering people...</p>
-
-    </div>
-
-
-    <!-- =====================================================
-         MAIN APP
+         APP
     ====================================================== -->
 
     <main
         id="app"
-        class="usersPage hidden"
+        class="discover-page"
     >
-
 
         <!-- =================================================
              HEADER
         ================================================== -->
 
-        <header class="usersHeader">
+        <header
+            class="discover-header"
+            aria-label="Discover header"
+        >
 
             <button
+                class="header-btn back-btn"
                 id="backBtn"
-                class="headerIcon"
                 type="button"
                 aria-label="Go back"
             >
-
-                <i class="fa-solid fa-arrow-left"></i>
-
+                <svg
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    aria-hidden="true"
+                >
+                    <path
+                        d="M15 18L9 12L15 6"
+                        stroke="currentColor"
+                        stroke-width="2.4"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                    />
+                </svg>
             </button>
 
 
-            <div class="headerBrand">
+            <div class="discover-title">
 
-                <div class="brandIcon">
+                <div class="discover-title-icon">
 
-                    <i class="fa-solid fa-users"></i>
+                    <svg
+                        width="27"
+                        height="27"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        aria-hidden="true"
+                    >
+                        <path
+                            d="M16 21V19C16 16.79 14.21 15 12 15H6C3.79 15 2 16.79 2 19V21"
+                            stroke="currentColor"
+                            stroke-width="1.9"
+                            stroke-linecap="round"
+                        />
+
+                        <circle
+                            cx="9"
+                            cy="7"
+                            r="4"
+                            stroke="currentColor"
+                            stroke-width="1.9"
+                        />
+
+                        <path
+                            d="M19 8V14"
+                            stroke="currentColor"
+                            stroke-width="1.9"
+                            stroke-linecap="round"
+                        />
+
+                        <path
+                            d="M22 11H16"
+                            stroke="currentColor"
+                            stroke-width="1.9"
+                            stroke-linecap="round"
+                        />
+                    </svg>
 
                 </div>
 
 
-                <div class="headerText">
+                <div>
 
                     <h1>Discover</h1>
 
-                    <p>People on Viewora</p>
+                    <span>
+                        People on Viewora
+                    </span>
 
                 </div>
 
@@ -159,13 +137,51 @@
 
 
             <button
-                id="refreshBtn"
-                class="headerIcon"
+                class="header-btn refresh-btn"
+                id="refreshUsers"
                 type="button"
-                aria-label="Refresh"
+                aria-label="Refresh users"
             >
 
-                <i class="fa-solid fa-rotate"></i>
+                <svg
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    aria-hidden="true"
+                >
+                    <path
+                        d="M20 11A8.1 8.1 0 0 0 5.2 6.3L3 9"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                    />
+
+                    <path
+                        d="M3 4V9H8"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                    />
+
+                    <path
+                        d="M4 13A8.1 8.1 0 0 0 18.8 17.7L21 15"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                    />
+
+                    <path
+                        d="M21 20V15H16"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                    />
+                </svg>
 
             </button>
 
@@ -173,322 +189,363 @@
 
 
         <!-- =================================================
-             HERO
+             STATS
         ================================================== -->
 
-        <section class="discoverHero">
+        <section
+            class="discover-stats"
+            aria-label="Community statistics"
+        >
 
-            <div class="heroContent">
+            <!-- Users -->
 
-                <span class="heroBadge">
+            <article class="stat-card">
 
-                    <i class="fa-solid fa-sparkles"></i>
+                <div class="stat-icon">
 
-                    Viewora Community
+                    <svg
+                        width="21"
+                        height="21"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        aria-hidden="true"
+                    >
+                        <path
+                            d="M16 21V19C16 16.8 14.2 15 12 15H6C3.8 15 2 16.8 2 19V21"
+                            stroke="currentColor"
+                            stroke-width="1.8"
+                            stroke-linecap="round"
+                        />
 
-                </span>
+                        <circle
+                            cx="9"
+                            cy="7"
+                            r="4"
+                            stroke="currentColor"
+                            stroke-width="1.8"
+                        />
 
+                        <path
+                            d="M22 21V19C22 17.17 20.77 15.63 19 15.18"
+                            stroke="currentColor"
+                            stroke-width="1.8"
+                            stroke-linecap="round"
+                        />
 
-                <h2>
-                    Find your people.
-                </h2>
-
-
-                <p>
-                    Discover creators, connect with people
-                    and grow your community.
-                </p>
-
-            </div>
-
-
-            <div class="heroVisual">
-
-                <div class="heroCircle heroCircleOne"></div>
-
-                <div class="heroCircle heroCircleTwo"></div>
-
-                <i class="fa-solid fa-user-group"></i>
-
-            </div>
-
-        </section>
-
-
-        <!-- =================================================
-             SEARCH
-        ================================================== -->
-
-        <section class="searchSection">
-
-            <div class="searchBox">
-
-                <div class="searchIcon">
-
-                    <i class="fa-solid fa-magnifying-glass"></i>
-
-                </div>
-
-
-                <input
-                    type="search"
-                    id="searchInput"
-                    placeholder="Search people or usernames..."
-                    autocomplete="off"
-                    spellcheck="false"
-                >
-
-
-                <button
-                    id="clearSearch"
-                    class="clearSearch"
-                    type="button"
-                    aria-label="Clear search"
-                >
-
-                    <i class="fa-solid fa-xmark"></i>
-
-                </button>
-
-            </div>
-
-
-            <div class="searchHint">
-
-                <span>
-                    <i class="fa-solid fa-bolt"></i>
-                    Instant search
-                </span>
-
-                <span>
-                    <i class="fa-solid fa-at"></i>
-                    Username
-                </span>
-
-            </div>
-
-        </section>
-
-
-        <!-- =================================================
-             COMMUNITY STATS
-        ================================================== -->
-
-        <section class="communityStats">
-
-            <div class="statCard">
-
-                <div class="statIcon">
-
-                    <i class="fa-solid fa-users"></i>
+                        <path
+                            d="M16 3.13C17.77 3.58 19 5.17 19 7C19 8.83 17.77 10.42 16 10.87"
+                            stroke="currentColor"
+                            stroke-width="1.8"
+                            stroke-linecap="round"
+                        />
+                    </svg>
 
                 </div>
 
                 <div>
-
-                    <strong id="totalUsers">
-                        0
-                    </strong>
-
+                    <strong id="totalUsers">0</strong>
                     <span>Users</span>
-
                 </div>
 
-            </div>
+            </article>
 
 
-            <div class="statCard">
+            <!-- Online -->
 
-                <div class="statIcon onlineIcon">
+            <article class="stat-card">
 
-                    <span class="onlineDot"></span>
+                <div class="stat-icon">
+
+                    <span
+                        style="
+                            width:10px;
+                            height:10px;
+                            border-radius:50%;
+                            background:#24e59a;
+                            box-shadow:0 0 14px rgba(36,229,154,.7);
+                        "
+                    ></span>
 
                 </div>
 
                 <div>
-
-                    <strong id="onlineCount">
-                        0
-                    </strong>
-
+                    <strong id="onlineUsers">0</strong>
                     <span>Online</span>
-
                 </div>
 
-            </div>
+            </article>
 
 
-            <div class="statCard">
+            <!-- Connect -->
 
-                <div class="statIcon">
+            <article class="stat-card">
 
-                    <i class="fa-solid fa-user-plus"></i>
+                <div class="stat-icon">
+
+                    <svg
+                        width="21"
+                        height="21"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        aria-hidden="true"
+                    >
+                        <circle
+                            cx="9"
+                            cy="8"
+                            r="4"
+                            stroke="currentColor"
+                            stroke-width="1.8"
+                        />
+
+                        <path
+                            d="M2 21C2 17.69 5.13 15 9 15C12.87 15 16 17.69 16 21"
+                            stroke="currentColor"
+                            stroke-width="1.8"
+                            stroke-linecap="round"
+                        />
+
+                        <path
+                            d="M19 8V14"
+                            stroke="currentColor"
+                            stroke-width="1.8"
+                            stroke-linecap="round"
+                        />
+
+                        <path
+                            d="M22 11H16"
+                            stroke="currentColor"
+                            stroke-width="1.8"
+                            stroke-linecap="round"
+                        />
+                    </svg>
 
                 </div>
 
                 <div>
-
                     <strong>Connect</strong>
-
                     <span>Grow Together</span>
-
                 </div>
 
-            </div>
+            </article>
 
         </section>
 
 
         <!-- =================================================
-             SUGGESTED
+             SUGGESTED FOR YOU
         ================================================== -->
 
-        <section class="usersSection">
+        <section
+            class="discover-section"
+            id="suggestedSection"
+        >
 
-            <div class="sectionHeader">
+            <div class="section-heading">
 
-                <div class="sectionHeading">
+                <div class="section-heading-left">
 
-                    <div class="sectionHeadingIcon">
+                    <div class="section-icon">
 
-                        <i class="fa-solid fa-wand-magic-sparkles"></i>
+                        <svg
+                            width="22"
+                            height="22"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            aria-hidden="true"
+                        >
+                            <path
+                                d="M15 3L17 7L21 9L17 11L15 15L13 11L9 9L13 7L15 3Z"
+                                stroke="currentColor"
+                                stroke-width="1.8"
+                                stroke-linejoin="round"
+                            />
+
+                            <path
+                                d="M6 13L7.2 15.8L10 17L7.2 18.2L6 21L4.8 18.2L2 17L4.8 15.8L6 13Z"
+                                stroke="currentColor"
+                                stroke-width="1.5"
+                                stroke-linejoin="round"
+                            />
+                        </svg>
 
                     </div>
+
 
                     <div>
 
-                        <h2>Suggested For You</h2>
+                        <h2>
+                            Suggested For You
+                        </h2>
 
-                        <p>People you may want to connect with</p>
+                        <p>
+                            People you may want to connect with
+                        </p>
 
                     </div>
 
                 </div>
 
 
-                <button
-                    id="suggestedSeeAll"
-                    class="seeAllBtn"
-                    type="button"
+                <a
+                    href="#allUsersSection"
+                    class="see-all"
+                    id="seeAllUsers"
                 >
-
                     See all
-
-                    <i class="fa-solid fa-arrow-right"></i>
-
-                </button>
+                    <span aria-hidden="true">→</span>
+                </a>
 
             </div>
 
+
+            <!-- JS will render suggested users here -->
 
             <div
                 id="suggestedUsers"
-                class="suggestedContainer"
+                class="suggested-users suggestions-grid"
             >
+
+                <!-- Loading cards -->
+
+                <article class="user-card user-skeleton"></article>
+
+                <article class="user-card user-skeleton"></article>
+
+                <article class="user-card user-skeleton"></article>
+
+                <article class="user-card user-skeleton"></article>
 
             </div>
 
         </section>
 
-
-        <!-- =================================================
-             ONLINE
-        ================================================== -->
-
-        <section class="usersSection">
-
-            <div class="sectionHeader">
-
-                <div class="sectionHeading">
-
-                    <div class="sectionHeadingIcon onlineHeading">
-
-                        <span class="onlineDot"></span>
-
-                    </div>
-
-                    <div>
-
-                        <h2>Online Now</h2>
-
-                        <p>People active on Viewora</p>
-
-                    </div>
-
-                </div>
-
-
-                <span class="onlineBadge">
-
-                    <span class="onlineDot"></span>
-
-                    <span id="onlineCountText">
-                        0 Online
-                    </span>
-
-                </span>
-
-            </div>
-
-
-            <div
-                id="onlineUsers"
-                class="onlineContainer"
-            >
-
-            </div>
-
-        </section>
 
 
         <!-- =================================================
              ALL USERS
         ================================================== -->
 
-        <section class="usersSection allUsersSection">
+        <section
+            class="discover-section all-users-section"
+            id="allUsersSection"
+        >
 
-            <div class="sectionHeader">
+            <div class="section-heading">
 
-                <div class="sectionHeading">
+                <div class="section-heading-left">
 
-                    <div class="sectionHeadingIcon">
+                    <div class="section-icon">
 
-                        <i class="fa-solid fa-layer-group"></i>
+                        <svg
+                            width="22"
+                            height="22"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            aria-hidden="true"
+                        >
+                            <path
+                                d="M4 5C4 3.9 4.9 3 6 3H18C19.1 3 20 3.9 20 5V19C20 20.1 19.1 21 18 21H6C4.9 21 4 20.1 4 19V5Z"
+                                stroke="currentColor"
+                                stroke-width="1.8"
+                            />
+
+                            <circle
+                                cx="12"
+                                cy="9"
+                                r="2.5"
+                                stroke="currentColor"
+                                stroke-width="1.6"
+                            />
+
+                            <path
+                                d="M8 17C8.7 14.9 10.1 14 12 14C13.9 14 15.3 14.9 16 17"
+                                stroke="currentColor"
+                                stroke-width="1.6"
+                                stroke-linecap="round"
+                            />
+                        </svg>
 
                     </div>
 
+
                     <div>
 
-                        <h2>All Users</h2>
+                        <h2>
+                            All Users
+                        </h2>
 
-                        <p>Explore the Viewora community</p>
+                        <p>
+                            Explore the Viewora community
+                        </p>
 
                     </div>
 
                 </div>
 
 
-                <span
-                    id="totalUsersLabel"
-                    class="countBadge"
+                <div
+                    class="user-count-badge"
+                    id="userCountBadge"
                 >
                     0 Users
-                </span>
+                </div>
 
             </div>
 
 
-            <!-- FILTERS -->
+            <!-- Filters -->
 
-            <div class="userFilters">
+            <div
+                class="user-filters"
+                role="tablist"
+                aria-label="User filters"
+            >
 
                 <button
-                    class="filterBtn active"
-                    data-filter="all"
+                    class="filter-btn active"
                     type="button"
+                    data-filter="all"
+                    role="tab"
+                    aria-selected="true"
                 >
 
-                    <i class="fa-solid fa-users"></i>
+                    <svg
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        aria-hidden="true"
+                    >
+                        <circle
+                            cx="9"
+                            cy="8"
+                            r="3"
+                            stroke="currentColor"
+                            stroke-width="1.7"
+                        />
+
+                        <circle
+                            cx="17"
+                            cy="9"
+                            r="2.4"
+                            stroke="currentColor"
+                            stroke-width="1.7"
+                        />
+
+                        <path
+                            d="M3 20C3 16.7 5.7 14 9 14C12.3 14 15 16.7 15 20"
+                            stroke="currentColor"
+                            stroke-width="1.7"
+                            stroke-linecap="round"
+                        />
+
+                        <path
+                            d="M15 14.5C17.8 14.7 20 16.9 20 20"
+                            stroke="currentColor"
+                            stroke-width="1.7"
+                            stroke-linecap="round"
+                        />
+                    </svg>
 
                     All
 
@@ -496,12 +553,22 @@
 
 
                 <button
-                    class="filterBtn"
-                    data-filter="online"
+                    class="filter-btn"
                     type="button"
+                    data-filter="online"
+                    role="tab"
+                    aria-selected="false"
                 >
 
-                    <span class="onlineDot"></span>
+                    <span
+                        style="
+                            width:8px;
+                            height:8px;
+                            border-radius:50%;
+                            background:#24e59a;
+                            box-shadow:0 0 10px rgba(36,229,154,.65);
+                        "
+                    ></span>
 
                     Online
 
@@ -509,12 +576,27 @@
 
 
                 <button
-                    class="filterBtn"
-                    data-filter="creators"
+                    class="filter-btn"
                     type="button"
+                    data-filter="creators"
+                    role="tab"
+                    aria-selected="false"
                 >
 
-                    <i class="fa-solid fa-star"></i>
+                    <svg
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        aria-hidden="true"
+                    >
+                        <path
+                            d="M12 3L14.8 8.2L20.5 9.2L16.5 13.2L17.3 18.9L12 16.3L6.7 18.9L7.5 13.2L3.5 9.2L9.2 8.2L12 3Z"
+                            stroke="currentColor"
+                            stroke-width="1.7"
+                            stroke-linejoin="round"
+                        />
+                    </svg>
 
                     Creators
 
@@ -523,353 +605,296 @@
             </div>
 
 
-            <!-- USER LIST -->
+            <!-- Search -->
 
             <div
-                id="usersList"
-                class="usersList"
+                class="users-search"
+                role="search"
             >
 
-            </div>
+                <svg
+                    width="19"
+                    height="19"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    aria-hidden="true"
+                >
+                    <circle
+                        cx="11"
+                        cy="11"
+                        r="7"
+                        stroke="currentColor"
+                        stroke-width="1.8"
+                    />
 
-        </section>
-
-
-        <!-- =================================================
-             EMPTY STATE
-        ================================================== -->
-
-        <section
-            id="emptyState"
-            class="emptyState hidden"
-        >
-
-            <div class="emptyIllustration">
-
-                <div class="emptyCircle">
-
-                    <i class="fa-solid fa-user-slash"></i>
-
-                </div>
-
-            </div>
-
-
-            <h2>No people found</h2>
+                    <path
+                        d="M16.5 16.5L21 21"
+                        stroke="currentColor"
+                        stroke-width="1.8"
+                        stroke-linecap="round"
+                    />
+                </svg>
 
 
-            <p>
-                We couldn't find anyone matching your search.
-                Try another name or username.
-            </p>
+                <input
+                    id="userSearch"
+                    type="search"
+                    autocomplete="off"
+                    placeholder="Search people..."
+                    aria-label="Search people"
+                >
 
-
-            <button
-                id="resetSearchBtn"
-                class="resetSearchBtn"
-                type="button"
-            >
-
-                <i class="fa-solid fa-arrow-rotate-left"></i>
-
-                Clear search
-
-            </button>
-
-        </section>
-
-
-        <!-- =================================================
-             SKELETON
-        ================================================== -->
-
-        <section
-            id="usersSkeleton"
-            class="usersSkeleton hidden"
-        >
-
-            <div class="skeletonCard"></div>
-
-            <div class="skeletonCard"></div>
-
-            <div class="skeletonCard"></div>
-
-            <div class="skeletonCard"></div>
-
-        </section>
-
-
-        <!-- =================================================
-             PROFILE MODAL
-        ================================================== -->
-
-        <div
-            id="profileModal"
-            class="modal hidden"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="modalName"
-        >
-
-            <div
-                id="modalOverlay"
-                class="modalOverlay"
-            ></div>
-
-
-            <div class="modalContent">
-
-
-                <!-- CLOSE -->
 
                 <button
-                    id="closeModal"
-                    class="closeBtn"
+                    id="clearUserSearch"
                     type="button"
-                    aria-label="Close profile"
+                    aria-label="Clear search"
+                    hidden
                 >
-
-                    <i class="fa-solid fa-xmark"></i>
-
+                    ×
                 </button>
-
-
-                <!-- COVER -->
-
-                <div class="modalCover">
-
-                    <div class="modalCoverGlow"></div>
-
-                </div>
-
-
-                <!-- AVATAR -->
-
-                <div class="modalAvatarWrapper">
-
-                    <img
-                        id="modalAvatar"
-                        class="modalAvatar"
-                        src="assets/default-avatar.png"
-                        alt="Profile"
-                    >
-
-
-                    <span
-                        id="modalOnlineDot"
-                        class="modalOnlineDot"
-                    ></span>
-
-                </div>
-
-
-                <!-- PROFILE INFO -->
-
-                <div class="modalProfileInfo">
-
-                    <h2 id="modalName">
-                        Viewora User
-                    </h2>
-
-
-                    <p
-                        id="modalUsername"
-                        class="modalUsername"
-                    >
-                        @username
-                    </p>
-
-
-                    <div
-                        id="modalPrivacy"
-                        class="modalPrivacy"
-                    >
-
-                        <i class="fa-solid fa-earth-americas"></i>
-
-                        Public profile
-
-                    </div>
-
-
-                    <p
-                        id="modalBio"
-                        class="modalBio"
-                    >
-                        Welcome to Viewora 🚀
-                    </p>
-
-                </div>
-
-
-                <!-- STATS -->
-
-                <div class="profileStats">
-
-                    <div class="profileStat">
-
-                        <strong id="modalPosts">
-                            0
-                        </strong>
-
-                        <span>Posts</span>
-
-                    </div>
-
-
-                    <div class="profileStat">
-
-                        <strong id="modalFollowers">
-                            0
-                        </strong>
-
-                        <span>Followers</span>
-
-                    </div>
-
-
-                    <div class="profileStat">
-
-                        <strong id="modalFollowing">
-                            0
-                        </strong>
-
-                        <span>Following</span>
-
-                    </div>
-
-                </div>
-
-
-                <!-- ACTIONS -->
-
-                <div class="modalButtons">
-
-                    <button
-                        id="followBtn"
-                        class="primaryBtn"
-                        type="button"
-                    >
-
-                        <i class="fa-solid fa-user-plus"></i>
-
-                        <span>Follow</span>
-
-                    </button>
-
-
-                    <button
-                        id="messageBtn"
-                        class="secondaryBtn"
-                        type="button"
-                    >
-
-                        <i class="fa-solid fa-paper-plane"></i>
-
-                        <span>Message</span>
-
-                    </button>
-
-                </div>
-
-
-                <!-- PRIVATE MESSAGE -->
-
-                <div
-                    id="privateMessage"
-                    class="privateMessage hidden"
-                >
-
-                    <i class="fa-solid fa-lock"></i>
-
-                    <span>
-                        This profile is private.
-                        Follow them to connect.
-                    </span>
-
-                </div>
 
             </div>
 
-        </div>
+
+            <!-- JS renders all users here -->
+
+            <div
+                id="allUsers"
+                class="all-users-list"
+            >
+
+                <article class="all-user-card user-skeleton"></article>
+
+                <article class="all-user-card user-skeleton"></article>
+
+                <article class="all-user-card user-skeleton"></article>
+
+            </div>
 
 
-        <!-- =================================================
-             FLOATING BUTTONS
-        ================================================== -->
+            <!-- Empty state -->
 
-        <button
-            id="scrollTopBtn"
-            class="floatingBtn hidden"
-            type="button"
-            aria-label="Scroll to top"
-        >
+            <div
+                id="emptyUsers"
+                class="empty-state"
+                hidden
+            >
 
-            <i class="fa-solid fa-arrow-up"></i>
+                <div class="empty-state-icon">
 
-        </button>
+                    <svg
+                        width="30"
+                        height="30"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        aria-hidden="true"
+                    >
+                        <circle
+                            cx="11"
+                            cy="11"
+                            r="7"
+                            stroke="currentColor"
+                            stroke-width="1.8"
+                        />
 
+                        <path
+                            d="M16.5 16.5L21 21"
+                            stroke="currentColor"
+                            stroke-width="1.8"
+                            stroke-linecap="round"
+                        />
 
-        <button
-            id="addFriendBtn"
-            class="floatingBtn addBtn"
-            type="button"
-            aria-label="Find people"
-        >
+                    </svg>
 
-            <i class="fa-solid fa-user-plus"></i>
+                </div>
 
-        </button>
+                <h3>
+                    No people found
+                </h3>
 
+                <p>
+                    Try another name or username.
+                </p>
 
-        <!-- =================================================
-             TOAST
-        ================================================== -->
+            </div>
 
-        <div
-            id="toast"
-            class="toast hidden"
-            role="status"
-            aria-live="polite"
-        >
-
-            <i
-                id="toastIcon"
-                class="fa-solid fa-circle-check"
-            ></i>
-
-
-            <span id="toastText">
-                Success
-            </span>
-
-        </div>
+        </section>
 
     </main>
+
+
+
+    <!-- =====================================================
+         FLOATING ACTIONS
+    ====================================================== -->
+
+    <div
+        class="floating-actions"
+        aria-label="Quick actions"
+    >
+
+        <button
+            class="floating-btn"
+            id="addFriendsBtn"
+            type="button"
+            aria-label="Find people"
+            title="Find people"
+        >
+
+            <svg
+                width="25"
+                height="25"
+                viewBox="0 0 24 24"
+                fill="none"
+                aria-hidden="true"
+            >
+                <circle
+                    cx="9"
+                    cy="8"
+                    r="4"
+                    stroke="currentColor"
+                    stroke-width="1.9"
+                />
+
+                <path
+                    d="M2 21C2 17.7 5.1 15 9 15C12.9 15 16 17.7 16 21"
+                    stroke="currentColor"
+                    stroke-width="1.9"
+                    stroke-linecap="round"
+                />
+
+                <path
+                    d="M19 8V14"
+                    stroke="currentColor"
+                    stroke-width="1.9"
+                    stroke-linecap="round"
+                />
+
+                <path
+                    d="M22 11H16"
+                    stroke="currentColor"
+                    stroke-width="1.9"
+                    stroke-linecap="round"
+                />
+
+            </svg>
+
+        </button>
+
+
+        <button
+            class="floating-btn secondary"
+            id="scrollTopBtn"
+            type="button"
+            aria-label="Scroll to top"
+            title="Scroll to top"
+        >
+
+            <svg
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                aria-hidden="true"
+            >
+                <path
+                    d="M12 19V5"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                />
+
+                <path
+                    d="M6 11L12 5L18 11"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                />
+
+            </svg>
+
+        </button>
+
+    </div>
+
 
 
     <!-- =====================================================
          BOTTOM NAV
     ====================================================== -->
 
-    <nav class="bottomNav">
+    <nav
+        class="bottom-nav"
+        aria-label="Main navigation"
+    >
 
-        <a href="index.html">
+        <a
+            href="index.html"
+            class="nav-item"
+            aria-label="Home"
+        >
 
-            <span class="activeIndicator"></span>
+            <svg
+                width="26"
+                height="26"
+                viewBox="0 0 24 24"
+                fill="none"
+                aria-hidden="true"
+            >
+                <path
+                    d="M3 10.5L12 3L21 10.5V20C21 20.55 20.55 21 20 21H4C3.45 21 3 20.55 3 20V10.5Z"
+                    stroke="currentColor"
+                    stroke-width="1.9"
+                    stroke-linejoin="round"
+                />
 
-            <i class="fa-solid fa-house"></i>
+                <path
+                    d="M9 21V14H15V21"
+                    stroke="currentColor"
+                    stroke-width="1.9"
+                    stroke-linejoin="round"
+                />
+            </svg>
 
             <span>Home</span>
 
         </a>
 
 
-        <a href="shorts.html">
+        <a
+            href="shorts.html"
+            class="nav-item"
+            aria-label="Shorts"
+        >
 
-            <span class="activeIndicator"></span>
+            <svg
+                width="26"
+                height="26"
+                viewBox="0 0 24 24"
+                fill="none"
+                aria-hidden="true"
+            >
+                <path
+                    d="M5 4H19V20H5V4Z"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    stroke-linejoin="round"
+                />
 
-            <i class="fa-solid fa-play"></i>
+                <path
+                    d="M8 4L16 20"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                />
+
+                <path
+                    d="M16 4L8 20"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                />
+            </svg>
 
             <span>Shorts</span>
 
@@ -877,35 +902,118 @@
 
 
         <a
-            href="upload.html"
-            class="uploadNav"
+            href="#"
+            class="nav-create"
+            id="createBtn"
             aria-label="Create"
         >
 
-            <i class="fa-solid fa-plus"></i>
+            <span class="create-circle">
+
+                <svg
+                    width="31"
+                    height="31"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    aria-hidden="true"
+                >
+                    <path
+                        d="M12 5V19"
+                        stroke="currentColor"
+                        stroke-width="2.3"
+                        stroke-linecap="round"
+                    />
+
+                    <path
+                        d="M5 12H19"
+                        stroke="currentColor"
+                        stroke-width="2.3"
+                        stroke-linecap="round"
+                    />
+                </svg>
+
+            </span>
 
         </a>
 
 
         <a
             href="users.html"
-            class="active"
+            class="nav-item active"
+            aria-label="Users"
         >
 
-            <span class="activeIndicator"></span>
+            <svg
+                width="27"
+                height="27"
+                viewBox="0 0 24 24"
+                fill="none"
+                aria-hidden="true"
+            >
+                <circle
+                    cx="9"
+                    cy="8"
+                    r="3.5"
+                    stroke="currentColor"
+                    stroke-width="1.9"
+                />
 
-            <i class="fa-solid fa-users"></i>
+                <circle
+                    cx="17"
+                    cy="9"
+                    r="2.5"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                />
+
+                <path
+                    d="M2.5 20C2.5 16.7 5.4 14 9 14C12.6 14 15.5 16.7 15.5 20"
+                    stroke="currentColor"
+                    stroke-width="1.9"
+                    stroke-linecap="round"
+                />
+
+                <path
+                    d="M15 14.8C18.3 15 20.5 17 20.5 20"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                />
+            </svg>
 
             <span>Users</span>
 
         </a>
 
 
-        <a href="profile.html">
+        <a
+            href="profile.html"
+            class="nav-item"
+            aria-label="Profile"
+        >
 
-            <span class="activeIndicator"></span>
+            <svg
+                width="26"
+                height="26"
+                viewBox="0 0 24 24"
+                fill="none"
+                aria-hidden="true"
+            >
+                <circle
+                    cx="12"
+                    cy="8"
+                    r="4"
+                    stroke="currentColor"
+                    stroke-width="1.9"
+                />
 
-            <i class="fa-solid fa-user"></i>
+                <path
+                    d="M4 21C4.8 16.9 7.5 14.5 12 14.5C16.5 14.5 19.2 16.9 20 21"
+                    stroke="currentColor"
+                    stroke-width="1.9"
+                    stroke-linecap="round"
+                />
+            </svg>
 
             <span>Profile</span>
 
@@ -913,191 +1021,528 @@
 
     </nav>
 
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+
+<script src="firebase.js"></script>
+<script src="nav.js"></script>
+<script src="users.js"></script>
+
 
     <!-- =====================================================
-         FIREBASE
+         SMALL UI HELPERS
     ====================================================== -->
 
-    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <style>
 
-    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+        /* User count badge */
 
-    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+        .user-count-badge {
+            flex: 0 0 auto;
+
+            padding: 8px 12px;
+
+            border: 1px solid rgba(255,255,255,.09);
+
+            border-radius: 999px;
+
+            background:
+                rgba(255,255,255,.045);
+
+            color: #aeb4c8;
+
+            font-size: 11px;
+
+            font-weight: 700;
+
+            white-space: nowrap;
+        }
 
 
-    <!-- Firebase Config -->
+        /* Search */
 
-    <script src="firebase.js"></script>
+        .users-search {
+            position: relative;
+
+            display: flex;
+            align-items: center;
+
+            gap: 10px;
+
+            width: 100%;
+
+            height: 48px;
+
+            margin-bottom: 14px;
+
+            padding: 0 13px;
+
+            border: 1px solid rgba(255,255,255,.08);
+
+            border-radius: 15px;
+
+            background:
+                rgba(255,255,255,.045);
+
+            color: #858ca0;
+
+            transition:
+                border-color .2s ease,
+                background .2s ease,
+                box-shadow .2s ease;
+        }
 
 
-    <!-- Navigation -->
+        .users-search:focus-within {
+            border-color:
+                rgba(120,103,255,.45);
 
-    <script src="nav.js"></script>
+            background:
+                rgba(120,103,255,.055);
+
+            box-shadow:
+                0 0 0 3px rgba(120,103,255,.08);
+        }
 
 
-    <!-- Users Logic -->
+        .users-search input {
+            min-width: 0;
 
-    <script src="users.js"></script>
+            flex: 1;
+
+            height: 100%;
+
+            border: 0;
+            outline: 0;
+
+            background: transparent;
+
+            color: white;
+
+            font-family: inherit;
+
+            font-size: 14px;
+        }
+
+
+        .users-search input::placeholder {
+            color: #70778b;
+        }
+
+
+        .users-search input::-webkit-search-cancel-button {
+            display: none;
+        }
+
+
+        .users-search button {
+            width: 30px;
+            height: 30px;
+
+            display: grid;
+            place-items: center;
+
+            border: 0;
+
+            border-radius: 50%;
+
+            background:
+                rgba(255,255,255,.08);
+
+            color: #cbd0dc;
+
+            font-size: 19px;
+
+            cursor: pointer;
+        }
+
+
+        /* Bottom navigation internals */
+
+        .bottom-nav {
+            display: grid;
+
+            grid-template-columns:
+                1fr
+                1fr
+                1.15fr
+                1fr
+                1fr;
+
+            align-items: center;
+
+            padding:
+                5px 8px
+                max(5px, env(safe-area-inset-bottom));
+        }
+
+
+        .nav-item {
+            height: 64px;
+
+            display: flex;
+
+            flex-direction: column;
+
+            align-items: center;
+
+            justify-content: center;
+
+            gap: 4px;
+
+            color: #8c92a4;
+
+            text-decoration: none;
+
+            font-size: 11px;
+
+            font-weight: 650;
+
+            transition:
+                color .2s ease,
+                transform .2s ease;
+        }
+
+
+        .nav-item svg {
+            transition:
+                transform .2s ease;
+        }
+
+
+        .nav-item.active {
+            color: #18bfff;
+        }
+
+
+        .nav-item.active svg {
+            filter:
+                drop-shadow(
+                    0 0 8px rgba(24,191,255,.35)
+                );
+        }
+
+
+        .nav-item:active {
+            transform: scale(.92);
+        }
+
+
+        .nav-create {
+            height: 72px;
+
+            display: grid;
+
+            place-items: center;
+
+            text-decoration: none;
+        }
+
+
+        .create-circle {
+            width: 58px;
+            height: 58px;
+
+            display: grid;
+
+            place-items: center;
+
+            border-radius: 50%;
+
+            background:
+                linear-gradient(
+                    135deg,
+                    #20bfff,
+                    #2879ff
+                );
+
+            color: white;
+
+            border:
+                4px solid rgba(8,10,18,.96);
+
+            box-shadow:
+                0 7px 25px rgba(25,168,255,.35);
+
+            transition:
+                transform .2s ease;
+        }
+
+
+        .nav-create:active .create-circle {
+            transform: scale(.9);
+        }
+
+
+        /* Make cards cleaner when JS has no bio */
+
+        .user-card-content:empty,
+        .user-info:empty {
+            display: none;
+        }
+
+
+        /* Better mobile list spacing */
+
+        @media (max-width: 480px) {
+
+            .user-count-badge {
+                font-size: 10px;
+                padding: 7px 10px;
+            }
+
+            .users-search {
+                height: 46px;
+            }
+        }
+
+    </style>
 
 
     <!-- =====================================================
-         PAGE STARTUP
+         NAVIGATION FALLBACK
     ====================================================== -->
 
     <script>
 
-        window.addEventListener("load", () => {
+        document.addEventListener("DOMContentLoaded", () => {
 
-            const loader =
-                document.getElementById("pageLoader");
+            const backBtn =
+                document.getElementById("backBtn");
 
-            const app =
-                document.getElementById("app");
+            const refreshBtn =
+                document.getElementById("refreshUsers");
+
+            const scrollTopBtn =
+                document.getElementById("scrollTopBtn");
+
+            const seeAll =
+                document.getElementById("seeAllUsers");
+
+            const searchInput =
+                document.getElementById("userSearch");
+
+            const clearSearch =
+                document.getElementById("clearUserSearch");
 
 
-            setTimeout(() => {
+            /* Back */
 
-                if (loader) {
+            if (backBtn) {
 
-                    loader.classList.add("loaded");
+                backBtn.addEventListener("click", () => {
 
-                }
+                    if (history.length > 1) {
+                        history.back();
+                    } else {
+                        window.location.href =
+                            "index.html";
+                    }
+
+                });
+
+            }
 
 
-                if (app) {
+            /* Refresh */
 
-                    app.classList.remove("hidden");
+            if (refreshBtn) {
 
-                    app.classList.add("fadeIn");
+                refreshBtn.addEventListener(
+                    "click",
+                    () => {
 
-                }
+                        refreshBtn.style.transform =
+                            "rotate(180deg)";
 
-            }, 700);
+                        setTimeout(() => {
+
+                            refreshBtn.style.transform =
+                                "";
+
+                        }, 350);
+
+
+                        /*
+                         * users.js can listen for this event
+                         * and reload Firebase users.
+                         */
+
+                        window.dispatchEvent(
+                            new CustomEvent(
+                                "viewora:refresh-users"
+                            )
+                        );
+
+                    }
+                );
+
+            }
+
+
+            /* See all */
+
+            if (seeAll) {
+
+                seeAll.addEventListener(
+                    "click",
+                    (event) => {
+
+                        event.preventDefault();
+
+                        document
+                            .getElementById(
+                                "allUsersSection"
+                            )
+                            ?.scrollIntoView({
+                                behavior: "smooth",
+                                block: "start"
+                            });
+
+                    }
+                );
+
+            }
+
+
+            /* Scroll top */
+
+            if (scrollTopBtn) {
+
+                scrollTopBtn.addEventListener(
+                    "click",
+                    () => {
+
+                        window.scrollTo({
+                            top: 0,
+                            behavior: "smooth"
+                        });
+
+                    }
+                );
+
+            }
+
+
+            /* Search clear */
+
+            if (searchInput && clearSearch) {
+
+                searchInput.addEventListener(
+                    "input",
+                    () => {
+
+                        clearSearch.hidden =
+                            !searchInput.value.trim();
+
+                    }
+                );
+
+
+                clearSearch.addEventListener(
+                    "click",
+                    () => {
+
+                        searchInput.value = "";
+
+                        clearSearch.hidden = true;
+
+                        searchInput.focus();
+
+                        searchInput.dispatchEvent(
+                            new Event("input", {
+                                bubbles: true
+                            })
+                        );
+
+                    }
+                );
+
+            }
+
+
+            /* Filter buttons */
+
+            document
+                .querySelectorAll(".filter-btn")
+                .forEach(button => {
+
+                    button.addEventListener(
+                        "click",
+                        () => {
+
+                            document
+                                .querySelectorAll(
+                                    ".filter-btn"
+                                )
+                                .forEach(btn => {
+
+                                    btn.classList.remove(
+                                        "active"
+                                    );
+
+                                    btn.setAttribute(
+                                        "aria-selected",
+                                        "false"
+                                    );
+
+                                });
+
+
+                            button.classList.add(
+                                "active"
+                            );
+
+                            button.setAttribute(
+                                "aria-selected",
+                                "true"
+                            );
+
+
+                            window.dispatchEvent(
+                                new CustomEvent(
+                                    "viewora:user-filter",
+                                    {
+                                        detail: {
+                                            filter:
+                                                button.dataset.filter
+                                        }
+                                    }
+                                )
+                            );
+
+                        }
+                    );
+
+                });
+
+
+            /* Create */
+
+            const createBtn =
+                document.getElementById("createBtn");
+
+            if (createBtn) {
+
+                createBtn.addEventListener(
+                    "click",
+                    event => {
+
+                        event.preventDefault();
+
+                        window.dispatchEvent(
+                            new CustomEvent(
+                                "viewora:create"
+                            )
+                        );
+
+                    }
+                );
+
+            }
 
         });
-
-
-        /* ================================================
-           SEARCH CLEAR
-        ================================================= */
-
-        const searchInput =
-            document.getElementById("searchInput");
-
-        const clearSearch =
-            document.getElementById("clearSearch");
-
-        const resetSearchBtn =
-            document.getElementById("resetSearchBtn");
-
-
-        function clearUsersSearch() {
-
-            if (!searchInput) return;
-
-            searchInput.value = "";
-
-            searchInput.dispatchEvent(
-                new Event("input")
-            );
-
-            searchInput.focus();
-
-        }
-
-
-        if (clearSearch) {
-
-            clearSearch.addEventListener(
-                "click",
-                clearUsersSearch
-            );
-
-        }
-
-
-        if (resetSearchBtn) {
-
-            resetSearchBtn.addEventListener(
-                "click",
-                clearUsersSearch
-            );
-
-        }
-
-
-        /* ================================================
-           BACKUP COUNT MIRROR
-        ================================================= */
-
-        const onlineCount =
-            document.getElementById("onlineCount");
-
-        const onlineCountText =
-            document.getElementById("onlineCountText");
-
-
-        if (
-            onlineCount &&
-            onlineCountText
-        ) {
-
-            const observer =
-                new MutationObserver(() => {
-
-                    onlineCountText.textContent =
-                        `${onlineCount.textContent} Online`;
-
-                });
-
-
-            observer.observe(
-                onlineCount,
-                {
-                    childList: true,
-                    characterData: true,
-                    subtree: true
-                }
-            );
-
-        }
-
-
-        /* ================================================
-           TOTAL COUNT MIRROR
-        ================================================= */
-
-        const totalUsers =
-            document.getElementById("totalUsers");
-
-        const totalUsersLabel =
-            document.getElementById("totalUsersLabel");
-
-
-        if (
-            totalUsers &&
-            totalUsersLabel
-        ) {
-
-            const observer =
-                new MutationObserver(() => {
-
-                    totalUsersLabel.textContent =
-                        `${totalUsers.textContent} Users`;
-
-                });
-
-
-            observer.observe(
-                totalUsers,
-                {
-                    childList: true,
-                    characterData: true,
-                    subtree: true
-                }
-            );
-
-        }
 
     </script>
 

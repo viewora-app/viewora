@@ -1,207 +1,120 @@
-/*=========================================
-        Viewora Splash
-        splash.js
-=========================================*/
-
-//==============================
-// Elements
-//==============================
-
-const splash = document.querySelector(".splash");
-const loaderFill = document.querySelector(".loaderFill");
-const loadingText = document.getElementById("loadingText");
-const logo = document.querySelector(".logo");
-
-//==============================
-// Loading Messages
-//==============================
-
-const loadingMessages = [
-
-"Initializing Viewora...",
-"Loading Assets...",
-"Connecting Firebase...",
-"Loading User Data...",
-"Preparing Experience...",
-"Almost Ready..."
-
-];
-
-let msgIndex = 0;
-
-const loadingInterval = setInterval(()=>{
-
-loadingText.textContent =
-loadingMessages[msgIndex];
-
-msgIndex++;
-
-if(msgIndex >= loadingMessages.length){
-
-msgIndex = loadingMessages.length-1;
-
-}
-
-},600);
-
-//==============================
-// Logo Animation
-//==============================
-
-logo.addEventListener("click",()=>{
-
-logo.style.transform="scale(1.15) rotate(8deg)";
-
-setTimeout(()=>{
-
-logo.style.transform="";
-
-},350);
-
-});
-
-//==============================
-// Progress Animation
-//==============================
-
-let progress=0;
-
-const progressInterval=setInterval(()=>{
-
-progress+=2;
-
-loaderFill.style.width=progress+"%";
-
-if(progress>=100){
-
-clearInterval(progressInterval);
-
-}
-
-},60);
-
-//==============================
-// Splash Finish
-//==============================
-
-function finishSplash(){
-
-clearInterval(loadingInterval);
-
-splash.classList.add("fadeOut");
-
-setTimeout(()=>{
-
-if(window.firebase){
-
-firebase.auth().onAuthStateChanged(user=>{
-
-if(user){
-
-window.location.replace("index.html");
-
-}else{
-
-window.location.replace("login.html");
-
-}
-
-});
-
-}else{
-
-window.location.replace("index.html");
-
-}
-
-},700);
-
-}
-
-//==============================
-// Auto Start
-//==============================
-
-setTimeout(finishSplash,3200);
-
-//==============================
-// Skip Animation
-//==============================
-
-document.addEventListener("keydown",e=>{
-
-if(e.key==="Enter"){
-
-finishSplash();
-
-}
-
-});
-
-let tapCount=0;
-
-document.body.addEventListener("click",()=>{
-
-tapCount++;
-
-if(tapCount>=2){
-
-finishSplash();
-
-}
-
-setTimeout(()=>{
-
-tapCount=0;
-
-},500);
-
-});
-
-//==============================
-// Online Check
-//==============================
-
-window.addEventListener("offline",()=>{
-
-loadingText.textContent="No Internet Connection";
-
-});
-
-window.addEventListener("online",()=>{
-
-loadingText.textContent="Connection Restored";
-
-});
-
-//==============================
-// Prevent Back Button
-//==============================
-
-history.pushState(null,null,location.href);
-
-window.onpopstate=function(){
-
-history.go(1);
-
-};
-
-//==============================
-// Console
-//==============================
-
-console.clear();
-
-console.log(
-
-"%cViewora V1.0",
-"color:#6366f1;font-size:22px;font-weight:bold;"
-
-);
-
-console.log(
-
-"%cSplash Loaded Successfully 🚀",
-"color:#22c55e;font-size:15px;"
-
-);
+"use strict";
+
+(() => {
+    if (window.__VIEWORA_SPLASH_INITIALIZED__) return;
+    window.__VIEWORA_SPLASH_INITIALIZED__ = true;
+
+    const loadingText = document.getElementById("loadingText");
+    const loaderFill  = document.querySelector(".loaderFill");
+    const loaderGlow  = document.querySelector(".loader-glow");
+    const particlesEl = document.getElementById("particles");
+
+    /* =========================================================
+       DESTINATION + SECURITY
+       ========================================================= */
+    const params = new URLSearchParams(window.location.search);
+    let nextPage = params.get("next");
+
+    if (
+        !nextPage ||
+        nextPage.includes("://") ||
+        nextPage.startsWith("//") ||
+        nextPage.includes("splash.html")
+    ) {
+        nextPage = "index.html";
+    }
+
+    /* =========================================================
+       GENERATE PARTICLES
+       ========================================================= */
+    const PARTICLE_COUNT = 18;
+
+    for (let i = 0; i < PARTICLE_COUNT; i++) {
+        const span = document.createElement("span");
+        const size = 2 + Math.random() * 3.5;
+
+        span.style.width  = `${size}px`;
+        span.style.height = `${size}px`;
+        span.style.left   = `${Math.random() * 100}%`;
+        span.style.top    = `${Math.random() * 100}%`;
+        span.style.animationDelay    = `${-Math.random() * 8}s`;
+        span.style.animationDuration = `${6 + Math.random() * 5}s`;
+
+        particlesEl.appendChild(span);
+    }
+
+    /* =========================================================
+       LOADING MESSAGES
+       ========================================================= */
+    const messages = [
+        "Initializing...",
+        "Preparing Viewora...",
+        "Loading your experience...",
+        "Almost ready..."
+    ];
+
+    let messageIndex = 0;
+
+    const messageTimer = setInterval(() => {
+        messageIndex++;
+        if (messageIndex < messages.length) {
+            loadingText.style.opacity = "0";
+            setTimeout(() => {
+                loadingText.textContent = messages[messageIndex];
+                loadingText.style.opacity = "1";
+            }, 180);
+        }
+    }, 620);
+
+    /* =========================================================
+       SMOOTH PROGRESS
+       ========================================================= */
+    let progress = 0;
+
+    const progressTimer = setInterval(() => {
+        // Ease-out style increments
+        const remaining = 100 - progress;
+        progress += Math.random() * (remaining * 0.18) + 1.2;
+
+        if (progress > 100) progress = 100;
+
+        loaderFill.style.width = `${progress}%`;
+
+        if (loaderGlow) {
+            loaderGlow.style.left    = `calc(${progress}% - 20px)`;
+            loaderGlow.style.opacity = progress > 5 && progress < 98 ? "1" : "0";
+        }
+
+        if (progress >= 100) {
+            clearInterval(progressTimer);
+        }
+    }, 110);
+
+    /* =========================================================
+       REDIRECT
+       ========================================================= */
+    setTimeout(() => {
+        clearInterval(messageTimer);
+        clearInterval(progressTimer);
+
+        loaderFill.style.width = "100%";
+        if (loaderGlow) loaderGlow.style.opacity = "0";
+
+        loadingText.style.opacity = "0";
+        setTimeout(() => {
+            loadingText.textContent = "Welcome to Viewora";
+            loadingText.style.opacity = "1";
+        }, 160);
+
+        setTimeout(() => {
+            // Soft exit animation
+            document.querySelector(".splash").style.transition = "opacity 0.4s ease, transform 0.4s ease";
+            document.querySelector(".splash").style.opacity = "0";
+            document.querySelector(".splash").style.transform = "scale(1.04)";
+
+            setTimeout(() => {
+                window.location.replace(nextPage);
+            }, 380);
+        }, 420);
+    }, 2800);
+})();

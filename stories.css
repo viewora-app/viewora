@@ -1,82 +1,55 @@
 /* ==========================================
    VIEWORA STORIES.CSS
-   Stories + Story Viewer
+   Stories + Story Viewer + Composer
 ========================================== */
 
 /* ==========================
    Stories Section
 ========================== */
 
-.storiesSection{
-
-padding:15px 12px;
-
-overflow-x:auto;
-
-scrollbar-width:none;
-
+.storiesSection {
+    padding: 15px 12px;
+    overflow-x: auto;
+    scrollbar-width: none;
 }
 
-.storiesSection::-webkit-scrollbar{
-
-display:none;
-
+.storiesSection::-webkit-scrollbar {
+    display: none;
 }
 
-#storiesContainer{
-
-display:flex;
-
-gap:15px;
-
-align-items:flex-start;
-
+#storiesContainer {
+    display: flex;
+    gap: 15px;
+    align-items: flex-start;
 }
 
 /* ==========================
    Story Item
 ========================== */
 
-.storyItem{
-
-min-width:78px;
-
-display:flex;
-
-flex-direction:column;
-
-align-items:center;
-
-cursor:pointer;
-
-transition:.25s;
-
+.storyItem {
+    min-width: 78px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: pointer;
+    transition: .25s;
 }
 
-.storyItem:hover{
-
-transform:translateY(-4px);
-
+.storyItem:hover {
+    transform: translateY(-4px);
 }
 
-.storyItem small{
-
-margin-top:8px;
-
-font-size:12px;
-
-color:#ddd;
-
-max-width:75px;
-
-overflow:hidden;
-
-white-space:nowrap;
-
-text-overflow:ellipsis;
-
-text-align:center;
-
+.storyItem small,
+.storyItem p {
+    margin-top: 8px;
+    font-size: 12px;
+    color: #ddd;
+    max-width: 75px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    text-align: center;
 }
 
 /* ==========================
@@ -84,384 +57,711 @@ text-align:center;
 ========================== */
 
 .storyRing,
-.storyRingMini{
-
-width:72px;
-
-height:72px;
-
-padding:3px;
-
-border-radius:50%;
-
-display:flex;
-
-align-items:center;
-
-justify-content:center;
-
-background:linear-gradient(
-45deg,
-#ff0066,
-#ff8c00,
-#00aaff,
-#7b2cff
-);
-
-background-size:300% 300%;
-
-animation:ringAnimation 4s linear infinite;
-
+.storyRingMini,
+#storyRing.has-story {
+    width: 72px;
+    height: 72px;
+    padding: 3px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(
+        45deg,
+        #ff0066,
+        #ff8c00,
+        #00aaff,
+        #7b2cff
+    );
+    background-size: 300% 300%;
+    animation: ringAnimation 4s linear infinite;
 }
 
 .storyRing img,
-.storyRingMini img{
-
-width:100%;
-
-height:100%;
-
-border-radius:50%;
-
-object-fit:cover;
-
-border:3px solid #111;
-
-background:#222;
-
+.storyRingMini img {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid #111;
+    background: #222;
 }
 
-@keyframes ringAnimation{
-
-0%{
-
-background-position:0% 50%;
-
-}
-
-100%{
-
-background-position:100% 50%;
-
-}
-
+@keyframes ringAnimation {
+    0% { background-position: 0% 50%; }
+    100% { background-position: 100% 50%; }
 }
 
 /* Own Story */
-
-.storyRing.own{
-
-position:relative;
-
+.storyRing.own {
+    position: relative;
 }
 
-.storyRing .plus{
-
-position:absolute;
-
-right:0;
-
-bottom:0;
-
-width:22px;
-
-height:22px;
-
-border-radius:50%;
-
-background:#00aaff;
-
-display:flex;
-
-justify-content:center;
-
-align-items:center;
-
-font-size:16px;
-
-font-weight:bold;
-
-color:#fff;
-
-border:2px solid #111;
-
+.storyRing .plus {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: #00aaff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 16px;
+    font-weight: bold;
+    color: #fff;
+    border: 2px solid #111;
 }
 
 /* ==========================
    Story Viewer
 ========================== */
 
-#storyViewer{
-
-position:fixed;
-
-inset:0;
-
-display:none;
-
-justify-content:center;
-
-align-items:center;
-
-flex-direction:column;
-
-background:#000;
-
-z-index:99999;
-
-animation:storyFade .25s ease;
-
+#storyViewer {
+    position: fixed;
+    inset: 0;
+    display: none;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    background: #000;
+    z-index: 99999;
+    animation: storyFade .25s ease;
 }
 
-@keyframes storyFade{
-
-from{
-
-opacity:0;
-
+@keyframes storyFade {
+    from { opacity: 0; }
+    to { opacity: 1; }
 }
 
-to{
-
-opacity:1;
-
+/* Progress bars (multiple segments) */
+#storyProgress,
+.story-progress-bars {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    right: 12px;
+    display: flex;
+    gap: 4px;
+    z-index: 10;
 }
 
+.story-progress-segment {
+    flex: 1;
+    height: 3px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, .25);
+    overflow: hidden;
 }
 
-/* ==========================
-   Progress
-========================== */
-
-#storyProgressContainer{
-
-position:absolute;
-
-top:15px;
-
-left:15px;
-
-right:15px;
-
-height:4px;
-
-border-radius:20px;
-
-background:rgba(255,255,255,.18);
-
-overflow:hidden;
-
+.story-progress-fill {
+    width: 0%;
+    height: 100%;
+    background: #fff;
+    border-radius: 10px;
 }
 
-#storyProgress{
-
-width:0%;
-
-height:100%;
-
-background:#fff;
-
+/* Header */
+.story-header {
+    position: absolute;
+    top: 28px;
+    left: 16px;
+    right: 60px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    z-index: 10;
 }
 
-/* ==========================
-   Media
-========================== */
+.story-header img {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #fff;
+}
 
+.story-header strong {
+    display: block;
+    color: #fff;
+    font-size: 14px;
+}
+
+.story-header small {
+    color: rgba(255, 255, 255, .7);
+    font-size: 11px;
+}
+
+/* Media */
 #storyImage,
-#storyVideo{
+#storyVideo {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    background: #000;
+}
 
-width:100%;
+/* Nav zones */
+.story-nav {
+    position: absolute;
+    top: 80px;
+    bottom: 80px;
+    width: 40%;
+    z-index: 5;
+}
 
-height:100%;
+.story-nav.left { left: 0; }
+.story-nav.right { right: 0; }
 
-object-fit:contain;
+/* Close Button */
+#closeStory,
+.closeBtn {
+    position: absolute;
+    top: 20px;
+    right: 18px;
+    width: 42px;
+    height: 42px;
+    border: none;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, .45);
+    color: #fff;
+    font-size: 20px;
+    cursor: pointer;
+    backdrop-filter: blur(10px);
+    transition: .25s;
+    z-index: 20;
+}
 
-background:#000;
+#closeStory:hover,
+.closeBtn:hover {
+    background: #ff3b6b;
+}
 
+/* Reply Box */
+#storyBottom,
+.storyBottom {
+    position: absolute;
+    left: 15px;
+    right: 15px;
+    bottom: 20px;
+    display: flex;
+    gap: 10px;
+    z-index: 10;
+}
+
+#storyBottom input,
+.storyBottom input {
+    flex: 1;
+    height: 46px;
+    padding: 0 15px;
+    border: none;
+    outline: none;
+    border-radius: 30px;
+    background: rgba(255, 255, 255, .12);
+    color: #fff;
+    backdrop-filter: blur(10px);
+}
+
+#storyBottom button,
+.storyBottom button {
+    padding: 0 20px;
+    border: none;
+    border-radius: 30px;
+    background: #00aaff;
+    color: #fff;
+    font-weight: 600;
+    cursor: pointer;
+    transition: .25s;
+}
+
+#storyBottom button:hover,
+.storyBottom button:hover {
+    background: #0088ff;
+}
+
+/* Text / Sticker / Mention overlays on viewer */
+.viewora-text-story {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    max-width: 85%;
+    padding: 16px 22px;
+    font-size: 28px;
+    font-weight: 700;
+    text-align: center;
+    line-height: 1.3;
+    z-index: 6;
+    word-break: break-word;
+}
+
+.viewora-story-sticker {
+    position: absolute;
+    top: 25%;
+    right: 18%;
+    font-size: 56px;
+    z-index: 7;
+    animation: stickerPop .4s ease;
+}
+
+@keyframes stickerPop {
+    from { transform: scale(0); }
+    to { transform: scale(1); }
+}
+
+.viewora-story-mention {
+    position: absolute;
+    bottom: 100px;
+    left: 20px;
+    padding: 6px 12px;
+    border-radius: 20px;
+    background: rgba(0, 0, 0, .55);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 600;
+    z-index: 7;
+}
+
+.viewora-story-drawing {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 5;
 }
 
 /* ==========================
-   Close Button
+   COMPOSER OVERLAY
 ========================== */
 
-#closeStory{
-
-position:absolute;
-
-top:20px;
-
-right:18px;
-
-width:42px;
-
-height:42px;
-
-border:none;
-
-border-radius:50%;
-
-background:rgba(0,0,0,.45);
-
-color:#fff;
-
-font-size:20px;
-
-cursor:pointer;
-
-backdrop-filter:blur(10px);
-
-transition:.25s;
-
+.viewora-composer-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 100000;
+    background: rgba(0, 0, 0, .88);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    animation: storyFade .2s ease;
 }
 
-#closeStory:hover{
+.viewora-composer {
+    width: 100%;
+    max-width: 420px;
+    max-height: 92vh;
+    overflow-y: auto;
+    border-radius: 24px;
+    background: linear-gradient(160deg, #141824, #0c0e14);
+    border: 1px solid rgba(255, 255, 255, .1);
+    box-shadow: 0 30px 80px rgba(0, 0, 0, .55);
+    padding: 18px;
+}
 
-background:#ff3b6b;
+.composer-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+}
 
+.composer-header strong {
+    font-size: 17px;
+    color: #fff;
+}
+
+.composer-header button {
+    width: 36px;
+    height: 36px;
+    border: none;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, .08);
+    color: #fff;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+.story-preview-area {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 9 / 16;
+    max-height: 380px;
+    border-radius: 18px;
+    background: #0a0c12;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 14px;
+}
+
+.preview-placeholder {
+    color: #6b7285;
+    font-size: 14px;
+}
+
+.composer-media-preview {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+#storyDrawCanvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: none;
+    z-index: 4;
+    touch-action: none;
+}
+
+#storyTextPreview {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    max-width: 90%;
+    font-size: 22px;
+    font-weight: 700;
+    text-align: center;
+    color: #fff;
+    z-index: 5;
+    word-break: break-word;
+    pointer-events: none;
+}
+
+#storyStickerPreview {
+    position: absolute;
+    top: 20%;
+    right: 15%;
+    font-size: 48px;
+    z-index: 6;
+    pointer-events: none;
+}
+
+#storyMentionPreview {
+    position: absolute;
+    bottom: 16px;
+    left: 12px;
+    right: 12px;
+    color: #a5b4ff;
+    font-size: 13px;
+    font-weight: 600;
+    z-index: 6;
+    pointer-events: none;
+}
+
+.composer-tools {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.composer-tools button {
+    flex: 1 1 30%;
+    min-height: 40px;
+    border: 1px solid rgba(255, 255, 255, .1);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, .05);
+    color: #e2e5ef;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: .2s;
+}
+
+.composer-tools button:hover {
+    background: rgba(112, 103, 255, .25);
+    border-color: rgba(112, 103, 255, .4);
+}
+
+.story-editor-panel {
+    min-height: 20px;
+    margin-bottom: 12px;
+}
+
+.story-editor-panel textarea,
+.story-editor-panel input {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid rgba(255, 255, 255, .1);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, .05);
+    color: #fff;
+    font-size: 14px;
+    margin-bottom: 10px;
+    outline: none;
+}
+
+.story-editor-panel textarea {
+    min-height: 80px;
+    resize: vertical;
+}
+
+.editor-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+}
+
+.text-color-btn {
+    padding: 8px 14px;
+    border: 1px solid rgba(255, 255, 255, .15);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, .06);
+    color: #fff;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+#applyTextBtn,
+#addMentionBtn,
+#chooseMusicBtn,
+#clearDraw,
+#finishDraw {
+    width: 100%;
+    min-height: 42px;
+    border: none;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #7067ff, #00bfe9);
+    color: #fff;
+    font-weight: 700;
+    font-size: 13px;
+    cursor: pointer;
+    margin-top: 4px;
+}
+
+.sticker-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+}
+
+.sticker-grid button {
+    height: 48px;
+    font-size: 24px;
+    border: 1px solid rgba(255, 255, 255, .08);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, .04);
+    cursor: pointer;
+}
+
+.draw-controls {
+    display: flex;
+    gap: 8px;
+}
+
+.draw-controls button {
+    flex: 1;
+}
+
+.music-selected {
+    padding: 12px;
+    border-radius: 12px;
+    background: rgba(0, 217, 255, .12);
+    color: #7ee8ff;
+    font-size: 13px;
+}
+
+.publish-story-btn {
+    width: 100%;
+    min-height: 48px;
+    border: none;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #7067ff, #00d9ff);
+    color: #fff;
+    font-size: 15px;
+    font-weight: 800;
+    cursor: pointer;
+    box-shadow: 0 10px 30px rgba(112, 103, 255, .3);
+    transition: .25s;
+}
+
+.publish-story-btn:disabled {
+    opacity: .6;
+    cursor: wait;
+}
+
+.publish-story-btn:hover:not(:disabled) {
+    transform: translateY(-2px);
 }
 
 /* ==========================
-   Reply Box
+   PROFILE STORY OPTIONS SHEET
 ========================== */
 
-#storyBottom{
-
-position:absolute;
-
-left:15px;
-
-right:15px;
-
-bottom:20px;
-
-display:flex;
-
-gap:10px;
-
+.profile-story-options {
+    position: fixed;
+    inset: 0;
+    z-index: 100001;
+    background: rgba(0, 0, 0, .65);
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    animation: storyFade .2s ease;
 }
 
-#storyBottom input{
-
-flex:1;
-
-height:46px;
-
-padding:0 15px;
-
-border:none;
-
-outline:none;
-
-border-radius:30px;
-
-background:rgba(255,255,255,.12);
-
-color:#fff;
-
-backdrop-filter:blur(10px);
-
+.profile-story-sheet {
+    width: 100%;
+    max-width: 420px;
+    background: #12151f;
+    border-radius: 24px 24px 0 0;
+    padding: 12px 20px 28px;
+    text-align: center;
+    border: 1px solid rgba(255, 255, 255, .08);
 }
 
-#storyBottom button{
-
-padding:0 20px;
-
-border:none;
-
-border-radius:30px;
-
-background:#00aaff;
-
-color:#fff;
-
-font-weight:600;
-
-cursor:pointer;
-
-transition:.25s;
-
+.sheet-handle {
+    width: 40px;
+    height: 4px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, .2);
+    margin: 0 auto 16px;
 }
 
-#storyBottom button:hover{
+.sheet-profile-image {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid #7067ff;
+    margin-bottom: 10px;
+}
 
-background:#0088ff;
+.profile-story-sheet h3 {
+    color: #fff;
+    font-size: 17px;
+    margin-bottom: 18px;
+}
 
+.profile-story-sheet button {
+    width: 100%;
+    min-height: 50px;
+    margin-bottom: 8px;
+    border: 1px solid rgba(255, 255, 255, .1);
+    border-radius: 14px;
+    background: rgba(255, 255, 255, .05);
+    color: #fff;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    transition: .2s;
+}
+
+.profile-story-sheet button:hover:not(:disabled) {
+    background: rgba(112, 103, 255, .2);
+    border-color: rgba(112, 103, 255, .35);
+}
+
+.profile-story-sheet button span {
+    font-size: 18px;
+    opacity: .85;
+}
+
+#closeProfileOptions {
+    margin-top: 6px;
+    color: #ff7184 !important;
+    background: transparent !important;
+    border-color: transparent !important;
+}
+
+/* ==========================
+   SIMPLE PHOTO VIEWER
+========================== */
+
+.simple-photo-viewer {
+    position: fixed;
+    inset: 0;
+    z-index: 100002;
+    background: rgba(0, 0, 0, .92);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.simple-photo-viewer img {
+    max-width: 92vw;
+    max-height: 85vh;
+    border-radius: 12px;
+    object-fit: contain;
+}
+
+.simple-photo-viewer button {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    width: 44px;
+    height: 44px;
+    border: none;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, .12);
+    color: #fff;
+    font-size: 20px;
+    cursor: pointer;
 }
 
 /* ==========================
    Upload Progress
 ========================== */
 
-.progressBar{
-
-width:100%;
-
-height:8px;
-
-background:#333;
-
-border-radius:20px;
-
-overflow:hidden;
-
-margin-top:10px;
-
+.progressBar {
+    width: 100%;
+    height: 8px;
+    background: #333;
+    border-radius: 20px;
+    overflow: hidden;
+    margin-top: 10px;
 }
 
-.progressFill{
-
-width:0%;
-
-height:100%;
-
-background:linear-gradient(
-90deg,
-#00aaff,
-#00ffb7
-);
-
-transition:.25s;
-
+.progressFill {
+    width: 0%;
+    height: 100%;
+    background: linear-gradient(90deg, #00aaff, #00ffb7);
+    transition: .25s;
 }
 
 /* ==========================
    Mobile
 ========================== */
 
-@media(max-width:768px){
+@media (max-width: 768px) {
+    .storyRing,
+    .storyRingMini {
+        width: 65px;
+        height: 65px;
+    }
 
-.storyRing,
-.storyRingMini{
-
-width:65px;
-
-height:65px;
-
+    .storyItem {
+        min-width: 72px;
+    }
 }
 
-.storyItem{
+@media (max-width: 480px) {
+    .storyRing,
+    .storyRingMini {
+        width: 60px;
+        height: 60px;
+    }
 
-min-width:72px;
+    .storyItem small,
+    .storyItem p {
+        font-size: 11px;
+    }
 
-}
+    .viewora-composer {
+        padding: 14px;
+        border-radius: 20px;
+    }
 
-}
-
-@media(max-width:480px){
-
-.storyRing,
-.storyRingMini{
-
-width:60px;
-
-height:60px;
-
-}
-
-.storyItem small{
-
-font-size:11px;
-
-}
-
+    .composer-tools button {
+        font-size: 11px;
+        min-height: 38px;
+    }
 }

@@ -10,19 +10,35 @@
         content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
     >
 
-    <title>Viewora • Profile</title>
-
     <meta
         name="theme-color"
-        content="#070912"
+        content="#06070c"
     >
+
+    <meta
+        name="description"
+        content="Viewora Premium Profile"
+    >
+
+    <title>Viewora • Profile</title>
 
     <!-- =====================================================
          FONTS
     ====================================================== -->
 
     <link
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="preconnect"
+        href="https://fonts.googleapis.com"
+    >
+
+    <link
+        rel="preconnect"
+        href="https://fonts.gstatic.com"
+        crossorigin
+    >
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
         rel="stylesheet"
     >
 
@@ -32,7 +48,7 @@
     >
 
     <!-- =====================================================
-         PROFILE CSS
+         EXISTING VIEWORA CSS
     ====================================================== -->
 
     <link
@@ -44,13 +60,18 @@
         rel="stylesheet"
         href="nav.css"
     >
-     
-<link rel="stylesheet" href="viewora-loader.css">
+
+    <link
+        rel="stylesheet"
+        href="viewora-loader.css"
+    >
+
 
     <style>
 
         /* =====================================================
-           VIEWORA PREMIUM PROFILE
+           VIEWORA PROFILE V12
+           PREMIUM PROFILE SHELL
         ====================================================== */
 
         :root {
@@ -58,35 +79,52 @@
             --bg:
                 #06070c;
 
-            --card:
-                rgba(255,255,255,.055);
+            --surface:
+                rgba(255,255,255,.045);
 
-            --card-border:
+            --surface-2:
+                rgba(255,255,255,.065);
+
+            --border:
                 rgba(255,255,255,.09);
 
             --text:
                 #ffffff;
 
             --muted:
-                #9da3b4;
+                #8f96a8;
 
             --accent:
-                #6c63ff;
+                #7067ff;
 
-            --accent2:
+            --cyan:
                 #00d9ff;
 
+            --pink:
+                #ff4fd8;
+
+            --danger:
+                #ff526d;
+
+            --radius:
+                22px;
+
             --shadow:
-                0 25px 70px rgba(0,0,0,.45);
+                0 25px 80px rgba(0,0,0,.48);
+
         }
 
 
         * {
 
-            margin: 0;
-            padding: 0;
+            margin:
+                0;
 
-            box-sizing: border-box;
+            padding:
+                0;
+
+            box-sizing:
+                border-box;
 
             font-family:
                 "Inter",
@@ -94,6 +132,7 @@
 
             -webkit-tap-highlight-color:
                 transparent;
+
         }
 
 
@@ -101,12 +140,14 @@
 
             scroll-behavior:
                 smooth;
+
         }
 
 
         body {
 
-            min-height: 100vh;
+            min-height:
+                100vh;
 
             background:
                 var(--bg);
@@ -116,94 +157,169 @@
 
             overflow-x:
                 hidden;
+
+        }
+
+
+        button,
+        a {
+
+            -webkit-tap-highlight-color:
+                transparent;
+
+        }
+
+
+        button {
+
+            font:
+                inherit;
+
         }
 
 
         /* =====================================================
-           ANIMATED BACKGROUND
+           BACKGROUND
         ====================================================== */
 
         .premiumBackground {
 
-            position: fixed;
+            position:
+                fixed;
 
-            inset: 0;
+            inset:
+                0;
 
-            z-index: -5;
+            z-index:
+                -10;
 
-            overflow: hidden;
+            overflow:
+                hidden;
 
             background:
+
                 radial-gradient(
-                    circle at 15% 10%,
-                    rgba(108,99,255,.16),
-                    transparent 30%
+                    circle at 10% 5%,
+                    rgba(112,103,255,.16),
+                    transparent 28%
                 ),
+
                 radial-gradient(
-                    circle at 85% 20%,
+                    circle at 90% 20%,
                     rgba(0,217,255,.10),
                     transparent 28%
                 ),
+
+                radial-gradient(
+                    circle at 50% 100%,
+                    rgba(255,79,216,.08),
+                    transparent 32%
+                ),
+
                 #06070c;
+
+        }
+
+
+        .premiumBackground::after {
+
+            content:
+                "";
+
+            position:
+                absolute;
+
+            inset:
+                0;
+
+            background:
+                linear-gradient(
+                    180deg,
+                    transparent,
+                    rgba(0,0,0,.28)
+                );
+
+            pointer-events:
+                none;
+
         }
 
 
         .orb {
 
-            position: absolute;
+            position:
+                absolute;
 
-            width: 280px;
-            height: 280px;
+            width:
+                300px;
 
-            border-radius: 50%;
+            height:
+                300px;
+
+            border-radius:
+                50%;
 
             filter:
-                blur(80px);
+                blur(90px);
 
-            opacity: .35;
+            opacity:
+                .25;
 
             animation:
-                floatingOrb 10s ease-in-out infinite;
+                profileOrb 12s ease-in-out infinite;
+
         }
 
 
         .orbOne {
 
-            top: 5%;
-            left: -80px;
+            left:
+                -120px;
+
+            top:
+                5%;
 
             background:
-                #655cff;
+                #7067ff;
+
         }
 
 
         .orbTwo {
 
-            right: -90px;
-            top: 35%;
+            right:
+                -130px;
+
+            top:
+                38%;
 
             background:
                 #00d9ff;
 
             animation-delay:
-                -3s;
+                -4s;
+
         }
 
 
         .orbThree {
 
-            bottom: -100px;
-            left: 35%;
+            left:
+                30%;
+
+            bottom:
+                -160px;
 
             background:
-                #9b59ff;
+                #ff4fd8;
 
             animation-delay:
-                -6s;
+                -7s;
+
         }
 
 
-        @keyframes floatingOrb {
+        @keyframes profileOrb {
 
             0%,
             100% {
@@ -211,14 +327,17 @@
                 transform:
                     translate3d(0,0,0)
                     scale(1);
+
             }
 
             50% {
 
                 transform:
-                    translate3d(35px,-45px,0)
+                    translate3d(35px,-40px,0)
                     scale(1.12);
+
             }
+
         }
 
 
@@ -228,11 +347,14 @@
 
         #pageLoader {
 
-            position: fixed;
+            position:
+                fixed;
 
-            inset: 0;
+            inset:
+                0;
 
-            z-index: 99999;
+            z-index:
+                99999;
 
             display:
                 flex;
@@ -246,105 +368,118 @@
             justify-content:
                 center;
 
-            gap: 18px;
+            gap:
+                16px;
 
             background:
                 #06070c;
 
             transition:
-                opacity .45s ease,
-                visibility .45s ease;
+                opacity .4s ease,
+                visibility .4s ease;
+
         }
 
 
         #pageLoader.hidden {
 
-            opacity: 0;
+            opacity:
+                0;
 
             visibility:
                 hidden;
 
             pointer-events:
                 none;
+
         }
 
 
-        .loader {
+        .profileLoader {
+
+            width:
+                62px;
+
+            height:
+                62px;
 
             position:
                 relative;
 
-            width: 65px;
-            height: 65px;
         }
 
 
-        .ring {
+        .profileLoader span {
 
-            position: absolute;
+            position:
+                absolute;
 
-            inset: 0;
+            inset:
+                0;
 
             border-radius:
                 50%;
 
             border:
                 3px solid
-                rgba(255,255,255,.08);
+                rgba(255,255,255,.07);
 
             border-top-color:
                 var(--accent);
 
             border-right-color:
-                var(--accent2);
+                var(--cyan);
 
             animation:
-                loaderSpin 1s linear infinite;
+                loaderRotate 1s linear infinite;
+
         }
 
 
-        .ring.delay {
+        .profileLoader span:nth-child(2) {
 
-            inset: 9px;
+            inset:
+                9px;
 
             border:
                 2px solid
                 rgba(255,255,255,.06);
 
             border-bottom-color:
-                #fff;
+                var(--pink);
 
             animation-direction:
                 reverse;
 
             animation-duration:
-                1.6s;
+                1.5s;
+
         }
 
 
-        @keyframes loaderSpin {
+        @keyframes loaderRotate {
 
             to {
 
                 transform:
                     rotate(360deg);
+
             }
+
         }
 
 
-        #pageLoader h2 {
+        #pageLoader strong {
 
             font-size:
-                14px;
+                13px;
+
+            color:
+                #aeb5c6;
 
             font-weight:
                 600;
 
-            color:
-                #aeb4c5;
-
-            letter-spacing:
-                .4px;
         }
 
 
@@ -367,10 +502,11 @@
                 auto;
 
             padding-bottom:
-                100px;
+                110px;
 
             animation:
-                pageEnter .7s ease both;
+                appEnter .55s ease both;
+
         }
 
 
@@ -378,26 +514,32 @@
 
             display:
                 none;
+
         }
 
 
-        @keyframes pageEnter {
+        @keyframes appEnter {
 
             from {
 
-                opacity: 0;
+                opacity:
+                    0;
 
                 transform:
-                    translateY(18px);
+                    translateY(12px);
+
             }
 
             to {
 
-                opacity: 1;
+                opacity:
+                    1;
 
                 transform:
                     translateY(0);
+
             }
+
         }
 
 
@@ -411,16 +553,17 @@
                 relative;
 
             height:
-                245px;
+                255px;
 
             overflow:
                 hidden;
 
             border-radius:
-                0 0 34px 34px;
+                0 0 32px 32px;
 
             background:
-                #111;
+                #11141d;
+
         }
 
 
@@ -432,34 +575,18 @@
             height:
                 100%;
 
+            display:
+                block;
+
             object-fit:
                 cover;
 
             transform:
                 scale(1.04);
 
-            animation:
-                coverReveal 1.3s ease both;
-        }
+            opacity:
+                .95;
 
-
-        @keyframes coverReveal {
-
-            from {
-
-                opacity: 0;
-
-                transform:
-                    scale(1.12);
-            }
-
-            to {
-
-                opacity: 1;
-
-                transform:
-                    scale(1.04);
-            }
         }
 
 
@@ -472,12 +599,14 @@
                 0;
 
             background:
+
                 linear-gradient(
                     to bottom,
-                    rgba(0,0,0,.18),
+                    rgba(0,0,0,.12),
                     transparent 35%,
-                    rgba(6,7,12,.95)
+                    rgba(6,7,12,.98) 100%
                 );
+
         }
 
 
@@ -496,51 +625,71 @@
                 linear-gradient(
                     110deg,
                     transparent 25%,
-                    rgba(255,255,255,.10) 50%,
+                    rgba(255,255,255,.09) 50%,
                     transparent 75%
                 );
 
             transform:
-                translateX(-120%);
+                translateX(-130%);
 
             animation:
-                coverShine 5s ease-in-out infinite;
+                bannerShine 6s ease-in-out infinite;
+
+            pointer-events:
+                none;
+
         }
 
 
-        @keyframes coverShine {
+        @keyframes bannerShine {
 
             0%,
             55% {
 
                 transform:
-                    translateX(-120%);
+                    translateX(-130%);
+
             }
 
             75%,
             100% {
 
                 transform:
-                    translateX(120%);
+                    translateX(130%);
+
             }
+
         }
 
 
         /* =====================================================
-           TOP BUTTONS
+           TOP ACTIONS
         ====================================================== */
 
-        .shareBtn,
-        .settingsBtn {
+        .profileTopActions {
 
             position:
                 absolute;
 
             top:
-                18px;
+                16px;
+
+            right:
+                16px;
 
             z-index:
                 5;
+
+            display:
+                flex;
+
+            gap:
+                8px;
+
+        }
+
+
+        .topAction {
 
             width:
                 43px;
@@ -550,16 +699,22 @@
 
             border:
                 1px solid
-                rgba(255,255,255,.14);
+                rgba(255,255,255,.13);
 
             border-radius:
-                15px;
+                14px;
+
+            display:
+                grid;
+
+            place-items:
+                center;
 
             color:
                 #fff;
 
             background:
-                rgba(10,12,20,.48);
+                rgba(8,10,17,.55);
 
             backdrop-filter:
                 blur(18px);
@@ -572,32 +727,21 @@
 
             transition:
                 .25s ease;
+
         }
 
 
-        .shareBtn {
-
-            right:
-                68px;
-        }
-
-
-        .settingsBtn {
-
-            right:
-                18px;
-        }
-
-
-        .shareBtn:hover,
-        .settingsBtn:hover {
+        .topAction:hover {
 
             transform:
-                translateY(-3px)
-                scale(1.04);
+                translateY(-2px);
 
             background:
-                rgba(108,99,255,.45);
+                rgba(112,103,255,.35);
+
+            border-color:
+                rgba(112,103,255,.45);
+
         }
 
 
@@ -610,8 +754,11 @@
             position:
                 relative;
 
+            z-index:
+                5;
+
             margin:
-                -58px 14px 0;
+                -62px 14px 0;
 
             padding:
                 0 20px 24px;
@@ -619,12 +766,9 @@
             text-align:
                 center;
 
-            z-index:
-                10;
-
             border:
                 1px solid
-                var(--card-border);
+                var(--border);
 
             border-radius:
                 30px;
@@ -646,27 +790,33 @@
                 blur(24px);
 
             animation:
-                cardRise .8s .15s ease both;
+                cardEnter .65s .05s ease both;
+
         }
 
 
-        @keyframes cardRise {
+        @keyframes cardEnter {
 
             from {
 
-                opacity: 0;
+                opacity:
+                    0;
 
                 transform:
-                    translateY(35px);
+                    translateY(25px);
+
             }
 
             to {
 
-                opacity: 1;
+                opacity:
+                    1;
 
                 transform:
                     translateY(0);
+
             }
+
         }
 
 
@@ -680,13 +830,13 @@
                 relative;
 
             width:
-                112px;
+                116px;
 
             height:
-                112px;
+                116px;
 
             margin:
-                -56px auto 14px;
+                -58px auto 15px;
 
             padding:
                 4px;
@@ -697,32 +847,20 @@
             background:
                 conic-gradient(
                     from 0deg,
-                    #6c63ff,
-                    #00d9ff,
-                    #ff4fd8,
-                    #6c63ff
+                    var(--accent),
+                    var(--cyan),
+                    var(--pink),
+                    var(--accent)
                 );
 
-            animation:
-                avatarGradient 5s linear infinite;
-
             box-shadow:
-                0 12px 40px
-                rgba(108,99,255,.35);
+                0 15px 50px
+                rgba(112,103,255,.32);
+
         }
 
 
-        @keyframes avatarGradient {
-
-            to {
-
-                transform:
-                    rotate(360deg);
-            }
-        }
-
-
-        #storyRing img {
+        #profilePic {
 
             width:
                 100%;
@@ -738,33 +876,14 @@
 
             border:
                 4px solid
-                #090a10;
+                #08090f;
 
             border-radius:
                 50%;
 
-            animation:
-                avatarImageIn .8s ease both;
-        }
+            background:
+                #10131c;
 
-
-        @keyframes avatarImageIn {
-
-            from {
-
-                opacity: 0;
-
-                transform:
-                    scale(.75);
-            }
-
-            to {
-
-                opacity: 1;
-
-                transform:
-                    scale(1);
-            }
         }
 
 
@@ -774,10 +893,10 @@
                 absolute;
 
             right:
-                1px;
+                0;
 
             bottom:
-                2px;
+                1px;
 
             width:
                 32px;
@@ -785,37 +904,39 @@
             height:
                 32px;
 
-            display:
-                flex;
-
-            align-items:
-                center;
-
-            justify-content:
-                center;
-
             border:
                 3px solid
-                #090a10;
+                #08090f;
 
             border-radius:
                 50%;
 
-            background:
-                linear-gradient(
-                    135deg,
-                    #6c63ff,
-                    #00d9ff
-                );
+            display:
+                grid;
+
+            place-items:
+                center;
 
             color:
                 #fff;
 
+            background:
+                linear-gradient(
+                    135deg,
+                    var(--accent),
+                    var(--cyan)
+                );
+
             cursor:
                 pointer;
 
+            box-shadow:
+                0 5px 18px
+                rgba(0,0,0,.4);
+
             transition:
                 .25s ease;
+
         }
 
 
@@ -824,68 +945,62 @@
             transform:
                 rotate(90deg)
                 scale(1.08);
+
         }
 
 
         /* =====================================================
-           NAME
+           PROFILE INFO
         ====================================================== */
 
         #profileName {
 
+            min-height:
+                30px;
+
             display:
                 flex;
 
-            align-items:
+            justify-content:
                 center;
 
-            justify-content:
+            align-items:
                 center;
 
             gap:
                 6px;
 
-            margin:
-                0;
-
             font-size:
                 24px;
+
+            line-height:
+                1.2;
 
             font-weight:
                 800;
 
             letter-spacing:
-                -.6px;
+                -.7px;
+
         }
 
 
-        .verified {
+        #verifiedBadge {
 
             color:
-                #20cfff;
+                #24cfff;
 
             font-size:
                 17px;
 
-            animation:
-                verifiedPulse 2s ease-in-out infinite;
         }
 
 
-        .verified.hidden {
+        #verifiedBadge.hidden {
 
             display:
                 none;
-        }
 
-
-        @keyframes verifiedPulse {
-
-            50% {
-
-                transform:
-                    scale(1.15);
-            }
         }
 
 
@@ -895,29 +1010,34 @@
                 5px;
 
             color:
-                #8f97aa;
+                var(--muted);
 
             font-size:
                 13px;
+
         }
 
 
         .bio {
 
             max-width:
-                500px;
+                540px;
 
             margin:
                 13px auto 0;
 
             color:
-                #d5d8e2;
+                #d8dbe5;
+
+            font-size:
+                14px;
 
             line-height:
                 1.55;
 
-            font-size:
-                14px;
+            white-space:
+                pre-wrap;
+
         }
 
 
@@ -927,29 +1047,30 @@
 
         .profileMeta {
 
+            margin-top:
+                14px;
+
             display:
                 flex;
 
-            align-items:
+            justify-content:
                 center;
 
-            justify-content:
+            align-items:
                 center;
 
             flex-wrap:
                 wrap;
 
             gap:
-                15px;
-
-            margin-top:
-                14px;
+                12px 18px;
 
             color:
-                #858da0;
+                #858da1;
 
             font-size:
                 11px;
+
         }
 
 
@@ -963,18 +1084,20 @@
 
             gap:
                 5px;
+
         }
 
 
         .profileMeta i {
 
             color:
-                #7c73ff;
+                #8077ff;
+
         }
 
 
         /* =====================================================
-           STATS
+           PROFILE STATS
         ====================================================== */
 
         .profileStats {
@@ -986,17 +1109,21 @@
                 repeat(4,1fr);
 
             gap:
-                8px;
+                7px;
 
             margin-top:
                 22px;
+
         }
 
 
         .stat {
 
+            min-width:
+                0;
+
             padding:
-                13px 5px;
+                13px 4px;
 
             border:
                 1px solid
@@ -1008,21 +1135,26 @@
             background:
                 rgba(255,255,255,.035);
 
+            cursor:
+                pointer;
+
             transition:
-                .3s ease;
+                .25s ease;
+
         }
 
 
         .stat:hover {
 
             transform:
-                translateY(-4px);
-
-            background:
-                rgba(108,99,255,.10);
+                translateY(-3px);
 
             border-color:
-                rgba(108,99,255,.25);
+                rgba(112,103,255,.28);
+
+            background:
+                rgba(112,103,255,.09);
+
         }
 
 
@@ -1033,6 +1165,7 @@
 
             font-weight:
                 800;
+
         }
 
 
@@ -1045,15 +1178,16 @@
                 3px;
 
             color:
-                #8b92a4;
+                #858da0;
 
             font-size:
-                10px;
+                9px;
+
         }
 
 
         /* =====================================================
-           BUTTONS
+           PROFILE BUTTONS
         ====================================================== */
 
         .profileButtons {
@@ -1065,10 +1199,11 @@
                 1fr 1fr 1fr;
 
             gap:
-                9px;
+                8px;
 
             margin-top:
                 18px;
+
         }
 
 
@@ -1100,11 +1235,14 @@
             color:
                 #fff;
 
+            background:
+                rgba(255,255,255,.045);
+
             text-decoration:
                 none;
 
             font-size:
-                12px;
+                11px;
 
             font-weight:
                 700;
@@ -1114,6 +1252,16 @@
 
             transition:
                 .25s ease;
+
+        }
+
+
+        .profileButtons button:hover,
+        .profileButtons a:hover {
+
+            transform:
+                translateY(-2px);
+
         }
 
 
@@ -1125,88 +1273,137 @@
             background:
                 linear-gradient(
                     135deg,
-                    #6c63ff,
+                    var(--accent),
                     #00bfe9
-                );
+                ) !important;
 
             box-shadow:
                 0 8px 25px
-                rgba(78,110,255,.25);
+                rgba(82,102,255,.24);
+
         }
 
 
-        .secondaryBtn {
+        .followingBtn {
 
             background:
-                rgba(255,255,255,.045);
+                rgba(255,255,255,.075) !important;
+
+            border-color:
+                rgba(255,255,255,.14) !important;
+
         }
 
 
-        .profileButtons button:hover,
-        .profileButtons a:hover {
+        .dangerBtn {
 
-            transform:
-                translateY(-3px);
+            color:
+                #ff7184 !important;
+
         }
 
 
         /* =====================================================
-           STORY HIGHLIGHTS
+           OWNER ONLY
+        ====================================================== */
+
+        .ownerOnly {
+
+            display:
+                none !important;
+
+        }
+
+
+        body.is-owner .ownerOnly {
+
+            display:
+                flex !important;
+
+        }
+
+
+        body.is-owner .visitorOnly {
+
+            display:
+                none !important;
+
+        }
+
+
+        /* =====================================================
+           STORIES
         ====================================================== */
 
         .storySection {
 
             margin:
-                18px 14px 0;
+                17px 14px 0;
 
             padding:
                 18px;
 
             border:
                 1px solid
-                rgba(255,255,255,.07);
+                rgba(255,255,255,.075);
 
             border-radius:
-                25px;
+                24px;
 
             background:
                 rgba(255,255,255,.035);
 
             backdrop-filter:
-                blur(18px);
+                blur(20px);
 
-            animation:
-                sectionReveal .7s .3s ease both;
+            -webkit-backdrop-filter:
+                blur(20px);
+
         }
 
 
-        @keyframes sectionReveal {
+        .sectionHeader {
 
-            from {
+            display:
+                flex;
 
-                opacity: 0;
+            align-items:
+                center;
 
-                transform:
-                    translateY(20px);
-            }
-
-            to {
-
-                opacity: 1;
-
-                transform:
-                    translateY(0);
-            }
-        }
-
-
-        .storySection h3 {
+            justify-content:
+                space-between;
 
             margin-bottom:
                 15px;
 
+        }
+
+
+        .sectionHeader h3 {
+
             font-size:
                 14px;
+
+            font-weight:
+                700;
+
+        }
+
+
+        .sectionHeader a {
+
+            color:
+                #8e87ff;
+
+            text-decoration:
+                none;
+
+            font-size:
+                10px;
+
+            font-weight:
+                700;
+
         }
 
 
@@ -1223,6 +1420,7 @@
 
             scrollbar-width:
                 none;
+
         }
 
 
@@ -1230,66 +1428,55 @@
 
             display:
                 none;
+
         }
 
 
         .storyItem {
 
-            min-width:
-                66px;
+            flex:
+                0 0 66px;
 
             text-align:
                 center;
 
             cursor:
                 pointer;
+
         }
 
 
         .storyCircle {
 
             width:
-                62px;
+                64px;
 
             height:
-                62px;
+                64px;
 
             padding:
                 3px;
 
-            display:
-                flex;
-
-            align-items:
-                center;
-
-            justify-content:
-                center;
-
             margin:
                 auto;
+
+            display:
+                grid;
+
+            place-items:
+                center;
 
             border-radius:
                 50%;
 
             background:
                 conic-gradient(
-                    #6c63ff,
-                    #00d9ff,
-                    #ff4fd8,
-                    #6c63ff
+                    var(--accent),
+                    var(--cyan),
+                    var(--pink),
+                    var(--accent)
                 );
 
-            transition:
-                .3s ease;
-        }
-
-
-        .storyCircle:hover {
-
-            transform:
-                scale(1.08)
-                rotate(4deg);
         }
 
 
@@ -1310,6 +1497,7 @@
 
             border-radius:
                 50%;
+
         }
 
 
@@ -1321,16 +1509,17 @@
             font-size:
                 18px;
 
+            border:
+                1px solid
+                rgba(255,255,255,.10);
+
             background:
                 linear-gradient(
                     135deg,
-                    #181b29,
+                    #171a28,
                     #252a3b
                 );
 
-            border:
-                1px solid
-                rgba(255,255,255,.1);
         }
 
 
@@ -1340,7 +1529,7 @@
                 7px;
 
             color:
-                #9aa1b2;
+                #9aa1b3;
 
             font-size:
                 10px;
@@ -1353,11 +1542,12 @@
 
             text-overflow:
                 ellipsis;
+
         }
 
 
         /* =====================================================
-           TABS
+           CONTENT TABS
         ====================================================== */
 
         .profileTabs {
@@ -1369,16 +1559,19 @@
                 0;
 
             z-index:
-                30;
+                50;
 
             display:
                 grid;
 
             grid-template-columns:
-                repeat(4,1fr);
+                repeat(5,1fr);
+
+            gap:
+                4px;
 
             margin:
-                15px 14px 0;
+                16px 14px 0;
 
             padding:
                 5px;
@@ -1391,13 +1584,14 @@
                 18px;
 
             background:
-                rgba(8,9,15,.78);
+                rgba(7,8,14,.82);
 
             backdrop-filter:
                 blur(22px);
 
             -webkit-backdrop-filter:
                 blur(22px);
+
         }
 
 
@@ -1407,7 +1601,13 @@
                 relative;
 
             min-height:
-                43px;
+                45px;
+
+            border:
+                0;
+
+            border-radius:
+                13px;
 
             display:
                 flex;
@@ -1424,26 +1624,18 @@
             gap:
                 3px;
 
-            border:
-                0;
-
-            border-radius:
-                13px;
+            color:
+                #70788b;
 
             background:
                 transparent;
-
-            color:
-                #737b8f;
-
-            font-size:
-                9px;
 
             cursor:
                 pointer;
 
             transition:
                 .25s ease;
+
         }
 
 
@@ -1451,6 +1643,18 @@
 
             font-size:
                 14px;
+
+        }
+
+
+        .tabBtn span {
+
+            font-size:
+                8px;
+
+            font-weight:
+                600;
+
         }
 
 
@@ -1462,9 +1666,10 @@
             background:
                 linear-gradient(
                     135deg,
-                    rgba(108,99,255,.24),
-                    rgba(0,217,255,.10)
+                    rgba(112,103,255,.23),
+                    rgba(0,217,255,.08)
                 );
+
         }
 
 
@@ -1494,20 +1699,22 @@
             background:
                 linear-gradient(
                     90deg,
-                    #6c63ff,
-                    #00d9ff
+                    var(--accent),
+                    var(--cyan)
                 );
+
         }
 
 
         /* =====================================================
-           TAB CONTENT
+           CONTENT AREA
         ====================================================== */
 
         .tabContainer {
 
             margin:
                 12px 14px 0;
+
         }
 
 
@@ -1517,7 +1724,8 @@
                 none;
 
             animation:
-                tabIn .35s ease both;
+                contentIn .3s ease both;
+
         }
 
 
@@ -1525,32 +1733,36 @@
 
             display:
                 block;
+
         }
 
 
-        @keyframes tabIn {
+        @keyframes contentIn {
 
             from {
 
-                opacity: 0;
+                opacity:
+                    0;
 
                 transform:
-                    translateY(10px);
+                    translateY(8px);
+
             }
 
             to {
 
-                opacity: 1;
+                opacity:
+                    1;
 
                 transform:
                     translateY(0);
+
             }
+
         }
 
 
-        .postsGrid,
-        .shortsGrid,
-        .savedGrid {
+        .contentGrid {
 
             display:
                 grid;
@@ -1560,10 +1772,14 @@
 
             gap:
                 4px;
+
         }
 
 
-        .videosList {
+        .contentEmpty {
+
+            min-height:
+                170px;
 
             display:
                 flex;
@@ -1571,88 +1787,255 @@
             flex-direction:
                 column;
 
+            align-items:
+                center;
+
+            justify-content:
+                center;
+
             gap:
+                8px;
+
+            border:
+                1px solid
+                rgba(255,255,255,.055);
+
+            border-radius:
+                18px;
+
+            color:
+                #777f92;
+
+            background:
+                rgba(255,255,255,.025);
+
+            grid-column:
+                1 / -1;
+
+        }
+
+
+        .contentEmpty i {
+
+            font-size:
+                25px;
+
+            opacity:
+                .6;
+
+        }
+
+
+        .contentEmpty strong {
+
+            color:
+                #aeb4c3;
+
+            font-size:
+                13px;
+
+        }
+
+
+        .contentEmpty span {
+
+            font-size:
                 10px;
+
         }
 
 
         /* =====================================================
-           BOTTOM NAV
+           LIVE / VIDEO LIST
         ====================================================== */
 
-        .bottomNav {
-
-            position:
-                fixed;
-
-            left:
-                50%;
-
-            bottom:
-                12px;
-
-            transform:
-                translateX(-50%);
-
-            z-index:
-                1000;
-
-            width:
-                min(94%, 600px);
-
-            height:
-                64px;
-
-            display:
-                flex;
-
-            align-items:
-                center;
-
-            justify-content:
-                space-around;
-
-            padding:
-                5px 8px;
-
-            border:
-                1px solid
-                rgba(255,255,255,.10);
-
-            border-radius:
-                23px;
-
-            background:
-                rgba(10,11,18,.78);
-
-            backdrop-filter:
-                blur(25px);
-
-            -webkit-backdrop-filter:
-                blur(25px);
-
-            box-shadow:
-                0 15px 50px
-                rgba(0,0,0,.45);
-        }
-
-
-        .bottomNav a {
-
-            position:
-                relative;
-
-            width:
-                58px;
-
-            height:
-                54px;
+        .contentList {
 
             display:
                 flex;
 
             flex-direction:
                 column;
+
+            gap:
+                9px;
+
+        }
+
+
+        /* =====================================================
+           CONTENT CARD HOOK
+        ====================================================== */
+
+        .profileContentCard {
+
+            position:
+                relative;
+
+            overflow:
+                hidden;
+
+            min-height:
+                120px;
+
+            border-radius:
+                12px;
+
+            background:
+                #10131b;
+
+            cursor:
+                pointer;
+
+        }
+
+
+        .profileContentCard img,
+        .profileContentCard video {
+
+            width:
+                100%;
+
+            height:
+                100%;
+
+            min-height:
+                120px;
+
+            display:
+                block;
+
+            object-fit:
+                cover;
+
+        }
+
+
+        .profileContentCard .contentOverlay {
+
+            position:
+                absolute;
+
+            inset:
+                0;
+
+            display:
+                flex;
+
+            align-items:
+                flex-end;
+
+            padding:
+                8px;
+
+            background:
+                linear-gradient(
+                    transparent,
+                    rgba(0,0,0,.75)
+                );
+
+        }
+
+
+        .contentOverlay span {
+
+            font-size:
+                9px;
+
+            color:
+                #fff;
+
+        }
+
+
+        /* =====================================================
+           OWNER CONTENT MENU
+        ====================================================== */
+
+        .contentMenuBtn {
+
+            position:
+                absolute;
+
+            right:
+                7px;
+
+            top:
+                7px;
+
+            width:
+                30px;
+
+            height:
+                30px;
+
+            border:
+                1px solid
+                rgba(255,255,255,.15);
+
+            border-radius:
+                10px;
+
+            color:
+                #fff;
+
+            background:
+                rgba(0,0,0,.45);
+
+            backdrop-filter:
+                blur(10px);
+
+            cursor:
+                pointer;
+
+        }
+
+
+        /* =====================================================
+           MORE PROFILE ACTIONS
+        ====================================================== */
+
+        .profileTools {
+
+            display:
+                flex;
+
+            gap:
+                8px;
+
+            margin:
+                12px 14px 0;
+
+            overflow-x:
+                auto;
+
+            scrollbar-width:
+                none;
+
+        }
+
+
+        .profileTools::-webkit-scrollbar {
+
+            display:
+                none;
+
+        }
+
+
+        .toolLink {
+
+            flex:
+                0 0 auto;
+
+            min-height:
+                36px;
+
+            padding:
+                0 13px;
+
+            display:
+                inline-flex;
 
             align-items:
                 center;
@@ -1661,108 +2044,50 @@
                 center;
 
             gap:
-                3px;
+                6px;
+
+            border:
+                1px solid
+                rgba(255,255,255,.08);
+
+            border-radius:
+                12px;
 
             color:
-                #777f93;
+                #aeb4c3;
+
+            background:
+                rgba(255,255,255,.035);
 
             text-decoration:
                 none;
 
             font-size:
-                9px;
+                10px;
 
-            transition:
-                .25s ease;
+            font-weight:
+                600;
+
         }
 
 
-        .bottomNav a i {
-
-            font-size:
-                17px;
-        }
-
-
-        .bottomNav a.active {
+        .toolLink i {
 
             color:
-                #fff;
+                #8077ff;
+
         }
 
 
-        .activeIndicator {
+        /* =====================================================
+           STORY FILE
+        ====================================================== */
 
-            position:
-                absolute;
+        #storyFile {
 
-            top:
-                4px;
+            display:
+                none;
 
-            width:
-                5px;
-
-            height:
-                5px;
-
-            border-radius:
-                50%;
-
-            background:
-                #00d9ff;
-
-            opacity:
-                0;
-
-            transform:
-                scale(0);
-
-            transition:
-                .25s ease;
-        }
-
-
-        .bottomNav a.active .activeIndicator {
-
-            opacity:
-                1;
-
-            transform:
-                scale(1);
-        }
-
-
-        .uploadNav {
-
-            width:
-                48px !important;
-
-            height:
-                48px !important;
-
-            border-radius:
-                16px !important;
-
-            color:
-                #fff !important;
-
-            background:
-                linear-gradient(
-                    135deg,
-                    #6c63ff,
-                    #00c9ed
-                );
-
-            box-shadow:
-                0 8px 25px
-                rgba(90,100,255,.35);
-        }
-
-
-        .uploadNav i {
-
-            font-size:
-                20px !important;
         }
 
 
@@ -1770,19 +2095,19 @@
            SCROLL TOP
         ====================================================== */
 
-        .floatingTop {
+        #scrollTopBtn {
 
             position:
                 fixed;
 
             right:
-                18px;
+                17px;
 
             bottom:
                 92px;
 
             z-index:
-                900;
+                800;
 
             width:
                 42px;
@@ -1792,16 +2117,16 @@
 
             border:
                 1px solid
-                rgba(255,255,255,.12);
+                rgba(255,255,255,.13);
 
             border-radius:
                 14px;
 
-            background:
-                rgba(20,22,32,.8);
-
             color:
                 #fff;
+
+            background:
+                rgba(17,19,29,.84);
 
             backdrop-filter:
                 blur(15px);
@@ -1811,10 +2136,11 @@
 
             transition:
                 .25s ease;
+
         }
 
 
-        .floatingTop.hidden {
+        #scrollTopBtn.hidden {
 
             opacity:
                 0;
@@ -1824,33 +2150,80 @@
 
             transform:
                 translateY(10px);
+
         }
 
 
-        .floatingTop:not(.hidden) {
+        /* =====================================================
+           TOAST
+        ====================================================== */
 
-            animation:
-                topButtonIn .3s ease;
+        #profileToast {
+
+            position:
+                fixed;
+
+            left:
+                50%;
+
+            bottom:
+                82px;
+
+            z-index:
+                9999;
+
+            max-width:
+                calc(100vw - 30px);
+
+            padding:
+                11px 16px;
+
+            border:
+                1px solid
+                rgba(255,255,255,.10);
+
+            border-radius:
+                14px;
+
+            color:
+                #fff;
+
+            background:
+                rgba(18,20,29,.94);
+
+            box-shadow:
+                0 15px 40px
+                rgba(0,0,0,.35);
+
+            backdrop-filter:
+                blur(18px);
+
+            transform:
+                translate(-50%,20px);
+
+            opacity:
+                0;
+
+            pointer-events:
+                none;
+
+            transition:
+                .25s ease;
+
+            font-size:
+                11px;
+
         }
 
 
-        @keyframes topButtonIn {
+        #profileToast.show {
 
-            from {
+            opacity:
+                1;
 
-                opacity: 0;
+            transform:
+                translate(-50%,0);
 
-                transform:
-                    translateY(10px);
-            }
-
-            to {
-
-                opacity: 1;
-
-                transform:
-                    translateY(0);
-            }
         }
 
 
@@ -1858,48 +2231,52 @@
            MOBILE
         ====================================================== */
 
-        @media (max-width: 520px) {
+        @media (max-width:520px) {
 
             #app {
 
                 padding-bottom:
-                    92px;
+                    95px;
+
             }
 
 
             .profileBanner {
 
                 height:
-                    215px;
+                    220px;
 
                 border-radius:
                     0 0 28px 28px;
+
             }
 
 
             .profileCard {
 
-                margin-top:
-                    -52px;
+                margin:
+                    -54px 10px 0;
 
                 padding:
-                    0 14px 20px;
+                    0 13px 20px;
 
                 border-radius:
                     26px;
+
             }
 
 
             #storyRing {
 
                 width:
-                    104px;
+                    105px;
 
                 height:
-                    104px;
+                    105px;
 
                 margin-top:
-                    -52px;
+                    -53px;
+
             }
 
 
@@ -1907,20 +2284,23 @@
 
                 font-size:
                     21px;
+
             }
 
 
             .profileStats {
 
                 gap:
-                    5px;
+                    4px;
+
             }
 
 
             .stat {
 
                 padding:
-                    11px 3px;
+                    11px 2px;
+
             }
 
 
@@ -1928,57 +2308,120 @@
 
                 font-size:
                     16px;
+
+            }
+
+
+            .stat span {
+
+                font-size:
+                    8px;
+
             }
 
 
             .profileButtons {
 
                 gap:
-                    6px;
+                    5px;
+
             }
 
 
             .profileButtons button,
             .profileButtons a {
 
+                min-height:
+                    41px;
+
                 font-size:
                     10px;
 
-                min-height:
-                    42px;
             }
 
 
             .profileButtons i {
 
                 font-size:
-                    11px;
+                    10px;
+
             }
 
 
             .storySection {
 
+                margin-left:
+                    10px;
+
+                margin-right:
+                    10px;
+
                 border-radius:
                     22px;
+
             }
+
+
+            .profileTabs {
+
+                margin-left:
+                    10px;
+
+                margin-right:
+                    10px;
+
+            }
+
+
+            .tabContainer {
+
+                margin-left:
+                    10px;
+
+                margin-right:
+                    10px;
+
+            }
+
+
+            .profileTools {
+
+                margin-left:
+                    10px;
+
+                margin-right:
+                    10px;
+
+            }
+
         }
 
 
-        @media (max-width: 360px) {
+        @media (max-width:370px) {
+
+            .tabBtn span {
+
+                display:
+                    none;
+
+            }
+
+
+            .tabBtn {
+
+                min-height:
+                    41px;
+
+            }
+
 
             .profileButtons span {
 
                 display:
                     none;
+
             }
 
-
-            .profileButtons button,
-            .profileButtons a {
-
-                min-height:
-                    40px;
-            }
         }
 
     </style>
@@ -1989,729 +2432,1198 @@
 <body>
 
 
-<!-- =====================================================
-     PREMIUM BACKGROUND
-====================================================== -->
+    <!-- =====================================================
+         BACKGROUND
+    ====================================================== -->
 
-<div class="premiumBackground">
+    <div class="premiumBackground">
 
-    <div class="orb orbOne"></div>
+        <div class="orb orbOne"></div>
 
-    <div class="orb orbTwo"></div>
+        <div class="orb orbTwo"></div>
 
-    <div class="orb orbThree"></div>
-
-</div>
-
-
-<!-- =====================================================
-     LOADER
-====================================================== -->
-
-<div id="pageLoader">
-
-    <div class="loader">
-
-        <div class="ring"></div>
-
-        <div class="ring delay"></div>
+        <div class="orb orbThree"></div>
 
     </div>
 
-    <h2>
-        Loading Profile...
-    </h2>
 
-</div>
+    <!-- =====================================================
+         LOADER
+    ====================================================== -->
 
+    <div id="pageLoader">
 
-<!-- =====================================================
-     APP
-====================================================== -->
+        <div class="profileLoader">
 
-<div id="app" class="hidden">
+            <span></span>
 
+            <span></span>
 
-    <!-- =================================================
-         PROFILE BANNER
-    ================================================== -->
+        </div>
 
-    <section class="profileBanner">
+        <strong>
+            Loading Profile...
+        </strong>
 
-        <img
-            id="coverPhoto"
-            src="assets/default-banner.jpg"
-            alt="Cover"
-        >
-
-        <div class="bannerOverlay"></div>
+    </div>
 
 
-        <button
-            class="shareBtn"
-            id="shareProfileBtn"
-            title="Share Profile"
-            type="button"
-        >
+    <!-- =====================================================
+         APP
+    ====================================================== -->
 
-            <i class="fa-solid fa-share-nodes"></i>
-
-        </button>
-
-
-        <button
-            class="settingsBtn"
-            id="settingsBtn"
-            title="Settings"
-            type="button"
-        >
-
-            <i class="fa-solid fa-gear"></i>
-
-        </button>
-
-    </section>
+    <main
+        id="app"
+        class="hidden"
+        data-profile-page="true"
+    >
 
 
-    <!-- =================================================
-         PROFILE CARD
-    ================================================== -->
+        <!-- =================================================
+             COVER
+        ================================================== -->
 
-    <section class="profileCard">
-
-
-        <!-- Avatar -->
-
-        <div id="storyRing">
+        <section class="profileBanner">
 
             <img
-                id="profilePic"
-                src="assets/default-avatar.png"
-                alt="Profile"
+                id="coverPhoto"
+                src="assets/default-banner.jpg"
+                alt="Profile cover"
+                loading="eager"
             >
+
+            <div class="bannerOverlay"></div>
+
+
+            <div class="profileTopActions">
+
+                <button
+                    id="shareProfileBtn"
+                    class="topAction"
+                    type="button"
+                    aria-label="Share profile"
+                >
+
+                    <i class="fa-solid fa-share-nodes"></i>
+
+                </button>
+
+
+                <button
+                    id="settingsBtn"
+                    class="topAction ownerOnly"
+                    type="button"
+                    aria-label="Settings"
+                >
+
+                    <i class="fa-solid fa-gear"></i>
+
+                </button>
+
+
+                <button
+                    id="profileMoreBtn"
+                    class="topAction visitorOnly"
+                    type="button"
+                    aria-label="More options"
+                >
+
+                    <i class="fa-solid fa-ellipsis"></i>
+
+                </button>
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================================
+             PROFILE CARD
+        ================================================== -->
+
+        <section
+            class="profileCard"
+            id="profileCard"
+        >
+
+
+            <!-- Avatar / Story -->
+
+            <div
+                id="storyRing"
+                data-story-action="view"
+            >
+
+                <img
+                    id="profilePic"
+                    src="assets/default-avatar.png"
+                    alt="Profile photo"
+                >
+
+
+                <button
+                    id="storyPlusBtn"
+                    class="storyPlus ownerOnly"
+                    type="button"
+                    aria-label="Add story"
+                >
+
+                    <i class="fa-solid fa-plus"></i>
+
+                </button>
+
+            </div>
+
+
+            <!-- Name -->
+
+            <h1 id="profileName">
+
+                Loading...
+
+                <span
+                    id="verifiedBadge"
+                    class="hidden"
+                    aria-label="Verified"
+                >
+
+                    <i
+                        class="fa-solid fa-circle-check"
+                    ></i>
+
+                </span>
+
+            </h1>
+
+
+            <!-- Username -->
+
+            <p
+                id="profileUsername"
+                class="username"
+            >
+                @loading
+            </p>
+
+
+            <!-- Bio -->
+
+            <p
+                id="profileBio"
+                class="bio"
+            >
+                Welcome to Viewora 🚀
+            </p>
+
+
+            <!-- Meta -->
+
+            <div class="profileMeta">
+
+                <span id="joinDate">
+
+                    <i class="fa-solid fa-calendar-days"></i>
+
+                    Joined
+
+                </span>
+
+
+                <span id="profileLocation">
+
+                    <i class="fa-solid fa-location-dot"></i>
+
+                    India
+
+                </span>
+
+            </div>
+
+
+            <!-- =================================================
+                 STATS
+            ================================================== -->
+
+            <div class="profileStats">
+
+
+                <button
+                    class="stat"
+                    id="postsStat"
+                    type="button"
+                    data-stat="posts"
+                >
+
+                    <h2 id="postsCount">
+                        0
+                    </h2>
+
+                    <span>
+                        Posts
+                    </span>
+
+                </button>
+
+
+                <button
+                    class="stat"
+                    id="followersStat"
+                    type="button"
+                    data-stat="followers"
+                >
+
+                    <h2 id="followersCount">
+                        0
+                    </h2>
+
+                    <span>
+                        Followers
+                    </span>
+
+                </button>
+
+
+                <button
+                    class="stat"
+                    id="followingStat"
+                    type="button"
+                    data-stat="following"
+                >
+
+                    <h2 id="followingCount">
+                        0
+                    </h2>
+
+                    <span>
+                        Following
+                    </span>
+
+                </button>
+
+
+                <button
+                    class="stat"
+                    id="videosStat"
+                    type="button"
+                    data-stat="videos"
+                >
+
+                    <h2 id="videosCount">
+                        0
+                    </h2>
+
+                    <span>
+                        Videos
+                    </span>
+
+                </button>
+
+            </div>
+
+
+            <!-- =================================================
+                 PROFILE ACTIONS
+            ================================================== -->
+
+            <div class="profileButtons">
+
+
+                <!-- Visitor Follow -->
+
+                <button
+                    id="followBtn"
+                    class="primaryBtn visitorOnly"
+                    type="button"
+                    data-action="follow"
+                >
+
+                    <i
+                        id="followBtnIcon"
+                        class="fa-solid fa-user-plus"
+                    ></i>
+
+                    <span id="followBtnText">
+                        Follow
+                    </span>
+
+                </button>
+
+
+                <!-- Owner Edit -->
+
+                <a
+                    id="editProfileBtn"
+                    class="primaryBtn ownerOnly"
+                    href="edit-profile.html"
+                >
+
+                    <i class="fa-solid fa-pen"></i>
+
+                    <span>
+                        Edit Profile
+                    </span>
+
+                </a>
+
+
+                <!-- Visitor Message -->
+
+                <button
+                    id="messageBtn"
+                    class="secondaryBtn visitorOnly"
+                    type="button"
+                    data-action="message"
+                >
+
+                    <i class="fa-solid fa-paper-plane"></i>
+
+                    <span>
+                        Message
+                    </span>
+
+                </button>
+
+
+                <!-- Owner Archive -->
+
+                <a
+                    id="archiveBtn"
+                    class="secondaryBtn ownerOnly"
+                    href="archive.html"
+                >
+
+                    <i class="fa-solid fa-box-archive"></i>
+
+                    <span>
+                        Archive
+                    </span>
+
+                </a>
+
+
+                <!-- Owner Saved -->
+
+                <a
+                    id="savedProfileBtn"
+                    class="secondaryBtn ownerOnly"
+                    href="saved.html"
+                >
+
+                    <i class="fa-solid fa-bookmark"></i>
+
+                    <span>
+                        Saved
+                    </span>
+
+                </a>
+
+
+                <!-- Visitor Share -->
+
+                <button
+                    id="visitorShareBtn"
+                    class="secondaryBtn visitorOnly"
+                    type="button"
+                >
+
+                    <i class="fa-solid fa-share"></i>
+
+                    <span>
+                        Share
+                    </span>
+
+                </button>
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================================
+             PROFILE QUICK TOOLS
+        ================================================== -->
+
+        <div class="profileTools">
+
+
+            <a
+                class="toolLink ownerOnly"
+                href="saved.html"
+            >
+
+                <i class="fa-solid fa-bookmark"></i>
+
+                Saved
+
+            </a>
+
+
+            <a
+                class="toolLink ownerOnly"
+                href="archive.html"
+            >
+
+                <i class="fa-solid fa-box-archive"></i>
+
+                Archive
+
+            </a>
+
+
+            <a
+                class="toolLink"
+                href="followers.html"
+                id="followersQuickLink"
+            >
+
+                <i class="fa-solid fa-user-group"></i>
+
+                Followers
+
+            </a>
+
+
+            <a
+                class="toolLink"
+                href="following.html"
+                id="followingQuickLink"
+            >
+
+                <i class="fa-solid fa-user-check"></i>
+
+                Following
+
+            </a>
+
+        </div>
+
+
+        <!-- =================================================
+             STORIES / HIGHLIGHTS
+        ================================================== -->
+
+        <section class="storySection">
+
+            <div class="sectionHeader">
+
+                <h3>
+                    Story Highlights
+                </h3>
+
+                <a
+                    href="stories.html"
+                    id="storiesLink"
+                >
+                    View all
+                </a>
+
+            </div>
+
+
+            <div
+                id="storiesWrapper"
+                class="storiesWrapper"
+            >
+
+
+                <!-- New Story -->
+
+                <div
+                    id="newStoryItem"
+                    class="storyItem ownerOnly"
+                >
+
+                    <div
+                        class="storyCircle addStory"
+                    >
+
+                        <i
+                            class="fa-solid fa-plus"
+                        ></i>
+
+                    </div>
+
+                    <p>
+                        New
+                    </p>
+
+                </div>
+
+
+                <!-- Dynamic stories inserted by JS -->
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================================
+             PROFILE TABS
+        ================================================== -->
+
+        <div
+            class="profileTabs"
+            id="profileTabs"
+        >
+
 
             <button
-                class="storyPlus"
-                id="storyPlusBtn"
+                class="tabBtn active"
+                data-tab="posts"
                 type="button"
-                title="Create Story"
             >
 
-                <i class="fa-solid fa-plus"></i>
-
-            </button>
-
-        </div>
-
-
-        <!-- Name -->
-
-        <h1 id="profileName">
-
-            Loading...
-
-            <span
-                id="verifiedBadge"
-                class="verified hidden"
-            >
-
-                <i
-                    class="fa-solid fa-circle-check"
-                ></i>
-
-            </span>
-
-        </h1>
-
-
-        <p
-            id="profileUsername"
-            class="username"
-        >
-            @loading
-        </p>
-
-
-        <p
-            id="profileBio"
-            class="bio"
-        >
-            Welcome to Viewora 🚀
-        </p>
-
-
-        <!-- Meta -->
-
-        <div class="profileMeta">
-
-            <span id="joinDate">
-
-                <i
-                    class="fa-solid fa-calendar"
-                ></i>
-
-                Joined 2026
-
-            </span>
-
-
-            <span id="profileLocation">
-
-                <i
-                    class="fa-solid fa-location-dot"
-                ></i>
-
-                India
-
-            </span>
-
-        </div>
-
-
-        <!-- Stats -->
-
-        <div class="profileStats">
-
-            <div class="stat">
-
-                <h2 id="postsCount">
-                    0
-                </h2>
+                <i class="fa-solid fa-table-cells-large"></i>
 
                 <span>
                     Posts
                 </span>
 
-            </div>
+            </button>
 
 
-            <div class="stat">
+            <button
+                class="tabBtn"
+                data-tab="shorts"
+                type="button"
+            >
 
-                <h2 id="followersCount">
-                    0
-                </h2>
-
-                <span>
-                    Followers
-                </span>
-
-            </div>
-
-
-            <div class="stat">
-
-                <h2 id="followingCount">
-                    0
-                </h2>
+                <i class="fa-solid fa-clapperboard"></i>
 
                 <span>
-                    Following
+                    Shorts
                 </span>
 
-            </div>
+            </button>
 
 
-            <div class="stat">
+            <button
+                class="tabBtn"
+                data-tab="videos"
+                type="button"
+            >
 
-                <h2 id="videosCount">
-                    0
-                </h2>
+                <i class="fa-solid fa-video"></i>
 
                 <span>
                     Videos
                 </span>
 
-            </div>
-
-        </div>
-
-
-        <!-- Buttons -->
-
-        <div class="profileButtons">
+            </button>
 
 
             <button
-                id="followBtn"
-                class="primaryBtn"
+                class="tabBtn"
+                data-tab="live"
                 type="button"
             >
 
-                <i
-                    class="fa-solid fa-user-plus"
-                ></i>
+                <i class="fa-solid fa-tower-broadcast"></i>
 
                 <span>
-                    Follow
+                    Live
                 </span>
 
             </button>
 
 
-            <a
-                href="edit-profile.html"
-                class="secondaryBtn"
-                id="editProfileBtn"
+            <button
+                class="tabBtn ownerOnly"
+                data-tab="saved"
+                type="button"
             >
 
-                <i
-                    class="fa-solid fa-pen"
-                ></i>
+                <i class="fa-solid fa-bookmark"></i>
 
                 <span>
-                    Edit
+                    Saved
+                </span>
+
+            </button>
+
+        </div>
+
+
+        <!-- =================================================
+             TAB CONTENT
+        ================================================== -->
+
+        <div class="tabContainer">
+
+
+            <!-- =================================================
+                 POSTS
+            ================================================== -->
+
+            <section
+                id="postsTab"
+                class="tabContent active"
+                data-content="posts"
+            >
+
+                <div
+                    id="postsList"
+                    class="contentGrid"
+                >
+
+                    <div
+                        id="postsEmpty"
+                        class="contentEmpty"
+                    >
+
+                        <i class="fa-regular fa-images"></i>
+
+                        <strong>
+                            No posts yet
+                        </strong>
+
+                        <span>
+                            Posts will appear here.
+                        </span>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+
+            <!-- =================================================
+                 SHORTS
+            ================================================== -->
+
+            <section
+                id="shortsTab"
+                class="tabContent"
+                data-content="shorts"
+            >
+
+                <div
+                    id="shortsList"
+                    class="contentGrid"
+                >
+
+                    <div
+                        id="shortsEmpty"
+                        class="contentEmpty"
+                    >
+
+                        <i class="fa-solid fa-clapperboard"></i>
+
+                        <strong>
+                            No Shorts yet
+                        </strong>
+
+                        <span>
+                            Shorts will appear here.
+                        </span>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+
+            <!-- =================================================
+                 VIDEOS
+            ================================================== -->
+
+            <section
+                id="videosTab"
+                class="tabContent"
+                data-content="videos"
+            >
+
+                <div
+                    id="videosList"
+                    class="contentList"
+                >
+
+                    <div
+                        id="videosEmpty"
+                        class="contentEmpty"
+                    >
+
+                        <i class="fa-solid fa-video"></i>
+
+                        <strong>
+                            No videos yet
+                        </strong>
+
+                        <span>
+                            Long videos will appear here.
+                        </span>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+
+            <!-- =================================================
+                 LIVE
+            ================================================== -->
+
+            <section
+                id="liveTab"
+                class="tabContent"
+                data-content="live"
+            >
+
+                <div
+                    id="liveList"
+                    class="contentList"
+                >
+
+                    <div
+                        id="liveEmpty"
+                        class="contentEmpty"
+                    >
+
+                        <i class="fa-solid fa-tower-broadcast"></i>
+
+                        <strong>
+                            No live videos
+                        </strong>
+
+                        <span>
+                            Live streams and replays will appear here.
+                        </span>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+
+            <!-- =================================================
+                 SAVED
+            ================================================== -->
+
+            <section
+                id="savedTab"
+                class="tabContent"
+                data-content="saved"
+            >
+
+                <div
+                    id="savedList"
+                    class="contentGrid"
+                >
+
+                    <div
+                        id="savedEmpty"
+                        class="contentEmpty"
+                    >
+
+                        <i class="fa-solid fa-bookmark"></i>
+
+                        <strong>
+                            No saved content
+                        </strong>
+
+                        <span>
+                            Your saved posts and videos will appear here.
+                        </span>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+        </div>
+
+
+        <!-- =================================================
+             STORY FILE
+        ================================================== -->
+
+        <input
+            type="file"
+            id="storyFile"
+            accept="image/*,video/*"
+            hidden
+        >
+
+
+        <!-- =================================================
+             BOTTOM NAV
+        ================================================== -->
+
+        <nav class="bottomNav">
+
+
+            <a href="index.html">
+
+                <div class="activeIndicator"></div>
+
+                <i class="fa-solid fa-house"></i>
+
+                <span>
+                    Home
                 </span>
 
             </a>
 
 
-            <button
-                id="messageBtn"
-                class="secondaryBtn"
-                type="button"
-            >
+            <a href="shorts.html">
 
-                <i
-                    class="fa-solid fa-paper-plane"
-                ></i>
+                <div class="activeIndicator"></div>
+
+                <i class="fa-solid fa-clapperboard"></i>
 
                 <span>
-                    Message
+                    Shorts
                 </span>
 
-            </button>
-
-        </div>
-
-    </section>
+            </a>
 
 
-    <!-- =================================================
-         STORY HIGHLIGHTS
-    ================================================== -->
-
-    <section class="storySection">
-
-        <h3>
-            Story Highlights
-        </h3>
-
-
-        <div
-            class="storiesWrapper"
-            id="storiesWrapper"
-        >
-
-            <div
-                class="storyItem"
-                id="newStoryItem"
+            <a
+                href="upload.html"
+                class="uploadNav"
+                aria-label="Upload"
             >
 
-                <div
-                    class="storyCircle addStory"
-                >
+                <i class="fa-solid fa-plus"></i>
 
-                    <i
-                        class="fa-solid fa-plus"
-                    ></i>
+                <span>
+                    Upload
+                </span>
 
-                </div>
+            </a>
 
-                <p>
-                    New
-                </p>
 
-            </div>
+            <a href="users.html">
 
-        </div>
+                <div class="activeIndicator"></div>
 
-    </section>
+                <i class="fa-solid fa-users"></i>
 
+                <span>
+                    Users
+                </span>
 
-    <!-- =================================================
-         TABS
-    ================================================== -->
+            </a>
 
-    <div class="profileTabs">
 
+            <a
+                href="profile.html"
+                class="active"
+            >
 
-        <button
-            class="tabBtn active"
-            data-tab="posts"
-            type="button"
-        >
+                <div class="activeIndicator"></div>
 
-            <i
-                class="fa-solid fa-image"
-            ></i>
+                <i class="fa-solid fa-user"></i>
 
-            <span>
-                Posts
-            </span>
+                <span>
+                    Profile
+                </span>
 
-        </button>
+            </a>
 
+        </nav>
 
-        <button
-            class="tabBtn"
-            data-tab="shorts"
-            type="button"
-        >
 
-            <i
-                class="fa-solid fa-play"
-            ></i>
+    </main>
 
-            <span>
-                Shorts
-            </span>
 
-        </button>
+    <!-- =====================================================
+         TOAST
+    ====================================================== -->
 
+    <div
+        id="profileToast"
+        role="status"
+        aria-live="polite"
+    ></div>
 
-        <button
-            class="tabBtn"
-            data-tab="videos"
-            type="button"
-        >
 
-            <i
-                class="fa-solid fa-video"
-            ></i>
-
-            <span>
-                Videos
-            </span>
-
-        </button>
-
-
-        <button
-            class="tabBtn"
-            data-tab="saved"
-            type="button"
-        >
-
-            <i
-                class="fa-solid fa-bookmark"
-            ></i>
-
-            <span>
-                Saved
-            </span>
-
-        </button>
-
-    </div>
-
-
-    <!-- =================================================
-         TAB CONTENT
-    ================================================== -->
-
-    <div class="tabContainer">
-
-
-        <div
-            id="postsTab"
-            class="tabContent active"
-        >
-
-            <div
-                id="postsList"
-                class="postsGrid"
-            ></div>
-
-        </div>
-
-
-        <div
-            id="shortsTab"
-            class="tabContent"
-        >
-
-            <div
-                id="shortsList"
-                class="shortsGrid"
-            ></div>
-
-        </div>
-
-
-        <div
-            id="videosTab"
-            class="tabContent"
-        >
-
-            <div
-                id="videosList"
-                class="videosList"
-            ></div>
-
-        </div>
-
-
-        <div
-            id="savedTab"
-            class="tabContent"
-        >
-
-            <div
-                id="savedList"
-                class="savedGrid"
-            ></div>
-
-        </div>
-
-    </div>
-
-
-    <!-- =================================================
-         BOTTOM NAV
-    ================================================== -->
-
-    <nav class="bottomNav">
-
-
-        <a href="index.html">
-
-            <span class="activeIndicator"></span>
-
-            <i
-                class="fa-solid fa-house"
-            ></i>
-
-            <span>
-                Home
-            </span>
-
-        </a>
-
-
-        <a href="shorts.html">
-
-            <span class="activeIndicator"></span>
-
-            <i
-                class="fa-solid fa-play"
-            ></i>
-
-            <span>
-                Shorts
-            </span>
-
-        </a>
-
-
-        <a
-            href="upload.html"
-            class="uploadNav"
-        >
-
-            <i
-                class="fa-solid fa-plus"
-            ></i>
-
-        </a>
-
-
-        <a href="users.html">
-
-            <span class="activeIndicator"></span>
-
-            <i
-                class="fa-solid fa-users"
-            ></i>
-
-            <span>
-                Users
-            </span>
-
-        </a>
-
-
-        <a
-            href="profile.html"
-            class="active"
-        >
-
-            <span class="activeIndicator"></span>
-
-            <i
-                class="fa-solid fa-user"
-            ></i>
-
-            <span>
-                Profile
-            </span>
-
-        </a>
-
-    </nav>
-
-
-    <!-- =================================================
-         STORY FILE
-    ================================================== -->
-
-    <input
-        type="file"
-        id="storyFile"
-        accept="image/*,video/*"
-        hidden
-    >
-
-
-    <!-- =================================================
+    <!-- =====================================================
          SCROLL TOP
-    ================================================== -->
+    ====================================================== -->
 
     <button
         id="scrollTopBtn"
-        class="floatingTop hidden"
+        class="hidden"
         type="button"
-        title="Scroll to top"
+        aria-label="Scroll to top"
     >
 
-        <i
-            class="fa-solid fa-arrow-up"
-        ></i>
+        <i class="fa-solid fa-arrow-up"></i>
 
     </button>
 
 
-</div>
+    <!-- =====================================================
+         FIREBASE SDK
+    ====================================================== -->
+
+    <script
+        src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"
+    ></script>
+
+    <script
+        src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"
+    ></script>
+
+    <script
+        src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"
+    ></script>
+
+    <script
+        src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"
+    ></script>
 
 
-<!-- =====================================================
-     FIREBASE
-====================================================== -->
+    <!-- =====================================================
+         VIEWORA CORE
+    ====================================================== -->
 
-<script
-    src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"
-></script>
+    <script src="firebase.js"></script>
 
-<script
-    src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"
-></script>
+    <script src="utils.js"></script>
 
-<script
-    src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"
-></script>
-
-<script
-    src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"
-></script>
+    <script src="nav.js"></script>
 
 
-<!-- =====================================================
-     VIEWORA CORE
-====================================================== -->
+    <!-- =====================================================
+         PROFILE JS
+    ====================================================== -->
 
-<script src="firebase.js"></script>
-
-<script src="utils.js"></script>
-
-<script src="nav.js"></script>
-
-<script src="profile.js"></script>
-
-<script src="viewora-loader.js"></script>
+    <script src="profile.js"></script>
 
 
-<!-- =====================================================
-     PREMIUM PROFILE BOOT
-====================================================== -->
+    <!-- =====================================================
+         PROFILE UI BOOT
+    ====================================================== -->
 
-<script>
+    <script>
 
-"use strict";
-
-
-document.addEventListener(
-    "DOMContentLoaded",
-    () => {
-
-        /*
-         * Story button
-         */
-
-        const storyBtn =
-            document.getElementById(
-                "storyPlusBtn"
-            );
-
-        const newStory =
-            document.getElementById(
-                "newStoryItem"
-            );
-
-        const storyFile =
-            document.getElementById(
-                "storyFile"
-            );
+        "use strict";
 
 
-        function openStoryPicker() {
-
-            if (storyFile) {
-
-                storyFile.click();
-
-            } else if (
-                typeof createStory ===
-                "function"
-            ) {
-
-                createStory();
-
-            }
-
-        }
+        document.addEventListener(
+            "DOMContentLoaded",
+            function () {
 
 
-        storyBtn?.addEventListener(
-            "click",
-            openStoryPicker
-        );
+                /* =================================================
+                   ELEMENTS
+                ================================================= */
+
+                const loader =
+                    document.getElementById(
+                        "pageLoader"
+                    );
 
 
-        newStory?.addEventListener(
-            "click",
-            openStoryPicker
-        );
+                const app =
+                    document.getElementById(
+                        "app"
+                    );
 
 
-        /*
-         * Settings
-         */
+                const storyFile =
+                    document.getElementById(
+                        "storyFile"
+                    );
 
-        document
-            .getElementById(
-                "settingsBtn"
-            )
-            ?.addEventListener(
-                "click",
-                () => {
 
-                    location.href =
-                        "settings.html";
+                const storyPlusBtn =
+                    document.getElementById(
+                        "storyPlusBtn"
+                    );
+
+
+                const newStoryItem =
+                    document.getElementById(
+                        "newStoryItem"
+                    );
+
+
+                const topBtn =
+                    document.getElementById(
+                        "scrollTopBtn"
+                    );
+
+
+                const toast =
+                    document.getElementById(
+                        "profileToast"
+                    );
+
+
+                /* =================================================
+                   TOAST
+                ================================================= */
+
+                window.vieworaProfileToast =
+                    function (message) {
+
+                        if (!toast) {
+                            return;
+                        }
+
+                        toast.textContent =
+                            String(
+                                message || ""
+                            );
+
+                        toast.classList.add(
+                            "show"
+                        );
+
+                        clearTimeout(
+                            window.__vieworaToastTimer
+                        );
+
+                        window.__vieworaToastTimer =
+                            setTimeout(
+                                function () {
+
+                                    toast.classList.remove(
+                                        "show"
+                                    );
+
+                                },
+                                2200
+                            );
+
+                    };
+
+
+                /* =================================================
+                   STORY PICKER
+                ================================================= */
+
+                function openStoryPicker() {
+
+                    if (!storyFile) {
+                        return;
+                    }
+
+                    storyFile.click();
 
                 }
-            );
 
 
-        /*
-         * Share profile
-         */
+                storyPlusBtn?.addEventListener(
+                    "click",
+                    function (event) {
 
-        document
-            .getElementById(
-                "shareProfileBtn"
-            )
-            ?.addEventListener(
-                "click",
-                async () => {
+                        event.stopPropagation();
+
+                        openStoryPicker();
+
+                    }
+                );
+
+
+                newStoryItem?.addEventListener(
+                    "click",
+                    openStoryPicker
+                );
+
+
+                /* =================================================
+                   STORY FILE CHANGE
+                ================================================= */
+
+                storyFile?.addEventListener(
+                    "change",
+                    async function () {
+
+                        const file =
+                            storyFile.files?.[0];
+
+                        if (!file) {
+                            return;
+                        }
+
+
+                        /*
+                         * profile.js may expose
+                         * createStoryFromFile().
+                         */
+
+                        try {
+
+                            if (
+                                typeof window.createStoryFromFile ===
+                                "function"
+                            ) {
+
+                                await window.createStoryFromFile(
+                                    file
+                                );
+
+                            } else if (
+                                typeof window.createStory ===
+                                "function"
+                            ) {
+
+                                await window.createStory(
+                                    file
+                                );
+
+                            } else {
+
+                                vieworaProfileToast(
+                                    "Story upload is being prepared."
+                                );
+
+                            }
+
+                        } catch (error) {
+
+                            console.error(
+                                "Story upload failed:",
+                                error
+                            );
+
+                            vieworaProfileToast(
+                                "Story upload failed."
+                            );
+
+                        }
+
+
+                        storyFile.value =
+                            "";
+
+                    }
+                );
+
+
+                /* =================================================
+                   SETTINGS
+                ================================================= */
+
+                document
+                    .getElementById(
+                        "settingsBtn"
+                    )
+                    ?.addEventListener(
+                        "click",
+                        function () {
+
+                            window.location.href =
+                                "settings.html";
+
+                        }
+                    );
+
+
+                /* =================================================
+                   SHARE
+                ================================================= */
+
+                async function shareProfile() {
 
                     const username =
                         document
@@ -2721,15 +3633,23 @@ document.addEventListener(
                             ?.textContent
                             ?.trim();
 
+
+                    const cleanUsername =
+                        username &&
+                        username !== "@loading"
+                            ? username
+                            : "this profile";
+
+
                     const shareData = {
 
                         title:
                             "Viewora Profile",
 
                         text:
-                            username
-                                ? `Check out ${username} on Viewora`
-                                : "Check out this profile on Viewora",
+                            "Check out " +
+                            cleanUsername +
+                            " on Viewora",
 
                         url:
                             window.location.href
@@ -2740,26 +3660,41 @@ document.addEventListener(
                     try {
 
                         if (
-                            navigator.share
+                            typeof navigator.share ===
+                            "function"
                         ) {
 
                             await navigator.share(
                                 shareData
                             );
 
-                        } else if (
-                            navigator.clipboard
+                            return;
+
+                        }
+
+
+                        if (
+                            navigator.clipboard &&
+                            typeof navigator.clipboard.writeText ===
+                            "function"
                         ) {
 
                             await navigator.clipboard.writeText(
                                 window.location.href
                             );
 
-                            alert(
+                            vieworaProfileToast(
                                 "Profile link copied!"
                             );
 
+                            return;
+
                         }
+
+
+                        vieworaProfileToast(
+                            "Copy this profile link from your browser."
+                        );
 
                     } catch (error) {
 
@@ -2769,7 +3704,7 @@ document.addEventListener(
                         ) {
 
                             console.warn(
-                                "Share failed:",
+                                "Profile share failed:",
                                 error
                             );
 
@@ -2778,128 +3713,544 @@ document.addEventListener(
                     }
 
                 }
-            );
 
 
-        /*
-         * Scroll top
-         */
+                document
+                    .getElementById(
+                        "shareProfileBtn"
+                    )
+                    ?.addEventListener(
+                        "click",
+                        shareProfile
+                    );
 
-        const topBtn =
-            document.getElementById(
-                "scrollTopBtn"
-            );
+
+                document
+                    .getElementById(
+                        "visitorShareBtn"
+                    )
+                    ?.addEventListener(
+                        "click",
+                        shareProfile
+                    );
 
 
-        window.addEventListener(
-            "scroll",
-            () => {
+                /* =================================================
+                   FOLLOWING / FOLLOWERS NAVIGATION
+                ================================================= */
 
-                if (!topBtn) {
-                    return;
+                function getProfileUID() {
+
+                    return (
+                        window.profileUID ||
+                        new URLSearchParams(
+                            window.location.search
+                        ).get("uid") ||
+                        new URLSearchParams(
+                            window.location.search
+                        ).get("user") ||
+                        ""
+                    );
+
                 }
 
-                topBtn.classList.toggle(
-                    "hidden",
-                    window.scrollY < 400
-                );
 
-            },
-            {
-                passive: true
-            }
-        );
+                function openPeoplePage(
+                    page
+                ) {
+
+                    const uid =
+                        getProfileUID();
 
 
-        topBtn?.addEventListener(
-            "click",
-            () => {
+                    if (!uid) {
 
-                window.scrollTo({
+                        vieworaProfileToast(
+                            "Profile is still loading."
+                        );
 
-                    top:
-                        0,
+                        return;
 
-                    behavior:
-                        "smooth"
-
-                });
-
-            }
-        );
+                    }
 
 
-        /*
-         * Premium tab animation
-         */
+                    window.location.href =
+                        page +
+                        "?uid=" +
+                        encodeURIComponent(
+                            uid
+                        );
 
-        document
-            .querySelectorAll(
-                ".tabBtn"
-            )
-            .forEach(
-                button => {
+                }
 
-                    button.addEventListener(
+
+                document
+                    .getElementById(
+                        "followersStat"
+                    )
+                    ?.addEventListener(
                         "click",
-                        () => {
+                        function () {
 
-                            document
-                                .querySelectorAll(
-                                    ".tabBtn"
-                                )
-                                .forEach(
-                                    btn =>
-                                        btn.classList.remove(
-                                            "active"
-                                        )
-                                );
-
-                            button.classList.add(
-                                "active"
+                            openPeoplePage(
+                                "followers.html"
                             );
 
                         }
                     );
 
+
+                document
+                    .getElementById(
+                        "followingStat"
+                    )
+                    ?.addEventListener(
+                        "click",
+                        function () {
+
+                            openPeoplePage(
+                                "following.html"
+                            );
+
+                        }
+                    );
+
+
+                document
+                    .getElementById(
+                        "followersQuickLink"
+                    )
+                    ?.addEventListener(
+                        "click",
+                        function (event) {
+
+                            event.preventDefault();
+
+                            openPeoplePage(
+                                "followers.html"
+                            );
+
+                        }
+                    );
+
+
+                document
+                    .getElementById(
+                        "followingQuickLink"
+                    )
+                    ?.addEventListener(
+                        "click",
+                        function (event) {
+
+                            event.preventDefault();
+
+                            openPeoplePage(
+                                "following.html"
+                            );
+
+                        }
+                    );
+
+
+                /* =================================================
+                   TABS
+                ================================================= */
+
+                const tabs =
+                    document.querySelectorAll(
+                        ".tabBtn"
+                    );
+
+
+                const contents =
+                    document.querySelectorAll(
+                        ".tabContent"
+                    );
+
+
+                function activateTab(
+                    tabName
+                ) {
+
+                    tabs.forEach(
+                        function (button) {
+
+                            button.classList.toggle(
+                                "active",
+                                button.dataset.tab ===
+                                tabName
+                            );
+
+                        }
+                    );
+
+
+                    contents.forEach(
+                        function (content) {
+
+                            content.classList.toggle(
+                                "active",
+                                content.dataset.content ===
+                                tabName
+                            );
+
+                        }
+                    );
+
+
+                    try {
+
+                        sessionStorage.setItem(
+                            "vieworaProfileTab",
+                            tabName
+                        );
+
+                    } catch (error) {
+
+                        /* Storage may be unavailable. */
+
+                    }
+
                 }
-            );
 
 
-        /*
-         * Loader fallback.
-         * profile.js can hide it earlier.
-         */
+                tabs.forEach(
+                    function (button) {
 
-        setTimeout(
-            () => {
+                        button.addEventListener(
+                            "click",
+                            function () {
 
-                const loader =
-                    document.getElementById(
-                        "pageLoader"
-                    );
+                                const tab =
+                                    button.dataset.tab;
 
-                const app =
-                    document.getElementById(
-                        "app"
-                    );
+                                if (!tab) {
+                                    return;
+                                }
 
-                loader?.classList.add(
-                    "hidden"
+                                activateTab(
+                                    tab
+                                );
+
+                            }
+                        );
+
+                    }
                 );
 
-                app?.classList.remove(
-                    "hidden"
+
+                /*
+                 * Restore last tab.
+                 */
+
+                try {
+
+                    const savedTab =
+                        sessionStorage.getItem(
+                            "vieworaProfileTab"
+                        );
+
+
+                    if (
+                        savedTab &&
+                        document.querySelector(
+                            '.tabBtn[data-tab="' +
+                            savedTab +
+                            '"]'
+                        )
+                    ) {
+
+                        activateTab(
+                            savedTab
+                        );
+
+                    }
+
+                } catch (error) {
+
+                    /* Ignore storage errors. */
+
+                }
+
+
+                /* =================================================
+                   PROFILE MORE
+                ================================================= */
+
+                document
+                    .getElementById(
+                        "profileMoreBtn"
+                    )
+                    ?.addEventListener(
+                        "click",
+                        function () {
+
+                            vieworaProfileToast(
+                                "More profile options coming soon."
+                            );
+
+                        }
+                    );
+
+
+                /* =================================================
+                   AVATAR STORY VIEW
+                ================================================= */
+
+                document
+                    .getElementById(
+                        "storyRing"
+                    )
+                    ?.addEventListener(
+                        "click",
+                        function () {
+
+                            /*
+                             * Do not trigger viewer when
+                             * owner clicks the plus button.
+                             */
+
+                            const hasStory =
+                                this.dataset.hasStory ===
+                                "true";
+
+
+                            if (!hasStory) {
+
+                                return;
+
+                            }
+
+
+                            if (
+                                typeof window.openStoryViewer ===
+                                "function"
+                            ) {
+
+                                window.openStoryViewer(
+                                    getProfileUID()
+                                );
+
+                            } else {
+
+                                window.location.href =
+                                    "stories.html?uid=" +
+                                    encodeURIComponent(
+                                        getProfileUID()
+                                    );
+
+                            }
+
+                        }
+                    );
+
+
+                /* =================================================
+                   SCROLL TOP
+                ================================================= */
+
+                function updateTopButton() {
+
+                    if (!topBtn) {
+                        return;
+                    }
+
+                    topBtn.classList.toggle(
+                        "hidden",
+                        window.scrollY < 400
+                    );
+
+                }
+
+
+                window.addEventListener(
+                    "scroll",
+                    updateTopButton,
+                    {
+                        passive: true
+                    }
                 );
 
-            },
-            5000
+
+                topBtn?.addEventListener(
+                    "click",
+                    function () {
+
+                        window.scrollTo({
+
+                            top:
+                                0,
+
+                            behavior:
+                                "smooth"
+
+                        });
+
+                    }
+                );
+
+
+                updateTopButton();
+
+
+                /* =================================================
+                   LOADER CONTROL
+                ================================================= */
+
+                window.hideProfileLoader =
+                    function () {
+
+                        loader?.classList.add(
+                            "hidden"
+                        );
+
+                        app?.classList.remove(
+                            "hidden"
+                        );
+
+                    };
+
+
+                /*
+                 * profile.js can call hideProfileLoader().
+                 * Fallback prevents permanent loader.
+                 */
+
+                setTimeout(
+                    function () {
+
+                        if (
+                            loader &&
+                            !loader.classList.contains(
+                                "hidden"
+                            )
+                        ) {
+
+                            hideProfileLoader();
+
+                        }
+
+                    },
+                    7000
+                );
+
+
+                /*
+                 * Initial UI.
+                 */
+
+                if (
+                    document.body.classList.contains(
+                        "is-owner"
+                    )
+                ) {
+
+                    /* Owner state already available. */
+
+                }
+
+
+            }
+        );
+
+      /* =====================================================
+   OWNER PROFILE — NEVER SHOW FOLLOW / MESSAGE
+===================================================== */
+
+function enforceOwnerProfileUI() {
+
+    const currentUID =
+        typeof window.getUID === "function"
+            ? window.getUID()
+            : window.auth?.currentUser?.uid || null;
+
+    const params =
+        new URLSearchParams(window.location.search);
+
+    const profileUID =
+        window.profileUID ||
+        params.get("uid") ||
+        params.get("user") ||
+        currentUID;
+
+    if (
+        currentUID &&
+        profileUID &&
+        String(currentUID) === String(profileUID)
+    ) {
+
+        document.body.classList.add("is-owner");
+
+        document
+            .querySelectorAll(".visitorOnly")
+            .forEach(function (element) {
+
+                element.style.setProperty(
+                    "display",
+                    "none",
+                    "important"
+                );
+
+                element.setAttribute(
+                    "aria-hidden",
+                    "true"
+                );
+
+            });
+
+        document
+            .querySelectorAll(".ownerOnly")
+            .forEach(function (element) {
+
+                element.style.removeProperty("display");
+
+                element.removeAttribute(
+                    "aria-hidden"
+                );
+
+            });
+
+        console.log(
+            "👤 Own profile detected — Follow/Message hidden."
         );
 
     }
-);
 
-</script>
+}
+
+
+/* Run after Firebase auth is ready */
+
+if (window.auth) {
+
+    window.auth.onAuthStateChanged(
+        function (user) {
+
+            if (!user) {
+                return;
+            }
+
+            setTimeout(
+                enforceOwnerProfileUI,
+                100
+            );
+
+            setTimeout(
+                enforceOwnerProfileUI,
+                500
+            );
+
+            setTimeout(
+                enforceOwnerProfileUI,
+                1200
+            );
+
+        }
+    );
+
+}
+
+    </script>
 
 </body>
 

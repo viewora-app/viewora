@@ -1,107 +1,70 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Viewora</title>
 
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="splash.css">
 
-<title>Viewora Splash</title>
-
-<link rel="stylesheet" href="splash.css">
-
-<link rel="preconnect" href="https://fonts.googleapis.com">
-
-<link rel="preconnect"
-href="https://fonts.gstatic.com"
-crossorigin>
-
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
-rel="stylesheet">
-
-<link rel="stylesheet"
-href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
-
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
 </head>
 
 <body>
+    <!-- BACKGROUND LAYERS -->
+    <div class="gradient"></div>
+    <div class="mesh"></div>
 
-<!-- Animated Background -->
+    <div class="blob blob1"></div>
+    <div class="blob blob2"></div>
+    <div class="blob blob3"></div>
+    <div class="blob blob4"></div>
 
-<div class="gradient"></div>
+    <div class="particles" id="particles"></div>
 
-<div class="blob blob1"></div>
-<div class="blob blob2"></div>
-<div class="blob blob3"></div>
+    <!-- FLYING DRAGON -->
+    <div class="dragon-orbit">
+        <div class="dragon">🐉</div>
+    </div>
 
-<div class="particles">
+    <!-- SPLASH CONTENT -->
+    <main class="splash">
+        <div class="logoBox">
+            <div class="logoGlow"></div>
+            <div class="logoRing logoRing1"></div>
+            <div class="logoRing logoRing2"></div>
+            <div class="logoRing logoRing3"></div>
 
-<span></span>
-<span></span>
-<span></span>
-<span></span>
-<span></span>
-<span></span>
-<span></span>
-<span></span>
+            <img src="file.jpg" class="logo" alt="Viewora Logo">
+        </div>
 
-</div>
+        <h1 class="brand">
+            <span class="letter">V</span><span class="letter">i</span><span class="letter">e</span><span class="letter">w</span><span class="letter">o</span><span class="letter">r</span><span class="letter">a</span>
+        </h1>
 
-<!-- Splash Container -->
+        <p class="tagline">
+            <span class="tag-item">Connect</span>
+            <span class="dot">•</span>
+            <span class="tag-item">Create</span>
+            <span class="dot">•</span>
+            <span class="tag-item">Earn</span>
+        </p>
 
-<div class="splash">
+        <div class="loader-wrap">
+            <div class="loader">
+                <div class="loaderFill"></div>
+            </div>
+            <div class="loader-glow"></div>
+        </div>
 
-<!-- Logo -->
+        <p id="loadingText">Initializing...</p>
 
-<div class="logoBox">
+        <div class="version">VERSION 1.0</div>
+    </main>
 
-<div class="logoGlow"></div>
-
-<img
-src="file.jpg"
-class="logo"
-alt="Viewora">
-
-</div>
-
-<!-- Brand -->
-
-<h1 class="brand">
-
-Viewora
-
-</h1>
-
-<p class="tagline">
-
-Connect • Create • Earn
-
-</p>
-
-<!-- Loader -->
-
-<div class="loader">
-
-<div class="loaderFill"></div>
-
-</div>
-
-<p id="loadingText">
-
-Initializing...
-
-</p>
-
-<!-- Version -->
-
-<div class="version">
-
-Version 1.0
-
-</div>
-
-</div>
-
-<script src="splash.js"></script>
-
+    <script src="splash.js"></script>
 </body>
 </html>
