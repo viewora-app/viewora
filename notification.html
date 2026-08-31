@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width,
+        initial-scale=1.0,
+        maximum-scale=1.0,
+        user-scalable=no,
+        viewport-fit=cover"
+    >
+
+    <meta
+        name="theme-color"
+        content="#000000"
+    >
+
+    <meta
+        name="mobile-web-app-capable"
+        content="yes"
+    >
+
+    <meta
+        name="apple-mobile-web-app-capable"
+        content="yes"
+    >
+
+    <title>Viewora • Notifications</title>
+
+
+    <!-- =====================================================
+         FONT
+    ====================================================== -->
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+
+    <link
+        rel="preconnect"
+        href="https://fonts.gstatic.com"
+        crossorigin
+    >
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet"
+    >
+
+
+    <!-- =====================================================
+         FONT AWESOME
+    ====================================================== -->
+
+    <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
+    >
+
+
+    <!-- =====================================================
+         VIEWORA NOTIFICATION CSS
+    ====================================================== -->
+
+    <link
+        rel="stylesheet"
+        href="notification.css"
+    >
+
+</head>
+
+
+<body>
+
+<div
+    id="vieworaApp"
+    class="viewora-app"
+>
+
+
+    <!-- =====================================================
+         TOP BAR
+    ====================================================== -->
+
+    <header class="topbar">
+
+        <button
+            id="backBtn"
+            class="topbar-btn"
+            type="button"
+            aria-label="Go back"
+        >
+
+            <i class="fa-solid fa-arrow-left"></i>
+
+        </button>
+
+
+        <div class="topbar-center">
+
+            <h1>
+                Notifications
+            </h1>
+
+            <span
+                id="notificationSubtitle"
+            >
+                Stay updated
+            </span>
+
+        </div>
+
+
+        <button
+            id="markAllBtn"
+            class="topbar-btn"
+            type="button"
+            aria-label="Mark all notifications as read"
+        >
+
+            <i class="fa-solid fa-check-double"></i>
+
+            <span
+                id="notificationCount"
+                class="notification-count"
+            ></span>
+
+        </button>
+
+    </header>
+
+
+
+    <!-- =====================================================
+         MAIN
+    ====================================================== -->
+
+    <main
+        id="notificationPage"
+        class="notification-page"
+    >
+
+
+        <!-- =================================================
+             FILTER TABS
+        ================================================== -->
+
+        <nav
+            class="notification-tabs"
+            aria-label="Notification filters"
+        >
+
+            <button
+                class="notification-tab active"
+                type="button"
+                data-filter="all"
+            >
+                <span>All</span>
+            </button>
+
+
+            <button
+                class="notification-tab"
+                type="button"
+                data-filter="likes"
+            >
+                <span>Likes</span>
+            </button>
+
+
+            <button
+                class="notification-tab"
+                type="button"
+                data-filter="comments"
+            >
+                <span>Comments</span>
+            </button>
+
+
+            <button
+                class="notification-tab"
+                type="button"
+                data-filter="follows"
+            >
+                <span>Follows</span>
+            </button>
+
+        </nav>
+
+
+
+        <!-- =================================================
+             NOTIFICATION FEED
+        ================================================== -->
+
+        <section
+            id="notificationList"
+            class="notification-list"
+            aria-live="polite"
+        >
+
+
+            <!-- =============================================
+                 SKELETON LOADING
+            ============================================== -->
+
+            <div
+                id="loadingState"
+                class="notification-loading"
+            >
+
+                <!-- Skeleton 1 -->
+
+                <div class="notification-skeleton">
+
+                    <div class="skeleton-avatar"></div>
+
+                    <div class="skeleton-content">
+
+                        <div
+                            class="skeleton-line skeleton-name"
+                        ></div>
+
+                        <div
+                            class="skeleton-line skeleton-text"
+                        ></div>
+
+                        <div
+                            class="skeleton-line skeleton-time"
+                        ></div>
+
+                    </div>
+
+                    <div class="skeleton-media"></div>
+
+                </div>
+
+
+                <!-- Skeleton 2 -->
+
+                <div class="notification-skeleton">
+
+                    <div class="skeleton-avatar"></div>
+
+                    <div class="skeleton-content">
+
+                        <div
+                            class="skeleton-line skeleton-name"
+                        ></div>
+
+                        <div
+                            class="skeleton-line skeleton-text"
+                        ></div>
+
+                        <div
+                            class="skeleton-line skeleton-time"
+                        ></div>
+
+                    </div>
+
+                    <div class="skeleton-media"></div>
+
+                </div>
+
+
+                <!-- Skeleton 3 -->
+
+                <div class="notification-skeleton">
+
+                    <div class="skeleton-avatar"></div>
+
+                    <div class="skeleton-content">
+
+                        <div
+                            class="skeleton-line skeleton-name"
+                        ></div>
+
+                        <div
+                            class="skeleton-line skeleton-text"
+                        ></div>
+
+                        <div class="skeleton-media"></div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+
+            <!-- =============================================
+                 EMPTY STATE
+            ============================================== -->
+
+            <section
+                id="emptyState"
+                class="notification-empty"
+                hidden
+            >
+
+                <div class="empty-orb">
+
+                    <div class="empty-icon">
+
+                        <i class="fa-regular fa-bell"></i>
+
+                    </div>
+
+                </div>
+
+
+                <h2 class="emptyTitle">
+                    No notifications yet
+                </h2>
+
+
+                <p class="emptyDescription">
+                    When people interact with you,
+                    you'll see it here.
+                </p>
+
+            </section>
+
+        </section>
+
+
+
+        <!-- =================================================
+             LOAD MORE
+        ================================================== -->
+
+        <button
+            id="loadMoreBtn"
+            class="load-more-btn"
+            type="button"
+            hidden
+        >
+
+            <span>
+                Load more
+            </span>
+
+            <i class="fa-solid fa-chevron-down"></i>
+
+        </button>
+
+
+    </main>
+
+
+
+    <!-- =====================================================
+         NOTIFICATION BOTTOM SHEET
+    ====================================================== -->
+
+    <div
+        id="notificationSheet"
+        class="bottom-sheet"
+        aria-hidden="true"
+    >
+
+
+        <!-- Backdrop -->
+
+        <div
+            id="sheetBackdrop"
+            class="sheet-backdrop"
+        ></div>
+
+
+        <!-- Panel -->
+
+        <section
+            class="sheet-panel"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="sheetTitle"
+        >
+
+
+            <!-- Handle -->
+
+            <div class="sheet-handle"></div>
+
+
+
+            <!-- Header -->
+
+            <header class="sheet-header">
+
+                <div class="sheet-heading">
+
+                    <span class="sheet-eyebrow">
+                        VIEWORA
+                    </span>
+
+                    <h2 id="sheetTitle">
+                        Notification
+                    </h2>
+
+                </div>
+
+
+                <button
+                    id="closeSheetBtn"
+                    class="sheet-close"
+                    type="button"
+                    aria-label="Close"
+                >
+
+                    <i class="fa-solid fa-xmark"></i>
+
+                </button>
+
+            </header>
+
+
+
+            <!-- Notification Preview -->
+
+            <div
+                id="sheetContent"
+                class="sheet-content"
+            >
+
+                <!-- JS dynamically inserts content -->
+
+            </div>
+
+
+
+            <!-- Actions -->
+
+            <div class="sheet-actions">
+
+                <button
+                    id="sheetOpenBtn"
+                    class="sheet-action primary"
+                    type="button"
+                >
+
+                    <span class="sheet-action-icon">
+
+                        <i
+                            class="fa-solid fa-arrow-up-right-from-square"
+                        ></i>
+
+                    </span>
+
+                    <span>
+                        Open
+                    </span>
+
+                </button>
+
+
+                <button
+                    id="sheetDeleteBtn"
+                    class="sheet-action danger"
+                    type="button"
+                >
+
+                    <span class="sheet-action-icon">
+
+                        <i
+                            class="fa-regular fa-trash-can"
+                        ></i>
+
+                    </span>
+
+                    <span>
+                        Remove
+                    </span>
+
+                </button>
+
+            </div>
+
+        </section>
+
+    </div>
+
+
+
+    <!-- =====================================================
+         TOAST
+    ====================================================== -->
+
+    <div
+        id="toast"
+        class="toast"
+        role="status"
+        aria-live="polite"
+    >
+
+        <div class="toast-icon">
+
+            <i class="fa-solid fa-check"></i>
+
+        </div>
+
+        <span
+            id="toastMessage"
+        ></span>
+
+    </div>
+
+
+
+    <!-- =====================================================
+         FIREBASE
+    ====================================================== -->
+
+    <script
+        src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"
+    ></script>
+
+    <script
+        src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"
+    ></script>
+
+    <script
+        src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"
+    ></script>
+
+
+    <!-- =====================================================
+         VIEWORA FIREBASE CORE
+    ====================================================== -->
+
+    <script src="firebase.js"></script>
+
+
+    <!-- =====================================================
+         VIEWORA NOTIFICATION JS
+    ====================================================== -->
+
+    <script src="notification.js"></script>
+
+
+</div>
+
+</body>
+
+</html>

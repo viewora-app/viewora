@@ -1,105 +1,208 @@
-/* =========================================================
-   VIEWORA • SHORTS.JS
-   Premium Shorts Feed
-   Firebase Realtime Database
-========================================================= */
+"use strict";
+
+/*
+==============================================================
+ VIEWORA V12 — SHORTS
+ PREMIUM TIKTOK / INSTAGRAM STYLE SHORTS ENGINE
+
+ Firebase:
+ • Authentication
+ • Realtime Database
+ • Realtime feed
+ • Realtime likes
+ • Realtime comments
+ • Realtime follows
+ • Realtime saves
+ • Views
+ • Reports
+
+ Cloudinary:
+ • Reads Cloudinary videoURL/mediaURL
+ • Compatible with Cloudinary uploaded videos
+
+ Edit:
+ • edit-shorts.html?shortId=ID
+ • old ?edit=ID also supported
+
+==============================================================
+*/
 
 (() => {
-    "use strict";
 
-    /* =====================================================
-       GLOBAL
-    ====================================================== */
+    /* =========================================================
+       DOUBLE INITIALIZATION PROTECTION
+    ========================================================= */
 
-    let currentUser = null;
-    let shorts = [];
-    let currentShareId = null;
-    let currentCommentId = null;
-    let currentMenuShortId = null;
-
-    const DEFAULT_AVATAR = "assets/default-avatar.png";
-
-    let shortsListener = null;
-    let viewObserver = null;
-
-
-    /* =====================================================
-       FIREBASE
-    ====================================================== */
-
-    if (
-        typeof firebase === "undefined" ||
-        !firebase.apps ||
-        !firebase.apps.length
-    ) {
-        console.error("Viewora: Firebase is not initialized.");
+    if (window.__VIEWORA_SHORTS_V12__) {
+        console.warn("Viewora Shorts already initialized.");
         return;
     }
 
-    const auth = firebase.auth();
-    const db = firebase.database();
+    window.__VIEWORA_SHORTS_V12__ = true;
 
 
-    /* =====================================================
-       DOM
-    ====================================================== */
+    /* =========================================================
+       CONFIG
+    ========================================================= */
 
-    const container = document.getElementById("shortsContainer");
-    const skeleton = document.getElementById("shortsSkeleton");
-    const emptyState = document.getElementById("emptyState");
+    const CONFIG = {
 
-    const toast = document.getElementById("toast");
-    const toastText = document.getElementById("toastText");
+        SHORTS_PATH: "shorts",
 
-    const heartAnimation =
-        document.getElementById("heartAnimation");
+        USERS_PATH: "users",
 
-    const commentsModal =
-        document.getElementById("commentsModal");
+        COMMENTS_PATH: "comments",
 
-    const shareModal =
-        document.getElementById("shareModal");
+        REPORTS_PATH: "reports",
 
-    const reportModal =
-        document.getElementById("reportModal");
+        FOLLOWERS_PATH: "followers",
 
-    const shortMenu =
-        document.getElementById("shortMenu");
+        FOLLOWING_PATH: "following",
+
+        SAVED_PATH: "savedShorts",
+
+        MAX_FEED: 100,
+
+        MAX_COMMENTS: 100,
+
+        VIEW_DELAY: 3000,
+
+        LOAD_TIMEOUT: 12000,
+
+        SEARCH_DEBOUNCE: 180
+
+    };
 
 
-    /* =====================================================
-       TOAST
-    ====================================================== */
+    /* =========================================================
+       STATE
+    ========================================================= */
 
-    function showToast(message) {
+    const state = {
 
-        if (!toast || !toastText) return;
+        initialized: false,
 
-        toastText.textContent = message;
+        currentUser: null,
 
-        toast.classList.remove("hidden");
+        shorts: [],
 
-        requestAnimationFrame(() => {
-            toast.classList.add("show");
-        });
+        filteredShorts: [],
 
-        clearTimeout(window.vieworaToastTimer);
+        currentShortId: null,
 
-        window.vieworaToastTimer = setTimeout(() => {
+        currentShortIndex: 0,
 
-            toast.classList.remove("show");
+        currentVideo: null,
 
-            setTimeout(() => {
-                toast.classList.add("hidden");
-            }, 250);
+        muted: true,
 
-        }, 2200);
+        observer: null,
+
+        searchText: "",
+
+        menuShortId: null,
+
+        commentShortId: null,
+
+        shareShortId: null,
+
+        reportShortId: null,
+
+        viewed: {},
+
+        viewTimers: {},
+
+        commentListener: null,
+
+        shortListener: null,
+
+        followListeners: {},
+
+        likeListeners: {},
+
+        saveListeners: {},
+
+        loading: false,
+
+        searchTimer: null,
+
+        confirmAction: null
+
+    };
+
+
+    /* =========================================================
+       DOM HELPERS
+    ========================================================= */
+
+    const $ = id =>
+        document.getElementById(id);
+
+
+    const container =
+        $("shortsContainer");
+
+    const skeleton =
+        $("shortsSkeleton");
+
+    const emptyState =
+        $("emptyState");
+
+    const toast =
+        $("toast");
+
+    const toastText =
+        $("toastText");
+
+    const toastIcon =
+        $("toastIcon");
+
+
+    /* =========================================================
+       FIREBASE CHECK
+    ========================================================= */
+
+    function firebaseReady() {
+
+        return (
+            typeof firebase !== "undefined" &&
+            typeof firebase.database === "function" &&
+            typeof firebase.auth === "function"
+        );
+
     }
 
 
-    /* =====================================================
-       ESCAPE HTML
-    ====================================================== */
+    if (!firebaseReady()) {
+
+        console.error(
+            "Viewora Shorts: Firebase SDK unavailable."
+        );
+
+        showToast(
+            "Firebase is not available",
+            "error"
+        );
+
+        return;
+
+    }
+
+
+    /* =========================================================
+       FIREBASE
+    ========================================================= */
+
+    const db =
+        firebase.database();
+
+    const auth =
+        firebase.auth();
+
+
+    /* =========================================================
+       BASIC HELPERS
+    ========================================================= */
 
     function escapeHTML(value) {
 
@@ -116,750 +219,2000 @@
             .replace(/>/g, "&gt;")
             .replace(/"/g, "&quot;")
             .replace(/'/g, "&#039;");
+
     }
 
 
-    /* =====================================================
-       NUMBER FORMAT
-    ====================================================== */
+    function safeNumber(value) {
 
-    function formatNumber(value) {
+        const number =
+            Number(value);
 
-        const number = Number(value || 0);
+        return Number.isFinite(number)
+            ? number
+            : 0;
 
-        if (number >= 1000000) {
+    }
+
+
+    function formatCount(value) {
+
+        const number =
+            safeNumber(value);
+
+        if (number >= 10000000) {
+
             return (
-                (number / 1000000)
+                (number / 10000000)
                     .toFixed(1)
-                    .replace(".0", "") + "M"
+                    .replace(".0", "") +
+                "Cr"
             );
+
+        }
+
+        if (number >= 100000) {
+
+            return (
+                (number / 100000)
+                    .toFixed(1)
+                    .replace(".0", "") +
+                "L"
+            );
+
         }
 
         if (number >= 1000) {
+
             return (
                 (number / 1000)
                     .toFixed(1)
-                    .replace(".0", "") + "K"
+                    .replace(".0", "") +
+                "K"
             );
+
         }
 
         return String(number);
+
     }
 
 
-    /* =====================================================
-       TIME AGO
-    ====================================================== */
+    function parseDisplayedCount(value) {
 
-    function timeAgo(timestamp) {
+        const text =
+            String(value || "")
+                .trim()
+                .toUpperCase();
 
-        if (!timestamp) return "";
+        if (text.endsWith("CR")) {
 
-        const diff =
-            Date.now() - Number(timestamp);
+            return (
+                safeNumber(
+                    parseFloat(
+                        text.replace("CR", "")
+                    )
+                ) * 10000000
+            );
 
-        const seconds =
-            Math.floor(diff / 1000);
-
-        if (seconds < 60) {
-            return "Just now";
         }
 
-        const minutes =
-            Math.floor(seconds / 60);
+        if (text.endsWith("L")) {
 
-        if (minutes < 60) {
-            return `${minutes}m ago`;
+            return (
+                safeNumber(
+                    parseFloat(
+                        text.replace("L", "")
+                    )
+                ) * 100000
+            );
+
         }
 
-        const hours =
-            Math.floor(minutes / 60);
+        if (text.endsWith("K")) {
 
-        if (hours < 24) {
-            return `${hours}h ago`;
+            return (
+                safeNumber(
+                    parseFloat(
+                        text.replace("K", "")
+                    )
+                ) * 1000
+            );
+
         }
 
-        const days =
-            Math.floor(hours / 24);
-
-        if (days < 7) {
-            return `${days}d ago`;
-        }
-
-        return new Date(
-            Number(timestamp)
-        ).toLocaleDateString();
-    }
-
-
-    /* =====================================================
-       USER HELPERS
-    ====================================================== */
-
-    function getCurrentUserName() {
-
-        return (
-            currentUser?.displayName ||
-            currentUser?.email?.split("@")[0] ||
-            "Viewora User"
+        return safeNumber(
+            text.replace(/,/g, "")
         );
+
     }
 
 
-    function getCurrentUserAvatar() {
+    function getUserId(short) {
 
         return (
-            currentUser?.photoURL ||
-            DEFAULT_AVATAR
-        );
-    }
-
-
-    /* =====================================================
-       GET SHORT USER ID
-    ====================================================== */
-
-    function getShortUserId(short) {
-
-        return (
-            short.uid ||
-            short.userId ||
-            short.ownerId ||
+            short?.uid ||
+            short?.userId ||
+            short?.authorId ||
+            short?.creatorId ||
             ""
         );
+
     }
 
 
-    /* =====================================================
-       GET VIDEO URL
-    ====================================================== */
+    function getUserName(data) {
+
+        return (
+            data?.username ||
+            data?.userName ||
+            data?.displayName ||
+            data?.name ||
+            "Viewora User"
+        );
+
+    }
+
+
+    function getAvatar(data) {
+
+        return (
+            data?.avatar ||
+            data?.avatarUrl ||
+            data?.photoURL ||
+            data?.profileImage ||
+            data?.profilePhoto ||
+            "assets/default-avatar.png"
+        );
+
+    }
+
 
     function getVideoURL(short) {
 
         return (
-            short.videoURL ||
-            short.videoUrl ||
-            short.video ||
-            short.url ||
+            short?.videoURL ||
+            short?.videoUrl ||
+            short?.videoUrl ||
+            short?.mediaURL ||
+            short?.mediaUrl ||
+            short?.url ||
+            short?.video ||
+            short?.cloudinaryURL ||
             ""
         );
+
     }
 
 
-    /* =====================================================
-       GET THUMBNAIL
-    ====================================================== */
-
-    function getThumbnail(short) {
+    function getCaption(short) {
 
         return (
-            short.thumbnail ||
-            short.thumbnailURL ||
-            short.thumbnailUrl ||
+            short?.caption ||
+            short?.description ||
+            short?.text ||
             ""
         );
+
     }
 
 
-    /* =====================================================
-       GET PROFILE
-    ====================================================== */
+    function getCreatedAt(short) {
 
-    function getProfile(short) {
-
-        return (
-            short.profile ||
-            short.profileURL ||
-            short.profileUrl ||
-            short.avatar ||
-            short.photoURL ||
-            DEFAULT_AVATAR
+        return safeNumber(
+            short?.createdAt ||
+            short?.timestamp ||
+            short?.created_at ||
+            0
         );
+
     }
 
 
-    /* =====================================================
-       LOAD SHORTS
-    ====================================================== */
+    function countObject(value) {
 
-    function loadShorts() {
-
-        if (!container) return;
-
-        showSkeleton();
-
-        if (shortsListener) {
-            db.ref("shorts").off(
-                "value",
-                shortsListener
-            );
+        if (
+            !value ||
+            typeof value !== "object"
+        ) {
+            return 0;
         }
 
-        const ref =
-            db.ref("shorts")
-                .orderByChild("createdAt")
-                .limitToLast(100);
+        return Object.keys(value).length;
 
-        shortsListener = snapshot => {
-
-            shorts = [];
-
-            if (!snapshot.exists()) {
-
-                container.innerHTML = "";
-
-                showEmpty();
-                hideSkeleton();
-
-                return;
-            }
-
-            snapshot.forEach(child => {
-
-                const data =
-                    child.val() || {};
-
-                shorts.push({
-                    id: child.key,
-                    ...data
-                });
-
-            });
-
-            shorts.sort(
-                (a, b) =>
-                    Number(b.createdAt || 0) -
-                    Number(a.createdAt || 0)
-            );
-
-            renderShorts();
-
-            hideSkeleton();
-        };
-
-        ref.on(
-            "value",
-            shortsListener,
-            error => {
-
-                console.error(
-                    "Shorts loading error:",
-                    error
-                );
-
-                hideSkeleton();
-
-                showToast(
-                    "Unable to load Shorts."
-                );
-            }
-        );
     }
 
 
-    /* =====================================================
-       RENDER
-    ====================================================== */
+    function isHidden(short) {
 
-    function renderShorts() {
+        return (
+            short?.hidden === true ||
+            short?.isHidden === true ||
+            short?.status === "hidden"
+        );
 
-        if (!container) return;
+    }
 
-        container.innerHTML = "";
 
-        if (!shorts.length) {
+    function commentsDisabled(short) {
+
+        return (
+            short?.commentsDisabled === true ||
+            short?.disableComments === true ||
+            short?.commentsEnabled === false
+        );
+
+    }
+
+
+    function likesHidden(short) {
+
+        return (
+            short?.hideLikeCount === true ||
+            short?.hideLikes === true ||
+            short?.likesVisible === false
+        );
+
+    }
+
+
+    function formatTime(timestamp) {
+
+        const time =
+            safeNumber(timestamp);
+
+        if (!time) {
+            return "";
+        }
+
+        const diff =
+            Date.now() - time;
+
+        if (diff < 60000) {
+            return "Just now";
+        }
+
+        if (diff < 3600000) {
+
+            return (
+                Math.floor(diff / 60000) +
+                "m"
+            );
+
+        }
+
+        if (diff < 86400000) {
+
+            return (
+                Math.floor(diff / 3600000) +
+                "h"
+            );
+
+        }
+
+        if (diff < 604800000) {
+
+            return (
+                Math.floor(diff / 86400000) +
+                "d"
+            );
+
+        }
+
+        return new Date(time)
+            .toLocaleDateString(
+                undefined,
+                {
+                    day: "numeric",
+                    month: "short"
+                }
+            );
+
+    }
+
+
+    /* =========================================================
+       TOAST
+    ========================================================= */
+
+    function showToast(
+        message,
+        type = "success"
+    ) {
+
+        if (!toast) {
+            return;
+        }
+
+        if (toastText) {
+            toastText.textContent =
+                message;
+        }
+
+        if (toastIcon) {
+
+            toastIcon.className =
+                type === "error"
+                    ? "fa-solid fa-circle-exclamation"
+                    : "fa-solid fa-circle-check";
+
+        }
+
+        toast.classList.remove("hidden");
+
+        clearTimeout(
+            showToast.timer
+        );
+
+        showToast.timer =
+            setTimeout(() => {
+
+                toast.classList.add(
+                    "hidden"
+                );
+
+            }, 2400);
+
+    }
+
+
+    /* =========================================================
+       AUTH
+    ========================================================= */
+
+    auth.onAuthStateChanged(user => {
+
+        state.currentUser =
+            user || null;
+
+        updateCommentAvatar();
+
+        loadShorts();
+
+    });
+
+
+    /* =========================================================
+       COMMENT AVATAR
+    ========================================================= */
+
+    function updateCommentAvatar() {
+
+        const avatar =
+            $("commentUserAvatar");
+
+        if (!avatar) {
+            return;
+        }
+
+        if (!state.currentUser) {
+
+            avatar.src =
+                "assets/default-avatar.png";
+
+            return;
+
+        }
+
+        avatar.src =
+            state.currentUser.photoURL ||
+            "assets/default-avatar.png";
+
+    }
+
+
+    /* =========================================================
+       LOAD SHORTS
+    ========================================================= */
+
+    async function loadShorts() {
+
+        if (!container || state.loading) {
+            return;
+        }
+
+        state.loading = true;
+
+        showSkeleton(true);
+
+        hideEmpty();
+
+        try {
+
+            const snapshot =
+                await Promise.race([
+
+                    db
+                        .ref(CONFIG.SHORTS_PATH)
+                        .limitToLast(CONFIG.MAX_FEED)
+                        .once("value"),
+
+                    new Promise((_, reject) => {
+
+                        setTimeout(() => {
+
+                            reject(
+                                new Error(
+                                    "SHORTS_LOAD_TIMEOUT"
+                                )
+                            );
+
+                        }, CONFIG.LOAD_TIMEOUT);
+
+                    })
+
+                ]);
+
+
+            const data =
+                snapshot.val() || {};
+
+            state.shorts =
+                Object.entries(data)
+
+                    .map(([id, value]) => ({
+
+                        id,
+
+                        ...(value || {})
+
+                    }))
+
+                    .filter(short => {
+
+                        return (
+                            short &&
+                            !isHidden(short) &&
+                            Boolean(
+                                getVideoURL(short)
+                            )
+                        );
+
+                    })
+
+                    .sort((a, b) => {
+
+                        return (
+                            getCreatedAt(b) -
+                            getCreatedAt(a)
+                        );
+
+                    });
+
+
+            state.filteredShorts =
+                [...state.shorts];
+
+
+            renderFeed();
+
+
+            /*
+             * Start realtime listener AFTER initial load.
+             */
+
+            startRealtimeShortListener();
+
+        } catch (error) {
+
+            console.error(
+                "Viewora Shorts load error:",
+                error
+            );
+
+            container.innerHTML = "";
+
+            showEmpty();
+
+            showToast(
+                error?.message ===
+                "SHORTS_LOAD_TIMEOUT"
+                    ? "Loading timed out. Tap retry."
+                    : "Unable to load Shorts",
+                "error"
+            );
+
+        } finally {
+
+            state.loading = false;
+
+            showSkeleton(false);
+
+        }
+
+    }
+
+
+    /* =========================================================
+       REALTIME SHORT LISTENER
+    ========================================================= */
+
+    function startRealtimeShortListener() {
+
+        if (state.shortListener) {
+            return;
+        }
+
+        state.shortListener =
+            snapshot => {
+
+                const data =
+                    snapshot.val() || {};
+
+                const realtime =
+                    Object.entries(data)
+
+                        .map(([id, value]) => ({
+
+                            id,
+
+                            ...(value || {})
+
+                        }))
+
+                        .filter(short => {
+
+                            return (
+                                short &&
+                                !isHidden(short) &&
+                                Boolean(
+                                    getVideoURL(short)
+                                )
+                            );
+
+                        })
+
+                        .sort((a, b) => {
+
+                            return (
+                                getCreatedAt(b) -
+                                getCreatedAt(a)
+                            );
+
+                        });
+
+
+                state.shorts =
+                    realtime;
+
+
+                applySearchAndRender();
+
+            };
+
+
+        db
+            .ref(CONFIG.SHORTS_PATH)
+            .limitToLast(CONFIG.MAX_FEED)
+            .on(
+                "value",
+                state.shortListener,
+                error => {
+
+                    console.warn(
+                        "Realtime Shorts listener:",
+                        error
+                    );
+
+                }
+            );
+
+    }
+
+
+    /* =========================================================
+       SEARCH
+    ========================================================= */
+
+    function applySearchAndRender() {
+
+        const query =
+            state.searchText;
+
+        if (!query) {
+
+            state.filteredShorts =
+                [...state.shorts];
+
+        } else {
+
+            state.filteredShorts =
+                state.shorts.filter(short => {
+
+                    const searchable =
+                        [
+
+                            getUserName(short),
+
+                            getCaption(short),
+
+                            short.music,
+
+                            short.audioName,
+
+                            short.hashtags,
+
+                            short.title
+
+                        ]
+                            .filter(Boolean)
+                            .join(" ")
+                            .toLowerCase();
+
+                    return searchable.includes(
+                        query
+                    );
+
+                });
+
+        }
+
+        renderFeed();
+
+    }
+
+
+    function performSearch(value) {
+
+        clearTimeout(
+            state.searchTimer
+        );
+
+        state.searchTimer =
+            setTimeout(() => {
+
+                state.searchText =
+                    String(value || "")
+                        .trim()
+                        .toLowerCase();
+
+                applySearchAndRender();
+
+            }, CONFIG.SEARCH_DEBOUNCE);
+
+    }
+
+
+    /* =========================================================
+       RENDER FEED
+    ========================================================= */
+
+    function renderFeed() {
+
+        if (!container) {
+            return;
+        }
+
+        if (!state.filteredShorts.length) {
+
+            container.innerHTML = "";
 
             showEmpty();
 
             return;
+
         }
 
         hideEmpty();
 
-        shorts.forEach(short => {
+        /*
+         * Preserve current playing short when realtime
+         * data updates.
+         */
 
-            container.appendChild(
-                createShortCard(short)
-            );
+        const previousId =
+            state.currentShortId;
 
-        });
 
-        setupVideoObserver();
+        container.innerHTML = "";
 
-        refreshAllLikeStates();
-        refreshAllSaveStates();
-        refreshAllFollowStates();
+
+        const fragment =
+            document.createDocumentFragment();
+
+
+        state.filteredShorts.forEach(
+            (short, index) => {
+
+                const card =
+                    createShortCard(
+                        short,
+                        index
+                    );
+
+                fragment.appendChild(
+                    card
+                );
+
+            }
+        );
+
+
+        container.appendChild(
+            fragment
+        );
+
+
+        setupVideoEvents();
+
+        setupObserver();
+
+
+        /*
+         * If currently visible short still exists,
+         * restore it.
+         */
+
+        if (previousId) {
+
+            const card =
+                container.querySelector(
+                    `.shortCard[data-short-id="${CSS.escape(previousId)}"]`
+                );
+
+            if (card) {
+
+                state.currentShortIndex =
+                    Number(
+                        card.dataset.index
+                    );
+
+                const video =
+                    card.querySelector(
+                        ".shortVideo"
+                    );
+
+                if (video) {
+
+                    setTimeout(() => {
+
+                        playVideo(video);
+
+                    }, 80);
+
+                }
+
+                return;
+
+            }
+
+        }
+
+
+        updateCurrentIndex();
+
     }
 
 
-    /* =====================================================
-       CREATE CARD
-    ====================================================== */
+    function showSkeleton(show) {
 
-    function createShortCard(short) {
+        skeleton?.classList.toggle(
+            "hidden",
+            !show
+        );
+
+    }
+
+
+    function showEmpty() {
+
+        emptyState?.classList.remove(
+            "hidden"
+        );
+
+    }
+
+
+    function hideEmpty() {
+
+        emptyState?.classList.add(
+            "hidden"
+        );
+
+    }
+
+
+    /* =========================================================
+       CREATE SHORT CARD
+    ========================================================= */
+
+    function createShortCard(
+        short,
+        index
+    ) {
 
         const card =
             document.createElement("article");
 
-        card.className = "shortCard";
+        card.className =
+            "shortCard";
 
-        card.dataset.id = short.id;
+        card.dataset.shortId =
+            short.id;
+
+        card.dataset.index =
+            String(index);
+
+
+        const ownerId =
+            getUserId(short);
+
+
+        const currentUid =
+            state.currentUser?.uid || "";
+
+
+        const isOwner =
+            Boolean(
+                currentUid &&
+                ownerId === currentUid
+            );
+
+
+        const likeCount =
+            safeNumber(
+                short.likeCount ??
+                short.likesCount ??
+                countObject(short.likes)
+            );
+
+
+        const commentCount =
+            safeNumber(
+                short.commentCount ??
+                short.commentsCount ??
+                0
+            );
+
+
+        const shareCount =
+            safeNumber(
+                short.shareCount ??
+                short.sharesCount ??
+                0
+            );
+
+
+        const saveCount =
+            safeNumber(
+                short.saveCount ??
+                short.savesCount ??
+                0
+            );
+
+
+        const liked =
+            Boolean(
+                currentUid &&
+                short.likes &&
+                short.likes[currentUid]
+            );
+
+
+        const saved =
+            Boolean(
+                currentUid &&
+                short.saves &&
+                short.saves[currentUid]
+            );
+
 
         const videoURL =
             getVideoURL(short);
 
-        const thumbnail =
-            getThumbnail(short);
 
-        const profile =
-            getProfile(short);
+        const commentsOff =
+            commentsDisabled(short);
 
-        const username =
-            short.username ||
-            short.displayName ||
-            short.name ||
-            "Viewora User";
 
-        const caption =
-            short.caption ||
-            short.description ||
-            "";
+        const hideLikes =
+            likesHidden(short);
+
 
         const music =
             short.music ||
             short.audioName ||
-            "Original Audio";
+            short.audioTitle ||
+            "Original audio";
 
-        const likes =
-            Number(short.likes || 0);
-
-        const comments =
-            Number(short.comments || 0);
-
-        const views =
-            Number(short.views || 0);
-
-        const uid =
-            getShortUserId(short);
-
-        const isOwner =
-            Boolean(
-                currentUser &&
-                uid &&
-                uid === currentUser.uid
-            );
 
         card.innerHTML = `
 
             <video
                 class="shortVideo"
-                src="${escapeHTML(videoURL)}"
-                ${thumbnail
-                    ? `poster="${escapeHTML(thumbnail)}"`
-                    : ""
-                }
                 playsinline
-                webkit-playsinline
                 loop
-                preload="metadata"
+                muted
+                preload="${index < 2 ? "auto" : "metadata"}"
+                src="${escapeHTML(videoURL)}"
             ></video>
 
 
-            <div class="shortGradient"></div>
+            <div class="shortVideoShade"></div>
 
 
-            <div class="shortOverlay">
+            <div class="playOverlay">
+                <i class="fa-solid fa-play"></i>
+            </div>
 
 
-                <!-- LEFT INFO -->
+            <button
+                type="button"
+                class="volumeBtn"
+                aria-label="Toggle sound"
+            >
+                <i class="fa-solid fa-volume-xmark"></i>
+            </button>
 
-                <div class="shortInfo">
+
+            <button
+                type="button"
+                class="moreBtn"
+                aria-label="More options"
+            >
+                <i class="fa-solid fa-ellipsis-vertical"></i>
+            </button>
 
 
-                    <div class="userRow">
+            <div class="shortContent">
 
-                        <button
-                            class="shortProfileBtn"
-                            type="button"
-                            data-profile-id="${escapeHTML(uid)}"
+
+                <div class="creatorRow">
+
+
+                    <div
+                        class="creatorProfile"
+                        data-user-id="${escapeHTML(ownerId)}"
+                    >
+
+                        <img
+                            class="creatorAvatar"
+                            src="${escapeHTML(getAvatar(short))}"
+                            alt=""
+                            loading="lazy"
+                            onerror="this.src='assets/default-avatar.png'"
                         >
 
-                            <img
-                                class="userAvatar"
-                                src="${escapeHTML(profile)}"
-                                alt="${escapeHTML(username)}"
-                                onerror="this.onerror=null;this.src='${DEFAULT_AVATAR}'"
-                            >
 
+                        <div class="creatorInfo">
 
-                            <div class="userDetails">
+                            <strong class="shortUsername">
+                                ${escapeHTML(
+                                    getUserName(short)
+                                )}
+                            </strong>
 
-                                <div class="username">
-
-                                    ${escapeHTML(username)}
-
-                                    ${
-                                        short.verified
-                                            ? `
-                                                <i
-                                                    class="fa-solid fa-circle-check verified"
-                                                ></i>
-                                            `
-                                            : ""
-                                    }
-
-                                </div>
-
-
-                                <div class="uploadTime">
-
-                                    ${timeAgo(
-                                        short.createdAt
-                                    )}
-
-                                </div>
-
-                            </div>
-
-                        </button>
-
-
-                        ${
-                            !isOwner && uid
+                            ${
+                                short.verified === true ||
+                                short.isVerified === true
                                 ? `
-                                    <button
-                                        class="followBtn"
-                                        type="button"
-                                        data-follow-id="${escapeHTML(uid)}"
-                                    >
-                                        Follow
-                                    </button>
+                                    <span class="verifiedBadge">
+                                        <i class="fa-solid fa-circle-check"></i>
+                                    </span>
                                 `
                                 : ""
-                        }
+                            }
+
+                        </div>
 
                     </div>
 
 
                     ${
-                        caption
+                        currentUid &&
+                        ownerId &&
+                        currentUid !== ownerId
                             ? `
-                                <div class="shortCaption">
-                                    ${escapeHTML(caption)}
-                                </div>
+                                <button
+                                    type="button"
+                                    class="followBtn"
+                                    data-follow-uid="${escapeHTML(ownerId)}"
+                                >
+                                    Follow
+                                </button>
                             `
                             : ""
                     }
 
+                </div>
 
-                    <div class="musicRow">
 
-                        <i class="fa-solid fa-music"></i>
+                ${
+                    getCaption(short)
+                        ? `
+                            <p class="shortCaption">
+                                ${escapeHTML(
+                                    getCaption(short)
+                                )}
+                            </p>
+                        `
+                        : ""
+                }
 
-                        <span>
-                            ${escapeHTML(music)}
-                        </span>
 
-                    </div>
+                ${
+                    short.hashtags
+                        ? `
+                            <div class="shortHashtags">
+                                ${escapeHTML(
+                                    Array.isArray(short.hashtags)
+                                        ? short.hashtags.join(" ")
+                                        : short.hashtags
+                                )}
+                            </div>
+                        `
+                        : ""
+                }
+
+
+                <div class="shortMusic">
+
+                    <i class="fa-solid fa-music"></i>
+
+                    <span>
+                        ${escapeHTML(music)}
+                    </span>
 
                 </div>
 
 
-                <!-- RIGHT ACTIONS -->
+                ${
+                    short.createdAt
+                        ? `
+                            <div class="shortTime">
+                                ${formatTime(
+                                    short.createdAt
+                                )}
+                            </div>
+                        `
+                        : ""
+                }
 
-                <div class="shortActions">
+            </div>
 
 
-                    <button
-                        class="actionBtn likeBtn"
-                        type="button"
-                        data-short-id="${escapeHTML(short.id)}"
-                        aria-label="Like"
+            <div class="shortActions">
+
+
+                <button
+                    type="button"
+                    class="shortAction likeBtn ${liked ? "liked" : ""}"
+                    data-action="like"
+                    aria-label="Like"
+                >
+
+                    <i class="${
+                        liked
+                            ? "fa-solid fa-heart"
+                            : "fa-regular fa-heart"
+                    }"></i>
+
+                    <span
+                        class="likeCount ${
+                            hideLikes ? "hidden" : ""
+                        }"
                     >
-
-                        <i class="fa-regular fa-heart"></i>
-
-                        <span>
-                            ${formatNumber(likes)}
-                        </span>
-
-                    </button>
-
-
-                    <button
-                        class="actionBtn commentBtn"
-                        type="button"
-                        data-short-id="${escapeHTML(short.id)}"
-                        aria-label="Comments"
-                    >
-
-                        <i class="fa-regular fa-comment"></i>
-
-                        <span>
-                            ${formatNumber(comments)}
-                        </span>
-
-                    </button>
-
-
-                    <button
-                        class="actionBtn shareBtn"
-                        type="button"
-                        data-short-id="${escapeHTML(short.id)}"
-                        aria-label="Share"
-                    >
-
-                        <i class="fa-solid fa-share"></i>
-
-                        <span>Share</span>
-
-                    </button>
-
-
-                    <button
-                        class="actionBtn saveBtn"
-                        type="button"
-                        data-short-id="${escapeHTML(short.id)}"
-                        aria-label="Save"
-                    >
-
-                        <i class="fa-regular fa-bookmark"></i>
-
-                        <span>Save</span>
-
-                    </button>
-
-
-                    <button
-                        class="actionBtn moreBtn"
-                        type="button"
-                        data-short-id="${escapeHTML(short.id)}"
-                        aria-label="More"
-                    >
-
-                        <i class="fa-solid fa-ellipsis"></i>
-
-                        <span>More</span>
-
-                    </button>
-
-
-                    <span class="viewCount">
-
-                        <i class="fa-solid fa-eye"></i>
-
-                        ${formatNumber(views)}
-
+                        ${formatCount(likeCount)}
                     </span>
 
+                </button>
 
-                    <div class="profileDisc">
 
-                        <img
-                            src="${escapeHTML(profile)}"
-                            alt=""
-                            onerror="this.onerror=null;this.src='${DEFAULT_AVATAR}'"
-                        >
+                <button
+                    type="button"
+                    class="shortAction commentBtn ${
+                        commentsOff ? "commentsDisabled" : ""
+                    }"
+                    data-action="comment"
+                    aria-label="Comments"
+                >
 
-                    </div>
+                    <i class="fa-regular fa-comment"></i>
+
+                    <span>
+                        ${formatCount(commentCount)}
+                    </span>
+
+                </button>
+
+
+                <button
+                    type="button"
+                    class="shortAction shareBtn"
+                    data-action="share"
+                    aria-label="Share"
+                >
+
+                    <i class="fa-solid fa-share"></i>
+
+                    <span>
+                        ${formatCount(shareCount)}
+                    </span>
+
+                </button>
+
+
+                <button
+                    type="button"
+                    class="shortAction saveBtn ${
+                        saved ? "saved" : ""
+                    }"
+                    data-action="save"
+                    aria-label="Save"
+                >
+
+                    <i class="${
+                        saved
+                            ? "fa-solid fa-bookmark"
+                            : "fa-regular fa-bookmark"
+                    }"></i>
+
+                    <span>
+                        ${saved ? "Saved" : "Save"}
+                    </span>
+
+                </button>
+
+
+                <div class="musicDisc">
+
+                    <i class="fa-solid fa-music"></i>
 
                 </div>
 
             </div>
+
+
+            <div class="shortProgress">
+                <span></span>
+            </div>
+
         `;
 
+
+        /*
+         * Owner-specific realtime UI listeners
+         */
+
+        if (currentUid) {
+
+            attachLikeListener(
+                short.id,
+                card
+            );
+
+            attachSaveListener(
+                short.id,
+                card
+            );
+
+        }
+
+
+        if (
+            currentUid &&
+            ownerId &&
+            currentUid !== ownerId
+        ) {
+
+            attachFollowListener(
+                ownerId,
+                card
+            );
+
+        }
+
+
         return card;
+
     }
 
 
-    /* =====================================================
-       VIDEO OBSERVER
-    ====================================================== */
+    /* =========================================================
+       VIDEO EVENTS
+    ========================================================= */
 
-    function setupVideoObserver() {
+    function setupVideoEvents() {
 
-        if (viewObserver) {
-            viewObserver.disconnect();
+        if (!container) {
+            return;
         }
 
-        const cards =
-            document.querySelectorAll(
+
+        container
+            .querySelectorAll(".shortVideo")
+            .forEach(video => {
+
+                video.onclick =
+                    event => {
+
+                        event.stopPropagation();
+
+                        toggleVideo(video);
+
+                    };
+
+
+                video.ontimeupdate =
+                    () => {
+
+                        updateProgress(video);
+
+                    };
+
+
+                video.onended =
+                    () => {
+
+                        playNext();
+
+                    };
+
+
+                video.onerror =
+                    () => {
+
+                        console.warn(
+                            "Short video failed:",
+                            video.src
+                        );
+
+                    };
+
+            });
+
+
+        container
+            .querySelectorAll(".volumeBtn")
+            .forEach(button => {
+
+                button.onclick =
+                    event => {
+
+                        event.stopPropagation();
+
+                        toggleMute();
+
+                    };
+
+            });
+
+
+        container
+            .querySelectorAll(".moreBtn")
+            .forEach(button => {
+
+                button.onclick =
+                    event => {
+
+                        event.stopPropagation();
+
+                        const card =
+                            button.closest(
+                                ".shortCard"
+                            );
+
+                        if (!card) {
+                            return;
+                        }
+
+                        openShortMenu(
+                            card.dataset.shortId
+                        );
+
+                    };
+
+            });
+
+
+        container
+            .querySelectorAll(".shortAction")
+            .forEach(button => {
+
+                button.onclick =
+                    event => {
+
+                        event.stopPropagation();
+
+                        const card =
+                            button.closest(
+                                ".shortCard"
+                            );
+
+                        if (!card) {
+                            return;
+                        }
+
+                        const shortId =
+                            card.dataset.shortId;
+
+                        const action =
+                            button.dataset.action;
+
+
+                        if (action === "like") {
+
+                            toggleLike(
+                                shortId,
+                                button
+                            );
+
+                        }
+
+
+                        if (action === "comment") {
+
+                            openComments(
+                                shortId
+                            );
+
+                        }
+
+
+                        if (action === "share") {
+
+                            openShare(
+                                shortId
+                            );
+
+                        }
+
+
+                        if (action === "save") {
+
+                            toggleSave(
+                                shortId,
+                                button
+                            );
+
+                        }
+
+                    };
+
+            });
+
+
+        container
+            .querySelectorAll(".creatorProfile")
+            .forEach(profile => {
+
+                profile.onclick =
+                    event => {
+
+                        event.stopPropagation();
+
+                        openProfile(
+                            profile.dataset.userId
+                        );
+
+                    };
+
+            });
+
+
+        container
+            .querySelectorAll(".followBtn")
+            .forEach(button => {
+
+                button.onclick =
+                    event => {
+
+                        event.stopPropagation();
+
+                        toggleFollow(
+                            button.dataset.followUid,
+                            button
+                        );
+
+                    };
+
+            });
+
+    }
+
+
+    /* =========================================================
+       VIDEO PLAYBACK
+    ========================================================= */
+
+    function toggleVideo(video) {
+
+        if (!video) {
+            return;
+        }
+
+        if (video.paused) {
+
+            playVideo(video);
+
+        } else {
+
+            video.pause();
+
+            showPlayOverlay(
+                video.closest(".shortCard"),
+                true
+            );
+
+        }
+
+    }
+
+
+    function playVideo(video) {
+
+        if (!video) {
+            return;
+        }
+
+
+        document
+            .querySelectorAll(".shortVideo")
+            .forEach(other => {
+
+                if (other !== video) {
+
+                    other.pause();
+
+                    showPlayOverlay(
+                        other.closest(".shortCard"),
+                        true
+                    );
+
+                }
+
+            });
+
+
+        video.muted =
+            state.muted;
+
+
+        video.play()
+            .then(() => {
+
+                state.currentVideo =
+                    video;
+
+                showPlayOverlay(
+                    video.closest(".shortCard"),
+                    false
+                );
+
+                updateVolumeIcons();
+
+            })
+            .catch(error => {
+
+                console.warn(
+                    "Autoplay blocked:",
+                    error
+                );
+
+                showPlayOverlay(
+                    video.closest(".shortCard"),
+                    true
+                );
+
+            });
+
+    }
+
+
+    function showPlayOverlay(
+        card,
+        visible
+    ) {
+
+        const overlay =
+            card?.querySelector(
+                ".playOverlay"
+            );
+
+        if (!overlay) {
+            return;
+        }
+
+        overlay.classList.toggle(
+            "show",
+            Boolean(visible)
+        );
+
+    }
+
+
+    function updateProgress(video) {
+
+        if (
+            !video.duration ||
+            !Number.isFinite(video.duration)
+        ) {
+            return;
+        }
+
+        const card =
+            video.closest(
                 ".shortCard"
             );
 
-        if (!cards.length) return;
-
-        viewObserver =
-            new IntersectionObserver(
-                entries => {
-
-                    entries.forEach(entry => {
-
-                        const video =
-                            entry.target.querySelector(
-                                ".shortVideo"
-                            );
-
-                        if (!video) return;
-
-                        const id =
-                            entry.target.dataset.id;
-
-                        if (
-                            entry.isIntersecting &&
-                            entry.intersectionRatio >= .7
-                        ) {
-
-                            pauseOtherVideos(video);
-
-                            video.play()
-                                .catch(() => {});
-
-                            increaseView(id);
-
-                        } else {
-
-                            video.pause();
-                        }
-
-                    });
-
-                },
-                {
-                    threshold: [.2, .7]
-                }
+        const bar =
+            card?.querySelector(
+                ".shortProgress span"
             );
 
-        cards.forEach(card => {
+        if (!bar) {
+            return;
+        }
 
-            viewObserver.observe(card);
+        const percentage =
+            (
+                video.currentTime /
+                video.duration
+            ) * 100;
 
-            setupDoubleTap(card);
-        });
+
+        bar.style.width =
+            `${percentage}%`;
+
     }
 
 
-    /* =====================================================
-       PAUSE OTHER VIDEOS
-    ====================================================== */
+    function toggleMute() {
 
-    function pauseOtherVideos(currentVideo) {
+        state.muted =
+            !state.muted;
 
         document
             .querySelectorAll(".shortVideo")
             .forEach(video => {
 
-                if (video !== currentVideo) {
-                    video.pause();
-                }
+                video.muted =
+                    state.muted;
 
             });
+
+        updateVolumeIcons();
+
     }
 
 
-    /* =====================================================
-       DOUBLE TAP LIKE
-    ====================================================== */
+    function updateVolumeIcons() {
 
-    function setupDoubleTap(card) {
+        document
+            .querySelectorAll(".volumeBtn i")
+            .forEach(icon => {
 
-        const video =
-            card.querySelector(".shortVideo");
+                icon.className =
+                    state.muted
+                        ? "fa-solid fa-volume-xmark"
+                        : "fa-solid fa-volume-high";
 
-        if (!video) return;
+            });
 
-        let lastTap = 0;
+    }
 
-        video.addEventListener(
-            "click",
-            () => {
 
-                const now = Date.now();
+    /* =========================================================
+       OBSERVER
+    ========================================================= */
 
-                if (
-                    now - lastTap < 320
-                ) {
+    function setupObserver() {
 
-                    const id =
-                        card.dataset.id;
+        state.observer?.disconnect();
 
-                    likeShort(id);
 
-                    showHeart();
+        state.observer =
+            new IntersectionObserver(
+                entries => {
+
+                    let bestEntry =
+                        null;
+
+
+                    entries.forEach(entry => {
+
+                        if (
+                            entry.isIntersecting &&
+                            entry.intersectionRatio >= 0.65
+                        ) {
+
+                            if (
+                                !bestEntry ||
+                                entry.intersectionRatio >
+                                bestEntry.intersectionRatio
+                            ) {
+
+                                bestEntry =
+                                    entry;
+
+                            }
+
+                        }
+
+                    });
+
+
+                    if (!bestEntry) {
+                        return;
+                    }
+
+
+                    const card =
+                        bestEntry.target;
+
+                    const video =
+                        card.querySelector(
+                            ".shortVideo"
+                        );
+
+
+                    state.currentShortId =
+                        card.dataset.shortId;
+
+
+                    state.currentShortIndex =
+                        Number(
+                            card.dataset.index
+                        );
+
+
+                    playVideo(video);
+
+
+                    registerView(
+                        state.currentShortId
+                    );
+
+                },
+                {
+                    threshold: [
+                        0.25,
+                        0.65,
+                        0.85,
+                        1
+                    ]
                 }
-
-                lastTap = now;
-            }
-        );
-    }
-
-
-    /* =====================================================
-       LIKE
-    ====================================================== */
-
-    async function likeShort(shortId) {
-
-        if (!currentUser) {
-
-            showToast(
-                "Please login first."
             );
 
+
+        container
+            ?.querySelectorAll(".shortCard")
+            .forEach(card => {
+
+                state.observer.observe(
+                    card
+                );
+
+            });
+
+    }
+
+
+    function updateCurrentIndex() {
+
+        const first =
+            container?.querySelector(
+                ".shortCard"
+            );
+
+        if (!first) {
             return;
         }
 
+
+        state.currentShortId =
+            first.dataset.shortId;
+
+
+        state.currentShortIndex =
+            Number(
+                first.dataset.index
+            );
+
+
+        const video =
+            first.querySelector(
+                ".shortVideo"
+            );
+
+
+        setTimeout(() => {
+
+            playVideo(video);
+
+            registerView(
+                first.dataset.shortId
+            );
+
+        }, 180);
+
+    }
+
+
+    /* =========================================================
+       NEXT SHORT
+    ========================================================= */
+
+    function playNext() {
+
+        const nextIndex =
+            state.currentShortIndex + 1;
+
+
+        if (
+            nextIndex >=
+            state.filteredShorts.length
+        ) {
+
+            return;
+
+        }
+
+
+        const nextCard =
+            container?.querySelector(
+                `.shortCard[data-index="${nextIndex}"]`
+            );
+
+
+        if (!nextCard) {
+            return;
+        }
+
+
+        nextCard.scrollIntoView({
+            behavior: "smooth",
+            block: "start"
+        });
+
+    }
+
+
+    /* =========================================================
+       VIEWS
+    ========================================================= */
+
+    function registerView(shortId) {
+
+        if (!shortId) {
+            return;
+        }
+
+
+        if (state.viewed[shortId]) {
+            return;
+        }
+
+
+        state.viewed[shortId] =
+            true;
+
+
+        clearTimeout(
+            state.viewTimers[shortId]
+        );
+
+
+        state.viewTimers[shortId] =
+            setTimeout(async () => {
+
+                try {
+
+                    await db
+                        .ref(
+                            `${CONFIG.SHORTS_PATH}/${shortId}/views`
+                        )
+                        .transaction(
+                            current => {
+
+                                return (
+                                    safeNumber(current) +
+                                    1
+                                );
+
+                            }
+                        );
+
+                } catch (error) {
+
+                    console.warn(
+                        "View update failed:",
+                        error
+                    );
+
+                }
+
+            }, CONFIG.VIEW_DELAY);
+
+    }
+
+
+    /* =========================================================
+       REALTIME LIKE LISTENER
+    ========================================================= */
+
+    function attachLikeListener(
+        shortId,
+        card
+    ) {
+
+        if (
+            !shortId ||
+            !state.currentUser ||
+            !card
+        ) {
+            return;
+        }
+
+
         const uid =
-            currentUser.uid;
+            state.currentUser.uid;
 
-        const likeRef =
+
+        const key =
+            `${shortId}:${uid}`;
+
+
+        if (state.likeListeners[key]) {
+            return;
+        }
+
+
+        const ref =
             db.ref(
-                `shortLikes/${shortId}/${uid}`
+                `${CONFIG.SHORTS_PATH}/${shortId}/likes/${uid}`
             );
 
-        const likesRef =
+
+        const listener =
+            snapshot => {
+
+                const button =
+                    card.querySelector(
+                        ".likeBtn"
+                    );
+
+                if (!button) {
+                    return;
+                }
+
+
+                updateLikeVisual(
+                    button,
+                    snapshot.exists()
+                );
+
+            };
+
+
+        state.likeListeners[key] =
+            listener;
+
+
+        ref.on(
+            "value",
+            listener
+        );
+
+    }
+
+
+    function updateLikeVisual(
+        button,
+        liked
+    ) {
+
+        button.classList.toggle(
+            "liked",
+            liked
+        );
+
+
+        const icon =
+            button.querySelector("i");
+
+
+        if (icon) {
+
+            icon.className =
+                liked
+                    ? "fa-solid fa-heart"
+                    : "fa-regular fa-heart";
+
+        }
+
+    }
+
+
+    /* =========================================================
+       LIKE
+    ========================================================= */
+
+    async function toggleLike(
+        shortId,
+        button
+    ) {
+
+        if (!state.currentUser) {
+
+            openLogin();
+
+            return;
+
+        }
+
+
+        const uid =
+            state.currentUser.uid;
+
+
+        const ref =
             db.ref(
-                `shorts/${shortId}/likes`
+                `${CONFIG.SHORTS_PATH}/${shortId}/likes/${uid}`
             );
+
 
         try {
 
             const snapshot =
-                await likeRef.once("value");
+                await ref.once("value");
 
-            if (snapshot.exists()) {
 
-                await likeRef.remove();
+            const alreadyLiked =
+                snapshot.exists();
 
-                await likesRef.transaction(
-                    value =>
-                        Math.max(
-                            Number(value || 0) - 1,
-                            0
-                        )
+
+            if (alreadyLiked) {
+
+                await ref.remove();
+
+
+                await decrementCounter(
+                    `${CONFIG.SHORTS_PATH}/${shortId}/likeCount`
                 );
 
-                updateLikeUI(
-                    shortId,
+
+                updateLikeVisual(
+                    button,
                     false
                 );
 
+
             } else {
 
-                await likeRef.set(true);
+                await ref.set({
 
-                await likesRef.transaction(
-                    value =>
-                        Number(value || 0) + 1
+                    uid,
+
+                    createdAt:
+                        firebase.database
+                            .ServerValue
+                            .TIMESTAMP
+
+                });
+
+
+                await incrementCounter(
+                    `${CONFIG.SHORTS_PATH}/${shortId}/likeCount`
                 );
 
-                updateLikeUI(
-                    shortId,
+
+                updateLikeVisual(
+                    button,
                     true
                 );
 
-                showHeart();
+
+                playHeart();
+
             }
+
+
+            refreshButtonCount(
+                button,
+                alreadyLiked ? -1 : 1
+            );
+
 
         } catch (error) {
 
@@ -869,132 +2222,165 @@
             );
 
             showToast(
-                "Couldn't update like."
-            );
-        }
-    }
-
-
-    /* =====================================================
-       LIKE UI
-    ====================================================== */
-
-    function updateLikeUI(shortId, liked) {
-
-        const card =
-            document.querySelector(
-                `.shortCard[data-id="${CSS.escape(shortId)}"]`
+                "Could not update like",
+                "error"
             );
 
-        if (!card) return;
-
-        const button =
-            card.querySelector(".likeBtn");
-
-        if (!button) return;
-
-        const icon =
-            button.querySelector("i");
-
-        if (!icon) return;
-
-        if (liked) {
-
-            icon.className =
-                "fa-solid fa-heart";
-
-            button.classList.add("liked");
-
-        } else {
-
-            icon.className =
-                "fa-regular fa-heart";
-
-            button.classList.remove("liked");
         }
+
     }
 
 
-    /* =====================================================
-       REFRESH LIKES
-    ====================================================== */
-
-    async function refreshAllLikeStates() {
-
-        if (!currentUser) return;
-
-        const buttons =
-            document.querySelectorAll(".likeBtn");
-
-        await Promise.all(
-            [...buttons].map(
-                async button => {
-
-                    const id =
-                        button.dataset.shortId;
-
-                    try {
-
-                        const snapshot =
-                            await db.ref(
-                                `shortLikes/${id}/${currentUser.uid}`
-                            ).once("value");
-
-                        updateLikeUI(
-                            id,
-                            snapshot.exists()
-                        );
-
-                    } catch (error) {
-                        console.warn(
-                            "Like state error:",
-                            error
-                        );
-                    }
-                }
-            )
-        );
-    }
-
-
-    /* =====================================================
+    /* =========================================================
        SAVE
-    ====================================================== */
+    ========================================================= */
 
-    async function saveShort(shortId, button) {
+    function attachSaveListener(
+        shortId,
+        card
+    ) {
 
-        if (!currentUser) {
-
-            showToast(
-                "Please login first."
-            );
-
+        if (
+            !shortId ||
+            !state.currentUser ||
+            !card
+        ) {
             return;
         }
 
+
+        const uid =
+            state.currentUser.uid;
+
+
+        const key =
+            `${shortId}:${uid}`;
+
+
+        if (state.saveListeners[key]) {
+            return;
+        }
+
+
         const ref =
             db.ref(
-                `savedShorts/${currentUser.uid}/${shortId}`
+                `${CONFIG.SHORTS_PATH}/${shortId}/saves/${uid}`
             );
+
+
+        const listener =
+            snapshot => {
+
+                const button =
+                    card.querySelector(
+                        ".saveBtn"
+                    );
+
+                if (!button) {
+                    return;
+                }
+
+
+                const saved =
+                    snapshot.exists();
+
+
+                button.classList.toggle(
+                    "saved",
+                    saved
+                );
+
+
+                const icon =
+                    button.querySelector("i");
+
+
+                if (icon) {
+
+                    icon.className =
+                        saved
+                            ? "fa-solid fa-bookmark"
+                            : "fa-regular fa-bookmark";
+
+                }
+
+
+                const label =
+                    button.querySelector("span");
+
+
+                if (label) {
+
+                    label.textContent =
+                        saved
+                            ? "Saved"
+                            : "Save";
+
+                }
+
+            };
+
+
+        state.saveListeners[key] =
+            listener;
+
+
+        ref.on(
+            "value",
+            listener
+        );
+
+    }
+
+
+    async function toggleSave(
+        shortId,
+        button
+    ) {
+
+        if (!state.currentUser) {
+
+            openLogin();
+
+            return;
+
+        }
+
+
+        const uid =
+            state.currentUser.uid;
+
+
+        const ref =
+            db.ref(
+                `${CONFIG.SHORTS_PATH}/${shortId}/saves/${uid}`
+            );
+
 
         try {
 
             const snapshot =
                 await ref.once("value");
 
-            const icon =
-                button?.querySelector("i");
 
-            if (snapshot.exists()) {
+            const saved =
+                snapshot.exists();
+
+
+            if (saved) {
 
                 await ref.remove();
 
-                button?.classList.remove("saved");
+                await decrementCounter(
+                    `${CONFIG.SHORTS_PATH}/${shortId}/saveCount`
+                );
 
-                if (icon) {
-                    icon.className =
-                        "fa-regular fa-bookmark";
-                }
+
+                updateSaveVisual(
+                    button,
+                    false
+                );
+
 
                 showToast(
                     "Removed from saved"
@@ -1002,20 +2388,33 @@
 
             } else {
 
-                await ref.set(
-                    firebase.database.ServerValue.TIMESTAMP
+                await ref.set({
+
+                    uid,
+
+                    createdAt:
+                        firebase.database
+                            .ServerValue
+                            .TIMESTAMP
+
+                });
+
+
+                await incrementCounter(
+                    `${CONFIG.SHORTS_PATH}/${shortId}/saveCount`
                 );
 
-                button?.classList.add("saved");
 
-                if (icon) {
-                    icon.className =
-                        "fa-solid fa-bookmark";
-                }
+                updateSaveVisual(
+                    button,
+                    true
+                );
+
 
                 showToast(
-                    "Saved to your collection"
+                    "Saved to profile"
                 );
+
             }
 
         } catch (error) {
@@ -1026,143 +2425,282 @@
             );
 
             showToast(
-                "Couldn't save Short."
+                "Could not update save",
+                "error"
             );
+
         }
+
     }
 
 
-    /* =====================================================
-       REFRESH SAVES
-    ====================================================== */
+    function updateSaveVisual(
+        button,
+        saved
+    ) {
 
-    async function refreshAllSaveStates() {
-
-        if (!currentUser) return;
-
-        const buttons =
-            document.querySelectorAll(".saveBtn");
-
-        await Promise.all(
-            [...buttons].map(
-                async button => {
-
-                    const id =
-                        button.dataset.shortId;
-
-                    try {
-
-                        const snapshot =
-                            await db.ref(
-                                `savedShorts/${currentUser.uid}/${id}`
-                            ).once("value");
-
-                        const icon =
-                            button.querySelector("i");
-
-                        if (snapshot.exists()) {
-
-                            button.classList.add(
-                                "saved"
-                            );
-
-                            if (icon) {
-                                icon.className =
-                                    "fa-solid fa-bookmark";
-                            }
-
-                        }
-
-                    } catch (error) {
-                        console.warn(
-                            "Save state error:",
-                            error
-                        );
-                    }
-                }
-            )
-        );
-    }
-
-
-    /* =====================================================
-       FOLLOW
-    ====================================================== */
-
-    async function followUser(uid, button) {
-
-        if (!currentUser) {
-
-            showToast(
-                "Please login first."
-            );
-
+        if (!button) {
             return;
         }
 
+
+        button.classList.toggle(
+            "saved",
+            saved
+        );
+
+
+        const icon =
+            button.querySelector("i");
+
+
+        if (icon) {
+
+            icon.className =
+                saved
+                    ? "fa-solid fa-bookmark"
+                    : "fa-regular fa-bookmark";
+
+        }
+
+
+        const label =
+            button.querySelector("span");
+
+
+        if (label) {
+
+            label.textContent =
+                saved
+                    ? "Saved"
+                    : "Save";
+
+        }
+
+    }
+
+
+    /* =========================================================
+       FOLLOW LISTENER
+    ========================================================= */
+
+    function attachFollowListener(
+        targetUid,
+        card
+    ) {
+
         if (
-            !uid ||
-            uid === currentUser.uid
+            !targetUid ||
+            !state.currentUser ||
+            !card
         ) {
             return;
         }
 
-        button.disabled = true;
+
+        const uid =
+            state.currentUser.uid;
+
+
+        const key =
+            `${targetUid}:${uid}`;
+
+
+        if (state.followListeners[key]) {
+            return;
+        }
+
+
+        const ref =
+            db.ref(
+                `${CONFIG.FOLLOWERS_PATH}/${targetUid}/${uid}`
+            );
+
+
+        const listener =
+            snapshot => {
+
+                const button =
+                    card.querySelector(
+                        ".followBtn"
+                    );
+
+
+                if (!button) {
+                    return;
+                }
+
+
+                button.textContent =
+                    snapshot.exists()
+                        ? "Following"
+                        : "Follow";
+
+
+                button.classList.toggle(
+                    "following",
+                    snapshot.exists()
+                );
+
+            };
+
+
+        state.followListeners[key] =
+            listener;
+
+
+        ref.on(
+            "value",
+            listener
+        );
+
+    }
+
+
+    /* =========================================================
+       FOLLOW / UNFOLLOW
+    ========================================================= */
+
+    async function toggleFollow(
+        targetUid,
+        button
+    ) {
+
+        if (!state.currentUser) {
+
+            openLogin();
+
+            return;
+
+        }
+
+
+        const uid =
+            state.currentUser.uid;
+
+
+        if (
+            !targetUid ||
+            targetUid === uid
+        ) {
+            return;
+        }
+
+
+        const followerRef =
+            db.ref(
+                `${CONFIG.FOLLOWERS_PATH}/${targetUid}/${uid}`
+            );
+
 
         const followingRef =
             db.ref(
-                `following/${currentUser.uid}/${uid}`
+                `${CONFIG.FOLLOWING_PATH}/${uid}/${targetUid}`
             );
 
-        const followersRef =
-            db.ref(
-                `followers/${uid}/${currentUser.uid}`
-            );
 
         try {
 
             const snapshot =
-                await followingRef.once("value");
+                await followerRef.once("value");
 
-            if (snapshot.exists()) {
 
-                await Promise.all([
-                    followingRef.remove(),
-                    followersRef.remove()
-                ]);
+            const following =
+                snapshot.exists();
 
-                button.textContent =
-                    "Follow";
 
-                button.classList.remove(
-                    "following"
+            /*
+             * Multi-location update.
+             * Both sides stay synchronized.
+             */
+
+            if (following) {
+
+                const updates = {};
+
+                updates[
+                    `${CONFIG.FOLLOWERS_PATH}/${targetUid}/${uid}`
+                ] = null;
+
+                updates[
+                    `${CONFIG.FOLLOWING_PATH}/${uid}/${targetUid}`
+                ] = null;
+
+
+                await db.ref().update(
+                    updates
                 );
+
+
+                if (button) {
+                    button.textContent =
+                        "Follow";
+
+                    button.classList.remove(
+                        "following"
+                    );
+                }
+
 
                 showToast(
                     "Unfollowed"
                 );
 
+
             } else {
 
-                await Promise.all([
-                    followingRef.set(
-                        firebase.database.ServerValue.TIMESTAMP
-                    ),
-                    followersRef.set(
-                        firebase.database.ServerValue.TIMESTAMP
-                    )
-                ]);
+                const timestamp =
+                    firebase.database
+                        .ServerValue
+                        .TIMESTAMP;
 
-                button.textContent =
-                    "Following";
 
-                button.classList.add(
-                    "following"
+                const updates = {};
+
+
+                updates[
+                    `${CONFIG.FOLLOWERS_PATH}/${targetUid}/${uid}`
+                ] = {
+
+                    uid,
+
+                    createdAt:
+                        timestamp
+
+                };
+
+
+                updates[
+                    `${CONFIG.FOLLOWING_PATH}/${uid}/${targetUid}`
+                ] = {
+
+                    uid: targetUid,
+
+                    createdAt:
+                        timestamp
+
+                };
+
+
+                await db.ref().update(
+                    updates
                 );
+
+
+                if (button) {
+                    button.textContent =
+                        "Following";
+
+                    button.classList.add(
+                        "following"
+                    );
+                }
+
 
                 showToast(
                     "Following"
                 );
+
             }
 
         } catch (error) {
@@ -1173,380 +2711,511 @@
             );
 
             showToast(
-                "Couldn't update follow."
+                "Could not update follow",
+                "error"
             );
 
-        } finally {
-
-            button.disabled = false;
         }
+
     }
 
 
-    /* =====================================================
-       REFRESH FOLLOW
-    ====================================================== */
+    /* =========================================================
+       COMMENTS
+    ========================================================= */
 
-    async function refreshAllFollowStates() {
-
-        if (!currentUser) return;
-
-        const buttons =
-            document.querySelectorAll(".followBtn");
-
-        await Promise.all(
-            [...buttons].map(
-                async button => {
-
-                    const uid =
-                        button.dataset.followId;
-
-                    if (!uid) return;
-
-                    try {
-
-                        const snapshot =
-                            await db.ref(
-                                `following/${currentUser.uid}/${uid}`
-                            ).once("value");
-
-                        if (snapshot.exists()) {
-
-                            button.textContent =
-                                "Following";
-
-                            button.classList.add(
-                                "following"
-                            );
-
-                        } else {
-
-                            button.textContent =
-                                "Follow";
-
-                            button.classList.remove(
-                                "following"
-                            );
-                        }
-
-                    } catch (error) {
-                        console.warn(
-                            "Follow state error:",
-                            error
-                        );
-                    }
-                }
-            )
-        );
-    }
-
-
-    /* =====================================================
-       VIEWS
-    ====================================================== */
-
-    async function increaseView(shortId) {
-
-        if (!currentUser) return;
-
-        const viewRef =
-            db.ref(
-                `shortViews/${shortId}/${currentUser.uid}`
-            );
-
-        try {
-
-            const snapshot =
-                await viewRef.once("value");
-
-            if (snapshot.exists()) return;
-
-            await viewRef.set(
-                firebase.database.ServerValue.TIMESTAMP
-            );
-
-            await db.ref(
-                `shorts/${shortId}/views`
-            ).transaction(
-                value =>
-                    Number(value || 0) + 1
-            );
-
-            updateViewUI(shortId);
-
-        } catch (error) {
-
-            console.warn(
-                "View update error:",
-                error
-            );
-        }
-    }
-
-
-    function updateViewUI(shortId) {
+    function openComments(
+        shortId
+    ) {
 
         const short =
-            shorts.find(
-                item =>
-                    item.id === shortId
+            getShort(shortId);
+
+
+        if (
+            short &&
+            commentsDisabled(short)
+        ) {
+
+            showToast(
+                "Comments are turned off",
+                "error"
             );
 
-        if (!short) return;
+            return;
 
-        const card =
-            document.querySelector(
-                `.shortCard[data-id="${CSS.escape(shortId)}"]`
-            );
-
-        const view =
-            card?.querySelector(".viewCount");
-
-        if (!view) return;
-
-        const newViews =
-            Number(short.views || 0) + 1;
-
-        short.views = newViews;
-
-        view.innerHTML = `
-            <i class="fa-solid fa-eye"></i>
-            ${formatNumber(newViews)}
-        `;
-    }
+        }
 
 
-    /* =====================================================
-       COMMENTS
-    ====================================================== */
+        state.commentShortId =
+            shortId;
 
-    async function openComments(shortId) {
 
-        if (!commentsModal) return;
+        const modal =
+            $("commentsModal");
 
-        currentCommentId = shortId;
 
-        commentsModal.classList.remove(
+        if (!modal) {
+            return;
+        }
+
+
+        modal.classList.remove(
             "hidden"
         );
 
-        commentsModal.setAttribute(
+
+        modal.setAttribute(
             "aria-hidden",
             "false"
         );
+
 
         document.body.classList.add(
             "modalOpen"
         );
 
-        const commentsContainer =
-            document.getElementById(
-                "commentsContainer"
+
+        loadComments(
+            shortId
+        );
+
+    }
+
+
+    function closeComments() {
+
+        const modal =
+            $("commentsModal");
+
+
+        modal?.classList.add(
+            "hidden"
+        );
+
+
+        modal?.setAttribute(
+            "aria-hidden",
+            "true"
+        );
+
+
+        document.body.classList.remove(
+            "modalOpen"
+        );
+
+
+        if (
+            state.commentListener &&
+            state.commentShortId
+        ) {
+
+            db.ref(
+                `${CONFIG.COMMENTS_PATH}/${state.commentShortId}`
+            ).off(
+                "value",
+                state.commentListener
             );
 
-        if (!commentsContainer) return;
+        }
 
-        commentsContainer.innerHTML = `
-            <div class="modalLoading">
-                Loading comments...
+
+        state.commentListener =
+            null;
+
+        state.commentShortId =
+            null;
+
+    }
+
+
+    function loadComments(
+        shortId
+    ) {
+
+        const list =
+            $("commentsContainer");
+
+
+        if (!list) {
+            return;
+        }
+
+
+        list.innerHTML = `
+
+            <div class="commentsLoading">
+
+                <div class="loadingSpinner"></div>
+
+                <span>
+                    Loading comments...
+                </span>
+
             </div>
+
         `;
 
-        try {
 
-            const snapshot =
-                await db.ref(
-                    `shortComments/${shortId}`
-                )
-                .orderByChild("time")
-                .once("value");
+        const ref =
+            db.ref(
+                `${CONFIG.COMMENTS_PATH}/${shortId}`
+            );
 
-            commentsContainer.innerHTML = "";
 
-            if (!snapshot.exists()) {
+        if (state.commentListener) {
 
-                commentsContainer.innerHTML = `
-                    <div class="noComments">
-                        <i class="fa-regular fa-comment"></i>
-                        <p>No comments yet.</p>
-                        <span>Be the first to comment.</span>
-                    </div>
-                `;
+            ref.off(
+                "value",
+                state.commentListener
+            );
 
-                return;
-            }
+        }
 
-            const comments = [];
 
-            snapshot.forEach(child => {
+        state.commentListener =
+            snapshot => {
 
-                comments.push({
-                    id: child.key,
-                    ...child.val()
-                });
+                const data =
+                    snapshot.val() || {};
 
-            });
 
-            comments.reverse();
+                const comments =
+                    Object.entries(data)
 
-            comments.forEach(comment => {
+                        .map(([id, value]) => ({
 
-                commentsContainer.insertAdjacentHTML(
-                    "beforeend",
-                    createComment(comment)
+                            id,
+
+                            ...(value || {})
+
+                        }))
+
+                        .filter(comment =>
+                            comment &&
+                            !comment.deleted
+                        )
+
+                        .sort((a, b) => {
+
+                            return (
+                                safeNumber(
+                                    a.createdAt
+                                ) -
+                                safeNumber(
+                                    b.createdAt
+                                )
+                            );
+
+                        })
+
+                        .slice(
+                            -CONFIG.MAX_COMMENTS
+                        );
+
+
+                renderComments(
+                    comments
                 );
 
-            });
 
-        } catch (error) {
+                updateCommentCount(
+                    comments.length
+                );
 
-            console.error(
-                "Comments error:",
-                error
-            );
+            };
 
-            commentsContainer.innerHTML = `
-                <div class="noComments">
-                    Unable to load comments.
-                </div>
-            `;
-        }
+
+        ref.on(
+            "value",
+            state.commentListener,
+            error => {
+
+                console.error(
+                    "Comment realtime error:",
+                    error
+                );
+
+                list.innerHTML = `
+
+                    <div class="noComments">
+                        Unable to load comments.
+                    </div>
+
+                `;
+
+            }
+        );
+
     }
 
 
-    /* =====================================================
-       COMMENT HTML
-    ====================================================== */
+    function renderComments(
+        comments
+    ) {
 
-    function createComment(comment) {
+        const list =
+            $("commentsContainer");
 
-        return `
-            <div
-                class="commentItem"
-                data-comment-id="${escapeHTML(comment.id || "")}"
-            >
 
-                <img
-                    src="${escapeHTML(
-                        comment.profile ||
-                        DEFAULT_AVATAR
-                    )}"
-                    alt=""
-                    onerror="this.onerror=null;this.src='${DEFAULT_AVATAR}'"
-                >
+        if (!list) {
+            return;
+        }
 
-                <div class="commentBody">
+
+        if (!comments.length) {
+
+            list.innerHTML = `
+
+                <div class="noComments">
+
+                    <i class="fa-regular fa-comment"></i>
 
                     <strong>
-                        ${escapeHTML(
-                            comment.username ||
-                            "User"
-                        )}
+                        No comments yet
                     </strong>
 
-                    <p>
-                        ${escapeHTML(
-                            comment.text ||
-                            ""
-                        )}
-                    </p>
-
-                    <small>
-                        ${timeAgo(
-                            comment.time
-                        )}
-                    </small>
+                    <span>
+                        Be the first to comment.
+                    </span>
 
                 </div>
 
-            </div>
-        `;
+            `;
+
+            return;
+
+        }
+
+
+        list.innerHTML =
+            comments
+                .map(comment => {
+
+                    const commentUid =
+                        comment.uid ||
+                        comment.userId ||
+                        "";
+
+
+                    const isOwn =
+                        state.currentUser &&
+                        commentUid ===
+                        state.currentUser.uid;
+
+
+                    return `
+
+                        <div
+                            class="commentItem"
+                            data-comment-id="${escapeHTML(comment.id)}"
+                        >
+
+                            <img
+                                src="${escapeHTML(getAvatar(comment))}"
+                                alt=""
+                                onerror="this.src='assets/default-avatar.png'"
+                            >
+
+
+                            <div class="commentBody">
+
+                                <strong>
+                                    ${escapeHTML(
+                                        getUserName(comment)
+                                    )}
+                                </strong>
+
+
+                                <p>
+                                    ${escapeHTML(
+                                        comment.text ||
+                                        comment.comment ||
+                                        ""
+                                    )}
+                                </p>
+
+
+                                <small>
+                                    ${formatTime(
+                                        comment.createdAt
+                                    )}
+                                </small>
+
+
+                                ${
+                                    isOwn
+                                        ? `
+                                            <button
+                                                type="button"
+                                                class="deleteCommentBtn"
+                                                data-comment-id="${escapeHTML(comment.id)}"
+                                            >
+                                                Delete
+                                            </button>
+                                        `
+                                        : ""
+                                }
+
+                            </div>
+
+                        </div>
+
+                    `;
+
+                })
+                .join("");
+
+
+        list
+            .querySelectorAll(
+                ".deleteCommentBtn"
+            )
+            .forEach(button => {
+
+                button.onclick =
+                    () => {
+
+                        deleteComment(
+                            state.commentShortId,
+                            button.dataset.commentId
+                        );
+
+                    };
+
+            });
+
     }
 
 
-    /* =====================================================
+    function updateCommentCount(
+        count
+    ) {
+
+        const element =
+            $("commentCountText");
+
+
+        if (!element) {
+            return;
+        }
+
+
+        element.textContent =
+            count
+                ? `${formatCount(count)} comments`
+                : "Join the conversation";
+
+    }
+
+
+    /* =========================================================
        SEND COMMENT
-    ====================================================== */
+    ========================================================= */
 
     async function sendComment() {
 
+        if (!state.currentUser) {
+
+            openLogin();
+
+            return;
+
+        }
+
+
+        const shortId =
+            state.commentShortId;
+
+
+        if (!shortId) {
+            return;
+        }
+
+
+        const short =
+            getShort(shortId);
+
+
         if (
-            !currentUser ||
-            !currentCommentId
+            short &&
+            commentsDisabled(short)
         ) {
 
             showToast(
-                "Please login first."
+                "Comments are turned off",
+                "error"
             );
 
             return;
+
         }
+
 
         const input =
-            document.getElementById(
-                "commentText"
-            );
+            $("commentText");
 
-        if (!input) return;
 
         const text =
-            input.value.trim();
+            input?.value
+                ?.trim();
 
-        if (!text) return;
 
-        if (text.length > 500) {
-
-            showToast(
-                "Comment is too long."
-            );
-
+        if (!text) {
             return;
         }
+
 
         try {
 
-            const ref =
-                db.ref(
-                    `shortComments/${currentCommentId}`
-                ).push();
+            const commentRef =
+                db
+                    .ref(
+                        `${CONFIG.COMMENTS_PATH}/${shortId}`
+                    )
+                    .push();
 
-            await ref.set({
+
+            const user =
+                state.currentUser;
+
+
+            await commentRef.set({
 
                 uid:
-                    currentUser.uid,
+                    user.uid,
+
+                userId:
+                    user.uid,
 
                 username:
-                    getCurrentUserName(),
+                    user.displayName ||
+                    "Viewora User",
 
-                profile:
-                    getCurrentUserAvatar(),
+                avatar:
+                    user.photoURL ||
+                    "assets/default-avatar.png",
 
-                text:
-                    text,
+                text,
 
-                time:
-                    firebase.database.ServerValue.TIMESTAMP
+                createdAt:
+                    firebase.database
+                        .ServerValue
+                        .TIMESTAMP
+
             });
 
-            await db.ref(
-                `shorts/${currentCommentId}/comments`
-            ).transaction(
-                value =>
-                    Number(value || 0) + 1
+
+            await incrementCounter(
+                `${CONFIG.SHORTS_PATH}/${shortId}/commentCount`
             );
+
 
             input.value = "";
 
+
             showToast(
                 "Comment added"
-            );
-
-            updateCommentCountUI(
-                currentCommentId
-            );
-
-            await openComments(
-                currentCommentId
             );
 
         } catch (error) {
@@ -1557,282 +3226,1012 @@
             );
 
             showToast(
-                "Couldn't add comment."
-            );
-        }
-    }
-
-
-    function updateCommentCountUI(shortId) {
-
-        const card =
-            document.querySelector(
-                `.shortCard[data-id="${CSS.escape(shortId)}"]`
+                "Could not post comment",
+                "error"
             );
 
-        const short =
-            shorts.find(
-                item =>
-                    item.id === shortId
-            );
-
-        if (!card || !short) return;
-
-        const button =
-            card.querySelector(".commentBtn");
-
-        const count =
-            button?.querySelector("span");
-
-        if (count) {
-
-            count.textContent =
-                formatNumber(
-                    Number(short.comments || 0) + 1
-                );
         }
 
-        short.comments =
-            Number(short.comments || 0) + 1;
     }
 
 
-    /* =====================================================
-       SHARE
-    ====================================================== */
+    /* =========================================================
+       DELETE COMMENT
+    ========================================================= */
 
-    function shareShort(shortId) {
+    async function deleteComment(
+        shortId,
+        commentId
+    ) {
 
-        currentShareId = shortId;
-
-        shareModal?.classList.remove(
-            "hidden"
-        );
-
-        shareModal?.setAttribute(
-            "aria-hidden",
-            "false"
-        );
-
-        document.body.classList.add(
-            "modalOpen"
-        );
-    }
-
-
-    function getShareURL() {
-
-        const url =
-            new URL(
-                "shorts.html",
-                window.location.href
-            );
-
-        if (currentShareId) {
-
-            url.searchParams.set(
-                "id",
-                currentShareId
-            );
+        if (
+            !state.currentUser ||
+            !shortId ||
+            !commentId
+        ) {
+            return;
         }
 
-        return url.href;
-    }
 
+        const ref =
+            db.ref(
+                `${CONFIG.COMMENTS_PATH}/${shortId}/${commentId}`
+            );
 
-    async function copyShortLink() {
-
-        const url =
-            getShareURL();
 
         try {
 
-            await navigator.clipboard.writeText(
-                url
+            const snapshot =
+                await ref.once("value");
+
+
+            const comment =
+                snapshot.val();
+
+
+            if (!comment) {
+                return;
+            }
+
+
+            const owner =
+                comment.uid ||
+                comment.userId;
+
+
+            if (
+                owner !==
+                state.currentUser.uid
+            ) {
+
+                showToast(
+                    "You cannot delete this comment",
+                    "error"
+                );
+
+                return;
+
+            }
+
+
+            await ref.remove();
+
+
+            await decrementCounter(
+                `${CONFIG.SHORTS_PATH}/${shortId}/commentCount`
             );
 
+
             showToast(
-                "Link copied"
+                "Comment deleted"
             );
 
         } catch (error) {
 
-            console.warn(
-                "Clipboard error:",
+            console.error(
+                "Delete comment error:",
                 error
             );
 
             showToast(
-                "Couldn't copy link."
+                "Could not delete comment",
+                "error"
             );
+
         }
+
     }
 
 
-    async function nativeShare() {
+    /* =========================================================
+       SHARE
+    ========================================================= */
 
-        const url =
-            getShareURL();
+    function openShare(
+        shortId
+    ) {
 
-        if (
-            navigator.share
-        ) {
+        state.shareShortId =
+            shortId;
 
-            try {
 
-                await navigator.share({
-                    title: "Viewora Short",
-                    text: "Watch this Short on Viewora",
-                    url
-                });
+        const modal =
+            $("shareModal");
 
-            } catch {
-                // User cancelled.
-            }
 
-        } else {
-
-            await copyShortLink();
+        if (!modal) {
+            return;
         }
-    }
 
 
-    /* =====================================================
-       CLOSE MODALS
-    ====================================================== */
+        modal.classList.remove(
+            "hidden"
+        );
 
-    function closeModal(modal) {
-
-        if (!modal) return;
-
-        modal.classList.add("hidden");
 
         modal.setAttribute(
             "aria-hidden",
-            "true"
+            "false"
         );
 
-        if (
-            document.querySelectorAll(
-                ".modal:not(.hidden)"
-            ).length === 0
-        ) {
 
-            document.body.classList.remove(
-                "modalOpen"
-            );
-        }
+        document.body.classList.add(
+            "modalOpen"
+        );
+
     }
 
 
-    /* =====================================================
-       OWNER MENU
-    ====================================================== */
+    function closeShare() {
 
-    function openOwnerMenu(shortId) {
-
-        if (!shortMenu) return;
-
-        const short =
-            shorts.find(
-                item =>
-                    item.id === shortId
+        $("shareModal")
+            ?.classList.add(
+                "hidden"
             );
 
-        if (!short) return;
 
-        const uid =
-            getShortUserId(short);
+        $("shareModal")
+            ?.setAttribute(
+                "aria-hidden",
+                "true"
+            );
 
-        if (
-            !currentUser ||
-            uid !== currentUser.uid
-        ) {
 
-            openReport(shortId);
-
-            return;
-        }
-
-        currentMenuShortId =
-            shortId;
-
-        shortMenu.classList.remove(
-            "hidden"
+        document.body.classList.remove(
+            "modalOpen"
         );
+
+
+        state.shareShortId =
+            null;
+
     }
 
 
-    function closeOwnerMenu() {
+    function getShareURL(shortId) {
 
-        currentMenuShortId = null;
-
-        shortMenu?.classList.add(
-            "hidden"
+        return (
+            window.location.origin +
+            window.location.pathname.replace(
+                /[^/]+$/,
+                ""
+            ) +
+            `shorts.html?short=${encodeURIComponent(shortId)}`
         );
+
     }
 
 
-    /* =====================================================
-       DELETE OWN SHORT
-    ====================================================== */
-
-    async function deleteOwnShort() {
+    async function shareShort(
+        type
+    ) {
 
         const shortId =
-            currentMenuShortId;
+            state.shareShortId;
 
-        if (
-            !shortId ||
-            !currentUser
-        ) return;
 
-        const short =
-            shorts.find(
-                item =>
-                    item.id === shortId
-            );
-
-        if (!short) return;
-
-        if (
-            getShortUserId(short) !==
-            currentUser.uid
-        ) {
-
-            showToast(
-                "You can't delete this Short."
-            );
-
+        if (!shortId) {
             return;
         }
 
-        const confirmed =
-            window.confirm(
-                "Delete this Short permanently?"
-            );
 
-        if (!confirmed) return;
+        const url =
+            getShareURL(shortId);
+
+
+        const short =
+            getShort(shortId);
+
+
+        const title =
+            getCaption(short) ||
+            "Watch this Short on Viewora";
+
 
         try {
 
-            await db.ref(
-                `shorts/${shortId}`
-            ).remove();
+            if (
+                type === "native" &&
+                navigator.share
+            ) {
 
-            await db.ref(
-                `shortComments/${shortId}`
-            ).remove();
+                await navigator.share({
 
-            await db.ref(
-                `shortLikes/${shortId}`
-            ).remove();
+                    title:
+                        "Viewora Short",
 
-            await db.ref(
-                `shortViews/${shortId}`
-            ).remove();
+                    text:
+                        title,
 
-            closeOwnerMenu();
+                    url
+
+                });
+
+
+            } else if (
+                type === "copy"
+            ) {
+
+                await copyText(url);
+
+                showToast(
+                    "Link copied"
+                );
+
+
+            } else if (
+                type === "whatsapp"
+            ) {
+
+                window.open(
+                    "https://wa.me/?text=" +
+                    encodeURIComponent(
+                        `${title}\n${url}`
+                    ),
+                    "_blank"
+                );
+
+
+            } else if (
+                type === "facebook"
+            ) {
+
+                window.open(
+                    "https://www.facebook.com/sharer/sharer.php?u=" +
+                    encodeURIComponent(url),
+                    "_blank"
+                );
+
+
+            } else if (
+                type === "x"
+            ) {
+
+                window.open(
+                    "https://twitter.com/intent/tweet?text=" +
+                    encodeURIComponent(title) +
+                    "&url=" +
+                    encodeURIComponent(url),
+                    "_blank"
+                );
+
+            }
+
+
+            await incrementCounter(
+                `${CONFIG.SHORTS_PATH}/${shortId}/shareCount`
+            );
+
+
+        } catch (error) {
+
+            if (
+                error?.name !==
+                "AbortError"
+            ) {
+
+                console.error(
+                    "Share error:",
+                    error
+                );
+
+            }
+
+        }
+
+    }
+
+
+    async function copyText(text) {
+
+        if (
+            navigator.clipboard &&
+            window.isSecureContext
+        ) {
+
+            await navigator.clipboard.writeText(
+                text
+            );
+
+            return;
+
+        }
+
+
+        const textarea =
+            document.createElement(
+                "textarea"
+            );
+
+
+        textarea.value =
+            text;
+
+
+        textarea.style.position =
+            "fixed";
+
+        textarea.style.opacity =
+            "0";
+
+
+        document.body.appendChild(
+            textarea
+        );
+
+
+        textarea.focus();
+
+        textarea.select();
+
+
+        try {
+
+            document.execCommand(
+                "copy"
+            );
+
+        } finally {
+
+            textarea.remove();
+
+        }
+
+    }
+
+
+    /* =========================================================
+       THREE DOT MENU
+    ========================================================= */
+
+    function openShortMenu(
+        shortId
+    ) {
+
+        const menu =
+            $("shortMenu");
+
+
+        if (!menu) {
+            return;
+        }
+
+
+        const short =
+            getShort(shortId);
+
+
+        if (!short) {
+            return;
+        }
+
+
+        state.menuShortId =
+            shortId;
+
+
+        const ownerId =
+            getUserId(short);
+
+
+        const isOwner =
+            Boolean(
+                state.currentUser &&
+                ownerId ===
+                state.currentUser.uid
+            );
+
+
+        const ownerMenu =
+            $("ownerMenu");
+
+
+        const viewerMenu =
+            $("viewerMenu");
+
+
+        ownerMenu?.classList.toggle(
+            "hidden",
+            !isOwner
+        );
+
+
+        viewerMenu?.classList.toggle(
+            "hidden",
+            isOwner
+        );
+
+
+        updateOwnerMenuText(
+            short
+        );
+
+
+        menu.classList.remove(
+            "hidden"
+        );
+
+
+        menu.setAttribute(
+            "aria-hidden",
+            "false"
+        );
+
+
+        document.body.classList.add(
+            "modalOpen"
+        );
+
+    }
+
+
+    function closeShortMenu() {
+
+        $("shortMenu")
+            ?.classList.add(
+                "hidden"
+            );
+
+
+        $("shortMenu")
+            ?.setAttribute(
+                "aria-hidden",
+                "true"
+            );
+
+
+        state.menuShortId =
+            null;
+
+
+        document.body.classList.remove(
+            "modalOpen"
+        );
+
+    }
+
+
+    function updateOwnerMenuText(
+        short
+    ) {
+
+        const hideBtn =
+            $("hideShortBtn");
+
+
+        const commentsBtn =
+            $("disableCommentsBtn");
+
+
+        const likesBtn =
+            $("hideLikeCountBtn");
+
+
+        if (hideBtn) {
+
+            const strong =
+                hideBtn.querySelector(
+                    "strong"
+                );
+
+            const small =
+                hideBtn.querySelector(
+                    "small"
+                );
+
+
+            if (strong) {
+
+                strong.textContent =
+                    isHidden(short)
+                        ? "Show Short"
+                        : "Hide Short";
+
+            }
+
+
+            if (small) {
+
+                small.textContent =
+                    isHidden(short)
+                        ? "Make this Short visible"
+                        : "Hide this Short from viewers";
+
+            }
+
+        }
+
+
+        if (commentsBtn) {
+
+            const strong =
+                commentsBtn.querySelector(
+                    "strong"
+                );
+
+
+            const small =
+                commentsBtn.querySelector(
+                    "small"
+                );
+
+
+            if (strong) {
+
+                strong.textContent =
+                    commentsDisabled(short)
+                        ? "Turn on comments"
+                        : "Turn off comments";
+
+            }
+
+
+            if (small) {
+
+                small.textContent =
+                    commentsDisabled(short)
+                        ? "Allow people to comment"
+                        : "Stop people from commenting";
+
+            }
+
+        }
+
+
+        if (likesBtn) {
+
+            const strong =
+                likesBtn.querySelector(
+                    "strong"
+                );
+
+
+            const small =
+                likesBtn.querySelector(
+                    "small"
+                );
+
+
+            if (strong) {
+
+                strong.textContent =
+                    likesHidden(short)
+                        ? "Show like count"
+                        : "Hide like count";
+
+            }
+
+
+            if (small) {
+
+                small.textContent =
+                    likesHidden(short)
+                        ? "Show the number of likes"
+                        : "Hide the number of likes";
+
+            }
+
+        }
+
+    }
+
+
+    /* =========================================================
+       EDIT SHORT
+    ========================================================= */
+
+    function editCurrentShort() {
+
+        const id =
+            state.menuShortId;
+
+
+        if (!id) {
+            return;
+        }
+
+
+        const short =
+            getShort(id);
+
+
+        if (!short) {
+            return;
+        }
+
+
+        const ownerId =
+            getUserId(short);
+
+
+        if (
+            !state.currentUser ||
+            ownerId !==
+            state.currentUser.uid
+        ) {
+
+            showToast(
+                "You can only edit your own Short",
+                "error"
+            );
+
+            return;
+
+        }
+
+
+        /*
+         * IMPORTANT:
+         * New edit flow:
+         * edit-shorts.html?shortId=YOUR_ID
+         */
+
+        try {
+
+            sessionStorage.setItem(
+                "vieworaEditShortId",
+                id
+            );
+
+        } catch (_) {}
+
+
+        try {
+
+            localStorage.setItem(
+                "vieworaEditShortId",
+                id
+            );
+
+        } catch (_) {}
+
+
+        window.location.href =
+            `edit-shorts.html?shortId=${encodeURIComponent(id)}`;
+
+    }
+
+
+    /* =========================================================
+       HIDE / SHOW SHORT
+    ========================================================= */
+
+    async function toggleHideCurrentShort() {
+
+        const id =
+            state.menuShortId;
+
+
+        if (!id) {
+            return;
+        }
+
+
+        const short =
+            getShort(id);
+
+
+        if (!short) {
+            return;
+        }
+
+
+        if (!isOwner(short)) {
+
+            showToast(
+                "You cannot change this Short",
+                "error"
+            );
+
+            return;
+
+        }
+
+
+        const currentlyHidden =
+            isHidden(short);
+
+
+        try {
+
+            await db
+                .ref(
+                    `${CONFIG.SHORTS_PATH}/${id}/hidden`
+                )
+                .set(
+                    !currentlyHidden
+                );
+
+
+            closeShortMenu();
+
+
+            if (currentlyHidden) {
+
+                showToast(
+                    "Short is visible again"
+                );
+
+            } else {
+
+                showToast(
+                    "Short hidden"
+                );
+
+            }
+
+
+            await loadShorts();
+
+        } catch (error) {
+
+            console.error(
+                "Hide Short error:",
+                error
+            );
+
+            showToast(
+                "Could not update Short",
+                "error"
+            );
+
+        }
+
+    }
+
+
+    /* =========================================================
+       COMMENTS ON / OFF
+    ========================================================= */
+
+    async function toggleComments() {
+
+        const id =
+            state.menuShortId;
+
+
+        if (!id) {
+            return;
+        }
+
+
+        const short =
+            getShort(id);
+
+
+        if (!short || !isOwner(short)) {
+
+            showToast(
+                "You cannot change this Short",
+                "error"
+            );
+
+            return;
+
+        }
+
+
+        const disabled =
+            commentsDisabled(short);
+
+
+        try {
+
+            await db
+                .ref(
+                    `${CONFIG.SHORTS_PATH}/${id}/commentsDisabled`
+                )
+                .set(
+                    !disabled
+                );
+
+
+            closeShortMenu();
+
+
+            showToast(
+                disabled
+                    ? "Comments turned on"
+                    : "Comments turned off"
+            );
+
+
+            await loadShorts();
+
+        } catch (error) {
+
+            console.error(
+                "Comments setting error:",
+                error
+            );
+
+            showToast(
+                "Could not update comments",
+                "error"
+            );
+
+        }
+
+    }
+
+
+    /* =========================================================
+       HIDE LIKE COUNT
+    ========================================================= */
+
+    async function toggleLikeCountVisibility() {
+
+        const id =
+            state.menuShortId;
+
+
+        if (!id) {
+            return;
+        }
+
+
+        const short =
+            getShort(id);
+
+
+        if (!short || !isOwner(short)) {
+
+            showToast(
+                "You cannot change this Short",
+                "error"
+            );
+
+            return;
+
+        }
+
+
+        const hidden =
+            likesHidden(short);
+
+
+        try {
+
+            await db
+                .ref(
+                    `${CONFIG.SHORTS_PATH}/${id}/hideLikeCount`
+                )
+                .set(
+                    !hidden
+                );
+
+
+            closeShortMenu();
+
+
+            showToast(
+                hidden
+                    ? "Like count shown"
+                    : "Like count hidden"
+            );
+
+
+            await loadShorts();
+
+        } catch (error) {
+
+            console.error(
+                "Like visibility error:",
+                error
+            );
+
+            showToast(
+                "Could not update like visibility",
+                "error"
+            );
+
+        }
+
+    }
+
+
+    /* =========================================================
+       DELETE SHORT
+    ========================================================= */
+
+    function deleteCurrentShort() {
+
+        const id =
+            state.menuShortId;
+
+
+        if (!id) {
+            return;
+        }
+
+
+        const short =
+            getShort(id);
+
+
+        if (!short) {
+            return;
+        }
+
+
+        if (!isOwner(short)) {
+
+            showToast(
+                "You cannot delete this Short",
+                "error"
+            );
+
+            return;
+
+        }
+
+
+        openConfirm(
+
+            "Delete Short?",
+
+            "This Short will be permanently removed from Viewora.",
+
+            "Delete",
+
+            async () => {
+
+                await permanentlyDeleteShort(
+                    id
+                );
+
+            }
+
+        );
+
+    }
+
+
+    async function permanentlyDeleteShort(
+        id
+    ) {
+
+        try {
+
+            /*
+             * Firebase record delete.
+             *
+             * Cloudinary file deletion normally requires
+             * a secure server/backend because Cloudinary
+             * destroy credentials must NOT be exposed
+             * in frontend JS.
+             */
+
+            await db
+                .ref(
+                    `${CONFIG.SHORTS_PATH}/${id}`
+                )
+                .remove();
+
+
+            closeShortMenu();
+
+
+            state.viewed[id] =
+                false;
+
+
+            state.shorts =
+                state.shorts.filter(
+                    short =>
+                        short.id !== id
+                );
+
+
+            state.filteredShorts =
+                state.filteredShorts.filter(
+                    short =>
+                        short.id !== id
+                );
+
+
+            renderFeed();
+
 
             showToast(
                 "Short deleted"
@@ -1841,222 +4240,293 @@
         } catch (error) {
 
             console.error(
-                "Delete error:",
+                "Delete Short error:",
                 error
             );
 
             showToast(
-                "Couldn't delete Short."
+                "Could not delete Short",
+                "error"
             );
+
         }
+
     }
 
 
-    /* =====================================================
-       HIDE COMMENTS
-    ====================================================== */
+    /* =========================================================
+       SAVE TO PROFILE FROM MENU
+    ========================================================= */
 
-    async function hideComments() {
+    async function saveCurrentShortToProfile() {
 
-        const shortId =
-            currentMenuShortId;
+        if (!state.currentUser) {
 
-        if (!shortId || !currentUser) return;
+            openLogin();
 
-        const short =
-            shorts.find(
-                item =>
-                    item.id === shortId
-            );
+            return;
 
-        if (!short) return;
+        }
 
-        if (
-            getShortUserId(short) !==
-            currentUser.uid
-        ) {
 
-            showToast(
-                "Only the owner can change this."
-            );
+        const id =
+            state.menuShortId;
 
+
+        if (!id) {
             return;
         }
 
+
         try {
 
-            const newValue =
-                !Boolean(
-                    short.commentsHidden
-                );
+            await db
+                .ref(
+                    `${CONFIG.SAVED_PATH}/${state.currentUser.uid}/${id}`
+                )
+                .set({
 
-            await db.ref(
-                `shorts/${shortId}/commentsHidden`
-            ).set(newValue);
+                    shortId: id,
 
-            short.commentsHidden =
-                newValue;
+                    createdAt:
+                        firebase.database
+                            .ServerValue
+                            .TIMESTAMP
 
-            closeOwnerMenu();
+                });
+
+
+            closeShortMenu();
+
 
             showToast(
-                newValue
-                    ? "Comments hidden"
-                    : "Comments enabled"
+                "Saved to profile"
             );
 
         } catch (error) {
 
             console.error(
-                "Hide comments error:",
+                "Profile save error:",
                 error
             );
 
             showToast(
-                "Couldn't update comments."
+                "Could not save Short",
+                "error"
             );
+
         }
+
     }
 
 
-    /* =====================================================
-       HIDE OWN SHORT
-    ====================================================== */
+    /* =========================================================
+       COPY SHORT LINK
+    ========================================================= */
 
-    async function hideOwnShort() {
+    async function copyCurrentShortLink() {
 
-        const shortId =
-            currentMenuShortId;
+        const id =
+            state.menuShortId;
 
-        if (!shortId || !currentUser) return;
 
-        const short =
-            shorts.find(
-                item =>
-                    item.id === shortId
-            );
-
-        if (!short) return;
-
-        if (
-            getShortUserId(short) !==
-            currentUser.uid
-        ) {
-
-            showToast(
-                "Only the owner can hide this."
-            );
-
+        if (!id) {
             return;
         }
 
+
         try {
 
-            const newValue =
-                !Boolean(
-                    short.hidden
-                );
+            await copyText(
+                getShareURL(id)
+            );
 
-            await db.ref(
-                `shorts/${shortId}/hidden`
-            ).set(newValue);
 
-            short.hidden =
-                newValue;
+            closeShortMenu();
 
-            closeOwnerMenu();
 
             showToast(
-                newValue
-                    ? "Short hidden"
-                    : "Short visible"
+                "Link copied"
             );
 
         } catch (error) {
 
             console.error(
-                "Hide short error:",
+                "Copy link error:",
                 error
             );
 
             showToast(
-                "Couldn't update Short."
+                "Could not copy link",
+                "error"
             );
+
         }
+
     }
 
 
-    /* =====================================================
-       EDIT SHORT
-    ====================================================== */
+    /* =========================================================
+       NOT INTERESTED
+    ========================================================= */
 
-    function editShort() {
+    async function notInterested() {
 
-        const shortId =
-            currentMenuShortId;
+        const id =
+            state.menuShortId;
 
-        if (!shortId) return;
 
-        closeOwnerMenu();
+        if (!id) {
+            return;
+        }
 
-        window.location.href =
-            `short_upload.html?edit=${encodeURIComponent(shortId)}`;
+
+        try {
+
+            closeShortMenu();
+
+
+            state.shorts =
+                state.shorts.filter(
+                    short =>
+                        short.id !== id
+                );
+
+
+            state.filteredShorts =
+                state.filteredShorts.filter(
+                    short =>
+                        short.id !== id
+                );
+
+
+            renderFeed();
+
+
+            showToast(
+                "Short removed from your feed"
+            );
+
+
+        } catch (error) {
+
+            console.error(
+                "Not interested error:",
+                error
+            );
+
+        }
+
     }
 
 
-    /* =====================================================
+    /* =========================================================
        REPORT
-    ====================================================== */
+    ========================================================= */
 
-    function openReport(shortId) {
+    function openReport(
+        shortId
+    ) {
 
-        currentMenuShortId =
+        state.reportShortId =
             shortId;
 
-        reportModal?.classList.remove(
-            "hidden"
-        );
 
-        reportModal?.setAttribute(
-            "aria-hidden",
-            "false"
-        );
+        $("reportModal")
+            ?.classList.remove(
+                "hidden"
+            );
+
+
+        $("reportModal")
+            ?.setAttribute(
+                "aria-hidden",
+                "false"
+            );
+
 
         document.body.classList.add(
             "modalOpen"
         );
+
     }
 
 
-    async function submitReport(type) {
+    function closeReport() {
 
-        if (
-            !currentUser ||
-            !currentMenuShortId
-        ) {
-
-            showToast(
-                "Please login first."
+        $("reportModal")
+            ?.classList.add(
+                "hidden"
             );
 
+
+        $("reportModal")
+            ?.setAttribute(
+                "aria-hidden",
+                "true"
+            );
+
+
+        document.body.classList.remove(
+            "modalOpen"
+        );
+
+
+        state.reportShortId =
+            null;
+
+    }
+
+
+    async function submitReport(
+        reason
+    ) {
+
+        if (!state.currentUser) {
+
+            openLogin();
+
+            return;
+
+        }
+
+
+        const shortId =
+            state.reportShortId;
+
+
+        if (!shortId) {
             return;
         }
 
+
         try {
 
-            await db.ref(
-                `shortReports/${currentMenuShortId}/${currentUser.uid}`
-            ).set({
+            await db
+                .ref(
+                    `${CONFIG.REPORTS_PATH}/${shortId}/${state.currentUser.uid}`
+                )
+                .set({
 
-                type,
-                time:
-                    firebase.database.ServerValue.TIMESTAMP
+                    uid:
+                        state.currentUser.uid,
 
-            });
+                    shortId,
 
-            closeModal(reportModal);
+                    reason,
 
-            currentMenuShortId = null;
+                    createdAt:
+                        firebase.database
+                            .ServerValue
+                            .TIMESTAMP
+
+                });
+
+
+            closeReport();
+
+            closeShortMenu();
+
 
             showToast(
                 "Report submitted"
@@ -2070,799 +4540,1227 @@
             );
 
             showToast(
-                "Couldn't submit report."
+                "Could not submit report",
+                "error"
             );
+
         }
+
     }
 
 
-    /* =====================================================
-       HEART
-    ====================================================== */
+    /* =========================================================
+       CONFIRM MODAL
+    ========================================================= */
 
-    function showHeart() {
+    function openConfirm(
+        title,
+        message,
+        actionText,
+        callback
+    ) {
 
-        if (!heartAnimation) return;
+        const modal =
+            $("confirmModal");
 
-        heartAnimation.classList.remove(
+
+        if (!modal) {
+
+            if (
+                window.confirm(
+                    message
+                )
+            ) {
+
+                callback?.();
+
+            }
+
+            return;
+
+        }
+
+
+        $("confirmTitle").textContent =
+            title;
+
+
+        $("confirmMessage").textContent =
+            message;
+
+
+        $("confirmActionBtn").textContent =
+            actionText;
+
+
+        state.confirmAction =
+            callback;
+
+
+        modal.classList.remove(
             "hidden"
         );
 
-        heartAnimation.classList.remove(
-            "heartPop"
+
+        modal.setAttribute(
+            "aria-hidden",
+            "false"
         );
 
-        void heartAnimation.offsetWidth;
 
-        heartAnimation.classList.add(
-            "heartPop"
+        document.body.classList.add(
+            "modalOpen"
         );
 
-        setTimeout(() => {
+    }
 
-            heartAnimation.classList.add(
+
+    function closeConfirm() {
+
+        $("confirmModal")
+            ?.classList.add(
                 "hidden"
             );
 
-        }, 700);
+
+        $("confirmModal")
+            ?.setAttribute(
+                "aria-hidden",
+                "true"
+            );
+
+
+        state.confirmAction =
+            null;
+
+
+        document.body.classList.remove(
+            "modalOpen"
+        );
+
     }
 
 
-    /* =====================================================
-       EMPTY / SKELETON
-    ====================================================== */
+    /* =========================================================
+       LOGIN
+    ========================================================= */
 
-    function showSkeleton() {
-        skeleton?.classList.remove(
+    function openLogin() {
+
+        const modal =
+            $("loginModal");
+
+
+        if (!modal) {
+
+            showToast(
+                "Please login first",
+                "error"
+            );
+
+            return;
+
+        }
+
+
+        modal.classList.remove(
             "hidden"
         );
-    }
 
-    function hideSkeleton() {
-        skeleton?.classList.add(
-            "hidden"
+
+        modal.setAttribute(
+            "aria-hidden",
+            "false"
         );
-    }
 
-    function showEmpty() {
-        emptyState?.classList.remove(
-            "hidden"
+
+        document.body.classList.add(
+            "modalOpen"
         );
+
     }
 
-    function hideEmpty() {
-        emptyState?.classList.add(
-            "hidden"
+
+    function closeLogin() {
+
+        $("loginModal")
+            ?.classList.add(
+                "hidden"
+            );
+
+
+        $("loginModal")
+            ?.setAttribute(
+                "aria-hidden",
+                "true"
+            );
+
+
+        document.body.classList.remove(
+            "modalOpen"
         );
+
     }
 
 
-    /* =====================================================
-       EVENT DELEGATION
-    ====================================================== */
+    /* =========================================================
+       PROFILE
+    ========================================================= */
 
-    document.addEventListener(
-        "click",
-        event => {
+    function openProfile(uid) {
 
-            /* LIKE */
-
-            const like =
-                event.target.closest(
-                    ".likeBtn"
-                );
-
-            if (like) {
-
-                likeShort(
-                    like.dataset.shortId
-                );
-
-                return;
-            }
+        if (!uid) {
+            return;
+        }
 
 
-            /* COMMENT */
+        window.location.href =
+            `profile.html?uid=${encodeURIComponent(uid)}`;
 
-            const comment =
-                event.target.closest(
-                    ".commentBtn"
-                );
+    }
 
-            if (comment) {
 
-                const short =
-                    shorts.find(
-                        item =>
-                            item.id ===
-                            comment.dataset.shortId
+    /* =========================================================
+       COUNTERS
+    ========================================================= */
+
+    async function incrementCounter(
+        path
+    ) {
+
+        return db
+            .ref(path)
+            .transaction(
+                current => {
+
+                    return (
+                        safeNumber(current) +
+                        1
                     );
 
-                if (
-                    short?.commentsHidden
-                ) {
-
-                    showToast(
-                        "Comments are disabled."
-                    );
-
-                    return;
                 }
+            );
 
-                openComments(
-                    comment.dataset.shortId
+    }
+
+
+    async function decrementCounter(
+        path
+    ) {
+
+        return db
+            .ref(path)
+            .transaction(
+                current => {
+
+                    return Math.max(
+                        0,
+                        safeNumber(current) -
+                        1
+                    );
+
+                }
+            );
+
+    }
+
+
+    function refreshButtonCount(
+        button,
+        delta
+    ) {
+
+        if (!button) {
+            return;
+        }
+
+
+        const count =
+            button.querySelector(
+                "span"
+            );
+
+
+        if (!count) {
+            return;
+        }
+
+
+        const current =
+            parseDisplayedCount(
+                count.textContent
+            );
+
+
+        count.textContent =
+            formatCount(
+                Math.max(
+                    0,
+                    current +
+                    safeNumber(delta)
+                )
+            );
+
+    }
+
+
+    /* =========================================================
+       HEART ANIMATION
+    ========================================================= */
+
+    function playHeart() {
+
+        const heart =
+            $("heartAnimation");
+
+
+        if (!heart) {
+            return;
+        }
+
+
+        heart.classList.remove(
+            "heartPlay"
+        );
+
+
+        void heart.offsetWidth;
+
+
+        heart.classList.add(
+            "heartPlay"
+        );
+
+    }
+
+
+    /* =========================================================
+       GET SHORT
+    ========================================================= */
+
+    function getShort(id) {
+
+        return state.shorts.find(
+            short =>
+                short.id === id
+        ) || null;
+
+    }
+
+
+    function isOwner(short) {
+
+        if (
+            !short ||
+            !state.currentUser
+        ) {
+            return false;
+        }
+
+
+        return (
+            getUserId(short) ===
+            state.currentUser.uid
+        );
+
+    }
+
+
+    /* =========================================================
+       GLOBAL EVENTS
+    ========================================================= */
+
+    function setupGlobalEvents() {
+
+
+        /* -----------------------------------------------
+           COMMENT
+        ------------------------------------------------ */
+
+        $("sendComment")
+            ?.addEventListener(
+                "click",
+                sendComment
+            );
+
+
+        $("commentText")
+            ?.addEventListener(
+                "keydown",
+                event => {
+
+                    if (
+                        event.key ===
+                        "Enter"
+                    ) {
+
+                        event.preventDefault();
+
+                        sendComment();
+
+                    }
+
+                }
+            );
+
+
+        /* -----------------------------------------------
+           SHARE
+        ------------------------------------------------ */
+
+        document
+            .querySelectorAll(
+                ".shareItem"
+            )
+            .forEach(item => {
+
+                item.addEventListener(
+                    "click",
+                    () => {
+
+                        shareShort(
+                            item.dataset.share
+                        );
+
+                    }
                 );
 
-                return;
-            }
+            });
 
 
-            /* SHARE */
+        /* -----------------------------------------------
+           CLOSE COMMENTS
+        ------------------------------------------------ */
 
-            const share =
-                event.target.closest(
-                    ".shareBtn"
+        $("closeComments")
+            ?.addEventListener(
+                "click",
+                closeComments
+            );
+
+
+        $("commentsOverlay")
+            ?.addEventListener(
+                "click",
+                closeComments
+            );
+
+
+        /* -----------------------------------------------
+           CLOSE SHARE
+        ------------------------------------------------ */
+
+        $("closeShare")
+            ?.addEventListener(
+                "click",
+                closeShare
+            );
+
+
+        $("shareOverlay")
+            ?.addEventListener(
+                "click",
+                closeShare
+            );
+
+
+        /* -----------------------------------------------
+           EDIT
+        ------------------------------------------------ */
+
+        $("editShortBtn")
+            ?.addEventListener(
+                "click",
+                editCurrentShort
+            );
+
+
+        /* -----------------------------------------------
+           HIDE
+        ------------------------------------------------ */
+
+        $("hideShortBtn")
+            ?.addEventListener(
+                "click",
+                toggleHideCurrentShort
+            );
+
+
+        /* -----------------------------------------------
+           COMMENTS ON/OFF
+        ------------------------------------------------ */
+
+        $("disableCommentsBtn")
+            ?.addEventListener(
+                "click",
+                toggleComments
+            );
+
+
+        /* -----------------------------------------------
+           LIKE COUNT
+        ------------------------------------------------ */
+
+        $("hideLikeCountBtn")
+            ?.addEventListener(
+                "click",
+                toggleLikeCountVisibility
+            );
+
+
+        /* -----------------------------------------------
+           SAVE TO PROFILE
+        ------------------------------------------------ */
+
+        $("saveShortBtn")
+            ?.addEventListener(
+                "click",
+                saveCurrentShortToProfile
+            );
+
+
+        /* -----------------------------------------------
+           DELETE
+        ------------------------------------------------ */
+
+        $("deleteShortBtn")
+            ?.addEventListener(
+                "click",
+                deleteCurrentShort
+            );
+
+
+        /* -----------------------------------------------
+           VIEWER NOT INTERESTED
+        ------------------------------------------------ */
+
+        $("notInterestedBtn")
+            ?.addEventListener(
+                "click",
+                notInterested
+            );
+
+
+        /* -----------------------------------------------
+           REPORT
+        ------------------------------------------------ */
+
+        $("reportShortBtn")
+            ?.addEventListener(
+                "click",
+                () => {
+
+                    const id =
+                        state.menuShortId;
+
+                    closeShortMenu();
+
+                    openReport(id);
+
+                }
+            );
+
+
+        document
+            .querySelectorAll(
+                ".reportBtn"
+            )
+            .forEach(button => {
+
+                button.addEventListener(
+                    "click",
+                    () => {
+
+                        submitReport(
+                            button.dataset.report
+                        );
+
+                    }
                 );
 
-            if (share) {
+            });
 
-                shareShort(
-                    share.dataset.shortId
+
+        $("closeReport")
+            ?.addEventListener(
+                "click",
+                closeReport
+            );
+
+
+        $("reportOverlay")
+            ?.addEventListener(
+                "click",
+                closeReport
+            );
+
+
+        /* -----------------------------------------------
+           COPY LINK
+        ------------------------------------------------ */
+
+        $("copyShortLinkBtn")
+            ?.addEventListener(
+                "click",
+                copyCurrentShortLink
+            );
+
+
+        /* -----------------------------------------------
+           CLOSE MENU
+        ------------------------------------------------ */
+
+        $("closeShortMenu")
+            ?.addEventListener(
+                "click",
+                closeShortMenu
+            );
+
+
+        $("menuBackdrop")
+            ?.addEventListener(
+                "click",
+                closeShortMenu
+            );
+
+
+        /* -----------------------------------------------
+           CONFIRM
+        ------------------------------------------------ */
+
+        $("confirmCancelBtn")
+            ?.addEventListener(
+                "click",
+                closeConfirm
+            );
+
+
+        $("confirmActionBtn")
+            ?.addEventListener(
+                "click",
+                async () => {
+
+                    const action =
+                        state.confirmAction;
+
+                    if (!action) {
+                        return;
+                    }
+
+
+                    try {
+
+                        await action();
+
+                    } catch (error) {
+
+                        console.error(
+                            error
+                        );
+
+                    } finally {
+
+                        closeConfirm();
+
+                    }
+
+                }
+            );
+
+
+        /* -----------------------------------------------
+           LOGIN
+        ------------------------------------------------ */
+
+        $("loginBtn")
+            ?.addEventListener(
+                "click",
+                () => {
+
+                    /*
+                     * If your auth page has another filename,
+                     * change this destination.
+                     */
+
+                    window.location.href =
+                        "login.html";
+
+                }
+            );
+
+
+        $("closeLoginBtn")
+            ?.addEventListener(
+                "click",
+                closeLogin
+            );
+
+
+        /* -----------------------------------------------
+           SEARCH
+        ------------------------------------------------ */
+
+        $("shortSearchBtn")
+            ?.addEventListener(
+                "click",
+                () => {
+
+                    $("shortSearchBar")
+                        ?.classList.toggle(
+                            "hidden"
+                        );
+
+
+                    if (
+                        !$("shortSearchBar")
+                            ?.classList.contains(
+                                "hidden"
+                            )
+                    ) {
+
+                        $("shortSearchInput")
+                            ?.focus();
+
+                    }
+
+                }
+            );
+
+
+        $("shortSearchInput")
+            ?.addEventListener(
+                "input",
+                event => {
+
+                    performSearch(
+                        event.target.value
+                    );
+
+                }
+            );
+
+
+        $("clearShortSearch")
+            ?.addEventListener(
+                "click",
+                () => {
+
+                    const input =
+                        $("shortSearchInput");
+
+
+                    if (input) {
+
+                        input.value =
+                            "";
+
+                    }
+
+
+                    state.searchText =
+                        "";
+
+
+                    applySearchAndRender();
+
+
+                    input?.focus();
+
+                }
+            );
+
+
+        /* -----------------------------------------------
+           CREATE SHORT
+        ------------------------------------------------ */
+
+        $("createShortBtn")
+            ?.addEventListener(
+                "click",
+                openCreateShort
+            );
+
+
+        $("emptyCreateBtn")
+            ?.addEventListener(
+                "click",
+                openCreateShort
+            );
+
+
+        /* -----------------------------------------------
+           BACK
+        ------------------------------------------------ */
+
+        $("shortsBackBtn")
+            ?.addEventListener(
+                "click",
+                () => {
+
+                    if (
+                        window.history.length > 1
+                    ) {
+
+                        window.history.back();
+
+                    } else {
+
+                        window.location.href =
+                            "index.html";
+
+                    }
+
+                }
+            );
+
+
+        /* -----------------------------------------------
+           BOTTOM NAV
+        ------------------------------------------------ */
+
+        document
+            .querySelectorAll(
+                ".bottomNavItem, .bottomCreate"
+            )
+            .forEach(button => {
+
+                button.addEventListener(
+                    "click",
+                    () => {
+
+                        handleNavigation(
+                            button.dataset.nav
+                        );
+
+                    }
                 );
 
-                return;
-            }
+            });
 
 
-            /* SAVE */
+        /* -----------------------------------------------
+           OUTSIDE MENU
+        ------------------------------------------------ */
 
-            const save =
-                event.target.closest(
-                    ".saveBtn"
-                );
+        document.addEventListener(
+            "click",
+            event => {
 
-            if (save) {
+                const menu =
+                    $("shortMenu");
 
-                saveShort(
-                    save.dataset.shortId,
-                    save
-                );
-
-                return;
-            }
-
-
-            /* FOLLOW */
-
-            const follow =
-                event.target.closest(
-                    ".followBtn"
-                );
-
-            if (follow) {
-
-                followUser(
-                    follow.dataset.followId,
-                    follow
-                );
-
-                return;
-            }
-
-
-            /* MORE */
-
-            const more =
-                event.target.closest(
-                    ".moreBtn"
-                );
-
-            if (more) {
 
                 if (
-                    shortMenu &&
-                    !shortMenu.classList.contains(
+                    !menu ||
+                    menu.classList.contains(
                         "hidden"
                     )
                 ) {
-
-                    closeOwnerMenu();
-
-                } else {
-
-                    openOwnerMenu(
-                        more.dataset.shortId
-                    );
+                    return;
                 }
 
-                return;
-            }
-
-
-            /* PROFILE */
-
-            const profile =
-                event.target.closest(
-                    ".shortProfileBtn"
-                );
-
-            if (profile) {
-
-                const uid =
-                    profile.dataset.profileId;
-
-                if (uid) {
-
-                    window.location.href =
-                        `profile.html?uid=${encodeURIComponent(uid)}`;
-                }
-
-                return;
-            }
-
-
-            /* SHARE OPTIONS */
-
-            const shareItem =
-                event.target.closest(
-                    ".shareItem"
-                );
-
-            if (shareItem) {
-
-                const id =
-                    shareItem.id;
 
                 if (
-                    id === "shareWhatsApp"
+                    !menu.contains(
+                        event.target
+                    ) &&
+                    !event.target.closest(
+                        ".moreBtn"
+                    )
                 ) {
 
-                    const url =
-                        getShareURL();
+                    closeShortMenu();
 
-                    window.open(
-                        "https://wa.me/?text=" +
-                        encodeURIComponent(
-                            url
-                        ),
-                        "_blank"
-                    );
-
-                } else if (
-                    id === "shareFacebook"
-                ) {
-
-                    const url =
-                        getShareURL();
-
-                    window.open(
-                        "https://www.facebook.com/sharer/sharer.php?u=" +
-                        encodeURIComponent(
-                            url
-                        ),
-                        "_blank"
-                    );
-
-                } else if (
-                    id === "shareX"
-                ) {
-
-                    const url =
-                        getShareURL();
-
-                    window.open(
-                        "https://twitter.com/intent/tweet?url=" +
-                        encodeURIComponent(
-                            url
-                        ),
-                        "_blank"
-                    );
-
-                } else if (
-                    id === "copyShortLink"
-                ) {
-
-                    copyShortLink();
                 }
 
-                return;
             }
-
-
-            /* REPORT */
-
-            const report =
-                event.target.closest(
-                    ".reportBtn"
-                );
-
-            if (report) {
-
-                submitReport(
-                    report.dataset.report
-                );
-
-                return;
-            }
-
-
-            /* OWNER MENU */
-
-            if (
-                event.target.closest(
-                    "#editShortBtn"
-                )
-            ) {
-
-                editShort();
-                return;
-            }
-
-
-            if (
-                event.target.closest(
-                    "#hideCommentsBtn"
-                )
-            ) {
-
-                hideComments();
-                return;
-            }
-
-
-            if (
-                event.target.closest(
-                    "#hideShortBtn"
-                )
-            ) {
-
-                hideOwnShort();
-                return;
-            }
-
-
-            if (
-                event.target.closest(
-                    "#deleteShortBtn"
-                )
-            ) {
-
-                deleteOwnShort();
-                return;
-            }
-
-
-            /* CLOSE OWNER MENU */
-
-            if (
-                shortMenu &&
-                !shortMenu.classList.contains(
-                    "hidden"
-                ) &&
-                !event.target.closest(
-                    "#shortMenu"
-                ) &&
-                !event.target.closest(
-                    ".moreBtn"
-                )
-            ) {
-
-                closeOwnerMenu();
-            }
-
-        }
-    );
-
-
-    /* =====================================================
-       COMMENT SEND
-    ====================================================== */
-
-    document
-        .getElementById("sendComment")
-        ?.addEventListener(
-            "click",
-            sendComment
         );
 
 
-    document
-        .getElementById("commentText")
-        ?.addEventListener(
+        /* -----------------------------------------------
+           ESCAPE
+        ------------------------------------------------ */
+
+        document.addEventListener(
             "keydown",
             event => {
 
                 if (
-                    event.key === "Enter" &&
-                    !event.shiftKey
+                    event.key !==
+                    "Escape"
                 ) {
-
-                    event.preventDefault();
-
-                    sendComment();
+                    return;
                 }
 
+
+                closeComments();
+
+                closeShare();
+
+                closeReport();
+
+                closeConfirm();
+
+                closeLogin();
+
+                closeShortMenu();
+
             }
         );
 
 
-    /* =====================================================
-       CLOSE COMMENTS
-    ====================================================== */
+        /* -----------------------------------------------
+           ONLINE / OFFLINE
+        ------------------------------------------------ */
 
-    document
-        .getElementById("closeComments")
-        ?.addEventListener(
-            "click",
+        window.addEventListener(
+            "online",
             () => {
 
-                closeModal(
-                    commentsModal
-                );
+                $("networkStatus")
+                    ?.classList.add(
+                        "hidden"
+                    );
 
-                currentCommentId = null;
+
+                loadShorts();
+
             }
         );
 
 
-    document
-        .getElementById("commentsOverlay")
-        ?.addEventListener(
-            "click",
+        window.addEventListener(
+            "offline",
             () => {
 
-                closeModal(
-                    commentsModal
-                );
+                $("networkStatus")
+                    ?.classList.remove(
+                        "hidden"
+                    );
 
-                currentCommentId = null;
             }
         );
 
-
-    /* =====================================================
-       CLOSE SHARE
-    ====================================================== */
-
-    document
-        .getElementById("closeShare")
-        ?.addEventListener(
-            "click",
-            () => {
-
-                closeModal(
-                    shareModal
-                );
-
-                currentShareId = null;
-            }
-        );
-
-
-    document
-        .getElementById("shareOverlay")
-        ?.addEventListener(
-            "click",
-            () => {
-
-                closeModal(
-                    shareModal
-                );
-
-                currentShareId = null;
-            }
-        );
-
-
-    /* =====================================================
-       CLOSE REPORT
-    ====================================================== */
-
-    document
-        .getElementById("closeReport")
-        ?.addEventListener(
-            "click",
-            () => {
-
-                closeModal(
-                    reportModal
-                );
-
-                currentMenuShortId = null;
-            }
-        );
-
-
-    document
-        .getElementById("reportOverlay")
-        ?.addEventListener(
-            "click",
-            () => {
-
-                closeModal(
-                    reportModal
-                );
-
-                currentMenuShortId = null;
-            }
-        );
-
-
-    /* =====================================================
-       SEARCH
-    ====================================================== */
-
-    document
-        .getElementById("shortSearchInput")
-        ?.addEventListener(
-            "input",
-            event => {
-
-                const query =
-                    event.target.value
-                        .trim()
-                        .toLowerCase();
-
-                document
-                    .querySelectorAll(
-                        ".shortCard"
-                    )
-                    .forEach(card => {
-
-                        const short =
-                            shorts.find(
-                                item =>
-                                    item.id ===
-                                    card.dataset.id
-                            );
-
-                        if (!short) return;
-
-                        const text = [
-
-                            short.caption,
-                            short.username,
-                            short.displayName,
-                            short.music,
-                            short.audioName
-
-                        ]
-                        .filter(Boolean)
-                        .join(" ")
-                        .toLowerCase();
-
-                        card.style.display =
-                            !query ||
-                            text.includes(query)
-                                ? ""
-                                : "none";
-                    });
-            }
-        );
-
-
-    /* =====================================================
-       URL OPENED SHORT
-    ====================================================== */
-
-    function openShortFromURL() {
-
-        const params =
-            new URLSearchParams(
-                window.location.search
-            );
-
-        const id =
-            params.get("id");
-
-        if (!id) return;
-
-        setTimeout(() => {
-
-            const card =
-                document.querySelector(
-                    `.shortCard[data-id="${CSS.escape(id)}"]`
-                );
-
-            if (card) {
-
-                card.scrollIntoView({
-                    behavior: "smooth",
-                    block: "start"
-                });
-            }
-
-        }, 700);
     }
 
 
-    /* =====================================================
-       ONLINE / OFFLINE
-    ====================================================== */
+    /* =========================================================
+       CREATE SHORT
+    ========================================================= */
 
-    window.addEventListener(
-        "offline",
-        () => {
+    function openCreateShort() {
 
-            showToast(
-                "No Internet Connection"
-            );
+        if (!state.currentUser) {
+
+            openLogin();
+
+            return;
+
         }
-    );
 
 
-    window.addEventListener(
-        "online",
-        () => {
+        window.location.href =
+            "short_upload.html";
 
-            showToast(
-                "Back online"
-            );
-        }
-    );
+    }
 
 
-    /* =====================================================
-       VISIBILITY
-    ====================================================== */
+    /* =========================================================
+       BOTTOM NAVIGATION
+    ========================================================= */
 
-    document.addEventListener(
-        "visibilitychange",
-        () => {
+    function handleNavigation(
+        nav
+    ) {
 
-            if (document.hidden) {
+        switch (nav) {
 
-                document
-                    .querySelectorAll(
-                        ".shortVideo"
-                    )
-                    .forEach(video => {
-                        video.pause();
-                    });
-
-            } else {
-
-                const visible =
-                    [...document.querySelectorAll(
-                        ".shortCard"
-                    )]
-                    .find(
-                        card => {
-
-                            const rect =
-                                card.getBoundingClientRect();
-
-                            return (
-                                rect.top >= -100 &&
-                                rect.top <=
-                                    window.innerHeight * .35
-                            );
-                        }
-                    );
-
-                visible
-                    ?.querySelector(".shortVideo")
-                    ?.play()
-                    .catch(() => {});
-            }
-        }
-    );
-
-
-    /* =====================================================
-       AUTH
-    ====================================================== */
-
-    auth.onAuthStateChanged(
-        user => {
-
-            if (!user) {
-
-                currentUser = null;
+            case "home":
 
                 window.location.href =
-                    "login.html";
+                    "index.html";
 
-                return;
-            }
+                break;
 
-            currentUser = user;
 
-            loadShorts();
+            case "search":
 
-            setTimeout(
-                openShortFromURL,
-                900
-            );
+                $("shortSearchBar")
+                    ?.classList.remove(
+                        "hidden"
+                    );
+
+
+                $("shortSearchInput")
+                    ?.focus();
+
+                break;
+
+
+            case "create":
+
+                openCreateShort();
+
+                break;
+
+
+            case "notifications":
+
+                window.location.href =
+                    "notifications.html";
+
+                break;
+
+
+            case "profile":
+
+                if (state.currentUser) {
+
+                    window.location.href =
+                        `profile.html?uid=${encodeURIComponent(
+                            state.currentUser.uid
+                        )}`;
+
+                } else {
+
+                    openLogin();
+
+                }
+
+                break;
+
         }
-    );
+
+    }
 
 
-    /* =====================================================
+    /* =========================================================
+       DOUBLE TAP LIKE
+    ========================================================= */
+
+    let lastTapTime = 0;
+
+
+    if (container) {
+
+        container.addEventListener(
+            "click",
+            event => {
+
+                const video =
+                    event.target.closest(
+                        ".shortVideo"
+                    );
+
+
+                if (!video) {
+                    return;
+                }
+
+
+                const now =
+                    Date.now();
+
+
+                if (
+                    now -
+                    lastTapTime <
+                    320
+                ) {
+
+                    const card =
+                        video.closest(
+                            ".shortCard"
+                        );
+
+
+                    if (!card) {
+                        return;
+                    }
+
+
+                    const button =
+                        card.querySelector(
+                            ".likeBtn"
+                        );
+
+
+                    if (
+                        button &&
+                        !button.classList.contains(
+                            "liked"
+                        )
+                    ) {
+
+                        toggleLike(
+                            card.dataset.shortId,
+                            button
+                        );
+
+                    }
+
+
+                    playHeart();
+
+                }
+
+
+                lastTapTime =
+                    now;
+
+            }
+        );
+
+    }
+
+
+    /* =========================================================
        CLEANUP
-    ====================================================== */
+    ========================================================= */
+
+    function cleanup() {
+
+        state.observer?.disconnect();
+
+
+        if (state.shortListener) {
+
+            db
+                .ref(CONFIG.SHORTS_PATH)
+                .off(
+                    "value",
+                    state.shortListener
+                );
+
+        }
+
+
+        if (
+            state.commentListener &&
+            state.commentShortId
+        ) {
+
+            db
+                .ref(
+                    `${CONFIG.COMMENTS_PATH}/${state.commentShortId}`
+                )
+                .off(
+                    "value",
+                    state.commentListener
+                );
+
+        }
+
+
+        Object.entries(
+            state.viewTimers
+        ).forEach(([id, timer]) => {
+
+            clearTimeout(timer);
+
+        });
+
+
+        state.observer =
+            null;
+
+        state.shortListener =
+            null;
+
+        state.commentListener =
+            null;
+
+    }
+
 
     window.addEventListener(
         "beforeunload",
-        () => {
+        cleanup
+    );
 
-            if (shortsListener) {
 
-                db.ref("shorts").off(
-                    "value",
-                    shortsListener
-                );
-            }
+    /* =========================================================
+       INITIALIZE
+    ========================================================= */
 
-            if (viewObserver) {
-                viewObserver.disconnect();
-            }
+    function init() {
+
+        if (state.initialized) {
+            return;
         }
-    );
 
 
-    /* =====================================================
-       READY
-    ====================================================== */
+        state.initialized =
+            true;
 
-    console.log(
-        "===================================="
-    );
 
-    console.log(
-        " VIEWORA SHORTS READY"
-    );
+        setupGlobalEvents();
 
-    console.log(
-        " Firebase ✔"
-    );
 
-    console.log(
-        " Feed ✔"
-    );
+        updateCommentAvatar();
 
-    console.log(
-        " Autoplay ✔"
-    );
 
-    console.log(
-        " Likes ✔"
-    );
+        /*
+         * Firebase auth listener will call loadShorts().
+         * Also load immediately if auth state is already available.
+         */
 
-    console.log(
-        " Comments ✔"
-    );
+        if (
+            auth.currentUser
+        ) {
 
-    console.log(
-        " Share ✔"
-    );
+            state.currentUser =
+                auth.currentUser;
 
-    console.log(
-        " Save ✔"
-    );
+        }
 
-    console.log(
-        " Follow / Unfollow ✔"
-    );
+    }
 
-    console.log(
-        " Views ✔"
-    );
 
-    console.log(
-        " Owner Menu ✔"
-    );
+    init();
 
-    console.log(
-        " Delete / Hide ✔"
-    );
 
-    console.log(
-        " Report ✔"
-    );
+    /* =========================================================
+       PUBLIC API
+    ========================================================= */
 
-    console.log(
-        "===================================="
-    );
+    window.VieworaShorts = {
+
+        reload:
+            () => {
+
+                state.loading =
+                    false;
+
+                return loadShorts();
+
+            },
+
+        openComments,
+
+        closeComments,
+
+        openShare,
+
+        closeShare,
+
+        openReport,
+
+        closeReport,
+
+        toggleMute,
+
+        playNext,
+
+        openShortMenu,
+
+        closeShortMenu,
+
+        editCurrentShort,
+
+        deleteCurrentShort
+
+    };
+
 
 })();

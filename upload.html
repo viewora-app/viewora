@@ -2,1995 +2,1467 @@
 <html lang="en">
 <head>
 
-<meta charset="UTF-8">
+    <meta charset="UTF-8">
 
-<meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
->
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    >
 
-<meta name="theme-color" content="#050816">
+    <meta name="theme-color" content="#050507">
+    <meta name="mobile-web-app-capable" content="yes">
 
-<meta
-    name="description"
-    content="Viewora Creator Studio - Create Posts, Shorts, Videos and Live"
->
+    <title>Viewora • Create</title>
 
-<title>Viewora • Creator Studio</title>
+    <link rel="icon" href="assets/logo.png">
 
-<link rel="icon" href="assets/logo.png">
+    <!-- FONT -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet"
+    >
 
-<!-- =====================================================
-     GOOGLE FONT
-===================================================== -->
+    <!-- ICONS -->
+    <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
+    >
 
-<link rel="preconnect" href="https://fonts.googleapis.com">
+    <!-- GLOBAL SPLASH ROUTER -->
+    <script src="page-loader.js"></script>
 
-<link
-    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
-    rel="stylesheet"
->
-
-<!-- =====================================================
-     FONT AWESOME
-===================================================== -->
-
-<link
-    rel="stylesheet"
-    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
->
-
-<!-- =====================================================
-     UPLOAD CSS
-===================================================== -->
-
-<link rel="stylesheet" href="upload.css">
-<link rel="stylesheet" href="viewora-loader.css">
-
-<style>
-
-/* =====================================================
-   PREMIUM BASE
-===================================================== */
-
-*{
-    box-sizing:border-box;
-    margin:0;
-    padding:0;
-}
-
-html{
-    scroll-behavior:smooth;
-}
-
-body{
-    min-height:100vh;
-    font-family:"Inter",sans-serif;
-    background:
-        radial-gradient(circle at 10% 10%,rgba(74,99,255,.16),transparent 28%),
-        radial-gradient(circle at 90% 20%,rgba(0,220,255,.10),transparent 25%),
-        #050816;
-    color:#fff;
-    overflow-x:hidden;
-}
-
-/* =====================================================
-   BACKGROUND
-===================================================== */
-
-.bgGlow{
-    position:fixed;
-    inset:0;
-    pointer-events:none;
-    z-index:-1;
-    overflow:hidden;
-}
-
-.bgGlow::before,
-.bgGlow::after{
-    content:"";
-    position:absolute;
-    width:350px;
-    height:350px;
-    border-radius:50%;
-    filter:blur(100px);
-    opacity:.18;
-    animation:floatGlow 9s ease-in-out infinite alternate;
-}
-
-.bgGlow::before{
-    background:#4361ee;
-    top:-100px;
-    left:-100px;
-}
-
-.bgGlow::after{
-    background:#00d4ff;
-    right:-120px;
-    bottom:-100px;
-    animation-delay:2s;
-}
-
-@keyframes floatGlow{
-    from{
-        transform:translate(0,0) scale(1);
-    }
-    to{
-        transform:translate(50px,30px) scale(1.15);
-    }
-}
-
-
-/* =====================================================
-   APP
-===================================================== */
-
-.hidden{
-    display:none !important;
-}
-
-#app{
-    min-height:100vh;
-}
-
-.fadeIn{
-    animation:fadeIn .7s ease forwards;
-}
-
-@keyframes fadeIn{
-    from{
-        opacity:0;
-        transform:translateY(15px);
-    }
-    to{
-        opacity:1;
-        transform:translateY(0);
-    }
-}
-
-/* =====================================================
-   HEADER
-===================================================== */
-
-.header{
-    position:sticky;
-    top:0;
-    z-index:100;
-    height:76px;
-    padding:0 20px;
-    display:flex;
-    align-items:center;
-    gap:15px;
-    border-bottom:1px solid rgba(255,255,255,.08);
-    backdrop-filter:blur(22px);
-    background:rgba(5,8,22,.78);
-}
-
-.iconBtn{
-    width:44px;
-    height:44px;
-    border:1px solid rgba(255,255,255,.1);
-    border-radius:14px;
-    background:rgba(255,255,255,.05);
-    color:white;
-    font-size:17px;
-    cursor:pointer;
-}
-
-.headerTitle{
-    flex:1;
-}
-
-.headerTitle h2{
-    font-size:19px;
-    font-weight:700;
-}
-
-.headerTitle p{
-    color:#9299ad;
-    font-size:12px;
-    margin-top:3px;
-}
-
-.draftBtn{
-    border:0;
-    padding:11px 15px;
-    border-radius:13px;
-    color:#fff;
-    background:rgba(255,255,255,.07);
-    cursor:pointer;
-}
-
-/* =====================================================
-   MAIN
-===================================================== */
-
-.uploadContainer{
-    width:min(950px,94%);
-    margin:30px auto 70px;
-}
-
-.uploadCard{
-    border:1px solid rgba(255,255,255,.08);
-    border-radius:28px;
-    padding:25px;
-    background:rgba(12,16,34,.72);
-    backdrop-filter:blur(24px);
-    box-shadow:0 25px 80px rgba(0,0,0,.35);
-}
-
-/* =====================================================
-   CREATOR TOP
-===================================================== */
-
-.uploadTop{
-    text-align:center;
-    padding:10px 0 25px;
-}
-
-.uploadLogo{
-    width:68px;
-    height:68px;
-    object-fit:contain;
-    margin-bottom:12px;
-    filter:drop-shadow(0 0 20px rgba(70,120,255,.45));
-}
-
-.uploadTop h1{
-    font-size:27px;
-    font-weight:800;
-}
-
-.uploadTop p{
-    color:#8f97ab;
-    margin-top:8px;
-    font-size:14px;
-}
-
-/* =====================================================
-   CONTENT TYPE TABS
-===================================================== */
-
-.contentTabs{
-    display:grid;
-    grid-template-columns:repeat(4,1fr);
-    gap:10px;
-    margin:10px 0 25px;
-}
-
-.contentTab{
-    border:1px solid rgba(255,255,255,.08);
-    background:rgba(255,255,255,.035);
-    color:#aeb5c7;
-    border-radius:17px;
-    padding:16px 8px;
-    cursor:pointer;
-    transition:.25s ease;
-    text-align:center;
-}
-
-.contentTab i{
-    display:block;
-    font-size:20px;
-    margin-bottom:8px;
-}
-
-.contentTab span{
-    font-size:12px;
-    font-weight:600;
-}
-
-.contentTab:hover{
-    transform:translateY(-2px);
-    border-color:rgba(90,130,255,.5);
-}
-
-.contentTab.active{
-    color:#fff;
-    border-color:rgba(80,130,255,.8);
-    background:linear-gradient(
-        135deg,
-        rgba(67,97,238,.35),
-        rgba(0,210,255,.12)
-    );
-    box-shadow:0 10px 30px rgba(55,100,255,.15);
-}
-
-/* =====================================================
-   MODE INFO
-===================================================== */
-
-.modeInfo{
-    padding:17px;
-    margin-bottom:20px;
-    border:1px solid rgba(255,255,255,.07);
-    border-radius:17px;
-    background:rgba(255,255,255,.025);
-}
-
-.modeInfo h3{
-    font-size:15px;
-    margin-bottom:5px;
-}
-
-.modeInfo p{
-    font-size:12px;
-    color:#858da2;
-    line-height:1.6;
-}
-
-/* =====================================================
-   DROP ZONE
-===================================================== */
-
-.dropZone{
-    min-height:280px;
-    border:1.5px dashed rgba(100,140,255,.4);
-    border-radius:23px;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    text-align:center;
-    background:
-        linear-gradient(
-            135deg,
-            rgba(64,91,190,.08),
-            rgba(0,190,255,.035)
-        );
-    transition:.3s ease;
-}
-
-.dropZone.dragover{
-    border-color:#55b8ff;
-    background:rgba(60,120,255,.12);
-    transform:scale(1.01);
-}
-
-.dropContent{
-    padding:30px;
-}
-
-.uploadIcon{
-    width:70px;
-    height:70px;
-    margin:0 auto 18px;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    border-radius:22px;
-    background:rgba(75,110,255,.13);
-    color:#65a7ff;
-    font-size:28px;
-}
-
-.dropContent h3{
-    font-size:18px;
-}
-
-.dropContent p{
-    margin:7px 0 18px;
-    color:#8992a7;
-    font-size:13px;
-}
-
-.dropContent small{
-    display:block;
-    color:#6f788d;
-    line-height:1.7;
-    margin-top:15px;
-}
-
-/* =====================================================
-   BUTTONS
-===================================================== */
-
-.primaryBtn,
-.secondaryBtn,
-.dangerBtn{
-    border:0;
-    border-radius:14px;
-    padding:13px 18px;
-    color:#fff;
-    font-weight:600;
-    cursor:pointer;
-    transition:.25s ease;
-}
-
-.primaryBtn{
-    background:linear-gradient(135deg,#536dff,#00b9ff);
-    box-shadow:0 10px 25px rgba(43,120,255,.2);
-}
-
-.secondaryBtn{
-    background:rgba(255,255,255,.07);
-    border:1px solid rgba(255,255,255,.08);
-}
-
-.dangerBtn{
-    background:rgba(255,65,90,.12);
-    color:#ff8294;
-    border:1px solid rgba(255,65,90,.15);
-}
-
-.primaryBtn:hover,
-.secondaryBtn:hover,
-.dangerBtn:hover{
-    transform:translateY(-2px);
-}
-
-/* =====================================================
-   PREVIEW
-===================================================== */
-
-.previewSection{
-    margin-top:22px;
-}
-
-.previewBox{
-    position:relative;
-    border-radius:20px;
-    overflow:hidden;
-    background:#02030a;
-    border:1px solid rgba(255,255,255,.08);
-}
-
-.previewBox img,
-.previewBox video{
-    width:100%;
-    max-height:450px;
-    display:block;
-    object-fit:contain;
-}
-
-.fileInfo{
-    padding:15px;
-}
-
-.fileInfo h3{
-    font-size:14px;
-    word-break:break-word;
-}
-
-.fileInfo p{
-    margin-top:5px;
-    color:#7e879b;
-    font-size:12px;
-}
-
-.quickActions{
-    display:flex;
-    gap:10px;
-    margin-top:12px;
-}
-
-/* =====================================================
-   FORM
-===================================================== */
-
-.sectionTitle{
-    display:flex;
-    align-items:center;
-    gap:10px;
-    margin:30px 0 17px;
-    font-size:15px;
-    font-weight:700;
-}
-
-.sectionTitle i{
-    color:#6c9cff;
-}
-
-.formGroup{
-    margin-bottom:18px;
-    position:relative;
-}
-
-.formGroup label{
-    display:block;
-    margin-bottom:8px;
-    font-size:13px;
-    font-weight:600;
-    color:#c7ccda;
-}
-
-.formGroup label i{
-    margin-right:6px;
-    color:#759bff;
-}
-
-.formGroup input,
-.formGroup textarea,
-.formGroup select{
-    width:100%;
-    border:1px solid rgba(255,255,255,.09);
-    outline:none;
-    color:#fff;
-    background:rgba(255,255,255,.045);
-    border-radius:14px;
-    padding:14px;
-    font-family:inherit;
-}
-
-.formGroup textarea{
-    resize:vertical;
-}
-
-.formGroup select option{
-    background:#101426;
-}
-
-.formGroup input:focus,
-.formGroup textarea:focus,
-.formGroup select:focus{
-    border-color:#587cff;
-    box-shadow:0 0 0 3px rgba(80,120,255,.08);
-}
-
-.counter{
-    text-align:right;
-    margin-top:5px;
-    color:#697286;
-    font-size:11px;
-}
-
-/* =====================================================
-   OPTIONS
-===================================================== */
-
-.optionsGrid{
-    display:grid;
-    grid-template-columns:repeat(2,1fr);
-    gap:10px;
-}
-
-.switchCard{
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    padding:15px;
-    border:1px solid rgba(255,255,255,.07);
-    border-radius:15px;
-    background:rgba(255,255,255,.025);
-    color:#bfc5d3;
-    font-size:12px;
-}
-
-.switchCard input{
-    accent-color:#557cff;
-    width:18px;
-    height:18px;
-}
-
-/* =====================================================
-   THUMBNAIL
-===================================================== */
-
-.thumbnailCard{
-    padding:18px;
-    border-radius:20px;
-    border:1px solid rgba(255,255,255,.07);
-}
-
-#thumbnailPreview img{
-    width:100%;
-    max-height:260px;
-    object-fit:cover;
-    border-radius:15px;
-    display:block;
-}
-
-.thumbnailButtons{
-    display:flex;
-    gap:10px;
-    margin-top:12px;
-}
-
-/* =====================================================
-   PROGRESS
-===================================================== */
-
-.progressSection{
-    margin-top:25px;
-    padding:18px;
-    border-radius:18px;
-    background:rgba(255,255,255,.035);
-    border:1px solid rgba(255,255,255,.07);
-}
-
-.progressHeader,
-.progressInfo{
-    display:flex;
-    justify-content:space-between;
-    font-size:12px;
-}
-
-.progressInfo{
-    margin-top:9px;
-    color:#798296;
-}
-
-.progressBar{
-    height:9px;
-    margin-top:12px;
-    border-radius:20px;
-    overflow:hidden;
-    background:rgba(255,255,255,.08);
-}
-
-#progressFill{
-    width:0%;
-    height:100%;
-    border-radius:20px;
-    background:linear-gradient(90deg,#526dff,#00d9ff);
-    transition:.2s ease;
-}
-
-/* =====================================================
-   LIVE PANEL
-===================================================== */
-
-.livePanel{
-    padding:25px;
-    text-align:center;
-    border:1px solid rgba(255,70,100,.18);
-    border-radius:22px;
-    background:
-        radial-gradient(
-            circle at center,
-            rgba(255,60,90,.08),
-            transparent 65%
-        );
-}
-
-.liveIcon{
-    width:80px;
-    height:80px;
-    margin:0 auto 18px;
-    border-radius:50%;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    background:rgba(255,55,85,.12);
-    color:#ff5d75;
-    font-size:30px;
-    animation:pulseLive 1.8s infinite;
-}
-
-@keyframes pulseLive{
-    0%,100%{
-        box-shadow:0 0 0 0 rgba(255,70,90,.25);
-    }
-    50%{
-        box-shadow:0 0 0 18px rgba(255,70,90,0);
-    }
-}
-
-.livePanel h2{
-    margin-bottom:7px;
-}
-
-.livePanel p{
-    color:#858da2;
-    font-size:13px;
-    line-height:1.6;
-    margin-bottom:18px;
-}
-
-/* =====================================================
-   STATS
-===================================================== */
-
-.statsGrid{
-    display:grid;
-    grid-template-columns:repeat(4,1fr);
-    gap:10px;
-}
-
-.statCard{
-    padding:15px;
-    border-radius:16px;
-    background:rgba(255,255,255,.025);
-    border:1px solid rgba(255,255,255,.06);
-}
-
-.statCard h4{
-    font-size:11px;
-    color:#777f93;
-    margin-bottom:7px;
-}
-
-.statCard span{
-    font-size:13px;
-    font-weight:600;
-}
-
-/* =====================================================
-   ACTIONS
-===================================================== */
-
-.buttonGroup{
-    display:grid;
-    grid-template-columns:1fr 1fr 1.5fr;
-    gap:10px;
-    margin-top:30px;
-}
-
-/* =====================================================
-   OVERLAY
-===================================================== */
-
-#loadingOverlay{
-    position:fixed;
-    inset:0;
-    z-index:9998;
-    background:rgba(2,4,12,.82);
-    backdrop-filter:blur(18px);
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    flex-direction:column;
-    text-align:center;
-}
-
-.premiumLoader{
-    width:75px;
-    height:75px;
-    position:relative;
-}
-
-.loaderRing{
-    position:absolute;
-    inset:0;
-    border:3px solid transparent;
-    border-top-color:#5b7cff;
-    border-radius:50%;
-    animation:spin 1s linear infinite;
-}
-
-.loaderRing.delay1{
-    inset:10px;
-    border-top-color:#00d5ff;
-    animation-duration:1.4s;
-}
-
-.loaderRing.delay2{
-    inset:20px;
-    border-top-color:#b05cff;
-    animation-duration:1.8s;
-}
-
-#loadingOverlay h3{
-    margin-top:22px;
-}
-
-#loadingOverlay p{
-    color:#838ca0;
-    font-size:12px;
-    margin-top:7px;
-}
-
-/* =====================================================
-   MODALS
-===================================================== */
-
-.modal{
-    position:fixed;
-    inset:0;
-    z-index:10000;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    padding:20px;
-    background:rgba(0,0,0,.72);
-    backdrop-filter:blur(15px);
-}
-
-.modalCard{
-    width:min(430px,100%);
-    padding:30px;
-    text-align:center;
-    border:1px solid rgba(255,255,255,.09);
-    border-radius:25px;
-    background:#111525;
-}
-
-.successIcon,
-.errorIcon{
-    width:75px;
-    height:75px;
-    border-radius:50%;
-    margin:0 auto 18px;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    font-size:30px;
-}
-
-.successIcon{
-    color:#5dff9a;
-    background:rgba(50,255,140,.1);
-}
-
-.errorIcon{
-    color:#ff6378;
-    background:rgba(255,60,90,.1);
-}
-
-.modalCard p{
-    color:#858da2;
-    margin:10px 0 22px;
-    line-height:1.5;
-}
-
-.modalButtons{
-    display:flex;
-    gap:10px;
-    justify-content:center;
-}
-
-/* =====================================================
-   TOAST
-===================================================== */
-
-.toast{
-    position:fixed;
-    left:50%;
-    bottom:25px;
-    transform:translateX(-50%);
-    z-index:11000;
-    display:flex;
-    align-items:center;
-    gap:10px;
-    padding:13px 18px;
-    border-radius:15px;
-    background:#161b2c;
-    border:1px solid rgba(255,255,255,.1);
-    box-shadow:0 15px 40px rgba(0,0,0,.4);
-    font-size:13px;
-}
-
-/* =====================================================
-   NETWORK
-===================================================== */
-
-#networkBanner{
-    position:fixed;
-    left:50%;
-    top:15px;
-    transform:translateX(-50%);
-    z-index:12000;
-    padding:10px 16px;
-    border-radius:12px;
-    background:#32121a;
-    color:#ff9aaa;
-    border:1px solid rgba(255,70,100,.2);
-    font-size:12px;
-}
-
-/* =====================================================
-   MOBILE
-===================================================== */
-
-@media(max-width:700px){
-
-    .uploadContainer{
-        width:94%;
-        margin-top:15px;
-    }
-
-    .uploadCard{
-        padding:16px;
-        border-radius:22px;
-    }
-
-    .header{
-        padding:0 12px;
-    }
-
-    .contentTabs{
-        grid-template-columns:repeat(2,1fr);
-    }
-
-    .optionsGrid{
-        grid-template-columns:1fr;
-    }
-
-    .statsGrid{
-        grid-template-columns:repeat(2,1fr);
-    }
-
-    .buttonGroup{
-        grid-template-columns:1fr;
-    }
-
-    .thumbnailButtons,
-    .quickActions{
-        flex-direction:column;
-    }
-
-    .uploadTop h1{
-        font-size:22px;
-    }
-
-    .dropZone{
-        min-height:240px;
-    }
-}
-
-</style>
+    <!-- UPLOAD CSS -->
+    <link rel="stylesheet" href="upload.css">
 
 </head>
 
 <body>
 
-<!-- Background -->
+<div id="app">
 
-<div class="bgGlow"></div>
+    <!-- =====================================================
+         CREATOR
+    ====================================================== -->
 
-<!-- Loader -->
+    <main class="creator">
 
-<div id="pageLoader">
+        <!-- CAMERA -->
+        <video
+            id="cameraPreview"
+            class="cameraPreview"
+            autoplay
+            muted
+            playsinline
+        ></video>
 
-<div class="loader">
 
-<div class="ring"></div>
+        <!-- CAMERA FALLBACK -->
 
-<div class="ring delay"></div>
-
-</div>
-
-<h2>Loading...</h2>
-
-</div>
-<!-- =====================================================
-     MAIN APP
-===================================================== -->
-
-<div id="app" class="hidden">
-
-<!-- =====================================================
-     HEADER
-===================================================== -->
-
-<header class="header">
-
-    <button id="backBtn" class="iconBtn">
-
-        <i class="fa-solid fa-arrow-left"></i>
-
-    </button>
-
-    <div class="headerTitle">
-
-        <h2>Creator Studio</h2>
-
-        <p>Create something amazing</p>
-
-    </div>
-
-    <button id="draftBtn" class="draftBtn">
-
-        <i class="fa-regular fa-floppy-disk"></i>
-
-        <span>Draft</span>
-
-    </button>
-
-</header>
-
-<!-- =====================================================
-     CONTENT
-===================================================== -->
-
-<main class="uploadContainer">
-
-<div class="uploadCard">
-
-<!-- =====================================================
-     TOP
-===================================================== -->
-
-<div class="uploadTop">
-
-    <img
-        src="assets/logo.png"
-        class="uploadLogo"
-        alt="Viewora"
-    >
-
-    <h1>Create on Viewora</h1>
-
-    <p>
-        Share your photos, videos, shorts and live moments.
-    </p>
-
-</div>
-
-<!-- =====================================================
-     CONTENT TYPE
-===================================================== -->
-
-<div class="contentTabs">
-
-    <button
-        class="contentTab active"
-        data-type="post"
-        type="button"
-    >
-
-        <i class="fa-solid fa-image"></i>
-
-        <span>Post</span>
-
-    </button>
-
-    <button
-        class="contentTab"
-        data-type="short"
-        type="button"
-    >
-
-        <i class="fa-solid fa-bolt"></i>
-
-        <span>Short</span>
-
-    </button>
-
-    <button
-        class="contentTab"
-        data-type="video"
-        type="button"
-    >
-
-        <i class="fa-solid fa-video"></i>
-
-        <span>Long Video</span>
-
-    </button>
-
-    <button
-        class="contentTab"
-        data-type="live"
-        type="button"
-    >
-
-        <i class="fa-solid fa-tower-broadcast"></i>
-
-        <span>Live</span>
-
-    </button>
-
-</div>
-
-<!-- =====================================================
-     MODE INFO
-===================================================== -->
-
-<div class="modeInfo" id="modeInfo">
-
-    <h3 id="modeTitle">
-        Create a Post
-    </h3>
-
-    <p id="modeDescription">
-        Share a photo or video with your Viewora community.
-    </p>
-
-</div>
-
-<!-- =====================================================
-     MEDIA CREATOR
-===================================================== -->
-
-<div id="mediaCreator">
-
-    <div
-        class="dropZone"
-        id="dropZone"
-    >
-
-        <input
-            type="file"
-            id="mediaInput"
-            accept="image/*,video/*"
-            hidden
+        <div
+            id="cameraFallback"
+            class="cameraFallback hidden"
         >
 
-        <div class="dropContent">
+            <div class="fallbackIcon">
+                <i class="fa-solid fa-camera"></i>
+            </div>
 
-            <div class="uploadIcon">
+            <h2>Camera unavailable</h2>
 
-                <i class="fa-solid fa-cloud-arrow-up"></i>
+            <p id="cameraErrorText">
+                Allow camera permission to use Viewora Camera.
+            </p>
+
+            <button
+                type="button"
+                id="retryCameraBtn"
+                class="premiumButton"
+            >
+                <i class="fa-solid fa-rotate-right"></i>
+                Try Again
+            </button>
+
+        </div>
+
+
+        <!-- =================================================
+             TOP BAR
+        ================================================== -->
+
+        <header class="topBar">
+
+            <button
+                type="button"
+                id="closeCreatorBtn"
+                class="iconButton glass"
+                aria-label="Close creator"
+            >
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+
+            <div class="brandPill">
+
+                <img
+                    src="assets/logo.png"
+                    alt="Viewora"
+                    class="brandLogo"
+                >
+
+                <div class="brandText">
+                    <strong>VIEWORA</strong>
+                    <span id="creatorModeLabel">CREATE</span>
+                </div>
 
             </div>
 
-            <h3 id="dropTitle">
-                Drag & Drop your file
-            </h3>
 
-            <p id="dropDescription">
-                or choose a file from your device
+            <button
+                type="button"
+                id="settingsBtn"
+                class="iconButton glass"
+                aria-label="Camera settings"
+            >
+                <i class="fa-solid fa-sliders"></i>
+            </button>
+
+        </header>
+
+
+        <!-- =================================================
+             MODE HEADER
+        ================================================== -->
+
+        <section class="modeHeader">
+
+            <div class="modeBadge">
+
+                <span id="modeIcon">
+                    <i class="fa-solid fa-bolt"></i>
+                </span>
+
+                <strong id="modeTitle">
+                    Shorts
+                </strong>
+
+            </div>
+
+            <p id="modeDescription">
+                Create a vertical short video
             </p>
 
-            <button
-                type="button"
-                id="browseBtn"
-                class="primaryBtn"
-            >
+        </section>
 
-                <i class="fa-solid fa-folder-open"></i>
 
-                Select File
-
-            </button>
-
-            <small id="supportedText">
-
-                Photos: JPG, PNG, WEBP
-                <br>
-                Videos: MP4, MOV, WEBM
-
-            </small>
-
-        </div>
-
-    </div>
-
-    <!-- =================================================
-         PREVIEW
-    ================================================= -->
-
-    <div
-        id="previewSection"
-        class="previewSection hidden"
-    >
-
-        <div class="previewBox">
-
-            <img
-                id="previewImage"
-                class="hidden"
-                alt="Preview"
-            >
-
-            <video
-                id="previewVideo"
-                class="hidden"
-                controls
-                playsinline
-            ></video>
-
-        </div>
-
-        <div class="fileInfo">
-
-            <h3 id="fileName">
-                No file selected
-            </h3>
-
-            <p id="fileSize">
-                0 MB
-            </p>
-
-        </div>
-
-        <div class="quickActions">
-
-            <button
-                type="button"
-                id="changeFileBtn"
-                class="secondaryBtn"
-            >
-
-                <i class="fa-solid fa-repeat"></i>
-
-                Change File
-
-            </button>
-
-            <button
-                type="button"
-                id="removeFileBtn"
-                class="dangerBtn"
-            >
-
-                <i class="fa-solid fa-trash"></i>
-
-                Remove
-
-            </button>
-
-        </div>
-
-    </div>
-
-</div>
-
-<!-- =====================================================
-     LIVE PANEL
-===================================================== -->
-
-<div
-    id="livePanel"
-    class="livePanel hidden"
->
-
-    <div class="liveIcon">
-
-        <i class="fa-solid fa-tower-broadcast"></i>
-
-    </div>
-
-    <h2>Go Live on Viewora</h2>
-
-    <p>
-        Start a live session and interact with your audience
-        in real time.
-    </p>
-
-    <button
-        type="button"
-        id="startLiveBtn"
-        class="primaryBtn"
-    >
-
-        <i class="fa-solid fa-circle-play"></i>
-
-        Start Live
-
-    </button>
-
-</div>
-
-<!-- =====================================================
-     CONTENT DETAILS
-===================================================== -->
-
-<div id="detailsSection">
-
-<div class="sectionTitle">
-
-    <i class="fa-solid fa-pen"></i>
-
-    <span>Content Details</span>
-
-</div>
-
-<!-- TITLE -->
-
-<div class="formGroup">
-
-    <label for="title">
-
-        <i class="fa-solid fa-heading"></i>
-
-        Title
-
-    </label>
-
-    <input
-        type="text"
-        id="title"
-        maxlength="100"
-        placeholder="Enter an attractive title"
-    >
-
-    <div class="counter">
-
-        <span id="titleCounter">0</span>/100
-
-    </div>
-
-</div>
-
-<!-- CAPTION -->
-
-<div class="formGroup">
-
-    <label for="caption">
-
-        <i class="fa-solid fa-align-left"></i>
-
-        Caption
-
-    </label>
-
-    <textarea
-        id="caption"
-        rows="5"
-        maxlength="5000"
-        placeholder="Tell everyone about your content..."
-    ></textarea>
-
-    <div class="counter">
-
-        <span id="captionCounter">0</span>/5000
-
-    </div>
-
-</div>
-
-<!-- HASHTAGS -->
-
-<div class="formGroup">
-
-    <label for="hashtags">
-
-        <i class="fa-solid fa-hashtag"></i>
-
-        Hashtags
-
-    </label>
-
-    <input
-        type="text"
-        id="hashtags"
-        placeholder="#viewora #gaming #music"
-    >
-
-    <div
-        id="hashtagPreview"
-        class="tagPreview"
-    ></div>
-
-</div>
-
-<!-- MENTIONS -->
-
-<div class="formGroup">
-
-    <label for="mentions">
-
-        <i class="fa-solid fa-at"></i>
-
-        Mention Users
-
-    </label>
-
-    <input
-        type="text"
-        id="mentions"
-        placeholder="@username"
-    >
-
-    <div
-        id="mentionPreview"
-        class="tagPreview"
-    ></div>
-
-</div>
-
-<!-- CATEGORY -->
-
-<div class="formGroup">
-
-    <label for="category">
-
-        <i class="fa-solid fa-layer-group"></i>
-
-        Category
-
-    </label>
-
-    <select id="category">
-
-        <option value="general">General</option>
-        <option value="gaming">Gaming</option>
-        <option value="music">Music</option>
-        <option value="education">Education</option>
-        <option value="technology">Technology</option>
-        <option value="sports">Sports</option>
-        <option value="comedy">Comedy</option>
-        <option value="vlog">Vlog</option>
-        <option value="news">News</option>
-        <option value="movies">Movies</option>
-        <option value="anime">Anime</option>
-
-    </select>
-
-</div>
-
-<!-- VISIBILITY -->
-
-<div class="formGroup">
-
-    <label for="visibility">
-
-        <i class="fa-solid fa-earth-asia"></i>
-
-        Visibility
-
-    </label>
-
-    <select id="visibility">
-
-        <option value="public">🌍 Public</option>
-        <option value="followers">👥 Followers Only</option>
-        <option value="private">🔒 Private</option>
-
-    </select>
-
-</div>
-
-<!-- AUDIENCE -->
-
-<div class="formGroup">
-
-    <label for="audience">
-
-        <i class="fa-solid fa-users"></i>
-
-        Audience
-
-    </label>
-
-    <select id="audience">
-
-        <option value="everyone">Everyone</option>
-        <option value="18plus">18+</option>
-        <option value="kids">Made for Kids</option>
-
-    </select>
-
-</div>
-
-<!-- LANGUAGE -->
-
-<div class="formGroup">
-
-    <label for="language">
-
-        <i class="fa-solid fa-language"></i>
-
-        Language
-
-    </label>
-
-    <select id="language">
-
-        <option value="english">English</option>
-        <option value="hindi">Hindi</option>
-        <option value="bengali">Bengali</option>
-        <option value="tamil">Tamil</option>
-        <option value="telugu">Telugu</option>
-        <option value="marathi">Marathi</option>
-        <option value="gujarati">Gujarati</option>
-        <option value="punjabi">Punjabi</option>
-        <option value="other">Other</option>
-
-    </select>
-
-</div>
-
-<!-- =================================================
-     POST SETTINGS
-================================================= -->
-
-<div class="sectionTitle">
-
-    <i class="fa-solid fa-sliders"></i>
-
-    <span>Post Settings</span>
-
-</div>
-
-<div class="optionsGrid">
-
-    <label class="switchCard">
-
-        <span>Allow Comments</span>
-
-        <input
-            type="checkbox"
-            id="allowComments"
-            checked
-        >
-
-    </label>
-
-    <label class="switchCard">
-
-        <span>Allow Downloads</span>
-
-        <input
-            type="checkbox"
-            id="allowDownload"
-        >
-
-    </label>
-
-    <label class="switchCard">
-
-        <span>Notify Followers</span>
-
-        <input
-            type="checkbox"
-            id="notifyFollowers"
-            checked
-        >
-
-    </label>
-
-    <label class="switchCard">
-
-        <span>Age Restricted</span>
-
-        <input
-            type="checkbox"
-            id="ageRestricted"
-        >
-
-    </label>
-
-    <label class="switchCard">
-
-        <span>Allow Remix</span>
-
-        <input
-            type="checkbox"
-            id="allowRemix"
-            checked
-        >
-
-    </label>
-
-    <label class="switchCard">
-
-        <span>Allow Sharing</span>
-
-        <input
-            type="checkbox"
-            id="allowShare"
-            checked
-        >
-
-    </label>
-
-</div>
-
-<!-- =================================================
-     THUMBNAIL
-================================================= -->
-
-<div id="thumbnailSection">
-
-<div class="sectionTitle">
-
-    <i class="fa-solid fa-image"></i>
-
-    <span>Video Thumbnail</span>
-
-</div>
-
-<div class="thumbnailCard">
-
-    <div id="thumbnailPreview">
-
-        <img
-            id="thumbnailImage"
-            src="assets/default-thumbnail.png"
-            alt="Thumbnail"
-        >
-
-    </div>
-
-    <div class="thumbnailButtons">
-
-        <input
-            type="file"
-            id="thumbnailInput"
-            accept="image/*"
-            hidden
-        >
+        <!-- =================================================
+             MUSIC
+        ================================================== -->
 
         <button
             type="button"
-            id="chooseThumbnailBtn"
-            class="secondaryBtn"
+            id="musicBtn"
+            class="musicButton"
         >
 
-            <i class="fa-solid fa-images"></i>
+            <span class="musicIcon">
+                <i class="fa-solid fa-music"></i>
+            </span>
 
-            Choose Thumbnail
+            <span class="musicInfo">
+                <strong>Add Music</strong>
+                <small>Choose a sound</small>
+            </span>
+
+            <i class="fa-solid fa-chevron-right musicArrow"></i>
+
+            <span class="musicGlow"></span>
 
         </button>
 
-        <button
-            type="button"
-            id="removeThumbnailBtn"
-            class="dangerBtn"
+
+        <!-- SELECTED MUSIC -->
+
+        <div
+            id="selectedMusic"
+            class="selectedMusic hidden"
         >
 
-            <i class="fa-solid fa-trash"></i>
+            <div class="musicDisc">
+                <i class="fa-solid fa-music"></i>
+            </div>
 
-            Remove
+            <div class="selectedMusicText">
 
-        </button>
+                <strong id="selectedMusicName">
+                    No music selected
+                </strong>
 
-    </div>
+                <span id="selectedMusicArtist">
+                    Choose a sound
+                </span>
 
-</div>
+            </div>
 
-</div>
+            <div class="musicWave">
+                <span></span>
+                <span></span>
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
 
-<!-- =================================================
-     LOCATION
-================================================= -->
+            <button
+                type="button"
+                id="removeMusicBtn"
+                class="miniButton"
+            >
+                <i class="fa-solid fa-xmark"></i>
+            </button>
 
-<div class="sectionTitle">
+        </div>
 
-    <i class="fa-solid fa-location-dot"></i>
 
-    <span>Location</span>
+        <!-- =================================================
+             CAMERA TOOLS
+        ================================================== -->
 
-</div>
+        <aside class="cameraTools">
 
-<div class="formGroup">
+            <button
+                type="button"
+                id="flashBtn"
+                class="cameraTool"
+            >
+                <span class="toolCircle">
+                    <i class="fa-solid fa-bolt"></i>
+                </span>
+                <small>Flash</small>
+            </button>
 
-    <label for="location">
 
-        <i class="fa-solid fa-map-location-dot"></i>
+            <button
+                type="button"
+                id="flipCameraBtn"
+                class="cameraTool"
+            >
+                <span class="toolCircle">
+                    <i class="fa-solid fa-camera-rotate"></i>
+                </span>
+                <small>Flip</small>
+            </button>
 
-        Location
 
-    </label>
+            <button
+                type="button"
+                id="timerBtn"
+                class="cameraTool"
+            >
+                <span class="toolCircle">
+                    <i class="fa-regular fa-clock"></i>
+                </span>
+                <small>Timer</small>
+            </button>
+
+
+            <button
+                type="button"
+                id="speedBtn"
+                class="cameraTool"
+            >
+                <span class="toolCircle">
+                    <i class="fa-solid fa-gauge-high"></i>
+                </span>
+                <small>Speed</small>
+            </button>
+
+        </aside>
+
+
+        <!-- =================================================
+             RECORDING STATUS
+        ================================================== -->
+
+        <div
+            id="recordingStatus"
+            class="recordingStatus hidden"
+        >
+
+            <span class="recordDot"></span>
+
+            <strong id="recordingTime">
+                00:00
+            </strong>
+
+            <span>REC</span>
+
+        </div>
+
+
+        <!-- =================================================
+             BOTTOM CAMERA AREA
+        ================================================== -->
+
+        <section class="cameraBottom">
+
+            <!-- FILE -->
+
+            <button
+                type="button"
+                id="selectFileBtn"
+                class="mediaButton"
+            >
+
+                <span class="mediaIcon">
+                    <i class="fa-solid fa-folder-open"></i>
+                </span>
+
+                <span class="mediaText">
+
+                    <strong id="fileButtonTitle">
+                        Select Video
+                    </strong>
+
+                    <small id="fileButtonHint">
+                        Upload to Shorts
+                    </small>
+
+                </span>
+
+            </button>
+
+
+            <!-- RECORD -->
+
+            <div class="recordWrapper">
+
+                <button
+                    type="button"
+                    id="recordBtn"
+                    class="recordButton"
+                    aria-label="Record"
+                >
+
+                    <span class="recordRing">
+
+                        <span
+                            id="recordInner"
+                            class="recordInner"
+                        ></span>
+
+                    </span>
+
+                </button>
+
+                <div class="recordHint">
+
+                    <strong id="recordLabel">
+                        Tap to record
+                    </strong>
+
+                    <span id="recordSubLabel">
+                        Shorts • up to 60 sec
+                    </span>
+
+                </div>
+
+            </div>
+
+
+            <!-- GALLERY -->
+
+            <button
+                type="button"
+                id="galleryBtn"
+                class="galleryButton"
+                aria-label="Gallery"
+            >
+
+                <i class="fa-regular fa-images"></i>
+
+                <span>Gallery</span>
+
+            </button>
+
+        </section>
+
+
+        <!-- =================================================
+             MODE SELECTOR
+        ================================================== -->
+
+        <section class="modeSelectorArea">
+
+            <div class="modeSelectorHint">
+
+                <i class="fa-solid fa-arrows-left-right"></i>
+
+                <span>
+                    Swipe or choose mode
+                </span>
+
+            </div>
+
+
+            <div
+                id="modeSelector"
+                class="modeSelector"
+            >
+
+                <!-- POST -->
+
+                <button
+                    type="button"
+                    class="modeItem"
+                    data-mode="post"
+                >
+
+                    <span class="modeIcon">
+                        <i class="fa-solid fa-image"></i>
+                    </span>
+
+                    <strong>Post</strong>
+
+                    <small>Photo</small>
+
+                </button>
+
+
+                <!-- SHORTS -->
+
+                <button
+                    type="button"
+                    class="modeItem active"
+                    data-mode="shorts"
+                >
+
+                    <span class="modeIcon">
+                        <i class="fa-solid fa-bolt"></i>
+                    </span>
+
+                    <strong>Shorts</strong>
+
+                    <small>Vertical</small>
+
+                </button>
+
+
+                <!-- LONG VIDEO -->
+
+                <button
+                    type="button"
+                    class="modeItem"
+                    data-mode="long"
+                >
+
+                    <span class="modeIcon">
+                        <i class="fa-solid fa-video"></i>
+                    </span>
+
+                    <strong>Long Video</strong>
+
+                    <small>Video</small>
+
+                </button>
+
+
+                <!-- LIVE -->
+
+                <button
+                    type="button"
+                    class="modeItem"
+                    data-mode="live"
+                >
+
+                    <span class="modeIcon liveIcon">
+                        <i class="fa-solid fa-tower-broadcast"></i>
+                    </span>
+
+                    <strong>Live</strong>
+
+                    <small>Go live</small>
+
+                </button>
+
+            </div>
+
+        </section>
+
+
+        <!-- MODE PROGRESS -->
+
+        <div class="modeProgress">
+
+            <span data-progress="post"></span>
+            <span
+                data-progress="shorts"
+                class="active"
+            ></span>
+            <span data-progress="long"></span>
+            <span data-progress="live"></span>
+
+        </div>
+
+    </main>
+
+
+    <!-- =====================================================
+         FILE INPUTS
+    ====================================================== -->
+
+    <!-- POST = PHOTO ONLY -->
 
     <input
-        type="text"
-        id="location"
-        placeholder="Add location (optional)"
-    >
+    type="file"
+    id="mediaInput"
+    accept="Photo/*"
+    hidden
+>
 
-</div>
 
-<!-- =================================================
-     SCHEDULE
-================================================= -->
-
-<div class="sectionTitle">
-
-    <i class="fa-solid fa-calendar-days"></i>
-
-    <span>Schedule</span>
-
-</div>
-
-<div class="formGroup">
-
-    <label for="scheduleDate">
-
-        <i class="fa-solid fa-clock"></i>
-
-        Schedule Upload
-
-    </label>
+    <!-- SHORTS = VIDEO ONLY -->
 
     <input
-        type="datetime-local"
-        id="scheduleDate"
-    >
-
-</div>
-
-<!-- =================================================
-     PROGRESS
-================================================= -->
-
-<div
-    id="progressSection"
-    class="progressSection hidden"
+    type="file"
+    id="mediaInput"
+    accept="video/*"
+    hidden
 >
 
-    <div class="progressHeader">
 
-        <span>Uploading...</span>
+    <!-- LONG VIDEO = VIDEO ONLY -->
 
-        <span id="progressPercent">0%</span>
-
-    </div>
-
-    <div class="progressBar">
-
-        <div id="progressFill"></div>
-
-    </div>
-
-    <div class="progressInfo">
-
-        <span id="uploadSpeed">
-            0 MB/s
-        </span>
-
-        <span id="remainingTime">
-            Calculating...
-        </span>
-
-    </div>
-
-</div>
-
-<!-- =================================================
-     MEDIA INFORMATION
-================================================= -->
-
-<div class="sectionTitle">
-
-    <i class="fa-solid fa-chart-column"></i>
-
-    <span>Media Information</span>
-
-</div>
-
-<div class="statsGrid">
-
-    <div class="statCard">
-
-        <h4>Resolution</h4>
-
-        <span id="videoResolution">
-            --
-        </span>
-
-    </div>
-
-    <div class="statCard">
-
-        <h4>Duration</h4>
-
-        <span id="videoDuration">
-            --
-        </span>
-
-    </div>
-
-    <div class="statCard">
-
-        <h4>File Size</h4>
-
-        <span id="mediaFileSize">
-            --
-        </span>
-
-    </div>
-
-    <div class="statCard">
-
-        <h4>Media Type</h4>
-
-        <span id="fileTypeBadge">
-            --
-        </span>
-
-    </div>
-
-</div>
-
-<!-- =================================================
-     ACTION BUTTONS
-================================================= -->
-
-<div class="buttonGroup">
-
-    <button
-        type="button"
-        id="saveDraftBtn"
-        class="secondaryBtn"
-    >
-
-        <i class="fa-solid fa-floppy-disk"></i>
-
-        Save Draft
-
-    </button>
-
-    <button
-        type="button"
-        id="cancelUploadBtn"
-        class="dangerBtn"
-    >
-
-        <i class="fa-solid fa-xmark"></i>
-
-        Cancel
-
-    </button>
-
-    <button
-        type="button"
-        id="uploadPostBtn"
-        class="primaryBtn"
-    >
-
-        <i class="fa-solid fa-cloud-arrow-up"></i>
-
-        Publish Post
-
-    </button>
-
-</div>
-
-</div>
-
-</div>
-
-</main>
-
-<!-- =====================================================
-     LOADING OVERLAY
-===================================================== -->
-
-<div
-    id="loadingOverlay"
-    class="hidden"
+    <input
+    type="file"
+    id="mediaInput"
+    accept="video/*"
+    hidden
 >
 
-    <div class="premiumLoader">
 
-        <div class="loaderRing"></div>
-        <div class="loaderRing delay1"></div>
-        <div class="loaderRing delay2"></div>
+    <!-- THUMBNAIL -->
+
+    <input
+        type="file"
+        id="thumbnailInput"
+        accept="image/*"
+        hidden
+    >
+
+
+    <!-- =====================================================
+         POST SHEET
+    ====================================================== -->
+
+    <div
+        id="postSheet"
+        class="overlay hidden"
+    >
+
+        <div class="overlayBackdrop"></div>
+
+        <section class="uploadSheet">
+
+            <div class="sheetHandle"></div>
+
+            <header class="sheetHeader">
+
+                <div>
+
+                    <span class="eyebrow">
+                        VIEWORA POST
+                    </span>
+
+                    <h2>
+                        Create a post
+                    </h2>
+
+                    <p>
+                        Choose photos from your device.
+                    </p>
+
+                </div>
+
+                <button
+                    type="button"
+                    id="closePostBtn"
+                    class="sheetCloseButton"
+                >
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+
+            </header>
+
+
+            <button
+                type="button"
+                id="choosePostPhotoBtn"
+                class="uploadOption primaryUpload"
+            >
+
+                <span class="uploadOptionIcon">
+                    <i class="fa-regular fa-images"></i>
+                </span>
+
+                <span class="uploadOptionText">
+
+                    <strong>
+                        Choose Photos
+                    </strong>
+
+                    <small>
+                        JPG, PNG, WEBP
+                    </small>
+
+                </span>
+
+                <i class="fa-solid fa-chevron-right"></i>
+
+            </button>
+
+
+            <button
+                type="button"
+                id="capturePostBtn"
+                class="uploadOption"
+            >
+
+                <span class="uploadOptionIcon">
+                    <i class="fa-solid fa-camera"></i>
+                </span>
+
+                <span class="uploadOptionText">
+
+                    <strong>
+                        Take Photo
+                    </strong>
+
+                    <small>
+                        Use the back camera
+                    </small>
+
+                </span>
+
+                <i class="fa-solid fa-chevron-right"></i>
+
+            </button>
+
+        </section>
 
     </div>
 
-    <h3 id="loadingTitle">
-        Uploading...
-    </h3>
 
-    <p id="loadingText">
-        Please wait while your content is being published.
-    </p>
+    <!-- =====================================================
+         VIDEO FILE SHEET
+    ====================================================== -->
 
-</div>
+    <div
+        id="videoSheet"
+        class="overlay hidden"
+    >
 
-<!-- =====================================================
-     TOAST
-===================================================== -->
+        <div class="overlayBackdrop"></div>
 
-<div
-    id="toast"
-    class="toast hidden"
->
+        <section class="uploadSheet">
 
-    <i
-        id="toastIcon"
-        class="fa-solid fa-circle-check"
-    ></i>
+            <div class="sheetHandle"></div>
 
-    <span id="toastText">
-        Success
-    </span>
+            <header class="sheetHeader">
 
-</div>
+                <div>
 
-<!-- =====================================================
-     SUCCESS MODAL
-===================================================== -->
+                    <span class="eyebrow">
+                        VIEWORA VIDEO
+                    </span>
 
-<div
-    id="successModal"
-    class="modal hidden"
->
+                    <h2 id="videoSheetTitle">
+                        Upload Shorts
+                    </h2>
 
-    <div class="modalCard">
+                    <p id="videoSheetDescription">
+                        Choose a video from your device.
+                    </p>
 
-        <div class="successIcon">
+                </div>
 
+                <button
+                    type="button"
+                    id="closeVideoBtn"
+                    class="sheetCloseButton"
+                >
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+
+            </header>
+
+
+            <button
+                type="button"
+                id="chooseVideoBtn"
+                class="uploadOption primaryUpload"
+            >
+
+                <span class="uploadOptionIcon">
+                    <i class="fa-solid fa-folder-open"></i>
+                </span>
+
+                <span class="uploadOptionText">
+
+                    <strong>
+                        Choose Video
+                    </strong>
+
+                    <small id="videoFormatHint">
+                        MP4, MOV, WEBM
+                    </small>
+
+                </span>
+
+                <i class="fa-solid fa-chevron-right"></i>
+
+            </button>
+
+
+            <button
+                type="button"
+                id="recordVideoBtn"
+                class="uploadOption"
+            >
+
+                <span class="uploadOptionIcon">
+                    <i class="fa-solid fa-video"></i>
+                </span>
+
+                <span class="uploadOptionText">
+
+                    <strong>
+                        Record Video
+                    </strong>
+
+                    <small>
+                        Use the back camera
+                    </small>
+
+                </span>
+
+                <i class="fa-solid fa-chevron-right"></i>
+
+            </button>
+
+        </section>
+
+    </div>
+
+
+    <!-- =====================================================
+         LIVE SETUP — YOUTUBE STYLE
+    ====================================================== -->
+
+    <div
+        id="livePanel"
+        class="overlay hidden"
+    >
+
+        <div class="overlayBackdrop"></div>
+
+        <section class="liveSheet">
+
+            <div class="sheetHandle"></div>
+
+            <header class="liveHeader">
+
+                <div class="liveHeaderIcon">
+                    <i class="fa-solid fa-tower-broadcast"></i>
+                </div>
+
+                <div>
+
+                    <span class="eyebrow">
+                        VIEWORA LIVE
+                    </span>
+
+                    <h2>
+                        Set up your live
+                    </h2>
+
+                    <p>
+                        Add the details your audience will see.
+                    </p>
+
+                </div>
+
+                <button
+                    type="button"
+                    id="closeLiveBtn"
+                    class="sheetCloseButton"
+                >
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+
+            </header>
+
+
+            <!-- LIVE THUMBNAIL -->
+
+            <button
+                type="button"
+                id="chooseThumbnailBtn"
+                class="thumbnailPicker"
+            >
+
+                <div
+                    id="thumbnailPreview"
+                    class="thumbnailPreview"
+                >
+
+                    <i class="fa-regular fa-image"></i>
+
+                    <span>
+                        Add thumbnail
+                    </span>
+
+                </div>
+
+                <div class="thumbnailText">
+
+                    <strong>
+                        Live thumbnail
+                    </strong>
+
+                    <small>
+                        Recommended 16:9 image
+                    </small>
+
+                </div>
+
+                <i class="fa-solid fa-chevron-right"></i>
+
+            </button>
+
+
+            <!-- LIVE TITLE -->
+
+            <div class="fieldGroup">
+
+                <label for="liveTitle">
+                    Title
+                </label>
+
+                <input
+                    type="text"
+                    id="liveTitle"
+                    maxlength="100"
+                    placeholder="What's your live about?"
+                    autocomplete="off"
+                >
+
+                <span class="characterCount">
+                    <b id="liveTitleCount">0</b>/100
+                </span>
+
+            </div>
+
+
+            <!-- LIVE DESCRIPTION -->
+
+            <div class="fieldGroup">
+
+                <label for="liveDescription">
+                    Description
+                </label>
+
+                <textarea
+                    id="liveDescription"
+                    maxlength="5000"
+                    rows="5"
+                    placeholder="Tell viewers what they can expect..."
+                ></textarea>
+
+                <span class="characterCount">
+                    <b id="liveDescriptionCount">0</b>/5000
+                </span>
+
+            </div>
+
+
+            <!-- VISIBILITY -->
+
+            <div class="fieldGroup">
+
+                <label for="liveVisibility">
+                    Visibility
+                </label>
+
+                <select id="liveVisibility">
+
+                    <option value="public">
+                        Public
+                    </option>
+
+                    <option value="unlisted">
+                        Unlisted
+                    </option>
+
+                    <option value="private">
+                        Private
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <!-- LIVE INFO -->
+
+            <div class="liveInfo">
+
+                <div>
+                    <i class="fa-solid fa-shield-halved"></i>
+
+                    <span>
+                        Your stream will follow Viewora's community rules.
+                    </span>
+                </div>
+
+                <div>
+                    <i class="fa-solid fa-bolt"></i>
+
+                    <span>
+                        You can add the stream details before going live.
+                    </span>
+                </div>
+
+            </div>
+
+
+            <!-- START LIVE -->
+
+            <button
+                type="button"
+                id="startLiveBtn"
+                class="primaryAction fullWidth"
+            >
+
+                <i class="fa-solid fa-circle-play"></i>
+
+                Start Live
+
+            </button>
+
+        </section>
+
+    </div>
+
+
+    <!-- =====================================================
+         MUSIC SHEET
+    ====================================================== -->
+
+    <div
+        id="musicSheet"
+        class="overlay hidden"
+    >
+
+        <div class="overlayBackdrop"></div>
+
+        <section class="musicSheet">
+
+            <div class="sheetHandle"></div>
+
+            <header class="sheetHeader">
+
+                <div>
+
+                    <span class="eyebrow">
+                        VIEWORA MUSIC
+                    </span>
+
+                    <h2>
+                        Choose your sound
+                    </h2>
+
+                </div>
+
+                <button
+                    type="button"
+                    id="closeMusicBtn"
+                    class="sheetCloseButton"
+                >
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+
+            </header>
+
+
+            <div class="musicSearch">
+
+                <i class="fa-solid fa-magnifying-glass"></i>
+
+                <input
+                    type="search"
+                    id="musicSearchInput"
+                    placeholder="Search music, artists & sounds..."
+                    autocomplete="off"
+                >
+
+                <button
+                    type="button"
+                    id="clearMusicSearch"
+                    class="hidden"
+                >
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+
+            </div>
+
+
+            <div class="musicCategories">
+
+                <button
+                    class="musicCategory active"
+                    data-category="trending"
+                >
+                    <i class="fa-solid fa-fire"></i>
+                    Trending
+                </button>
+
+                <button
+                    class="musicCategory"
+                    data-category="popular"
+                >
+                    <i class="fa-solid fa-star"></i>
+                    Popular
+                </button>
+
+                <button
+                    class="musicCategory"
+                    data-category="new"
+                >
+                    <i class="fa-solid fa-sparkles"></i>
+                    New
+                </button>
+
+                <button
+                    class="musicCategory"
+                    data-category="saved"
+                >
+                    <i class="fa-regular fa-bookmark"></i>
+                    Saved
+                </button>
+
+            </div>
+
+
+            <div
+                id="musicList"
+                class="musicList"
+            ></div>
+
+        </section>
+
+    </div>
+
+
+    <!-- =====================================================
+         TIMER SHEET
+    ====================================================== -->
+
+    <div
+        id="timerSheet"
+        class="overlay hidden"
+    >
+
+        <div class="overlayBackdrop"></div>
+
+        <section class="smallSheet">
+
+            <div class="sheetHandle"></div>
+
+            <header class="simpleSheetHeader">
+
+                <div>
+                    <span class="eyebrow">CAMERA</span>
+                    <h2>Timer</h2>
+                </div>
+
+                <button
+                    type="button"
+                    id="closeTimerBtn"
+                    class="sheetCloseButton"
+                >
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+
+            </header>
+
+
+            <div class="choiceGrid">
+
+                <button
+                    class="choiceItem active"
+                    data-time="0"
+                >
+                    Off
+                </button>
+
+                <button
+                    class="choiceItem"
+                    data-time="3"
+                >
+                    3 sec
+                </button>
+
+                <button
+                    class="choiceItem"
+                    data-time="5"
+                >
+                    5 sec
+                </button>
+
+                <button
+                    class="choiceItem"
+                    data-time="10"
+                >
+                    10 sec
+                </button>
+
+            </div>
+
+        </section>
+
+    </div>
+
+
+    <!-- =====================================================
+         SPEED SHEET
+    ====================================================== -->
+
+    <div
+        id="speedSheet"
+        class="overlay hidden"
+    >
+
+        <div class="overlayBackdrop"></div>
+
+        <section class="smallSheet">
+
+            <div class="sheetHandle"></div>
+
+            <header class="simpleSheetHeader">
+
+                <div>
+                    <span class="eyebrow">CAMERA</span>
+                    <h2>Recording Speed</h2>
+                </div>
+
+                <button
+                    type="button"
+                    id="closeSpeedBtn"
+                    class="sheetCloseButton"
+                >
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+
+            </header>
+
+
+            <div class="speedGrid">
+
+                <button
+                    class="speedItem"
+                    data-speed="0.5"
+                >
+                    0.5x
+                </button>
+
+                <button
+                    class="speedItem active"
+                    data-speed="1"
+                >
+                    1x
+                </button>
+
+                <button
+                    class="speedItem"
+                    data-speed="2"
+                >
+                    2x
+                </button>
+
+                <button
+                    class="speedItem"
+                    data-speed="3"
+                >
+                    3x
+                </button>
+
+            </div>
+
+        </section>
+
+    </div>
+
+
+    <!-- =====================================================
+         CAMERA SETTINGS
+    ====================================================== -->
+
+    <div
+        id="settingsSheet"
+        class="overlay hidden"
+    >
+
+        <div class="overlayBackdrop"></div>
+
+        <section class="settingsSheet">
+
+            <div class="sheetHandle"></div>
+
+            <header class="simpleSheetHeader">
+
+                <div>
+
+                    <span class="eyebrow">
+                        VIEWORA CAMERA
+                    </span>
+
+                    <h2>
+                        Camera Settings
+                    </h2>
+
+                </div>
+
+                <button
+                    type="button"
+                    id="closeSettingsBtn"
+                    class="sheetCloseButton"
+                >
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+
+            </header>
+
+
+            <div class="settingsList">
+
+                <label class="settingRow">
+
+                    <span class="settingInfo">
+
+                        <span class="settingIcon">
+                            <i class="fa-solid fa-microphone"></i>
+                        </span>
+
+                        <span>
+                            <strong>Microphone</strong>
+                            <small>Record camera audio</small>
+                        </span>
+
+                    </span>
+
+                    <input
+                        type="checkbox"
+                        id="microphoneToggle"
+                        checked
+                    >
+
+                </label>
+
+
+                <label class="settingRow">
+
+                    <span class="settingInfo">
+
+                        <span class="settingIcon">
+                            <i class="fa-solid fa-high-definition"></i>
+                        </span>
+
+                        <span>
+                            <strong>HD Quality</strong>
+                            <small>Use high quality camera</small>
+                        </span>
+
+                    </span>
+
+                    <input
+                        type="checkbox"
+                        id="qualityToggle"
+                        checked
+                    >
+
+                </label>
+
+
+                <label class="settingRow">
+
+                    <span class="settingInfo">
+
+                        <span class="settingIcon">
+                            <i class="fa-solid fa-expand"></i>
+                        </span>
+
+                        <span>
+                            <strong>Full Screen Camera</strong>
+                            <small>Immersive camera preview</small>
+                        </span>
+
+                    </span>
+
+                    <input
+                        type="checkbox"
+                        id="fullscreenToggle"
+                        checked
+                    >
+
+                </label>
+
+            </div>
+
+        </section>
+
+    </div>
+
+
+    <!-- =====================================================
+         RECORD PREVIEW
+    ====================================================== -->
+
+    <div
+        id="recordPreview"
+        class="previewOverlay hidden"
+    >
+
+        <video
+            id="recordedVideo"
+            class="recordedVideo"
+            controls
+            playsinline
+        ></video>
+
+
+        <header class="previewTop">
+
+            <button
+                type="button"
+                id="closePreviewBtn"
+                class="iconButton glass"
+            >
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+            <div>
+
+                <span>PREVIEW</span>
+
+                <strong id="previewModeTitle">
+                    Shorts
+                </strong>
+
+            </div>
+
+        </header>
+
+
+        <div class="previewBottom">
+
+            <button
+                type="button"
+                id="retakeBtn"
+                class="secondaryAction"
+            >
+                <i class="fa-solid fa-rotate-left"></i>
+                Retake
+            </button>
+
+            <button
+                type="button"
+                id="continueVideoBtn"
+                class="primaryAction"
+            >
+                Continue
+                <i class="fa-solid fa-arrow-right"></i>
+            </button>
+
+        </div>
+
+    </div>
+
+
+    <!-- =====================================================
+         PROCESSING
+    ====================================================== -->
+
+    <div
+        id="processingOverlay"
+        class="processingOverlay hidden"
+    >
+
+        <div class="processingOrb">
+
+            <div class="processingSpinner"></div>
+
+            <i class="fa-solid fa-wand-magic-sparkles"></i>
+
+        </div>
+
+        <h2>
+            Preparing your content
+        </h2>
+
+        <p id="processingText">
+            Opening editor...
+        </p>
+
+        <div class="processingProgress">
+            <span></span>
+        </div>
+
+    </div>
+
+
+    <!-- =====================================================
+         TOAST
+    ====================================================== -->
+
+    <div
+        id="toast"
+        class="toast hidden"
+    >
+
+        <span id="toastIcon">
             <i class="fa-solid fa-circle-check"></i>
+        </span>
 
-        </div>
+        <div>
 
-        <h2>
-            Published Successfully 🎉
-        </h2>
+            <strong id="toastTitle">
+                Done
+            </strong>
 
-        <p>
-            Your content is now available on Viewora.
-        </p>
-
-        <div class="modalButtons">
-
-            <button
-                id="viewPostBtn"
-                class="primaryBtn"
-            >
-
-                <i class="fa-solid fa-play"></i>
-
-                View
-
-            </button>
-
-            <button
-                id="uploadAnotherBtn"
-                class="secondaryBtn"
-            >
-
-                <i class="fa-solid fa-plus"></i>
-
-                Create Another
-
-            </button>
+            <p id="toastText">
+                Action completed successfully.
+            </p>
 
         </div>
 
     </div>
 
-</div>
 
-<!-- =====================================================
-     FAILED MODAL
-===================================================== -->
+    <!-- =====================================================
+         AUDIO
+    ====================================================== -->
 
-<div
-    id="failedModal"
-    class="modal hidden"
->
-
-    <div class="modalCard">
-
-        <div class="errorIcon">
-
-            <i class="fa-solid fa-circle-xmark"></i>
-
-        </div>
-
-        <h2>
-            Upload Failed
-        </h2>
-
-        <p id="uploadErrorMessage">
-            Something went wrong.
-        </p>
-
-        <div class="modalButtons">
-
-            <button
-                id="retryUploadBtn"
-                class="primaryBtn"
-            >
-
-                <i class="fa-solid fa-rotate-right"></i>
-
-                Retry
-
-            </button>
-
-            <button
-                id="closeFailedBtn"
-                class="secondaryBtn"
-            >
-
-                Close
-
-            </button>
-
-        </div>
-
-    </div>
+    <audio
+        id="musicAudio"
+        preload="metadata"
+    ></audio>
 
 </div>
 
-<!-- =====================================================
-     NETWORK
-===================================================== -->
-
-<div
-    id="networkBanner"
-    class="hidden"
->
-
-    <i class="fa-solid fa-wifi"></i>
-
-    <span>
-        No Internet Connection
-    </span>
-
-</div>
 
 <!-- =====================================================
-     FIREBASE SDK
-     MUST LOAD BEFORE firebase.js
-===================================================== -->
+     FIREBASE
+====================================================== -->
 
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 
@@ -2000,266 +1472,15 @@ body{
 
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
 
-<!-- =====================================================
-     CLOUDINARY WIDGET
-     MUST LOAD BEFORE upload.js
-===================================================== -->
-
-<script
-    src="https://upload-widget.cloudinary.com/global/all.js"
-    type="text/javascript"
-></script>
-
-<!-- =====================================================
-     FIREBASE CONFIG
-===================================================== -->
-
 <script src="firebase.js"></script>
+  <script src="call-listener.js"></script>
+
 
 <!-- =====================================================
      UPLOAD LOGIC
-===================================================== -->
+====================================================== -->
 
 <script src="upload.js"></script>
-<script src="viewora-loader.js"></script>
-
-<!-- =====================================================
-     PREMIUM STARTUP
-===================================================== -->
-
-<script>
-
-window.addEventListener("load", function(){
-
-    const loader =
-        document.getElementById("pageLoader");
-
-    const app =
-        document.getElementById("app");
-
-    setTimeout(function(){
-
-        loader.style.opacity = "0";
-
-        loader.style.visibility = "hidden";
-
-        app.classList.remove("hidden");
-
-        app.classList.add("fadeIn");
-
-    }, 1000);
-
-});
-
-
-/* =====================================================
-   NETWORK
-===================================================== */
-
-function updateNetwork(){
-
-    const banner =
-        document.getElementById("networkBanner");
-
-    if(!navigator.onLine){
-
-        banner.classList.remove("hidden");
-
-    }else{
-
-        banner.classList.add("hidden");
-
-    }
-
-}
-
-window.addEventListener("offline", updateNetwork);
-
-window.addEventListener("online", updateNetwork);
-
-updateNetwork();
-
-
-/* =====================================================
-   CONTENT TYPE UI
-===================================================== */
-
-document.querySelectorAll(".contentTab").forEach(function(tab){
-
-    tab.addEventListener("click", function(){
-
-        document
-            .querySelectorAll(".contentTab")
-            .forEach(function(item){
-
-                item.classList.remove("active");
-
-            });
-
-        tab.classList.add("active");
-
-        const type = tab.dataset.type;
-
-        const mediaCreator =
-            document.getElementById("mediaCreator");
-
-        const livePanel =
-            document.getElementById("livePanel");
-
-        const detailsSection =
-            document.getElementById("detailsSection");
-
-        const modeTitle =
-            document.getElementById("modeTitle");
-
-        const modeDescription =
-            document.getElementById("modeDescription");
-
-        const dropTitle =
-            document.getElementById("dropTitle");
-
-        const dropDescription =
-            document.getElementById("dropDescription");
-
-        const supportedText =
-            document.getElementById("supportedText");
-
-        const thumbnailSection =
-            document.getElementById("thumbnailSection");
-
-        if(type === "post"){
-
-            mediaCreator.classList.remove("hidden");
-            livePanel.classList.add("hidden");
-            detailsSection.classList.remove("hidden");
-            thumbnailSection.classList.add("hidden");
-
-            modeTitle.textContent =
-                "Create a Post";
-
-            modeDescription.textContent =
-                "Share a photo or video with your Viewora community.";
-
-            dropTitle.textContent =
-                "Upload your Post";
-
-            dropDescription.textContent =
-                "Choose a photo or video from your device.";
-
-            supportedText.innerHTML =
-                "JPG • PNG • JPEG • WEBP<br>MP4 • MOV • WEBM";
-
-        }
-
-        else if(type === "short"){
-
-            mediaCreator.classList.remove("hidden");
-            livePanel.classList.add("hidden");
-            detailsSection.classList.remove("hidden");
-            thumbnailSection.classList.remove("hidden");
-
-            modeTitle.textContent =
-                "Create a Short";
-
-            modeDescription.textContent =
-                "Create a vertical short video for the Viewora Shorts feed.";
-
-            dropTitle.textContent =
-                "Upload your Short";
-
-            dropDescription.textContent =
-                "Best experience: vertical video.";
-
-            supportedText.innerHTML =
-                "MP4 • MOV • WEBM<br>Short-form video";
-
-        }
-
-        else if(type === "video"){
-
-            mediaCreator.classList.remove("hidden");
-            livePanel.classList.add("hidden");
-            detailsSection.classList.remove("hidden");
-            thumbnailSection.classList.remove("hidden");
-
-            modeTitle.textContent =
-                "Upload Long Video";
-
-            modeDescription.textContent =
-                "Publish your full-length video on Viewora.";
-
-            dropTitle.textContent =
-                "Upload Long Video";
-
-            dropDescription.textContent =
-                "Upload your full-length video.";
-
-            supportedText.innerHTML =
-                "MP4 • MOV • WEBM<br>Long-form video";
-
-        }
-
-        else if(type === "live"){
-
-            mediaCreator.classList.add("hidden");
-            livePanel.classList.remove("hidden");
-            detailsSection.classList.remove("hidden");
-            thumbnailSection.classList.add("hidden");
-
-            modeTitle.textContent =
-                "Viewora Live";
-
-            modeDescription.textContent =
-                "Start a live broadcast and connect with your audience.";
-
-        }
-
-    });
-
-});
-
-
-/* =====================================================
-   COUNTERS
-===================================================== */
-
-const titleInput =
-    document.getElementById("title");
-
-const titleCounter =
-    document.getElementById("titleCounter");
-
-const captionInput =
-    document.getElementById("caption");
-
-const captionCounter =
-    document.getElementById("captionCounter");
-
-
-if(titleInput){
-
-    titleInput.addEventListener("input", function(){
-
-        titleCounter.textContent =
-            titleInput.value.length;
-
-    });
-
-}
-
-
-if(captionInput){
-
-    captionInput.addEventListener("input", function(){
-
-        captionCounter.textContent =
-            captionInput.value.length;
-
-    });
-
-}
-
-</script>
 
 </body>
 </html>

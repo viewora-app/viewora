@@ -1,0 +1,2230 @@
+/* ==========================================================
+   VIEWORA — EDIT SHORTS
+   PREMIUM EDITOR CSS
+   Mobile First • Dark • Glass • Shorts Style
+========================================================== */
+
+:root {
+    --bg: #050507;
+    --black: #000;
+    --surface: #0d0e13;
+    --surface-2: #15161c;
+    --surface-3: #1b1c23;
+
+    --text: #fff;
+    --muted: #9b9da8;
+    --muted-2: #666975;
+
+    --line: rgba(255,255,255,.09);
+    --line-strong: rgba(255,255,255,.16);
+
+    --glass: rgba(15,16,21,.72);
+    --glass-heavy: rgba(10,11,15,.90);
+
+    --white: #fff;
+    --danger: #ff526b;
+    --success: #39d98a;
+
+    --radius-sm: 12px;
+    --radius: 17px;
+    --radius-lg: 24px;
+
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+
+    --shadow:
+        0 20px 70px rgba(0,0,0,.55);
+
+    --blur: blur(20px);
+}
+
+
+/* ==========================================================
+   RESET
+========================================================== */
+
+* {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+}
+
+html {
+    width: 100%;
+    height: 100%;
+    background: var(--black);
+}
+
+body {
+    width: 100%;
+    min-width: 100%;
+    height: 100%;
+    min-height: 100%;
+    margin: 0;
+    padding: 0;
+
+    overflow: hidden;
+
+    background:
+        radial-gradient(
+            circle at 50% -10%,
+            rgba(255,255,255,.08),
+            transparent 35%
+        ),
+        var(--bg);
+
+    color: var(--text);
+
+    font-family:
+        Inter,
+        system-ui,
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        sans-serif;
+
+    overscroll-behavior: none;
+}
+
+button,
+input,
+textarea,
+select {
+    font: inherit;
+}
+
+button {
+    border: 0;
+    outline: 0;
+    color: inherit;
+    cursor: pointer;
+}
+
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible {
+    outline: 2px solid rgba(255,255,255,.45);
+    outline-offset: 2px;
+}
+
+button:disabled {
+    opacity: .5;
+    pointer-events: none;
+}
+
+.hidden {
+    display: none !important;
+}
+
+
+/* ==========================================================
+   APP
+========================================================== */
+
+#app {
+    position: relative;
+
+    width: 100%;
+    height: 100dvh;
+    min-height: 100vh;
+
+    overflow: hidden;
+
+    background: #000;
+}
+
+
+/* ==========================================================
+   MAIN EDITOR
+========================================================== */
+
+.editShorts {
+    position: relative;
+
+    width: 100%;
+    height: 100dvh;
+    min-height: 600px;
+
+    overflow: hidden;
+
+    background: #000;
+}
+
+
+/* ==========================================================
+   EDITOR STAGE
+========================================================== */
+
+.editorStage {
+    position: absolute;
+    inset: 0;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    overflow: hidden;
+
+    background:
+        radial-gradient(
+            circle at center,
+            #1a1b20 0%,
+            #090a0d 55%,
+            #000 100%
+        );
+}
+
+
+/* ==========================================================
+   VIDEO
+========================================================== */
+
+#shortPreview,
+.editorMedia,
+.previewMedia {
+    position: absolute;
+
+    width: 100%;
+    height: 100%;
+
+    display: block;
+
+    object-fit: contain;
+
+    background: #000;
+
+    transform-origin: center center;
+
+    transition:
+        transform .28s cubic-bezier(.2,.8,.2,1),
+        filter .2s ease;
+}
+
+
+/* ==========================================================
+   STAGE VIGNETTE
+========================================================== */
+
+.editorStage::after {
+    content: "";
+
+    position: absolute;
+    inset: 0;
+
+    z-index: 5;
+
+    pointer-events: none;
+
+    background:
+        linear-gradient(
+            to bottom,
+            rgba(0,0,0,.62) 0%,
+            rgba(0,0,0,0) 23%,
+            rgba(0,0,0,0) 62%,
+            rgba(0,0,0,.82) 100%
+        );
+}
+
+
+/* ==========================================================
+   MEDIA LOADING
+========================================================== */
+
+.mediaLoading {
+    position: absolute;
+    inset: 0;
+
+    z-index: 20;
+
+    display: flex;
+    flex-direction: column;
+
+    align-items: center;
+    justify-content: center;
+
+    gap: 14px;
+
+    background:
+        radial-gradient(
+            circle at center,
+            #15161b,
+            #050507 65%,
+            #000
+        );
+
+    transition:
+        opacity .25s ease,
+        visibility .25s ease;
+}
+
+.mediaLoading span {
+    color: rgba(255,255,255,.58);
+
+    font-size: 12px;
+    font-weight: 600;
+
+    letter-spacing: .02em;
+}
+
+.loadingSpinner,
+.processingSpinner {
+    width: 38px;
+    height: 38px;
+
+    border-radius: 50%;
+
+    border:
+        3px solid rgba(255,255,255,.13);
+
+    border-top-color: #fff;
+
+    animation:
+        vieworaSpin .75s linear infinite;
+}
+
+@keyframes vieworaSpin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+
+/* ==========================================================
+   NO MEDIA
+========================================================== */
+
+.noMedia {
+    position: absolute;
+    inset: 0;
+
+    z-index: 15;
+
+    display: flex;
+    flex-direction: column;
+
+    align-items: center;
+    justify-content: center;
+
+    padding: 30px;
+
+    text-align: center;
+
+    background:
+        radial-gradient(
+            circle at center,
+            #17181d,
+            #050507 68%
+        );
+}
+
+.noMediaIcon {
+    width: 76px;
+    height: 76px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    margin-bottom: 18px;
+
+    border-radius: 25px;
+
+    background: rgba(255,255,255,.07);
+
+    border:
+        1px solid rgba(255,255,255,.10);
+
+    box-shadow:
+        0 18px 50px rgba(0,0,0,.4);
+}
+
+.noMediaIcon i {
+    font-size: 27px;
+
+    color: rgba(255,255,255,.85);
+}
+
+.noMedia h2 {
+    margin: 0 0 8px;
+
+    font-size: 21px;
+    font-weight: 800;
+}
+
+.noMedia p {
+    max-width: 300px;
+
+    margin: 0;
+
+    color: var(--muted);
+
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+
+/* ==========================================================
+   TOP BAR
+========================================================== */
+
+.editorTop {
+    position: absolute;
+
+    top: 0;
+    left: 0;
+    right: 0;
+
+    z-index: 40;
+
+    display: grid;
+
+    grid-template-columns: 1fr auto 1fr;
+
+    align-items: center;
+
+    padding:
+        calc(10px + var(--safe-top))
+        14px
+        18px;
+
+    background:
+        linear-gradient(
+            to bottom,
+            rgba(0,0,0,.78),
+            rgba(0,0,0,.25),
+            transparent
+        );
+
+    pointer-events: none;
+}
+
+.editorTop > * {
+    pointer-events: auto;
+}
+
+.topLeft {
+    display: flex;
+    justify-content: flex-start;
+}
+
+.topRight {
+    display: flex;
+    justify-content: flex-end;
+}
+
+
+/* ==========================================================
+   TITLE
+========================================================== */
+
+.editorTitle {
+    display: flex;
+    flex-direction: column;
+
+    align-items: center;
+    justify-content: center;
+
+    min-width: 130px;
+
+    text-align: center;
+}
+
+.editorTitle strong {
+    font-size: 18px;
+    line-height: 1.15;
+
+    font-weight: 800;
+
+    letter-spacing: -.02em;
+}
+
+.editorTitle span {
+    margin-top: 4px;
+
+    color: rgba(255,255,255,.48);
+
+    font-size: 9px;
+    font-weight: 800;
+
+    letter-spacing: .16em;
+}
+
+
+/* ==========================================================
+   ICON BUTTON
+========================================================== */
+
+.iconButton {
+    width: 46px;
+    height: 46px;
+
+    display: inline-flex;
+
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 50%;
+
+    background:
+        rgba(255,255,255,.09);
+
+    border:
+        1px solid rgba(255,255,255,.12);
+
+    backdrop-filter: var(--blur);
+    -webkit-backdrop-filter: var(--blur);
+
+    box-shadow:
+        0 8px 25px rgba(0,0,0,.25);
+
+    transition:
+        transform .18s ease,
+        background .18s ease;
+}
+
+.iconButton i {
+    font-size: 17px;
+}
+
+.iconButton:active {
+    transform: scale(.90);
+
+    background:
+        rgba(255,255,255,.17);
+}
+
+
+/* ==========================================================
+   SHORTS BADGE
+========================================================== */
+
+.shortsBadge {
+    min-height: 44px;
+
+    display: inline-flex;
+
+    align-items: center;
+    justify-content: center;
+
+    gap: 8px;
+
+    padding: 0 15px;
+
+    border-radius: 999px;
+
+    background:
+        rgba(255,255,255,.09);
+
+    border:
+        1px solid rgba(255,255,255,.12);
+
+    backdrop-filter: var(--blur);
+    -webkit-backdrop-filter: var(--blur);
+
+    box-shadow:
+        0 8px 28px rgba(0,0,0,.25);
+
+    font-size: 11px;
+    font-weight: 800;
+
+    letter-spacing: .06em;
+}
+
+.shortsBadge i {
+    font-size: 12px;
+}
+
+
+/* ==========================================================
+   RIGHT SIDE EDIT TOOLS
+========================================================== */
+
+.editorControls {
+    position: absolute;
+
+    right: 12px;
+    bottom: 235px;
+
+    z-index: 35;
+
+    display: flex;
+    flex-direction: column;
+
+    align-items: center;
+
+    gap: 9px;
+}
+
+.editTool {
+    width: 52px;
+    min-height: 52px;
+
+    display: flex;
+    flex-direction: column;
+
+    align-items: center;
+    justify-content: center;
+
+    gap: 4px;
+
+    padding: 5px 3px;
+
+    border-radius: 17px;
+
+    background:
+        rgba(12,13,18,.67);
+
+    border:
+        1px solid rgba(255,255,255,.10);
+
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+
+    box-shadow:
+        0 8px 30px rgba(0,0,0,.28);
+
+    transition:
+        transform .18s ease,
+        background .18s ease;
+}
+
+.editTool i {
+    font-size: 15px;
+}
+
+.editTool span {
+    font-size: 8px;
+
+    color: rgba(255,255,255,.65);
+
+    font-weight: 700;
+}
+
+.editTool:active {
+    transform: scale(.91);
+
+    background:
+        rgba(255,255,255,.15);
+}
+
+
+/* ==========================================================
+   TEXT OVERLAY
+========================================================== */
+
+.textOverlay {
+    position: absolute;
+
+    top: 43%;
+    left: 50%;
+
+    z-index: 25;
+
+    max-width: 82%;
+
+    transform:
+        translate(-50%,-50%);
+
+    padding: 9px 17px;
+
+    color: #fff;
+
+    font-size:
+        clamp(21px, 5vw, 38px);
+
+    line-height: 1.15;
+
+    font-weight: 800;
+
+    text-align: center;
+
+    word-break: break-word;
+
+    text-shadow:
+        0 3px 14px rgba(0,0,0,.75);
+
+    pointer-events: none;
+
+    user-select: none;
+}
+
+.textOverlay[data-style="clean"] {
+    background: transparent;
+}
+
+.textOverlay[data-style="bold"] {
+    padding: 12px 18px;
+
+    border-radius: 13px;
+
+    background:
+        rgba(0,0,0,.68);
+}
+
+.textOverlay[data-style="outline"] {
+    color: transparent;
+
+    -webkit-text-stroke:
+        1.5px #fff;
+
+    text-shadow: none;
+}
+
+.textOverlay[data-style="minimal"] {
+    font-size:
+        clamp(17px, 4vw, 28px);
+
+    font-weight: 500;
+}
+
+
+/* ==========================================================
+   TIMELINE
+========================================================== */
+
+.timelineArea {
+    position: absolute;
+
+    left: 14px;
+    right: 14px;
+
+    bottom: 183px;
+
+    z-index: 35;
+}
+
+.timelineHeader {
+    display: flex;
+
+    align-items: center;
+    justify-content: space-between;
+
+    margin-bottom: 8px;
+
+    padding: 0 2px;
+}
+
+.timelineHeader span {
+    color: rgba(255,255,255,.70);
+
+    font-size: 10px;
+    font-weight: 600;
+
+    font-variant-numeric: tabular-nums;
+}
+
+.timeline {
+    position: relative;
+
+    width: 100%;
+    height: 55px;
+
+    overflow: hidden;
+
+    border-radius: 12px;
+
+    background:
+        rgba(255,255,255,.07);
+
+    border:
+        1px solid rgba(255,255,255,.13);
+
+    box-shadow:
+        0 10px 35px rgba(0,0,0,.35);
+}
+
+.timelineTrack {
+    position: absolute;
+    inset: 0;
+
+    display: flex;
+}
+
+.timelineThumb {
+    flex: 1;
+
+    min-width: 24px;
+    height: 100%;
+
+    object-fit: cover;
+
+    opacity: .68;
+
+    border-right:
+        1px solid rgba(0,0,0,.35);
+}
+
+.timelinePlayhead {
+    position: absolute;
+
+    top: -2px;
+    bottom: -2px;
+
+    left: 0;
+
+    width: 2px;
+
+    background: #fff;
+
+    box-shadow:
+        0 0 12px rgba(255,255,255,.85);
+
+    pointer-events: none;
+}
+
+.timelinePlayhead::before {
+    content: "";
+
+    position: absolute;
+
+    top: 0;
+    left: 50%;
+
+    width: 8px;
+    height: 8px;
+
+    transform: translateX(-50%);
+
+    border-radius: 50%;
+
+    background: #fff;
+}
+
+
+/* ==========================================================
+   AUDIO STRIP
+========================================================== */
+
+.audioStrip {
+    position: absolute;
+
+    left: 14px;
+    right: 14px;
+
+    bottom: 145px;
+
+    z-index: 35;
+
+    height: 32px;
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 9px;
+
+    padding: 0 11px;
+
+    border-radius: 10px;
+
+    background:
+        rgba(15,16,21,.76);
+
+    border:
+        1px solid rgba(255,255,255,.09);
+
+    backdrop-filter:
+        blur(16px);
+
+    -webkit-backdrop-filter:
+        blur(16px);
+
+    overflow: hidden;
+}
+
+.audioStrip i {
+    flex: 0 0 auto;
+
+    font-size: 11px;
+}
+
+.audioStrip span {
+    min-width: 0;
+
+    overflow: hidden;
+
+    white-space: nowrap;
+
+    text-overflow: ellipsis;
+
+    color: rgba(255,255,255,.72);
+
+    font-size: 10px;
+    font-weight: 600;
+}
+
+
+/* ==========================================================
+   BOTTOM EDITOR
+========================================================== */
+
+.editorBottom {
+    position: absolute;
+
+    left: 0;
+    right: 0;
+    bottom: 0;
+
+    z-index: 40;
+
+    padding:
+        10px
+        14px
+        calc(12px + var(--safe-bottom));
+
+    background:
+        linear-gradient(
+            to top,
+            rgba(0,0,0,.98) 0%,
+            rgba(0,0,0,.92) 48%,
+            rgba(0,0,0,.65) 75%,
+            transparent 100%
+        );
+}
+
+
+/* ==========================================================
+   BOTTOM TOOLS
+========================================================== */
+
+.bottomTools {
+    display: grid;
+
+    grid-template-columns:
+        repeat(5, minmax(0,1fr));
+
+    gap: 7px;
+}
+
+.bottomTool {
+    min-width: 0;
+    min-height: 62px;
+
+    display: flex;
+    flex-direction: column;
+
+    align-items: center;
+    justify-content: center;
+
+    gap: 6px;
+
+    padding: 7px 3px;
+
+    border-radius: 16px;
+
+    background:
+        rgba(255,255,255,.065);
+
+    border:
+        1px solid rgba(255,255,255,.08);
+
+    backdrop-filter:
+        blur(14px);
+
+    -webkit-backdrop-filter:
+        blur(14px);
+
+    transition:
+        transform .18s ease,
+        background .18s ease,
+        border-color .18s ease;
+}
+
+.bottomTool i {
+    font-size: 17px;
+}
+
+.bottomTool span {
+    overflow: hidden;
+
+    max-width: 100%;
+
+    color: rgba(255,255,255,.65);
+
+    font-size: 9px;
+    font-weight: 700;
+
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.bottomTool.active {
+    background:
+        rgba(255,255,255,.15);
+
+    border-color:
+        rgba(255,255,255,.20);
+}
+
+.bottomTool:active {
+    transform: scale(.93);
+}
+
+
+/* ==========================================================
+   PUBLISH BAR
+========================================================== */
+
+.publishBar {
+    display: flex;
+
+    align-items: center;
+
+    gap: 9px;
+
+    margin-top: 9px;
+}
+
+.secondaryButton,
+.primaryButton {
+    min-height: 50px;
+
+    display: inline-flex;
+
+    align-items: center;
+    justify-content: center;
+
+    gap: 8px;
+
+    border-radius: 16px;
+
+    font-size: 12px;
+    font-weight: 800;
+
+    transition:
+        transform .18s ease,
+        opacity .18s ease;
+}
+
+.secondaryButton {
+    width: 52px;
+
+    flex: 0 0 52px;
+
+    background:
+        rgba(255,255,255,.08);
+
+    border:
+        1px solid rgba(255,255,255,.10);
+}
+
+.primaryButton {
+    flex: 1;
+
+    color: #050507;
+
+    background: #fff;
+
+    box-shadow:
+        0 8px 28px rgba(0,0,0,.30);
+}
+
+.secondaryButton:active,
+.primaryButton:active {
+    transform: scale(.97);
+}
+
+.primaryButton i,
+.secondaryButton i {
+    font-size: 13px;
+}
+
+
+/* ==========================================================
+   OVERLAY
+========================================================== */
+
+.overlay {
+    position: fixed;
+
+    inset: 0;
+
+    z-index: 100;
+
+    overflow: hidden;
+}
+
+.overlayBackdrop {
+    position: absolute;
+
+    inset: 0;
+
+    background:
+        rgba(0,0,0,.70);
+
+    backdrop-filter:
+        blur(7px);
+
+    -webkit-backdrop-filter:
+        blur(7px);
+}
+
+
+/* ==========================================================
+   BOTTOM SHEETS
+========================================================== */
+
+.bottomSheet,
+.editorSheet,
+.musicSheet,
+.settingsSheet {
+    position: absolute;
+
+    left: 0;
+    right: 0;
+    bottom: 0;
+
+    z-index: 2;
+
+    max-height: 88dvh;
+
+    overflow-x: hidden;
+    overflow-y: auto;
+
+    padding:
+        10px
+        16px
+        calc(20px + var(--safe-bottom));
+
+    background:
+        linear-gradient(
+            180deg,
+            #17181e 0%,
+            #0b0c11 100%
+        );
+
+    border-radius:
+        27px
+        27px
+        0
+        0;
+
+    border:
+        1px solid rgba(255,255,255,.09);
+
+    box-shadow:
+        0 -25px 80px rgba(0,0,0,.65);
+
+    animation:
+        vieworaSheetUp .24s
+        cubic-bezier(.2,.8,.2,1);
+}
+
+@keyframes vieworaSheetUp {
+    from {
+        transform: translateY(100%);
+        opacity: .5;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+
+/* ==========================================================
+   SHEET HANDLE
+========================================================== */
+
+.sheetHandle {
+    width: 42px;
+    height: 4px;
+
+    margin:
+        2px auto
+        17px;
+
+    border-radius: 999px;
+
+    background:
+        rgba(255,255,255,.20);
+}
+
+
+/* ==========================================================
+   SHEET HEADER
+========================================================== */
+
+.sheetHeader {
+    display: flex;
+
+    align-items: flex-start;
+    justify-content: space-between;
+
+    gap: 14px;
+
+    margin-bottom: 18px;
+}
+
+.sheetHeader h2 {
+    margin: 4px 0 5px;
+
+    font-size: 21px;
+    line-height: 1.2;
+
+    font-weight: 800;
+
+    letter-spacing: -.025em;
+}
+
+.sheetHeader p {
+    margin: 0;
+
+    color: var(--muted);
+
+    font-size: 11px;
+    line-height: 1.4;
+}
+
+.eyebrow {
+    display: block;
+
+    color: rgba(255,255,255,.42);
+
+    font-size: 9px;
+    font-weight: 800;
+
+    letter-spacing: .16em;
+}
+
+
+/* ==========================================================
+   CLOSE BUTTON
+========================================================== */
+
+.sheetCloseButton {
+    width: 38px;
+    height: 38px;
+
+    flex: 0 0 38px;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 50%;
+
+    background:
+        rgba(255,255,255,.08);
+
+    border:
+        1px solid rgba(255,255,255,.08);
+}
+
+.sheetCloseButton:active {
+    transform: scale(.92);
+}
+
+
+/* ==========================================================
+   FORM
+========================================================== */
+
+.fieldGroup {
+    position: relative;
+
+    margin-bottom: 15px;
+}
+
+.fieldGroup label {
+    display: block;
+
+    margin-bottom: 7px;
+
+    color: rgba(255,255,255,.72);
+
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.fieldGroup input,
+.fieldGroup textarea,
+.fieldGroup select {
+    width: 100%;
+
+    min-height: 47px;
+
+    padding:
+        12px
+        13px;
+
+    border-radius: 14px;
+
+    outline: none;
+
+    color: #fff;
+
+    background:
+        rgba(255,255,255,.055);
+
+    border:
+        1px solid rgba(255,255,255,.09);
+
+    transition:
+        border-color .18s ease,
+        background .18s ease;
+}
+
+.fieldGroup textarea {
+    min-height: 105px;
+
+    resize: vertical;
+
+    line-height: 1.45;
+}
+
+.fieldGroup input::placeholder,
+.fieldGroup textarea::placeholder {
+    color:
+        rgba(255,255,255,.28);
+}
+
+.fieldGroup input:focus,
+.fieldGroup textarea:focus,
+.fieldGroup select:focus {
+    background:
+        rgba(255,255,255,.075);
+
+    border-color:
+        rgba(255,255,255,.25);
+}
+
+.characterCount {
+    position: absolute;
+
+    right: 11px;
+    bottom: 9px;
+
+    color:
+        rgba(255,255,255,.36);
+
+    font-size: 9px;
+}
+
+
+/* ==========================================================
+   OPTION ROW
+========================================================== */
+
+.optionRow {
+    width: 100%;
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 12px;
+
+    margin-bottom: 8px;
+
+    padding: 12px;
+
+    text-align: left;
+
+    border-radius: 16px;
+
+    background:
+        rgba(255,255,255,.055);
+
+    border:
+        1px solid rgba(255,255,255,.07);
+
+    transition:
+        transform .18s ease,
+        background .18s ease;
+}
+
+.optionRow:active {
+    transform: scale(.985);
+
+    background:
+        rgba(255,255,255,.10);
+}
+
+.optionIcon {
+    width: 43px;
+    height: 43px;
+
+    flex: 0 0 43px;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 13px;
+
+    background:
+        rgba(255,255,255,.08);
+}
+
+.optionText {
+    min-width: 0;
+
+    flex: 1;
+}
+
+.optionText strong,
+.optionText small {
+    display: block;
+}
+
+.optionText strong {
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.optionText small {
+    margin-top: 3px;
+
+    color: var(--muted);
+
+    font-size: 10px;
+}
+
+.optionRow > i {
+    color:
+        rgba(255,255,255,.34);
+
+    font-size: 12px;
+}
+
+
+/* ==========================================================
+   MUSIC SEARCH
+========================================================== */
+
+.musicSearch {
+    height: 46px;
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 9px;
+
+    padding: 0 13px;
+
+    border-radius: 14px;
+
+    background:
+        rgba(255,255,255,.06);
+
+    border:
+        1px solid rgba(255,255,255,.08);
+}
+
+.musicSearch i {
+    color: var(--muted);
+
+    font-size: 13px;
+}
+
+.musicSearch input {
+    width: 100%;
+
+    height: 100%;
+
+    padding: 0;
+
+    outline: none;
+    border: 0;
+
+    background: transparent;
+
+    color: #fff;
+
+    font-size: 12px;
+}
+
+.musicSearch input::placeholder {
+    color:
+        rgba(255,255,255,.30);
+}
+
+
+/* ==========================================================
+   MUSIC LIST
+========================================================== */
+
+.musicList {
+    margin-top: 10px;
+}
+
+.musicItem {
+    width: 100%;
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 11px;
+
+    padding: 11px 4px;
+
+    text-align: left;
+
+    background: transparent;
+
+    border-bottom:
+        1px solid rgba(255,255,255,.06);
+}
+
+.musicItem:last-child {
+    border-bottom: 0;
+}
+
+.musicItem:active {
+    opacity: .7;
+}
+
+.musicItemIcon {
+    width: 42px;
+    height: 42px;
+
+    flex: 0 0 42px;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 12px;
+
+    background:
+        rgba(255,255,255,.08);
+}
+
+.musicItemText {
+    min-width: 0;
+
+    flex: 1;
+}
+
+.musicItemText strong,
+.musicItemText small {
+    display: block;
+
+    overflow: hidden;
+
+    white-space: nowrap;
+
+    text-overflow: ellipsis;
+}
+
+.musicItemText strong {
+    font-size: 12px;
+}
+
+.musicItemText small {
+    margin-top: 3px;
+
+    color: var(--muted);
+
+    font-size: 10px;
+}
+
+.musicItem > i {
+    color:
+        rgba(255,255,255,.35);
+
+    font-size: 12px;
+}
+
+
+/* ==========================================================
+   TEXT STYLES
+========================================================== */
+
+.textStyles {
+    display: grid;
+
+    grid-template-columns:
+        repeat(2, minmax(0,1fr));
+
+    gap: 9px;
+
+    margin: 12px 0;
+}
+
+.textStyle {
+    min-height: 72px;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 15px;
+
+    background:
+        rgba(255,255,255,.055);
+
+    border:
+        1px solid rgba(255,255,255,.07);
+
+    font-size: 16px;
+    font-weight: 800;
+
+    transition:
+        transform .18s ease,
+        background .18s ease,
+        border-color .18s ease;
+}
+
+.textStyle.active {
+    background:
+        rgba(255,255,255,.14);
+
+    border-color:
+        rgba(255,255,255,.26);
+}
+
+.textStyle:active {
+    transform: scale(.97);
+}
+
+
+/* ==========================================================
+   SPEED GRID
+========================================================== */
+
+.choiceGrid {
+    display: grid;
+
+    grid-template-columns:
+        repeat(4, minmax(0,1fr));
+
+    gap: 8px;
+}
+
+.speedItem {
+    min-height: 55px;
+
+    border-radius: 15px;
+
+    background:
+        rgba(255,255,255,.06);
+
+    border:
+        1px solid rgba(255,255,255,.08);
+
+    font-size: 13px;
+    font-weight: 800;
+}
+
+.speedItem.active {
+    color: #050507;
+
+    background: #fff;
+
+    border-color: #fff;
+}
+
+.speedItem:active {
+    transform: scale(.96);
+}
+
+
+/* ==========================================================
+   SHEET ACTION
+========================================================== */
+
+.sheetAction {
+    width: 100%;
+
+    min-height: 50px;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    gap: 8px;
+
+    margin-top: 10px;
+
+    border-radius: 15px;
+
+    color: #050507;
+
+    background: #fff;
+
+    font-size: 13px;
+    font-weight: 800;
+
+    box-shadow:
+        0 8px 25px rgba(0,0,0,.25);
+
+    transition:
+        transform .18s ease,
+        opacity .18s ease;
+}
+
+.sheetAction:active {
+    transform: scale(.98);
+}
+
+
+/* ==========================================================
+   SETTING ROW
+========================================================== */
+
+.settingRow {
+    display: flex;
+
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 15px;
+
+    padding: 14px 0;
+
+    border-bottom:
+        1px solid rgba(255,255,255,.07);
+}
+
+.settingInfo {
+    min-width: 0;
+}
+
+.settingInfo strong,
+.settingInfo small {
+    display: block;
+}
+
+.settingInfo strong {
+    font-size: 13px;
+}
+
+.settingInfo small {
+    margin-top: 4px;
+
+    color: var(--muted);
+
+    font-size: 10px;
+    line-height: 1.35;
+}
+
+
+/* ==========================================================
+   TOGGLE
+========================================================== */
+
+.toggle {
+    position: relative;
+
+    width: 48px;
+    height: 28px;
+
+    flex: 0 0 48px;
+}
+
+.toggle input {
+    position: absolute;
+
+    opacity: 0;
+
+    pointer-events: none;
+}
+
+.toggleSlider {
+    position: absolute;
+
+    inset: 0;
+
+    border-radius: 999px;
+
+    background:
+        #303139;
+
+    transition:
+        background .2s ease;
+}
+
+.toggleSlider::after {
+    content: "";
+
+    position: absolute;
+
+    top: 3px;
+    left: 3px;
+
+    width: 22px;
+    height: 22px;
+
+    border-radius: 50%;
+
+    background: #fff;
+
+    transition:
+        transform .2s ease,
+        background .2s ease;
+}
+
+.toggle input:checked + .toggleSlider {
+    background: #fff;
+}
+
+.toggle input:checked + .toggleSlider::after {
+    transform: translateX(20px);
+
+    background: #111;
+}
+
+
+/* ==========================================================
+   PROCESSING OVERLAY
+========================================================== */
+
+.processingOverlay {
+    position: fixed;
+
+    inset: 0;
+
+    z-index: 300;
+
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+    justify-content: center;
+
+    padding: 30px;
+
+    text-align: center;
+
+    background:
+        radial-gradient(
+            circle at center,
+            rgba(255,255,255,.09),
+            rgba(0,0,0,.97) 63%
+        );
+
+    backdrop-filter:
+        blur(18px);
+
+    -webkit-backdrop-filter:
+        blur(18px);
+}
+
+.processingOrb {
+    position: relative;
+
+    width: 82px;
+    height: 82px;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 50%;
+
+    background:
+        rgba(255,255,255,.07);
+
+    border:
+        1px solid rgba(255,255,255,.12);
+
+    box-shadow:
+        0 15px 50px rgba(0,0,0,.4);
+}
+
+.processingOrb .processingSpinner {
+    position: absolute;
+
+    width: 68px;
+    height: 68px;
+}
+
+.processingOrb i {
+    font-size: 20px;
+}
+
+.processingOverlay h2 {
+    margin: 21px 0 7px;
+
+    font-size: 18px;
+    font-weight: 800;
+}
+
+.processingOverlay p {
+    max-width: 260px;
+
+    margin: 0;
+
+    color: var(--muted);
+
+    font-size: 11px;
+    line-height: 1.4;
+}
+
+.processingProgress {
+    width: 175px;
+    height: 4px;
+
+    overflow: hidden;
+
+    margin-top: 21px;
+
+    border-radius: 999px;
+
+    background:
+        rgba(255,255,255,.10);
+}
+
+.processingProgress span {
+    display: block;
+
+    width: 45%;
+    height: 100%;
+
+    border-radius: inherit;
+
+    background: #fff;
+
+    animation:
+        vieworaProgress 1.5s
+        ease-in-out infinite;
+}
+
+@keyframes vieworaProgress {
+
+    0% {
+        transform: translateX(-130%);
+    }
+
+    100% {
+        transform: translateX(360%);
+    }
+}
+
+
+/* ==========================================================
+   TOAST
+========================================================== */
+
+.toast {
+    position: fixed;
+
+    left: 14px;
+    right: 14px;
+
+    bottom:
+        calc(18px + var(--safe-bottom));
+
+    z-index: 500;
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 11px;
+
+    padding: 12px 13px;
+
+    border-radius: 17px;
+
+    background:
+        rgba(23,24,30,.95);
+
+    border:
+        1px solid rgba(255,255,255,.11);
+
+    box-shadow:
+        var(--shadow);
+
+    backdrop-filter:
+        blur(22px);
+
+    -webkit-backdrop-filter:
+        blur(22px);
+
+    animation:
+        vieworaToast .25s
+        cubic-bezier(.2,.8,.2,1);
+}
+
+.toastIcon {
+    width: 36px;
+    height: 36px;
+
+    flex: 0 0 36px;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 11px;
+
+    background:
+        rgba(255,255,255,.08);
+}
+
+.toastIcon i {
+    font-size: 14px;
+}
+
+.toast strong {
+    display: block;
+
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.toast p {
+    margin: 3px 0 0;
+
+    color: var(--muted);
+
+    font-size: 10px;
+}
+
+@keyframes vieworaToast {
+    from {
+        opacity: 0;
+        transform: translateY(18px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+
+/* ==========================================================
+   SCROLLBAR
+========================================================== */
+
+.bottomSheet::-webkit-scrollbar,
+.editorSheet::-webkit-scrollbar,
+.musicSheet::-webkit-scrollbar,
+.settingsSheet::-webkit-scrollbar {
+    width: 4px;
+}
+
+.bottomSheet::-webkit-scrollbar-thumb,
+.editorSheet::-webkit-scrollbar-thumb,
+.musicSheet::-webkit-scrollbar-thumb,
+.settingsSheet::-webkit-scrollbar-thumb {
+    background:
+        rgba(255,255,255,.16);
+
+    border-radius: 999px;
+}
+
+* {
+    scrollbar-width: thin;
+
+    scrollbar-color:
+        rgba(255,255,255,.16)
+        transparent;
+}
+
+
+/* ==========================================================
+   SMALL PHONES
+========================================================== */
+
+@media (max-width: 380px) {
+
+    .editorTitle strong {
+        font-size: 16px;
+    }
+
+    .editorTitle span {
+        font-size: 8px;
+    }
+
+    .iconButton {
+        width: 43px;
+        height: 43px;
+    }
+
+    .shortsBadge {
+        min-height: 41px;
+
+        padding: 0 12px;
+
+        font-size: 10px;
+    }
+
+    .editorControls {
+        right: 8px;
+        bottom: 220px;
+
+        gap: 7px;
+    }
+
+    .editTool {
+        width: 45px;
+        min-height: 45px;
+
+        border-radius: 15px;
+    }
+
+    .editTool i {
+        font-size: 14px;
+    }
+
+    .editTool span {
+        font-size: 7px;
+    }
+
+    .timelineArea {
+        left: 10px;
+        right: 10px;
+        bottom: 178px;
+    }
+
+    .audioStrip {
+        left: 10px;
+        right: 10px;
+        bottom: 140px;
+    }
+
+    .editorBottom {
+        padding-left: 10px;
+        padding-right: 10px;
+    }
+
+    .bottomTools {
+        gap: 4px;
+    }
+
+    .bottomTool {
+        min-height: 57px;
+
+        border-radius: 14px;
+    }
+
+    .bottomTool i {
+        font-size: 15px;
+    }
+
+    .bottomTool span {
+        font-size: 8px;
+    }
+
+    .publishBar {
+        gap: 7px;
+    }
+
+    .secondaryButton {
+        width: 48px;
+        flex-basis: 48px;
+    }
+}
+
+
+/* ==========================================================
+   LANDSCAPE
+========================================================== */
+
+@media (orientation: landscape) and (max-height: 600px) {
+
+    .editorControls {
+        bottom: 110px;
+    }
+
+    .timelineArea {
+        bottom: 78px;
+        left: 120px;
+        right: 120px;
+    }
+
+    .audioStrip {
+        display: none;
+    }
+
+    .editorBottom {
+        padding:
+            6px
+            12px
+            calc(6px + var(--safe-bottom));
+
+        background:
+            linear-gradient(
+                to top,
+                rgba(0,0,0,.95),
+                transparent
+            );
+    }
+
+    .bottomTools {
+        display: none;
+    }
+
+    .publishBar {
+        width: 320px;
+        margin-left: auto;
+    }
+}
+
+
+/* ==========================================================
+   TABLET / DESKTOP
+========================================================== */
+
+@media (min-width: 700px) {
+
+    .editShorts {
+        width: 520px;
+
+        margin: 0 auto;
+
+        border-left:
+            1px solid rgba(255,255,255,.06);
+
+        border-right:
+            1px solid rgba(255,255,255,.06);
+
+        box-shadow:
+            0 0 100px rgba(0,0,0,.55);
+    }
+
+    .bottomSheet,
+    .editorSheet,
+    .musicSheet,
+    .settingsSheet {
+        left: 50%;
+        right: auto;
+
+        width: 520px;
+
+        transform:
+            translateX(-50%);
+    }
+
+    .toast {
+        left: 50%;
+        right: auto;
+
+        width: 390px;
+
+        transform:
+            translateX(-50%);
+    }
+}
+
+
+/* ==========================================================
+   REDUCED MOTION
+========================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+
+    *,
+    *::before,
+    *::after {
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        scroll-behavior: auto !important;
+        transition-duration: .01ms !important;
+    }
+}

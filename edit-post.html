@@ -1,0 +1,1258 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    >
+
+    <meta name="theme-color" content="#050507">
+
+    <title>Viewora • Edit Post</title>
+
+    <link rel="icon" href="assets/logo.png">
+
+    <!-- FONT -->
+    <link
+        rel="preconnect"
+        href="https://fonts.googleapis.com"
+    >
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet"
+    >
+
+    <!-- ICONS -->
+    <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
+    >
+
+    <!-- CSS -->
+    <link
+        rel="stylesheet"
+        href="edit-post.css"
+    >
+
+</head>
+
+
+<body>
+
+
+<!-- =====================================================
+     APP
+====================================================== -->
+
+<div id="app">
+
+
+    <!-- =================================================
+         TOP BAR
+    ================================================== -->
+
+    <header class="editorTopBar">
+
+        <button
+            type="button"
+            id="backBtn"
+            class="topButton"
+            aria-label="Back"
+        >
+            <i class="fa-solid fa-arrow-left"></i>
+        </button>
+
+
+        <div class="topBrand">
+
+            <img
+                src="assets/logo.png"
+                alt="Viewora"
+            >
+
+            <div>
+
+                <strong>VIEWORA</strong>
+
+                <span>EDIT POST</span>
+
+            </div>
+
+        </div>
+
+
+        <button
+            type="button"
+            id="nextBtn"
+            class="nextButton"
+        >
+            Next
+            <i class="fa-solid fa-arrow-right"></i>
+        </button>
+
+    </header>
+
+
+
+    <!-- =================================================
+         MAIN EDITOR
+    ================================================== -->
+
+    <main class="editor">
+
+
+        <!-- =============================================
+             MEDIA PREVIEW
+        ============================================== -->
+
+        <section class="mediaSection">
+
+            <div
+                id="mediaCanvas"
+                class="mediaCanvas"
+            >
+
+                <div
+                    id="mediaLoading"
+                    class="mediaLoading"
+                >
+
+                    <div class="loadingSpinner"></div>
+
+                    <span>
+                        Loading your photo...
+                    </span>
+
+                </div>
+
+
+                <img
+                    id="postPreview"
+                    class="postPreview"
+                    alt="Post preview"
+                >
+
+
+                <!-- TEXT OVERLAY -->
+
+                <div
+                    id="textOverlay"
+                    class="textOverlay hidden"
+                >
+                    Your text
+                </div>
+
+
+                <!-- MEDIA CONTROLS -->
+
+                <div class="mediaControls">
+
+                    <button
+                        type="button"
+                        id="rotateBtn"
+                        class="mediaControl"
+                    >
+                        <i class="fa-solid fa-rotate"></i>
+                    </button>
+
+                    <button
+                        type="button"
+                        id="fitBtn"
+                        class="mediaControl"
+                    >
+                        <i class="fa-solid fa-expand"></i>
+                    </button>
+
+                    <button
+                        type="button"
+                        id="adjustBtn"
+                        class="mediaControl"
+                    >
+                        <i class="fa-solid fa-sliders"></i>
+                    </button>
+
+                </div>
+
+
+                <!-- PHOTO COUNT -->
+
+                <div
+                    id="photoCounter"
+                    class="photoCounter hidden"
+                >
+                    <i class="fa-regular fa-images"></i>
+                    <span>1 / 1</span>
+                </div>
+
+            </div>
+
+        </section>
+
+
+
+        <!-- =================================================
+             QUICK TOOLS
+        ================================================== -->
+
+        <section class="quickTools">
+
+
+            <!-- MUSIC -->
+
+            <button
+                type="button"
+                class="quickTool"
+                id="musicBtn"
+            >
+
+                <span class="toolIcon musicToolIcon">
+                    <i class="fa-solid fa-music"></i>
+                </span>
+
+                <span class="toolText">
+
+                    <strong>Music</strong>
+
+                    <small>
+                        Add a sound
+                    </small>
+
+                </span>
+
+                <i class="fa-solid fa-chevron-right"></i>
+
+            </button>
+
+
+
+            <!-- TEXT -->
+
+            <button
+                type="button"
+                class="quickTool"
+                id="textBtn"
+            >
+
+                <span class="toolIcon">
+                    <i class="fa-solid fa-font"></i>
+                </span>
+
+                <span class="toolText">
+
+                    <strong>Text</strong>
+
+                    <small>
+                        Add text
+                    </small>
+
+                </span>
+
+                <i class="fa-solid fa-chevron-right"></i>
+
+            </button>
+
+
+
+            <!-- FILTER -->
+
+            <button
+                type="button"
+                class="quickTool"
+                id="filterBtn"
+            >
+
+                <span class="toolIcon">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                </span>
+
+                <span class="toolText">
+
+                    <strong>Filter</strong>
+
+                    <small>
+                        Enhance your photo
+                    </small>
+
+                </span>
+
+                <i class="fa-solid fa-chevron-right"></i>
+
+            </button>
+
+
+        </section>
+
+
+
+        <!-- =================================================
+             POST DETAILS
+        ================================================== -->
+
+        <section class="detailsSection">
+
+
+            <div class="sectionTitle">
+
+                <div>
+
+                    <span class="eyebrow">
+                        YOUR POST
+                    </span>
+
+                    <h2>
+                        Add details
+                    </h2>
+
+                </div>
+
+            </div>
+
+
+
+            <!-- CAPTION -->
+
+            <div class="captionBox">
+
+                <div class="captionHeader">
+
+                    <div class="userMini">
+
+                        <img
+                            id="userAvatar"
+                            src="assets/default-avatar.png"
+                            alt=""
+                        >
+
+                        <strong id="userName">
+                            You
+                        </strong>
+
+                    </div>
+
+                    <span id="captionCount">
+                        0 / 2200
+                    </span>
+
+                </div>
+
+
+                <textarea
+                    id="captionInput"
+                    maxlength="2200"
+                    placeholder="Write a caption..."
+                    spellcheck="true"
+                ></textarea>
+
+
+                <div class="captionTools">
+
+                    <button
+                        type="button"
+                        id="emojiBtn"
+                    >
+                        <i class="fa-regular fa-face-smile"></i>
+                    </button>
+
+                    <button
+                        type="button"
+                        id="hashtagBtn"
+                    >
+                        #
+                    </button>
+
+                    <button
+                        type="button"
+                        id="mentionBtn"
+                    >
+                        @
+                    </button>
+
+                </div>
+
+            </div>
+
+
+
+            <!-- LOCATION -->
+
+            <button
+                type="button"
+                class="detailRow"
+                id="locationBtn"
+            >
+
+                <span class="detailIcon">
+                    <i class="fa-solid fa-location-dot"></i>
+                </span>
+
+                <span class="detailContent">
+
+                    <strong>
+                        Add location
+                    </strong>
+
+                    <small>
+                        Help people discover your post
+                    </small>
+
+                </span>
+
+                <i class="fa-solid fa-chevron-right"></i>
+
+            </button>
+
+
+
+            <!-- COLLABORATION -->
+
+            <button
+                type="button"
+                class="detailRow"
+                id="collabBtn"
+            >
+
+                <span class="detailIcon collaborationIcon">
+                    <i class="fa-solid fa-user-group"></i>
+                </span>
+
+                <span class="detailContent">
+
+                    <strong>
+                        Invite collaborator
+                    </strong>
+
+                    <small id="collabValue">
+                        Collaborate with another creator
+                    </small>
+
+                </span>
+
+                <i class="fa-solid fa-chevron-right"></i>
+
+            </button>
+
+
+
+            <!-- TAG PEOPLE -->
+
+            <button
+                type="button"
+                class="detailRow"
+                id="tagPeopleBtn"
+            >
+
+                <span class="detailIcon">
+                    <i class="fa-solid fa-user-plus"></i>
+                </span>
+
+                <span class="detailContent">
+
+                    <strong>
+                        Tag people
+                    </strong>
+
+                    <small id="tagValue">
+                        Add people to your post
+                    </small>
+
+                </span>
+
+                <i class="fa-solid fa-chevron-right"></i>
+
+            </button>
+
+
+
+            <!-- AUDIENCE -->
+
+            <button
+                type="button"
+                class="detailRow"
+                id="audienceBtn"
+            >
+
+                <span class="detailIcon">
+                    <i class="fa-solid fa-earth-americas"></i>
+                </span>
+
+                <span class="detailContent">
+
+                    <strong>
+                        Audience
+                    </strong>
+
+                    <small id="audienceValue">
+                        Everyone
+                    </small>
+
+                </span>
+
+                <i class="fa-solid fa-chevron-right"></i>
+
+            </button>
+
+
+
+            <!-- COMMENTS -->
+
+            <div class="settingRow">
+
+                <div class="settingInfo">
+
+                    <span class="detailIcon">
+                        <i class="fa-regular fa-comment"></i>
+                    </span>
+
+                    <div>
+
+                        <strong>
+                            Allow comments
+                        </strong>
+
+                        <small>
+                            Let people comment on your post
+                        </small>
+
+                    </div>
+
+                </div>
+
+
+                <label class="switch">
+
+                    <input
+                        type="checkbox"
+                        id="commentsToggle"
+                        checked
+                    >
+
+                    <span class="slider"></span>
+
+                </label>
+
+            </div>
+
+
+
+            <!-- LIKE COUNT -->
+
+            <div class="settingRow">
+
+                <div class="settingInfo">
+
+                    <span class="detailIcon">
+                        <i class="fa-regular fa-heart"></i>
+                    </span>
+
+                    <div>
+
+                        <strong>
+                            Hide like count
+                        </strong>
+
+                        <small>
+                            Hide the number of likes from others
+                        </small>
+
+                    </div>
+
+                </div>
+
+
+                <label class="switch">
+
+                    <input
+                        type="checkbox"
+                        id="hideLikesToggle"
+                    >
+
+                    <span class="slider"></span>
+
+                </label>
+
+            </div>
+
+
+
+            <!-- SAVE -->
+
+            <div class="settingRow">
+
+                <div class="settingInfo">
+
+                    <span class="detailIcon">
+                        <i class="fa-regular fa-bookmark"></i>
+                    </span>
+
+                    <div>
+
+                        <strong>
+                            Allow saves
+                        </strong>
+
+                        <small>
+                            Let people save your post
+                        </small>
+
+                    </div>
+
+                </div>
+
+
+                <label class="switch">
+
+                    <input
+                        type="checkbox"
+                        id="allowSavesToggle"
+                        checked
+                    >
+
+                    <span class="slider"></span>
+
+                </label>
+
+            </div>
+
+
+        </section>
+
+
+    </main>
+
+
+
+    <!-- =================================================
+         BOTTOM PUBLISH BAR
+    ================================================== -->
+
+    <footer class="publishBar">
+
+        <div class="publishInfo">
+
+            <div class="publishIcon">
+                <i class="fa-solid fa-sparkles"></i>
+            </div>
+
+            <div>
+
+                <strong>
+                    Ready to share?
+                </strong>
+
+                <span>
+                    Your post will appear on Viewora
+                </span>
+
+            </div>
+
+        </div>
+
+
+        <button
+            type="button"
+            id="publishBtn"
+            class="publishButton"
+        >
+
+            <span>
+                Share Post
+            </span>
+
+            <i class="fa-solid fa-arrow-up"></i>
+
+        </button>
+
+    </footer>
+
+
+
+</div>
+
+
+
+<!-- =====================================================
+     MUSIC SHEET
+====================================================== -->
+
+<div
+    id="musicSheet"
+    class="overlay hidden"
+>
+
+    <div class="overlayBackdrop"></div>
+
+    <section class="bottomSheet">
+
+        <div class="sheetHandle"></div>
+
+        <header class="sheetHeader">
+
+            <div>
+
+                <span class="eyebrow">
+                    VIEWORA MUSIC
+                </span>
+
+                <h2>
+                    Add music
+                </h2>
+
+            </div>
+
+            <button
+                type="button"
+                class="sheetClose"
+                data-close="musicSheet"
+            >
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+        </header>
+
+
+        <div class="searchBox">
+
+            <i class="fa-solid fa-magnifying-glass"></i>
+
+            <input
+                type="search"
+                id="musicSearch"
+                placeholder="Search music & sounds..."
+            >
+
+        </div>
+
+
+        <div class="musicCategories">
+
+            <button class="musicCategory active">
+                <i class="fa-solid fa-fire"></i>
+                Trending
+            </button>
+
+            <button class="musicCategory">
+                <i class="fa-solid fa-star"></i>
+                Popular
+            </button>
+
+            <button class="musicCategory">
+                <i class="fa-solid fa-sparkles"></i>
+                New
+            </button>
+
+            <button class="musicCategory">
+                <i class="fa-regular fa-bookmark"></i>
+                Saved
+            </button>
+
+        </div>
+
+
+        <div
+            id="musicList"
+            class="musicList"
+        >
+
+            <!-- JS MUSIC -->
+
+        </div>
+
+    </section>
+
+</div>
+
+
+
+<!-- =====================================================
+     TEXT SHEET
+====================================================== -->
+
+<div
+    id="textSheet"
+    class="overlay hidden"
+>
+
+    <div class="overlayBackdrop"></div>
+
+    <section class="bottomSheet textSheet">
+
+        <div class="sheetHandle"></div>
+
+        <header class="sheetHeader">
+
+            <div>
+
+                <span class="eyebrow">
+                    EDITOR
+                </span>
+
+                <h2>
+                    Add text
+                </h2>
+
+            </div>
+
+            <button
+                type="button"
+                class="sheetClose"
+                data-close="textSheet"
+            >
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+        </header>
+
+
+        <textarea
+            id="overlayTextInput"
+            placeholder="Write something..."
+            maxlength="120"
+        ></textarea>
+
+
+        <div class="textStyles">
+
+            <button
+                class="textStyle active"
+                data-style="clean"
+            >
+                Clean
+            </button>
+
+            <button
+                class="textStyle"
+                data-style="bold"
+            >
+                Bold
+            </button>
+
+            <button
+                class="textStyle"
+                data-style="classic"
+            >
+                Classic
+            </button>
+
+            <button
+                class="textStyle"
+                data-style="modern"
+            >
+                Modern
+            </button>
+
+        </div>
+
+
+        <button
+            type="button"
+            id="applyTextBtn"
+            class="sheetPrimaryButton"
+        >
+            Add to post
+            <i class="fa-solid fa-check"></i>
+        </button>
+
+    </section>
+
+</div>
+
+
+
+<!-- =====================================================
+     COLLABORATION SHEET
+====================================================== -->
+
+<div
+    id="collabSheet"
+    class="overlay hidden"
+>
+
+    <div class="overlayBackdrop"></div>
+
+    <section class="bottomSheet">
+
+        <div class="sheetHandle"></div>
+
+        <header class="sheetHeader">
+
+            <div>
+
+                <span class="eyebrow">
+                    COLLABORATION
+                </span>
+
+                <h2>
+                    Invite a creator
+                </h2>
+
+            </div>
+
+            <button
+                type="button"
+                class="sheetClose"
+                data-close="collabSheet"
+            >
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+        </header>
+
+
+        <div class="searchBox">
+
+            <i class="fa-solid fa-magnifying-glass"></i>
+
+            <input
+                type="search"
+                id="collabSearch"
+                placeholder="Search creators..."
+            >
+
+        </div>
+
+
+        <div
+            id="creatorList"
+            class="creatorList"
+        >
+
+            <div class="emptyState">
+
+                <i class="fa-solid fa-user-group"></i>
+
+                <strong>
+                    Find a creator
+                </strong>
+
+                <span>
+                    Search for someone to collaborate with
+                </span>
+
+            </div>
+
+        </div>
+
+    </section>
+
+</div>
+
+
+
+<!-- =====================================================
+     LOCATION SHEET
+====================================================== -->
+
+<div
+    id="locationSheet"
+    class="overlay hidden"
+>
+
+    <div class="overlayBackdrop"></div>
+
+    <section class="bottomSheet">
+
+        <div class="sheetHandle"></div>
+
+        <header class="sheetHeader">
+
+            <div>
+
+                <span class="eyebrow">
+                    LOCATION
+                </span>
+
+                <h2>
+                    Add location
+                </h2>
+
+            </div>
+
+            <button
+                type="button"
+                class="sheetClose"
+                data-close="locationSheet"
+            >
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+        </header>
+
+
+        <div class="searchBox">
+
+            <i class="fa-solid fa-location-dot"></i>
+
+            <input
+                type="search"
+                id="locationSearch"
+                placeholder="Search a place..."
+            >
+
+        </div>
+
+
+        <div class="locationOptions">
+
+            <button class="locationOption">
+
+                <span>
+                    <i class="fa-solid fa-location-crosshairs"></i>
+                </span>
+
+                <div>
+
+                    <strong>
+                        Use current location
+                    </strong>
+
+                    <small>
+                        Find places around you
+                    </small>
+
+                </div>
+
+            </button>
+
+
+            <button class="locationOption">
+
+                <span>
+                    <i class="fa-solid fa-location-dot"></i>
+                </span>
+
+                <div>
+
+                    <strong>
+                        Mithapur
+                    </strong>
+
+                    <small>
+                        Bihar, India
+                    </small>
+
+                </div>
+
+            </button>
+
+        </div>
+
+    </section>
+
+</div>
+
+
+
+<!-- =====================================================
+     AUDIENCE SHEET
+====================================================== -->
+
+<div
+    id="audienceSheet"
+    class="overlay hidden"
+>
+
+    <div class="overlayBackdrop"></div>
+
+    <section class="smallSheet">
+
+        <div class="sheetHandle"></div>
+
+        <header class="sheetHeader">
+
+            <div>
+
+                <span class="eyebrow">
+                    PRIVACY
+                </span>
+
+                <h2>
+                    Who can see this?
+                </h2>
+
+            </div>
+
+            <button
+                type="button"
+                class="sheetClose"
+                data-close="audienceSheet"
+            >
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+        </header>
+
+
+        <div class="audienceList">
+
+            <button
+                class="audienceOption active"
+                data-audience="Everyone"
+            >
+
+                <span>
+                    <i class="fa-solid fa-earth-americas"></i>
+                </span>
+
+                <div>
+
+                    <strong>
+                        Everyone
+                    </strong>
+
+                    <small>
+                        Anyone can see this post
+                    </small>
+
+                </div>
+
+                <i class="fa-solid fa-check"></i>
+
+            </button>
+
+
+            <button
+                class="audienceOption"
+                data-audience="Followers"
+            >
+
+                <span>
+                    <i class="fa-solid fa-user-group"></i>
+                </span>
+
+                <div>
+
+                    <strong>
+                        Followers
+                    </strong>
+
+                    <small>
+                        Only your followers can see it
+                    </small>
+
+                </div>
+
+                <i class="fa-solid fa-check"></i>
+
+            </button>
+
+
+            <button
+                class="audienceOption"
+                data-audience="Only me"
+            >
+
+                <span>
+                    <i class="fa-solid fa-lock"></i>
+                </span>
+
+                <div>
+
+                    <strong>
+                        Only me
+                    </strong>
+
+                    <small>
+                        Keep this post private
+                    </small>
+
+                </div>
+
+                <i class="fa-solid fa-check"></i>
+
+            </button>
+
+        </div>
+
+    </section>
+
+</div>
+
+
+
+<!-- =====================================================
+     PROCESSING
+====================================================== -->
+
+<div
+    id="processingOverlay"
+    class="processingOverlay hidden"
+>
+
+    <div class="processingOrb">
+
+        <div class="processingSpinner"></div>
+
+        <i class="fa-solid fa-sparkles"></i>
+
+    </div>
+
+    <h2>
+        Preparing your post
+    </h2>
+
+    <p>
+        Please wait...
+    </p>
+
+</div>
+
+
+
+<!-- =====================================================
+     TOAST
+====================================================== -->
+
+<div
+    id="toast"
+    class="toast hidden"
+>
+
+    <span class="toastIcon">
+        <i class="fa-solid fa-circle-check"></i>
+    </span>
+
+    <div>
+
+        <strong id="toastTitle">
+            Done
+        </strong>
+
+        <p id="toastText">
+            Action completed.
+        </p>
+
+    </div>
+
+</div>
+
+
+
+<!-- =====================================================
+     FIREBASE
+====================================================== -->
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
+
+<script src="firebase.js"></script>
+
+
+<!-- =====================================================
+     EDIT POST JS
+====================================================== -->
+
+<script src="edit-post.js"></script>
+
+
+</body>
+</html>

@@ -1,0 +1,1928 @@
+/* ==========================================================
+   VIEWORA — SHORT EDIT
+   PREMIUM DETAILS EDITOR
+   Matching: short-edit.html
+   Mobile First • Dark • Glass • Premium
+========================================================== */
+
+:root {
+    --bg: #050507;
+    --surface: #0b0c10;
+    --surface-2: #111219;
+    --surface-3: #171821;
+
+    --text: #ffffff;
+    --muted: #9699a6;
+    --muted-2: #696c78;
+
+    --border: rgba(255,255,255,.08);
+    --border-strong: rgba(255,255,255,.14);
+
+    --glass: rgba(15,16,22,.78);
+
+    --accent: #ffffff;
+    --danger: #ff526b;
+    --success: #35d98a;
+
+    --radius: 20px;
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+
+    --shadow:
+        0 20px 70px rgba(0,0,0,.48);
+}
+
+/* ==========================================================
+   RESET
+========================================================== */
+
+* {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+}
+
+html {
+    width: 100%;
+    min-height: 100%;
+    background: var(--bg);
+    color-scheme: dark;
+}
+
+body {
+    width: 100%;
+    min-height: 100vh;
+    margin: 0;
+    padding: 0;
+
+    background:
+        radial-gradient(
+            circle at 50% -10%,
+            rgba(255,255,255,.075),
+            transparent 32%
+        ),
+        #050507;
+
+    color: var(--text);
+
+    font-family:
+        Inter,
+        system-ui,
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        sans-serif;
+
+    overflow-x: hidden;
+}
+
+button,
+input,
+textarea,
+select {
+    font: inherit;
+}
+
+button {
+    border: 0;
+    outline: 0;
+    color: inherit;
+    cursor: pointer;
+}
+
+button:active {
+    transform: scale(.97);
+}
+
+button:disabled {
+    opacity: .55;
+    cursor: not-allowed;
+}
+
+input,
+textarea {
+    outline: none;
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* ==========================================================
+   APP
+========================================================== */
+
+#app {
+    width: 100%;
+    min-height: 100vh;
+}
+
+/* ==========================================================
+   PAGE
+========================================================== */
+
+.shortEditPage {
+    width: 100%;
+    min-height: 100vh;
+
+    background:
+        radial-gradient(
+            circle at 50% 0%,
+            rgba(255,255,255,.045),
+            transparent 30%
+        );
+}
+
+/* ==========================================================
+   TOP BAR
+========================================================== */
+
+.topBar {
+    position: sticky;
+    top: 0;
+    z-index: 80;
+
+    width: 100%;
+    min-height: 64px;
+
+    display: grid;
+    grid-template-columns: 48px 1fr auto;
+    align-items: center;
+    gap: 10px;
+
+    padding:
+        calc(8px + var(--safe-top))
+        14px
+        8px;
+
+    background:
+        linear-gradient(
+            to bottom,
+            rgba(5,5,7,.98),
+            rgba(5,5,7,.88)
+        );
+
+    border-bottom: 1px solid rgba(255,255,255,.055);
+
+    backdrop-filter: blur(22px);
+    -webkit-backdrop-filter: blur(22px);
+}
+
+.topIconButton {
+    width: 42px;
+    height: 42px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 50%;
+
+    background: rgba(255,255,255,.075);
+    border: 1px solid rgba(255,255,255,.08);
+
+    transition:
+        background .18s ease,
+        transform .18s ease;
+}
+
+.topIconButton:active {
+    background: rgba(255,255,255,.15);
+}
+
+.topIconButton i {
+    font-size: 15px;
+}
+
+.topTitle {
+    min-width: 0;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+    line-height: 1.15;
+}
+
+.topTitle strong {
+    font-size: 15px;
+    font-weight: 800;
+    letter-spacing: -.01em;
+}
+
+.topTitle span {
+    margin-top: 3px;
+
+    color: rgba(255,255,255,.38);
+
+    font-size: 8px;
+    font-weight: 800;
+
+    letter-spacing: .2em;
+}
+
+.previewButton {
+    min-height: 40px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+
+    padding: 0 12px;
+
+    border-radius: 13px;
+
+    background: rgba(255,255,255,.075);
+    border: 1px solid rgba(255,255,255,.09);
+
+    font-size: 11px;
+    font-weight: 800;
+
+    white-space: nowrap;
+}
+
+.previewButton i {
+    font-size: 12px;
+}
+
+/* ==========================================================
+   CONTENT
+========================================================== */
+
+.content {
+    width: 100%;
+    max-width: 680px;
+
+    margin: 0 auto;
+
+    padding:
+        14px
+        14px
+        calc(35px + var(--safe-bottom));
+}
+
+/* ==========================================================
+   PREVIEW CARD
+========================================================== */
+
+.previewCard {
+    position: relative;
+
+    width: 100%;
+    overflow: hidden;
+
+    border-radius: 22px;
+
+    background:
+        linear-gradient(
+            145deg,
+            #15161d,
+            #090a0e
+        );
+
+    border: 1px solid rgba(255,255,255,.08);
+
+    box-shadow: var(--shadow);
+}
+
+.previewMedia {
+    position: relative;
+
+    width: 100%;
+    height: min(62vh, 520px);
+
+    min-height: 320px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    overflow: hidden;
+
+    background:
+        radial-gradient(
+            circle,
+            #1a1b22,
+            #07080b 72%
+        );
+}
+
+.previewMedia::after {
+    content: "";
+
+    position: absolute;
+    inset: 0;
+
+    pointer-events: none;
+
+    background:
+        linear-gradient(
+            to bottom,
+            rgba(0,0,0,.12),
+            transparent 45%,
+            rgba(0,0,0,.58)
+        );
+}
+
+#shortPreview {
+    width: 100%;
+    height: 100%;
+
+    display: block;
+
+    object-fit: contain;
+
+    background: #000;
+}
+
+/* ==========================================================
+   PREVIEW FALLBACK
+========================================================== */
+
+.previewFallback {
+    position: absolute;
+    inset: 0;
+    z-index: 5;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+
+    background:
+        radial-gradient(
+            circle,
+            #181920,
+            #050507
+        );
+}
+
+.previewFallback i {
+    width: 60px;
+    height: 60px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 20px;
+
+    background: rgba(255,255,255,.07);
+
+    font-size: 22px;
+}
+
+.previewFallback span {
+    color: var(--muted);
+    font-size: 11px;
+}
+
+/* ==========================================================
+   PREVIEW PLAY
+========================================================== */
+
+.previewPlayButton {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    z-index: 15;
+
+    width: 58px;
+    height: 58px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    transform: translate(-50%, -50%);
+
+    border-radius: 50%;
+
+    background: rgba(255,255,255,.16);
+
+    border: 1px solid rgba(255,255,255,.2);
+
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+
+    box-shadow:
+        0 12px 35px rgba(0,0,0,.38);
+
+    transition:
+        opacity .2s ease,
+        transform .2s ease,
+        background .2s ease;
+}
+
+.previewPlayButton:active {
+    transform: translate(-50%, -50%) scale(.92);
+}
+
+.previewPlayButton i {
+    margin-left: 2px;
+    font-size: 18px;
+}
+
+.previewDuration {
+    position: absolute;
+    right: 10px;
+    bottom: 10px;
+    z-index: 20;
+
+    padding: 6px 9px;
+
+    border-radius: 8px;
+
+    background: rgba(0,0,0,.58);
+
+    backdrop-filter: blur(10px);
+
+    font-size: 10px;
+    font-weight: 700;
+}
+
+/* ==========================================================
+   PREVIEW INFO
+========================================================== */
+
+.previewInfo {
+    min-height: 66px;
+
+    display: flex;
+    align-items: center;
+    gap: 11px;
+
+    padding: 12px 14px;
+
+    background:
+        linear-gradient(
+            to bottom,
+            rgba(255,255,255,.025),
+            rgba(255,255,255,.01)
+        );
+}
+
+.previewInfoIcon {
+    width: 40px;
+    height: 40px;
+    flex: 0 0 auto;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 13px;
+
+    background: rgba(255,255,255,.08);
+    border: 1px solid rgba(255,255,255,.08);
+}
+
+.previewInfoIcon i {
+    font-size: 14px;
+}
+
+.previewInfo strong,
+.previewInfo span {
+    display: block;
+}
+
+.previewInfo strong {
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.previewInfo span {
+    margin-top: 3px;
+
+    color: var(--muted);
+
+    font-size: 10px;
+}
+
+/* ==========================================================
+   FORM SECTION
+========================================================== */
+
+.formSection {
+    margin-top: 24px;
+}
+
+.sectionHeading {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 10px;
+
+    margin-bottom: 10px;
+}
+
+.sectionEyebrow {
+    display: block;
+
+    color: rgba(255,255,255,.38);
+
+    font-size: 8px;
+    font-weight: 800;
+
+    letter-spacing: .19em;
+    text-transform: uppercase;
+}
+
+.sectionHeading h2 {
+    margin: 4px 0 0;
+
+    font-size: 17px;
+    line-height: 1.2;
+
+    font-weight: 800;
+    letter-spacing: -.02em;
+}
+
+.counter {
+    color: var(--muted-2);
+
+    font-size: 9px;
+    font-weight: 700;
+}
+
+/* ==========================================================
+   INPUT
+========================================================== */
+
+.inputBox {
+    position: relative;
+}
+
+.inputBox input {
+    width: 100%;
+    height: 54px;
+
+    padding:
+        0
+        43px
+        0
+        15px;
+
+    border-radius: 16px;
+
+    border: 1px solid var(--border);
+
+    background:
+        linear-gradient(
+            145deg,
+            rgba(255,255,255,.065),
+            rgba(255,255,255,.035)
+        );
+
+    color: #fff;
+
+    font-size: 13px;
+    font-weight: 500;
+
+    transition:
+        border-color .18s ease,
+        background .18s ease,
+        box-shadow .18s ease;
+}
+
+.inputBox input:focus {
+    border-color: rgba(255,255,255,.22);
+
+    background: rgba(255,255,255,.075);
+
+    box-shadow:
+        0 0 0 3px rgba(255,255,255,.035);
+}
+
+.inputBox input::placeholder {
+    color: rgba(255,255,255,.28);
+}
+
+.inputBox i {
+    position: absolute;
+    top: 50%;
+    right: 15px;
+
+    transform: translateY(-50%);
+
+    color: rgba(255,255,255,.32);
+
+    font-size: 12px;
+
+    pointer-events: none;
+}
+
+/* ==========================================================
+   TEXTAREA
+========================================================== */
+
+.textareaBox textarea {
+    width: 100%;
+    min-height: 130px;
+
+    padding: 14px 15px;
+
+    resize: vertical;
+
+    border-radius: 16px;
+
+    border: 1px solid var(--border);
+
+    background:
+        linear-gradient(
+            145deg,
+            rgba(255,255,255,.065),
+            rgba(255,255,255,.035)
+        );
+
+    color: #fff;
+
+    font-size: 13px;
+    line-height: 1.55;
+
+    transition:
+        border-color .18s ease,
+        box-shadow .18s ease;
+}
+
+.textareaBox textarea:focus {
+    border-color: rgba(255,255,255,.22);
+
+    box-shadow:
+        0 0 0 3px rgba(255,255,255,.035);
+}
+
+.textareaBox textarea::placeholder {
+    color: rgba(255,255,255,.28);
+}
+
+/* ==========================================================
+   DESCRIPTION TOOLS
+========================================================== */
+
+.descriptionTools {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+
+    margin-top: 8px;
+}
+
+.miniTool {
+    min-height: 34px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+
+    padding: 0 11px;
+
+    border-radius: 10px;
+
+    background: rgba(255,255,255,.055);
+    border: 1px solid rgba(255,255,255,.07);
+
+    color: rgba(255,255,255,.7);
+
+    font-size: 9px;
+    font-weight: 700;
+}
+
+.miniTool i {
+    font-size: 10px;
+}
+
+/* ==========================================================
+   TAGS
+========================================================== */
+
+.tagsBox {
+    min-height: 56px;
+
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 7px;
+
+    padding: 8px 12px;
+
+    border-radius: 16px;
+
+    background:
+        linear-gradient(
+            145deg,
+            rgba(255,255,255,.065),
+            rgba(255,255,255,.035)
+        );
+
+    border: 1px solid var(--border);
+}
+
+.selectedTags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+
+    padding: 7px 9px;
+
+    border-radius: 999px;
+
+    background: rgba(255,255,255,.1);
+
+    border: 1px solid rgba(255,255,255,.1);
+
+    color: rgba(255,255,255,.85);
+
+    font-size: 9px;
+    font-weight: 700;
+}
+
+.tag button {
+    width: 16px;
+    height: 16px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 50%;
+
+    background: rgba(255,255,255,.1);
+
+    font-size: 7px;
+}
+
+#tagInput {
+    flex: 1;
+
+    min-width: 120px;
+    height: 38px;
+
+    border: 0;
+    outline: 0;
+
+    background: transparent;
+
+    color: #fff;
+
+    font-size: 12px;
+}
+
+#tagInput::placeholder {
+    color: rgba(255,255,255,.28);
+}
+
+.helperText {
+    margin: 8px 2px 0;
+
+    color: var(--muted-2);
+
+    font-size: 9px;
+    line-height: 1.5;
+}
+
+/* ==========================================================
+   SETTINGS CARD
+========================================================== */
+
+.settingsCard {
+    margin-top: 18px;
+
+    overflow: hidden;
+
+    border-radius: 18px;
+
+    background:
+        linear-gradient(
+            145deg,
+            rgba(255,255,255,.055),
+            rgba(255,255,255,.028)
+        );
+
+    border: 1px solid var(--border);
+
+    box-shadow:
+        0 12px 40px rgba(0,0,0,.15);
+}
+
+/* ==========================================================
+   SETTING ITEM
+========================================================== */
+
+.settingItem {
+    width: 100%;
+    min-height: 72px;
+
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    padding: 12px 14px;
+
+    background: transparent;
+
+    text-align: left;
+}
+
+.settingItem.static {
+    cursor: default;
+}
+
+.settingIcon {
+    width: 40px;
+    height: 40px;
+    flex: 0 0 auto;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 13px;
+
+    background: rgba(255,255,255,.065);
+
+    border: 1px solid rgba(255,255,255,.06);
+}
+
+.settingIcon i {
+    font-size: 14px;
+}
+
+.settingContent {
+    min-width: 0;
+    flex: 1;
+}
+
+.settingContent strong,
+.settingContent small {
+    display: block;
+}
+
+.settingContent strong {
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.settingContent small {
+    margin-top: 4px;
+
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    color: var(--muted);
+
+    font-size: 9px;
+}
+
+.settingArrow {
+    flex: 0 0 auto;
+
+    color: rgba(255,255,255,.28);
+
+    font-size: 11px;
+}
+
+.settingDivider {
+    height: 1px;
+    margin-left: 66px;
+
+    background: rgba(255,255,255,.055);
+}
+
+/* ==========================================================
+   VISIBILITY
+========================================================== */
+
+.visibilityOptions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.visibilityOption {
+    width: 100%;
+    min-height: 67px;
+
+    display: flex;
+    align-items: center;
+    gap: 11px;
+
+    padding: 10px 12px;
+
+    border-radius: 16px;
+
+    background: rgba(255,255,255,.045);
+
+    border: 1px solid rgba(255,255,255,.065);
+
+    text-align: left;
+
+    transition:
+        background .18s ease,
+        border-color .18s ease;
+}
+
+.visibilityOption.active {
+    background: rgba(255,255,255,.085);
+    border-color: rgba(255,255,255,.18);
+}
+
+.visibilityIcon {
+    width: 39px;
+    height: 39px;
+    flex: 0 0 auto;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 12px;
+
+    background: rgba(255,255,255,.065);
+}
+
+.visibilityIcon i {
+    font-size: 13px;
+}
+
+.visibilityText {
+    min-width: 0;
+    flex: 1;
+}
+
+.visibilityText strong,
+.visibilityText small {
+    display: block;
+}
+
+.visibilityText strong {
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.visibilityText small {
+    margin-top: 3px;
+
+    color: var(--muted);
+
+    font-size: 9px;
+}
+
+.radioCircle {
+    width: 20px;
+    height: 20px;
+
+    flex: 0 0 auto;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 50%;
+
+    border: 1.5px solid rgba(255,255,255,.25);
+}
+
+.visibilityOption.active .radioCircle {
+    border-color: #fff;
+}
+
+.radioCircle span {
+    width: 9px;
+    height: 9px;
+
+    border-radius: 50%;
+
+    background: #fff;
+
+    transform: scale(0);
+
+    transition: transform .18s ease;
+}
+
+.visibilityOption.active .radioCircle span {
+    transform: scale(1);
+}
+
+/* ==========================================================
+   TOGGLE
+========================================================== */
+
+.toggle {
+    position: relative;
+
+    width: 48px;
+    height: 28px;
+
+    flex: 0 0 auto;
+}
+
+.toggle input {
+    position: absolute;
+
+    width: 1px;
+    height: 1px;
+
+    opacity: 0;
+}
+
+.toggleSlider {
+    position: absolute;
+    inset: 0;
+
+    border-radius: 999px;
+
+    background: #30313a;
+
+    border: 1px solid rgba(255,255,255,.08);
+
+    transition:
+        background .2s ease,
+        border-color .2s ease;
+}
+
+.toggleSlider::after {
+    content: "";
+
+    position: absolute;
+
+    width: 20px;
+    height: 20px;
+
+    top: 3px;
+    left: 3px;
+
+    border-radius: 50%;
+
+    background: #fff;
+
+    box-shadow:
+        0 2px 8px rgba(0,0,0,.35);
+
+    transition:
+        transform .2s ease,
+        background .2s ease;
+}
+
+.toggle input:checked + .toggleSlider {
+    background: #fff;
+    border-color: #fff;
+}
+
+.toggle input:checked + .toggleSlider::after {
+    transform: translateX(20px);
+    background: #0a0a0c;
+}
+
+/* ==========================================================
+   COVER MINI
+========================================================== */
+
+.coverMini {
+    width: 42px;
+    height: 54px;
+
+    flex: 0 0 auto;
+
+    overflow: hidden;
+
+    border-radius: 9px;
+
+    background: rgba(255,255,255,.08);
+
+    border: 1px solid rgba(255,255,255,.1);
+}
+
+.coverMini img {
+    width: 100%;
+    height: 100%;
+
+    display: block;
+
+    object-fit: cover;
+}
+
+/* ==========================================================
+   PUBLISH SECTION
+========================================================== */
+
+.publishSection {
+    display: grid;
+    grid-template-columns: 1fr 1.7fr;
+    gap: 9px;
+
+    margin-top: 28px;
+}
+
+.draftButton,
+.publishButton {
+    min-height: 52px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+
+    border-radius: 16px;
+
+    font-size: 12px;
+    font-weight: 800;
+
+    transition:
+        transform .18s ease,
+        opacity .18s ease;
+}
+
+.draftButton {
+    background: rgba(255,255,255,.065);
+
+    border: 1px solid rgba(255,255,255,.1);
+
+    color: rgba(255,255,255,.82);
+}
+
+.publishButton {
+    background: #fff;
+    color: #050507;
+
+    box-shadow:
+        0 10px 30px rgba(255,255,255,.08);
+}
+
+.publishButton i,
+.draftButton i {
+    font-size: 12px;
+}
+
+.publishNote {
+    margin: 12px auto 0;
+
+    max-width: 440px;
+
+    color: rgba(255,255,255,.28);
+
+    font-size: 9px;
+    line-height: 1.55;
+
+    text-align: center;
+}
+
+/* ==========================================================
+   OVERLAY
+========================================================== */
+
+.overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+}
+
+.overlayBackdrop {
+    position: absolute;
+    inset: 0;
+
+    background: rgba(0,0,0,.72);
+
+    backdrop-filter: blur(7px);
+    -webkit-backdrop-filter: blur(7px);
+}
+
+/* ==========================================================
+   BOTTOM SHEET
+========================================================== */
+
+.bottomSheet {
+    position: absolute;
+
+    left: 0;
+    right: 0;
+    bottom: 0;
+
+    width: 100%;
+
+    max-height: 88vh;
+
+    overflow-y: auto;
+
+    padding:
+        9px
+        16px
+        calc(22px + var(--safe-bottom));
+
+    background:
+        linear-gradient(
+            180deg,
+            #16171d,
+            #0a0b0f
+        );
+
+    border-radius: 26px 26px 0 0;
+
+    border: 1px solid rgba(255,255,255,.08);
+
+    box-shadow:
+        0 -20px 70px rgba(0,0,0,.55);
+
+    animation:
+        sheetUp .24s ease-out;
+}
+
+@keyframes sheetUp {
+    from {
+        transform: translateY(100%);
+        opacity: .4;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.sheetHandle {
+    width: 42px;
+    height: 4px;
+
+    margin: 2px auto 17px;
+
+    border-radius: 999px;
+
+    background: rgba(255,255,255,.18);
+}
+
+/* ==========================================================
+   SHEET HEADER
+========================================================== */
+
+.sheetHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+
+    margin-bottom: 17px;
+}
+
+.sheetHeader h2 {
+    margin: 4px 0;
+
+    font-size: 20px;
+    font-weight: 800;
+}
+
+.sheetHeader p {
+    margin: 0;
+
+    color: var(--muted);
+
+    font-size: 10px;
+}
+
+.sheetCloseButton {
+    width: 38px;
+    height: 38px;
+
+    flex: 0 0 auto;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 50%;
+
+    background: rgba(255,255,255,.075);
+
+    border: 1px solid rgba(255,255,255,.08);
+}
+
+.sheetCloseButton i {
+    font-size: 14px;
+}
+
+/* ==========================================================
+   SHEET OPTION
+========================================================== */
+
+.sheetOption {
+    width: 100%;
+
+    min-height: 68px;
+
+    display: grid;
+    grid-template-columns: 43px 1fr 15px;
+    align-items: center;
+    gap: 12px;
+
+    padding: 10px 12px;
+
+    margin-bottom: 8px;
+
+    border-radius: 16px;
+
+    background: rgba(255,255,255,.05);
+
+    border: 1px solid rgba(255,255,255,.07);
+
+    text-align: left;
+}
+
+.sheetOptionIcon {
+    width: 41px;
+    height: 41px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 13px;
+
+    background: rgba(255,255,255,.07);
+}
+
+.sheetOptionIcon i {
+    font-size: 14px;
+}
+
+.sheetOption strong,
+.sheetOption small {
+    display: block;
+}
+
+.sheetOption strong {
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.sheetOption small {
+    margin-top: 4px;
+
+    color: var(--muted);
+
+    font-size: 9px;
+}
+
+.sheetOption > i {
+    color: rgba(255,255,255,.28);
+    font-size: 10px;
+}
+
+/* ==========================================================
+   SEARCH BOX
+========================================================== */
+
+.searchBox {
+    height: 46px;
+
+    display: flex;
+    align-items: center;
+    gap: 9px;
+
+    padding: 0 13px;
+
+    margin-bottom: 12px;
+
+    border-radius: 14px;
+
+    background: rgba(255,255,255,.055);
+
+    border: 1px solid rgba(255,255,255,.08);
+}
+
+.searchBox i {
+    color: var(--muted);
+    font-size: 12px;
+}
+
+.searchBox input {
+    width: 100%;
+    height: 100%;
+
+    border: 0;
+    outline: 0;
+
+    background: transparent;
+
+    color: #fff;
+
+    font-size: 12px;
+}
+
+.searchBox input::placeholder {
+    color: rgba(255,255,255,.3);
+}
+
+/* ==========================================================
+   USER LIST
+========================================================== */
+
+.userList {
+    min-height: 100px;
+}
+
+.userItem {
+    width: 100%;
+
+    display: flex;
+    align-items: center;
+    gap: 11px;
+
+    padding: 10px;
+
+    border-bottom: 1px solid rgba(255,255,255,.06);
+
+    background: transparent;
+
+    text-align: left;
+}
+
+.userAvatar {
+    width: 42px;
+    height: 42px;
+
+    flex: 0 0 auto;
+
+    overflow: hidden;
+
+    border-radius: 50%;
+
+    background: rgba(255,255,255,.08);
+}
+
+.userAvatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.userInfo {
+    min-width: 0;
+    flex: 1;
+}
+
+.userInfo strong,
+.userInfo small {
+    display: block;
+}
+
+.userInfo strong {
+    font-size: 12px;
+}
+
+.userInfo small {
+    margin-top: 3px;
+
+    color: var(--muted);
+
+    font-size: 9px;
+}
+
+.userSelectButton {
+    padding: 8px 11px;
+
+    border-radius: 10px;
+
+    background: #fff;
+    color: #050507;
+
+    font-size: 9px;
+    font-weight: 800;
+}
+
+.emptyState {
+    min-height: 160px;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+    gap: 7px;
+
+    text-align: center;
+}
+
+.emptyState i {
+    width: 48px;
+    height: 48px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    margin-bottom: 4px;
+
+    border-radius: 15px;
+
+    background: rgba(255,255,255,.06);
+
+    font-size: 17px;
+}
+
+.emptyState strong {
+    font-size: 12px;
+}
+
+.emptyState span {
+    color: var(--muted);
+
+    font-size: 9px;
+}
+
+/* ==========================================================
+   ADVANCED ROW
+========================================================== */
+
+.advancedRow {
+    min-height: 66px;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 15px;
+
+    padding: 12px 0;
+
+    border-bottom: 1px solid rgba(255,255,255,.06);
+}
+
+.advancedRow:last-child {
+    border-bottom: 0;
+}
+
+.advancedRow > div {
+    min-width: 0;
+    flex: 1;
+}
+
+.advancedRow strong,
+.advancedRow small {
+    display: block;
+}
+
+.advancedRow strong {
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.advancedRow small {
+    margin-top: 4px;
+
+    color: var(--muted);
+
+    font-size: 9px;
+    line-height: 1.4;
+}
+
+/* ==========================================================
+   PROCESSING
+========================================================== */
+
+.processingOverlay {
+    position: fixed;
+    inset: 0;
+    z-index: 500;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+    padding: 30px;
+
+    background:
+        radial-gradient(
+            circle at center,
+            rgba(255,255,255,.075),
+            rgba(0,0,0,.96) 62%
+        );
+
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+}
+
+.processingOrb {
+    position: relative;
+
+    width: 82px;
+    height: 82px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 50%;
+
+    background: rgba(255,255,255,.065);
+
+    border: 1px solid rgba(255,255,255,.12);
+
+    box-shadow:
+        0 20px 70px rgba(0,0,0,.5);
+}
+
+.processingOrb .processingSpinner {
+    position: absolute;
+
+    width: 68px;
+    height: 68px;
+
+    border: 3px solid rgba(255,255,255,.13);
+    border-top-color: #fff;
+
+    border-radius: 50%;
+
+    animation: spin .8s linear infinite;
+}
+
+.processingOrb > i {
+    font-size: 19px;
+}
+
+.processingOverlay h2 {
+    margin: 21px 0 7px;
+
+    font-size: 18px;
+    font-weight: 800;
+
+    text-align: center;
+}
+
+.processingOverlay p {
+    margin: 0;
+
+    color: var(--muted);
+
+    font-size: 10px;
+
+    text-align: center;
+}
+
+.processingProgress {
+    width: 175px;
+    height: 4px;
+
+    overflow: hidden;
+
+    margin-top: 21px;
+
+    border-radius: 999px;
+
+    background: rgba(255,255,255,.1);
+}
+
+.processingProgress span {
+    display: block;
+
+    width: 42%;
+    height: 100%;
+
+    border-radius: inherit;
+
+    background: #fff;
+
+    animation:
+        progressMove 1.5s ease-in-out infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes progressMove {
+    0% {
+        transform: translateX(-130%);
+    }
+
+    100% {
+        transform: translateX(350%);
+    }
+}
+
+/* ==========================================================
+   TOAST
+========================================================== */
+
+.toast {
+    position: fixed;
+
+    left: 14px;
+    right: 14px;
+    bottom: calc(16px + var(--safe-bottom));
+
+    z-index: 700;
+
+    display: flex;
+    align-items: center;
+    gap: 11px;
+
+    padding: 12px 13px;
+
+    border-radius: 16px;
+
+    background:
+        rgba(20,21,27,.95);
+
+    border: 1px solid rgba(255,255,255,.1);
+
+    box-shadow:
+        0 18px 60px rgba(0,0,0,.5);
+
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+
+    animation: toastUp .25s ease-out;
+}
+
+.toastIcon {
+    width: 35px;
+    height: 35px;
+
+    flex: 0 0 auto;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 11px;
+
+    background: rgba(255,255,255,.07);
+}
+
+.toastIcon i {
+    font-size: 13px;
+}
+
+.toast strong {
+    display: block;
+
+    font-size: 11px;
+    font-weight: 800;
+}
+
+.toast p {
+    margin: 3px 0 0;
+
+    color: var(--muted);
+
+    font-size: 9px;
+}
+
+@keyframes toastUp {
+    from {
+        opacity: 0;
+        transform: translateY(18px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ==========================================================
+   SCROLLBAR
+========================================================== */
+
+::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,.14);
+    border-radius: 999px;
+}
+
+/* ==========================================================
+   SMALL PHONES
+========================================================== */
+
+@media (max-width: 370px) {
+
+    .content {
+        padding-left: 10px;
+        padding-right: 10px;
+    }
+
+    .topBar {
+        padding-left: 10px;
+        padding-right: 10px;
+    }
+
+    .previewButton {
+        padding: 0 9px;
+        font-size: 10px;
+    }
+
+    .previewMedia {
+        min-height: 290px;
+    }
+
+    .publishSection {
+        grid-template-columns: 1fr 1.5fr;
+    }
+
+    .draftButton,
+    .publishButton {
+        font-size: 10px;
+    }
+}
+
+/* ==========================================================
+   TABLET / DESKTOP
+========================================================== */
+
+@media (min-width: 700px) {
+
+    body {
+        background:
+            radial-gradient(
+                circle at 50% 0%,
+                rgba(255,255,255,.08),
+                transparent 38%
+            ),
+            #030304;
+    }
+
+    .shortEditPage {
+        max-width: 760px;
+
+        margin: 0 auto;
+
+        border-left: 1px solid rgba(255,255,255,.055);
+        border-right: 1px solid rgba(255,255,255,.055);
+
+        background:
+            linear-gradient(
+                180deg,
+                rgba(255,255,255,.018),
+                transparent
+            );
+    }
+
+    .topBar {
+        max-width: 760px;
+        margin: 0 auto;
+    }
+
+    .content {
+        padding-left: 24px;
+        padding-right: 24px;
+    }
+
+    .previewMedia {
+        height: 560px;
+    }
+
+    .bottomSheet {
+        left: 50%;
+        right: auto;
+
+        width: 600px;
+
+        transform: translateX(-50%);
+
+        border-radius: 26px 26px 0 0;
+    }
+
+    .toast {
+        left: 50%;
+        right: auto;
+
+        width: 390px;
+
+        transform: translateX(-50%);
+    }
+}
+
+/* ==========================================================
+   REDUCED MOTION
+========================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+
+    *,
+    *::before,
+    *::after {
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        scroll-behavior: auto !important;
+        transition-duration: .01ms !important;
+    }
+}

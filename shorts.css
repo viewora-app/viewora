@@ -1,28 +1,30 @@
 /* =========================================================
-   VIEWORA • SHORTS.CSS
-   Premium • Clean • Mobile First • Shorts Feed
+   VIEWORA SHORTS
+   PREMIUM MOBILE-FIRST CSS
+   TikTok / Instagram Inspired
 ========================================================= */
 
 :root {
-    --bg: #050505;
-    --surface: rgba(18, 18, 22, .78);
-    --surface-strong: rgba(25, 25, 30, .94);
+    --shorts-bg: #000;
+    --surface: rgba(20, 20, 20, .92);
+    --surface-soft: rgba(255, 255, 255, .10);
+    --surface-border: rgba(255, 255, 255, .12);
     --text: #fff;
-    --muted: rgba(255,255,255,.65);
-    --soft: rgba(255,255,255,.12);
-    --border: rgba(255,255,255,.14);
-    --accent: #7c5cff;
-    --accent-2: #a855f7;
-    --danger: #ff4d67;
-    --success: #35d07f;
-    --nav-height: 68px;
-    --header-height: 64px;
+    --muted: rgba(255, 255, 255, .68);
+    --danger: #ff3b5f;
+    --accent: #ffffff;
+    --nav-height: 64px;
+    --top-height: 60px;
+    --radius: 22px;
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
 }
+
+/* =========================================================
+   RESET
+========================================================= */
 
 * {
     box-sizing: border-box;
-    margin: 0;
-    padding: 0;
     -webkit-tap-highlight-color: transparent;
 }
 
@@ -30,10 +32,12 @@ html,
 body {
     width: 100%;
     height: 100%;
-    background: var(--bg);
-    color: var(--text);
-    font-family: "Inter", sans-serif;
+    margin: 0;
+    padding: 0;
     overflow: hidden;
+    background: #000;
+    color: var(--text);
+    font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
 body {
@@ -47,250 +51,265 @@ input {
 
 button {
     border: 0;
+    outline: 0;
     cursor: pointer;
-    color: inherit;
+}
+
+img {
+    max-width: 100%;
 }
 
 .hidden {
     display: none !important;
 }
 
-
 /* =========================================================
    APP
 ========================================================= */
 
+#app,
 .shortsApp {
-    position: fixed;
-    inset: 0 0 var(--nav-height) 0;
+    position: relative;
+    width: 100%;
+    height: 100dvh;
     overflow: hidden;
     background: #000;
 }
 
-.shortsApp.fadeIn {
-    animation: appFade .45s ease both;
-}
-
-@keyframes appFade {
-    from {
-        opacity: 0;
-        transform: scale(.99);
-    }
-    to {
-        opacity: 1;
-        transform: scale(1);
-    }
-}
-
-
 /* =========================================================
-   LOADER
+   TOP BAR
 ========================================================= */
 
-.pageLoader {
+.shortsTopBar {
     position: fixed;
-    inset: 0;
-    z-index: 9999;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    background:
-        radial-gradient(circle at 50% 40%, rgba(124,92,255,.16), transparent 32%),
-        #050505;
-    transition: opacity .45s ease, visibility .45s ease;
-}
-
-.pageLoader.loaded {
-    opacity: 0;
-    visibility: hidden;
-    pointer-events: none;
-}
-
-.loaderLogo {
-    width: 68px;
-    height: 68px;
-    border-radius: 22px;
-    overflow: hidden;
-    position: relative;
-    display: grid;
-    place-items: center;
-    background: rgba(255,255,255,.08);
-    border: 1px solid rgba(255,255,255,.14);
-}
-
-.loaderLogo img {
-    width: 70%;
-    height: 70%;
-    object-fit: contain;
-}
-
-.loaderRing {
-    position: absolute;
-    width: 78px;
-    height: 78px;
-    border: 2px solid transparent;
-    border-top-color: var(--accent);
-    border-right-color: var(--accent-2);
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-    to {
-        transform: rotate(360deg);
-    }
-}
-
-.pageLoader h2 {
-    font-size: 20px;
-    font-weight: 800;
-}
-
-.pageLoader p {
-    color: var(--muted);
-    font-size: 13px;
-}
-
-
-/* =========================================================
-   HEADER
-========================================================= */
-
-.shortsHeader {
-    position: absolute;
+    z-index: 100;
     top: 0;
     left: 0;
     right: 0;
-    height: var(--header-height);
-    z-index: 30;
+
+    height: calc(
+        var(--top-height) +
+        env(safe-area-inset-top, 0px)
+    );
+
+    padding:
+        env(safe-area-inset-top, 0px)
+        14px
+        10px
+        14px;
+
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 8px 14px;
+
     background: linear-gradient(
         to bottom,
-        rgba(0,0,0,.72),
-        rgba(0,0,0,.2),
+        rgba(0, 0, 0, .70),
+        rgba(0, 0, 0, .18),
         transparent
     );
+
     pointer-events: none;
 }
 
-.shortsHeader > * {
+.shortsTopBar > *,
+.topActions {
     pointer-events: auto;
 }
 
-.headerIconBtn {
-    width: 42px;
-    height: 42px;
-    border-radius: 50%;
-    display: grid;
-    place-items: center;
-    background: rgba(0,0,0,.36);
-    border: 1px solid rgba(255,255,255,.12);
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
-    font-size: 17px;
-    transition: .2s ease;
-}
-
-.headerIconBtn:active {
-    transform: scale(.9);
-}
-
-.shortsBrand {
+.topActions {
     display: flex;
     align-items: center;
-    gap: 9px;
-}
-
-.brandLogo {
-    width: 35px;
-    height: 35px;
-    object-fit: contain;
-    border-radius: 10px;
-}
-
-.shortsBrand h1 {
-    font-size: 17px;
-    line-height: 18px;
-    font-weight: 800;
-}
-
-.shortsBrand span {
-    display: block;
-    margin-top: 2px;
-    color: var(--muted);
-    font-size: 10px;
-}
-
-.headerActions {
-    display: flex;
     gap: 8px;
 }
 
+.topAction,
+.createShortBtn {
+    width: 42px;
+    height: 42px;
+
+    display: grid;
+    place-items: center;
+
+    border-radius: 50%;
+
+    color: #fff;
+    background: rgba(0, 0, 0, .32);
+
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+
+    box-shadow:
+        0 4px 20px rgba(0, 0, 0, .25),
+        inset 0 0 0 1px rgba(255, 255, 255, .10);
+
+    transition:
+        transform .18s ease,
+        background .18s ease;
+}
+
+.topAction:active,
+.createShortBtn:active {
+    transform: scale(.91);
+}
+
+.createShortBtn {
+    background: #fff;
+    color: #000;
+}
+
+.shortsBrand {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+
+    display: flex;
+    align-items: center;
+    gap: 7px;
+
+    white-space: nowrap;
+}
+
+.shortsBrand strong {
+    font-size: 18px;
+    font-weight: 800;
+    letter-spacing: -.5px;
+}
+
+.shortsBrand span {
+    font-size: 8px;
+    font-weight: 800;
+    letter-spacing: 1.6px;
+    opacity: .65;
+}
 
 /* =========================================================
    SEARCH
 ========================================================= */
 
-.shortSearchBox {
-    position: absolute;
-    top: 66px;
+.shortSearchBar {
+    position: fixed;
+    z-index: 120;
+    top: calc(
+        var(--top-height) +
+        env(safe-area-inset-top, 0px)
+    );
+
     left: 14px;
     right: 14px;
-    z-index: 50;
+
+    padding-bottom: 8px;
+}
+
+.searchInputWrap {
     height: 48px;
+
     display: flex;
     align-items: center;
+
+    padding: 0 13px;
     gap: 10px;
-    padding: 0 12px;
-    border-radius: 16px;
-    background: rgba(20,20,24,.92);
-    border: 1px solid var(--border);
-    box-shadow: 0 15px 45px rgba(0,0,0,.4);
+
+    border-radius: 15px;
+
+    background: rgba(25, 25, 25, .90);
+
     backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+
+    box-shadow:
+        inset 0 0 0 1px rgba(255, 255, 255, .10),
+        0 10px 30px rgba(0, 0, 0, .28);
 }
 
-.shortSearchBox > i {
-    color: var(--muted);
+.searchInputWrap > i {
+    color: rgba(255, 255, 255, .62);
 }
 
-.shortSearchBox input {
+.searchInputWrap input {
     min-width: 0;
     flex: 1;
-    color: #fff;
-    background: transparent;
+
     border: 0;
-    outline: none;
+    outline: 0;
+
+    background: transparent;
+    color: #fff;
+
     font-size: 14px;
 }
 
-.shortSearchBox input::placeholder {
-    color: rgba(255,255,255,.4);
+.searchInputWrap input::placeholder {
+    color: rgba(255, 255, 255, .45);
 }
 
-.shortSearchBox button {
-    width: 32px;
-    height: 32px;
+.searchInputWrap button {
+    width: 30px;
+    height: 30px;
+
+    display: grid;
+    place-items: center;
+
     border-radius: 50%;
-    background: rgba(255,255,255,.08);
+
+    background: rgba(255, 255, 255, .08);
+    color: #fff;
 }
 
+/* =========================================================
+   NETWORK
+========================================================= */
+
+.networkStatus {
+    position: fixed;
+    z-index: 500;
+
+    top: calc(
+        var(--top-height) +
+        env(safe-area-inset-top, 0px) +
+        8px
+    );
+
+    left: 50%;
+    transform: translateX(-50%);
+
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    padding: 8px 13px;
+
+    border-radius: 999px;
+
+    background: rgba(30, 30, 30, .92);
+    color: #fff;
+
+    font-size: 12px;
+    font-weight: 600;
+
+    backdrop-filter: blur(16px);
+}
 
 /* =========================================================
    SHORTS FEED
 ========================================================= */
 
 .shortsContainer {
+    position: relative;
+
     width: 100%;
-    height: 100%;
+    height: 100dvh;
+
     overflow-y: auto;
     overflow-x: hidden;
+
     scroll-snap-type: y mandatory;
+    scroll-behavior: smooth;
+
+    overscroll-behavior-y: contain;
+
     scrollbar-width: none;
+
     background: #000;
 }
 
@@ -298,320 +317,536 @@ button {
     display: none;
 }
 
+/* =========================================================
+   SHORT CARD
+========================================================= */
+
 .shortCard {
     position: relative;
+
     width: 100%;
-    height: 100%;
-    min-height: 100%;
-    overflow: hidden;
+    height: 100dvh;
+
+    flex: 0 0 100dvh;
+
     scroll-snap-align: start;
     scroll-snap-stop: always;
-    background: #000;
+
+    overflow: hidden;
+
+    background: #050505;
 }
+
+/* =========================================================
+   VIDEO
+========================================================= */
 
 .shortVideo {
     position: absolute;
+
     inset: 0;
+
     width: 100%;
     height: 100%;
+
     object-fit: cover;
+
     background: #000;
+
+    user-select: none;
+    -webkit-user-select: none;
 }
 
-
-/* =========================================================
-   VIDEO GRADIENT
-========================================================= */
-
-.shortGradient {
+.shortVideoShade {
     position: absolute;
     inset: 0;
+
     pointer-events: none;
+
     background:
         linear-gradient(
             to bottom,
-            rgba(0,0,0,.58) 0%,
-            transparent 22%,
-            transparent 55%,
-            rgba(0,0,0,.2) 70%,
-            rgba(0,0,0,.82) 100%
+            rgba(0, 0, 0, .42),
+            transparent 25%,
+            transparent 48%,
+            rgba(0, 0, 0, .12) 60%,
+            rgba(0, 0, 0, .82) 100%
         );
 }
 
-
 /* =========================================================
-   OVERLAY
+   PLAY OVERLAY
 ========================================================= */
 
-.shortOverlay {
+.playOverlay {
     position: absolute;
-    inset: 0;
-    z-index: 5;
-    pointer-events: none;
-}
 
-.shortInfo {
-    position: absolute;
-    left: 15px;
-    right: 78px;
-    bottom: 24px;
-    pointer-events: auto;
-}
+    top: 50%;
+    left: 50%;
 
+    width: 74px;
+    height: 74px;
 
-/* =========================================================
-   USER ROW
-========================================================= */
+    transform:
+        translate(-50%, -50%)
+        scale(.75);
 
-.userRow {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 10px;
-}
+    display: grid;
+    place-items: center;
 
-.shortProfileBtn {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    min-width: 0;
-    max-width: calc(100% - 75px);
-    background: transparent;
-    text-align: left;
-}
-
-.userAvatar {
-    width: 47px;
-    height: 47px;
-    min-width: 47px;
     border-radius: 50%;
-    object-fit: cover;
-    border: 2px solid rgba(255,255,255,.92);
-    box-shadow: 0 4px 18px rgba(0,0,0,.4);
-}
 
-.userDetails {
-    min-width: 0;
-}
+    background: rgba(0, 0, 0, .48);
 
-.username {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    max-width: 170px;
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-    font-size: 15px;
-    font-weight: 800;
-}
-
-.verified {
-    flex-shrink: 0;
-    color: #4da6ff;
-    font-size: 12px;
-}
-
-.uploadTime {
-    margin-top: 3px;
-    color: rgba(255,255,255,.65);
-    font-size: 11px;
-}
-
-
-/* =========================================================
-   FOLLOW BUTTON
-========================================================= */
-
-.followBtn {
-    flex-shrink: 0;
-    min-width: 72px;
-    height: 31px;
-    padding: 0 13px;
-    border-radius: 10px;
-    background: rgba(255,255,255,.96);
-    color: #080808;
-    font-size: 12px;
-    font-weight: 800;
-    box-shadow: 0 6px 20px rgba(0,0,0,.25);
-    transition: .2s ease;
-}
-
-.followBtn:active {
-    transform: scale(.94);
-}
-
-.followBtn.following {
     color: #fff;
-    background: rgba(255,255,255,.12);
-    border: 1px solid rgba(255,255,255,.24);
+
+    opacity: 0;
+    pointer-events: none;
+
+    transition:
+        opacity .2s ease,
+        transform .2s ease;
+
     backdrop-filter: blur(12px);
 }
 
-
-/* =========================================================
-   CAPTION
-========================================================= */
-
-.shortCaption {
-    max-width: 100%;
-    margin-bottom: 9px;
-    color: #fff;
-    font-size: 14px;
-    line-height: 20px;
-    font-weight: 500;
-    text-shadow: 0 2px 10px rgba(0,0,0,.65);
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 3;
-    overflow: hidden;
+.playOverlay.show {
+    opacity: 1;
+    transform:
+        translate(-50%, -50%)
+        scale(1);
 }
 
+.playOverlay i {
+    margin-left: 4px;
+    font-size: 25px;
+}
 
 /* =========================================================
-   MUSIC
+   VOLUME
 ========================================================= */
 
-.musicRow {
+.volumeBtn {
+    position: absolute;
+
+    top: calc(
+        var(--top-height) +
+        env(safe-area-inset-top, 0px) +
+        10px
+    );
+
+    right: 62px;
+
+    width: 40px;
+    height: 40px;
+
+    display: grid;
+    place-items: center;
+
+    border-radius: 50%;
+
+    color: #fff;
+    background: rgba(0, 0, 0, .35);
+
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+
+    box-shadow:
+        inset 0 0 0 1px rgba(255, 255, 255, .10);
+}
+
+/* =========================================================
+   MORE
+========================================================= */
+
+.moreBtn {
+    position: absolute;
+
+    top: calc(
+        var(--top-height) +
+        env(safe-area-inset-top, 0px) +
+        10px
+    );
+
+    right: 14px;
+
+    width: 40px;
+    height: 40px;
+
+    display: grid;
+    place-items: center;
+
+    border-radius: 50%;
+
+    color: #fff;
+    background: rgba(0, 0, 0, .35);
+
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+
+    box-shadow:
+        inset 0 0 0 1px rgba(255, 255, 255, .10);
+}
+
+/* =========================================================
+   CONTENT
+========================================================= */
+
+.shortContent {
+    position: absolute;
+
+    left: 14px;
+    right: 82px;
+
+    bottom:
+        calc(
+            var(--nav-height) +
+            var(--safe-bottom) +
+            24px
+        );
+
+    z-index: 10;
+}
+
+.creatorRow {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    margin-bottom: 11px;
+}
+
+.creatorProfile {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+
+    min-width: 0;
+
+    cursor: pointer;
+}
+
+.creatorAvatar {
+    width: 38px;
+    height: 38px;
+
+    flex: 0 0 38px;
+
+    object-fit: cover;
+
+    border-radius: 50%;
+
+    border: 2px solid rgba(255, 255, 255, .9);
+
+    background: #222;
+}
+
+.shortUsername {
+    max-width: 145px;
+
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    font-size: 14px;
+    font-weight: 800;
+
+    text-shadow: 0 2px 8px rgba(0, 0, 0, .6);
+}
+
+.followBtn {
+    padding: 7px 14px;
+
+    border-radius: 9px;
+
+    background: rgba(255, 255, 255, .96);
+    color: #000;
+
+    font-size: 11px;
+    font-weight: 800;
+
+    transition: transform .18s ease;
+}
+
+.followBtn:active {
+    transform: scale(.93);
+}
+
+.shortCaption {
+    margin: 0 0 10px;
+
+    max-width: 100%;
+
+    font-size: 13px;
+    line-height: 1.45;
+    font-weight: 500;
+
+    color: rgba(255, 255, 255, .94);
+
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+
+    text-shadow: 0 2px 8px rgba(0, 0, 0, .7);
+}
+
+.shortMusic {
     display: flex;
     align-items: center;
     gap: 8px;
-    max-width: 220px;
-    color: rgba(255,255,255,.88);
-    font-size: 12px;
-    font-weight: 600;
-}
 
-.musicRow i {
+    max-width: 100%;
+
     font-size: 11px;
-    animation: musicFloat 1.5s ease-in-out infinite;
+    font-weight: 600;
+
+    color: rgba(255, 255, 255, .88);
 }
 
-.musicRow span {
+.shortMusic i {
+    font-size: 10px;
+}
+
+.shortMusic span {
     overflow: hidden;
-    white-space: nowrap;
     text-overflow: ellipsis;
+    white-space: nowrap;
 }
-
-@keyframes musicFloat {
-    0%,100% {
-        transform: translateY(0);
-    }
-    50% {
-        transform: translateY(-2px);
-    }
-}
-
 
 /* =========================================================
-   RIGHT ACTIONS
+   ACTIONS
 ========================================================= */
 
 .shortActions {
     position: absolute;
+
     right: 10px;
-    bottom: 23px;
-    width: 54px;
+
+    bottom:
+        calc(
+            var(--nav-height) +
+            var(--safe-bottom) +
+            26px
+        );
+
+    z-index: 20;
+
+    width: 58px;
+
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 14px;
-    pointer-events: auto;
+    gap: 17px;
 }
 
-.actionBtn {
-    width: 50px;
-    min-height: 48px;
+.shortAction {
+    width: 54px;
+
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
-    gap: 4px;
+    gap: 5px;
+
     background: transparent;
     color: #fff;
-    text-shadow: 0 2px 8px rgba(0,0,0,.6);
-    transition: transform .18s ease;
+
+    text-shadow: 0 2px 7px rgba(0, 0, 0, .8);
 }
 
-.actionBtn:active {
-    transform: scale(.84);
-}
-
-.actionBtn i {
+.shortAction i {
     font-size: 25px;
+
+    filter:
+        drop-shadow(
+            0 2px 5px rgba(0, 0, 0, .45)
+        );
+
+    transition:
+        transform .18s ease;
 }
 
-.actionBtn span {
-    max-width: 52px;
+.shortAction span {
+    max-width: 58px;
+
     overflow: hidden;
-    white-space: nowrap;
     text-overflow: ellipsis;
+    white-space: nowrap;
+
     font-size: 10px;
     font-weight: 700;
 }
 
-.likeBtn.liked {
-    color: #ff4964;
+.shortAction:active i {
+    transform: scale(.78);
 }
 
 .likeBtn.liked i {
-    animation: likePop .25s ease;
+    color: var(--danger);
+    animation: likePop .28s ease;
+}
+
+.saveBtn.saved i {
+    color: #fff;
 }
 
 @keyframes likePop {
     0% {
         transform: scale(.7);
     }
-    70% {
-        transform: scale(1.2);
+
+    55% {
+        transform: scale(1.3);
     }
+
     100% {
         transform: scale(1);
     }
 }
 
-.saveBtn.saved {
-    color: #fff;
-}
-
-
 /* =========================================================
-   VIEW COUNT
+   MUSIC DISC
 ========================================================= */
 
-.viewCount {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    color: rgba(255,255,255,.75);
-    font-size: 10px;
-    font-weight: 700;
-}
-
-.viewCount i {
-    font-size: 10px;
-}
-
-
-/* =========================================================
-   PROFILE MUSIC DISC
-========================================================= */
-
-.profileDisc {
+.musicDisc {
     width: 43px;
     height: 43px;
-    padding: 3px;
+
+    margin-top: 2px;
+
+    display: grid;
+    place-items: center;
+
     border-radius: 50%;
-    background: rgba(255,255,255,.16);
-    border: 1px solid rgba(255,255,255,.3);
-    animation: discSpin 5s linear infinite;
+
+    background:
+        radial-gradient(
+            circle at center,
+            #111 0 28%,
+            #333 29% 45%,
+            #090909 46% 100%
+        );
+
+    border: 2px solid rgba(255, 255, 255, .18);
+
+    box-shadow:
+        0 5px 15px rgba(0, 0, 0, .45);
+
+    animation: discSpin 4s linear infinite;
+    animation-play-state: paused;
 }
 
-.profileDisc img {
-    width: 100%;
+.shortCard:has(.shortVideo:not([paused])) .musicDisc {
+    animation-play-state: running;
+}
+
+.musicDisc i {
+    font-size: 14px;
+}
+
+/* =========================================================
+   PROGRESS
+========================================================= */
+
+.shortProgress {
+    position: absolute;
+
+    z-index: 40;
+
+    left: 0;
+    right: 0;
+
+    bottom:
+        calc(
+            var(--nav-height) +
+            var(--safe-bottom)
+        );
+
+    height: 2px;
+
+    background: rgba(255, 255, 255, .16);
+}
+
+.shortProgress span {
+    display: block;
+
+    width: 0;
     height: 100%;
-    border-radius: 50%;
-    object-fit: cover;
+
+    background: #fff;
+
+    transition: width .05s linear;
+}
+
+/* =========================================================
+   HEART ANIMATION
+========================================================= */
+
+.heartAnimation {
+    position: fixed;
+
+    z-index: 800;
+
+    top: 50%;
+    left: 50%;
+
+    width: 100px;
+    height: 100px;
+
+    display: grid;
+    place-items: center;
+
+    transform:
+        translate(-50%, -50%)
+        scale(.2);
+
+    opacity: 0;
+    pointer-events: none;
+}
+
+.heartAnimation i {
+    color: #fff;
+
+    font-size: 86px;
+
+    filter:
+        drop-shadow(
+            0 8px 25px rgba(0, 0, 0, .5)
+        );
+}
+
+.heartAnimation.heartPlay {
+    animation: heartBurst .72s cubic-bezier(.17, .67, .25, 1);
+}
+
+@keyframes heartBurst {
+    0% {
+        opacity: 0;
+        transform:
+            translate(-50%, -50%)
+            scale(.2);
+    }
+
+    20% {
+        opacity: 1;
+        transform:
+            translate(-50%, -50%)
+            scale(1.15);
+    }
+
+    45% {
+        opacity: 1;
+        transform:
+            translate(-50%, -50%)
+            scale(.95);
+    }
+
+    100% {
+        opacity: 0;
+        transform:
+            translate(-50%, -50%)
+            scale(1.35);
+    }
 }
 
 @keyframes discSpin {
@@ -620,530 +855,825 @@ button {
     }
 }
 
-
-/* =========================================================
-   FLOATING CREATE
-========================================================= */
-
-.floatingUploadBtn {
-    position: absolute;
-    right: 15px;
-    top: 74px;
-    z-index: 40;
-    height: 42px;
-    display: flex;
-    align-items: center;
-    gap: 7px;
-    padding: 0 12px 0 7px;
-    border-radius: 14px;
-    color: #fff;
-    background: rgba(15,15,20,.72);
-    border: 1px solid rgba(255,255,255,.16);
-    box-shadow: 0 10px 30px rgba(0,0,0,.35);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    font-size: 12px;
-    font-weight: 800;
-    transition: .2s ease;
-}
-
-.floatingUploadBtn:active {
-    transform: scale(.93);
-}
-
-.uploadPlus {
-    width: 29px;
-    height: 29px;
-    display: grid;
-    place-items: center;
-    border-radius: 9px;
-    background: linear-gradient(
-        135deg,
-        var(--accent),
-        var(--accent-2)
-    );
-}
-
-.uploadPlus i {
-    font-size: 12px;
-}
-
-
-/* =========================================================
-   MUSIC ANIMATION
-========================================================= */
-
-.musicAnimation {
-    position: absolute;
-    left: 16px;
-    bottom: 20px;
-    z-index: 15;
-    pointer-events: none;
-}
-
-.musicDisc {
-    width: 38px;
-    height: 38px;
-    display: grid;
-    place-items: center;
-    border-radius: 50%;
-    background: rgba(15,15,15,.75);
-    border: 1px solid rgba(255,255,255,.15);
-    box-shadow: 0 8px 25px rgba(0,0,0,.35);
-    animation: discSpin 4s linear infinite;
-}
-
-.musicDisc i {
-    font-size: 14px;
-}
-
-
-/* =========================================================
-   HEART ANIMATION
-========================================================= */
-
-.heartAnimation {
-    position: absolute;
-    inset: 0;
-    z-index: 100;
-    display: grid;
-    place-items: center;
-    pointer-events: none;
-}
-
-.heartAnimation i {
-    color: #ff4964;
-    font-size: 105px;
-    filter: drop-shadow(0 8px 30px rgba(255,60,90,.35));
-}
-
-.heartAnimation.heartPop i {
-    animation: heartPop .7s cubic-bezier(.2,.8,.2,1);
-}
-
-@keyframes heartPop {
-    0% {
-        opacity: 0;
-        transform: scale(.3);
-    }
-    25% {
-        opacity: 1;
-        transform: scale(1.25);
-    }
-    60% {
-        opacity: 1;
-        transform: scale(.95);
-    }
-    100% {
-        opacity: 0;
-        transform: scale(1.05);
-    }
-}
-
-
-/* =========================================================
-   EMPTY STATE
-========================================================= */
-
-.emptyState {
-    position: absolute;
-    inset: 0;
-    z-index: 20;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 30px;
-    text-align: center;
-    background:
-        radial-gradient(
-            circle at center,
-            rgba(124,92,255,.13),
-            transparent 42%
-        ),
-        #050505;
-}
-
-.emptyIcon {
-    width: 76px;
-    height: 76px;
-    display: grid;
-    place-items: center;
-    margin-bottom: 18px;
-    border-radius: 24px;
-    background: rgba(124,92,255,.12);
-    border: 1px solid rgba(124,92,255,.24);
-}
-
-.emptyIcon i {
-    font-size: 30px;
-    color: #a98cff;
-}
-
-.emptyState h2 {
-    font-size: 23px;
-    font-weight: 800;
-}
-
-.emptyState p {
-    max-width: 300px;
-    margin: 9px 0 20px;
-    color: var(--muted);
-    font-size: 13px;
-    line-height: 20px;
-}
-
-.primaryBtn {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    height: 45px;
-    padding: 0 18px;
-    border-radius: 13px;
-    color: #fff;
-    background: linear-gradient(
-        135deg,
-        var(--accent),
-        var(--accent-2)
-    );
-    font-weight: 800;
-}
-
-
 /* =========================================================
    SKELETON
 ========================================================= */
 
 .shortsSkeleton {
-    position: absolute;
+    position: fixed;
     inset: 0;
-    z-index: 25;
-    background: #090909;
+
+    z-index: 70;
+
+    background: #080808;
 }
 
-.skeletonVideo {
+.skeletonScreen {
+    position: relative;
+
     width: 100%;
     height: 100%;
+}
+
+.skeletonTop {
+    position: absolute;
+
+    top: 20px;
+    left: 20px;
+    right: 20px;
+
+    height: 42px;
+
+    border-radius: 14px;
+
     background:
         linear-gradient(
-            100deg,
-            #090909 20%,
-            #171717 40%,
-            #090909 60%
+            90deg,
+            #111,
+            #222,
+            #111
         );
-    background-size: 300% 100%;
-    animation: skeletonMove 1.3s infinite;
+
+    background-size: 200% 100%;
+
+    animation: skeletonMove 1.4s infinite;
+}
+
+.skeletonBottom {
+    position: absolute;
+
+    left: 18px;
+    bottom: 110px;
+
+    width: 65%;
+}
+
+.skeletonLine {
+    width: 70%;
+    height: 11px;
+
+    margin-top: 10px;
+
+    border-radius: 999px;
+
+    background: #1c1c1c;
+}
+
+.skeletonLine.large {
+    width: 85%;
+    height: 14px;
+}
+
+.skeletonLine.small {
+    width: 45%;
+}
+
+.skeletonActions {
+    position: absolute;
+
+    right: 18px;
+    bottom: 125px;
+
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.skeletonActions span {
+    width: 42px;
+    height: 42px;
+
+    border-radius: 50%;
+
+    background: #191919;
 }
 
 @keyframes skeletonMove {
-    to {
-        background-position: -300% 0;
+    0% {
+        background-position: 200% 0;
+    }
+
+    100% {
+        background-position: -200% 0;
     }
 }
-
 
 /* =========================================================
-   MODALS
+   EMPTY
 ========================================================= */
 
-.modal {
+.shortsEmpty {
     position: fixed;
     inset: 0;
-    z-index: 500;
+
+    z-index: 60;
+
     display: flex;
-    align-items: flex-end;
+    flex-direction: column;
+    align-items: center;
     justify-content: center;
+
+    padding: 30px;
+
+    text-align: center;
+
+    background: #000;
 }
 
-.modalOverlay {
+.emptyIcon {
+    width: 78px;
+    height: 78px;
+
+    display: grid;
+    place-items: center;
+
+    margin-bottom: 18px;
+
+    border-radius: 24px;
+
+    background: rgba(255, 255, 255, .08);
+
+    font-size: 29px;
+}
+
+.shortsEmpty h2 {
+    margin: 0 0 7px;
+
+    font-size: 21px;
+}
+
+.shortsEmpty p {
+    margin: 0 0 20px;
+
+    max-width: 290px;
+
+    color: var(--muted);
+
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.primaryButton,
+.secondaryButton,
+.dangerButton {
+    min-height: 44px;
+
+    padding: 0 20px;
+
+    border-radius: 13px;
+
+    font-weight: 800;
+}
+
+.primaryButton {
+    background: #fff;
+    color: #000;
+}
+
+.secondaryButton {
+    background: rgba(255, 255, 255, .08);
+    color: #fff;
+}
+
+.dangerButton {
+    background: var(--danger);
+    color: #fff;
+}
+
+/* =========================================================
+   MODAL
+========================================================= */
+
+.modal,
+.actionMenu {
+    position: fixed;
+    inset: 0;
+
+    z-index: 1000;
+}
+
+.modalOverlay,
+.menuBackdrop {
     position: absolute;
     inset: 0;
-    background: rgba(0,0,0,.68);
+
+    background: rgba(0, 0, 0, .64);
+
     backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
 }
 
-.modalCard {
-    position: relative;
-    width: min(100%, 560px);
-    max-height: 82vh;
+/* =========================================================
+   SHEETS
+========================================================= */
+
+.commentsSheet,
+.shareSheet,
+.menuSheet,
+.reportSheet {
+    position: absolute;
+
+    left: 0;
+    right: 0;
+    bottom: 0;
+
+    max-height: 88dvh;
+
     overflow: hidden;
-    border-radius: 24px 24px 0 0;
-    background: #151519;
-    border: 1px solid rgba(255,255,255,.1);
-    box-shadow: 0 -20px 70px rgba(0,0,0,.55);
-    animation: modalUp .28s ease;
+
+    background:
+        linear-gradient(
+            180deg,
+            #181818,
+            #0d0d0d
+        );
+
+    border-radius:
+        25px 25px 0 0;
+
+    box-shadow:
+        0 -15px 60px rgba(0, 0, 0, .55);
+
+    animation: sheetUp .25s ease;
 }
 
-@keyframes modalUp {
+@keyframes sheetUp {
     from {
-        opacity: 0;
-        transform: translateY(35px);
+        transform: translateY(100%);
     }
+
     to {
-        opacity: 1;
         transform: translateY(0);
     }
 }
 
-.modalHeader {
-    min-height: 66px;
+.sheetHandle {
+    width: 38px;
+    height: 4px;
+
+    margin: 9px auto 3px;
+
+    border-radius: 999px;
+
+    background: rgba(255, 255, 255, .25);
+}
+
+.sheetHeader,
+.menuHeader {
+    min-height: 65px;
+
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 14px 17px;
-    border-bottom: 1px solid rgba(255,255,255,.08);
+
+    padding: 8px 17px;
+
+    border-bottom:
+        1px solid rgba(255, 255, 255, .08);
 }
 
-.modalHeader h2 {
-    font-size: 17px;
+.sheetHeader > div {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.sheetHeader strong,
+.menuHeader strong {
+    font-size: 16px;
     font-weight: 800;
 }
 
-.modalHeader span {
-    display: block;
-    margin-top: 3px;
-    color: var(--muted);
+.sheetHeader span {
+    color: rgba(255, 255, 255, .48);
+
     font-size: 11px;
 }
 
-.modalCloseBtn {
+.sheetClose {
     width: 36px;
     height: 36px;
+
     display: grid;
     place-items: center;
-    border-radius: 50%;
-    background: rgba(255,255,255,.08);
-}
 
+    border-radius: 50%;
+
+    background: rgba(255, 255, 255, .08);
+    color: #fff;
+}
 
 /* =========================================================
    COMMENTS
 ========================================================= */
 
+.commentsSheet {
+    height: min(78dvh, 720px);
+
+    display: flex;
+    flex-direction: column;
+}
+
 .commentsContainer {
-    max-height: 52vh;
+    flex: 1;
+
     overflow-y: auto;
-    padding: 8px 15px 15px;
+
+    padding: 10px 15px 12px;
+
+    scrollbar-width: none;
 }
 
 .commentsContainer::-webkit-scrollbar {
-    width: 4px;
+    display: none;
 }
 
-.commentsContainer::-webkit-scrollbar-thumb {
-    background: rgba(255,255,255,.15);
-    border-radius: 10px;
+.commentsLoading,
+.noComments {
+    min-height: 220px;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+    gap: 8px;
+
+    text-align: center;
+
+    color: rgba(255, 255, 255, .48);
+
+    font-size: 12px;
+}
+
+.noComments i {
+    margin-bottom: 7px;
+    font-size: 34px;
+}
+
+.noComments strong {
+    color: #fff;
+    font-size: 14px;
+}
+
+.loadingSpinner {
+    width: 25px;
+    height: 25px;
+
+    border: 3px solid rgba(255, 255, 255, .16);
+    border-top-color: #fff;
+
+    border-radius: 50%;
+
+    animation: spin .75s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 .commentItem {
     display: flex;
     gap: 10px;
-    padding: 12px 0;
+
+    padding: 11px 0;
+
+    border-bottom:
+        1px solid rgba(255, 255, 255, .055);
 }
 
 .commentItem > img {
-    width: 36px;
-    height: 36px;
-    flex-shrink: 0;
-    border-radius: 50%;
+    width: 37px;
+    height: 37px;
+
+    flex: 0 0 37px;
+
     object-fit: cover;
+
+    border-radius: 50%;
 }
 
-.commentBody {
+.commentItem > div {
     min-width: 0;
 }
 
-.commentBody strong {
+.commentItem strong {
+    display: block;
+
+    margin-bottom: 4px;
+
     font-size: 12px;
 }
 
-.commentBody p {
-    margin-top: 4px;
-    color: rgba(255,255,255,.86);
+.commentItem p {
+    margin: 0;
+
+    color: rgba(255, 255, 255, .87);
+
     font-size: 13px;
-    line-height: 18px;
+    line-height: 1.4;
+
     word-break: break-word;
 }
 
-.commentBody small {
+.commentItem small {
     display: block;
-    margin-top: 4px;
-    color: rgba(255,255,255,.42);
+
+    margin-top: 5px;
+
+    color: rgba(255, 255, 255, .38);
+
     font-size: 10px;
 }
 
 .commentComposer {
     display: flex;
-    gap: 8px;
-    padding: 12px;
-    border-top: 1px solid rgba(255,255,255,.08);
-    background: rgba(0,0,0,.15);
+    align-items: center;
+    gap: 9px;
+
+    padding:
+        10px
+        14px
+        calc(
+            10px +
+            env(safe-area-inset-bottom, 0px)
+        );
+
+    border-top:
+        1px solid rgba(255, 255, 255, .08);
+
+    background: #101010;
 }
 
-.commentComposer input {
+.composerAvatar {
+    width: 38px;
+    height: 38px;
+
+    object-fit: cover;
+
+    border-radius: 50%;
+}
+
+.commentInputWrap {
+    flex: 1;
+
+    height: 44px;
+
+    display: flex;
+    align-items: center;
+
+    padding-left: 13px;
+
+    border-radius: 999px;
+
+    background: rgba(255, 255, 255, .07);
+}
+
+.commentInputWrap input {
     min-width: 0;
     flex: 1;
-    height: 43px;
-    padding: 0 14px;
+
+    border: 0;
+    outline: 0;
+
+    background: transparent;
     color: #fff;
-    outline: none;
-    border: 1px solid rgba(255,255,255,.1);
-    border-radius: 13px;
-    background: rgba(255,255,255,.06);
+
+    font-size: 13px;
 }
 
-.commentComposer button {
+.commentInputWrap input::placeholder {
+    color: rgba(255, 255, 255, .42);
+}
+
+.commentInputWrap button {
     width: 43px;
     height: 43px;
-    border-radius: 13px;
-    background: linear-gradient(
-        135deg,
-        var(--accent),
-        var(--accent-2)
-    );
-}
 
+    border-radius: 50%;
+
+    background: transparent;
+    color: #fff;
+}
 
 /* =========================================================
    SHARE
 ========================================================= */
 
-.shareCard {
-    padding-bottom: 20px;
+.shareSheet {
+    padding-bottom:
+        calc(
+            20px +
+            env(safe-area-inset-bottom, 0px)
+        );
 }
 
 .shareGrid {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 12px;
-    padding: 18px;
+    grid-template-columns: repeat(5, 1fr);
+
+    gap: 8px;
+
+    padding: 19px 14px 8px;
 }
 
 .shareItem {
-    min-height: 80px;
+    min-width: 0;
+
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
     gap: 8px;
-    border-radius: 16px;
+
+    background: transparent;
     color: #fff;
-    background: rgba(255,255,255,.06);
-    border: 1px solid rgba(255,255,255,.08);
-    transition: .2s ease;
 }
 
-.shareItem:active {
-    transform: scale(.94);
+.shareIcon {
+    width: 52px;
+    height: 52px;
+
+    display: grid;
+    place-items: center;
+
+    border-radius: 50%;
+
+    background: rgba(255, 255, 255, .08);
+
+    font-size: 19px;
+
+    transition: transform .18s ease;
 }
 
-.shareItem i {
-    font-size: 23px;
+.shareItem:active .shareIcon {
+    transform: scale(.88);
 }
 
-.shareItem span {
+.shareItem strong {
+    overflow: hidden;
+
+    max-width: 70px;
+
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
     font-size: 10px;
+}
+
+/* =========================================================
+   ACTION MENU
+========================================================= */
+
+.menuSheet {
+    max-height: 90dvh;
+
+    padding-bottom:
+        calc(
+            12px +
+            env(safe-area-inset-bottom, 0px)
+        );
+}
+
+.menuGroup {
+    padding: 5px 10px;
+}
+
+.menuItem {
+    width: 100%;
+
+    min-height: 65px;
+
+    display: flex;
+    align-items: center;
+
+    gap: 12px;
+
+    padding: 9px 9px;
+
+    border-radius: 15px;
+
+    background: transparent;
+    color: #fff;
+
+    text-align: left;
+
+    transition:
+        background .16s ease,
+        transform .16s ease;
+}
+
+.menuItem:active {
+    background: rgba(255, 255, 255, .07);
+    transform: scale(.985);
+}
+
+.menuIcon {
+    width: 40px;
+    height: 40px;
+
+    flex: 0 0 40px;
+
+    display: grid;
+    place-items: center;
+
+    border-radius: 12px;
+
+    background: rgba(255, 255, 255, .08);
+
+    font-size: 14px;
+}
+
+.menuText {
+    min-width: 0;
+    flex: 1;
+
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.menuText strong {
+    font-size: 13px;
     font-weight: 700;
 }
 
+.menuText small {
+    color: rgba(255, 255, 255, .45);
+
+    font-size: 10px;
+    line-height: 1.3;
+}
+
+.menuItem > .fa-chevron-right {
+    color: rgba(255, 255, 255, .25);
+    font-size: 11px;
+}
+
+.menuItem.danger {
+    color: #ff5270;
+}
+
+.menuItem.danger .menuIcon {
+    background: rgba(255, 60, 90, .10);
+}
+
+.menuDivider {
+    height: 1px;
+
+    margin: 4px 16px;
+
+    background:
+        rgba(255, 255, 255, .08);
+}
 
 /* =========================================================
    REPORT
 ========================================================= */
 
+.reportSheet {
+    padding-bottom:
+        calc(
+            15px +
+            env(safe-area-inset-bottom, 0px)
+        );
+}
+
 .reportOptions {
-    display: flex;
-    flex-direction: column;
-    padding: 10px 15px 18px;
+    padding: 7px 10px;
 }
 
 .reportBtn {
-    min-height: 50px;
-    display: flex;
+    width: 100%;
+    min-height: 57px;
+
+    display: grid;
+    grid-template-columns: 30px 1fr 20px;
+
     align-items: center;
-    gap: 13px;
-    padding: 0 5px;
-    color: rgba(255,255,255,.9);
+    gap: 9px;
+
+    padding: 8px 10px;
+
     background: transparent;
-    border-bottom: 1px solid rgba(255,255,255,.06);
+    color: #fff;
+
     text-align: left;
+
+    border-radius: 13px;
 }
 
-.reportBtn i {
-    width: 25px;
-    text-align: center;
-    color: var(--muted);
+.reportBtn:active {
+    background: rgba(255, 255, 255, .07);
 }
 
-.reportBtn:last-child {
-    border-bottom: 0;
+.reportBtn > span {
+    font-size: 12px;
 }
 
+.reportBtn > i:last-child {
+    color: rgba(255, 255, 255, .28);
+    font-size: 10px;
+}
+
+.reportBtn.danger,
+.reportBtn:nth-child(2) {
+    color: #fff;
+}
 
 /* =========================================================
-   OWNER MENU
+   CONFIRM
 ========================================================= */
 
-.shortMenu {
-    position: fixed;
-    right: 14px;
-    bottom: 92px;
-    z-index: 600;
-    width: 210px;
-    overflow: hidden;
-    padding: 7px;
-    border-radius: 18px;
-    background: rgba(22,22,27,.96);
-    border: 1px solid rgba(255,255,255,.12);
-    box-shadow: 0 20px 55px rgba(0,0,0,.5);
-    backdrop-filter: blur(20px);
-    animation: menuIn .2s ease;
+.confirmCard,
+.loginCard {
+    position: absolute;
+
+    top: 50%;
+    left: 50%;
+
+    width: min(
+        calc(100% - 34px),
+        390px
+    );
+
+    transform: translate(-50%, -50%);
+
+    padding: 25px 20px 20px;
+
+    border-radius: 25px;
+
+    background:
+        linear-gradient(
+            180deg,
+            #1d1d1d,
+            #111
+        );
+
+    text-align: center;
+
+    box-shadow:
+        0 25px 80px rgba(0, 0, 0, .7);
+
+    animation: cardIn .2s ease;
 }
 
-@keyframes menuIn {
+@keyframes cardIn {
     from {
         opacity: 0;
-        transform: translateY(8px) scale(.96);
+        transform:
+            translate(-50%, -50%)
+            scale(.94);
     }
+
     to {
         opacity: 1;
-        transform: translateY(0) scale(1);
+        transform:
+            translate(-50%, -50%)
+            scale(1);
     }
 }
 
-.shortMenu button {
-    width: 100%;
-    height: 46px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 0 12px;
-    border-radius: 12px;
-    color: rgba(255,255,255,.9);
-    background: transparent;
-    text-align: left;
-    font-size: 13px;
-    font-weight: 600;
+.confirmIcon,
+.loginIcon {
+    width: 58px;
+    height: 58px;
+
+    display: grid;
+    place-items: center;
+
+    margin: 0 auto 15px;
+
+    border-radius: 18px;
+
+    background: rgba(255, 255, 255, .08);
+
+    font-size: 22px;
 }
 
-.shortMenu button:active {
-    background: rgba(255,255,255,.08);
+.confirmCard h2,
+.loginCard h2 {
+    margin: 0 0 8px;
+
+    font-size: 19px;
 }
 
-.shortMenu button i {
-    width: 20px;
-    text-align: center;
-    color: var(--muted);
+.confirmCard p,
+.loginCard p {
+    margin: 0 auto 20px;
+
+    color: rgba(255, 255, 255, .54);
+
+    font-size: 12px;
+    line-height: 1.5;
 }
 
-.shortMenu .dangerAction {
-    color: var(--danger);
+.confirmActions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 9px;
 }
-
-.shortMenu .dangerAction i {
-    color: var(--danger);
-}
-
 
 /* =========================================================
    TOAST
@@ -1151,138 +1681,266 @@ button {
 
 .toast {
     position: fixed;
+
+    z-index: 2000;
+
     left: 50%;
-    bottom: 85px;
-    z-index: 1000;
-    display: flex;
-    align-items: center;
-    gap: 9px;
+
+    bottom:
+        calc(
+            var(--nav-height) +
+            var(--safe-bottom) +
+            16px
+        );
+
+    transform: translateX(-50%);
+
+    min-width: 170px;
     max-width: calc(100% - 30px);
-    padding: 11px 15px;
-    border-radius: 14px;
-    background: rgba(25,25,30,.94);
-    border: 1px solid rgba(255,255,255,.12);
-    box-shadow: 0 15px 40px rgba(0,0,0,.45);
-    backdrop-filter: blur(18px);
-    transform: translate(-50%, 15px);
-    opacity: 0;
-    pointer-events: none;
-    transition: .25s ease;
-    font-size: 12px;
-    font-weight: 700;
-}
 
-.toast.show {
-    opacity: 1;
-    transform: translate(-50%, 0);
-}
+    min-height: 43px;
 
-.toast i {
-    color: var(--success);
-}
-
-
-/* =========================================================
-   NETWORK
-========================================================= */
-
-.networkStatus {
-    position: fixed;
-    top: 72px;
-    left: 50%;
-    z-index: 800;
     display: flex;
     align-items: center;
-    gap: 7px;
-    padding: 8px 13px;
-    border-radius: 12px;
-    background: rgba(35,35,38,.94);
+    justify-content: center;
+
+    gap: 9px;
+
+    padding: 8px 14px;
+
+    border-radius: 999px;
+
+    background: rgba(28, 28, 28, .95);
+
     color: #fff;
+
     font-size: 11px;
     font-weight: 700;
-    transform: translateX(-50%);
+
+    box-shadow:
+        0 12px 40px rgba(0, 0, 0, .45);
+
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+
+    animation: toastIn .22s ease;
 }
 
+.toastIcon {
+    display: grid;
+    place-items: center;
+
+    font-size: 14px;
+}
+
+@keyframes toastIn {
+    from {
+        opacity: 0;
+        transform:
+            translateX(-50%)
+            translateY(12px)
+            scale(.96);
+    }
+
+    to {
+        opacity: 1;
+        transform:
+            translateX(-50%)
+            translateY(0)
+            scale(1);
+    }
+}
 
 /* =========================================================
-   BODY MODAL STATE
+   BOTTOM NAV
 ========================================================= */
 
-body.modalOpen {
-    overflow: hidden;
+.shortsBottomNav {
+    position: fixed;
+
+    z-index: 150;
+
+    left: 0;
+    right: 0;
+    bottom: 0;
+
+    height:
+        calc(
+            var(--nav-height) +
+            env(safe-area-inset-bottom, 0px)
+        );
+
+    padding:
+        4px
+        10px
+        env(safe-area-inset-bottom, 0px);
+
+    display: grid;
+    grid-template-columns:
+        1fr
+        1fr
+        1fr
+        1fr
+        1fr;
+
+    align-items: center;
+
+    background:
+        linear-gradient(
+            to top,
+            rgba(0, 0, 0, .92),
+            rgba(0, 0, 0, .48),
+            transparent
+        );
+
+    pointer-events: auto;
 }
 
+.bottomNavItem {
+    height: 54px;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+    gap: 4px;
+
+    background: transparent;
+    color: rgba(255, 255, 255, .76);
+
+    font-size: 17px;
+}
+
+.bottomNavItem span {
+    font-size: 8px;
+    font-weight: 600;
+}
+
+.bottomNavItem:active {
+    transform: scale(.91);
+}
+
+.bottomCreate {
+    display: grid;
+    place-items: center;
+
+    background: transparent;
+}
+
+.bottomCreate span {
+    width: 45px;
+    height: 34px;
+
+    display: grid;
+    place-items: center;
+
+    border-radius: 11px;
+
+    background: #fff;
+    color: #000;
+
+    box-shadow:
+        0 5px 20px rgba(0, 0, 0, .3);
+}
+
+.bottomCreate i {
+    font-size: 17px;
+}
 
 /* =========================================================
-   RESPONSIVE
+   DESKTOP / TABLET
 ========================================================= */
 
 @media (min-width: 700px) {
 
-    .shortsApp {
-        inset: 0;
-        width: min(100%, 480px);
+    .shortsContainer {
+        background: #050505;
+    }
+
+    .shortCard {
+        width: min(100%, 520px);
+        margin: 0 auto;
+    }
+
+    .shortsTopBar {
         left: 50%;
         right: auto;
+
+        width: 520px;
+
         transform: translateX(-50%);
-        border-left: 1px solid rgba(255,255,255,.08);
-        border-right: 1px solid rgba(255,255,255,.08);
     }
 
-    .bottomNav {
-        display: none !important;
+    .shortsBottomNav {
+        left: 50%;
+        right: auto;
+
+        width: 520px;
+
+        transform: translateX(-50%);
     }
 
-    .shortInfo {
-        bottom: 32px;
-        left: 18px;
+    .shortSearchBar {
+        width: 492px;
+
+        left: 50%;
+        right: auto;
+
+        transform: translateX(-50%);
     }
 
-    .shortActions {
-        bottom: 30px;
+    .networkStatus {
+        left: 50%;
     }
 
-    .floatingUploadBtn {
-        right: 16px;
+    .toast {
+        bottom: 82px;
     }
 }
 
-
 /* =========================================================
-   SMALL PHONES
+   SMALL DEVICES
 ========================================================= */
 
 @media (max-height: 650px) {
 
-    .shortInfo {
-        bottom: 16px;
+    .shortActions {
+        gap: 11px;
+    }
+
+    .shortAction i {
+        font-size: 22px;
+    }
+
+    .shortContent {
+        bottom:
+            calc(
+                var(--nav-height) +
+                var(--safe-bottom) +
+                16px
+            );
     }
 
     .shortActions {
-        bottom: 14px;
-        gap: 8px;
+        bottom:
+            calc(
+                var(--nav-height) +
+                var(--safe-bottom) +
+                17px
+            );
     }
 
-    .actionBtn {
-        min-height: 42px;
+    .creatorAvatar {
+        width: 34px;
+        height: 34px;
     }
 
-    .actionBtn i {
-        font-size: 21px;
-    }
-
-    .profileDisc {
-        width: 36px;
-        height: 36px;
-    }
-
-    .userAvatar {
-        width: 42px;
-        height: 42px;
-        min-width: 42px;
+    .musicDisc {
+        width: 37px;
+        height: 37px;
     }
 }
-
 
 /* =========================================================
    REDUCED MOTION
@@ -1293,9 +1951,47 @@ body.modalOpen {
     *,
     *::before,
     *::after {
-        animation-duration: .01ms !important;
-        animation-iteration-count: 1 !important;
         scroll-behavior: auto !important;
-        transition-duration: .01ms !important;
+        animation-duration: .001ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: .001ms !important;
     }
 }
+
+/* =========================================================
+   VIDEO / IMAGE SAFETY
+========================================================= */
+
+.shortVideo::-webkit-media-controls {
+    display: none !important;
+}
+
+.shortVideo::-webkit-media-controls-enclosure {
+    display: none !important;
+}
+
+.shortVideo {
+    -webkit-user-drag: none;
+}
+
+/* =========================================================
+   MODAL BODY LOCK
+========================================================= */
+
+body.modalOpen {
+    overflow: hidden;
+}
+
+/* =========================================================
+   ACCESSIBILITY
+========================================================= */
+
+button:focus-visible,
+input:focus-visible {
+    outline: 2px solid rgba(255, 255, 255, .85);
+    outline-offset: 2px;
+}
+
+/* =========================================================
+   END VIEWORA SHORTS CSS
+========================================================= */

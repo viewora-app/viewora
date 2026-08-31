@@ -1,2002 +1,2256 @@
-/*=========================================
-        VIEWORA V10 PREMIUM
-            upload.css
-            PART 1
-Root • Reset • Body • Background
-=========================================*/
+/* =========================================================
+   VIEWORA — PREMIUM CREATE
+   upload.css
+========================================================= */
 
 :root{
+    --bg:#050507;
+    --surface:rgba(15,16,22,.78);
+    --surface2:rgba(25,26,34,.88);
+    --border:rgba(255,255,255,.10);
 
-    --primary:#6c63ff;
-    --primary2:#8b5cf6;
-    --accent:#00d4ff;
+    --text:#fff;
+    --muted:#9ca3af;
 
-    --success:#00d26a;
-    --warning:#ffb100;
-    --danger:#ff4d67;
+    --primary:#00aaff;
+    --secondary:#6366f1;
+    --danger:#ff3b5c;
+    --success:#22c55e;
 
-    --bg:#050816;
-    --bg2:#0d1227;
-    --card:rgba(255,255,255,.08);
-
-    --text:#ffffff;
-    --text2:#c8d0ff;
-
-    --border:rgba(255,255,255,.12);
-
-    --radius:22px;
-
-    --shadow:
-    0 15px 45px rgba(0,0,0,.35);
-
-    --transition:.30s ease;
-
+    --radius:24px;
 }
 
-/*=========================================
-Reset
-=========================================*/
+/* =========================================================
+   RESET
+========================================================= */
 
 *{
-
+    box-sizing:border-box;
     margin:0;
     padding:0;
-
-    box-sizing:border-box;
-
-    font-family:
-    "Inter",
-    sans-serif;
-
+    -webkit-tap-highlight-color:transparent;
 }
 
-html{
-
-    scroll-behavior:smooth;
-
-}
-
+html,
 body{
-
-    background:var(--bg);
-
-    color:var(--text);
-
-    overflow-x:hidden;
-
-    min-height:100vh;
-
-    position:relative;
-
-}
-
-/*=========================================
-Scrollbar
-=========================================*/
-
-::-webkit-scrollbar{
-
-    width:10px;
-
-}
-
-::-webkit-scrollbar-track{
-
-    background:#090d1e;
-
-}
-
-::-webkit-scrollbar-thumb{
-
-    background:linear-gradient(
-
-        180deg,
-
-        var(--primary),
-
-        var(--accent)
-
-    );
-
-    border-radius:30px;
-
-}
-
-/*=========================================
-Animated Background
-=========================================*/
-
-.bgGradient{
-
-    position:fixed;
-
-    inset:0;
-
-    background:
-
-    radial-gradient(circle at top left,
-    rgba(108,99,255,.35),
-    transparent 45%),
-
-    radial-gradient(circle at top right,
-    rgba(0,212,255,.25),
-    transparent 40%),
-
-    radial-gradient(circle at bottom,
-    rgba(139,92,246,.25),
-    transparent 45%),
-
-    var(--bg);
-
-    z-index:-5;
-
-}
-
-/*=========================================
-Floating Blobs
-=========================================*/
-
-.blob{
-
-    position:fixed;
-
-    border-radius:50%;
-
-    filter:blur(80px);
-
-    opacity:.45;
-
-    animation:floatBlob 12s ease-in-out infinite;
-
-    z-index:-4;
-
-}
-
-.blob1{
-
-    width:320px;
-    height:320px;
-
-    background:#6c63ff;
-
-    top:-90px;
-    left:-80px;
-
-}
-
-.blob2{
-
-    width:280px;
-    height:280px;
-
-    background:#00d4ff;
-
-    right:-90px;
-    top:120px;
-
-    animation-delay:2s;
-
-}
-
-.blob3{
-
-    width:340px;
-    height:340px;
-
-    background:#8b5cf6;
-
-    bottom:-120px;
-    left:30%;
-
-    animation-delay:4s;
-
-}
-
-/*=========================================
-Particles Canvas
-=========================================*/
-
-#particles{
-
-    position:fixed;
-
-    inset:0;
-
     width:100%;
-
     height:100%;
-
-    pointer-events:none;
-
-    z-index:-3;
-
+    overflow:hidden;
+    background:var(--bg);
+    color:var(--text);
+    font-family:Inter,Arial,sans-serif;
 }
 
-/*=========================================
-Glass Effect
-=========================================*/
-
-.glass{
-
-    background:rgba(255,255,255,.08);
-
-    backdrop-filter:blur(20px);
-
-    -webkit-backdrop-filter:blur(20px);
-
-    border:1px solid
-    rgba(255,255,255,.10);
-
-    box-shadow:var(--shadow);
-
+button,
+input,
+textarea,
+select{
+    font:inherit;
 }
 
-/*=========================================
-Fade Animation
-=========================================*/
-
-.fadeIn{
-
-    animation:fadeIn .6s ease;
-
+button{
+    border:0;
+    cursor:pointer;
 }
 
 .hidden{
-
     display:none !important;
-
 }
 
-/*=========================================
-Keyframes
-=========================================*/
 
-@keyframes fadeIn{
+/* =========================================================
+   APP
+========================================================= */
 
-    from{
-
-        opacity:0;
-
-        transform:translateY(25px);
-
-    }
-
-    to{
-
-        opacity:1;
-
-        transform:translateY(0);
-
-    }
-
+#app{
+    width:100%;
+    height:100%;
+    position:relative;
+    overflow:hidden;
 }
 
-@keyframes floatBlob{
 
-    0%{
+/* =========================================================
+   CREATOR
+========================================================= */
 
-        transform:
-        translate(0,0)
-        scale(1);
-
-    }
-
-    50%{
-
-        transform:
-        translate(35px,-30px)
-        scale(1.12);
-
-    }
-
-    100%{
-
-        transform:
-        translate(0,0)
-        scale(1);
-
-    }
-
+.creator{
+    position:relative;
+    width:100%;
+    height:100%;
+    overflow:hidden;
+    background:
+        radial-gradient(
+            circle at 50% 35%,
+            rgba(0,170,255,.10),
+            transparent 35%
+        ),
+        #050507;
 }
-/*=========================================
-        VIEWORA V10 PREMIUM
-            upload.css
-            PART 2
-Header • Upload Card • Buttons • Inputs
-=========================================*/
 
-/*=========================================
-Header
-=========================================*/
 
-.header{
+/* =========================================================
+   CAMERA
+========================================================= */
 
-    position:sticky;
-    top:0;
+.cameraPreview{
+    position:absolute;
+    inset:0;
 
     width:100%;
+    height:100%;
+
+    object-fit:cover;
+
+    background:#08090d;
+
+    z-index:1;
+
+    transform:scaleX(1);
+
+    transition:
+        filter .35s ease,
+        transform .35s ease;
+}
+
+.cameraPreview::after{
+    content:"";
+}
+
+
+/* cinematic camera overlay */
+
+.creator::after{
+    content:"";
+
+    position:absolute;
+    inset:0;
+
+    pointer-events:none;
+
+    z-index:2;
+
+    background:
+        linear-gradient(
+            to bottom,
+            rgba(0,0,0,.65),
+            transparent 22%,
+            transparent 65%,
+            rgba(0,0,0,.88)
+        );
+}
+
+
+/* =========================================================
+   CAMERA FALLBACK
+========================================================= */
+
+.cameraFallback{
+    position:absolute;
+    inset:0;
+
+    z-index:20;
+
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    align-items:center;
+
+    text-align:center;
+
+    padding:30px;
+
+    background:
+        radial-gradient(
+            circle at center,
+            rgba(0,170,255,.12),
+            transparent 45%
+        ),
+        #050507;
+}
+
+.fallbackIcon{
+    width:84px;
+    height:84px;
+
+    border-radius:50%;
+
+    display:grid;
+    place-items:center;
+
+    margin-bottom:20px;
+
+    font-size:32px;
+
+    background:rgba(255,255,255,.07);
+
+    border:1px solid var(--border);
+
+    box-shadow:
+        0 20px 60px rgba(0,0,0,.5),
+        inset 0 0 25px rgba(255,255,255,.04);
+}
+
+.cameraFallback h2{
+    font-size:22px;
+    margin-bottom:8px;
+}
+
+.cameraFallback p{
+    max-width:320px;
+    color:var(--muted);
+    font-size:14px;
+    line-height:1.6;
+}
+
+
+/* =========================================================
+   TOP BAR
+========================================================= */
+
+.topBar{
+    position:absolute;
+
+    top:0;
+    left:0;
+    right:0;
+
+    z-index:30;
+
+    height:86px;
+
+    padding:
+        max(14px, env(safe-area-inset-top))
+        18px
+        12px;
 
     display:flex;
     align-items:center;
     justify-content:space-between;
-
-    padding:18px 28px;
-
-    z-index:1000;
-
-    border-bottom:1px solid rgba(255,255,255,.08);
-
 }
 
-.headerTitle{
 
-    flex:1;
+/* =========================================================
+   GLASS BUTTON
+========================================================= */
 
-    margin-left:18px;
-
-}
-
-.headerTitle h2{
-
-    font-size:26px;
-    font-weight:700;
-
-    color:#fff;
-
-}
-
-.headerTitle p{
-
-    margin-top:4px;
-
-    font-size:14px;
-
-    color:var(--text2);
-
-}
-
-/*=========================================
-Upload Container
-=========================================*/
-
-.uploadContainer{
-
-    width:100%;
-
-    display:flex;
-    justify-content:center;
-
-    padding:40px 20px 80px;
-
-}
-
-.uploadCard{
-
-    width:100%;
-    max-width:900px;
-
-    border-radius:var(--radius);
-
-    padding:35px;
-
-    overflow:hidden;
-
-    transition:var(--transition);
-
-}
-
-.uploadCard:hover{
-
-    transform:translateY(-4px);
-
-}
-
-/*=========================================
-Top Section
-=========================================*/
-
-.uploadTop{
-
-    text-align:center;
-
-    margin-bottom:35px;
-
-}
-
-.uploadLogo{
-
-    width:90px;
-    height:90px;
-
-    object-fit:contain;
-
-    margin-bottom:15px;
-
-}
-
-.uploadTop h2{
-
-    font-size:32px;
-
-    font-weight:800;
-
-}
-
-.uploadTop p{
-
-    margin-top:10px;
-
-    color:var(--text2);
-
-    line-height:1.7;
-
-}
-
-/*=========================================
-Buttons
-=========================================*/
-
-button{
-
-    border:none;
-
-    outline:none;
-
-    cursor:pointer;
-
-    transition:var(--transition);
-
-    font-weight:600;
-
-}
-
-.primaryBtn{
-
-    display:inline-flex;
-
-    align-items:center;
-
-    justify-content:center;
-
-    gap:10px;
-
-    padding:14px 24px;
+.iconButton{
+    width:46px;
+    height:46px;
 
     border-radius:16px;
 
-    background:linear-gradient(
-    135deg,
-    var(--primary),
-    var(--accent));
-
-    color:#fff;
-
-    box-shadow:
-    0 10px 25px
-    rgba(108,99,255,.35);
-
-}
-
-.primaryBtn:hover{
-
-    transform:translateY(-2px);
-
-    box-shadow:
-    0 15px 35px
-    rgba(108,99,255,.45);
-
-}
-
-.secondaryBtn{
-
-    display:inline-flex;
-
-    align-items:center;
-
-    justify-content:center;
-
-    gap:10px;
-
-    padding:14px 24px;
-
-    border-radius:16px;
-
-    background:rgba(255,255,255,.08);
-
-    color:#fff;
-
-    border:1px solid
-    rgba(255,255,255,.12);
-
-}
-
-.secondaryBtn:hover{
-
-    background:rgba(255,255,255,.15);
-
-}
-
-.dangerBtn{
-
-    display:inline-flex;
-
-    align-items:center;
-
-    justify-content:center;
-
-    gap:10px;
-
-    padding:14px 24px;
-
-    border-radius:16px;
-
-    background:linear-gradient(
-    135deg,
-    #ff4d67,
-    #ff2d55);
-
-    color:#fff;
-
-}
-
-.dangerBtn:hover{
-
-    transform:translateY(-2px);
-
-}
-
-/*=========================================
-Icon Button
-=========================================*/
-
-.iconBtn{
-
-    width:52px;
-    height:52px;
-
-    border-radius:50%;
-
-    background:rgba(255,255,255,.08);
+    display:grid;
+    place-items:center;
 
     color:#fff;
 
     font-size:18px;
 
-    border:1px solid rgba(255,255,255,.10);
-
+    transition:
+        transform .2s ease,
+        background .2s ease;
 }
 
-.iconBtn:hover{
-
-    background:rgba(255,255,255,.18);
-
+.iconButton:active{
+    transform:scale(.9);
 }
 
-/*=========================================
-Draft Button
-=========================================*/
+.glass{
+    background:rgba(0,0,0,.35);
 
-.draftBtn{
+    border:1px solid rgba(255,255,255,.12);
 
-    display:flex;
-
-    align-items:center;
-
-    gap:8px;
-
-    padding:12px 18px;
-
-    border-radius:14px;
-
-    background:rgba(255,255,255,.08);
-
-    color:#fff;
-
-    border:1px solid rgba(255,255,255,.10);
-
-}
-
-.draftBtn:hover{
-
-    background:rgba(255,255,255,.16);
-
-}
-
-/*=========================================
-Input Fields
-=========================================*/
-
-.formGroup{
-
-    margin-bottom:25px;
-
-}
-
-.formGroup label{
-
-    display:block;
-
-    margin-bottom:10px;
-
-    font-size:15px;
-
-    font-weight:600;
-
-    color:#fff;
-
-}
-
-.formGroup input,
-
-.formGroup textarea,
-
-.formGroup select{
-
-    width:100%;
-
-    padding:16px 18px;
-
-    border-radius:16px;
-
-    background:rgba(255,255,255,.06);
-
-    border:1px solid
-    rgba(255,255,255,.10);
-
-    color:#fff;
-
-    font-size:15px;
-
-    outline:none;
-
-    transition:var(--transition);
-
-}
-
-.formGroup textarea{
-
-    resize:vertical;
-
-    min-height:140px;
-
-}
-
-.formGroup input::placeholder,
-
-.formGroup textarea::placeholder{
-
-    color:#9fb7ff;
-
-}
-
-.formGroup input:focus,
-
-.formGroup textarea:focus,
-
-.formGroup select:focus{
-
-    border-color:var(--accent);
+    backdrop-filter:blur(18px);
+    -webkit-backdrop-filter:blur(18px);
 
     box-shadow:
-    0 0 0 3px
-    rgba(0,212,255,.20);
-
+        0 10px 30px rgba(0,0,0,.25);
 }
 
-/*=========================================
-Character Counter
-=========================================*/
 
-.counter{
+/* =========================================================
+   BRAND
+========================================================= */
 
-    margin-top:8px;
-
-    text-align:right;
-
-    font-size:13px;
-
-    color:#9fb7ff;
-
-}
-/*=========================================
-        VIEWORA V10 PREMIUM
-            upload.css
-            PART 3
-Drag & Drop • Preview • Switches
-=========================================*/
-
-/*=========================================
-Drop Zone
-=========================================*/
-
-.dropZone{
-
-    position:relative;
-
-    width:100%;
-
-    min-height:320px;
-
-    border:2px dashed rgba(255,255,255,.18);
-
-    border-radius:24px;
-
+.brandPill{
     display:flex;
-
     align-items:center;
+    gap:10px;
 
-    justify-content:center;
-
-    text-align:center;
-
-    padding:40px;
-
-    margin-bottom:30px;
-
-    background:rgba(255,255,255,.04);
-
-    transition:.35s;
-
-}
-
-.dropZone:hover{
-
-    border-color:var(--accent);
-
-    background:rgba(0,212,255,.06);
-
-    transform:translateY(-3px);
-
-}
-
-.dropZone.dragover{
-
-    border-color:var(--success);
-
-    background:rgba(0,210,106,.08);
-
-    transform:scale(1.02);
-
-}
-
-/*=========================================
-Drop Content
-=========================================*/
-
-.dropContent{
-
-    width:100%;
-
-}
-
-.uploadIcon{
-
-    width:95px;
-
-    height:95px;
-
-    margin:auto;
-
-    border-radius:50%;
-
-    display:flex;
-
-    align-items:center;
-
-    justify-content:center;
-
-    background:linear-gradient(
-    135deg,
-    var(--primary),
-    var(--accent));
-
-    font-size:38px;
-
-    color:#fff;
-
-    margin-bottom:20px;
-
-    animation:floatIcon 3s ease-in-out infinite;
-
-}
-
-.dropContent h3{
-
-    font-size:28px;
-
-    font-weight:700;
-
-}
-
-.dropContent p{
-
-    margin:12px 0;
-
-    color:var(--text2);
-
-}
-
-.dropContent small{
-
-    display:block;
-
-    margin-top:18px;
-
-    color:#8fa6ff;
-
-}
-
-/*=========================================
-Preview Section
-=========================================*/
-
-.previewSection{
-
-    margin-top:35px;
-
-    border-radius:20px;
-
-    overflow:hidden;
-
-    background:rgba(255,255,255,.05);
-
-    border:1px solid rgba(255,255,255,.08);
-
-}
-
-.previewVideo,
-
-.previewImage{
-
-    width:100%;
-
-    max-height:500px;
-
-    object-fit:contain;
-
-    background:#000;
-
-}
-
-/*=========================================
-File Information
-=========================================*/
-
-.fileInfo{
-
-    padding:22px;
-
-}
-
-.fileInfo h3{
-
-    font-size:20px;
-
-    word-break:break-word;
-
-}
-
-.fileInfo p{
-
-    margin-top:8px;
-
-    color:var(--text2);
-
-}
-
-.fileType{
-
-    margin-top:15px;
-
-}
-
-#fileTypeBadge{
-
-    display:inline-block;
-
-    padding:8px 16px;
-
-    border-radius:50px;
-
-    background:rgba(108,99,255,.18);
-
-    color:#fff;
-
-    font-size:13px;
-
-}
-
-/*=========================================
-Quick Actions
-=========================================*/
-
-.quickActions{
-
-    display:flex;
-
-    gap:15px;
-
-    flex-wrap:wrap;
-
-    margin:25px 0;
-
-}
-
-/*=========================================
-Section Title
-=========================================*/
-
-.sectionTitle{
-
-    display:flex;
-
-    align-items:center;
-
-    gap:12px;
-
-    margin:35px 0 20px;
-
-    font-size:22px;
-
-    font-weight:700;
-
-}
-
-.sectionTitle i{
-
-    color:var(--accent);
-
-}
-
-/*=========================================
-Options Grid
-=========================================*/
-
-.optionsGrid{
-
-    display:grid;
-
-    grid-template-columns:
-    repeat(auto-fit,minmax(230px,1fr));
-
-    gap:18px;
-
-    margin-top:25px;
-
-}
-
-/*=========================================
-Switch Cards
-=========================================*/
-
-.switchCard{
-
-    display:flex;
-
-    justify-content:space-between;
-
-    align-items:center;
-
-    padding:18px;
+    padding:8px 16px 8px 9px;
 
     border-radius:18px;
 
-    background:rgba(255,255,255,.05);
+    background:rgba(0,0,0,.35);
 
-    border:1px solid rgba(255,255,255,.08);
+    border:1px solid rgba(255,255,255,.11);
 
-    transition:.30s;
+    backdrop-filter:blur(18px);
+    -webkit-backdrop-filter:blur(18px);
 
+    box-shadow:
+        0 12px 35px rgba(0,0,0,.3);
 }
 
-.switchCard:hover{
+.brandLogo{
+    width:34px;
+    height:34px;
 
-    transform:translateY(-3px);
+    border-radius:11px;
 
-    background:rgba(255,255,255,.08);
+    object-fit:cover;
 
+    box-shadow:
+        0 0 18px rgba(0,170,255,.35);
 }
 
-.switchCard span{
-
-    font-size:15px;
-
-    font-weight:600;
-
+.brandText{
+    display:flex;
+    flex-direction:column;
+    line-height:1.05;
 }
 
-/*=========================================
-Modern Toggle
-=========================================*/
-
-.switchCard input{
-
-    width:52px;
-
-    height:28px;
-
-    appearance:none;
-
-    border-radius:30px;
-
-    background:#555;
-
-    position:relative;
-
-    cursor:pointer;
-
-    transition:.30s;
-
+.brandText strong{
+    font-size:12px;
+    letter-spacing:1.8px;
 }
 
-.switchCard input::before{
+.brandText span{
+    margin-top:4px;
 
-    content:"";
+    font-size:8px;
+    letter-spacing:2.2px;
 
+    color:var(--primary);
+}
+
+
+/* =========================================================
+   MODE HEADER
+========================================================= */
+
+.modeHeader{
     position:absolute;
 
-    left:4px;
+    top:105px;
+    left:22px;
 
-    top:4px;
+    z-index:20;
 
-    width:20px;
+    max-width:280px;
+}
 
-    height:20px;
+.modeBadge{
+    display:inline-flex;
+    align-items:center;
+    gap:9px;
+
+    padding:8px 13px;
+
+    border-radius:999px;
+
+    background:rgba(0,0,0,.38);
+
+    border:1px solid rgba(255,255,255,.12);
+
+    backdrop-filter:blur(15px);
+}
+
+.modeBadge span{
+    width:26px;
+    height:26px;
+
+    display:grid;
+    place-items:center;
+
+    border-radius:50%;
+
+    background:linear-gradient(
+        135deg,
+        var(--primary),
+        var(--secondary)
+    );
+
+    font-size:12px;
+}
+
+.modeBadge strong{
+    font-size:13px;
+}
+
+.modeHeader p{
+    margin-top:9px;
+
+    color:rgba(255,255,255,.65);
+
+    font-size:11px;
+
+    line-height:1.4;
+}
+
+
+/* =========================================================
+   MUSIC
+========================================================= */
+
+.musicButton{
+    position:absolute;
+
+    top:180px;
+    left:20px;
+
+    z-index:20;
+
+    display:flex;
+    align-items:center;
+
+    gap:10px;
+
+    min-width:210px;
+
+    padding:10px 13px;
+
+    color:#fff;
+
+    border-radius:18px;
+
+    background:rgba(0,0,0,.35);
+
+    border:1px solid rgba(255,255,255,.11);
+
+    backdrop-filter:blur(18px);
+    -webkit-backdrop-filter:blur(18px);
+
+    overflow:hidden;
+
+    text-align:left;
+
+    transition:
+        transform .2s ease,
+        border-color .2s ease;
+}
+
+.musicButton:active{
+    transform:scale(.96);
+}
+
+.musicIcon{
+    width:38px;
+    height:38px;
+
+    display:grid;
+    place-items:center;
+
+    border-radius:13px;
+
+    background:
+        linear-gradient(
+            135deg,
+            var(--primary),
+            var(--secondary)
+        );
+
+    box-shadow:
+        0 0 20px rgba(0,170,255,.25);
+}
+
+.musicInfo{
+    display:flex;
+    flex-direction:column;
+
+    min-width:0;
+}
+
+.musicInfo strong{
+    font-size:12px;
+}
+
+.musicInfo small{
+    margin-top:3px;
+
+    font-size:9px;
+
+    color:var(--muted);
+}
+
+.musicArrow{
+    margin-left:auto;
+    color:rgba(255,255,255,.5);
+    font-size:11px;
+}
+
+.musicGlow{
+    position:absolute;
+
+    width:70px;
+    height:70px;
+
+    right:-30px;
+    top:-30px;
+
+    border-radius:50%;
+
+    background:rgba(0,170,255,.18);
+
+    filter:blur(20px);
+}
+
+
+/* =========================================================
+   SELECTED MUSIC
+========================================================= */
+
+.selectedMusic{
+    position:absolute;
+
+    top:180px;
+    left:20px;
+
+    z-index:21;
+
+    display:flex;
+    align-items:center;
+
+    gap:10px;
+
+    max-width:290px;
+
+    padding:8px 10px;
+
+    border-radius:17px;
+
+    background:rgba(0,0,0,.48);
+
+    border:1px solid rgba(255,255,255,.12);
+
+    backdrop-filter:blur(18px);
+}
+
+.musicDisc{
+    width:38px;
+    height:38px;
+
+    border-radius:50%;
+
+    display:grid;
+    place-items:center;
+
+    background:
+        linear-gradient(
+            135deg,
+            var(--primary),
+            var(--secondary)
+        );
+
+    animation:discSpin 4s linear infinite;
+}
+
+@keyframes discSpin{
+    to{
+        transform:rotate(360deg);
+    }
+}
+
+.selectedMusicText{
+    display:flex;
+    flex-direction:column;
+
+    min-width:100px;
+}
+
+.selectedMusicText strong{
+    font-size:11px;
+
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+}
+
+.selectedMusicText span{
+    margin-top:3px;
+
+    font-size:9px;
+    color:var(--muted);
+}
+
+.musicWave{
+    display:flex;
+    align-items:center;
+    gap:2px;
+    margin-left:auto;
+}
+
+.musicWave span{
+    width:2px;
+    height:12px;
+
+    border-radius:10px;
+
+    background:var(--primary);
+
+    animation:wave .7s ease-in-out infinite alternate;
+}
+
+.musicWave span:nth-child(2){
+    animation-delay:.1s;
+}
+
+.musicWave span:nth-child(3){
+    animation-delay:.2s;
+}
+
+.musicWave span:nth-child(4){
+    animation-delay:.3s;
+}
+
+.musicWave span:nth-child(5){
+    animation-delay:.4s;
+}
+
+@keyframes wave{
+    from{height:5px;}
+    to{height:16px;}
+}
+
+
+/* =========================================================
+   CAMERA TOOLS
+========================================================= */
+
+.cameraTools{
+    position:absolute;
+
+    right:15px;
+    top:50%;
+
+    transform:translateY(-50%);
+
+    z-index:20;
+
+    display:flex;
+    flex-direction:column;
+
+    gap:15px;
+}
+
+.cameraTool{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:5px;
+
+    color:#fff;
+
+    background:none;
+}
+
+.toolCircle{
+    width:43px;
+    height:43px;
+
+    display:grid;
+    place-items:center;
+
+    border-radius:50%;
+
+    background:rgba(0,0,0,.40);
+
+    border:1px solid rgba(255,255,255,.12);
+
+    backdrop-filter:blur(14px);
+
+    transition:.2s;
+}
+
+.cameraTool:active .toolCircle{
+    transform:scale(.88);
+    background:rgba(0,170,255,.25);
+}
+
+.cameraTool small{
+    font-size:8px;
+
+    color:rgba(255,255,255,.75);
+}
+
+
+/* =========================================================
+   RECORDING STATUS
+========================================================= */
+
+.recordingStatus{
+    position:absolute;
+
+    top:100px;
+    left:50%;
+
+    transform:translateX(-50%);
+
+    z-index:40;
+
+    display:flex;
+    align-items:center;
+    gap:8px;
+
+    padding:8px 13px;
+
+    border-radius:999px;
+
+    background:rgba(0,0,0,.55);
+
+    border:1px solid rgba(255,59,92,.4);
+
+    backdrop-filter:blur(14px);
+}
+
+.recordDot{
+    width:8px;
+    height:8px;
+
+    border-radius:50%;
+
+    background:var(--danger);
+
+    box-shadow:0 0 12px var(--danger);
+
+    animation:recordPulse 1s infinite;
+}
+
+@keyframes recordPulse{
+    50%{
+        opacity:.3;
+        transform:scale(.7);
+    }
+}
+
+.recordingStatus strong{
+    font-size:12px;
+}
+
+.recordingStatus span:last-child{
+    color:var(--danger);
+    font-size:9px;
+    font-weight:800;
+}
+
+
+/* =========================================================
+   CAMERA BOTTOM
+========================================================= */
+
+.cameraBottom{
+    position:absolute;
+
+    left:0;
+    right:0;
+    bottom:120px;
+
+    z-index:20;
+
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+
+    padding:0 22px;
+}
+
+
+/* =========================================================
+   MEDIA BUTTON
+========================================================= */
+
+.mediaButton{
+    width:115px;
+
+    display:flex;
+    align-items:center;
+    gap:8px;
+
+    color:#fff;
+    text-align:left;
+
+    background:none;
+}
+
+.mediaIcon{
+    width:42px;
+    height:42px;
+
+    display:grid;
+    place-items:center;
+
+    flex-shrink:0;
+
+    border-radius:14px;
+
+    background:rgba(0,0,0,.45);
+
+    border:1px solid rgba(255,255,255,.12);
+
+    backdrop-filter:blur(15px);
+}
+
+.mediaText{
+    display:flex;
+    flex-direction:column;
+}
+
+.mediaText strong{
+    font-size:10px;
+}
+
+.mediaText small{
+    margin-top:3px;
+    font-size:8px;
+    color:rgba(255,255,255,.55);
+}
+
+
+/* =========================================================
+   RECORD BUTTON
+========================================================= */
+
+.recordWrapper{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+}
+
+.recordButton{
+    width:82px;
+    height:82px;
+
+    display:grid;
+    place-items:center;
+
+    border-radius:50%;
+
+    background:rgba(0,0,0,.35);
+
+    border:2px solid rgba(255,255,255,.8);
+
+    box-shadow:
+        0 0 0 5px rgba(255,255,255,.08),
+        0 15px 45px rgba(0,0,0,.4);
+
+    transition:
+        transform .2s ease,
+        box-shadow .25s ease;
+}
+
+.recordButton:active{
+    transform:scale(.88);
+}
+
+.recordRing{
+    width:62px;
+    height:62px;
+
+    display:grid;
+    place-items:center;
 
     border-radius:50%;
 
     background:#fff;
 
-    transition:.30s;
-
+    transition:.25s;
 }
 
-.switchCard input:checked{
-
-    background:var(--success);
-
-}
-
-.switchCard input:checked::before{
-
-    transform:translateX(24px);
-
-}
-
-/*=========================================
-Floating Upload Icon
-=========================================*/
-
-@keyframes floatIcon{
-
-    0%{
-
-        transform:translateY(0);
-
-    }
-
-    50%{
-
-        transform:translateY(-10px);
-
-    }
-
-    100%{
-
-        transform:translateY(0);
-
-    }
-
-}
-/*=========================================
-        VIEWORA V10 PREMIUM
-            upload.css
-            PART 4
-Progress • Stats • Toast • Modal
-=========================================*/
-
-/*=========================================
-Thumbnail Card
-=========================================*/
-
-.thumbnailCard{
-
-    display:flex;
-
-    flex-direction:column;
-
-    gap:20px;
-
-    padding:24px;
-
-    border-radius:20px;
-
-    background:rgba(255,255,255,.05);
-
-    border:1px solid rgba(255,255,255,.08);
-
-    margin-bottom:30px;
-
-}
-
-#thumbnailPreview{
-
-    width:100%;
-
-    height:230px;
-
-    border-radius:18px;
-
-    overflow:hidden;
-
-    background:#111;
-
-    display:flex;
-
-    align-items:center;
-
-    justify-content:center;
-
-}
-
-#thumbnailPreview img{
-
-    width:100%;
-
-    height:100%;
-
-    object-fit:cover;
-
-}
-
-.thumbnailButtons{
-
-    display:flex;
-
-    flex-wrap:wrap;
-
-    gap:15px;
-
-}
-
-/*=========================================
-Progress Section
-=========================================*/
-
-#progressSection{
-
-    margin-top:35px;
-
-    padding:22px;
-
-    border-radius:20px;
-
-    background:rgba(255,255,255,.06);
-
-    border:1px solid rgba(255,255,255,.08);
-
-}
-
-.progressHeader{
-
-    display:flex;
-
-    justify-content:space-between;
-
-    margin-bottom:14px;
-
-    font-weight:600;
-
-}
-
-.progressBar{
-
-    width:100%;
-
-    height:12px;
-
-    border-radius:50px;
-
-    overflow:hidden;
-
-    background:rgba(255,255,255,.10);
-
-}
-
-#progressFill{
-
-    width:0%;
-
-    height:100%;
-
-    border-radius:50px;
-
-    background:linear-gradient(
-        90deg,
-        var(--primary),
-        var(--accent)
-    );
-
-    transition:width .3s linear;
-
-}
-
-.progressInfo{
-
-    display:flex;
-
-    justify-content:space-between;
-
-    margin-top:12px;
-
-    font-size:14px;
-
-    color:var(--text2);
-
-}
-
-/*=========================================
-Statistics
-=========================================*/
-
-.statsGrid{
-
-    display:grid;
-
-    grid-template-columns:
-    repeat(auto-fit,minmax(170px,1fr));
-
-    gap:18px;
-
-    margin:30px 0;
-
-}
-
-.statCard{
-
-    text-align:center;
-
-    padding:22px;
-
-    border-radius:18px;
-
-    background:rgba(255,255,255,.05);
-
-    border:1px solid rgba(255,255,255,.08);
-
-    transition:.3s;
-
-}
-
-.statCard:hover{
-
-    transform:translateY(-5px);
-
-    border-color:var(--accent);
-
-}
-
-.statCard h4{
-
-    color:var(--text2);
-
-    font-size:14px;
-
-    margin-bottom:10px;
-
-}
-
-.statCard span{
-
-    font-size:22px;
-
-    font-weight:700;
-
-    color:#fff;
-
-}
-
-/*=========================================
-Button Group
-=========================================*/
-
-.buttonGroup{
-
-    display:flex;
-
-    gap:16px;
-
-    flex-wrap:wrap;
-
-    justify-content:flex-end;
-
-    margin-top:35px;
-
-}
-
-/*=========================================
-Toast
-=========================================*/
-
-.toast{
-
-    position:fixed;
-
-    right:20px;
-
-    bottom:25px;
-
-    display:flex;
-
-    align-items:center;
-
-    gap:12px;
-
-    padding:16px 22px;
-
-    border-radius:16px;
-
-    background:rgba(20,20,35,.95);
-
-    color:#fff;
-
-    border:1px solid rgba(255,255,255,.10);
-
-    box-shadow:0 15px 40px rgba(0,0,0,.45);
-
-    z-index:9999;
-
-    transform:translateY(100px);
-
-    opacity:0;
-
-    transition:.35s;
-
-}
-
-.toast.show{
-
-    transform:translateY(0);
-
-    opacity:1;
-
-}
-
-#toastIcon{
-
-    font-size:22px;
-
-}
-
-/*=========================================
-Modal
-=========================================*/
-
-.modal{
-
-    position:fixed;
-
-    inset:0;
-
-    display:flex;
-
-    align-items:center;
-
-    justify-content:center;
-
-    background:rgba(0,0,0,.60);
-
-    backdrop-filter:blur(8px);
-
-    z-index:10000;
-
-}
-
-.modalCard{
-
-    width:90%;
-
-    max-width:430px;
-
-    padding:35px;
-
-    border-radius:24px;
-
-    text-align:center;
-
-}
-
-.modalCard h2{
-
-    margin:18px 0 12px;
-
-    font-size:28px;
-
-}
-
-.modalCard p{
-
-    color:var(--text2);
-
-    line-height:1.7;
-
-}
-
-.modalButtons{
-
-    display:flex;
-
-    gap:15px;
-
-    justify-content:center;
-
-    flex-wrap:wrap;
-
-    margin-top:30px;
-
-}
-
-/*=========================================
-Success & Error Icons
-=========================================*/
-
-.successIcon,
-
-.errorIcon{
-
-    width:90px;
-
-    height:90px;
-
-    margin:auto;
+.recordInner{
+    width:48px;
+    height:48px;
 
     border-radius:50%;
 
-    display:flex;
+    background:
+        linear-gradient(
+            135deg,
+            #ff3158,
+            #ff1647
+        );
 
+    box-shadow:
+        0 0 25px rgba(255,49,88,.35);
+
+    transition:.25s;
+}
+
+.recordButton.recording .recordInner{
+    width:28px;
+    height:28px;
+
+    border-radius:8px;
+}
+
+.recordHint{
+    margin-top:8px;
+
+    display:flex;
+    flex-direction:column;
     align-items:center;
 
+    text-shadow:0 2px 8px #000;
+}
+
+.recordHint strong{
+    font-size:10px;
+}
+
+.recordHint span{
+    margin-top:3px;
+
+    font-size:8px;
+
+    color:rgba(255,255,255,.55);
+}
+
+
+/* =========================================================
+   GALLERY
+========================================================= */
+
+.galleryButton{
+    width:70px;
+
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:6px;
+
+    color:#fff;
+
+    background:none;
+
+    font-size:20px;
+}
+
+.galleryButton span{
+    font-size:9px;
+    color:rgba(255,255,255,.7);
+}
+
+
+/* =========================================================
+   MODE SELECTOR
+========================================================= */
+
+.modeSelectorArea{
+    position:absolute;
+
+    left:12px;
+    right:12px;
+    bottom:18px;
+
+    z-index:25;
+}
+
+.modeSelectorHint{
+    display:flex;
+    align-items:center;
     justify-content:center;
 
-    font-size:42px;
+    gap:6px;
 
+    margin-bottom:9px;
+
+    color:rgba(255,255,255,.45);
+
+    font-size:8px;
 }
 
-.successIcon{
+.modeSelector{
+    display:grid;
 
-    background:rgba(0,210,106,.18);
+    grid-template-columns:repeat(4,1fr);
 
-    color:var(--success);
+    gap:6px;
 
+    padding:6px;
+
+    border-radius:22px;
+
+    background:rgba(0,0,0,.48);
+
+    border:1px solid rgba(255,255,255,.10);
+
+    backdrop-filter:blur(20px);
 }
 
-.errorIcon{
+.modeItem{
+    min-height:66px;
 
-    background:rgba(255,77,103,.18);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
 
-    color:var(--danger);
+    gap:3px;
 
+    border-radius:17px;
+
+    color:rgba(255,255,255,.5);
+
+    background:transparent;
+
+    transition:.25s;
 }
 
-/*=========================================
-Network Banner
-=========================================*/
+.modeItem.active{
+    color:#fff;
 
-#networkBanner{
+    background:
+        linear-gradient(
+            135deg,
+            rgba(0,170,255,.28),
+            rgba(99,102,241,.25)
+        );
 
-    position:fixed;
+    box-shadow:
+        inset 0 0 20px rgba(255,255,255,.04),
+        0 5px 20px rgba(0,0,0,.2);
+}
 
-    top:18px;
+.modeIcon{
+    width:28px;
+    height:28px;
 
+    display:grid;
+    place-items:center;
+
+    font-size:13px;
+}
+
+.modeItem strong{
+    font-size:9px;
+}
+
+.modeItem small{
+    font-size:7px;
+
+    color:rgba(255,255,255,.45);
+}
+
+.modeItem.active small{
+    color:rgba(255,255,255,.7);
+}
+
+
+/* =========================================================
+   MODE PROGRESS
+========================================================= */
+
+.modeProgress{
+    position:absolute;
+
+    bottom:8px;
     left:50%;
 
     transform:translateX(-50%);
 
-    display:flex;
+    z-index:30;
 
+    display:flex;
+    gap:4px;
+}
+
+.modeProgress span{
+    width:18px;
+    height:2px;
+
+    border-radius:5px;
+
+    background:rgba(255,255,255,.18);
+
+    transition:.25s;
+}
+
+.modeProgress span.active{
+    width:28px;
+    background:var(--primary);
+
+    box-shadow:
+        0 0 10px rgba(0,170,255,.6);
+}
+
+
+/* =========================================================
+   OVERLAY
+========================================================= */
+
+.overlay{
+    position:fixed;
+
+    inset:0;
+
+    z-index:100;
+
+    display:flex;
+    align-items:flex-end;
+
+    background:rgba(0,0,0,.35);
+}
+
+.overlayBackdrop{
+    position:absolute;
+    inset:0;
+
+    background:rgba(0,0,0,.55);
+
+    backdrop-filter:blur(7px);
+}
+
+
+/* =========================================================
+   SHEETS
+========================================================= */
+
+.uploadSheet,
+.liveSheet,
+.musicSheet,
+.smallSheet,
+.settingsSheet{
+    position:relative;
+
+    width:100%;
+    max-height:90vh;
+
+    overflow:auto;
+
+    z-index:2;
+
+    padding:
+        10px 20px
+        calc(22px + env(safe-area-inset-bottom));
+
+    border-radius:30px 30px 0 0;
+
+    background:
+        linear-gradient(
+            180deg,
+            rgba(24,25,33,.98),
+            rgba(8,9,13,.99)
+        );
+
+    border:1px solid rgba(255,255,255,.10);
+
+    box-shadow:
+        0 -20px 80px rgba(0,0,0,.65);
+
+    animation:sheetUp .3s cubic-bezier(.2,.8,.2,1);
+}
+
+@keyframes sheetUp{
+    from{
+        opacity:0;
+        transform:translateY(100%);
+    }
+
+    to{
+        opacity:1;
+        transform:translateY(0);
+    }
+}
+
+.sheetHandle{
+    width:40px;
+    height:4px;
+
+    margin:2px auto 20px;
+
+    border-radius:10px;
+
+    background:rgba(255,255,255,.18);
+}
+
+.sheetHeader,
+.liveHeader{
+    display:flex;
+    align-items:flex-start;
+    gap:14px;
+
+    margin-bottom:22px;
+}
+
+.sheetHeader > div,
+.liveHeader > div:nth-child(2){
+    flex:1;
+}
+
+.eyebrow{
+    font-size:8px;
+
+    letter-spacing:1.8px;
+
+    color:var(--primary);
+
+    font-weight:800;
+}
+
+.sheetHeader h2,
+.liveHeader h2{
+    margin-top:6px;
+
+    font-size:22px;
+}
+
+.sheetHeader p,
+.liveHeader p{
+    margin-top:6px;
+
+    color:var(--muted);
+
+    font-size:11px;
+
+    line-height:1.5;
+}
+
+.sheetCloseButton{
+    width:40px;
+    height:40px;
+
+    flex-shrink:0;
+
+    border-radius:13px;
+
+    color:#fff;
+
+    background:rgba(255,255,255,.07);
+
+    border:1px solid rgba(255,255,255,.08);
+}
+
+
+/* =========================================================
+   UPLOAD OPTIONS
+========================================================= */
+
+.uploadOption{
+    width:100%;
+
+    display:flex;
+    align-items:center;
+
+    gap:13px;
+
+    padding:14px;
+
+    margin-top:10px;
+
+    text-align:left;
+
+    color:#fff;
+
+    border-radius:18px;
+
+    background:rgba(255,255,255,.045);
+
+    border:1px solid rgba(255,255,255,.08);
+
+    transition:.2s;
+}
+
+.uploadOption:active{
+    transform:scale(.98);
+}
+
+.uploadOptionIcon{
+    width:46px;
+    height:46px;
+
+    display:grid;
+    place-items:center;
+
+    flex-shrink:0;
+
+    border-radius:14px;
+
+    background:rgba(255,255,255,.07);
+
+    color:var(--primary);
+}
+
+.uploadOptionText{
+    display:flex;
+    flex-direction:column;
+
+    flex:1;
+}
+
+.uploadOptionText strong{
+    font-size:12px;
+}
+
+.uploadOptionText small{
+    margin-top:4px;
+
+    color:var(--muted);
+
+    font-size:9px;
+}
+
+.uploadOption > i{
+    color:rgba(255,255,255,.35);
+    font-size:11px;
+}
+
+.primaryUpload{
+    background:
+        linear-gradient(
+            135deg,
+            rgba(0,170,255,.17),
+            rgba(99,102,241,.14)
+        );
+
+    border-color:rgba(0,170,255,.25);
+}
+
+
+/* =========================================================
+   LIVE
+========================================================= */
+
+.liveHeaderIcon{
+    width:48px;
+    height:48px;
+
+    display:grid;
+    place-items:center;
+
+    flex-shrink:0;
+
+    border-radius:16px;
+
+    color:#fff;
+
+    background:
+        linear-gradient(
+            135deg,
+            #ff3158,
+            #ff1749
+        );
+
+    box-shadow:
+        0 10px 30px rgba(255,49,88,.25);
+}
+
+.thumbnailPicker{
+    width:100%;
+
+    display:flex;
+    align-items:center;
+
+    gap:12px;
+
+    padding:10px;
+
+    margin-bottom:18px;
+
+    text-align:left;
+
+    color:#fff;
+
+    background:rgba(255,255,255,.045);
+
+    border:1px solid rgba(255,255,255,.08);
+
+    border-radius:18px;
+}
+
+.thumbnailPreview{
+    width:100px;
+    height:62px;
+
+    flex-shrink:0;
+
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+
+    gap:5px;
+
+    overflow:hidden;
+
+    border-radius:12px;
+
+    background:
+        linear-gradient(
+            135deg,
+            #151821,
+            #090a0e
+        );
+
+    color:rgba(255,255,255,.45);
+
+    font-size:17px;
+}
+
+.thumbnailPreview span{
+    font-size:7px;
+}
+
+.thumbnailText{
+    flex:1;
+
+    display:flex;
+    flex-direction:column;
+}
+
+.thumbnailText strong{
+    font-size:11px;
+}
+
+.thumbnailText small{
+    margin-top:4px;
+
+    color:var(--muted);
+
+    font-size:8px;
+}
+
+
+/* =========================================================
+   FORM
+========================================================= */
+
+.fieldGroup{
+    position:relative;
+
+    margin-top:15px;
+}
+
+.fieldGroup label{
+    display:block;
+
+    margin-bottom:7px;
+
+    color:rgba(255,255,255,.75);
+
+    font-size:10px;
+
+    font-weight:600;
+}
+
+.fieldGroup input,
+.fieldGroup textarea,
+.fieldGroup select{
+    width:100%;
+
+    outline:none;
+
+    color:#fff;
+
+    border-radius:15px;
+
+    padding:13px 14px;
+
+    background:rgba(255,255,255,.055);
+
+    border:1px solid rgba(255,255,255,.09);
+
+    transition:.2s;
+}
+
+.fieldGroup textarea{
+    resize:none;
+    min-height:105px;
+}
+
+.fieldGroup input:focus,
+.fieldGroup textarea:focus,
+.fieldGroup select:focus{
+    border-color:rgba(0,170,255,.65);
+
+    box-shadow:
+        0 0 0 3px rgba(0,170,255,.09);
+}
+
+.fieldGroup input::placeholder,
+.fieldGroup textarea::placeholder{
+    color:#606571;
+}
+
+.characterCount{
+    position:absolute;
+
+    right:12px;
+    bottom:10px;
+
+    font-size:8px;
+
+    color:#626773;
+}
+
+.characterCount b{
+    color:var(--primary);
+}
+
+
+/* =========================================================
+   LIVE INFO
+========================================================= */
+
+.liveInfo{
+    display:flex;
+    flex-direction:column;
+
+    gap:9px;
+
+    margin:18px 0;
+}
+
+.liveInfo div{
+    display:flex;
+    align-items:flex-start;
+
+    gap:9px;
+
+    padding:10px;
+
+    border-radius:13px;
+
+    background:rgba(255,255,255,.035);
+
+    color:var(--muted);
+
+    font-size:8px;
+
+    line-height:1.5;
+}
+
+.liveInfo i{
+    color:var(--primary);
+
+    margin-top:1px;
+}
+
+
+/* =========================================================
+   ACTIONS
+========================================================= */
+
+.primaryAction,
+.secondaryAction{
+    min-height:48px;
+
+    padding:0 20px;
+
+    border-radius:15px;
+
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+
+    gap:8px;
+
+    font-weight:700;
+
+    transition:.2s;
+}
+
+.primaryAction{
+    color:#fff;
+
+    background:
+        linear-gradient(
+            135deg,
+            var(--primary),
+            var(--secondary)
+        );
+
+    box-shadow:
+        0 10px 30px rgba(0,170,255,.20);
+}
+
+.secondaryAction{
+    color:#fff;
+
+    background:rgba(255,255,255,.07);
+
+    border:1px solid rgba(255,255,255,.09);
+}
+
+.primaryAction:active,
+.secondaryAction:active{
+    transform:scale(.97);
+}
+
+.fullWidth{
+    width:100%;
+}
+
+
+/* =========================================================
+   MUSIC SEARCH
+========================================================= */
+
+.musicSearch{
+    display:flex;
     align-items:center;
 
     gap:10px;
 
-    padding:12px 22px;
+    padding:0 13px;
 
-    border-radius:50px;
+    height:48px;
 
-    background:#ff4d67;
+    border-radius:15px;
+
+    background:rgba(255,255,255,.05);
+
+    border:1px solid rgba(255,255,255,.08);
+}
+
+.musicSearch i{
+    color:#717783;
+}
+
+.musicSearch input{
+    flex:1;
+
+    border:0;
+    outline:0;
+
+    background:transparent;
 
     color:#fff;
 
-    font-weight:600;
-
-    z-index:9999;
-
-    box-shadow:0 10px 30px rgba(255,77,103,.35);
-
-}
-/*=========================================
-        VIEWORA V10 PREMIUM
-            upload.css
-            PART 5 FINAL
-Loader • Responsive • Utilities
-Animations • Production
-=========================================*/
-
-/* =========================
-Premium Loader
-========================= */
-
-#pageLoader{
-
-position:fixed;
-
-inset:0;
-
-background:#000;
-
-display:flex;
-
-flex-direction:column;
-
-justify-content:center;
-
-align-items:center;
-
-z-index:999999;
-
-transition:.5s;
-
+    font-size:12px;
 }
 
-.loader{
+.musicCategories{
+    display:flex;
 
-position:relative;
+    gap:7px;
 
-width:80px;
+    margin:14px 0;
 
-height:80px;
-
-margin-bottom:25px;
-
+    overflow-x:auto;
 }
 
-.ring{
+.musicCategory{
+    flex-shrink:0;
 
-position:absolute;
+    padding:8px 11px;
 
-width:80px;
+    border-radius:999px;
 
-height:80px;
+    color:#9ca3af;
 
-border-radius:50%;
+    background:rgba(255,255,255,.05);
 
-border:4px solid transparent;
+    border:1px solid rgba(255,255,255,.07);
 
-border-top-color:#00bfff;
-
-animation:spin 1s linear infinite;
-
+    font-size:9px;
 }
 
-.delay{
+.musicCategory.active{
+    color:#fff;
 
-animation-delay:.35s;
+    background:rgba(0,170,255,.15);
 
-border-top-color:#7c3aed;
-
+    border-color:rgba(0,170,255,.3);
 }
 
-@keyframes spin{
 
-100%{
+/* =========================================================
+   CHOICES
+========================================================= */
 
-transform:rotate(360deg);
+.choiceGrid,
+.speedGrid{
+    display:grid;
 
+    grid-template-columns:repeat(4,1fr);
+
+    gap:8px;
 }
 
+.choiceItem,
+.speedItem{
+    min-height:50px;
+
+    border-radius:14px;
+
+    color:#aaa;
+
+    background:rgba(255,255,255,.05);
+
+    border:1px solid rgba(255,255,255,.08);
 }
 
-#pageLoader h2{
+.choiceItem.active,
+.speedItem.active{
+    color:#fff;
 
-font-size:22px;
+    background:rgba(0,170,255,.15);
 
-font-weight:700;
-
-margin-bottom:10px;
-
+    border-color:rgba(0,170,255,.35);
 }
 
-#pageLoader p{
 
-font-size:14px;
+/* =========================================================
+   SETTINGS
+========================================================= */
 
-color:#aaa;
+.settingsList{
+    display:flex;
+    flex-direction:column;
 
+    gap:8px;
 }
 
-/*=========================================
-Ripple Effect
-=========================================*/
+.settingRow{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
 
-button{
+    padding:13px;
+
+    border-radius:16px;
+
+    background:rgba(255,255,255,.045);
+
+    border:1px solid rgba(255,255,255,.07);
+}
+
+.settingInfo{
+    display:flex;
+    align-items:center;
+
+    gap:11px;
+}
+
+.settingIcon{
+    width:40px;
+    height:40px;
+
+    display:grid;
+    place-items:center;
+
+    border-radius:12px;
+
+    background:rgba(0,170,255,.10);
+
+    color:var(--primary);
+}
+
+.settingInfo > span:last-child{
+    display:flex;
+    flex-direction:column;
+}
+
+.settingInfo strong{
+    font-size:10px;
+}
+
+.settingInfo small{
+    margin-top:4px;
+
+    color:var(--muted);
+
+    font-size:8px;
+}
+
+
+/* =========================================================
+   TOGGLE
+========================================================= */
+
+.settingRow input{
+    appearance:none;
+
+    width:42px;
+    height:24px;
+
+    border-radius:20px;
+
+    background:#30323a;
 
     position:relative;
 
-    overflow:hidden;
-
+    transition:.25s;
 }
 
-.ripple{
+.settingRow input::after{
+    content:"";
 
     position:absolute;
 
-    width:15px;
+    width:18px;
+    height:18px;
 
-    height:15px;
+    left:3px;
+    top:3px;
 
     border-radius:50%;
 
-    background:rgba(255,255,255,.45);
+    background:#fff;
 
-    transform:translate(-50%,-50%) scale(0);
-
-    animation:ripple .6s linear;
-
-    pointer-events:none;
-
+    transition:.25s;
 }
 
-/*=========================================
-Hover Effects
-=========================================*/
-
-.primaryBtn:hover,
-
-.secondaryBtn:hover,
-
-.dangerBtn:hover,
-
-.iconBtn:hover,
-
-.draftBtn:hover{
-
-    transform:translateY(-3px);
-
+.settingRow input:checked{
+    background:var(--primary);
 }
 
-.uploadCard:hover{
-
-    box-shadow:
-
-    0 20px 60px rgba(0,0,0,.45);
-
+.settingRow input:checked::after{
+    transform:translateX(18px);
 }
 
-/*=========================================
-Focus
-=========================================*/
 
-button:focus,
+/* =========================================================
+   PREVIEW
+========================================================= */
 
-input:focus,
+.previewOverlay{
+    position:fixed;
 
-textarea:focus,
+    inset:0;
 
-select:focus{
+    z-index:200;
 
-    outline:none;
-
+    background:#050507;
 }
 
-/*=========================================
-Responsive
-=========================================*/
+.recordedVideo{
+    width:100%;
+    height:100%;
 
-@media(max-width:992px){
-
-.uploadCard{
-
-padding:28px;
-
+    object-fit:contain;
+    background:#000;
 }
 
-.header{
+.previewTop{
+    position:absolute;
 
-padding:16px;
+    top:0;
+    left:0;
+    right:0;
 
+    padding:
+        max(15px, env(safe-area-inset-top))
+        18px;
+
+    display:flex;
+    align-items:center;
+
+    gap:15px;
+
+    background:linear-gradient(
+        to bottom,
+        rgba(0,0,0,.65),
+        transparent
+    );
 }
 
+.previewTop div{
+    display:flex;
+    flex-direction:column;
 }
 
-@media(max-width:768px){
-
-.header{
-
-flex-wrap:wrap;
-
-gap:15px;
-
+.previewTop span{
+    font-size:8px;
+    color:var(--primary);
+    letter-spacing:1px;
 }
 
-.headerTitle{
-
-margin:0;
-
-width:100%;
-
-text-align:center;
-
+.previewTop strong{
+    margin-top:3px;
+    font-size:13px;
 }
 
-.uploadTop h2{
+.previewBottom{
+    position:absolute;
 
-font-size:26px;
+    left:0;
+    right:0;
+    bottom:0;
 
+    padding:
+        18px
+        18px
+        calc(22px + env(safe-area-inset-bottom));
+
+    display:grid;
+    grid-template-columns:1fr 1fr;
+
+    gap:10px;
+
+    background:linear-gradient(
+        to top,
+        rgba(0,0,0,.85),
+        transparent
+    );
 }
 
-.buttonGroup{
 
-flex-direction:column;
+/* =========================================================
+   PROCESSING
+========================================================= */
 
+.processingOverlay{
+    position:fixed;
+
+    inset:0;
+
+    z-index:300;
+
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+
+    text-align:center;
+
+    padding:30px;
+
+    background:rgba(5,5,7,.96);
+
+    backdrop-filter:blur(20px);
 }
 
-.buttonGroup button{
+.processingOrb{
+    position:relative;
 
-width:100%;
+    width:90px;
+    height:90px;
 
+    display:grid;
+    place-items:center;
+
+    margin-bottom:25px;
+
+    border-radius:50%;
+
+    background:
+        radial-gradient(
+            circle,
+            rgba(0,170,255,.18),
+            transparent 70%
+        );
 }
 
-.quickActions{
+.processingSpinner{
+    position:absolute;
 
-flex-direction:column;
+    inset:0;
 
+    border-radius:50%;
+
+    border:2px solid rgba(255,255,255,.08);
+
+    border-top-color:var(--primary);
+
+    animation:spin .9s linear infinite;
 }
 
-.quickActions button{
-
-width:100%;
-
+.processingOrb > i{
+    color:var(--primary);
+    font-size:24px;
 }
-
-.thumbnailButtons{
-
-flex-direction:column;
-
-}
-
-.thumbnailButtons button{
-
-width:100%;
-
-}
-
-.statsGrid{
-
-grid-template-columns:1fr;
-
-}
-
-.optionsGrid{
-
-grid-template-columns:1fr;
-
-}
-
-.modalCard{
-
-padding:25px;
-
-}
-
-}
-
-@media(max-width:480px){
-
-body{
-
-font-size:14px;
-
-}
-
-.uploadContainer{
-
-padding:18px;
-
-}
-
-.uploadCard{
-
-padding:20px;
-
-border-radius:18px;
-
-}
-
-.uploadLogo{
-
-width:70px;
-
-height:70px;
-
-}
-
-.uploadTop h2{
-
-font-size:22px;
-
-}
-
-.dropZone{
-
-min-height:240px;
-
-padding:25px;
-
-}
-
-.uploadIcon{
-
-width:75px;
-
-height:75px;
-
-font-size:28px;
-
-}
-
-.primaryBtn,
-
-.secondaryBtn,
-
-.dangerBtn{
-
-padding:13px 16px;
-
-font-size:14px;
-
-}
-
-}
-
-/*=========================================
-Utilities
-=========================================*/
-
-.hidden{
-
-display:none !important;
-
-}
-
-.center{
-
-display:flex;
-
-align-items:center;
-
-justify-content:center;
-
-}
-
-.textCenter{
-
-text-align:center;
-
-}
-
-.mt10{margin-top:10px;}
-.mt20{margin-top:20px;}
-.mt30{margin-top:30px;}
-
-.mb10{margin-bottom:10px;}
-.mb20{margin-bottom:20px;}
-.mb30{margin-bottom:30px;}
-
-/*=========================================
-Animations
-=========================================*/
 
 @keyframes spin{
+    to{
+        transform:rotate(360deg);
+    }
+}
 
-100%{
+.processingOverlay h2{
+    font-size:18px;
+}
 
-transform:rotate(360deg);
+.processingOverlay p{
+    margin-top:8px;
+
+    color:var(--muted);
+
+    font-size:11px;
+}
+
+.processingProgress{
+    width:220px;
+    height:4px;
+
+    margin-top:20px;
+
+    overflow:hidden;
+
+    border-radius:10px;
+
+    background:rgba(255,255,255,.08);
+}
+
+.processingProgress span{
+    display:block;
+
+    width:45%;
+    height:100%;
+
+    border-radius:10px;
+
+    background:
+        linear-gradient(
+            90deg,
+            var(--primary),
+            var(--secondary)
+        );
+
+    animation:processing 1.5s ease-in-out infinite;
+}
+
+@keyframes processing{
+    0%{
+        transform:translateX(-100%);
+    }
+
+    100%{
+        transform:translateX(330%);
+    }
+}
+
+
+/* =========================================================
+   TOAST
+========================================================= */
+
+.toast{
+    position:fixed;
+
+    left:50%;
+    bottom:25px;
+
+    z-index:500;
+
+    transform:translateX(-50%);
+
+    min-width:270px;
+
+    display:flex;
+    align-items:center;
+
+    gap:11px;
+
+    padding:12px 15px;
+
+    border-radius:17px;
+
+    background:rgba(20,21,27,.95);
+
+    border:1px solid rgba(255,255,255,.10);
+
+    box-shadow:
+        0 20px 60px rgba(0,0,0,.5);
+
+    backdrop-filter:blur(20px);
+
+    animation:toastIn .3s ease;
+}
+
+@keyframes toastIn{
+    from{
+        opacity:0;
+        transform:translate(-50%,20px);
+    }
+
+    to{
+        opacity:1;
+        transform:translate(-50%,0);
+    }
+}
+
+#toastIcon{
+    width:34px;
+    height:34px;
+
+    display:grid;
+    place-items:center;
+
+    border-radius:11px;
+
+    color:var(--success);
+
+    background:rgba(34,197,94,.10);
+}
+
+.toast div{
+    display:flex;
+    flex-direction:column;
+}
+
+.toast strong{
+    font-size:10px;
+}
+
+.toast p{
+    margin-top:3px;
+
+    color:var(--muted);
+
+    font-size:9px;
+}
+
+
+/* =========================================================
+   PREMIUM BUTTON
+========================================================= */
+
+.premiumButton{
+    margin-top:20px;
+
+    padding:12px 18px;
+
+    display:flex;
+    align-items:center;
+
+    gap:8px;
+
+    border-radius:14px;
+
+    color:#fff;
+
+    background:
+        linear-gradient(
+            135deg,
+            var(--primary),
+            var(--secondary)
+        );
+
+    box-shadow:
+        0 10px 30px rgba(0,170,255,.25);
+}
+
+
+/* =========================================================
+   DESKTOP
+========================================================= */
+
+@media(min-width:700px){
+
+    .creator{
+        max-width:650px;
+        margin:auto;
+
+        border-left:1px solid rgba(255,255,255,.06);
+        border-right:1px solid rgba(255,255,255,.06);
+    }
+
+    .cameraBottom{
+        bottom:135px;
+    }
+
+    .modeSelectorArea{
+        left:25px;
+        right:25px;
+    }
+
+    .uploadSheet,
+    .liveSheet,
+    .musicSheet,
+    .smallSheet,
+    .settingsSheet{
+        max-width:650px;
+        margin:auto;
+
+        border-radius:30px;
+    }
 
 }
 
+
+/* =========================================================
+   SMALL PHONES
+========================================================= */
+
+@media(max-width:380px){
+
+    .topBar{
+        padding-left:12px;
+        padding-right:12px;
+    }
+
+    .brandPill{
+        padding-right:10px;
+    }
+
+    .brandText{
+        display:none;
+    }
+
+    .modeHeader{
+        left:14px;
+        top:98px;
+    }
+
+    .musicButton{
+        left:14px;
+        top:170px;
+
+        min-width:190px;
+    }
+
+    .cameraTools{
+        right:9px;
+        gap:10px;
+    }
+
+    .toolCircle{
+        width:38px;
+        height:38px;
+    }
+
+    .cameraBottom{
+        bottom:112px;
+        padding:0 12px;
+    }
+
+    .recordButton{
+        width:72px;
+        height:72px;
+    }
+
+    .recordRing{
+        width:55px;
+        height:55px;
+    }
+
+    .recordInner{
+        width:42px;
+        height:42px;
+    }
+
+    .modeSelector{
+        border-radius:18px;
+    }
+
+    .modeItem{
+        min-height:58px;
+    }
+
+    .modeItem strong{
+        font-size:8px;
+    }
+
+    .modeItem small{
+        display:none;
+    }
 }
 
-@keyframes ripple{
 
-to{
+/* =========================================================
+   REDUCED MOTION
+========================================================= */
 
-transform:translate(-50%,-50%) scale(18);
+@media(prefers-reduced-motion:reduce){
 
-opacity:0;
-
-}
-
-}
-
-@keyframes popup{
-
-from{
-
-opacity:0;
-
-transform:scale(.85);
-
-}
-
-to{
-
-opacity:1;
-
-transform:scale(1);
-
-}
-
-}
-
-.modalCard{
-
-animation:popup .35s ease;
-
-}
-
-/*=========================================
-Selection
-=========================================*/
-
-::selection{
-
-background:var(--primary);
-
-color:#fff;
-
-}
-
-/*=========================================
-Image & Video
-=========================================*/
-
-img,
-
-video{
-
-max-width:100%;
-
-display:block;
-
-}
-
-/*=========================================
-Production Ready
-=========================================*/
-
-*{
-
--webkit-tap-highlight-color:transparent;
-
-}
-
-button{
-
-user-select:none;
-
-}
-
-html{
-
-scroll-behavior:smooth;
-
-}
-
-body{
-
-text-rendering:optimizeLegibility;
-
-font-smoothing:antialiased;
-
--webkit-font-smoothing:antialiased;
+    *,
+    *::before,
+    *::after{
+        animation-duration:.01ms !important;
+        animation-iteration-count:1 !important;
+        scroll-behavior:auto !important;
+        transition:none !important;
+    }
 
 }
