@@ -554,79 +554,29 @@
 
     async function createCall() {
 
-        ensureCallReference();
+    ensureCallReference();   // ← yahan change kiya
 
+    callerId = currentUser.uid;
 
-        callerId =
-            currentUser.uid;
+    const callData = {
+        callId: callId,
+        callerId: currentUser.uid,
+        receiverId: receiverId,
+        type: callType,
+        status: "ringing",
+        createdAt: firebase.database.ServerValue.TIMESTAMP,
+        updatedAt: firebase.database.ServerValue.TIMESTAMP
+    };
 
+    const updates = {};
 
-        const callData = {
+    updates[`calls/${callId}`] = callData;
+    updates[`incomingCalls/${receiverId}/${callId}`] = callData;
 
-            callId:
+    await db.ref().update(updates);
 
-                callId,
-
-            callerId:
-
-                currentUser.uid,
-
-            receiverId:
-
-                receiverId,
-
-            type:
-
-                callType,
-
-            status:
-
-                "ringing",
-
-            createdAt:
-
-                firebase.database.ServerValue.TIMESTAMP,
-
-            updatedAt:
-
-                firebase.database.ServerValue.TIMESTAMP
-
-        };
-
-
-        /*
-         * Main call record
-         */
-
-        await callRef.set(
-            callData
-        );
-
-
-        /*
-         * IMPORTANT:
-         * Receiver notification record.
-         */
-
-        await db
-            .ref(
-                "incomingCalls/" +
-                receiverId +
-                "/" +
-                callId
-            )
-            .set(
-                callData
-            );
-
-
-        log(
-            "☎️ Call created:",
-            callId
-        );
-
-    }
-
+    log("📞 Call + Incoming call created:", callId);
+}
 
     /* ======================================================
        REMOVE INCOMING RECORD
@@ -2231,7 +2181,86 @@
     }
 
 
+    
     /* ======================================================
+       SWITCH CAMERA (front / back) — no pause glitch
+    ====================================================== */
+
+    let usingFrontCamera = true;
+
+    async function switchCamera() {
+        if (callType !== "video") {
+            toast("Camera switch only on video calls.");
+            return;
+        }
+
+        if (!localStream || !peerConnection) {
+            toast("Camera not ready.");
+            return;
+        }
+
+        const oldTrack = localStream.getVideoTracks()[0];
+        if (!oldTrack) {
+            toast("No camera track.");
+            return;
+        }
+
+        usingFrontCamera = !usingFrontCamera;
+        const facing = usingFrontCamera ? "user" : "environment";
+
+        try {
+            const newStream = await navigator.mediaDevices.getUserMedia({
+                audio: false,
+                video: {
+                    facingMode: { ideal: facing },
+                    width: { ideal: 1280 },
+                    height: { ideal: 720 }
+                }
+            });
+
+            const newTrack = newStream.getVideoTracks()[0];
+            if (!newTrack) throw new Error("No new video track");
+
+            // Replace on peer connection WITHOUT stopping negotiation
+            const sender = peerConnection
+                .getSenders()
+                .find(s => s.track && s.track.kind === "video");
+
+            if (sender) {
+                await sender.replaceTrack(newTrack);
+            }
+
+            // Update local preview — keep stream continuous
+            oldTrack.stop();
+            localStream.removeTrack(oldTrack);
+            localStream.addTrack(newTrack);
+
+            window.localStream = localStream;
+
+            if (localVideo) {
+                // Re-assign only if needed; avoid black flash
+                if (localVideo.srcObject !== localStream) {
+                    localVideo.srcObject = localStream;
+                }
+                localVideo.playsInline = true;
+                localVideo.muted = true;
+                await localVideo.play().catch(() => {});
+            }
+
+            // Stop extra tracks from temp stream (audio none)
+            newStream.getTracks().forEach(t => {
+                if (t.id !== newTrack.id) t.stop();
+            });
+
+            toast(usingFrontCamera ? "Front camera" : "Back camera");
+        } catch (error) {
+            logError("Camera switch:", error);
+            usingFrontCamera = !usingFrontCamera; // revert flag
+            toast("Unable to switch camera.");
+        }
+    }
+
+/* ======================================================
        MUTE
     ====================================================== */
 
@@ -2640,6 +2669,13 @@
         );
 
 
+    $("flipCameraBtn")
+        ?.addEventListener(
+            "click",
+            switchCamera
+        );
+
+
     $("minimizeCallBtn")
         ?.addEventListener(
             "click",
@@ -2752,6 +2788,12 @@
 
         toggleCamera:
             toggleCamera,
+
+        switchCamera:
+            switchCamera,
+
+        getPeerConnection:
+            () => peerConnection,
 
 
         getCallId:

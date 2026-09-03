@@ -1,41 +1,40 @@
 /* ==========================================================
-   VIEWORA — EDIT SHORTS
-   PREMIUM EDITOR CSS
-   Mobile First • Dark • Glass • Shorts Style
+   VIEWORA
+   EDIT SHORTS • PREMIUM EDITOR CSS
+   Mobile First • Dark • Responsive
 ========================================================== */
 
 :root {
     --bg: #050507;
-    --black: #000;
-    --surface: #0d0e13;
-    --surface-2: #15161c;
-    --surface-3: #1b1c23;
+    --surface: #0c0c10;
+    --surface-2: #111116;
+    --surface-3: #17171d;
+    --card: rgba(20, 20, 27, .92);
+    --border: rgba(255,255,255,.09);
+    --border-strong: rgba(255,255,255,.16);
 
-    --text: #fff;
-    --muted: #9b9da8;
-    --muted-2: #666975;
+    --text: #ffffff;
+    --text-soft: #b8b8c2;
+    --text-muted: #777782;
 
-    --line: rgba(255,255,255,.09);
-    --line-strong: rgba(255,255,255,.16);
+    --accent: #ffffff;
+    --accent-dark: #050507;
 
-    --glass: rgba(15,16,21,.72);
-    --glass-heavy: rgba(10,11,15,.90);
+    --danger: #ff4d67;
+    --success: #45e08b;
 
-    --white: #fff;
-    --danger: #ff526b;
-    --success: #39d98a;
+    --radius-sm: 10px;
+    --radius-md: 16px;
+    --radius-lg: 22px;
+    --radius-xl: 28px;
 
-    --radius-sm: 12px;
-    --radius: 17px;
-    --radius-lg: 24px;
+    --shadow:
+        0 18px 55px rgba(0,0,0,.45);
 
     --safe-top: env(safe-area-inset-top, 0px);
     --safe-bottom: env(safe-area-inset-bottom, 0px);
 
-    --shadow:
-        0 20px 70px rgba(0,0,0,.55);
-
-    --blur: blur(20px);
+    --editor-max: 1180px;
 }
 
 
@@ -45,44 +44,32 @@
 
 * {
     box-sizing: border-box;
+    margin: 0;
+    padding: 0;
     -webkit-tap-highlight-color: transparent;
 }
 
 html {
     width: 100%;
-    height: 100%;
-    background: var(--black);
+    min-height: 100%;
+    background: var(--bg);
+    color-scheme: dark;
+    scroll-behavior: smooth;
 }
 
 body {
     width: 100%;
-    min-width: 100%;
-    height: 100%;
     min-height: 100%;
-    margin: 0;
-    padding: 0;
-
-    overflow: hidden;
-
     background:
         radial-gradient(
             circle at 50% -10%,
-            rgba(255,255,255,.08),
-            transparent 35%
+            rgba(255,255,255,.055),
+            transparent 32%
         ),
         var(--bg);
-
     color: var(--text);
-
-    font-family:
-        Inter,
-        system-ui,
-        -apple-system,
-        BlinkMacSystemFont,
-        "Segoe UI",
-        sans-serif;
-
-    overscroll-behavior: none;
+    font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    overflow-x: hidden;
 }
 
 button,
@@ -94,21 +81,21 @@ select {
 
 button {
     border: 0;
-    outline: 0;
     color: inherit;
     cursor: pointer;
 }
 
-button:focus-visible,
-input:focus-visible,
-textarea:focus-visible {
-    outline: 2px solid rgba(255,255,255,.45);
-    outline-offset: 2px;
+input,
+textarea,
+select {
+    color: var(--text);
 }
 
-button:disabled {
-    opacity: .5;
-    pointer-events: none;
+img,
+video,
+canvas {
+    display: block;
+    max-width: 100%;
 }
 
 .hidden {
@@ -120,245 +107,12 @@ button:disabled {
    APP
 ========================================================== */
 
-#app {
-    position: relative;
-
+.editorApp {
     width: 100%;
-    height: 100dvh;
     min-height: 100vh;
-
-    overflow: hidden;
-
-    background: #000;
-}
-
-
-/* ==========================================================
-   MAIN EDITOR
-========================================================== */
-
-.editShorts {
+    min-height: 100dvh;
     position: relative;
-
-    width: 100%;
-    height: 100dvh;
-    min-height: 600px;
-
-    overflow: hidden;
-
-    background: #000;
-}
-
-
-/* ==========================================================
-   EDITOR STAGE
-========================================================== */
-
-.editorStage {
-    position: absolute;
-    inset: 0;
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    overflow: hidden;
-
-    background:
-        radial-gradient(
-            circle at center,
-            #1a1b20 0%,
-            #090a0d 55%,
-            #000 100%
-        );
-}
-
-
-/* ==========================================================
-   VIDEO
-========================================================== */
-
-#shortPreview,
-.editorMedia,
-.previewMedia {
-    position: absolute;
-
-    width: 100%;
-    height: 100%;
-
-    display: block;
-
-    object-fit: contain;
-
-    background: #000;
-
-    transform-origin: center center;
-
-    transition:
-        transform .28s cubic-bezier(.2,.8,.2,1),
-        filter .2s ease;
-}
-
-
-/* ==========================================================
-   STAGE VIGNETTE
-========================================================== */
-
-.editorStage::after {
-    content: "";
-
-    position: absolute;
-    inset: 0;
-
-    z-index: 5;
-
-    pointer-events: none;
-
-    background:
-        linear-gradient(
-            to bottom,
-            rgba(0,0,0,.62) 0%,
-            rgba(0,0,0,0) 23%,
-            rgba(0,0,0,0) 62%,
-            rgba(0,0,0,.82) 100%
-        );
-}
-
-
-/* ==========================================================
-   MEDIA LOADING
-========================================================== */
-
-.mediaLoading {
-    position: absolute;
-    inset: 0;
-
-    z-index: 20;
-
-    display: flex;
-    flex-direction: column;
-
-    align-items: center;
-    justify-content: center;
-
-    gap: 14px;
-
-    background:
-        radial-gradient(
-            circle at center,
-            #15161b,
-            #050507 65%,
-            #000
-        );
-
-    transition:
-        opacity .25s ease,
-        visibility .25s ease;
-}
-
-.mediaLoading span {
-    color: rgba(255,255,255,.58);
-
-    font-size: 12px;
-    font-weight: 600;
-
-    letter-spacing: .02em;
-}
-
-.loadingSpinner,
-.processingSpinner {
-    width: 38px;
-    height: 38px;
-
-    border-radius: 50%;
-
-    border:
-        3px solid rgba(255,255,255,.13);
-
-    border-top-color: #fff;
-
-    animation:
-        vieworaSpin .75s linear infinite;
-}
-
-@keyframes vieworaSpin {
-    to {
-        transform: rotate(360deg);
-    }
-}
-
-
-/* ==========================================================
-   NO MEDIA
-========================================================== */
-
-.noMedia {
-    position: absolute;
-    inset: 0;
-
-    z-index: 15;
-
-    display: flex;
-    flex-direction: column;
-
-    align-items: center;
-    justify-content: center;
-
-    padding: 30px;
-
-    text-align: center;
-
-    background:
-        radial-gradient(
-            circle at center,
-            #17181d,
-            #050507 68%
-        );
-}
-
-.noMediaIcon {
-    width: 76px;
-    height: 76px;
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    margin-bottom: 18px;
-
-    border-radius: 25px;
-
-    background: rgba(255,255,255,.07);
-
-    border:
-        1px solid rgba(255,255,255,.10);
-
-    box-shadow:
-        0 18px 50px rgba(0,0,0,.4);
-}
-
-.noMediaIcon i {
-    font-size: 27px;
-
-    color: rgba(255,255,255,.85);
-}
-
-.noMedia h2 {
-    margin: 0 0 8px;
-
-    font-size: 21px;
-    font-weight: 800;
-}
-
-.noMedia p {
-    max-width: 300px;
-
-    margin: 0;
-
-    color: var(--muted);
-
-    font-size: 12px;
-    line-height: 1.5;
+    overflow-x: hidden;
 }
 
 
@@ -366,398 +120,1165 @@ button:disabled {
    TOP BAR
 ========================================================== */
 
-.editorTop {
-    position: absolute;
-
+.editorTopBar {
+    position: sticky;
     top: 0;
-    left: 0;
-    right: 0;
-
-    z-index: 40;
-
-    display: grid;
-
-    grid-template-columns: 1fr auto 1fr;
-
-    align-items: center;
-
+    z-index: 100;
+    height: calc(64px + var(--safe-top));
     padding:
-        calc(10px + var(--safe-top))
+        var(--safe-top)
         14px
-        18px;
+        0;
 
-    background:
-        linear-gradient(
-            to bottom,
-            rgba(0,0,0,.78),
-            rgba(0,0,0,.25),
-            transparent
-        );
-
-    pointer-events: none;
-}
-
-.editorTop > * {
-    pointer-events: auto;
-}
-
-.topLeft {
     display: flex;
-    justify-content: flex-start;
-}
-
-.topRight {
-    display: flex;
-    justify-content: flex-end;
-}
-
-
-/* ==========================================================
-   TITLE
-========================================================== */
-
-.editorTitle {
-    display: flex;
-    flex-direction: column;
-
     align-items: center;
-    justify-content: center;
-
-    min-width: 130px;
-
-    text-align: center;
-}
-
-.editorTitle strong {
-    font-size: 18px;
-    line-height: 1.15;
-
-    font-weight: 800;
-
-    letter-spacing: -.02em;
-}
-
-.editorTitle span {
-    margin-top: 4px;
-
-    color: rgba(255,255,255,.48);
-
-    font-size: 9px;
-    font-weight: 800;
-
-    letter-spacing: .16em;
-}
-
-
-/* ==========================================================
-   ICON BUTTON
-========================================================== */
-
-.iconButton {
-    width: 46px;
-    height: 46px;
-
-    display: inline-flex;
-
-    align-items: center;
-    justify-content: center;
-
-    border-radius: 50%;
-
-    background:
-        rgba(255,255,255,.09);
-
-    border:
-        1px solid rgba(255,255,255,.12);
-
-    backdrop-filter: var(--blur);
-    -webkit-backdrop-filter: var(--blur);
-
-    box-shadow:
-        0 8px 25px rgba(0,0,0,.25);
-
-    transition:
-        transform .18s ease,
-        background .18s ease;
-}
-
-.iconButton i {
-    font-size: 17px;
-}
-
-.iconButton:active {
-    transform: scale(.90);
-
-    background:
-        rgba(255,255,255,.17);
-}
-
-
-/* ==========================================================
-   SHORTS BADGE
-========================================================== */
-
-.shortsBadge {
-    min-height: 44px;
-
-    display: inline-flex;
-
-    align-items: center;
-    justify-content: center;
-
     gap: 8px;
 
-    padding: 0 15px;
+    background: rgba(5,5,7,.86);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
 
-    border-radius: 999px;
-
-    background:
-        rgba(255,255,255,.09);
-
-    border:
-        1px solid rgba(255,255,255,.12);
-
-    backdrop-filter: var(--blur);
-    -webkit-backdrop-filter: var(--blur);
-
-    box-shadow:
-        0 8px 28px rgba(0,0,0,.25);
-
-    font-size: 11px;
-    font-weight: 800;
-
-    letter-spacing: .06em;
+    border-bottom: 1px solid rgba(255,255,255,.06);
 }
 
-.shortsBadge i {
-    font-size: 12px;
+.topIconButton {
+    width: 42px;
+    height: 42px;
+    flex: 0 0 42px;
+
+    display: grid;
+    place-items: center;
+
+    border-radius: 14px;
+    background: rgba(255,255,255,.055);
+    border: 1px solid rgba(255,255,255,.08);
+
+    color: #fff;
+    transition:
+        transform .2s ease,
+        background .2s ease,
+        opacity .2s ease;
 }
 
+.topIconButton:active {
+    transform: scale(.92);
+}
 
-/* ==========================================================
-   RIGHT SIDE EDIT TOOLS
-========================================================== */
+.topIconButton:disabled {
+    opacity: .3;
+    cursor: default;
+}
 
-.editorControls {
-    position: absolute;
-
-    right: 12px;
-    bottom: 235px;
-
-    z-index: 35;
+.editorBrand {
+    min-width: 0;
+    flex: 1;
 
     display: flex;
-    flex-direction: column;
-
     align-items: center;
-
+    justify-content: center;
     gap: 9px;
 }
 
-.editTool {
-    width: 52px;
-    min-height: 52px;
+.editorBrand img {
+    width: 30px;
+    height: 30px;
+    object-fit: contain;
+    border-radius: 9px;
+}
 
+.editorBrand > div {
+    min-width: 0;
     display: flex;
     flex-direction: column;
-
-    align-items: center;
-    justify-content: center;
-
-    gap: 4px;
-
-    padding: 5px 3px;
-
-    border-radius: 17px;
-
-    background:
-        rgba(12,13,18,.67);
-
-    border:
-        1px solid rgba(255,255,255,.10);
-
-    backdrop-filter: blur(18px);
-    -webkit-backdrop-filter: blur(18px);
-
-    box-shadow:
-        0 8px 30px rgba(0,0,0,.28);
-
-    transition:
-        transform .18s ease,
-        background .18s ease;
+    align-items: flex-start;
 }
 
-.editTool i {
-    font-size: 15px;
+.editorBrand strong {
+    font-size: 13px;
+    line-height: 1.05;
+    letter-spacing: .12em;
+    font-weight: 800;
 }
 
-.editTool span {
-    font-size: 8px;
-
-    color: rgba(255,255,255,.65);
-
+.editorBrand span {
+    margin-top: 3px;
+    color: var(--text-muted);
+    font-size: 7px;
+    letter-spacing: .18em;
     font-weight: 700;
 }
 
-.editTool:active {
-    transform: scale(.91);
 
-    background:
-        rgba(255,255,255,.15);
+/* ==========================================================
+   MAIN
+========================================================== */
+
+.editorMain {
+    width: 100%;
+    max-width: var(--editor-max);
+    margin: 0 auto;
+    padding-bottom: calc(96px + var(--safe-bottom));
 }
 
 
 /* ==========================================================
-   TEXT OVERLAY
+   VIDEO SECTION
 ========================================================== */
 
-.textOverlay {
+.videoSection {
+    width: 100%;
+}
+
+.videoStage {
+    position: relative;
+    width: 100%;
+
+    aspect-ratio: 9 / 16;
+    max-height: 72vh;
+
+    margin: 0 auto;
+    overflow: hidden;
+
+    background:
+        linear-gradient(
+            145deg,
+            #15151b,
+            #070709
+        );
+
+    isolation: isolate;
+}
+
+.shortVideo {
     position: absolute;
+    inset: 0;
 
-    top: 43%;
-    left: 50%;
+    width: 100%;
+    height: 100%;
 
-    z-index: 25;
+    object-fit: contain;
+    background: #000;
+}
 
-    max-width: 82%;
-
-    transform:
-        translate(-50%,-50%);
-
-    padding: 9px 17px;
-
-    color: #fff;
-
-    font-size:
-        clamp(21px, 5vw, 38px);
-
-    line-height: 1.15;
-
-    font-weight: 800;
-
-    text-align: center;
-
-    word-break: break-word;
-
-    text-shadow:
-        0 3px 14px rgba(0,0,0,.75);
+.filterLayer {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
 
     pointer-events: none;
 
-    user-select: none;
-}
-
-.textOverlay[data-style="clean"] {
     background: transparent;
+    transition: filter .25s ease;
 }
 
-.textOverlay[data-style="bold"] {
-    padding: 12px 18px;
+.drawCanvas {
+    position: absolute;
+    inset: 0;
 
-    border-radius: 13px;
+    width: 100%;
+    height: 100%;
 
-    background:
-        rgba(0,0,0,.68);
+    z-index: 5;
+    pointer-events: none;
 }
 
-.textOverlay[data-style="outline"] {
-    color: transparent;
+.elementLayer {
+    position: absolute;
+    inset: 0;
+    z-index: 6;
 
-    -webkit-text-stroke:
-        1.5px #fff;
-
-    text-shadow: none;
+    pointer-events: none;
 }
 
-.textOverlay[data-style="minimal"] {
-    font-size:
-        clamp(17px, 4vw, 28px);
-
-    font-weight: 500;
+.elementLayer > * {
+    pointer-events: auto;
 }
 
 
 /* ==========================================================
-   TIMELINE
+   PLAY OVERLAY
 ========================================================== */
 
-.timelineArea {
+.playOverlay {
     position: absolute;
+    z-index: 10;
 
-    left: 14px;
-    right: 14px;
+    left: 50%;
+    top: 50%;
 
-    bottom: 183px;
+    width: 68px;
+    height: 68px;
 
-    z-index: 35;
+    transform: translate(-50%, -50%);
+
+    border-radius: 50%;
+    background: rgba(0,0,0,.48);
+    border: 1px solid rgba(255,255,255,.25);
+
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+
+    box-shadow: 0 15px 40px rgba(0,0,0,.45);
+
+    transition:
+        transform .2s ease,
+        opacity .2s ease;
 }
 
-.timelineHeader {
+.playOverlay span {
+    width: 100%;
+    height: 100%;
+    display: grid;
+    place-items: center;
+}
+
+.playOverlay i {
+    margin-left: 3px;
+    font-size: 22px;
+}
+
+.playOverlay:active {
+    transform: translate(-50%, -50%) scale(.9);
+}
+
+
+/* ==========================================================
+   VIDEO LOADER
+========================================================== */
+
+.videoLoader {
+    position: absolute;
+    inset: 0;
+    z-index: 20;
+
     display: flex;
-
+    flex-direction: column;
     align-items: center;
-    justify-content: space-between;
+    justify-content: center;
 
-    margin-bottom: 8px;
+    padding: 25px;
+    text-align: center;
 
-    padding: 0 2px;
+    background:
+        radial-gradient(
+            circle at center,
+            rgba(20,20,25,.72),
+            rgba(0,0,0,.88)
+        );
+
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
 }
 
-.timelineHeader span {
-    color: rgba(255,255,255,.70);
+.loaderSpinner,
+.processingSpinner {
+    width: 34px;
+    height: 34px;
+
+    border-radius: 50%;
+    border: 3px solid rgba(255,255,255,.15);
+    border-top-color: #fff;
+
+    animation: spin .8s linear infinite;
+}
+
+.videoLoader strong {
+    margin-top: 15px;
+    font-size: 14px;
+}
+
+.videoLoader span {
+    margin-top: 5px;
+    color: var(--text-soft);
+    font-size: 11px;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+
+/* ==========================================================
+   VIDEO DURATION
+========================================================== */
+
+.videoDuration {
+    position: absolute;
+    right: 12px;
+    bottom: 12px;
+    z-index: 15;
+
+    display: flex;
+    align-items: center;
+    gap: 6px;
+
+    padding: 7px 10px;
+
+    border-radius: 10px;
+    background: rgba(0,0,0,.58);
+    border: 1px solid rgba(255,255,255,.12);
+
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
 
     font-size: 10px;
-    font-weight: 600;
+    color: #fff;
+}
 
-    font-variant-numeric: tabular-nums;
+
+/* ==========================================================
+   VIDEO CONTROLS
+========================================================== */
+
+.videoControls {
+    height: 54px;
+    padding: 0 14px;
+
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    background: #08080b;
+    border-bottom: 1px solid rgba(255,255,255,.055);
+}
+
+.controlButton {
+    width: 34px;
+    height: 34px;
+
+    display: grid;
+    place-items: center;
+
+    border-radius: 10px;
+    background: rgba(255,255,255,.075);
+
+    font-size: 12px;
+}
+
+.controlButton:active {
+    transform: scale(.92);
 }
 
 .timeline {
     position: relative;
+    flex: 1;
+    height: 34px;
 
+    display: flex;
+    align-items: center;
+
+    cursor: pointer;
+}
+
+.timelineTrack {
+    position: relative;
     width: 100%;
-    height: 55px;
+    height: 4px;
+
+    border-radius: 99px;
+    background: rgba(255,255,255,.14);
+    overflow: hidden;
+}
+
+.timelineProgress {
+    width: 0;
+    height: 100%;
+
+    border-radius: inherit;
+    background: #fff;
+
+    transition: width .05s linear;
+}
+
+.timeLabel {
+    min-width: 38px;
+    text-align: right;
+
+    color: var(--text-soft);
+    font-size: 10px;
+    font-variant-numeric: tabular-nums;
+}
+
+
+/* ==========================================================
+   TOOL SECTION
+========================================================== */
+
+.toolSection {
+    padding: 22px 14px 0;
+}
+
+.sectionHeading {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.sectionEyebrow,
+.panelEyebrow {
+    display: block;
+
+    color: var(--text-muted);
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: .16em;
+}
+
+.sectionHeading h2 {
+    margin-top: 5px;
+
+    font-size: 20px;
+    line-height: 1.1;
+    letter-spacing: -.035em;
+}
+
+.editStatus {
+    padding: 7px 10px;
+
+    border-radius: 999px;
+
+    color: var(--text-soft);
+    background: rgba(255,255,255,.05);
+    border: 1px solid rgba(255,255,255,.07);
+
+    font-size: 9px;
+    font-weight: 700;
+}
+
+
+/* ==========================================================
+   TOOL SCROLLER
+========================================================== */
+
+.toolScroller {
+    display: flex;
+    gap: 9px;
+
+    margin-top: 17px;
+    padding-bottom: 5px;
+
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+
+    scrollbar-width: none;
+}
+
+.toolScroller::-webkit-scrollbar {
+    display: none;
+}
+
+.editTool {
+    flex: 0 0 74px;
+
+    min-height: 75px;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+
+    border-radius: 16px;
+
+    background: rgba(255,255,255,.045);
+    border: 1px solid rgba(255,255,255,.07);
+
+    color: var(--text-soft);
+
+    transition:
+        transform .2s ease,
+        background .2s ease,
+        color .2s ease,
+        border-color .2s ease;
+}
+
+.editTool:active {
+    transform: scale(.94);
+}
+
+.editTool.active {
+    color: #fff;
+    background: rgba(255,255,255,.105);
+    border-color: rgba(255,255,255,.18);
+    box-shadow:
+        inset 0 0 0 1px rgba(255,255,255,.025),
+        0 8px 22px rgba(0,0,0,.22);
+}
+
+.toolIcon {
+    width: 32px;
+    height: 32px;
+
+    display: grid;
+    place-items: center;
+
+    border-radius: 10px;
+    background: rgba(255,255,255,.075);
+
+    font-size: 12px;
+}
+
+.editTool strong {
+    font-size: 9px;
+    font-weight: 700;
+}
+
+
+/* ==========================================================
+   TOOL PANEL
+========================================================== */
+
+.toolPanel {
+    margin: 15px 14px 0;
+}
+
+.toolPanelContent {
+    padding: 17px;
+
+    border-radius: 21px;
+
+    background:
+        linear-gradient(
+            145deg,
+            rgba(23,23,30,.96),
+            rgba(11,11,15,.96)
+        );
+
+    border: 1px solid rgba(255,255,255,.08);
+
+    box-shadow: var(--shadow);
+
+    animation: panelIn .22s ease both;
+}
+
+@keyframes panelIn {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.panelTitle {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 15px;
+}
+
+.panelTitle h3 {
+    margin-top: 4px;
+
+    font-size: 15px;
+    letter-spacing: -.02em;
+}
+
+.panelClose,
+.sheetClose {
+    width: 32px;
+    height: 32px;
+
+    flex: 0 0 32px;
+
+    display: grid;
+    place-items: center;
+
+    border-radius: 10px;
+    background: rgba(255,255,255,.06);
+
+    color: var(--text-soft);
+}
+
+
+/* ==========================================================
+   TEXT
+========================================================== */
+
+.textInputRow {
+    display: flex;
+    gap: 8px;
+
+    margin-top: 15px;
+}
+
+.textInputRow input {
+    min-width: 0;
+    flex: 1;
+
+    height: 45px;
+    padding: 0 13px;
+
+    border-radius: 13px;
+
+    outline: none;
+
+    background: rgba(0,0,0,.3);
+    border: 1px solid rgba(255,255,255,.08);
+
+    font-size: 12px;
+}
+
+.textInputRow input:focus {
+    border-color: rgba(255,255,255,.25);
+}
+
+.smallPrimaryButton,
+.widePrimaryButton {
+    background: #fff;
+    color: #050507;
+
+    font-weight: 800;
+}
+
+.smallPrimaryButton {
+    padding: 0 16px;
+    border-radius: 13px;
+    font-size: 11px;
+}
+
+.styleRow {
+    display: flex;
+    gap: 7px;
+
+    margin-top: 12px;
+
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+
+.styleRow::-webkit-scrollbar {
+    display: none;
+}
+
+.styleChip {
+    flex: 0 0 auto;
+
+    padding: 8px 11px;
+
+    border-radius: 999px;
+
+    color: var(--text-soft);
+    background: rgba(255,255,255,.055);
+    border: 1px solid rgba(255,255,255,.07);
+
+    font-size: 10px;
+}
+
+.styleChip.active {
+    color: #050507;
+    background: #fff;
+}
+
+
+/* ==========================================================
+   WIDE OPTION
+========================================================== */
+
+.wideOption {
+    width: 100%;
+
+    margin-top: 15px;
+    padding: 13px;
+
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    border-radius: 15px;
+
+    background: rgba(255,255,255,.055);
+    border: 1px solid rgba(255,255,255,.075);
+
+    text-align: left;
+}
+
+.wideOption > span {
+    width: 38px;
+    height: 38px;
+
+    flex: 0 0 38px;
+
+    display: grid;
+    place-items: center;
+
+    border-radius: 11px;
+    background: rgba(255,255,255,.08);
+}
+
+.wideOption > div {
+    min-width: 0;
+    flex: 1;
+}
+
+.wideOption strong,
+.wideOption small {
+    display: block;
+}
+
+.wideOption strong {
+    font-size: 11px;
+}
+
+.wideOption small {
+    margin-top: 3px;
+
+    color: var(--text-muted);
+    font-size: 9px;
+}
+
+
+/* ==========================================================
+   MUSIC
+========================================================== */
+
+.activeMusicInfo {
+    margin-top: 10px;
+    padding: 10px;
+
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    border-radius: 14px;
+    background: rgba(255,255,255,.045);
+}
+
+.musicArtwork {
+    width: 38px;
+    height: 38px;
+
+    display: grid;
+    place-items: center;
+
+    border-radius: 11px;
+
+    background:
+        linear-gradient(
+            145deg,
+            #222229,
+            #0e0e12
+        );
+}
+
+.activeMusicInfo > div:nth-child(2) {
+    min-width: 0;
+    flex: 1;
+}
+
+.activeMusicInfo strong,
+.activeMusicInfo small {
+    display: block;
+
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.activeMusicInfo strong {
+    font-size: 11px;
+}
+
+.activeMusicInfo small {
+    margin-top: 3px;
+    color: var(--text-muted);
+    font-size: 9px;
+}
+
+.miniRemove {
+    width: 31px;
+    height: 31px;
+
+    display: grid;
+    place-items: center;
+
+    border-radius: 9px;
+    background: rgba(255,255,255,.06);
+
+    color: var(--text-soft);
+}
+
+
+/* ==========================================================
+   DRAW
+========================================================== */
+
+.drawControls {
+    margin-top: 16px;
+
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.drawControls label {
+    flex: 1;
+
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+
+    color: var(--text-soft);
+    font-size: 10px;
+}
+
+input[type="range"] {
+    width: 100%;
+    accent-color: #fff;
+}
+
+.secondarySmallButton {
+    padding: 10px 12px;
+
+    display: flex;
+    align-items: center;
+    gap: 6px;
+
+    border-radius: 11px;
+
+    color: #fff;
+    background: rgba(255,255,255,.07);
+    border: 1px solid rgba(255,255,255,.08);
+
+    font-size: 10px;
+}
+
+
+/* ==========================================================
+   STICKERS
+========================================================== */
+
+.stickerGrid {
+    margin-top: 15px;
+
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+}
+
+.stickerItem {
+    aspect-ratio: 1;
+
+    display: grid;
+    place-items: center;
+
+    border-radius: 14px;
+
+    background: rgba(255,255,255,.045);
+    border: 1px solid rgba(255,255,255,.07);
+
+    font-size: 25px;
+
+    transition: transform .18s ease;
+}
+
+.stickerItem:active {
+    transform: scale(.9);
+}
+
+
+/* ==========================================================
+   FILTERS
+========================================================== */
+
+.filterGrid {
+    margin-top: 15px;
+
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 9px;
+}
+
+.filterItem {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 7px;
+
+    color: var(--text-soft);
+
+    background: transparent;
+
+    font-size: 9px;
+    font-weight: 700;
+}
+
+.filterItem.active {
+    color: #fff;
+}
+
+.filterPreview {
+    width: 100%;
+    aspect-ratio: 1.1;
+
+    border-radius: 13px;
+
+    background:
+        linear-gradient(
+            145deg,
+            #aaa,
+            #222
+        );
+
+    border: 2px solid transparent;
 
     overflow: hidden;
+}
+
+.filterItem.active .filterPreview {
+    border-color: #fff;
+}
+
+.filterPreview.normal {
+    filter: none;
+}
+
+.filterPreview.contrast {
+    filter: contrast(1.5);
+}
+
+.filterPreview.mono {
+    filter: grayscale(1);
+}
+
+.filterPreview.warm {
+    filter: sepia(.35) saturate(1.3);
+}
+
+.filterPreview.cool {
+    filter: hue-rotate(35deg) saturate(.85);
+}
+
+.filterPreview.vintage {
+    filter: sepia(.55) contrast(.9);
+}
+
+
+/* ==========================================================
+   SPLIT
+========================================================== */
+
+.splitInfo {
+    margin-top: 15px;
+    padding: 12px;
+
+    display: flex;
+    align-items: center;
+    gap: 11px;
+
+    border-radius: 14px;
+    background: rgba(255,255,255,.045);
+}
+
+.splitTimeIcon {
+    width: 40px;
+    height: 40px;
+
+    display: grid;
+    place-items: center;
+
+    border-radius: 12px;
+    background: rgba(255,255,255,.08);
+}
+
+.splitInfo strong,
+.splitInfo span {
+    display: block;
+}
+
+.splitInfo strong {
+    font-size: 10px;
+}
+
+.splitInfo span {
+    margin-top: 3px;
+    color: var(--text-soft);
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+}
+
+.widePrimaryButton {
+    width: 100%;
+    min-height: 45px;
+
+    margin-top: 11px;
+
+    border-radius: 13px;
+
+    font-size: 11px;
+}
+
+
+/* ==========================================================
+   TRIM
+========================================================== */
+
+.trimInfo {
+    margin-top: 15px;
+
+    display: flex;
+    justify-content: space-between;
+
+    color: var(--text-soft);
+    font-size: 10px;
+}
+
+.trimInfo b {
+    margin-left: 4px;
+    color: #fff;
+    font-variant-numeric: tabular-nums;
+}
+
+.trimRange {
+    position: relative;
+
+    margin-top: 18px;
+}
+
+.trimRange input {
+    display: block;
+}
+
+
+/* ==========================================================
+   SPEED
+========================================================== */
+
+.speedChoices {
+    margin-top: 15px;
+
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 7px;
+}
+
+.speedChoices button {
+    min-height: 39px;
+
+    border-radius: 11px;
+
+    background: rgba(255,255,255,.05);
+    border: 1px solid rgba(255,255,255,.07);
+
+    color: var(--text-soft);
+    font-size: 10px;
+    font-weight: 700;
+}
+
+.speedChoices button.active {
+    background: #fff;
+    color: #050507;
+}
+
+
+/* ==========================================================
+   VOLUME
+========================================================== */
+
+.volumeControl {
+    margin-top: 18px;
+
+    display: flex;
+    align-items: center;
+    gap: 9px;
+
+    color: var(--text-soft);
+}
+
+.volumeControl input {
+    flex: 1;
+}
+
+.volumeControl strong {
+    min-width: 40px;
+
+    text-align: right;
+
+    color: #fff;
+    font-size: 10px;
+}
+
+
+/* ==========================================================
+   TIMELINE SECTION
+========================================================== */
+
+.timelineSection {
+    margin: 18px 14px 0;
+    padding: 16px;
+
+    border-radius: 19px;
+
+    background: rgba(255,255,255,.035);
+    border: 1px solid rgba(255,255,255,.07);
+}
+
+.timelineHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.timelineHeader strong {
+    display: block;
+    margin-top: 4px;
+    font-size: 12px;
+}
+
+.timelineHeader > span {
+    color: var(--text-soft);
+    font-size: 10px;
+    font-variant-numeric: tabular-nums;
+}
+
+.clipTimeline {
+    position: relative;
+
+    height: 62px;
+
+    margin-top: 13px;
 
     border-radius: 12px;
 
     background:
-        rgba(255,255,255,.07);
+        repeating-linear-gradient(
+            90deg,
+            rgba(255,255,255,.08) 0,
+            rgba(255,255,255,.08) 1px,
+            transparent 1px,
+            transparent 30px
+        ),
+        #09090c;
 
-    border:
-        1px solid rgba(255,255,255,.13);
+    border: 1px solid rgba(255,255,255,.08);
 
-    box-shadow:
-        0 10px 35px rgba(0,0,0,.35);
+    overflow: hidden;
 }
 
-.timelineTrack {
+.clipTrack {
     position: absolute;
-    inset: 0;
+    inset: 7px;
 
-    display: flex;
+    border-radius: 7px;
+
+    background:
+        linear-gradient(
+            90deg,
+            rgba(255,255,255,.12),
+            rgba(255,255,255,.04)
+        );
 }
 
-.timelineThumb {
-    flex: 1;
-
-    min-width: 24px;
-    height: 100%;
-
-    object-fit: cover;
-
-    opacity: .68;
-
-    border-right:
-        1px solid rgba(0,0,0,.35);
-}
-
-.timelinePlayhead {
+.clipPlayhead {
     position: absolute;
-
-    top: -2px;
-    bottom: -2px;
+    top: 0;
+    bottom: 0;
 
     left: 0;
 
@@ -766,12 +1287,12 @@ button:disabled {
     background: #fff;
 
     box-shadow:
-        0 0 12px rgba(255,255,255,.85);
+        0 0 12px rgba(255,255,255,.75);
 
     pointer-events: none;
 }
 
-.timelinePlayhead::before {
+.clipPlayhead::before {
     content: "";
 
     position: absolute;
@@ -779,10 +1300,10 @@ button:disabled {
     top: 0;
     left: 50%;
 
-    width: 8px;
-    height: 8px;
+    width: 9px;
+    height: 9px;
 
-    transform: translateX(-50%);
+    transform: translate(-50%, -2px);
 
     border-radius: 50%;
 
@@ -791,240 +1312,100 @@ button:disabled {
 
 
 /* ==========================================================
-   AUDIO STRIP
+   BOTTOM BAR
 ========================================================== */
 
-.audioStrip {
-    position: absolute;
-
-    left: 14px;
-    right: 14px;
-
-    bottom: 145px;
-
-    z-index: 35;
-
-    height: 32px;
-
-    display: flex;
-
-    align-items: center;
-
-    gap: 9px;
-
-    padding: 0 11px;
-
-    border-radius: 10px;
-
-    background:
-        rgba(15,16,21,.76);
-
-    border:
-        1px solid rgba(255,255,255,.09);
-
-    backdrop-filter:
-        blur(16px);
-
-    -webkit-backdrop-filter:
-        blur(16px);
-
-    overflow: hidden;
-}
-
-.audioStrip i {
-    flex: 0 0 auto;
-
-    font-size: 11px;
-}
-
-.audioStrip span {
-    min-width: 0;
-
-    overflow: hidden;
-
-    white-space: nowrap;
-
-    text-overflow: ellipsis;
-
-    color: rgba(255,255,255,.72);
-
-    font-size: 10px;
-    font-weight: 600;
-}
-
-
-/* ==========================================================
-   BOTTOM EDITOR
-========================================================== */
-
-.editorBottom {
-    position: absolute;
-
+.editorBottomBar {
+    position: fixed;
     left: 0;
     right: 0;
     bottom: 0;
 
-    z-index: 40;
+    z-index: 120;
+
+    min-height: calc(72px + var(--safe-bottom));
 
     padding:
         10px
         14px
-        calc(12px + var(--safe-bottom));
+        calc(10px + var(--safe-bottom));
 
-    background:
-        linear-gradient(
-            to top,
-            rgba(0,0,0,.98) 0%,
-            rgba(0,0,0,.92) 48%,
-            rgba(0,0,0,.65) 75%,
-            transparent 100%
-        );
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    background: rgba(6,6,8,.92);
+
+    border-top: 1px solid rgba(255,255,255,.07);
+
+    backdrop-filter: blur(25px);
+    -webkit-backdrop-filter: blur(25px);
 }
 
+.bottomSecondary {
+    height: 48px;
 
-/* ==========================================================
-   BOTTOM TOOLS
-========================================================== */
+    padding: 0 15px;
 
-.bottomTools {
-    display: grid;
-
-    grid-template-columns:
-        repeat(5, minmax(0,1fr));
-
+    display: flex;
+    align-items: center;
     gap: 7px;
-}
 
-.bottomTool {
-    min-width: 0;
-    min-height: 62px;
+    border-radius: 14px;
 
-    display: flex;
-    flex-direction: column;
+    color: var(--text-soft);
+    background: rgba(255,255,255,.055);
+    border: 1px solid rgba(255,255,255,.08);
 
-    align-items: center;
-    justify-content: center;
-
-    gap: 6px;
-
-    padding: 7px 3px;
-
-    border-radius: 16px;
-
-    background:
-        rgba(255,255,255,.065);
-
-    border:
-        1px solid rgba(255,255,255,.08);
-
-    backdrop-filter:
-        blur(14px);
-
-    -webkit-backdrop-filter:
-        blur(14px);
-
-    transition:
-        transform .18s ease,
-        background .18s ease,
-        border-color .18s ease;
-}
-
-.bottomTool i {
-    font-size: 17px;
-}
-
-.bottomTool span {
-    overflow: hidden;
-
-    max-width: 100%;
-
-    color: rgba(255,255,255,.65);
-
-    font-size: 9px;
+    font-size: 10px;
     font-weight: 700;
-
-    white-space: nowrap;
-    text-overflow: ellipsis;
 }
 
-.bottomTool.active {
-    background:
-        rgba(255,255,255,.15);
-
-    border-color:
-        rgba(255,255,255,.20);
-}
-
-.bottomTool:active {
-    transform: scale(.93);
-}
-
-
-/* ==========================================================
-   PUBLISH BAR
-========================================================== */
-
-.publishBar {
-    display: flex;
-
-    align-items: center;
-
-    gap: 9px;
-
-    margin-top: 9px;
-}
-
-.secondaryButton,
-.primaryButton {
-    min-height: 50px;
-
-    display: inline-flex;
-
-    align-items: center;
-    justify-content: center;
-
-    gap: 8px;
-
-    border-radius: 16px;
-
-    font-size: 12px;
-    font-weight: 800;
-
-    transition:
-        transform .18s ease,
-        opacity .18s ease;
-}
-
-.secondaryButton {
-    width: 52px;
-
-    flex: 0 0 52px;
-
-    background:
-        rgba(255,255,255,.08);
-
-    border:
-        1px solid rgba(255,255,255,.10);
-}
-
-.primaryButton {
+.nextButton {
+    min-width: 0;
     flex: 1;
+    height: 48px;
+
+    padding: 0 14px;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    border-radius: 14px;
 
     color: #050507;
-
     background: #fff;
 
     box-shadow:
-        0 8px 28px rgba(0,0,0,.30);
+        0 8px 28px rgba(0,0,0,.3);
+
+    transition: transform .2s ease;
 }
 
-.secondaryButton:active,
-.primaryButton:active {
+.nextButton:active {
     transform: scale(.97);
 }
 
-.primaryButton i,
-.secondaryButton i {
+.nextButton span {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.nextButton small {
+    font-size: 7px;
+    letter-spacing: .14em;
+    font-weight: 800;
+    opacity: .55;
+}
+
+.nextButton strong {
+    margin-top: 2px;
+    font-size: 12px;
+}
+
+.nextButton > i {
     font-size: 13px;
 }
 
@@ -1033,414 +1414,184 @@ button:disabled {
    OVERLAY
 ========================================================== */
 
-.overlay {
+.overlay,
+.dialogOverlay,
+.processingOverlay {
     position: fixed;
-
     inset: 0;
 
-    z-index: 100;
+    z-index: 300;
 
-    overflow: hidden;
+    display: flex;
+    align-items: flex-end;
+
+    background: rgba(0,0,0,.62);
+
+    backdrop-filter: blur(7px);
+    -webkit-backdrop-filter: blur(7px);
+}
+
+.overlay.hidden,
+.dialogOverlay.hidden,
+.processingOverlay.hidden {
+    display: none;
 }
 
 .overlayBackdrop {
     position: absolute;
-
     inset: 0;
-
-    background:
-        rgba(0,0,0,.70);
-
-    backdrop-filter:
-        blur(7px);
-
-    -webkit-backdrop-filter:
-        blur(7px);
 }
 
 
 /* ==========================================================
-   BOTTOM SHEETS
+   BOTTOM SHEET
 ========================================================== */
 
-.bottomSheet,
-.editorSheet,
-.musicSheet,
-.settingsSheet {
-    position: absolute;
-
-    left: 0;
-    right: 0;
-    bottom: 0;
-
+.bottomSheet {
+    position: relative;
     z-index: 2;
 
+    width: 100%;
+    max-height: 88vh;
     max-height: 88dvh;
-
-    overflow-x: hidden;
-    overflow-y: auto;
 
     padding:
         10px
         16px
-        calc(20px + var(--safe-bottom));
+        calc(22px + var(--safe-bottom));
+
+    border-radius: 27px 27px 0 0;
 
     background:
         linear-gradient(
-            180deg,
-            #17181e 0%,
-            #0b0c11 100%
+            145deg,
+            #17171d,
+            #0b0b0f
         );
 
-    border-radius:
-        27px
-        27px
-        0
-        0;
-
-    border:
-        1px solid rgba(255,255,255,.09);
+    border: 1px solid rgba(255,255,255,.09);
+    border-bottom: 0;
 
     box-shadow:
-        0 -25px 80px rgba(0,0,0,.65);
+        0 -20px 60px rgba(0,0,0,.55);
 
-    animation:
-        vieworaSheetUp .24s
-        cubic-bezier(.2,.8,.2,1);
+    animation: sheetUp .28s ease both;
+
+    overflow-y: auto;
 }
 
-@keyframes vieworaSheetUp {
+@keyframes sheetUp {
     from {
         transform: translateY(100%);
-        opacity: .5;
     }
 
     to {
         transform: translateY(0);
-        opacity: 1;
     }
 }
 
-
-/* ==========================================================
-   SHEET HANDLE
-========================================================== */
-
 .sheetHandle {
-    width: 42px;
+    width: 40px;
     height: 4px;
 
-    margin:
-        2px auto
-        17px;
+    margin: 1px auto 17px;
 
-    border-radius: 999px;
-
-    background:
-        rgba(255,255,255,.20);
+    border-radius: 99px;
+    background: rgba(255,255,255,.2);
 }
-
-
-/* ==========================================================
-   SHEET HEADER
-========================================================== */
 
 .sheetHeader {
     display: flex;
-
     align-items: flex-start;
     justify-content: space-between;
+    gap: 15px;
+}
 
-    gap: 14px;
+.sheetHeader > div {
+    min-width: 0;
+}
 
-    margin-bottom: 18px;
+.sheetHeader span {
+    color: var(--text-muted);
+    font-size: 8px;
+    letter-spacing: .16em;
+    font-weight: 800;
 }
 
 .sheetHeader h2 {
-    margin: 4px 0 5px;
-
-    font-size: 21px;
-    line-height: 1.2;
-
-    font-weight: 800;
-
-    letter-spacing: -.025em;
+    margin-top: 5px;
+    font-size: 18px;
 }
 
-.sheetHeader p {
-    margin: 0;
-
-    color: var(--muted);
-
-    font-size: 11px;
-    line-height: 1.4;
-}
-
-.eyebrow {
-    display: block;
-
-    color: rgba(255,255,255,.42);
-
-    font-size: 9px;
-    font-weight: 800;
-
-    letter-spacing: .16em;
-}
-
-
-/* ==========================================================
-   CLOSE BUTTON
-========================================================== */
-
-.sheetCloseButton {
-    width: 38px;
-    height: 38px;
-
-    flex: 0 0 38px;
-
-    display: flex;
-
-    align-items: center;
-    justify-content: center;
-
-    border-radius: 50%;
-
-    background:
-        rgba(255,255,255,.08);
-
-    border:
-        1px solid rgba(255,255,255,.08);
-}
-
-.sheetCloseButton:active {
-    transform: scale(.92);
-}
-
-
-/* ==========================================================
-   FORM
-========================================================== */
-
-.fieldGroup {
+.sheetSearch,
+.musicSearchBox {
     position: relative;
-
-    margin-bottom: 15px;
+    margin-top: 15px;
 }
 
-.fieldGroup label {
-    display: block;
-
-    margin-bottom: 7px;
-
-    color: rgba(255,255,255,.72);
-
-    font-size: 11px;
-    font-weight: 700;
-}
-
-.fieldGroup input,
-.fieldGroup textarea,
-.fieldGroup select {
-    width: 100%;
-
-    min-height: 47px;
-
-    padding:
-        12px
-        13px;
-
-    border-radius: 14px;
-
-    outline: none;
-
-    color: #fff;
-
-    background:
-        rgba(255,255,255,.055);
-
-    border:
-        1px solid rgba(255,255,255,.09);
-
-    transition:
-        border-color .18s ease,
-        background .18s ease;
-}
-
-.fieldGroup textarea {
-    min-height: 105px;
-
-    resize: vertical;
-
-    line-height: 1.45;
-}
-
-.fieldGroup input::placeholder,
-.fieldGroup textarea::placeholder {
-    color:
-        rgba(255,255,255,.28);
-}
-
-.fieldGroup input:focus,
-.fieldGroup textarea:focus,
-.fieldGroup select:focus {
-    background:
-        rgba(255,255,255,.075);
-
-    border-color:
-        rgba(255,255,255,.25);
-}
-
-.characterCount {
+.musicSearchBox i {
     position: absolute;
+    left: 13px;
+    top: 50%;
 
-    right: 11px;
-    bottom: 9px;
+    transform: translateY(-50%);
 
-    color:
-        rgba(255,255,255,.36);
-
-    font-size: 9px;
+    color: var(--text-muted);
+    font-size: 11px;
 }
 
-
-/* ==========================================================
-   OPTION ROW
-========================================================== */
-
-.optionRow {
+.musicSearchBox input {
     width: 100%;
+    height: 44px;
 
-    display: flex;
-
-    align-items: center;
-
-    gap: 12px;
-
-    margin-bottom: 8px;
-
-    padding: 12px;
-
-    text-align: left;
-
-    border-radius: 16px;
-
-    background:
-        rgba(255,255,255,.055);
-
-    border:
-        1px solid rgba(255,255,255,.07);
-
-    transition:
-        transform .18s ease,
-        background .18s ease;
-}
-
-.optionRow:active {
-    transform: scale(.985);
-
-    background:
-        rgba(255,255,255,.10);
-}
-
-.optionIcon {
-    width: 43px;
-    height: 43px;
-
-    flex: 0 0 43px;
-
-    display: flex;
-
-    align-items: center;
-    justify-content: center;
+    padding: 0 14px 0 37px;
 
     border-radius: 13px;
+    outline: none;
 
-    background:
-        rgba(255,255,255,.08);
+    background: rgba(255,255,255,.055);
+    border: 1px solid rgba(255,255,255,.07);
+
+    font-size: 11px;
 }
 
-.optionText {
-    min-width: 0;
+.musicCategories {
+    display: flex;
+    gap: 7px;
 
-    flex: 1;
+    margin-top: 12px;
+
+    overflow-x: auto;
+    scrollbar-width: none;
 }
 
-.optionText strong,
-.optionText small {
-    display: block;
+.musicCategories::-webkit-scrollbar {
+    display: none;
 }
 
-.optionText strong {
-    font-size: 13px;
+.musicCategory {
+    flex: 0 0 auto;
+
+    padding: 8px 11px;
+
+    display: flex;
+    align-items: center;
+    gap: 6px;
+
+    border-radius: 999px;
+
+    background: rgba(255,255,255,.05);
+    border: 1px solid rgba(255,255,255,.07);
+
+    color: var(--text-soft);
+
+    font-size: 9px;
     font-weight: 700;
 }
 
-.optionText small {
-    margin-top: 3px;
-
-    color: var(--muted);
-
-    font-size: 10px;
-}
-
-.optionRow > i {
-    color:
-        rgba(255,255,255,.34);
-
-    font-size: 12px;
-}
-
-
-/* ==========================================================
-   MUSIC SEARCH
-========================================================== */
-
-.musicSearch {
-    height: 46px;
-
-    display: flex;
-
-    align-items: center;
-
-    gap: 9px;
-
-    padding: 0 13px;
-
-    border-radius: 14px;
-
-    background:
-        rgba(255,255,255,.06);
-
-    border:
-        1px solid rgba(255,255,255,.08);
-}
-
-.musicSearch i {
-    color: var(--muted);
-
-    font-size: 13px;
-}
-
-.musicSearch input {
-    width: 100%;
-
-    height: 100%;
-
-    padding: 0;
-
-    outline: none;
-    border: 0;
-
-    background: transparent;
-
-    color: #fff;
-
-    font-size: 12px;
-}
-
-.musicSearch input::placeholder {
-    color:
-        rgba(255,255,255,.30);
+.musicCategory.active {
+    color: #050507;
+    background: #fff;
 }
 
 
@@ -1449,456 +1600,253 @@ button:disabled {
 ========================================================== */
 
 .musicList {
-    margin-top: 10px;
+    margin-top: 12px;
 }
 
-.musicItem {
+.musicChoice {
     width: 100%;
-
-    display: flex;
-
-    align-items: center;
-
-    gap: 11px;
 
     padding: 11px 4px;
 
-    text-align: left;
+    display: flex;
+    align-items: center;
+    gap: 11px;
 
     background: transparent;
 
-    border-bottom:
-        1px solid rgba(255,255,255,.06);
+    border-bottom: 1px solid rgba(255,255,255,.06);
+
+    text-align: left;
 }
 
-.musicItem:last-child {
-    border-bottom: 0;
-}
+.musicChoiceIcon {
+    width: 43px;
+    height: 43px;
 
-.musicItem:active {
-    opacity: .7;
-}
+    flex: 0 0 43px;
 
-.musicItemIcon {
-    width: 42px;
-    height: 42px;
-
-    flex: 0 0 42px;
-
-    display: flex;
-
-    align-items: center;
-    justify-content: center;
+    display: grid;
+    place-items: center;
 
     border-radius: 12px;
 
     background:
-        rgba(255,255,255,.08);
+        linear-gradient(
+            145deg,
+            #25252d,
+            #0d0d11
+        );
 }
 
-.musicItemText {
+.musicChoice > span:nth-child(2) {
     min-width: 0;
-
     flex: 1;
 }
 
-.musicItemText strong,
-.musicItemText small {
+.musicChoice strong,
+.musicChoice small {
     display: block;
 
     overflow: hidden;
-
     white-space: nowrap;
-
     text-overflow: ellipsis;
 }
 
-.musicItemText strong {
-    font-size: 12px;
+.musicChoice strong {
+    font-size: 11px;
 }
 
-.musicItemText small {
+.musicChoice small {
     margin-top: 3px;
-
-    color: var(--muted);
-
-    font-size: 10px;
-}
-
-.musicItem > i {
-    color:
-        rgba(255,255,255,.35);
-
-    font-size: 12px;
+    color: var(--text-muted);
+    font-size: 9px;
 }
 
 
 /* ==========================================================
-   TEXT STYLES
+   EXIT DIALOG
 ========================================================== */
 
-.textStyles {
-    display: grid;
-
-    grid-template-columns:
-        repeat(2, minmax(0,1fr));
-
-    gap: 9px;
-
-    margin: 12px 0;
-}
-
-.textStyle {
-    min-height: 72px;
-
-    display: flex;
-
+.dialogOverlay {
     align-items: center;
     justify-content: center;
 
-    border-radius: 15px;
+    padding: 20px;
+}
+
+.confirmDialog {
+    width: min(100%, 370px);
+
+    padding: 23px;
+
+    border-radius: 24px;
 
     background:
-        rgba(255,255,255,.055);
+        linear-gradient(
+            145deg,
+            #19191f,
+            #0d0d11
+        );
 
-    border:
-        1px solid rgba(255,255,255,.07);
-
-    font-size: 16px;
-    font-weight: 800;
-
-    transition:
-        transform .18s ease,
-        background .18s ease,
-        border-color .18s ease;
-}
-
-.textStyle.active {
-    background:
-        rgba(255,255,255,.14);
-
-    border-color:
-        rgba(255,255,255,.26);
-}
-
-.textStyle:active {
-    transform: scale(.97);
-}
-
-
-/* ==========================================================
-   SPEED GRID
-========================================================== */
-
-.choiceGrid {
-    display: grid;
-
-    grid-template-columns:
-        repeat(4, minmax(0,1fr));
-
-    gap: 8px;
-}
-
-.speedItem {
-    min-height: 55px;
-
-    border-radius: 15px;
-
-    background:
-        rgba(255,255,255,.06);
-
-    border:
-        1px solid rgba(255,255,255,.08);
-
-    font-size: 13px;
-    font-weight: 800;
-}
-
-.speedItem.active {
-    color: #050507;
-
-    background: #fff;
-
-    border-color: #fff;
-}
-
-.speedItem:active {
-    transform: scale(.96);
-}
-
-
-/* ==========================================================
-   SHEET ACTION
-========================================================== */
-
-.sheetAction {
-    width: 100%;
-
-    min-height: 50px;
-
-    display: flex;
-
-    align-items: center;
-    justify-content: center;
-
-    gap: 8px;
-
-    margin-top: 10px;
-
-    border-radius: 15px;
-
-    color: #050507;
-
-    background: #fff;
-
-    font-size: 13px;
-    font-weight: 800;
+    border: 1px solid rgba(255,255,255,.1);
 
     box-shadow:
-        0 8px 25px rgba(0,0,0,.25);
-
-    transition:
-        transform .18s ease,
-        opacity .18s ease;
-}
-
-.sheetAction:active {
-    transform: scale(.98);
-}
-
-
-/* ==========================================================
-   SETTING ROW
-========================================================== */
-
-.settingRow {
-    display: flex;
-
-    align-items: center;
-    justify-content: space-between;
-
-    gap: 15px;
-
-    padding: 14px 0;
-
-    border-bottom:
-        1px solid rgba(255,255,255,.07);
-}
-
-.settingInfo {
-    min-width: 0;
-}
-
-.settingInfo strong,
-.settingInfo small {
-    display: block;
-}
-
-.settingInfo strong {
-    font-size: 13px;
-}
-
-.settingInfo small {
-    margin-top: 4px;
-
-    color: var(--muted);
-
-    font-size: 10px;
-    line-height: 1.35;
-}
-
-
-/* ==========================================================
-   TOGGLE
-========================================================== */
-
-.toggle {
-    position: relative;
-
-    width: 48px;
-    height: 28px;
-
-    flex: 0 0 48px;
-}
-
-.toggle input {
-    position: absolute;
-
-    opacity: 0;
-
-    pointer-events: none;
-}
-
-.toggleSlider {
-    position: absolute;
-
-    inset: 0;
-
-    border-radius: 999px;
-
-    background:
-        #303139;
-
-    transition:
-        background .2s ease;
-}
-
-.toggleSlider::after {
-    content: "";
-
-    position: absolute;
-
-    top: 3px;
-    left: 3px;
-
-    width: 22px;
-    height: 22px;
-
-    border-radius: 50%;
-
-    background: #fff;
-
-    transition:
-        transform .2s ease,
-        background .2s ease;
-}
-
-.toggle input:checked + .toggleSlider {
-    background: #fff;
-}
-
-.toggle input:checked + .toggleSlider::after {
-    transform: translateX(20px);
-
-    background: #111;
-}
-
-
-/* ==========================================================
-   PROCESSING OVERLAY
-========================================================== */
-
-.processingOverlay {
-    position: fixed;
-
-    inset: 0;
-
-    z-index: 300;
-
-    display: flex;
-
-    flex-direction: column;
-
-    align-items: center;
-    justify-content: center;
-
-    padding: 30px;
+        0 25px 80px rgba(0,0,0,.65);
 
     text-align: center;
 
-    background:
-        radial-gradient(
-            circle at center,
-            rgba(255,255,255,.09),
-            rgba(0,0,0,.97) 63%
-        );
-
-    backdrop-filter:
-        blur(18px);
-
-    -webkit-backdrop-filter:
-        blur(18px);
+    animation: dialogIn .2s ease both;
 }
 
-.processingOrb {
-    position: relative;
+@keyframes dialogIn {
+    from {
+        opacity: 0;
+        transform: scale(.95) translateY(8px);
+    }
 
-    width: 82px;
-    height: 82px;
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
 
-    display: flex;
+.dialogIcon {
+    width: 48px;
+    height: 48px;
+
+    margin: 0 auto 15px;
+
+    display: grid;
+    place-items: center;
+
+    border-radius: 15px;
+
+    background: rgba(255,255,255,.07);
+}
+
+.confirmDialog h2 {
+    font-size: 18px;
+}
+
+.confirmDialog p {
+    margin-top: 7px;
+
+    color: var(--text-muted);
+    font-size: 11px;
+    line-height: 1.55;
+}
+
+.dialogActions {
+    margin-top: 20px;
+
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.dialogActions button {
+    min-height: 43px;
+
+    border-radius: 12px;
+
+    background: rgba(255,255,255,.07);
+
+    font-size: 10px;
+    font-weight: 700;
+}
+
+.dialogActions .dangerButton {
+    color: #fff;
+    background: var(--danger);
+}
+
+
+/* ==========================================================
+   PROCESSING
+========================================================== */
+
+.processingOverlay {
+    z-index: 500;
 
     align-items: center;
     justify-content: center;
 
-    border-radius: 50%;
+    padding: 20px;
+}
+
+.processingCard {
+    width: min(100%, 350px);
+
+    padding: 27px 22px;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    border-radius: 24px;
 
     background:
-        rgba(255,255,255,.07);
+        linear-gradient(
+            145deg,
+            #18181e,
+            #0c0c10
+        );
 
-    border:
-        1px solid rgba(255,255,255,.12);
+    border: 1px solid rgba(255,255,255,.1);
 
     box-shadow:
-        0 15px 50px rgba(0,0,0,.4);
+        0 25px 80px rgba(0,0,0,.65);
+
+    text-align: center;
 }
 
-.processingOrb .processingSpinner {
-    position: absolute;
-
-    width: 68px;
-    height: 68px;
+.processingCard strong {
+    margin-top: 17px;
+    font-size: 14px;
 }
 
-.processingOrb i {
-    font-size: 20px;
+.processingCard > span {
+    margin-top: 5px;
+
+    color: var(--text-muted);
+    font-size: 10px;
 }
 
-.processingOverlay h2 {
-    margin: 21px 0 7px;
-
-    font-size: 18px;
-    font-weight: 800;
-}
-
-.processingOverlay p {
-    max-width: 260px;
-
-    margin: 0;
-
-    color: var(--muted);
-
-    font-size: 11px;
-    line-height: 1.4;
-}
-
-.processingProgress {
-    width: 175px;
+.processingBar {
+    width: 100%;
     height: 4px;
 
+    margin-top: 18px;
+
     overflow: hidden;
+    border-radius: 99px;
 
-    margin-top: 21px;
-
-    border-radius: 999px;
-
-    background:
-        rgba(255,255,255,.10);
+    background: rgba(255,255,255,.08);
 }
 
-.processingProgress span {
+.processingBar span {
     display: block;
 
-    width: 45%;
+    width: 35%;
     height: 100%;
 
     border-radius: inherit;
-
     background: #fff;
 
-    animation:
-        vieworaProgress 1.5s
-        ease-in-out infinite;
+    animation: processing 1.5s ease-in-out infinite;
 }
 
-@keyframes vieworaProgress {
-
+@keyframes processing {
     0% {
-        transform: translateX(-130%);
+        transform: translateX(-120%);
+    }
+
+    50% {
+        transform: translateX(150%);
     }
 
     100% {
-        transform: translateX(360%);
+        transform: translateX(300%);
     }
 }
 
@@ -1914,80 +1862,37 @@ button:disabled {
     right: 14px;
 
     bottom:
-        calc(18px + var(--safe-bottom));
+        calc(88px + var(--safe-bottom));
 
-    z-index: 500;
+    z-index: 600;
+
+    max-width: 430px;
+    margin: auto;
+
+    padding: 12px;
 
     display: flex;
-
     align-items: center;
+    gap: 10px;
 
-    gap: 11px;
+    border-radius: 15px;
 
-    padding: 12px 13px;
-
-    border-radius: 17px;
-
-    background:
-        rgba(23,24,30,.95);
-
-    border:
-        1px solid rgba(255,255,255,.11);
+    background: rgba(22,22,28,.96);
+    border: 1px solid rgba(255,255,255,.1);
 
     box-shadow:
-        var(--shadow);
+        0 15px 45px rgba(0,0,0,.45);
 
-    backdrop-filter:
-        blur(22px);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
 
-    -webkit-backdrop-filter:
-        blur(22px);
-
-    animation:
-        vieworaToast .25s
-        cubic-bezier(.2,.8,.2,1);
+    animation: toastIn .25s ease both;
 }
 
-.toastIcon {
-    width: 36px;
-    height: 36px;
-
-    flex: 0 0 36px;
-
-    display: flex;
-
-    align-items: center;
-    justify-content: center;
-
-    border-radius: 11px;
-
-    background:
-        rgba(255,255,255,.08);
-}
-
-.toastIcon i {
-    font-size: 14px;
-}
-
-.toast strong {
-    display: block;
-
-    font-size: 12px;
-    font-weight: 800;
-}
-
-.toast p {
-    margin: 3px 0 0;
-
-    color: var(--muted);
-
-    font-size: 10px;
-}
-
-@keyframes vieworaToast {
+@keyframes toastIn {
     from {
         opacity: 0;
-        transform: translateY(18px);
+        transform: translateY(12px);
     }
 
     to {
@@ -1996,219 +1901,281 @@ button:disabled {
     }
 }
 
+.toast > span {
+    width: 35px;
+    height: 35px;
+
+    flex: 0 0 35px;
+
+    display: grid;
+    place-items: center;
+
+    border-radius: 10px;
+
+    background: rgba(255,255,255,.07);
+}
+
+.toast strong,
+.toast p {
+    display: block;
+}
+
+.toast strong {
+    font-size: 10px;
+}
+
+.toast p {
+    margin-top: 3px;
+
+    color: var(--text-muted);
+    font-size: 9px;
+}
+
 
 /* ==========================================================
-   SCROLLBAR
+   EDIT ELEMENTS
 ========================================================== */
 
-.bottomSheet::-webkit-scrollbar,
-.editorSheet::-webkit-scrollbar,
-.musicSheet::-webkit-scrollbar,
-.settingsSheet::-webkit-scrollbar {
-    width: 4px;
+.editTextElement,
+.editStickerElement {
+    position: absolute;
+
+    transform: translate(-50%, -50%);
+
+    user-select: none;
+    touch-action: none;
+
+    cursor: grab;
 }
 
-.bottomSheet::-webkit-scrollbar-thumb,
-.editorSheet::-webkit-scrollbar-thumb,
-.musicSheet::-webkit-scrollbar-thumb,
-.settingsSheet::-webkit-scrollbar-thumb {
-    background:
-        rgba(255,255,255,.16);
-
-    border-radius: 999px;
+.editTextElement:active,
+.editStickerElement:active {
+    cursor: grabbing;
 }
 
-* {
-    scrollbar-width: thin;
+.editTextElement {
+    max-width: 85%;
 
-    scrollbar-color:
-        rgba(255,255,255,.16)
-        transparent;
+    padding: 7px 11px;
+
+    border-radius: 8px;
+
+    font-size: clamp(14px, 4vw, 28px);
+    font-weight: 700;
+
+    text-align: center;
+    word-break: break-word;
+
+    color: #fff;
+    text-shadow:
+        0 2px 8px rgba(0,0,0,.8);
+}
+
+.editTextElement.bold {
+    font-weight: 900;
+}
+
+.editTextElement.outline {
+    color: transparent;
+    -webkit-text-stroke: 1px #fff;
+    text-shadow: none;
+}
+
+.editTextElement.bubble {
+    padding: 9px 13px;
+
+    color: #050507;
+    background: #fff;
+
+    text-shadow: none;
+}
+
+.editStickerElement {
+    font-size: clamp(32px, 11vw, 75px);
 }
 
 
 /* ==========================================================
-   SMALL PHONES
+   ACCESSIBILITY / TOUCH
 ========================================================== */
 
-@media (max-width: 380px) {
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+    outline: 2px solid rgba(255,255,255,.7);
+    outline-offset: 2px;
+}
 
-    .editorTitle strong {
-        font-size: 16px;
+@media (hover:hover) {
+
+    .topIconButton:hover,
+    .editTool:hover,
+    .wideOption:hover,
+    .musicChoice:hover,
+    .stickerItem:hover,
+    .filterItem:hover {
+        background-color: rgba(255,255,255,.085);
     }
 
-    .editorTitle span {
-        font-size: 8px;
+    .topIconButton:hover {
+        border-color: rgba(255,255,255,.15);
+    }
+}
+
+
+/* ==========================================================
+   TABLET
+========================================================== */
+
+@media (min-width: 600px) {
+
+    .editorTopBar {
+        padding-left: 20px;
+        padding-right: 20px;
     }
 
-    .iconButton {
-        width: 43px;
-        height: 43px;
+    .videoStage {
+        margin-top: 18px;
+
+        width: min(430px, 100%);
+        border-radius: 24px;
+
+        box-shadow:
+            0 30px 80px rgba(0,0,0,.45);
     }
 
-    .shortsBadge {
-        min-height: 41px;
+    .videoControls {
+        width: min(430px, 100%);
+        margin: 0 auto;
 
-        padding: 0 12px;
-
-        font-size: 10px;
+        border-radius: 0 0 18px 18px;
     }
 
-    .editorControls {
-        right: 8px;
-        bottom: 220px;
+    .toolSection {
+        padding-left: 24px;
+        padding-right: 24px;
+    }
 
-        gap: 7px;
+    .toolPanel {
+        margin-left: 24px;
+        margin-right: 24px;
+    }
+
+    .timelineSection {
+        margin-left: 24px;
+        margin-right: 24px;
     }
 
     .editTool {
-        width: 45px;
-        min-height: 45px;
-
-        border-radius: 15px;
-    }
-
-    .editTool i {
-        font-size: 14px;
-    }
-
-    .editTool span {
-        font-size: 7px;
-    }
-
-    .timelineArea {
-        left: 10px;
-        right: 10px;
-        bottom: 178px;
-    }
-
-    .audioStrip {
-        left: 10px;
-        right: 10px;
-        bottom: 140px;
-    }
-
-    .editorBottom {
-        padding-left: 10px;
-        padding-right: 10px;
-    }
-
-    .bottomTools {
-        gap: 4px;
-    }
-
-    .bottomTool {
-        min-height: 57px;
-
-        border-radius: 14px;
-    }
-
-    .bottomTool i {
-        font-size: 15px;
-    }
-
-    .bottomTool span {
-        font-size: 8px;
-    }
-
-    .publishBar {
-        gap: 7px;
-    }
-
-    .secondaryButton {
-        width: 48px;
-        flex-basis: 48px;
+        flex-basis: 82px;
     }
 }
 
 
 /* ==========================================================
-   LANDSCAPE
+   DESKTOP
 ========================================================== */
 
-@media (orientation: landscape) and (max-height: 600px) {
+@media (min-width: 900px) {
 
-    .editorControls {
-        bottom: 110px;
+    body {
+        overflow-y: auto;
     }
 
-    .timelineArea {
-        bottom: 78px;
-        left: 120px;
-        right: 120px;
+    .editorTopBar {
+        position: sticky;
+
+        padding-left: max(24px, calc((100vw - 1180px) / 2));
+        padding-right: max(24px, calc((100vw - 1180px) / 2));
     }
 
-    .audioStrip {
-        display: none;
-    }
+    .editorMain {
+        display: grid;
 
-    .editorBottom {
+        grid-template-columns:
+            minmax(330px, 440px)
+            minmax(0, 1fr);
+
+        column-gap: 30px;
+
         padding:
-            6px
-            12px
-            calc(6px + var(--safe-bottom));
-
-        background:
-            linear-gradient(
-                to top,
-                rgba(0,0,0,.95),
-                transparent
-            );
+            24px
+            24px
+            110px;
     }
 
-    .bottomTools {
-        display: none;
+    .videoSection {
+        grid-row: 1 / span 5;
+
+        position: sticky;
+        top: 90px;
+
+        align-self: start;
     }
 
-    .publishBar {
-        width: 320px;
-        margin-left: auto;
+    .videoStage {
+        width: 100%;
+        max-height: calc(100vh - 145px);
+        max-height: calc(100dvh - 145px);
+
+        margin-top: 0;
+    }
+
+    .videoControls {
+        width: 100%;
+        border-radius: 0 0 18px 18px;
+    }
+
+    .toolSection {
+        padding: 0;
+    }
+
+    .toolScroller {
+        padding-bottom: 4px;
+    }
+
+    .toolPanel {
+        margin: 15px 0 0;
+    }
+
+    .timelineSection {
+        margin: 18px 0 0;
+    }
+
+    .editorBottomBar {
+        left: 50%;
+        right: auto;
+
+        width: min(650px, calc(100% - 30px));
+
+        transform: translateX(-50%);
+
+        border: 1px solid rgba(255,255,255,.08);
+        border-bottom: 0;
+
+        border-radius: 20px 20px 0 0;
     }
 }
 
 
 /* ==========================================================
-   TABLET / DESKTOP
+   LARGE DESKTOP
 ========================================================== */
 
-@media (min-width: 700px) {
+@media (min-width: 1200px) {
 
-    .editShorts {
-        width: 520px;
-
-        margin: 0 auto;
-
-        border-left:
-            1px solid rgba(255,255,255,.06);
-
-        border-right:
-            1px solid rgba(255,255,255,.06);
-
-        box-shadow:
-            0 0 100px rgba(0,0,0,.55);
+    .editorMain {
+        grid-template-columns: 440px minmax(0, 1fr);
+        column-gap: 42px;
     }
 
-    .bottomSheet,
-    .editorSheet,
-    .musicSheet,
-    .settingsSheet {
-        left: 50%;
-        right: auto;
-
-        width: 520px;
-
-        transform:
-            translateX(-50%);
+    .sectionHeading h2 {
+        font-size: 23px;
     }
 
-    .toast {
-        left: 50%;
-        right: auto;
-
-        width: 390px;
-
-        transform:
-            translateX(-50%);
+    .editTool {
+        flex-basis: 86px;
     }
 }
 
@@ -2222,9 +2189,61 @@ button:disabled {
     *,
     *::before,
     *::after {
+        scroll-behavior: auto !important;
         animation-duration: .01ms !important;
         animation-iteration-count: 1 !important;
-        scroll-behavior: auto !important;
         transition-duration: .01ms !important;
+    }
+}
+
+
+/* ==========================================================
+   VERY SMALL DEVICES
+========================================================== */
+
+@media (max-width: 360px) {
+
+    .editorTopBar {
+        padding-left: 9px;
+        padding-right: 9px;
+    }
+
+    .topIconButton {
+        width: 38px;
+        height: 38px;
+        flex-basis: 38px;
+    }
+
+    .editorBrand img {
+        width: 27px;
+        height: 27px;
+    }
+
+    .editorBrand strong {
+        font-size: 11px;
+    }
+
+    .editTool {
+        flex-basis: 68px;
+        min-height: 70px;
+    }
+
+    .toolSection {
+        padding-left: 10px;
+        padding-right: 10px;
+    }
+
+    .toolPanel {
+        margin-left: 10px;
+        margin-right: 10px;
+    }
+
+    .timelineSection {
+        margin-left: 10px;
+        margin-right: 10px;
+    }
+
+    .bottomSecondary {
+        padding: 0 11px;
     }
 }

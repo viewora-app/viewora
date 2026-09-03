@@ -863,153 +863,16 @@
        FLIP CAMERA
     ===================================================== */
 
-    const flipButton =
-        $("flipCameraBtn");
-
-
-    let usingFrontCamera =
-        true;
-
+    const flipButton = $("flipCameraBtn");
 
     if (flipButton) {
-
-        flipButton.addEventListener(
-            "click",
-            async () => {
-
-                const stream =
-                    window.localStream;
-
-
-                if (!stream) {
-                    return;
-                }
-
-
-                const videoTracks =
-                    stream.getVideoTracks();
-
-
-                if (!videoTracks.length) {
-                    return;
-                }
-
-
-                usingFrontCamera =
-                    !usingFrontCamera;
-
-
-                const oldTrack =
-                    videoTracks[0];
-
-
-                try {
-
-                    const newStream =
-                        await navigator
-                            .mediaDevices
-                            .getUserMedia({
-
-                                audio: false,
-
-                                video: {
-
-                                    facingMode:
-                                        usingFrontCamera
-                                            ? "user"
-                                            : "environment"
-
-                                }
-
-                            });
-
-
-                    const newTrack =
-                        newStream
-                            .getVideoTracks()[0];
-
-
-                    const pc =
-                        window.VieworaCall
-                            ?.getPeerConnection
-                            ? window.VieworaCall
-                                .getPeerConnection()
-                            : null;
-
-
-                    if (pc) {
-
-                        const sender =
-                            pc
-                                .getSenders()
-                                .find(
-                                    item =>
-                                        item.track &&
-                                        item.track.kind ===
-                                        "video"
-                                );
-
-
-                        if (sender) {
-
-                            await sender
-                                .replaceTrack(
-                                    newTrack
-                                );
-
-                        }
-
-                    }
-
-
-                    oldTrack.stop();
-
-
-                    const audioTracks =
-                        stream
-                            .getAudioTracks();
-
-
-                    const replacement =
-                        new MediaStream([
-                            ...audioTracks,
-                            newTrack
-                        ]);
-
-
-                    window.localStream =
-                        replacement;
-
-
-                    const localVideo =
-                        $("localVideo");
-
-
-                    if (localVideo) {
-
-                        localVideo.srcObject =
-                            replacement;
-
-                    }
-
-
-                } catch (error) {
-
-                    console.error(
-                        "Camera flip error:",
-                        error
-                    );
-
-
-                    showCallToast(
-                        "Unable to switch camera."
-                    );
-
-                }
-
+        flipButton.addEventListener("click", async () => {
+            if (window.VieworaCall && typeof window.VieworaCall.switchCamera === "function") {
+                await window.VieworaCall.switchCamera();
+            } else {
+                showCallToast("Camera switch not ready.");
             }
-        );
-
+        });
     }
 
 

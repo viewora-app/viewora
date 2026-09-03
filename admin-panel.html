@@ -262,6 +262,42 @@
 
         <button
             class="navItem"
+            data-section="music"
+        >
+
+            <i class="fa-solid fa-music"></i>
+
+            <span>Music Store</span>
+
+        </button>
+
+
+        <button
+            class="navItem"
+            data-section="stickers"
+        >
+
+            <i class="fa-solid fa-face-smile"></i>
+
+            <span>Sticker Store</span>
+
+        </button>
+
+
+        <button
+            class="navItem"
+            data-section="monetization"
+        >
+
+            <i class="fa-solid fa-coins"></i>
+
+            <span>Monetization</span>
+
+        </button>
+
+
+        <button
+            class="navItem"
             data-section="settings"
         >
 
@@ -1439,6 +1475,199 @@
 
 
 <!-- =====================================================
+     MUSIC STORE
+===================================================== -->
+
+<section
+    id="musicSection"
+    class="adminSection"
+>
+
+    <div class="sectionHeader">
+
+        <div>
+
+            <h2>Music Store</h2>
+
+            <p>Manage tracks for Shorts &amp; Stories.</p>
+
+        </div>
+
+        <button id="addMusicBtn" class="secondaryBtn" type="button">
+
+            <i class="fa-solid fa-plus"></i>
+            Add Track
+
+        </button>
+
+    </div>
+
+    <div class="filterBar">
+
+        <div class="tableSearch">
+
+            <i class="fa-solid fa-magnifying-glass"></i>
+
+            <input id="musicAdminSearch" type="search" placeholder="Search tracks...">
+
+        </div>
+
+    </div>
+
+    <div id="musicAdminList" class="verificationList">
+
+        <div class="largeEmptyState">
+
+            <i class="fa-solid fa-music"></i>
+
+            <h3>No tracks yet</h3>
+
+            <p>Add music for creators to use.</p>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- =====================================================
+     STICKER STORE
+===================================================== -->
+
+<section
+    id="stickersSection"
+    class="adminSection"
+>
+
+    <div class="sectionHeader">
+
+        <div>
+
+            <h2>Sticker Store</h2>
+
+            <p>Manage sticker packs for Stories.</p>
+
+        </div>
+
+        <button id="addStickerPackBtn" class="secondaryBtn" type="button">
+
+            <i class="fa-solid fa-plus"></i>
+            Add Pack
+
+        </button>
+
+    </div>
+
+    <div id="stickerAdminList" class="verificationList">
+
+        <div class="largeEmptyState">
+
+            <i class="fa-solid fa-face-smile"></i>
+
+            <h3>No sticker packs</h3>
+
+            <p>Create packs for story stickers.</p>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- =====================================================
+     MONETIZATION
+===================================================== -->
+
+<section
+    id="monetizationSection"
+    class="adminSection"
+>
+
+    <div class="sectionHeader">
+
+        <div>
+
+            <h2>Monetization</h2>
+
+            <p>
+                Policy: 3,00,000 views · 600 followers · 100 stories
+            </p>
+
+        </div>
+
+        <button id="refreshMonetizationBtn" class="secondaryBtn" type="button">
+
+            <i class="fa-solid fa-rotate"></i>
+            Refresh
+
+        </button>
+
+    </div>
+
+    <div class="analyticsCards" style="margin-bottom:18px">
+
+        <div class="analyticsCard">
+
+            <span>Min Views</span>
+
+            <strong>3L</strong>
+
+            <small>Required</small>
+
+        </div>
+
+        <div class="analyticsCard">
+
+            <span>Min Followers</span>
+
+            <strong>600</strong>
+
+            <small>Required</small>
+
+        </div>
+
+        <div class="analyticsCard">
+
+            <span>Min Stories</span>
+
+            <strong>100</strong>
+
+            <small>Required</small>
+
+        </div>
+
+        <div class="analyticsCard">
+
+            <span>Eligible Creators</span>
+
+            <strong id="monetizationEligibleCount">0</strong>
+
+            <small>Ready to enable</small>
+
+        </div>
+
+    </div>
+
+    <div id="monetizationList" class="verificationList">
+
+        <div class="largeEmptyState">
+
+            <i class="fa-solid fa-coins"></i>
+
+            <h3>Loading creators...</h3>
+
+            <p>Checking eligibility against policy.</p>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- =====================================================
      SETTINGS
 ===================================================== -->
 
@@ -1827,6 +2056,129 @@
 
 
 <!-- =====================================================
+     ADD MUSIC MODAL
+===================================================== -->
+
+<div id="addMusicModal" class="adminModal hidden">
+
+    <div class="modalBackdrop"></div>
+
+    <div class="modalCard">
+
+        <button type="button" class="modalClose" id="closeAddMusicModal">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+
+        <div class="modalIcon">
+            <i class="fa-solid fa-music"></i>
+        </div>
+
+        <h2>Add Music Track</h2>
+
+        <p>Upload audio file + cover. Files go to Cloudinary automatically.</p>
+
+        <div style="display:grid;gap:10px;margin-top:14px">
+
+            <input id="musicTitleInput" type="text" placeholder="Song title"
+                style="height:42px;padding:0 12px;border-radius:10px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.05);color:#fff">
+
+            <input id="musicArtistInput" type="text" placeholder="Artist name"
+                style="height:42px;padding:0 12px;border-radius:10px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.05);color:#fff">
+
+            <input id="musicGenreInput" type="text" placeholder="Genre (Pop, Desi, Hip-Hop...)"
+                style="height:42px;padding:0 12px;border-radius:10px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.05);color:#fff">
+
+            <label style="font-size:11px;color:#94a3b8;margin-top:4px">Audio file (MP3 / M4A / WAV)</label>
+            <input id="musicAudioFile" type="file" accept="audio/*,.mp3,.m4a,.wav,.aac,.ogg"
+                style="height:42px;padding:8px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.05);color:#fff;font-size:12px">
+
+            <label style="font-size:11px;color:#94a3b8;margin-top:4px">Cover image (optional)</label>
+            <input id="musicCoverFile" type="file" accept="image/*"
+                style="height:42px;padding:8px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.05);color:#fff;font-size:12px">
+
+            <p id="musicUploadStatus" style="font-size:11px;color:#9ca3af;min-height:16px;margin:0"></p>
+
+        </div>
+
+        <div class="confirmButtons" style="margin-top:18px">
+
+            <button type="button" class="secondaryBtn" id="cancelAddMusicBtn">Cancel</button>
+
+            <button type="button" class="dangerBtn" id="saveMusicBtn" style="background:linear-gradient(135deg,#7c5cff,#4f8cff)">
+                Save Track
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- =====================================================
+     ADD STICKER PACK MODAL
+===================================================== -->
+
+<div id="addStickerModal" class="adminModal hidden">
+
+    <div class="modalBackdrop"></div>
+
+    <div class="modalCard">
+
+        <button type="button" class="modalClose" id="closeAddStickerModal">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+
+        <div class="modalIcon">
+            <i class="fa-solid fa-face-smile"></i>
+        </div>
+
+        <h2>Add Sticker Pack</h2>
+
+        <p>Paste sticker image URLs separated by new lines.</p>
+
+        <div style="display:grid;gap:10px;margin-top:14px">
+
+            <input id="stickerPackNameInput" type="text" placeholder="Pack name"
+                style="height:42px;padding:0 12px;border-radius:10px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.05);color:#fff">
+
+            <input id="stickerPackCoverInput" type="url" placeholder="Cover image URL"
+                style="height:42px;padding:0 12px;border-radius:10px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.05);color:#fff">
+
+            <input id="stickerPackCategoryInput" type="text" placeholder="Category"
+                style="height:42px;padding:0 12px;border-radius:10px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.05);color:#fff">
+
+            <input id="stickerPackPriceInput" type="number" min="0" placeholder="Price (0 = Free)"
+                style="height:42px;padding:0 12px;border-radius:10px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.05);color:#fff">
+
+            <label style="font-size:11px;color:#94a3b8">Sticker images (multiple)</label>
+            <input id="stickerFilesInput" type="file" accept="image/*" multiple
+                style="height:42px;padding:8px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.05);color:#fff;font-size:12px">
+
+            <label style="font-size:11px;color:#94a3b8;margin-top:4px">Or paste image URLs (optional)</label>
+            <textarea id="stickerUrlsInput" rows="3" placeholder="https://.../sticker1.png"
+                style="padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.05);color:#fff;resize:vertical;font-family:inherit"></textarea>
+
+            <p id="stickerUploadStatus" style="font-size:11px;color:#9ca3af;min-height:16px;margin:0"></p>
+
+        </div>
+
+        <div class="confirmButtons" style="margin-top:18px">
+
+            <button type="button" class="secondaryBtn" id="cancelAddStickerBtn">Cancel</button>
+
+            <button type="button" class="dangerBtn" id="saveStickerPackBtn" style="background:linear-gradient(135deg,#7c5cff,#4f8cff)">
+                Save Pack
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- =====================================================
      TOAST
 ===================================================== -->
 
@@ -1862,6 +2214,10 @@
 
 <script src="firebase.js"></script>
 
+
+<!-- Stores API -->
+
+<script src="viewora-stores.js"></script>
 
 <!-- Admin Logic -->
 

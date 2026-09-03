@@ -464,6 +464,21 @@ function switchSection(section) {
             "View Viewora growth and engagement."
         ],
 
+        music: [
+            "Music Store",
+            "Manage tracks for Shorts and Stories."
+        ],
+
+        stickers: [
+            "Sticker Store",
+            "Manage sticker packs for Stories."
+        ],
+
+        monetization: [
+            "Monetization",
+            "3L views · 600 followers · 100 stories"
+        ],
+
         settings: [
             "Settings",
             "Configure your Viewora administration."
@@ -512,6 +527,18 @@ function switchSection(section) {
 
     if (section === "analytics") {
         loadAnalytics();
+    }
+
+    if (section === "music") {
+        loadMusicAdmin();
+    }
+
+    if (section === "stickers") {
+        loadStickersAdmin();
+    }
+
+    if (section === "monetization") {
+        loadMonetizationAdmin();
     }
 
     if (window.innerWidth <= 850) {
@@ -1281,6 +1308,58 @@ function openUserModal(uid) {
                     <i class="fa-solid fa-ban"></i>
                     Block User
                   `;
+    }
+
+    /* Inject Verify + Monetize actions if missing */
+    const actions = $("userModalActions");
+    if (actions) {
+        if (!$("grantBlueTickBtn")) {
+            const btn = document.createElement("button");
+            btn.id = "grantBlueTickBtn";
+            btn.className = "modalAction";
+            btn.innerHTML = `
+                <i class="fa-solid fa-circle-check"></i>
+                <span id="grantBlueTickLabel">Grant Blue Tick</span>
+            `;
+            btn.addEventListener("click", async () => {
+                if (!selectedUserId) return;
+                const u = cachedUsers[selectedUserId] || {};
+                const isVerified =
+                    u.verified === true ||
+                    u.isVerified === true ||
+                    u.blueTick === true;
+                await grantBlueTick(selectedUserId, !isVerified);
+                closeUserModal();
+            });
+            actions.appendChild(btn);
+        }
+
+        if (!$("monetizeUserBtn")) {
+            const btn = document.createElement("button");
+            btn.id = "monetizeUserBtn";
+            btn.className = "modalAction";
+            btn.innerHTML = `
+                <i class="fa-solid fa-coins"></i>
+                <span>Check Monetization</span>
+            `;
+            btn.addEventListener("click", async () => {
+                if (!selectedUserId) return;
+                await reviewMonetizationForUser(selectedUserId);
+            });
+            actions.appendChild(btn);
+        }
+
+        const tickLabel = $("grantBlueTickLabel");
+        const isVerified =
+            user.verified === true ||
+            user.isVerified === true ||
+            user.blueTick === true;
+        if (tickLabel) {
+            tickLabel.textContent =
+                isVerified
+                    ? "Remove Blue Tick"
+                    : "Grant Blue Tick";
+        }
     }
 
     modal.classList.remove("hidden");
@@ -2405,6 +2484,20 @@ async function updateVerification(
 
     try {
 
+        const reqSnap =
+            await db.ref(
+                "verificationRequests/" + id
+            ).once("value");
+
+        const request =
+            reqSnap.val() || {};
+
+        const targetUID =
+            request.uid ||
+            request.userId ||
+            request.creatorId ||
+            id;
+
         await db.ref(
             "verificationRequests/" + id
         ).update({
@@ -2420,9 +2513,48 @@ async function updateVerification(
                     : null
         });
 
+        /*
+         * BLUE TICK
+         * Approve → users/{uid}.verified = true
+         * Reject  → remove verified flag
+         */
+        if (targetUID) {
+
+            if (status === "approved") {
+
+                await db.ref(
+                    "users/" + targetUID
+                ).update({
+
+                    verified: true,
+                    isVerified: true,
+                    blueTick: true,
+                    verificationStatus: "verified",
+                    verifiedAt:
+                        firebase.database.ServerValue.TIMESTAMP,
+                    verifiedBy:
+                        currentAdmin
+                            ? currentAdmin.uid
+                            : null
+                });
+
+            } else if (status === "rejected") {
+
+                await db.ref(
+                    "users/" + targetUID
+                ).update({
+
+                    verified: false,
+                    isVerified: false,
+                    blueTick: false,
+                    verificationStatus: "rejected"
+                });
+            }
+        }
+
         showToast(
             status === "approved"
-                ? "Verification approved."
+                ? "Blue tick granted. Creator is verified."
                 : "Verification rejected."
         );
 
@@ -2432,6 +2564,303 @@ async function updateVerification(
 
         console.error(error);
 
+        showToast(
+            "Unable to update verification.",
+            "error"
+        );
+    }
+}
+
+
+/* =========================================================
+   MONETIZATION POLICY
+   Requirements:
+     • 300,000 total views
+     • 600 followers
+     • 100 stories posted
+========================================================= */
+
+const MONETIZATION_RULES = {
+    minViews: 300000,
+    minFollowers: 600,
+    minStories: 100
+};
+
+async function getCreatorStats(uid) {
+
+    const stats = {
+        views: 0,
+        followers: 0,
+        stories: 0
+    };
+
+    if (!uid) return stats;
+
+    try {
+        /* Followers */
+        const folSnap =
+            await db.ref(
+                "followers/" + uid
+            ).once("value");
+
+        if (folSnap.exists()) {
+            stats.followers =
+                Object.keys(
+                    folSnap.val() || {}
+                ).length;
+        }
+
+        /* Also check user node counters */
+        const userSnap =
+            await db.ref(
+                "users/" + uid
+            ).once("value");
+
+        const user =
+            userSnap.val() || {};
+
+        if (user.followersCount) {
+            stats.followers = Math.max(
+                stats.followers,
+                Number(user.followersCount) || 0
+            );
+        }
+
+        if (user.followerCount) {
+            stats.followers = Math.max(
+                stats.followers,
+                Number(user.followerCount) || 0
+            );
+        }
+
+        /* Views from posts + shorts + videos */
+        const sumViews = (obj) => {
+            let total = 0;
+            Object.values(obj || {}).forEach((item) => {
+                if (!item || typeof item !== "object") return;
+                const owner =
+                    item.uid ||
+                    item.userId ||
+                    item.ownerId ||
+                    item.creatorId ||
+                    "";
+                if (owner !== uid) return;
+                total += Number(
+                    item.views ||
+                    item.viewCount ||
+                    0
+                );
+            });
+            return total;
+        };
+
+        const [posts, shorts, videos] =
+            await Promise.all([
+                db.ref("posts").once("value"),
+                db.ref("shorts").once("value"),
+                db.ref("videos").once("value")
+            ]);
+
+        stats.views +=
+            sumViews(posts.val()) +
+            sumViews(shorts.val()) +
+            sumViews(videos.val());
+
+        if (user.totalViews) {
+            stats.views = Math.max(
+                stats.views,
+                Number(user.totalViews) || 0
+            );
+        }
+
+        /* Stories count */
+        const storiesSnap =
+            await db.ref("stories").once("value");
+
+        const stories =
+            storiesSnap.val() || {};
+
+        Object.values(stories).forEach((s) => {
+            if (!s || typeof s !== "object") return;
+            const owner =
+                s.uid ||
+                s.userId ||
+                s.ownerId ||
+                "";
+            if (owner === uid) {
+                stats.stories += 1;
+            }
+        });
+
+        if (user.storiesCount) {
+            stats.stories = Math.max(
+                stats.stories,
+                Number(user.storiesCount) || 0
+            );
+        }
+
+    } catch (err) {
+        console.warn("Creator stats error:", err);
+    }
+
+    return stats;
+}
+
+function checkMonetizationEligibility(stats) {
+    const viewsOK =
+        Number(stats.views) >= MONETIZATION_RULES.minViews;
+    const followersOK =
+        Number(stats.followers) >= MONETIZATION_RULES.minFollowers;
+    const storiesOK =
+        Number(stats.stories) >= MONETIZATION_RULES.minStories;
+
+    return {
+        eligible: viewsOK && followersOK && storiesOK,
+        viewsOK,
+        followersOK,
+        storiesOK,
+        stats
+    };
+}
+
+async function grantMonetization(uid, enable = true) {
+
+    if (!uid) return;
+
+    try {
+        await db.ref("users/" + uid).update({
+
+            monetizationEnabled: enable === true,
+            monetizationStatus:
+                enable === true
+                    ? "active"
+                    : "disabled",
+
+            monetizationUpdatedAt:
+                firebase.database.ServerValue.TIMESTAMP,
+
+            monetizationBy:
+                currentAdmin
+                    ? currentAdmin.uid
+                    : null
+        });
+
+        await db.ref(
+            "monetization/" + uid
+        ).update({
+
+            enabled: enable === true,
+            status:
+                enable === true
+                    ? "active"
+                    : "disabled",
+            policy: {
+                minViews: MONETIZATION_RULES.minViews,
+                minFollowers: MONETIZATION_RULES.minFollowers,
+                minStories: MONETIZATION_RULES.minStories
+            },
+            updatedAt:
+                firebase.database.ServerValue.TIMESTAMP,
+            updatedBy:
+                currentAdmin
+                    ? currentAdmin.uid
+                    : null
+        });
+
+        showToast(
+            enable
+                ? "Monetization enabled for creator."
+                : "Monetization disabled."
+        );
+
+    } catch (error) {
+        console.error(error);
+        showToast(
+            "Unable to update monetization.",
+            "error"
+        );
+    }
+}
+
+async function reviewMonetizationForUser(uid) {
+
+    if (!uid) return;
+
+    const stats = await getCreatorStats(uid);
+    const check = checkMonetizationEligibility(stats);
+
+    const lines = [
+        "Views: " +
+            formatNumber(stats.views) +
+            " / " +
+            formatNumber(MONETIZATION_RULES.minViews) +
+            (check.viewsOK ? " ✓" : " ✗"),
+        "Followers: " +
+            formatNumber(stats.followers) +
+            " / " +
+            formatNumber(MONETIZATION_RULES.minFollowers) +
+            (check.followersOK ? " ✓" : " ✗"),
+        "Stories: " +
+            formatNumber(stats.stories) +
+            " / " +
+            formatNumber(MONETIZATION_RULES.minStories) +
+            (check.storiesOK ? " ✓" : " ✗")
+    ].join("\n");
+
+    if (check.eligible) {
+
+        openConfirmModal(
+            "Enable Monetization?",
+            "Creator meets policy:\n" + lines,
+            async () => {
+                await grantMonetization(uid, true);
+            }
+        );
+
+    } else {
+
+        showToast(
+            "Not eligible yet. " +
+                lines.replace(/\n/g, " | "),
+            "warning"
+        );
+    }
+}
+
+/* Grant blue tick directly from user modal */
+async function grantBlueTick(uid, enable = true) {
+
+    if (!uid) return;
+
+    try {
+        await db.ref("users/" + uid).update({
+            verified: enable === true,
+            isVerified: enable === true,
+            blueTick: enable === true,
+            verificationStatus:
+                enable === true
+                    ? "verified"
+                    : "none",
+            verifiedAt:
+                enable === true
+                    ? firebase.database.ServerValue.TIMESTAMP
+                    : null,
+            verifiedBy:
+                enable === true && currentAdmin
+                    ? currentAdmin.uid
+                    : null
+        });
+
+        showToast(
+            enable
+                ? "Blue tick granted."
+                : "Blue tick removed."
+        );
+
+        await loadUsers();
+
+    } catch (error) {
+        console.error(error);
         showToast(
             "Unable to update verification.",
             "error"
@@ -3525,6 +3954,588 @@ window.addEventListener(
    Useful if other Viewora files need these.
 ========================================================= */
 
+
+/* =========================================================
+   MUSIC STORE (ADMIN)
+========================================================= */
+
+async function loadMusicAdmin() {
+
+    const container = $("musicAdminList");
+    if (!container) return;
+
+    container.innerHTML = `
+        <div class="largeEmptyState">
+            <i class="fa-solid fa-spinner fa-spin"></i>
+            <h3>Loading music...</h3>
+        </div>
+    `;
+
+    try {
+        const snap = await db.ref("musicLibrary").once("value");
+        const data = snap.val() || {};
+        let entries = Object.entries(data).map(([id, v]) => ({ id, ...v }));
+
+        const q = ($("musicAdminSearch")?.value || "").toLowerCase().trim();
+        if (q) {
+            entries = entries.filter(
+                (t) =>
+                    String(t.title || "").toLowerCase().includes(q) ||
+                    String(t.artist || "").toLowerCase().includes(q)
+            );
+        }
+
+        entries.sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0));
+
+        if (!entries.length) {
+            container.innerHTML = `
+                <div class="largeEmptyState">
+                    <i class="fa-solid fa-music"></i>
+                    <h3>No tracks yet</h3>
+                    <p>Click Add Track to upload music links.</p>
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = entries.map((t) => `
+            <div class="verificationAdminCard">
+                <div class="verificationIcon">
+                    <i class="fa-solid fa-music"></i>
+                </div>
+                <div class="verificationInfo">
+                    <strong>${escapeHTML(t.title || "Untitled")}</strong>
+                    <span>${escapeHTML(t.artist || "Unknown")} · ${escapeHTML(t.genre || "")}</span>
+                    <small>${formatNumber(t.uses || 0)} uses · ${t.active === false ? "Hidden" : "Active"}</small>
+                </div>
+                <button class="verificationApproveBtn" data-toggle-music="${escapeAttribute(t.id)}" data-active="${t.active === false ? "0" : "1"}">
+                    ${t.active === false ? "Show" : "Hide"}
+                </button>
+                <button class="verificationRejectBtn" data-delete-music="${escapeAttribute(t.id)}">
+                    Delete
+                </button>
+            </div>
+        `).join("");
+
+        qsa("[data-toggle-music]", container).forEach((btn) => {
+            btn.addEventListener("click", async () => {
+                const id = btn.dataset.toggleMusic;
+                const next = btn.dataset.active === "1" ? false : true;
+                await db.ref("musicLibrary/" + id + "/active").set(next);
+                showToast(next ? "Track visible." : "Track hidden.");
+                loadMusicAdmin();
+            });
+        });
+
+        qsa("[data-delete-music]", container).forEach((btn) => {
+            btn.addEventListener("click", () => {
+                openConfirmModal(
+                    "Delete track?",
+                    "This music will be removed from the store.",
+                    async () => {
+                        await db.ref("musicLibrary/" + btn.dataset.deleteMusic).remove();
+                        showToast("Track deleted.");
+                        loadMusicAdmin();
+                    }
+                );
+            });
+        });
+
+    } catch (error) {
+        console.error(error);
+        container.innerHTML = `
+            <div class="largeEmptyState">
+                <i class="fa-solid fa-circle-xmark"></i>
+                <h3>Failed to load music</h3>
+            </div>
+        `;
+    }
+}
+
+function openAddMusicModal(show) {
+    const modal = $("addMusicModal");
+    if (!modal) return;
+    if (show) {
+        modal.classList.remove("hidden");
+        modal.classList.add("show");
+    } else {
+        modal.classList.remove("show");
+        setTimeout(() => modal.classList.add("hidden"), 180);
+    }
+}
+
+const addMusicBtn = $("addMusicBtn");
+if (addMusicBtn) {
+    addMusicBtn.addEventListener("click", () => openAddMusicModal(true));
+}
+
+["closeAddMusicModal", "cancelAddMusicBtn"].forEach((id) => {
+    const el = $(id);
+    if (el) el.addEventListener("click", () => openAddMusicModal(false));
+});
+
+async function adminUploadToCloudinary(file) {
+    const CLOUD_NAME = "z5m6wjdf";
+    const UPLOAD_PRESET = "Viewora-upload";
+    const UPLOAD_URL =
+        "https://api.cloudinary.com/v1_1/" +
+        CLOUD_NAME +
+        "/auto/upload";
+
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("upload_preset", UPLOAD_PRESET);
+
+    const response = await fetch(UPLOAD_URL, {
+        method: "POST",
+        body: formData
+    });
+
+    if (!response.ok) {
+        throw new Error("Cloudinary HTTP " + response.status);
+    }
+
+    const data = await response.json();
+    return data.secure_url || data.url;
+}
+
+const saveMusicBtn = $("saveMusicBtn");
+if (saveMusicBtn) {
+    saveMusicBtn.addEventListener("click", async () => {
+        const title = $("musicTitleInput")?.value?.trim();
+        const artist = $("musicArtistInput")?.value?.trim();
+        const genre = $("musicGenreInput")?.value?.trim() || "Other";
+        const audioFile = $("musicAudioFile")?.files?.[0];
+        const coverFile = $("musicCoverFile")?.files?.[0];
+        const statusEl = $("musicUploadStatus");
+
+        if (!title) {
+            showToast("Song title required.", "warning");
+            return;
+        }
+
+        if (!audioFile) {
+            showToast("Please choose an audio file.", "warning");
+            return;
+        }
+
+        /* Max ~40MB soft limit */
+        if (audioFile.size > 40 * 1024 * 1024) {
+            showToast("Audio file too large (max 40MB).", "warning");
+            return;
+        }
+
+        saveMusicBtn.disabled = true;
+        if (statusEl) statusEl.textContent = "Uploading audio...";
+
+        try {
+            const audioUrl = await adminUploadToCloudinary(audioFile);
+
+            let coverUrl = "";
+            if (coverFile) {
+                if (statusEl) statusEl.textContent = "Uploading cover...";
+                coverUrl = await adminUploadToCloudinary(coverFile);
+            }
+
+            if (statusEl) statusEl.textContent = "Saving track...";
+
+            const payload = {
+                title,
+                artist: artist || "Unknown",
+                audioUrl,
+                coverUrl: coverUrl || "",
+                genre,
+                duration: 0,
+                uses: 0,
+                trending: false,
+                active: true,
+                createdAt: firebase.database.ServerValue.TIMESTAMP
+            };
+
+            if (window.VieworaStores?.MusicStore) {
+                await VieworaStores.MusicStore.addTrack(payload);
+            } else {
+                await db.ref("musicLibrary").push(payload);
+            }
+
+            showToast("Music track uploaded.");
+            openAddMusicModal(false);
+
+            ["musicTitleInput", "musicArtistInput", "musicGenreInput"].forEach((id) => {
+                if ($(id)) $(id).value = "";
+            });
+            if ($("musicAudioFile")) $("musicAudioFile").value = "";
+            if ($("musicCoverFile")) $("musicCoverFile").value = "";
+            if (statusEl) statusEl.textContent = "";
+
+            loadMusicAdmin();
+
+        } catch (e) {
+            console.error(e);
+            showToast(
+                e.message || "Upload failed. Check Cloudinary preset.",
+                "error"
+            );
+            if (statusEl) statusEl.textContent = "Upload failed.";
+        } finally {
+            saveMusicBtn.disabled = false;
+        }
+    });
+}
+
+const musicAdminSearch = $("musicAdminSearch");
+if (musicAdminSearch) {
+    musicAdminSearch.addEventListener("input", () => loadMusicAdmin());
+}
+
+
+/* =========================================================
+   STICKER STORE (ADMIN)
+========================================================= */
+
+async function loadStickersAdmin() {
+
+    const container = $("stickerAdminList");
+    if (!container) return;
+
+    container.innerHTML = `
+        <div class="largeEmptyState">
+            <i class="fa-solid fa-spinner fa-spin"></i>
+            <h3>Loading packs...</h3>
+        </div>
+    `;
+
+    try {
+        const snap = await db.ref("stickerPacks").once("value");
+        const data = snap.val() || {};
+        const entries = Object.entries(data)
+            .map(([id, v]) => ({ id, ...v }))
+            .sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0));
+
+        if (!entries.length) {
+            container.innerHTML = `
+                <div class="largeEmptyState">
+                    <i class="fa-solid fa-face-smile"></i>
+                    <h3>No sticker packs</h3>
+                    <p>Click Add Pack to create one.</p>
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = entries.map((p) => `
+            <div class="verificationAdminCard">
+                <div class="verificationIcon">
+                    <i class="fa-solid fa-face-smile"></i>
+                </div>
+                <div class="verificationInfo">
+                    <strong>${escapeHTML(p.name || "Pack")}</strong>
+                    <span>${escapeHTML(p.category || "General")} · ${(p.stickers || []).length} stickers</span>
+                    <small>${Number(p.price) > 0 ? "₹" + p.price : "Free"} · ${p.active === false ? "Hidden" : "Active"}</small>
+                </div>
+                <button class="verificationApproveBtn" data-toggle-pack="${escapeAttribute(p.id)}" data-active="${p.active === false ? "0" : "1"}">
+                    ${p.active === false ? "Show" : "Hide"}
+                </button>
+                <button class="verificationRejectBtn" data-delete-pack="${escapeAttribute(p.id)}">
+                    Delete
+                </button>
+            </div>
+        `).join("");
+
+        qsa("[data-toggle-pack]", container).forEach((btn) => {
+            btn.addEventListener("click", async () => {
+                const next = btn.dataset.active === "1" ? false : true;
+                await db.ref("stickerPacks/" + btn.dataset.togglePack + "/active").set(next);
+                showToast(next ? "Pack visible." : "Pack hidden.");
+                loadStickersAdmin();
+            });
+        });
+
+        qsa("[data-delete-pack]", container).forEach((btn) => {
+            btn.addEventListener("click", () => {
+                openConfirmModal(
+                    "Delete pack?",
+                    "This sticker pack will be removed.",
+                    async () => {
+                        await db.ref("stickerPacks/" + btn.dataset.deletePack).remove();
+                        showToast("Pack deleted.");
+                        loadStickersAdmin();
+                    }
+                );
+            });
+        });
+
+    } catch (error) {
+        console.error(error);
+        container.innerHTML = `
+            <div class="largeEmptyState">
+                <i class="fa-solid fa-circle-xmark"></i>
+                <h3>Failed to load stickers</h3>
+            </div>
+        `;
+    }
+}
+
+function openAddStickerModal(show) {
+    const modal = $("addStickerModal");
+    if (!modal) return;
+    if (show) {
+        modal.classList.remove("hidden");
+        modal.classList.add("show");
+    } else {
+        modal.classList.remove("show");
+        setTimeout(() => modal.classList.add("hidden"), 180);
+    }
+}
+
+const addStickerPackBtn = $("addStickerPackBtn");
+if (addStickerPackBtn) {
+    addStickerPackBtn.addEventListener("click", () => openAddStickerModal(true));
+}
+
+["closeAddStickerModal", "cancelAddStickerBtn"].forEach((id) => {
+    const el = $(id);
+    if (el) el.addEventListener("click", () => openAddStickerModal(false));
+});
+
+const saveStickerPackBtn = $("saveStickerPackBtn");
+if (saveStickerPackBtn) {
+    saveStickerPackBtn.addEventListener("click", async () => {
+        const name = $("stickerPackNameInput")?.value?.trim();
+        let coverUrl = $("stickerPackCoverInput")?.value?.trim() || "";
+        const category = $("stickerPackCategoryInput")?.value?.trim() || "General";
+        const price = Number($("stickerPackPriceInput")?.value || 0);
+        const urlLines = ($("stickerUrlsInput")?.value || "")
+            .split(/\n/)
+            .map((s) => s.trim())
+            .filter(Boolean);
+        const files = $("stickerFilesInput")?.files
+            ? [...$("stickerFilesInput").files]
+            : [];
+        const statusEl = $("stickerUploadStatus");
+
+        if (!name) {
+            showToast("Pack name required.", "warning");
+            return;
+        }
+
+        if (!files.length && !urlLines.length) {
+            showToast("Add sticker images or URLs.", "warning");
+            return;
+        }
+
+        saveStickerPackBtn.disabled = true;
+
+        try {
+            const stickers = [];
+
+            for (let i = 0; i < files.length; i++) {
+                if (statusEl) {
+                    statusEl.textContent =
+                        "Uploading sticker " + (i + 1) + "/" + files.length + "...";
+                }
+                const url = await adminUploadToCloudinary(files[i]);
+                stickers.push({
+                    id: "s" + (stickers.length + 1),
+                    url,
+                    name: "Sticker " + (stickers.length + 1)
+                });
+            }
+
+            urlLines.forEach((url) => {
+                stickers.push({
+                    id: "s" + (stickers.length + 1),
+                    url,
+                    name: "Sticker " + (stickers.length + 1)
+                });
+            });
+
+            if (!coverUrl && stickers[0]) {
+                coverUrl = stickers[0].url;
+            }
+
+            if (statusEl) statusEl.textContent = "Saving pack...";
+
+            const payload = {
+                name,
+                coverUrl: coverUrl || "",
+                category,
+                price,
+                stickers,
+                uses: 0,
+                active: true,
+                createdAt: firebase.database.ServerValue.TIMESTAMP
+            };
+
+            if (window.VieworaStores?.StickerStore) {
+                await VieworaStores.StickerStore.addPack(payload);
+            } else {
+                await db.ref("stickerPacks").push(payload);
+            }
+
+            showToast("Sticker pack added.");
+            openAddStickerModal(false);
+
+            ["stickerPackNameInput","stickerPackCoverInput","stickerPackCategoryInput","stickerPackPriceInput","stickerUrlsInput"]
+                .forEach((id) => { if ($(id)) $(id).value = ""; });
+            if ($("stickerFilesInput")) $("stickerFilesInput").value = "";
+            if (statusEl) statusEl.textContent = "";
+
+            loadStickersAdmin();
+        } catch (e) {
+            console.error(e);
+            showToast(e.message || "Failed to add pack.", "error");
+            if (statusEl) statusEl.textContent = "Upload failed.";
+        } finally {
+            saveStickerPackBtn.disabled = false;
+        }
+    });
+}
+
+
+/* =========================================================
+   MONETIZATION ADMIN LIST
+========================================================= */
+
+async function loadMonetizationAdmin() {
+
+    const container = $("monetizationList");
+    if (!container) return;
+
+    container.innerHTML = `
+        <div class="largeEmptyState">
+            <i class="fa-solid fa-spinner fa-spin"></i>
+            <h3>Checking creators...</h3>
+        </div>
+    `;
+
+    try {
+        const usersSnap = await db.ref("users").once("value");
+        const users = usersSnap.val() || {};
+        const entries = Object.entries(users);
+
+        const results = [];
+        let eligibleCount = 0;
+
+        /* Sample up to 40 users for performance */
+        for (const [uid, user] of entries.slice(0, 40)) {
+            let stats = { views: 0, followers: 0, stories: 0 };
+
+            if (typeof getCreatorStats === "function") {
+                stats = await getCreatorStats(uid);
+            } else {
+                stats.followers = Number(
+                    user.followersCount ||
+                    user.followerCount ||
+                    0
+                );
+                stats.views = Number(user.totalViews || 0);
+                stats.stories = Number(user.storiesCount || 0);
+            }
+
+            const check =
+                typeof checkMonetizationEligibility === "function"
+                    ? checkMonetizationEligibility(stats)
+                    : {
+                        eligible:
+                            stats.views >= 300000 &&
+                            stats.followers >= 600 &&
+                            stats.stories >= 100,
+                        stats
+                    };
+
+            if (check.eligible) eligibleCount += 1;
+
+            results.push({
+                uid,
+                user,
+                stats,
+                eligible: check.eligible,
+                enabled: user.monetizationEnabled === true
+            });
+        }
+
+        results.sort((a, b) => {
+            if (a.eligible !== b.eligible) return a.eligible ? -1 : 1;
+            return b.stats.views - a.stats.views;
+        });
+
+        setText("monetizationEligibleCount", formatNumber(eligibleCount));
+
+        if (!results.length) {
+            container.innerHTML = `
+                <div class="largeEmptyState">
+                    <i class="fa-solid fa-coins"></i>
+                    <h3>No creators found</h3>
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = results.map((row) => {
+            const name = escapeHTML(getUserName(row.user));
+            return `
+                <div class="verificationAdminCard">
+                    <div class="verificationIcon">
+                        <i class="fa-solid fa-coins"></i>
+                    </div>
+                    <div class="verificationInfo">
+                        <strong>${name}</strong>
+                        <span>
+                            ${formatNumber(row.stats.views)} views ·
+                            ${formatNumber(row.stats.followers)} followers ·
+                            ${formatNumber(row.stats.stories)} stories
+                        </span>
+                        <small>
+                            ${row.eligible ? "Eligible" : "Not eligible"} ·
+                            ${row.enabled ? "Monetization ON" : "OFF"}
+                        </small>
+                    </div>
+                    <button
+                        class="verificationApproveBtn"
+                        data-mono-uid="${escapeAttribute(row.uid)}"
+                        data-mono-enable="${row.enabled ? "0" : "1"}"
+                    >
+                        ${row.enabled ? "Disable" : "Enable"}
+                    </button>
+                </div>
+            `;
+        }).join("");
+
+        qsa("[data-mono-uid]", container).forEach((btn) => {
+            btn.addEventListener("click", async () => {
+                const uid = btn.dataset.monoUid;
+                const enable = btn.dataset.monoEnable === "1";
+                if (typeof grantMonetization === "function") {
+                    await grantMonetization(uid, enable);
+                } else {
+                    await db.ref("users/" + uid).update({
+                        monetizationEnabled: enable,
+                        monetizationStatus: enable ? "active" : "disabled"
+                    });
+                    showToast(enable ? "Monetization enabled." : "Disabled.");
+                }
+                loadMonetizationAdmin();
+            });
+        });
+
+    } catch (error) {
+        console.error(error);
+        container.innerHTML = `
+            <div class="largeEmptyState">
+                <i class="fa-solid fa-circle-xmark"></i>
+                <h3>Failed to load monetization</h3>
+            </div>
+        `;
+    }
+}
+
+const refreshMonetizationBtn = $("refreshMonetizationBtn");
+if (refreshMonetizationBtn) {
+    refreshMonetizationBtn.addEventListener("click", () => loadMonetizationAdmin());
+}
+
+
 window.VieworaAdmin = {
 
     switchSection,
@@ -3543,7 +4554,23 @@ window.VieworaAdmin = {
 
     loadAnalytics,
 
-    showToast
+    loadMusicAdmin,
+
+    loadStickersAdmin,
+
+    loadMonetizationAdmin,
+
+    showToast,
+
+    grantBlueTick,
+
+    grantMonetization,
+
+    reviewMonetizationForUser,
+
+    getCreatorStats,
+
+    MONETIZATION_RULES
 
 };
 

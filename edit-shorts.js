@@ -1,3188 +1,1240 @@
+/* ==========================================================
+   VIEWORA — SHORTS VISUAL EDITOR
+   edit-shorts.js
+   PREMIUM • PRODUCTION READY
+
+   Works with:
+   • edit-shorts.html
+   • upload.js (IndexedDB video handoff)
+   • short-edit.html (details / publish)
+
+   Features:
+   • Load video from IndexedDB (no Short ID required for new shorts)
+   • Play / pause / timeline
+   • Text overlays
+   • Stickers
+   • Filters
+   • Draw
+   • Speed / volume
+   • Music selection
+   • Trim (UI)
+   • Save draft (session)
+   • Next → short-edit.html (details)
+========================================================== */
+
 "use strict";
-
-/*
-===========================================================
- VIEWORA — EDIT SHORT
- edit-shorts.js
- PREMIUM • FIREBASE REALTIME DATABASE
-===========================================================
-
-SUPPORTED URLS:
-
-edit-shorts.html?shortId=SHORT_ID
-edit-shorts.html?edit=SHORT_ID
-
-ID FALLBACK:
-
-1. URL ?shortId=
-2. URL ?edit=
-3. sessionStorage
-4. localStorage
-
-FIREBASE:
-
-shorts/{shortId}
-
-FEATURES:
-
-• Load existing Short
-• Load video preview
-• Load title
-• Load description
-• Load tags
-• Load visibility
-• Load comments/sharing/remix settings
-• Load advanced settings
-• Change cover
-• Save Draft
-• Update Short
-• Retry
-• Preview
-===========================================================
-*/
 
 (() => {
 
-    /* =====================================================
-       PREVENT DOUBLE INIT
-    ====================================================== */
-
-    if (window.__VIEWORA_EDIT_SHORT_INITIALIZED__) {
-        console.warn("Viewora Edit Short already initialized.");
+    if (window.__VIEWORA_EDIT_SHORTS_INITIALIZED__) {
+        console.warn("VIEWORA edit-shorts.js already initialized.");
         return;
     }
 
-    window.__VIEWORA_EDIT_SHORT_INITIALIZED__ = true;
+    window.__VIEWORA_EDIT_SHORTS_INITIALIZED__ = true;
 
 
-    /* =====================================================
-       CONFIG
+    /* ======================================================
+       HELPERS
     ====================================================== */
 
-    const CONFIG = {
+    const $ = (id) => document.getElementById(id);
 
-        SHORTS_PATH: "shorts",
+    const $$ = (selector, parent = document) =>
+        Array.from(parent.querySelectorAll(selector));
 
-        USERS_PATH: "users",
-
-        STORAGE_KEY:
-            "viewora_edit_short_id",
-
-        SESSION_KEY:
-            "viewora_edit_short_id",
-
-        MAX_TITLE:
-            100,
-
-        MAX_DESCRIPTION:
-            5000
-
-    };
+    const sleep = (ms) =>
+        new Promise((resolve) => setTimeout(resolve, ms));
 
 
-    /* =====================================================
+    /* ======================================================
+       CONSTANTS / STORAGE
+    ====================================================== */
+
+    const VIDEO_DB_NAME = "VIEWORA_MEDIA_DB";
+    const VIDEO_DB_VERSION = 1;
+    const VIDEO_STORE = "uploads";
+    const VIDEO_KEY = "currentVideo";
+
+    const EDITOR_DATA_KEY = "viewora_edit_short_data";
+    const EDITOR_SESSION_KEY = "viewora_short_editor";
+
+
+    /* ======================================================
+       DOM
+    ====================================================== */
+
+    const shortVideo = $("shortVideo");
+    const videoLoader = $("videoLoader");
+    const videoLoaderText = $("videoLoaderText");
+    const playOverlay = $("playOverlay");
+    const playBtn = $("playBtn");
+    const timeline = $("timeline");
+    const timelineProgress = $("timelineProgress");
+    const currentTimeLabel = $("currentTimeLabel");
+    const durationLabel = $("durationLabel");
+    const timelineDuration = $("timelineDuration");
+    const editStatus = $("editStatus");
+
+    const filterLayer = $("filterLayer");
+    const drawCanvas = $("drawCanvas");
+    const elementLayer = $("elementLayer");
+
+    const toolPanel = $("toolPanel");
+    const textInput = $("textInput");
+    const addTextBtn = $("addTextBtn");
+
+    const chooseMusicBtn = $("chooseMusicBtn");
+    const activeMusicInfo = $("activeMusicInfo");
+    const editMusicName = $("editMusicName");
+    const editMusicArtist = $("editMusicArtist");
+    const removeEditMusicBtn = $("removeEditMusicBtn");
+
+    const brushSize = $("brushSize");
+    const clearDrawBtn = $("clearDrawBtn");
+
+    const splitTimeLabel = $("splitTimeLabel");
+    const splitBtn = $("splitBtn");
+
+    const trimStart = $("trimStart");
+    const trimEnd = $("trimEnd");
+    const trimStartLabel = $("trimStartLabel");
+    const trimEndLabel = $("trimEndLabel");
+
+    const volumeRange = $("volumeRange");
+    const volumeValue = $("volumeValue");
+
+    const clipPlayhead = $("clipPlayhead");
+
+    const backBtn = $("backBtn");
+    const undoBtn = $("undoBtn");
+    const redoBtn = $("redoBtn");
+
+    const saveDraftBtn = $("saveDraftBtn");
+    const nextBtn = $("nextBtn");
+
+    const musicSheet = $("musicSheet");
+    const editorMusicSearch = $("editorMusicSearch");
+    const editorMusicList = $("editorMusicList");
+
+    const exitDialog = $("exitDialog");
+    const cancelExitBtn = $("cancelExitBtn");
+    const confirmExitBtn = $("confirmExitBtn");
+
+    const processingOverlay = $("processingOverlay");
+    const processingTitle = $("processingTitle");
+    const processingMessage = $("processingMessage");
+
+    const toast = $("toast");
+    const toastTitle = $("toastTitle");
+    const toastText = $("toastText");
+    const toastIcon = $("toastIcon");
+
+
+    /* ======================================================
        STATE
     ====================================================== */
 
     const state = {
+        videoUrl: null,
+        videoBlob: null,
+        videoObjectUrl: null,
+        duration: 0,
+        isPlaying: false,
+        dirty: false,
 
-        shortId: null,
+        filter: "none",
+        speed: 1,
+        volume: 1,
 
-        short: null,
+        trimStart: 0,
+        trimEnd: 1,
 
-        currentUser: null,
+        textStyle: "classic",
+        elements: [],
 
-        initialized: false,
+        music: {
+            id: "original",
+            name: "Original audio",
+            artist: "Your video"
+        },
 
-        loading: false,
+        drawing: false,
+        drawCtx: null,
+        lastX: 0,
+        lastY: 0,
 
-        saving: false,
-
-        selectedVisibility: "public",
-
-        selectedTags: [],
-
-        coverURL: "",
-
-        coverChanged: false,
-
-        originalVideoURL: "",
-
-        videoObjectURL: "",
-
-        retrying: false
-
+        history: [],
+        historyIndex: -1
     };
 
 
-    /* =====================================================
-       DOM HELPER
+    /* ======================================================
+       FILTER MAP
     ====================================================== */
 
-    const $ = id =>
-        document.getElementById(id);
+    const FILTER_CSS = {
+        none: "none",
+        contrast: "contrast(1.35) saturate(1.1)",
+        mono: "grayscale(1)",
+        warm: "sepia(0.35) saturate(1.25)",
+        cool: "hue-rotate(28deg) saturate(0.9)",
+        vintage: "sepia(0.5) contrast(0.92) saturate(0.85)"
+    };
 
 
-    /* =====================================================
-       FIREBASE CHECK
-    ====================================================== */
-
-    function firebaseReady() {
-
-        return (
-            typeof firebase !== "undefined" &&
-            firebase.database &&
-            firebase.auth
-        );
-
-    }
-
-
-    if (!firebaseReady()) {
-
-        console.error(
-            "Viewora Edit Short: Firebase is not loaded."
-        );
-
-        showToast(
-            "Firebase is not available",
-            "error"
-        );
-
-        return;
-
-    }
-
-
-    /* =====================================================
-       FIREBASE
-    ====================================================== */
-
-    const db =
-        firebase.database();
-
-    const auth =
-        firebase.auth();
-
-
-    /* =====================================================
-       BASIC HELPERS
-    ====================================================== */
-
-    function escapeHTML(value) {
-
-        if (
-            value === null ||
-            value === undefined
-        ) {
-            return "";
-        }
-
-        return String(value)
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/"/g, "&quot;")
-            .replace(/'/g, "&#039;");
-
-    }
-
-
-    function getFirstValue(
-        object,
-        keys,
-        fallback = ""
-    ) {
-
-        if (!object) {
-            return fallback;
-        }
-
-        for (const key of keys) {
-
-            const value =
-                object[key];
-
-            if (
-                value !== undefined &&
-                value !== null &&
-                value !== ""
-            ) {
-                return value;
-            }
-
-        }
-
-        return fallback;
-
-    }
-
-
-    function normalizeBoolean(
-        value,
-        fallback = true
-    ) {
-
-        if (
-            value === undefined ||
-            value === null
-        ) {
-            return fallback;
-        }
-
-        if (
-            value === false ||
-            value === "false" ||
-            value === 0
-        ) {
-            return false;
-        }
-
-        return true;
-
-    }
-
-
-    /* =====================================================
+    /* ======================================================
        TOAST
     ====================================================== */
 
-    function showToast(
-        message,
-        type = "success"
-    ) {
+    let toastTimer = null;
 
-        const toast =
-            $("toast");
+    function showToast(title, message, type = "success") {
+        if (!toast) return;
 
-        const toastText =
-            $("toastText");
+        clearTimeout(toastTimer);
 
-        const toastIcon =
-            $("toastIconElement");
-
-        if (!toast) {
-            return;
-        }
-
-        if (toastText) {
-            toastText.textContent =
-                message;
-        }
+        if (toastTitle) toastTitle.textContent = title;
+        if (toastText) toastText.textContent = message;
 
         if (toastIcon) {
-
-            toastIcon.className =
+            const icon =
                 type === "error"
-                    ? "fa-solid fa-circle-exclamation"
-                    : "fa-solid fa-circle-check";
+                    ? "fa-circle-exclamation"
+                    : type === "warning"
+                        ? "fa-triangle-exclamation"
+                        : "fa-circle-check";
 
+            toastIcon.innerHTML = `<i class="fa-solid ${icon}"></i>`;
         }
 
-        toast.classList.remove(
-            "hidden"
-        );
+        toast.classList.remove("hidden");
 
-        clearTimeout(
-            showToast.timer
-        );
-
-        showToast.timer =
-            setTimeout(() => {
-
-                toast.classList.add(
-                    "hidden"
-                );
-
-            }, 2600);
-
+        toastTimer = setTimeout(() => {
+            toast.classList.add("hidden");
+        }, 3200);
     }
 
 
-    /* =====================================================
-       PROCESSING UI
+    /* ======================================================
+       PROCESSING
     ====================================================== */
 
-    function showProcessing(
-        title,
-        text
-    ) {
-
-        const overlay =
-            $("processingOverlay");
-
-        if (!overlay) {
-            return;
-        }
-
-        $("processingTitle").textContent =
-            title || "Saving your Short";
-
-        $("processingText").textContent =
-            text || "Please wait...";
-
-        overlay.classList.remove(
-            "hidden"
-        );
-
-        const progress =
-            overlay.querySelector(
-                ".processingProgress span"
-            );
-
-        if (progress) {
-
-            progress.style.width =
-                "20%";
-
-            setTimeout(() => {
-
-                progress.style.width =
-                    "55%";
-
-            }, 250);
-
-        }
-
+    function showProcessing(title, message) {
+        if (processingTitle) processingTitle.textContent = title || "Preparing";
+        if (processingMessage) processingMessage.textContent = message || "Please wait...";
+        processingOverlay?.classList.remove("hidden");
     }
-
 
     function hideProcessing() {
-
-        const overlay =
-            $("processingOverlay");
-
-        if (!overlay) {
-            return;
-        }
-
-        const progress =
-            overlay.querySelector(
-                ".processingProgress span"
-            );
-
-        if (progress) {
-            progress.style.width =
-                "100%";
-        }
-
-        setTimeout(() => {
-
-            overlay.classList.add(
-                "hidden"
-            );
-
-            if (progress) {
-                progress.style.width =
-                    "0%";
-            }
-
-        }, 300);
-
+        processingOverlay?.classList.add("hidden");
     }
 
 
-    /* =====================================================
-       GET SHORT ID
-    ====================================================== */
-
-    function getShortId() {
-
-        const params =
-            new URLSearchParams(
-                window.location.search
-            );
-
-
-        /* ---------------------------------------------
-           NEW FLOW
-        --------------------------------------------- */
-
-        const shortId =
-            params.get("shortId");
-
-
-        if (
-            shortId &&
-            shortId.trim()
-        ) {
-
-            const id =
-                shortId.trim();
-
-            saveShortId(id);
-
-            return id;
-
-        }
-
-
-        /* ---------------------------------------------
-           OLD FLOW
-        --------------------------------------------- */
-
-        const editId =
-            params.get("edit");
-
-
-        if (
-            editId &&
-            editId.trim()
-        ) {
-
-            const id =
-                editId.trim();
-
-            saveShortId(id);
-
-            return id;
-
-        }
-
-
-        /* ---------------------------------------------
-           SESSION STORAGE
-        --------------------------------------------- */
-
-        try {
-
-            const sessionId =
-                sessionStorage.getItem(
-                    CONFIG.SESSION_KEY
-                );
-
-            if (
-                sessionId &&
-                sessionId.trim()
-            ) {
-
-                return sessionId.trim();
-
-            }
-
-        } catch (error) {
-
-            console.warn(
-                "SessionStorage unavailable:",
-                error
-            );
-
-        }
-
-
-        /* ---------------------------------------------
-           LOCAL STORAGE
-        --------------------------------------------- */
-
-        try {
-
-            const localId =
-                localStorage.getItem(
-                    CONFIG.STORAGE_KEY
-                );
-
-            if (
-                localId &&
-                localId.trim()
-            ) {
-
-                return localId.trim();
-
-            }
-
-        } catch (error) {
-
-            console.warn(
-                "LocalStorage unavailable:",
-                error
-            );
-
-        }
-
-
-        return null;
-
-    }
-
-
-    /* =====================================================
-       SAVE SHORT ID
-    ====================================================== */
-
-    function saveShortId(
-        id
-    ) {
-
-        if (!id) {
-            return;
-        }
-
-        try {
-
-            sessionStorage.setItem(
-                CONFIG.SESSION_KEY,
-                id
-            );
-
-        } catch (error) {
-
-            console.warn(
-                "Could not save session ID:",
-                error
-            );
-
-        }
-
-
-        try {
-
-            localStorage.setItem(
-                CONFIG.STORAGE_KEY,
-                id
-            );
-
-        } catch (error) {
-
-            console.warn(
-                "Could not save local ID:",
-                error
-            );
-
-        }
-
-    }
-
-
-    /* =====================================================
-       CLEAR SHORT ID
-    ====================================================== */
-
-    function clearStoredShortId() {
-
-        try {
-
-            sessionStorage.removeItem(
-                CONFIG.SESSION_KEY
-            );
-
-        } catch (error) {}
-
-
-        try {
-
-            localStorage.removeItem(
-                CONFIG.STORAGE_KEY
-            );
-
-        } catch (error) {}
-
-    }
-
-
-    /* =====================================================
-       AUTH
-    ====================================================== */
-
-    auth.onAuthStateChanged(
-        user => {
-
-            state.currentUser =
-                user || null;
-
-            initializePage();
-
-        }
-    );
-
-
-    /* =====================================================
-       INITIALIZE
-    ====================================================== */
-
-    async function initializePage() {
-
-        if (state.initialized) {
-            return;
-        }
-
-        state.initialized = true;
-
-        state.shortId =
-            getShortId();
-
-
-        if (!state.shortId) {
-
-            showUnavailable(
-                "This editor needs a Short ID or video URL."
-            );
-
-            return;
-
-        }
-
-
-        await loadShort();
-
-    }
-
-
-    /* =====================================================
-       LOAD SHORT
-    ====================================================== */
-
-    async function loadShort() {
-
-        if (
-            !state.shortId ||
-            state.loading
-        ) {
-            return;
-        }
-
-        state.loading = true;
-
-        setLoadingState(
-            true
-        );
-
-
-        try {
-
-            const snapshot =
-                await db
-                    .ref(
-                        `${CONFIG.SHORTS_PATH}/${state.shortId}`
-                    )
-                    .once("value");
-
-
-            if (!snapshot.exists()) {
-
-                console.warn(
-                    "Short not found:",
-                    state.shortId
-                );
-
-                showUnavailable(
-                    "This Short could not be found."
-                );
-
-                return;
-
-            }
-
-
-            const short =
-                snapshot.val();
-
-
-            if (
-                !short ||
-                typeof short !== "object"
-            ) {
-
-                showUnavailable(
-                    "Invalid Short data."
-                );
-
-                return;
-
-            }
-
-
-            state.short =
-                short;
-
-
-            /* -----------------------------------------
-               OWNER CHECK
-            ------------------------------------------ */
-
-            const ownerId =
-                getFirstValue(
-                    short,
-                    [
-                        "uid",
-                        "userId",
-                        "authorId",
-                        "creatorId"
-                    ],
-                    ""
-                );
-
-
-            if (
-                state.currentUser &&
-                ownerId &&
-                ownerId !==
-                state.currentUser.uid
-            ) {
-
-                showUnavailable(
-                    "You can only edit your own Short."
-                );
-
-                return;
-
-            }
-
-
-            /* -----------------------------------------
-               VIDEO
-            ------------------------------------------ */
-
-            const videoURL =
-                getVideoURL(
-                    short
-                );
-
-
-            if (!videoURL) {
-
-                showUnavailable(
-                    "This Short does not have a valid video."
-                );
-
-                return;
-
-            }
-
-
-            state.originalVideoURL =
-                videoURL;
-
-
-            /* -----------------------------------------
-               POPULATE FORM
-            ------------------------------------------ */
-
-            populateForm(
-                short
-            );
-
-
-            /* -----------------------------------------
-               VIDEO
-            ------------------------------------------ */
-
-            loadVideo(
-                videoURL
-            );
-
-
-            hideUnavailable();
-
-            updateStatus(
-                "Ready to edit"
-            );
-
-        } catch (error) {
-
-            console.error(
-                "Load Short error:",
-                error
-            );
-
-            showUnavailable(
-                "Unable to load this Short. Tap Retry."
-            );
-
-            showToast(
-                "Could not load Short",
-                "error"
-            );
-
-        } finally {
-
-            state.loading =
-                false;
-
-            setLoadingState(
-                false
-            );
-
-        }
-
-    }
-
-
-    /* =====================================================
-       VIDEO URL
-    ====================================================== */
-
-    function getVideoURL(
-        short
-    ) {
-
-        return getFirstValue(
-            short,
-            [
-                "videoURL",
-                "videoUrl",
-                "video_url",
-                "mediaURL",
-                "mediaUrl",
-                "media_url",
-                "video",
-                "url",
-                "src"
-            ],
-            ""
-        );
-
-    }
-
-
-    /* =====================================================
-       LOAD VIDEO
-    ====================================================== */
-
-    function loadVideo(
-        url
-    ) {
-
-        const video =
-            $("shortPreview");
-
-        if (!video || !url) {
-            return;
-        }
-
-
-        video.pause();
-
-        video.removeAttribute(
-            "src"
-        );
-
-        video.load();
-
-
-        video.src =
-            url;
-
-
-        video.load();
-
-
-        video.addEventListener(
-            "loadedmetadata",
-            handleVideoMetadata,
-            {
-                once: true
-            }
-        );
-
-
-        video.addEventListener(
-            "error",
-            () => {
-
-                console.error(
-                    "Video preview failed:",
-                    url
-                );
-
-                updateStatus(
-                    "Video preview unavailable"
-                );
-
-            },
-            {
-                once: true
-            }
-        );
-
-    }
-
-
-    /* =====================================================
-       VIDEO METADATA
-    ====================================================== */
-
-    function handleVideoMetadata() {
-
-        const video =
-            $("shortPreview");
-
-        if (!video) {
-            return;
-        }
-
-
-        const duration =
-            video.duration;
-
-
-        const durationElement =
-            $("previewDuration");
-
-
-        if (
-            durationElement &&
-            Number.isFinite(duration)
-        ) {
-
-            durationElement.textContent =
-                formatDuration(
-                    duration
-                );
-
-        }
-
-
-        updateStatus(
-            "Ready to edit"
-        );
-
-    }
-
-
-    /* =====================================================
-       FORMAT DURATION
-    ====================================================== */
-
-    function formatDuration(
-        seconds
-    ) {
-
-        seconds =
-            Math.max(
-                0,
-                Math.floor(
-                    Number(seconds || 0)
-                )
-            );
-
-
-        const minutes =
-            Math.floor(
-                seconds / 60
-            );
-
-
-        const remaining =
-            seconds % 60;
-
-
-        return (
-            String(minutes).padStart(
-                2,
-                "0"
-            ) +
-            ":" +
-            String(remaining).padStart(
-                2,
-                "0"
-            )
-        );
-
-    }
-
-
-    /* =====================================================
-       POPULATE FORM
-    ====================================================== */
-
-    function populateForm(
-        short
-    ) {
-
-        /* ---------------------------------------------
-           TITLE
-        ------------------------------------------ */
-
-        const title =
-            getFirstValue(
-                short,
-                [
-                    "title",
-                    "shortTitle",
-                    "name"
-                ],
-                ""
-            );
-
-
-        const titleInput =
-            $("shortTitle");
-
-
-        if (titleInput) {
-
-            titleInput.value =
-                String(title);
-
-            updateTitleCount();
-
-        }
-
-
-        /* ---------------------------------------------
-           DESCRIPTION
-        ------------------------------------------ */
-
-        const description =
-            getFirstValue(
-                short,
-                [
-                    "description",
-                    "caption",
-                    "text"
-                ],
-                ""
-            );
-
-
-        const descriptionInput =
-            $("shortDescription");
-
-
-        if (descriptionInput) {
-
-            descriptionInput.value =
-                String(description);
-
-            updateDescriptionCount();
-
-        }
-
-
-        /* ---------------------------------------------
-           TAGS
-        ------------------------------------------ */
-
-        state.selectedTags =
-            normalizeTags(
-                short.tags ||
-                short.hashtags ||
-                short.tagList
-            );
-
-
-        renderTags();
-
-
-        /* ---------------------------------------------
-           VISIBILITY
-        ------------------------------------------ */
-
-        const visibility =
-            getFirstValue(
-                short,
-                [
-                    "visibility",
-                    "privacy"
-                ],
-                "public"
-            );
-
-
-        state.selectedVisibility =
-            normalizeVisibility(
-                visibility
-            );
-
-
-        updateVisibilityUI();
-
-
-        /* ---------------------------------------------
-           COMMENTS
-        ------------------------------------------ */
-
-        const commentsToggle =
-            $("commentsToggle");
-
-
-        if (commentsToggle) {
-
-            commentsToggle.checked =
-                normalizeBoolean(
-                    getFirstValue(
-                        short,
-                        [
-                            "allowComments",
-                            "commentsAllowed",
-                            "comments"
-                        ],
-                        true
-                    ),
-                    true
-                );
-
-        }
-
-
-        /* ---------------------------------------------
-           SHARING
-        ------------------------------------------ */
-
-        const sharingToggle =
-            $("sharingToggle");
-
-
-        if (sharingToggle) {
-
-            sharingToggle.checked =
-                normalizeBoolean(
-                    getFirstValue(
-                        short,
-                        [
-                            "allowSharing",
-                            "sharingAllowed",
-                            "shareAllowed"
-                        ],
-                        true
-                    ),
-                    true
-                );
-
-        }
-
-
-        /* ---------------------------------------------
-           REMIX
-        ------------------------------------------ */
-
-        const remixToggle =
-            $("remixToggle");
-
-
-        if (remixToggle) {
-
-            remixToggle.checked =
-                normalizeBoolean(
-                    getFirstValue(
-                        short,
-                        [
-                            "allowRemix",
-                            "remixAllowed"
-                        ],
-                        true
-                    ),
-                    true
-                );
-
-        }
-
-
-        /* ---------------------------------------------
-           ADVANCED
-        ------------------------------------------ */
-
-        const likeCountToggle =
-            $("likeCountToggle");
-
-
-        if (likeCountToggle) {
-
-            likeCountToggle.checked =
-                normalizeBoolean(
-                    getFirstValue(
-                        short,
-                        [
-                            "showLikeCount",
-                            "likeCountVisible"
-                        ],
-                        true
-                    ),
-                    true
-                );
-
-        }
-
-
-        const viewCountToggle =
-            $("viewCountToggle");
-
-
-        if (viewCountToggle) {
-
-            viewCountToggle.checked =
-                normalizeBoolean(
-                    getFirstValue(
-                        short,
-                        [
-                            "showViewCount",
-                            "viewCountVisible"
-                        ],
-                        true
-                    ),
-                    true
-                );
-
-        }
-
-
-        const profileToggle =
-            $("profileToggle");
-
-
-        if (profileToggle) {
-
-            profileToggle.checked =
-                normalizeBoolean(
-                    getFirstValue(
-                        short,
-                        [
-                            "saveToProfile",
-                            "profileVisible"
-                        ],
-                        true
-                    ),
-                    true
-                );
-
-        }
-
-
-        /* ---------------------------------------------
-           MUSIC
-        ------------------------------------------ */
-
-        updateMusicText(
-            short
-        );
-
-
-        /* ---------------------------------------------
-           COVER
-        ------------------------------------------ */
-
-        const cover =
-            getFirstValue(
-                short,
-                [
-                    "coverURL",
-                    "coverUrl",
-                    "thumbnailURL",
-                    "thumbnailUrl",
-                    "thumbnail",
-                    "cover"
-                ],
-                ""
-            );
-
-
-        if (cover) {
-
-            state.coverURL =
-                cover;
-
-            state.coverChanged =
-                false;
-
-            setCoverPreview(
-                cover
-            );
-
-        }
-
-
-        /* ---------------------------------------------
-           COLLABORATION
-        ------------------------------------------ */
-
-        const collaborator =
-            getFirstValue(
-                short,
-                [
-                    "collaboratorName",
-                    "collaboratorUsername"
-                ],
-                ""
-            );
-
-
-        const collaborationValue =
-            $("collaborationValue");
-
-
-        if (
-            collaborationValue &&
-            collaborator
-        ) {
-
-            collaborationValue.textContent =
-                collaborator;
-
-        }
-
-    }
-
-
-    /* =====================================================
-       NORMALIZE TAGS
-    ====================================================== */
-
-    function normalizeTags(
-        value
-    ) {
-
-        if (Array.isArray(value)) {
-
-            return value
-                .map(
-                    tag =>
-                        String(tag)
-                            .trim()
-                )
-                .filter(Boolean);
-
-        }
-
-
-        if (
-            value &&
-            typeof value === "object"
-        ) {
-
-            return Object.values(value)
-                .map(
-                    tag =>
-                        String(tag)
-                            .trim()
-                )
-                .filter(Boolean);
-
-        }
-
-
-        if (typeof value === "string") {
-
-            return value
-                .split(/[,\s]+/)
-                .map(
-                    tag =>
-                        tag.trim()
-                )
-                .filter(Boolean);
-
-        }
-
-
-        return [];
-
-    }
-
-
-    /* =====================================================
-       VISIBILITY
-    ====================================================== */
-
-    function normalizeVisibility(
-        value
-    ) {
-
-        const visibility =
-            String(
-                value || "public"
-            ).toLowerCase();
-
-
-        if (
-            visibility === "followers" ||
-            visibility === "friends"
-        ) {
-
-            return "followers";
-
-        }
-
-
-        if (
-            visibility === "private"
-        ) {
-
-            return "private";
-
-        }
-
-
-        return "public";
-
-    }
-
-
-    function updateVisibilityUI() {
-
-        document
-            .querySelectorAll(
-                ".visibilityOption"
-            )
-            .forEach(option => {
-
-                option.classList.toggle(
-                    "active",
-                    option.dataset.visibility ===
-                    state.selectedVisibility
-                );
-
-            });
-
-    }
-
-
-    /* =====================================================
-       TAGS UI
-    ====================================================== */
-
-    function renderTags() {
-
-        const container =
-            $("selectedTags");
-
-        if (!container) {
-            return;
-        }
-
-
-        container.innerHTML =
-            state.selectedTags
-                .map(
-                    (tag, index) => `
-
-                        <span
-                            class="tagChip"
-                            data-index="${index}"
-                        >
-
-                            <span>
-                                ${escapeHTML(tag)}
-                            </span>
-
-                            <button
-                                type="button"
-                                class="removeTag"
-                                aria-label="Remove tag"
-                            >
-                                <i class="fa-solid fa-xmark"></i>
-                            </button>
-
-                        </span>
-
-                    `
-                )
-                .join("");
-
-
-        container
-            .querySelectorAll(
-                ".removeTag"
-            )
-            .forEach(button => {
-
-                button.addEventListener(
-                    "click",
-                    event => {
-
-                        event.preventDefault();
-                        event.stopPropagation();
-
-                        const chip =
-                            button.closest(
-                                ".tagChip"
-                            );
-
-                        const index =
-                            Number(
-                                chip?.dataset.index
-                            );
-
-
-                        if (
-                            Number.isInteger(index)
-                        ) {
-
-                            state.selectedTags
-                                .splice(
-                                    index,
-                                    1
-                                );
-
-                            renderTags();
-
-                        }
-
-                    }
-                );
-
-            });
-
-    }
-
-
-    /* =====================================================
-       MUSIC
-    ====================================================== */
-
-    function updateMusicText(
-        short
-    ) {
-
-        const music =
-            getFirstValue(
-                short,
-                [
-                    "music",
-                    "audioName",
-                    "musicName",
-                    "soundName"
-                ],
-                "Original sound"
-            );
-
-
-        const musicElement =
-            document.querySelector(
-                ".shortMusic"
-            );
-
-
-        if (musicElement) {
-
-            const span =
-                musicElement.querySelector(
-                    "span"
-                );
-
-            if (span) {
-                span.textContent =
-                    music;
-            }
-
-        }
-
-    }
-
-
-    /* =====================================================
-       COVER
-    ====================================================== */
-
-    function setCoverPreview(
-        url
-    ) {
-
-        const preview =
-            $("coverPreview");
-
-        const image =
-            $("coverImage");
-
-        const value =
-            $("coverValue");
-
-
-        if (
-            !preview ||
-            !image
-        ) {
-            return;
-        }
-
-
-        image.src =
-            url;
-
-
-        preview.classList.remove(
-            "hidden"
-        );
-
-
-        if (value) {
-
-            value.textContent =
-                "Custom cover selected";
-
-        }
-
-    }
-
-
-    /* =====================================================
-       USE CURRENT VIDEO FRAME
-    ====================================================== */
-
-    function useCurrentFrame() {
-
-        const video =
-            $("shortPreview");
-
-        if (
-            !video ||
-            !video.videoWidth ||
-            !video.videoHeight
-        ) {
-
-            showToast(
-                "Video frame is not ready",
-                "error"
-            );
-
-            return;
-
-        }
-
-
-        try {
-
-            const canvas =
-                document.createElement(
-                    "canvas"
-                );
-
-
-            canvas.width =
-                video.videoWidth;
-
-            canvas.height =
-                video.videoHeight;
-
-
-            const context =
-                canvas.getContext(
-                    "2d"
-                );
-
-
-            context.drawImage(
-                video,
-                0,
-                0,
-                canvas.width,
-                canvas.height
-            );
-
-
-            const dataURL =
-                canvas.toDataURL(
-                    "image/jpeg",
-                    0.88
-                );
-
-
-            state.coverURL =
-                dataURL;
-
-            state.coverChanged =
-                true;
-
-
-            setCoverPreview(
-                dataURL
-            );
-
-
-            closeSheet(
-                "coverSheet"
-            );
-
-
-            showToast(
-                "Current frame selected"
-            );
-
-        } catch (error) {
-
-            console.error(
-                "Cover frame error:",
-                error
-            );
-
-            showToast(
-                "Could not create cover",
-                "error"
-            );
-
-        }
-
-    }
-
-
-    /* =====================================================
-       COVER FILE
-    ====================================================== */
-
-    function handleCoverFile(
-        file
-    ) {
-
-        if (!file) {
-            return;
-        }
-
-
-        if (
-            !file.type.startsWith(
-                "image/"
-            )
-        ) {
-
-            showToast(
-                "Please select an image",
-                "error"
-            );
-
-            return;
-
-        }
-
-
-        if (
-            file.size >
-            10 * 1024 * 1024
-        ) {
-
-            showToast(
-                "Cover image must be under 10 MB",
-                "error"
-            );
-
-            return;
-
-        }
-
-
-        if (
-            state.coverObjectURL
-        ) {
-
-            URL.revokeObjectURL(
-                state.coverObjectURL
-            );
-
-        }
-
-
-        const objectURL =
-            URL.createObjectURL(
-                file
-            );
-
-
-        state.coverObjectURL =
-            objectURL;
-
-
-        state.coverFile =
-            file;
-
-
-        state.coverChanged =
-            true;
-
-
-        setCoverPreview(
-            objectURL
-        );
-
-
-        closeSheet(
-            "coverSheet"
-        );
-
-
-        showToast(
-            "Cover selected"
-        );
-
-    }
-
-
-    /* =====================================================
-       SHEETS
-    ====================================================== */
-
-    function openSheet(
-        id
-    ) {
-
-        const sheet =
-            $(id);
-
-        if (!sheet) {
-            return;
-        }
-
-        sheet.classList.remove(
-            "hidden"
-        );
-
-        document.body.classList.add(
-            "modalOpen"
-        );
-
-    }
-
-
-    function closeSheet(
-        id
-    ) {
-
-        const sheet =
-            $(id);
-
-        if (!sheet) {
-            return;
-        }
-
-        sheet.classList.add(
-            "hidden"
-        );
-
-        if (
-            !document.querySelector(
-                ".overlay:not(.hidden)"
-            )
-        ) {
-
-            document.body.classList.remove(
-                "modalOpen"
-            );
-
-        }
-
-    }
-
-
-    /* =====================================================
-       SAVE COVER TO STORAGE / CLOUDINARY
-       OPTIONAL
-    ====================================================== */
-
-    async function uploadCoverIfNeeded() {
-
-        if (
-            !state.coverChanged ||
-            !state.coverFile
-        ) {
-
-            return state.coverURL || "";
-
-        }
-
-
-        const file =
-            state.coverFile;
-
-
-        /* ---------------------------------------------
-           CLOUDINARY SUPPORT
-        ------------------------------------------ */
-
-        try {
-
-            if (
-                typeof window.uploadToCloudinary ===
-                "function"
-            ) {
-
-                const result =
-                    await window.uploadToCloudinary(
-                        file
-                    );
-
-
-                if (
-                    typeof result === "string"
-                ) {
-
-                    return result;
-
-                }
-
-
-                if (result?.secure_url) {
-
-                    return result.secure_url;
-
-                }
-
-
-                if (result?.url) {
-
-                    return result.url;
-
-                }
-
-            }
-
-        } catch (error) {
-
-            console.warn(
-                "Cloudinary cover upload failed:",
-                error
-            );
-
-        }
-
-
-        /* ---------------------------------------------
-           FIREBASE STORAGE FALLBACK
-        ------------------------------------------ */
-
-        try {
-
-            if (
-                firebase.storage &&
-                firebase.storage()
-            ) {
-
-                const path =
-                    `shorts/${state.shortId}/cover_${Date.now()}`;
-
-                const ref =
-                    firebase
-                        .storage()
-                        .ref(path);
-
-
-                const snapshot =
-                    await ref.put(
-                        file
-                    );
-
-
-                return await snapshot.ref
-                    .getDownloadURL();
-
-            }
-
-        } catch (error) {
-
-            console.warn(
-                "Firebase cover upload failed:",
-                error
-            );
-
-        }
-
-
-        return state.coverURL || "";
-
-    }
-
-
-    /* =====================================================
-       SAVE DATA
-    ====================================================== */
-
-    function collectFormData() {
-
-        const title =
-            $("shortTitle")
-                ?.value
-                ?.trim() || "";
-
-
-        const description =
-            $("shortDescription")
-                ?.value
-                ?.trim() || "";
-
-
-        const comments =
-            $("commentsToggle")
-                ?.checked !== false;
-
-
-        const sharing =
-            $("sharingToggle")
-                ?.checked !== false;
-
-
-        const remix =
-            $("remixToggle")
-                ?.checked !== false;
-
-
-        const showLikeCount =
-            $("likeCountToggle")
-                ?.checked !== false;
-
-
-        const showViewCount =
-            $("viewCountToggle")
-                ?.checked !== false;
-
-
-        const saveToProfile =
-            $("profileToggle")
-                ?.checked !== false;
-
-
-        return {
-
-            title,
-
-            description,
-
-            caption:
-                description,
-
-            tags:
-                [...state.selectedTags],
-
-            visibility:
-                state.selectedVisibility,
-
-            allowComments:
-                comments,
-
-            commentsAllowed:
-                comments,
-
-            allowSharing:
-                sharing,
-
-            sharingAllowed:
-                sharing,
-
-            allowRemix:
-                remix,
-
-            remixAllowed:
-                remix,
-
-            showLikeCount,
-
-            showViewCount,
-
-            saveToProfile,
-
-            updatedAt:
-                firebase.database.ServerValue.TIMESTAMP
-
-        };
-
-    }
-
-
-    /* =====================================================
-       VALIDATE
-    ====================================================== */
-
-    function validateForm(
-        data
-    ) {
-
-        if (!data.title) {
-
-            showToast(
-                "Please add a title",
-                "error"
-            );
-
-            $("shortTitle")
-                ?.focus();
-
-            return false;
-
-        }
-
-
-        if (
-            data.title.length >
-            CONFIG.MAX_TITLE
-        ) {
-
-            showToast(
-                "Title is too long",
-                "error"
-            );
-
-            return false;
-
-        }
-
-
-        if (
-            data.description.length >
-            CONFIG.MAX_DESCRIPTION
-        ) {
-
-            showToast(
-                "Description is too long",
-                "error"
-            );
-
-            return false;
-
-        }
-
-
-        return true;
-
-    }
-
-
-    /* =====================================================
-       UPDATE SHORT
-    ====================================================== */
-
-    async function saveChanges(
-        mode = "publish"
-    ) {
-
-        if (
-            !state.shortId ||
-            state.saving
-        ) {
-            return;
-        }
-
-
-        const data =
-            collectFormData();
-
-
-        if (
-            !validateForm(
-                data
-            )
-        ) {
-            return;
-        }
-
-
-        state.saving =
-            true;
-
-
-        const publishButton =
-            $("publishBtn");
-
-
-        const draftButton =
-            $("saveDraftBtn");
-
-
-        if (publishButton) {
-            publishButton.disabled =
-                true;
-        }
-
-
-        if (draftButton) {
-            draftButton.disabled =
-                true;
-        }
-
-
-        showProcessing(
-            mode === "draft"
-                ? "Saving your draft"
-                : "Saving your Short",
-            "Updating Short details..."
-        );
-
-
-        try {
-
-            /* -----------------------------------------
-               COVER
-            ------------------------------------------ */
-
-            const coverURL =
-                await uploadCoverIfNeeded();
-
-
-            if (coverURL) {
-
-                data.coverURL =
-                    coverURL;
-
-                data.coverUrl =
-                    coverURL;
-
-                data.thumbnailURL =
-                    coverURL;
-
-            }
-
-
-            /* -----------------------------------------
-               KEEP VIDEO URL
-            ------------------------------------------ */
-
-            if (
-                state.originalVideoURL
-            ) {
-
-                data.videoURL =
-                    state.originalVideoURL;
-
-            }
-
-
-            /* -----------------------------------------
-               DRAFT / PUBLISHED STATUS
-            ------------------------------------------ */
-
-            if (
-                mode === "draft"
-            ) {
-
-                data.status =
-                    "draft";
-
-                data.isDraft =
-                    true;
-
-            } else {
-
-                data.status =
-                    "published";
-
-                data.isDraft =
-                    false;
-
-            }
-
-
-            /* -----------------------------------------
-               UPDATE FIREBASE
-            ------------------------------------------ */
-
-            await db
-                .ref(
-                    `${CONFIG.SHORTS_PATH}/${state.shortId}`
-                )
-                .update(
-                    data
-                );
-
-
-            /* -----------------------------------------
-               UPDATE LOCAL STATE
-            ------------------------------------------ */
-
-            state.short =
-                {
-                    ...state.short,
-                    ...data
-                };
-
-
-            state.coverURL =
-                coverURL ||
-                state.coverURL;
-
-
-            updateStatus(
-                mode === "draft"
-                    ? "Draft saved"
-                    : "Changes saved"
-            );
-
-
-            showToast(
-                mode === "draft"
-                    ? "Draft saved successfully"
-                    : "Short updated successfully"
-            );
-
-
-            /* -----------------------------------------
-               RETURN TO SHORTS
-            ------------------------------------------ */
-
-            setTimeout(() => {
-
-                const params =
-                    new URLSearchParams(
-                        window.location.search
-                    );
-
-
-                const from =
-                    params.get(
-                        "from"
-                    );
-
-
-                if (from) {
-
-                    window.location.href =
-                        from;
-
-                    return;
-
-                }
-
-
-                window.location.href =
-                    `shorts.html?short=${encodeURIComponent(
-                        state.shortId
-                    )}`;
-
-            }, 800);
-
-        } catch (error) {
-
-            console.error(
-                "Save Short error:",
-                error
-            );
-
-            showToast(
-                "Could not save changes",
-                "error"
-            );
-
-        } finally {
-
-            state.saving =
-                false;
-
-            hideProcessing();
-
-
-            if (publishButton) {
-                publishButton.disabled =
-                    false;
-            }
-
-
-            if (draftButton) {
-                draftButton.disabled =
-                    false;
-            }
-
-        }
-
-    }
-
-
-    /* =====================================================
-       COUNTERS
-    ====================================================== */
-
-    function updateTitleCount() {
-
-        const input =
-            $("shortTitle");
-
-        const counter =
-            $("titleCount");
-
-        if (
-            !input ||
-            !counter
-        ) {
-            return;
-        }
-
-        counter.textContent =
-            `${input.value.length}/${CONFIG.MAX_TITLE}`;
-
-    }
-
-
-    function updateDescriptionCount() {
-
-        const input =
-            $("shortDescription");
-
-        const counter =
-            $("descriptionCount");
-
-        if (
-            !input ||
-            !counter
-        ) {
-            return;
-        }
-
-        counter.textContent =
-            `${input.value.length}/${CONFIG.MAX_DESCRIPTION}`;
-
-    }
-
-
-    /* =====================================================
+    /* ======================================================
        STATUS
     ====================================================== */
 
-    function updateStatus(
-        text
-    ) {
-
-        const status =
-            $("previewStatus");
-
-        if (status) {
-            status.textContent =
-                text;
-        }
-
+    function setStatus(text) {
+        if (editStatus) editStatus.textContent = text;
     }
 
 
-    /* =====================================================
-       UNAVAILABLE
+    /* ======================================================
+       TIME FORMAT
     ====================================================== */
 
-    function showUnavailable(
-        message
-    ) {
-
-        const fallback =
-            $("previewFallback");
-
-
-        const video =
-            $("shortPreview");
-
-
-        if (video) {
-
-            video.pause();
-
-            video.removeAttribute(
-                "src"
-            );
-
-            video.load();
-
-        }
-
-
-        if (fallback) {
-
-            fallback.classList.remove(
-                "hidden"
-            );
-
-
-            const span =
-                fallback.querySelector(
-                    "span"
-                );
-
-
-            if (span) {
-                span.textContent =
-                    message ||
-                    "Preview unavailable";
-            }
-
-        }
-
-
-        updateStatus(
-            "Short unavailable"
-        );
-
+    function formatTime(seconds) {
+        const value = Math.max(0, Number(seconds) || 0);
+        const m = Math.floor(value / 60);
+        const s = Math.floor(value % 60);
+        return String(m).padStart(2, "0") + ":" + String(s).padStart(2, "0");
     }
 
 
-    function hideUnavailable() {
-
-        const fallback =
-            $("previewFallback");
-
-        if (fallback) {
-
-            fallback.classList.add(
-                "hidden"
-            );
-
-        }
-
-    }
-
-
-    /* =====================================================
-       LOADING STATE
+    /* ======================================================
+       INDEXED DB — LOAD VIDEO
     ====================================================== */
 
-    function setLoadingState(
-        loading
-    ) {
-
-        const status =
-            $("previewStatus");
-
-        if (!status) {
-            return;
-        }
-
-
-        status.textContent =
-            loading
-                ? "Loading Short..."
-                : status.textContent;
-
-    }
-
-
-    /* =====================================================
-       RETRY
-    ====================================================== */
-
-    async function retryLoad() {
-
-        if (state.retrying) {
-            return;
-        }
-
-        state.retrying =
-            true;
-
-
-        const button =
-            $("retryBtn");
-
-
-        if (button) {
-            button.disabled =
-                true;
-        }
-
-
-        try {
-
-            state.shortId =
-                getShortId();
-
-
-            if (!state.shortId) {
-
-                showUnavailable(
-                    "Short ID is missing."
-                );
-
+    function openVideoDB() {
+        return new Promise((resolve, reject) => {
+            if (!("indexedDB" in window)) {
+                reject(new Error("IndexedDB is not supported."));
                 return;
-
             }
 
+            const request = indexedDB.open(VIDEO_DB_NAME, VIDEO_DB_VERSION);
 
-            await loadShort();
+            request.onupgradeneeded = (event) => {
+                const db = event.target.result;
+                if (!db.objectStoreNames.contains(VIDEO_STORE)) {
+                    db.createObjectStore(VIDEO_STORE);
+                }
+            };
 
-        } finally {
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = () =>
+                reject(request.error || new Error("Could not open media database."));
+        });
+    }
 
-            state.retrying =
-                false;
+
+    async function loadVideoFromIndexedDB() {
+        const db = await openVideoDB();
+
+        return new Promise((resolve, reject) => {
+            try {
+                const tx = db.transaction(VIDEO_STORE, "readonly");
+                const store = tx.objectStore(VIDEO_STORE);
+                const request = store.get(VIDEO_KEY);
+
+                request.onsuccess = () => {
+                    const value = request.result;
+                    if (!value) {
+                        resolve(null);
+                        return;
+                    }
+                    resolve(value);
+                };
+
+                request.onerror = () => {
+                    reject(request.error || new Error("Could not read video."));
+                };
+            } catch (error) {
+                reject(error);
+            }
+        });
+    }
 
 
-            if (button) {
-                button.disabled =
-                    false;
+    /* ======================================================
+       APPLY VIDEO
+    ====================================================== */
+
+    function applyVideoSource(blobOrFile) {
+        if (!shortVideo || !blobOrFile) return;
+
+        if (state.videoObjectUrl) {
+            try {
+                URL.revokeObjectURL(state.videoObjectUrl);
+            } catch (_) {}
+            state.videoObjectUrl = null;
+        }
+
+        state.videoBlob = blobOrFile;
+        state.videoObjectUrl = URL.createObjectURL(blobOrFile);
+        state.videoUrl = state.videoObjectUrl;
+
+        shortVideo.src = state.videoObjectUrl;
+        shortVideo.load();
+
+        videoLoader?.classList.remove("hidden");
+        if (videoLoaderText) {
+            videoLoaderText.textContent = "Loading your video...";
+        }
+    }
+
+
+    /* ======================================================
+       VIDEO EVENTS
+    ====================================================== */
+
+    function setupVideoEvents() {
+        if (!shortVideo) return;
+
+        shortVideo.addEventListener("loadedmetadata", () => {
+            state.duration = shortVideo.duration || 0;
+
+            if (durationLabel) durationLabel.textContent = formatTime(state.duration);
+            if (timelineDuration) timelineDuration.textContent = formatTime(state.duration);
+            if (trimEndLabel) trimEndLabel.textContent = formatTime(state.duration);
+            if (splitTimeLabel) splitTimeLabel.textContent = formatTime(0);
+
+            if (trimStart) {
+                trimStart.min = "0";
+                trimStart.max = String(state.duration || 100);
+                trimStart.value = "0";
             }
 
-        }
-
-    }
-
-
-    /* =====================================================
-       PREVIEW
-    ====================================================== */
-
-    function togglePreview() {
-
-        const video =
-            $("shortPreview");
-
-        if (!video) {
-            return;
-        }
-
-
-        if (
-            video.paused
-        ) {
-
-            video.play()
-                .then(() => {
-
-                    updatePreviewPlayIcon(
-                        true
-                    );
-
-                })
-                .catch(() => {
-
-                    showToast(
-                        "Could not play preview",
-                        "error"
-                    );
-
-                });
-
-        } else {
-
-            video.pause();
-
-            updatePreviewPlayIcon(
-                false
-            );
-
-        }
-
-    }
-
-
-    function updatePreviewPlayIcon(
-        playing
-    ) {
-
-        const button =
-            $("previewPlayBtn");
-
-        if (!button) {
-            return;
-        }
-
-
-        const icon =
-            button.querySelector(
-                "i"
-            );
-
-
-        if (icon) {
-
-            icon.className =
-                playing
-                    ? "fa-solid fa-pause"
-                    : "fa-solid fa-play";
-
-        }
-
-    }
-
-
-    /* =====================================================
-       GLOBAL EVENTS
-    ====================================================== */
-
-    function setupEvents() {
-
-        /* ---------------------------------------------
-           BACK
-        ------------------------------------------ */
-
-        $("backBtn")
-            ?.addEventListener(
-                "click",
-                () => {
-
-                    if (
-                        window.history.length >
-                        1
-                    ) {
-
-                        window.history.back();
-
-                    } else {
-
-                        window.location.href =
-                            "shorts.html";
-
-                    }
-
-                }
-            );
-
-
-        /* ---------------------------------------------
-           RETRY
-        ------------------------------------------ */
-
-        $("retryBtn")
-            ?.addEventListener(
-                "click",
-                retryLoad
-            );
-
-
-        /* ---------------------------------------------
-           PREVIEW
-        ------------------------------------------ */
-
-        $("previewPlayBtn")
-            ?.addEventListener(
-                "click",
-                event => {
-
-                    event.stopPropagation();
-
-                    togglePreview();
-
-                }
-            );
-
-
-        $("previewBtn")
-            ?.addEventListener(
-                "click",
-                togglePreview
-            );
-
-
-        $("shortPreview")
-            ?.addEventListener(
-                "click",
-                togglePreview
-            );
-
-
-        $("shortPreview")
-            ?.addEventListener(
-                "play",
-                () => {
-
-                    updatePreviewPlayIcon(
-                        true
-                    );
-
-                }
-            );
-
-
-        $("shortPreview")
-            ?.addEventListener(
-                "pause",
-                () => {
-
-                    updatePreviewPlayIcon(
-                        false
-                    );
-
-                }
-            );
-
-
-        /* ---------------------------------------------
-           COUNTERS
-        ------------------------------------------ */
-
-        $("shortTitle")
-            ?.addEventListener(
-                "input",
-                updateTitleCount
-            );
-
-
-        $("shortDescription")
-            ?.addEventListener(
-                "input",
-                updateDescriptionCount
-            );
-
-
-        /* ---------------------------------------------
-           TAG INPUT
-        ------------------------------------------ */
-
-        $("tagInput")
-            ?.addEventListener(
-                "keydown",
-                event => {
-
-                    if (
-                        event.key ===
-                        "Enter" ||
-                        event.key === ","
-                    ) {
-
-                        event.preventDefault();
-
-                        addTag(
-                            event.target.value
-                        );
-
-                    }
-
-                }
-            );
-
-
-        /* ---------------------------------------------
-           VISIBILITY
-        ------------------------------------------ */
-
-        document
-            .querySelectorAll(
-                ".visibilityOption"
-            )
-            .forEach(option => {
-
-                option.addEventListener(
-                    "click",
-                    () => {
-
-                        state.selectedVisibility =
-                            normalizeVisibility(
-                                option.dataset.visibility
-                            );
-
-                        updateVisibilityUI();
-
-                    }
-                );
-
-            });
-
-
-        /* ---------------------------------------------
-           COVER
-        ------------------------------------------ */
-
-        $("coverBtn")
-            ?.addEventListener(
-                "click",
-                () => {
-
-                    openSheet(
-                        "coverSheet"
-                    );
-
-                }
-            );
-
-
-        $("closeCoverBtn")
-            ?.addEventListener(
-                "click",
-                () => {
-
-                    closeSheet(
-                        "coverSheet"
-                    );
-
-                }
-            );
-
-
-        $("useCurrentFrameBtn")
-            ?.addEventListener(
-                "click",
-                useCurrentFrame
-            );
-
-
-        $("chooseCoverBtn")
-            ?.addEventListener(
-                "click",
-                () => {
-
-                    $("coverInput")
-                        ?.click();
-
-                }
-            );
-
-
-        $("coverInput")
-            ?.addEventListener(
-                "change",
-                event => {
-
-                    const file =
-                        event.target.files?.[0];
-
-                    handleCoverFile(
-                        file
-                    );
-
-                }
-            );
-
-
-        /* ---------------------------------------------
-           ADVANCED
-        ------------------------------------------ */
-
-        $("advancedBtn")
-            ?.addEventListener(
-                "click",
-                () => {
-
-                    openSheet(
-                        "advancedSheet"
-                    );
-
-                }
-            );
-
-
-        $("closeAdvancedBtn")
-            ?.addEventListener(
-                "click",
-                () => {
-
-                    closeSheet(
-                        "advancedSheet"
-                    );
-
-                }
-            );
-
-
-        /* ---------------------------------------------
-           COLLABORATION
-        ------------------------------------------ */
-
-        $("collaborationBtn")
-            ?.addEventListener(
-                "click",
-                () => {
-
-                    openSheet(
-                        "collaborationSheet"
-                    );
-
-                }
-            );
-
-
-        $("closeCollaborationBtn")
-            ?.addEventListener(
-                "click",
-                () => {
-
-                    closeSheet(
-                        "collaborationSheet"
-                    );
-
-                }
-            );
-
-
-        /* ---------------------------------------------
-           OVERLAY BACKDROPS
-        ------------------------------------------ */
-
-        document
-            .querySelectorAll(
-                ".overlayBackdrop"
-            )
-            .forEach(backdrop => {
-
-                backdrop.addEventListener(
-                    "click",
-                    () => {
-
-                        const overlay =
-                            backdrop.closest(
-                                ".overlay"
-                            );
-
-                        if (overlay) {
-
-                            overlay.classList.add(
-                                "hidden"
-                            );
-
-                        }
-
-                        if (
-                            !document.querySelector(
-                                ".overlay:not(.hidden)"
-                            )
-                        ) {
-
-                            document.body.classList.remove(
-                                "modalOpen"
-                            );
-
-                        }
-
-                    }
-                );
-
-            });
-
-
-        /* ---------------------------------------------
-           SAVE DRAFT
-        ------------------------------------------ */
-
-        $("saveDraftBtn")
-            ?.addEventListener(
-                "click",
-                () => {
-
-                    saveChanges(
-                        "draft"
-                    );
-
-                }
-            );
-
-
-        /* ---------------------------------------------
-           POST / SAVE
-        ------------------------------------------ */
-
-        $("publishBtn")
-            ?.addEventListener(
-                "click",
-                () => {
-
-                    saveChanges(
-                        "publish"
-                    );
-
-                }
-            );
-
-
-        /* ---------------------------------------------
-           ESCAPE
-        ------------------------------------------ */
-
-        document.addEventListener(
-            "keydown",
-            event => {
-
-                if (
-                    event.key !==
-                    "Escape"
-                ) {
-                    return;
-                }
-
-
-                document
-                    .querySelectorAll(
-                        ".overlay:not(.hidden)"
-                    )
-                    .forEach(
-                        overlay => {
-
-                            overlay.classList.add(
-                                "hidden"
-                            );
-
-                        }
-                    );
-
-
-                document.body.classList.remove(
-                    "modalOpen"
-                );
-
+            if (trimEnd) {
+                trimEnd.min = "0";
+                trimEnd.max = String(state.duration || 100);
+                trimEnd.value = String(state.duration || 100);
             }
-        );
 
-    }
+            state.trimStart = 0;
+            state.trimEnd = state.duration;
 
+            videoLoader?.classList.add("hidden");
+            setStatus("Ready");
+            markDirty(false);
+            updatePlayhead();
+        });
 
-    /* =====================================================
-       ADD TAG
-    ====================================================== */
+        shortVideo.addEventListener("timeupdate", () => {
+            updateTimeline();
+            if (splitTimeLabel) {
+                splitTimeLabel.textContent = formatTime(shortVideo.currentTime);
+            }
+        });
 
-    function addTag(
-        value
-    ) {
+        shortVideo.addEventListener("play", () => {
+            state.isPlaying = true;
+            updatePlayIcons(true);
+            playOverlay?.classList.add("hidden");
+        });
 
-        let tag =
-            String(
-                value || ""
-            )
-            .trim()
-            .replace(/^#+/, "");
+        shortVideo.addEventListener("pause", () => {
+            state.isPlaying = false;
+            updatePlayIcons(false);
+            playOverlay?.classList.remove("hidden");
+        });
 
+        shortVideo.addEventListener("ended", () => {
+            state.isPlaying = false;
+            updatePlayIcons(false);
+            playOverlay?.classList.remove("hidden");
+        });
 
-        if (!tag) {
-            return;
-        }
-
-
-        if (
-            tag.length >
-            30
-        ) {
-
-            tag =
-                tag.substring(
-                    0,
-                    30
-                );
-
-        }
-
-
-        const exists =
-            state.selectedTags.some(
-                existing =>
-                    existing.toLowerCase() ===
-                    tag.toLowerCase()
-            );
-
-
-        if (exists) {
-
-            $("tagInput").value =
-                "";
-
-            return;
-
-        }
-
-
-        if (
-            state.selectedTags.length >=
-            20
-        ) {
-
+        shortVideo.addEventListener("error", () => {
+            videoLoader?.classList.remove("hidden");
+            if (videoLoaderText) {
+                videoLoaderText.textContent = "Unable to load video. Go back and try again.";
+            }
+            setStatus("Video error");
             showToast(
-                "Maximum 20 tags",
+                "Video failed",
+                "Could not load the Short video. Please re-upload or re-record.",
                 "error"
             );
-
-            return;
-
-        }
-
-
-        state.selectedTags.push(
-            tag
-        );
-
-
-        $("tagInput").value =
-            "";
-
-
-        renderTags();
-
+        });
     }
 
 
-    /* =====================================================
-       PAGE VISIBILITY
+    function updatePlayIcons(playing) {
+        const iconClass = playing ? "fa-solid fa-pause" : "fa-solid fa-play";
+
+        if (playBtn) {
+            const i = playBtn.querySelector("i");
+            if (i) i.className = iconClass;
+        }
+
+        if (playOverlay) {
+            const i = playOverlay.querySelector("i");
+            if (i) i.className = iconClass;
+        }
+    }
+
+
+    function updateTimeline() {
+        if (!shortVideo || !state.duration) return;
+
+        const progress = (shortVideo.currentTime / state.duration) * 100;
+
+        if (timelineProgress) {
+            timelineProgress.style.width = Math.min(100, Math.max(0, progress)) + "%";
+        }
+
+        if (currentTimeLabel) {
+            currentTimeLabel.textContent = formatTime(shortVideo.currentTime);
+        }
+
+        updatePlayhead();
+    }
+
+
+    function updatePlayhead() {
+        if (!clipPlayhead || !state.duration) return;
+
+        const pct = (shortVideo.currentTime / state.duration) * 100;
+        clipPlayhead.style.left = Math.min(100, Math.max(0, pct)) + "%";
+    }
+
+
+    function togglePlay() {
+        if (!shortVideo || !shortVideo.src) return;
+
+        if (shortVideo.paused) {
+            shortVideo.play().catch(() => {});
+        } else {
+            shortVideo.pause();
+        }
+    }
+
+
+    function seekFromEvent(event) {
+        if (!shortVideo || !state.duration || !timeline) return;
+
+        const rect = timeline.getBoundingClientRect();
+        const x = (event.clientX ?? event.touches?.[0]?.clientX) - rect.left;
+        const ratio = Math.min(1, Math.max(0, x / rect.width));
+
+        shortVideo.currentTime = ratio * state.duration;
+        updateTimeline();
+    }
+
+
+    /* ======================================================
+       DRAW CANVAS
     ====================================================== */
 
-    document.addEventListener(
-        "visibilitychange",
-        () => {
+    function setupDrawCanvas() {
+        if (!drawCanvas || !shortVideo) return;
 
-            if (
-                document.hidden
-            ) {
+        const resize = () => {
+            const stage = $("videoStage");
+            if (!stage) return;
 
-                $("shortPreview")
-                    ?.pause();
+            const rect = stage.getBoundingClientRect();
+            drawCanvas.width = Math.floor(rect.width);
+            drawCanvas.height = Math.floor(rect.height);
 
+            state.drawCtx = drawCanvas.getContext("2d");
+            if (state.drawCtx) {
+                state.drawCtx.lineCap = "round";
+                state.drawCtx.lineJoin = "round";
+                state.drawCtx.strokeStyle = "#ffffff";
+                state.drawCtx.lineWidth = Number(brushSize?.value) || 6;
+            }
+        };
+
+        resize();
+        window.addEventListener("resize", resize);
+
+        const getPos = (e) => {
+            const rect = drawCanvas.getBoundingClientRect();
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            return {
+                x: clientX - rect.left,
+                y: clientY - rect.top
+            };
+        };
+
+        const startDraw = (e) => {
+            if (!drawCanvas.classList.contains("drawing-active")) return;
+            e.preventDefault();
+            state.drawing = true;
+            const pos = getPos(e);
+            state.lastX = pos.x;
+            state.lastY = pos.y;
+        };
+
+        const moveDraw = (e) => {
+            if (!state.drawing || !state.drawCtx) return;
+            e.preventDefault();
+            const pos = getPos(e);
+            state.drawCtx.beginPath();
+            state.drawCtx.moveTo(state.lastX, state.lastY);
+            state.drawCtx.lineTo(pos.x, pos.y);
+            state.drawCtx.stroke();
+            state.lastX = pos.x;
+            state.lastY = pos.y;
+            markDirty(true);
+        };
+
+        const endDraw = () => {
+            state.drawing = false;
+        };
+
+        drawCanvas.addEventListener("mousedown", startDraw);
+        drawCanvas.addEventListener("mousemove", moveDraw);
+        drawCanvas.addEventListener("mouseup", endDraw);
+        drawCanvas.addEventListener("mouseleave", endDraw);
+
+        drawCanvas.addEventListener("touchstart", startDraw, { passive: false });
+        drawCanvas.addEventListener("touchmove", moveDraw, { passive: false });
+        drawCanvas.addEventListener("touchend", endDraw);
+    }
+
+
+    function clearDrawing() {
+        if (!state.drawCtx || !drawCanvas) return;
+        state.drawCtx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
+        markDirty(true);
+        showToast("Canvas cleared", "Drawing removed.");
+    }
+
+
+    /* ======================================================
+       TOOLS
+    ====================================================== */
+
+    function setActiveTool(toolName) {
+        $$(".editTool").forEach((btn) => {
+            btn.classList.toggle("active", btn.dataset.tool === toolName);
+        });
+
+        $$(".toolPanelContent").forEach((panel) => {
+            const isMatch = panel.dataset.panel === toolName;
+            panel.classList.toggle("hidden", !isMatch);
+        });
+
+        // Drawing only when draw tool is active
+        if (drawCanvas) {
+            const drawing = toolName === "draw";
+            drawCanvas.classList.toggle("drawing-active", drawing);
+            drawCanvas.style.pointerEvents = drawing ? "auto" : "none";
+        }
+
+        setStatus(toolName ? toolName.charAt(0).toUpperCase() + toolName.slice(1) : "Ready");
+    }
+
+
+    /* ======================================================
+       TEXT
+    ====================================================== */
+
+    function addTextOverlay() {
+        const value = (textInput?.value || "").trim();
+        if (!value) {
+            showToast("Empty text", "Type something first.", "warning");
+            textInput?.focus();
+            return;
+        }
+
+        if (!elementLayer) return;
+
+        const el = document.createElement("div");
+        el.className = "editTextElement " + (state.textStyle || "classic");
+        el.textContent = value;
+        el.style.left = "50%";
+        el.style.top = "42%";
+        el.dataset.type = "text";
+
+        makeDraggable(el);
+        elementLayer.appendChild(el);
+
+        state.elements.push({
+            type: "text",
+            text: value,
+            style: state.textStyle,
+            x: 50,
+            y: 42
+        });
+
+        if (textInput) textInput.value = "";
+        markDirty(true);
+        showToast("Text added", "Drag to reposition.");
+    }
+
+
+    /* ======================================================
+       STICKERS
+    ====================================================== */
+
+    function addSticker(emoji) {
+        if (!elementLayer || !emoji) return;
+
+        const el = document.createElement("div");
+        el.className = "editStickerElement";
+        el.textContent = emoji;
+        el.style.left = "50%";
+        el.style.top = "48%";
+        el.dataset.type = "sticker";
+
+        makeDraggable(el);
+        elementLayer.appendChild(el);
+
+        state.elements.push({
+            type: "sticker",
+            emoji,
+            x: 50,
+            y: 48
+        });
+
+        markDirty(true);
+    }
+
+
+    /* ======================================================
+       DRAGGABLE
+    ====================================================== */
+
+    function makeDraggable(el) {
+        let dragging = false;
+        let startX = 0;
+        let startY = 0;
+        let originLeft = 0;
+        let originTop = 0;
+
+        const onStart = (e) => {
+            dragging = true;
+            const point = e.touches ? e.touches[0] : e;
+            startX = point.clientX;
+            startY = point.clientY;
+
+            const stage = $("videoStage");
+            const rect = stage.getBoundingClientRect();
+            originLeft = ((parseFloat(el.style.left) || 50) / 100) * rect.width;
+            originTop = ((parseFloat(el.style.top) || 50) / 100) * rect.height;
+
+            e.preventDefault();
+        };
+
+        const onMove = (e) => {
+            if (!dragging) return;
+            const point = e.touches ? e.touches[0] : e;
+            const stage = $("videoStage");
+            const rect = stage.getBoundingClientRect();
+
+            const dx = point.clientX - startX;
+            const dy = point.clientY - startY;
+
+            let left = ((originLeft + dx) / rect.width) * 100;
+            let top = ((originTop + dy) / rect.height) * 100;
+
+            left = Math.min(95, Math.max(5, left));
+            top = Math.min(95, Math.max(5, top));
+
+            el.style.left = left + "%";
+            el.style.top = top + "%";
+        };
+
+        const onEnd = () => {
+            if (dragging) {
+                dragging = false;
+                markDirty(true);
+            }
+        };
+
+        el.addEventListener("mousedown", onStart);
+        el.addEventListener("touchstart", onStart, { passive: false });
+
+        window.addEventListener("mousemove", onMove);
+        window.addEventListener("touchmove", onMove, { passive: false });
+        window.addEventListener("mouseup", onEnd);
+        window.addEventListener("touchend", onEnd);
+    }
+
+
+    /* ======================================================
+       FILTERS
+    ====================================================== */
+
+    function applyFilter(name) {
+        state.filter = name || "none";
+
+        const css = FILTER_CSS[state.filter] || "none";
+
+        if (shortVideo) shortVideo.style.filter = css;
+        if (filterLayer) filterLayer.style.filter = css;
+
+        $$(".filterItem").forEach((item) => {
+            item.classList.toggle("active", item.dataset.filter === state.filter);
+        });
+
+        markDirty(true);
+        showToast("Filter applied", name === "none" ? "Original look" : name);
+    }
+
+
+    /* ======================================================
+       SPEED / VOLUME
+    ====================================================== */
+
+    function setSpeed(value) {
+        state.speed = Number(value) || 1;
+        if (shortVideo) shortVideo.playbackRate = state.speed;
+
+        $$(".speedChoices button").forEach((btn) => {
+            btn.classList.toggle(
+                "active",
+                Number(btn.dataset.speed) === state.speed
+            );
+        });
+
+        markDirty(true);
+        showToast("Speed", state.speed + "x");
+    }
+
+
+    function setVolume(value) {
+        state.volume = Math.min(1, Math.max(0, Number(value) || 0));
+        if (shortVideo) shortVideo.volume = state.volume;
+        if (volumeValue) {
+            volumeValue.textContent = Math.round(state.volume * 100) + "%";
+        }
+        markDirty(true);
+    }
+
+
+    /* ======================================================
+       MUSIC
+    ====================================================== */
+
+    function openMusicSheet() {
+        musicSheet?.classList.remove("hidden");
+    }
+
+    function closeMusicSheet() {
+        musicSheet?.classList.add("hidden");
+    }
+
+    function selectMusic(id, name, artist) {
+        state.music = {
+            id: id || "original",
+            name: name || "Original audio",
+            artist: artist || "Your video"
+        };
+
+        if (editMusicName) editMusicName.textContent = state.music.name;
+        if (editMusicArtist) editMusicArtist.textContent = state.music.artist;
+
+        activeMusicInfo?.classList.remove("hidden");
+        closeMusicSheet();
+        markDirty(true);
+        showToast("Music selected", state.music.name);
+    }
+
+    function removeMusic() {
+        state.music = {
+            id: "original",
+            name: "Original audio",
+            artist: "Your video"
+        };
+
+        if (editMusicName) editMusicName.textContent = state.music.name;
+        if (editMusicArtist) editMusicArtist.textContent = state.music.artist;
+
+        activeMusicInfo?.classList.add("hidden");
+        markDirty(true);
+        showToast("Music removed", "Original audio restored.");
+    }
+
+
+    /* ======================================================
+       TRIM
+    ====================================================== */
+
+    function updateTrimUI() {
+        if (!state.duration) return;
+
+        const start = Number(trimStart?.value) || 0;
+        const end = Number(trimEnd?.value) || state.duration;
+
+        state.trimStart = Math.min(start, end);
+        state.trimEnd = Math.max(start, end);
+
+        if (trimStartLabel) trimStartLabel.textContent = formatTime(state.trimStart);
+        if (trimEndLabel) trimEndLabel.textContent = formatTime(state.trimEnd);
+
+        markDirty(true);
+    }
+
+
+    /* ======================================================
+       DIRTY / HISTORY (simple)
+    ====================================================== */
+
+    function markDirty(value = true) {
+        state.dirty = value;
+        if (undoBtn) undoBtn.disabled = !value;
+    }
+
+
+    /* ======================================================
+       BUILD EDITOR PAYLOAD
+    ====================================================== */
+
+    function buildEditorPayload() {
+        return {
+            source: "edit-shorts",
+            videoUrl: state.videoUrl || "",
+            // blob cannot be JSON-serialized; details page reloads from IndexedDB
+            hasLocalVideo: Boolean(state.videoBlob),
+            filter: state.filter,
+            speed: state.speed,
+            volume: state.volume,
+            trimStart: state.trimStart,
+            trimEnd: state.trimEnd,
+            music: { ...state.music },
+            elements: state.elements.map((e) => ({ ...e })),
+            mode: "shorts",
+            updatedAt: Date.now()
+        };
+    }
+
+
+    function persistEditorData() {
+        const data = buildEditorPayload();
+
+        try {
+            sessionStorage.setItem(EDITOR_DATA_KEY, JSON.stringify(data));
+            sessionStorage.setItem(EDITOR_SESSION_KEY, JSON.stringify(data));
+            sessionStorage.setItem("viewora_current_short", JSON.stringify(data));
+        } catch (error) {
+            console.warn("Editor data persist failed:", error);
+        }
+
+        return data;
+    }
+
+
+    /* ======================================================
+       NEXT → DETAILS
+    ====================================================== */
+
+    async function goToDetails() {
+        if (!state.videoBlob && !state.videoUrl) {
+            showToast(
+                "No video",
+                "Load or record a Short first.",
+                "error"
+            );
+            return;
+        }
+
+        showProcessing("Preparing details", "Saving your edits...");
+
+        try {
+            // Ensure video is still in IndexedDB for the details page
+            if (state.videoBlob) {
+                const db = await openVideoDB();
+                await new Promise((resolve, reject) => {
+                    const tx = db.transaction(VIDEO_STORE, "readwrite");
+                    const store = tx.objectStore(VIDEO_STORE);
+                    const req = store.put(state.videoBlob, VIDEO_KEY);
+                    req.onsuccess = () => resolve();
+                    req.onerror = () => reject(req.error);
+                });
             }
 
+            persistEditorData();
+
+            try {
+                sessionStorage.setItem("viewora_pending_new_short", "1");
+                // Clear any stale editing id so details page treats this as NEW
+                [
+                    "vieworaShortId",
+                    "viewora_short_id",
+                    "currentShortId",
+                    "editingShortId",
+                    "vieworaEditingShortId"
+                ].forEach((key) => {
+                    try { sessionStorage.removeItem(key); } catch (_) {}
+                    try { localStorage.removeItem(key); } catch (_) {}
+                });
+            } catch (_) {}
+
+            await sleep(350);
+
+            window.location.href = "short-edit.html?source=editor";
+
+        } catch (error) {
+            console.error("goToDetails error:", error);
+            hideProcessing();
+            showToast(
+                "Could not continue",
+                error?.message || "Please try again.",
+                "error"
+            );
         }
-    );
+    }
 
 
-    /* =====================================================
+    /* ======================================================
+       SAVE DRAFT (local)
+    ====================================================== */
+
+    function saveDraftLocal() {
+        persistEditorData();
+        markDirty(false);
+        setStatus("Draft saved");
+        showToast("Draft saved", "Your edits are stored on this device.");
+    }
+
+
+    /* ======================================================
+       EXIT
+    ====================================================== */
+
+    function requestExit() {
+        if (state.dirty) {
+            exitDialog?.classList.remove("hidden");
+            return;
+        }
+        leaveEditor();
+    }
+
+    function leaveEditor() {
+        if (state.videoObjectUrl) {
+            try {
+                URL.revokeObjectURL(state.videoObjectUrl);
+            } catch (_) {}
+        }
+        window.location.href = "upload.html";
+    }
+
+
+    /* ======================================================
+       EVENTS
+    ====================================================== */
+
+    function bindEvents() {
+
+        /* Play */
+        playBtn?.addEventListener("click", togglePlay);
+        playOverlay?.addEventListener("click", togglePlay);
+
+        /* Timeline seek */
+        timeline?.addEventListener("click", seekFromEvent);
+
+        let seeking = false;
+        timeline?.addEventListener("mousedown", () => { seeking = true; });
+        timeline?.addEventListener("touchstart", () => { seeking = true; }, { passive: true });
+        window.addEventListener("mouseup", () => { seeking = false; });
+        window.addEventListener("touchend", () => { seeking = false; });
+        timeline?.addEventListener("mousemove", (e) => {
+            if (seeking) seekFromEvent(e);
+        });
+
+        /* Tools */
+        $$(".editTool").forEach((btn) => {
+            btn.addEventListener("click", () => {
+                setActiveTool(btn.dataset.tool);
+            });
+        });
+
+        $$("[data-close-panel]").forEach((btn) => {
+            btn.addEventListener("click", () => {
+                setActiveTool("text");
+            });
+        });
+
+        /* Text */
+        addTextBtn?.addEventListener("click", addTextOverlay);
+        textInput?.addEventListener("keydown", (e) => {
+            if (e.key === "Enter") {
+                e.preventDefault();
+                addTextOverlay();
+            }
+        });
+
+        $$("[data-text-style]").forEach((chip) => {
+            chip.addEventListener("click", () => {
+                state.textStyle = chip.dataset.textStyle || "classic";
+                $$("[data-text-style]").forEach((c) =>
+                    c.classList.toggle("active", c === chip)
+                );
+            });
+        });
+
+        /* Stickers */
+        $$(".stickerItem").forEach((item) => {
+            item.addEventListener("click", () => {
+                addSticker(item.dataset.sticker);
+            });
+        });
+
+        /* Filters */
+        $$(".filterItem").forEach((item) => {
+            item.addEventListener("click", () => {
+                applyFilter(item.dataset.filter);
+            });
+        });
+
+        /* Speed */
+        $$(".speedChoices button").forEach((btn) => {
+            btn.addEventListener("click", () => {
+                setSpeed(btn.dataset.speed);
+            });
+        });
+
+        /* Volume */
+        volumeRange?.addEventListener("input", () => {
+            setVolume(volumeRange.value);
+        });
+
+        /* Brush */
+        brushSize?.addEventListener("input", () => {
+            if (state.drawCtx) {
+                state.drawCtx.lineWidth = Number(brushSize.value) || 6;
+            }
+        });
+
+        clearDrawBtn?.addEventListener("click", clearDrawing);
+
+        /* Split (placeholder) */
+        splitBtn?.addEventListener("click", () => {
+            showToast(
+                "Split",
+                "Clip split is saved for the next step. Position: " +
+                    formatTime(shortVideo?.currentTime || 0)
+            );
+            markDirty(true);
+        });
+
+        /* Trim */
+        trimStart?.addEventListener("input", updateTrimUI);
+        trimEnd?.addEventListener("input", updateTrimUI);
+
+        /* Music */
+        chooseMusicBtn?.addEventListener("click", openMusicSheet);
+        removeEditMusicBtn?.addEventListener("click", removeMusic);
+
+        $$("[data-close='musicSheet']").forEach((el) => {
+            el.addEventListener("click", closeMusicSheet);
+        });
+
+        musicSheet?.querySelector(".overlayBackdrop")?.addEventListener("click", closeMusicSheet);
+
+        $$(".musicChoice").forEach((btn) => {
+            btn.addEventListener("click", () => {
+                selectMusic(
+                    btn.dataset.musicId,
+                    btn.dataset.musicName,
+                    btn.dataset.musicArtist
+                );
+            });
+        });
+
+        editorMusicSearch?.addEventListener("input", () => {
+            const q = (editorMusicSearch.value || "").toLowerCase().trim();
+            $$(".musicChoice").forEach((btn) => {
+                const name = (btn.dataset.musicName || "").toLowerCase();
+                const artist = (btn.dataset.musicArtist || "").toLowerCase();
+                const match = !q || name.includes(q) || artist.includes(q);
+                btn.style.display = match ? "" : "none";
+            });
+        });
+
+        /* Categories (visual only) */
+        $$(".musicCategory").forEach((btn) => {
+            btn.addEventListener("click", () => {
+                $$(".musicCategory").forEach((c) =>
+                    c.classList.toggle("active", c === btn)
+                );
+            });
+        });
+
+        /* Bottom actions */
+        nextBtn?.addEventListener("click", goToDetails);
+        saveDraftBtn?.addEventListener("click", saveDraftLocal);
+
+        /* Back / exit */
+        backBtn?.addEventListener("click", requestExit);
+        cancelExitBtn?.addEventListener("click", () => {
+            exitDialog?.classList.add("hidden");
+        });
+        confirmExitBtn?.addEventListener("click", leaveEditor);
+
+        /* Escape */
+        document.addEventListener("keydown", (e) => {
+            if (e.key === "Escape") {
+                closeMusicSheet();
+                exitDialog?.classList.add("hidden");
+            }
+
+            if (e.code === "Space" && e.target === document.body) {
+                e.preventDefault();
+                togglePlay();
+            }
+        });
+    }
+
+
+    /* ======================================================
        INIT
     ====================================================== */
 
-    setupEvents();
+    async function init() {
+        try {
+            setStatus("Loading...");
+            videoLoader?.classList.remove("hidden");
+
+            setupVideoEvents();
+            setupDrawCanvas();
+            bindEvents();
+            setActiveTool("text");
+            setVolume(1);
+
+            // Prefer IndexedDB video from upload / camera
+            let file = null;
+
+            try {
+                file = await loadVideoFromIndexedDB();
+            } catch (error) {
+                console.warn("IndexedDB load failed:", error);
+            }
+
+            // Fallback: session/local flags only (no blob)
+            if (!file) {
+                const params = new URLSearchParams(window.location.search);
+                const source = params.get("source") || "";
+
+                if (source === "upload" || source === "camera") {
+                    // Video should have been saved; give a clear message
+                    videoLoader?.classList.remove("hidden");
+                    if (videoLoaderText) {
+                        videoLoaderText.textContent =
+                            "No video found. Please go back and select or record again.";
+                    }
+                    setStatus("No video");
+                    showToast(
+                        "Video missing",
+                        "Please upload or record a Short again.",
+                        "warning"
+                    );
+                    return;
+                }
+
+                // Editing existing short without local blob is handled by details page
+                videoLoader?.classList.remove("hidden");
+                if (videoLoaderText) {
+                    videoLoaderText.textContent =
+                        "No local video. Open Create → Shorts to add a video.";
+                }
+                setStatus("Waiting for video");
+                return;
+            }
+
+            applyVideoSource(file);
+
+            // Restore music from create screen if any
+            try {
+                const raw = sessionStorage.getItem("viewora_selected_music");
+                if (raw) {
+                    const music = JSON.parse(raw);
+                    if (music?.id) {
+                        selectMusic(
+                            music.id,
+                            music.title || music.name,
+                            music.artist
+                        );
+                    }
+                }
+            } catch (_) {}
+
+            console.log("VIEWORA Shorts Editor ready");
+
+        } catch (error) {
+            console.error("EDIT SHORTS INIT ERROR:", error);
+            setStatus("Error");
+            showToast(
+                "Editor error",
+                error?.message || "Something went wrong opening the editor.",
+                "error"
+            );
+        }
+    }
+
+
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", init, { once: true });
+    } else {
+        init();
+    }
+
+
+    /* ======================================================
+       PUBLIC API
+    ====================================================== */
+
+    window.VieworaEditShorts = {
+        getState: () => ({ ...state }),
+        goToDetails,
+        saveDraft: saveDraftLocal
+    };
 
 })();

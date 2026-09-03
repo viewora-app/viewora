@@ -984,7 +984,27 @@
 
         stopRingtone();
 
+        // Prefer user-provided MP3 ringtone if present
+        try {
+            const audioEl = document.getElementById("incomingCallRingtone");
+            if (audioEl) {
+                audioEl.loop = true;
+                audioEl.currentTime = 0;
+                const p = audioEl.play();
+                if (p && p.catch) {
+                    p.catch(() => {
+                        // fallback to WebAudio if autoplay blocked until gesture
+                        startWebAudioRingtone();
+                    });
+                }
+                return;
+            }
+        } catch (_) {}
 
+        startWebAudioRingtone();
+    }
+
+    function startWebAudioRingtone() {
         try {
 
             const AudioContext =
@@ -1174,6 +1194,14 @@
     ====================================================== */
 
     function stopRingtone() {
+
+        try {
+            const audioEl = document.getElementById("incomingCallRingtone");
+            if (audioEl) {
+                audioEl.pause();
+                audioEl.currentTime = 0;
+            }
+        } catch (_) {}
 
         if (ringtoneTimer) {
 

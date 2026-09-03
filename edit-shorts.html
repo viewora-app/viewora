@@ -5,301 +5,295 @@
 
     <meta
         name="viewport"
-        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
     >
 
     <meta name="theme-color" content="#050507">
+
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
     <title>Viewora • Edit Short</title>
 
     <link rel="icon" href="assets/logo.png">
 
-    <!-- =====================================================
-         FONT
-    ====================================================== -->
-
+    <!-- FONT -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 
     <link
         href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
         rel="stylesheet"
     >
 
-    <!-- =====================================================
-         ICONS
-    ====================================================== -->
-
+    <!-- ICONS -->
     <link
         rel="stylesheet"
         href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
     >
 
-    <!-- =====================================================
-         PAGE LOADER
-    ====================================================== -->
-
+    <!-- LOADER -->
     <script src="page-loader.js"></script>
 
-    <!-- =====================================================
-         EDIT SHORTS CSS
-    ====================================================== -->
-
+    <!-- PAGE CSS -->
     <link rel="stylesheet" href="edit-shorts.css">
 </head>
 
 <body>
 
-<div id="app">
+<div id="app" class="editorApp">
 
     <!-- =====================================================
-         MAIN EDITOR
+         TOP BAR
     ====================================================== -->
 
-    <main class="editShorts" id="editShorts">
+    <header class="editorTopBar">
+
+        <button
+            type="button"
+            id="backBtn"
+            class="topIconButton"
+            aria-label="Back"
+        >
+            <i class="fa-solid fa-arrow-left"></i>
+        </button>
+
+
+        <div class="editorBrand">
+
+            <img
+                src="assets/logo.png"
+                alt="Viewora"
+            >
+
+            <div>
+                <strong>VIEWORA</strong>
+                <span>SHORTS EDITOR</span>
+            </div>
+
+        </div>
+
+
+        <button
+            type="button"
+            id="undoBtn"
+            class="topIconButton"
+            aria-label="Undo"
+            disabled
+        >
+            <i class="fa-solid fa-rotate-left"></i>
+        </button>
+
+
+        <button
+            type="button"
+            id="redoBtn"
+            class="topIconButton"
+            aria-label="Redo"
+            disabled
+        >
+            <i class="fa-solid fa-rotate-right"></i>
+        </button>
+
+    </header>
+
+
+    <!-- =====================================================
+         EDITOR AREA
+    ====================================================== -->
+
+    <main class="editorMain">
 
         <!-- =================================================
              VIDEO STAGE
         ================================================== -->
 
-        <section class="editorStage" id="editorStage">
-
-            <video
-                id="shortPreview"
-                class="editorMedia"
-                playsinline
-                webkit-playsinline
-                preload="metadata"
-                controlslist="nodownload noplaybackrate"
-            ></video>
-
-            <!-- Video loading -->
+        <section class="videoSection">
 
             <div
-                id="mediaLoading"
-                class="mediaLoading"
+                id="videoStage"
+                class="videoStage"
             >
 
-                <div class="loadingSpinner"></div>
+                <video
+                    id="shortVideo"
+                    class="shortVideo"
+                    playsinline
+                    webkit-playsinline
+                    preload="metadata"
+                ></video>
 
-                <span id="loadingText">
-                    Loading your Short...
-                </span>
 
-            </div>
+                <!-- FILTER LAYER -->
 
-            <!-- No video -->
+                <div
+                    id="filterLayer"
+                    class="filterLayer"
+                ></div>
 
-            <div
-                id="noMedia"
-                class="noMedia hidden"
-            >
 
-                <div class="noMediaIcon">
-                    <i class="fa-solid fa-video-slash"></i>
+                <!-- DRAW LAYER -->
+
+                <canvas
+                    id="drawCanvas"
+                    class="drawCanvas"
+                ></canvas>
+
+
+                <!-- EDIT ELEMENTS -->
+
+                <div
+                    id="elementLayer"
+                    class="elementLayer"
+                ></div>
+
+
+                <!-- PLAY OVERLAY -->
+
+                <button
+                    type="button"
+                    id="playOverlay"
+                    class="playOverlay"
+                    aria-label="Play video"
+                >
+                    <span>
+                        <i class="fa-solid fa-play"></i>
+                    </span>
+                </button>
+
+
+                <!-- VIDEO LOADER -->
+
+                <div
+                    id="videoLoader"
+                    class="videoLoader"
+                >
+
+                    <div class="loaderSpinner"></div>
+
+                    <strong>
+                        Preparing Short
+                    </strong>
+
+                    <span id="videoLoaderText">
+                        Loading your video...
+                    </span>
+
                 </div>
 
-                <h2>Short unavailable</h2>
 
-                <p id="noMediaText">
-                    We couldn't load this Short.
-                </p>
+                <!-- DURATION -->
 
-                <button
-                    type="button"
-                    id="retryBtn"
-                    class="sheetAction"
-                >
-                    <i class="fa-solid fa-rotate-right"></i>
-                    Retry
-                </button>
+                <div class="videoDuration">
 
-            </div>
+                    <i class="fa-regular fa-clock"></i>
 
-            <!-- Text preview -->
+                    <span id="durationLabel">
+                        00:00
+                    </span>
 
-            <div
-                id="textOverlay"
-                class="textOverlay hidden"
-                data-style="clean"
-            ></div>
-
-        </section>
-
-
-        <!-- =================================================
-             TOP BAR
-        ================================================== -->
-
-        <header class="editorTop">
-
-            <div class="topLeft">
-
-                <button
-                    type="button"
-                    id="backBtn"
-                    class="iconButton"
-                    aria-label="Go back"
-                >
-                    <i class="fa-solid fa-arrow-left"></i>
-                </button>
-
-            </div>
-
-
-            <div class="editorTitle">
-
-                <strong>Edit Short</strong>
-
-                <span>VIEWORA EDITOR</span>
-
-            </div>
-
-
-            <div class="topRight">
-
-                <div class="shortsBadge">
-                    <i class="fa-solid fa-bolt"></i>
-                    <span>SHORTS</span>
                 </div>
 
             </div>
 
-        </header>
 
+            <!-- =================================================
+                 VIDEO CONTROLS
+            ================================================== -->
 
-        <!-- =================================================
-             RIGHT SIDE TOOLS
-        ================================================== -->
+            <div class="videoControls">
 
-        <aside class="editorControls">
+                <button
+                    type="button"
+                    id="playBtn"
+                    class="controlButton"
+                    aria-label="Play"
+                >
+                    <i class="fa-solid fa-play"></i>
+                </button>
 
-            <button
-                type="button"
-                id="rotateBtn"
-                class="editTool"
-                aria-label="Rotate video"
-            >
-                <i class="fa-solid fa-rotate"></i>
-                <span>Rotate</span>
-            </button>
-
-
-            <button
-                type="button"
-                id="flipBtn"
-                class="editTool"
-                aria-label="Flip video"
-            >
-                <i class="fa-solid fa-arrows-left-right"></i>
-                <span>Flip</span>
-            </button>
-
-
-            <button
-                type="button"
-                id="muteBtn"
-                class="editTool"
-                aria-label="Toggle sound"
-            >
-                <i
-                    id="muteIcon"
-                    class="fa-solid fa-volume-high"
-                ></i>
-
-                <span>Sound</span>
-            </button>
-
-
-            <button
-                type="button"
-                id="fullscreenBtn"
-                class="editTool"
-                aria-label="Fullscreen"
-            >
-                <i class="fa-solid fa-expand"></i>
-                <span>Full</span>
-            </button>
-
-        </aside>
-
-
-        <!-- =================================================
-             TIMELINE
-        ================================================== -->
-
-        <section
-            class="timelineArea"
-            id="timelineArea"
-        >
-
-            <div class="timelineHeader">
-
-                <span id="currentTime">
-                    00:00
-                </span>
-
-                <span id="durationTime">
-                    00:00
-                </span>
-
-            </div>
-
-
-            <div
-                class="timeline"
-                id="timeline"
-            >
 
                 <div
-                    class="timelineTrack"
-                    id="timelineTrack"
-                ></div>
+                    id="timeline"
+                    class="timeline"
+                    role="slider"
+                    aria-label="Video timeline"
+                    tabindex="0"
+                >
 
-                <div
-                    class="timelinePlayhead"
-                    id="timelinePlayhead"
-                ></div>
+                    <div class="timelineTrack">
+
+                        <div
+                            id="timelineProgress"
+                            class="timelineProgress"
+                        ></div>
+
+                    </div>
+
+                </div>
+
+
+                <span
+                    id="currentTimeLabel"
+                    class="timeLabel"
+                >
+                    00:00
+                </span>
 
             </div>
 
         </section>
 
 
-        <!-- =================================================
-             AUDIO STRIP
-        ================================================== -->
+        <!-- =====================================================
+             QUICK EDIT TOOLS
+        ====================================================== -->
 
-        <div
-            class="audioStrip"
-            id="audioStrip"
-        >
+        <section class="toolSection">
 
-            <i class="fa-solid fa-music"></i>
+            <div class="sectionHeading">
 
-            <span id="audioName">
-                Original sound
-            </span>
+                <div>
 
-        </div>
+                    <span class="sectionEyebrow">
+                        CREATE
+                    </span>
+
+                    <h2>
+                        Edit your Short
+                    </h2>
+
+                </div>
+
+                <span
+                    id="editStatus"
+                    class="editStatus"
+                >
+                    Ready
+                </span>
+
+            </div>
 
 
-        <!-- =================================================
-             BOTTOM EDITOR
-        ================================================== -->
-
-        <section class="editorBottom">
-
-            <div class="bottomTools">
+            <div class="toolScroller">
 
                 <!-- TEXT -->
 
                 <button
                     type="button"
-                    id="textBtn"
-                    class="bottomTool"
+                    class="editTool active"
+                    data-tool="text"
                 >
-                    <i class="fa-solid fa-font"></i>
-                    <span>Text</span>
+
+                    <span class="toolIcon">
+                        <i class="fa-solid fa-t"></i>
+                    </span>
+
+                    <strong>
+                        Text
+                    </strong>
+
                 </button>
 
 
@@ -307,23 +301,94 @@
 
                 <button
                     type="button"
-                    id="musicBtn"
-                    class="bottomTool"
+                    class="editTool"
+                    data-tool="music"
                 >
-                    <i class="fa-solid fa-music"></i>
-                    <span>Music</span>
+
+                    <span class="toolIcon">
+                        <i class="fa-solid fa-music"></i>
+                    </span>
+
+                    <strong>
+                        Music
+                    </strong>
+
                 </button>
 
 
-                <!-- SPEED -->
+                <!-- DRAW -->
 
                 <button
                     type="button"
-                    id="speedBtn"
-                    class="bottomTool"
+                    class="editTool"
+                    data-tool="draw"
                 >
-                    <i class="fa-solid fa-gauge-high"></i>
-                    <span>Speed</span>
+
+                    <span class="toolIcon">
+                        <i class="fa-solid fa-pen"></i>
+                    </span>
+
+                    <strong>
+                        Draw
+                    </strong>
+
+                </button>
+
+
+                <!-- STICKER -->
+
+                <button
+                    type="button"
+                    class="editTool"
+                    data-tool="sticker"
+                >
+
+                    <span class="toolIcon">
+                        <i class="fa-regular fa-face-smile"></i>
+                    </span>
+
+                    <strong>
+                        Sticker
+                    </strong>
+
+                </button>
+
+
+                <!-- FILTER -->
+
+                <button
+                    type="button"
+                    class="editTool"
+                    data-tool="filter"
+                >
+
+                    <span class="toolIcon">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i>
+                    </span>
+
+                    <strong>
+                        Filter
+                    </strong>
+
+                </button>
+
+
+                <!-- SPLIT -->
+
+                <button
+                    type="button"
+                    class="editTool"
+                    data-tool="split"
+                >
+
+                    <span class="toolIcon">
+                        <i class="fa-solid fa-scissors"></i>
+                    </span>
+
+                    <strong>
+                        Split
+                    </strong>
+
                 </button>
 
 
@@ -331,57 +396,801 @@
 
                 <button
                     type="button"
-                    id="trimBtn"
-                    class="bottomTool"
+                    class="editTool"
+                    data-tool="trim"
                 >
-                    <i class="fa-solid fa-scissors"></i>
-                    <span>Trim</span>
+
+                    <span class="toolIcon">
+                        <i class="fa-solid fa-crop-simple"></i>
+                    </span>
+
+                    <strong>
+                        Trim
+                    </strong>
+
                 </button>
 
 
-                <!-- COVER -->
+                <!-- SPEED -->
 
                 <button
                     type="button"
-                    id="coverBtn"
-                    class="bottomTool"
+                    class="editTool"
+                    data-tool="speed"
                 >
-                    <i class="fa-regular fa-image"></i>
-                    <span>Cover</span>
+
+                    <span class="toolIcon">
+                        <i class="fa-solid fa-gauge-high"></i>
+                    </span>
+
+                    <strong>
+                        Speed
+                    </strong>
+
+                </button>
+
+
+                <!-- VOLUME -->
+
+                <button
+                    type="button"
+                    class="editTool"
+                    data-tool="volume"
+                >
+
+                    <span class="toolIcon">
+                        <i class="fa-solid fa-volume-high"></i>
+                    </span>
+
+                    <strong>
+                        Volume
+                    </strong>
+
+                </button>
+
+            </div>
+
+        </section>
+
+
+        <!-- =====================================================
+             ACTIVE TOOL PANEL
+        ====================================================== -->
+
+        <section
+            id="toolPanel"
+            class="toolPanel"
+        >
+
+            <!-- TEXT PANEL -->
+
+            <div
+                class="toolPanelContent"
+                data-panel="text"
+            >
+
+                <div class="panelTitle">
+
+                    <div>
+                        <span class="panelEyebrow">
+                            TEXT
+                        </span>
+
+                        <h3>
+                            Add text to your Short
+                        </h3>
+                    </div>
+
+                    <button
+                        type="button"
+                        class="panelClose"
+                        data-close-panel
+                    >
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+
+                </div>
+
+
+                <div class="textInputRow">
+
+                    <input
+                        type="text"
+                        id="textInput"
+                        maxlength="120"
+                        placeholder="Type something..."
+                        autocomplete="off"
+                    >
+
+                    <button
+                        type="button"
+                        id="addTextBtn"
+                        class="smallPrimaryButton"
+                    >
+                        Add
+                    </button>
+
+                </div>
+
+
+                <div class="styleRow">
+
+                    <button
+                        type="button"
+                        class="styleChip active"
+                        data-text-style="classic"
+                    >
+                        Classic
+                    </button>
+
+                    <button
+                        type="button"
+                        class="styleChip"
+                        data-text-style="bold"
+                    >
+                        Bold
+                    </button>
+
+                    <button
+                        type="button"
+                        class="styleChip"
+                        data-text-style="outline"
+                    >
+                        Outline
+                    </button>
+
+                    <button
+                        type="button"
+                        class="styleChip"
+                        data-text-style="bubble"
+                    >
+                        Bubble
+                    </button>
+
+                </div>
+
+            </div>
+
+
+            <!-- MUSIC PANEL -->
+
+            <div
+                class="toolPanelContent hidden"
+                data-panel="music"
+            >
+
+                <div class="panelTitle">
+
+                    <div>
+                        <span class="panelEyebrow">
+                            AUDIO
+                        </span>
+
+                        <h3>
+                            Add music
+                        </h3>
+                    </div>
+
+                    <button
+                        type="button"
+                        class="panelClose"
+                        data-close-panel
+                    >
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+
+                </div>
+
+
+                <button
+                    type="button"
+                    id="chooseMusicBtn"
+                    class="wideOption"
+                >
+
+                    <span>
+                        <i class="fa-solid fa-music"></i>
+                    </span>
+
+                    <div>
+                        <strong>
+                            Choose a sound
+                        </strong>
+
+                        <small>
+                            Add music from Viewora
+                        </small>
+                    </div>
+
+                    <i class="fa-solid fa-chevron-right"></i>
+
+                </button>
+
+
+                <div
+                    id="activeMusicInfo"
+                    class="activeMusicInfo hidden"
+                >
+
+                    <div class="musicArtwork">
+                        <i class="fa-solid fa-music"></i>
+                    </div>
+
+                    <div>
+                        <strong id="editMusicName">
+                            No music
+                        </strong>
+
+                        <small id="editMusicArtist">
+                            Choose a sound
+                        </small>
+                    </div>
+
+                    <button
+                        type="button"
+                        id="removeEditMusicBtn"
+                        class="miniRemove"
+                    >
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+
+                </div>
+
+            </div>
+
+
+            <!-- DRAW PANEL -->
+
+            <div
+                class="toolPanelContent hidden"
+                data-panel="draw"
+            >
+
+                <div class="panelTitle">
+
+                    <div>
+                        <span class="panelEyebrow">
+                            DRAW
+                        </span>
+
+                        <h3>
+                            Draw on your Short
+                        </h3>
+                    </div>
+
+                    <button
+                        type="button"
+                        class="panelClose"
+                        data-close-panel
+                    >
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+
+                </div>
+
+
+                <div class="drawControls">
+
+                    <label>
+                        Brush size
+
+                        <input
+                            type="range"
+                            id="brushSize"
+                            min="2"
+                            max="30"
+                            value="6"
+                        >
+                    </label>
+
+
+                    <button
+                        type="button"
+                        id="clearDrawBtn"
+                        class="secondarySmallButton"
+                    >
+                        <i class="fa-solid fa-eraser"></i>
+                        Clear
+                    </button>
+
+                </div>
+
+            </div>
+
+
+            <!-- STICKER PANEL -->
+
+            <div
+                class="toolPanelContent hidden"
+                data-panel="sticker"
+            >
+
+                <div class="panelTitle">
+
+                    <div>
+                        <span class="panelEyebrow">
+                            STICKERS
+                        </span>
+
+                        <h3>
+                            Add a sticker
+                        </h3>
+                    </div>
+
+                    <button
+                        type="button"
+                        class="panelClose"
+                        data-close-panel
+                    >
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+
+                </div>
+
+
+                <div class="stickerGrid">
+
+                    <button
+                        type="button"
+                        class="stickerItem"
+                        data-sticker="❤️"
+                    >
+                        ❤️
+                    </button>
+
+                    <button
+                        type="button"
+                        class="stickerItem"
+                        data-sticker="🔥"
+                    >
+                        🔥
+                    </button>
+
+                    <button
+                        type="button"
+                        class="stickerItem"
+                        data-sticker="✨"
+                    >
+                        ✨
+                    </button>
+
+                    <button
+                        type="button"
+                        class="stickerItem"
+                        data-sticker="😂"
+                    >
+                        😂
+                    </button>
+
+                    <button
+                        type="button"
+                        class="stickerItem"
+                        data-sticker="😍"
+                    >
+                        😍
+                    </button>
+
+                    <button
+                        type="button"
+                        class="stickerItem"
+                        data-sticker="👏"
+                    >
+                        👏
+                    </button>
+
+                    <button
+                        type="button"
+                        class="stickerItem"
+                        data-sticker="💯"
+                    >
+                        💯
+                    </button>
+
+                    <button
+                        type="button"
+                        class="stickerItem"
+                        data-sticker="⭐"
+                    >
+                        ⭐
+                    </button>
+
+                </div>
+
+            </div>
+
+
+            <!-- FILTER PANEL -->
+
+            <div
+                class="toolPanelContent hidden"
+                data-panel="filter"
+            >
+
+                <div class="panelTitle">
+
+                    <div>
+                        <span class="panelEyebrow">
+                            FILTER
+                        </span>
+
+                        <h3>
+                            Choose a look
+                        </h3>
+                    </div>
+
+                    <button
+                        type="button"
+                        class="panelClose"
+                        data-close-panel
+                    >
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+
+                </div>
+
+
+                <div class="filterGrid">
+
+                    <button
+                        type="button"
+                        class="filterItem active"
+                        data-filter="none"
+                    >
+                        <span class="filterPreview normal"></span>
+                        Original
+                    </button>
+
+                    <button
+                        type="button"
+                        class="filterItem"
+                        data-filter="contrast"
+                    >
+                        <span class="filterPreview contrast"></span>
+                        Contrast
+                    </button>
+
+                    <button
+                        type="button"
+                        class="filterItem"
+                        data-filter="mono"
+                    >
+                        <span class="filterPreview mono"></span>
+                        Mono
+                    </button>
+
+                    <button
+                        type="button"
+                        class="filterItem"
+                        data-filter="warm"
+                    >
+                        <span class="filterPreview warm"></span>
+                        Warm
+                    </button>
+
+                    <button
+                        type="button"
+                        class="filterItem"
+                        data-filter="cool"
+                    >
+                        <span class="filterPreview cool"></span>
+                        Cool
+                    </button>
+
+                    <button
+                        type="button"
+                        class="filterItem"
+                        data-filter="vintage"
+                    >
+                        <span class="filterPreview vintage"></span>
+                        Vintage
+                    </button>
+
+                </div>
+
+            </div>
+
+
+            <!-- SPLIT PANEL -->
+
+            <div
+                class="toolPanelContent hidden"
+                data-panel="split"
+            >
+
+                <div class="panelTitle">
+
+                    <div>
+                        <span class="panelEyebrow">
+                            SPLIT
+                        </span>
+
+                        <h3>
+                            Split at current point
+                        </h3>
+                    </div>
+
+                    <button
+                        type="button"
+                        class="panelClose"
+                        data-close-panel
+                    >
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+
+                </div>
+
+
+                <div class="splitInfo">
+
+                    <div class="splitTimeIcon">
+                        <i class="fa-solid fa-scissors"></i>
+                    </div>
+
+                    <div>
+
+                        <strong>
+                            Current position
+                        </strong>
+
+                        <span id="splitTimeLabel">
+                            00:00
+                        </span>
+
+                    </div>
+
+                </div>
+
+
+                <button
+                    type="button"
+                    id="splitBtn"
+                    class="widePrimaryButton"
+                >
+                    <i class="fa-solid fa-scissors"></i>
+                    Split video
                 </button>
 
             </div>
 
 
-            <!-- =================================================
-                 SAVE BAR
-            ================================================== -->
+            <!-- TRIM PANEL -->
 
-            <div class="publishBar">
+            <div
+                class="toolPanelContent hidden"
+                data-panel="trim"
+            >
 
-                <button
-                    type="button"
-                    id="discardBtn"
-                    class="secondaryButton"
-                    aria-label="Discard changes"
-                >
-                    <i class="fa-solid fa-rotate-left"></i>
-                </button>
+                <div class="panelTitle">
+
+                    <div>
+                        <span class="panelEyebrow">
+                            TRIM
+                        </span>
+
+                        <h3>
+                            Trim your Short
+                        </h3>
+                    </div>
+
+                    <button
+                        type="button"
+                        class="panelClose"
+                        data-close-panel
+                    >
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+
+                </div>
 
 
-                <button
-                    type="button"
-                    id="saveBtn"
-                    class="primaryButton"
-                >
+                <div class="trimInfo">
 
-                    <span id="saveButtonText">
-                        Save Changes
+                    <span>
+                        Start
+                        <b id="trimStartLabel">00:00</b>
                     </span>
 
-                    <i class="fa-solid fa-check"></i>
+                    <span>
+                        End
+                        <b id="trimEndLabel">00:00</b>
+                    </span>
 
-                </button>
+                </div>
+
+
+                <div class="trimRange">
+
+                    <input
+                        type="range"
+                        id="trimStart"
+                        min="0"
+                        max="100"
+                        value="0"
+                    >
+
+                    <input
+                        type="range"
+                        id="trimEnd"
+                        min="0"
+                        max="100"
+                        value="100"
+                    >
+
+                </div>
+
+            </div>
+
+
+            <!-- SPEED PANEL -->
+
+            <div
+                class="toolPanelContent hidden"
+                data-panel="speed"
+            >
+
+                <div class="panelTitle">
+
+                    <div>
+                        <span class="panelEyebrow">
+                            SPEED
+                        </span>
+
+                        <h3>
+                            Playback speed
+                        </h3>
+                    </div>
+
+                    <button
+                        type="button"
+                        class="panelClose"
+                        data-close-panel
+                    >
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+
+                </div>
+
+
+                <div class="speedChoices">
+
+                    <button
+                        type="button"
+                        data-speed="0.5"
+                    >
+                        0.5x
+                    </button>
+
+                    <button
+                        type="button"
+                        data-speed="0.75"
+                    >
+                        0.75x
+                    </button>
+
+                    <button
+                        type="button"
+                        data-speed="1"
+                        class="active"
+                    >
+                        1x
+                    </button>
+
+                    <button
+                        type="button"
+                        data-speed="1.5"
+                    >
+                        1.5x
+                    </button>
+
+                    <button
+                        type="button"
+                        data-speed="2"
+                    >
+                        2x
+                    </button>
+
+                </div>
+
+            </div>
+
+
+            <!-- VOLUME PANEL -->
+
+            <div
+                class="toolPanelContent hidden"
+                data-panel="volume"
+            >
+
+                <div class="panelTitle">
+
+                    <div>
+                        <span class="panelEyebrow">
+                            AUDIO
+                        </span>
+
+                        <h3>
+                            Original audio
+                        </h3>
+                    </div>
+
+                    <button
+                        type="button"
+                        class="panelClose"
+                        data-close-panel
+                    >
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+
+                </div>
+
+
+                <div class="volumeControl">
+
+                    <i class="fa-solid fa-volume-low"></i>
+
+                    <input
+                        type="range"
+                        id="volumeRange"
+                        min="0"
+                        max="1"
+                        step="0.01"
+                        value="1"
+                    >
+
+                    <i class="fa-solid fa-volume-high"></i>
+
+                    <strong id="volumeValue">
+                        100%
+                    </strong>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- =====================================================
+             TIMELINE
+        ====================================================== -->
+
+        <section class="timelineSection">
+
+            <div class="timelineHeader">
+
+                <div>
+
+                    <span class="sectionEyebrow">
+                        TIMELINE
+                    </span>
+
+                    <strong>
+                        Your Short
+                    </strong>
+
+                </div>
+
+                <span id="timelineDuration">
+                    00:00
+                </span>
+
+            </div>
+
+
+            <div
+                id="clipTimeline"
+                class="clipTimeline"
+            >
+
+                <div
+                    id="clipTrack"
+                    class="clipTrack"
+                ></div>
+
+                <div
+                    id="clipPlayhead"
+                    class="clipPlayhead"
+                ></div>
 
             </div>
 
@@ -391,126 +1200,47 @@
 
 
     <!-- =====================================================
-         TEXT SHEET
+         BOTTOM ACTION
     ====================================================== -->
 
-    <div
-        id="textSheet"
-        class="overlay hidden"
-        aria-hidden="true"
-    >
+    <footer class="editorBottomBar">
 
-        <div
-            class="overlayBackdrop"
-            data-close-sheet="textSheet"
-        ></div>
+        <button
+            type="button"
+            id="saveDraftBtn"
+            class="bottomSecondary"
+        >
 
+            <i class="fa-regular fa-floppy-disk"></i>
 
-        <section class="editorSheet">
+            Save draft
 
-            <div class="sheetHandle"></div>
-
-            <header class="sheetHeader">
-
-                <div>
-
-                    <span class="eyebrow">
-                        VIEWORA TEXT
-                    </span>
-
-                    <h2>Add text</h2>
-
-                    <p>
-                        Add a message to your Short.
-                    </p>
-
-                </div>
+        </button>
 
 
-                <button
-                    type="button"
-                    id="closeTextBtn"
-                    class="sheetCloseButton"
-                    aria-label="Close"
-                >
-                    <i class="fa-solid fa-xmark"></i>
-                </button>
+        <button
+            type="button"
+            id="nextBtn"
+            class="nextButton"
+        >
 
-            </header>
+            <span>
 
+                <small>
+                    NEXT
+                </small>
 
-            <div class="fieldGroup">
+                <strong>
+                    Details
+                </strong>
 
-                <label for="shortText">
-                    Text
-                </label>
+            </span>
 
-                <textarea
-                    id="shortText"
-                    maxlength="120"
-                    rows="3"
-                    placeholder="Write something..."
-                ></textarea>
+            <i class="fa-solid fa-arrow-right"></i>
 
-                <span
-                    id="textCharacterCount"
-                    class="characterCount"
-                >
-                    0/120
-                </span>
+        </button>
 
-            </div>
-
-
-            <div class="textStyles">
-
-                <button
-                    type="button"
-                    class="textStyle active"
-                    data-style="clean"
-                >
-                    Clean
-                </button>
-
-                <button
-                    type="button"
-                    class="textStyle"
-                    data-style="bold"
-                >
-                    Bold
-                </button>
-
-                <button
-                    type="button"
-                    class="textStyle"
-                    data-style="outline"
-                >
-                    Outline
-                </button>
-
-                <button
-                    type="button"
-                    class="textStyle"
-                    data-style="minimal"
-                >
-                    Minimal
-                </button>
-
-            </div>
-
-
-            <button
-                type="button"
-                id="applyTextBtn"
-                class="sheetAction"
-            >
-                <i class="fa-solid fa-check"></i>
-                Apply Text
-            </button>
-
-        </section>
-
-    </div>
+    </footer>
 
 
     <!-- =====================================================
@@ -520,40 +1250,37 @@
     <div
         id="musicSheet"
         class="overlay hidden"
-        aria-hidden="true"
     >
 
         <div
             class="overlayBackdrop"
-            data-close-sheet="musicSheet"
+            data-close="musicSheet"
         ></div>
 
 
-        <section class="musicSheet">
+        <section class="bottomSheet">
 
             <div class="sheetHandle"></div>
+
 
             <header class="sheetHeader">
 
                 <div>
 
-                    <span class="eyebrow">
+                    <span>
                         VIEWORA MUSIC
                     </span>
 
-                    <h2>Choose sound</h2>
-
-                    <p>
-                        Select music for your Short.
-                    </p>
+                    <h2>
+                        Choose a sound
+                    </h2>
 
                 </div>
 
-
                 <button
                     type="button"
-                    id="closeMusicBtn"
-                    class="sheetCloseButton"
+                    class="sheetClose"
+                    data-close="musicSheet"
                 >
                     <i class="fa-solid fa-xmark"></i>
                 </button>
@@ -561,13 +1288,13 @@
             </header>
 
 
-            <div class="musicSearch">
+            <div class="musicSearchBox">
 
                 <i class="fa-solid fa-magnifying-glass"></i>
 
                 <input
                     type="search"
-                    id="musicSearchInput"
+                    id="editorMusicSearch"
                     placeholder="Search music..."
                     autocomplete="off"
                 >
@@ -575,96 +1302,121 @@
             </div>
 
 
+            <div class="musicCategories">
+
+                <button
+                    type="button"
+                    class="musicCategory active"
+                    data-category="trending"
+                >
+                    <i class="fa-solid fa-fire"></i>
+                    Trending
+                </button>
+
+                <button
+                    type="button"
+                    class="musicCategory"
+                    data-category="popular"
+                >
+                    <i class="fa-solid fa-star"></i>
+                    Popular
+                </button>
+
+                <button
+                    type="button"
+                    class="musicCategory"
+                    data-category="new"
+                >
+                    <i class="fa-solid fa-sparkles"></i>
+                    New
+                </button>
+
+            </div>
+
+
             <div
-                id="musicList"
+                id="editorMusicList"
                 class="musicList"
-            ></div>
+            >
 
-        </section>
+                <button
+                    type="button"
+                    class="musicChoice"
+                    data-music-id="original"
+                    data-music-name="Original audio"
+                    data-music-artist="Your video"
+                >
 
-    </div>
-
-
-    <!-- =====================================================
-         SPEED SHEET
-    ====================================================== -->
-
-    <div
-        id="speedSheet"
-        class="overlay hidden"
-        aria-hidden="true"
-    >
-
-        <div
-            class="overlayBackdrop"
-            data-close-sheet="speedSheet"
-        ></div>
-
-
-        <section class="bottomSheet">
-
-            <div class="sheetHandle"></div>
-
-            <header class="sheetHeader">
-
-                <div>
-
-                    <span class="eyebrow">
-                        VIDEO
+                    <span class="musicChoiceIcon">
+                        <i class="fa-solid fa-waveform"></i>
                     </span>
 
-                    <h2>Playback speed</h2>
+                    <span>
+                        <strong>
+                            Original audio
+                        </strong>
 
-                    <p>
-                        Adjust your Short speed.
-                    </p>
+                        <small>
+                            Your video
+                        </small>
+                    </span>
 
-                </div>
+                    <i class="fa-solid fa-chevron-right"></i>
 
-
-                <button
-                    type="button"
-                    id="closeSpeedBtn"
-                    class="sheetCloseButton"
-                >
-                    <i class="fa-solid fa-xmark"></i>
                 </button>
 
-            </header>
-
-
-            <div class="choiceGrid">
 
                 <button
                     type="button"
-                    class="speedItem"
-                    data-speed="0.5"
+                    class="musicChoice"
+                    data-music-id="sound-1"
+                    data-music-name="Viewora Beat"
+                    data-music-artist="Viewora Music"
                 >
-                    0.5x
+
+                    <span class="musicChoiceIcon">
+                        <i class="fa-solid fa-music"></i>
+                    </span>
+
+                    <span>
+                        <strong>
+                            Viewora Beat
+                        </strong>
+
+                        <small>
+                            Viewora Music
+                        </small>
+                    </span>
+
+                    <i class="fa-solid fa-chevron-right"></i>
+
                 </button>
 
-                <button
-                    type="button"
-                    class="speedItem active"
-                    data-speed="1"
-                >
-                    1x
-                </button>
 
                 <button
                     type="button"
-                    class="speedItem"
-                    data-speed="1.5"
+                    class="musicChoice"
+                    data-music-id="sound-2"
+                    data-music-name="Neon Motion"
+                    data-music-artist="Viewora Sounds"
                 >
-                    1.5x
-                </button>
 
-                <button
-                    type="button"
-                    class="speedItem"
-                    data-speed="2"
-                >
-                    2x
+                    <span class="musicChoiceIcon">
+                        <i class="fa-solid fa-headphones"></i>
+                    </span>
+
+                    <span>
+                        <strong>
+                            Neon Motion
+                        </strong>
+
+                        <small>
+                            Viewora Sounds
+                        </small>
+                    </span>
+
+                    <i class="fa-solid fa-chevron-right"></i>
+
                 </button>
 
             </div>
@@ -675,217 +1427,50 @@
 
 
     <!-- =====================================================
-         TRIM SHEET
+         CONFIRM EXIT
     ====================================================== -->
 
     <div
-        id="trimSheet"
-        class="overlay hidden"
-        aria-hidden="true"
+        id="exitDialog"
+        class="dialogOverlay hidden"
     >
 
-        <div
-            class="overlayBackdrop"
-            data-close-sheet="trimSheet"
-        ></div>
+        <div class="confirmDialog">
 
+            <div class="dialogIcon">
+                <i class="fa-solid fa-arrow-left"></i>
+            </div>
 
-        <section class="bottomSheet">
+            <h2>
+                Leave editor?
+            </h2>
 
-            <div class="sheetHandle"></div>
+            <p>
+                Your current editing changes may be lost.
+            </p>
 
-            <header class="sheetHeader">
-
-                <div>
-
-                    <span class="eyebrow">
-                        VIDEO
-                    </span>
-
-                    <h2>Trim Short</h2>
-
-                    <p>
-                        Choose where your Short starts and ends.
-                    </p>
-
-                </div>
-
+            <div class="dialogActions">
 
                 <button
                     type="button"
-                    id="closeTrimBtn"
-                    class="sheetCloseButton"
+                    id="cancelExitBtn"
                 >
-                    <i class="fa-solid fa-xmark"></i>
+                    Keep editing
                 </button>
-
-            </header>
-
-
-            <div class="fieldGroup">
-
-                <label for="trimStart">
-                    Start time
-                </label>
-
-                <input
-                    type="number"
-                    id="trimStart"
-                    min="0"
-                    step="0.1"
-                    value="0"
-                >
-
-            </div>
-
-
-            <div class="fieldGroup">
-
-                <label for="trimEnd">
-                    End time
-                </label>
-
-                <input
-                    type="number"
-                    id="trimEnd"
-                    min="0"
-                    step="0.1"
-                    value="0"
-                >
-
-            </div>
-
-
-            <button
-                type="button"
-                id="applyTrimBtn"
-                class="sheetAction"
-            >
-                <i class="fa-solid fa-scissors"></i>
-                Apply Trim
-            </button>
-
-        </section>
-
-    </div>
-
-
-    <!-- =====================================================
-         COVER SHEET
-    ====================================================== -->
-
-    <div
-        id="coverSheet"
-        class="overlay hidden"
-        aria-hidden="true"
-    >
-
-        <div
-            class="overlayBackdrop"
-            data-close-sheet="coverSheet"
-        ></div>
-
-
-        <section class="bottomSheet">
-
-            <div class="sheetHandle"></div>
-
-            <header class="sheetHeader">
-
-                <div>
-
-                    <span class="eyebrow">
-                        VIEWORA COVER
-                    </span>
-
-                    <h2>Change cover</h2>
-
-                    <p>
-                        Choose a custom thumbnail.
-                    </p>
-
-                </div>
-
 
                 <button
                     type="button"
-                    id="closeCoverBtn"
-                    class="sheetCloseButton"
+                    id="confirmExitBtn"
+                    class="dangerButton"
                 >
-                    <i class="fa-solid fa-xmark"></i>
+                    Leave
                 </button>
 
-            </header>
+            </div>
 
-
-            <button
-                type="button"
-                id="chooseCoverBtn"
-                class="optionRow"
-            >
-
-                <span class="optionIcon">
-                    <i class="fa-regular fa-image"></i>
-                </span>
-
-
-                <span class="optionText">
-
-                    <strong>Choose Image</strong>
-
-                    <small>
-                        JPG, PNG or WEBP
-                    </small>
-
-                </span>
-
-
-                <i class="fa-solid fa-chevron-right"></i>
-
-            </button>
-
-
-            <button
-                type="button"
-                id="useCurrentFrameBtn"
-                class="optionRow"
-            >
-
-                <span class="optionIcon">
-                    <i class="fa-solid fa-camera"></i>
-                </span>
-
-
-                <span class="optionText">
-
-                    <strong>Use Current Frame</strong>
-
-                    <small>
-                        Use the current video frame
-                    </small>
-
-                </span>
-
-
-                <i class="fa-solid fa-chevron-right"></i>
-
-            </button>
-
-        </section>
+        </div>
 
     </div>
-
-
-    <!-- =====================================================
-         COVER INPUT
-    ====================================================== -->
-
-    <input
-        type="file"
-        id="coverInput"
-        accept="image/jpeg,image/png,image/webp"
-        hidden
-    >
 
 
     <!-- =====================================================
@@ -895,30 +1480,25 @@
     <div
         id="processingOverlay"
         class="processingOverlay hidden"
-        aria-hidden="true"
+        aria-live="polite"
     >
 
-        <div class="processingOrb">
+        <div class="processingCard">
 
             <div class="processingSpinner"></div>
 
-            <i class="fa-solid fa-cloud-arrow-up"></i>
+            <strong id="processingTitle">
+                Preparing your Short
+            </strong>
 
-        </div>
+            <span id="processingMessage">
+                Please wait...
+            </span>
 
+            <div class="processingBar">
+                <span></span>
+            </div>
 
-        <h2>
-            Saving your Short
-        </h2>
-
-
-        <p id="processingText">
-            Preparing changes...
-        </p>
-
-
-        <div class="processingProgress">
-            <span></span>
         </div>
 
     </div>
@@ -935,15 +1515,9 @@
         aria-live="polite"
     >
 
-        <span class="toastIcon">
-
-            <i
-                id="toastIconElement"
-                class="fa-solid fa-circle-check"
-            ></i>
-
+        <span id="toastIcon">
+            <i class="fa-solid fa-circle-check"></i>
         </span>
-
 
         <div>
 
@@ -952,7 +1526,7 @@
             </strong>
 
             <p id="toastText">
-                Changes saved successfully.
+                Changes saved.
             </p>
 
         </div>
@@ -963,7 +1537,7 @@
 
 
 <!-- =========================================================
-     FIREBASE SDK
+     FIREBASE
 ========================================================= -->
 
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
@@ -975,30 +1549,14 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
 
 
-<!-- =========================================================
-     VIEWORA FIREBASE CORE
-========================================================= -->
+<!-- VIEWORA CORE -->
 
 <script src="firebase.js"></script>
-
-
-<!-- =========================================================
-     CLOUDINARY
-========================================================= -->
-
-<script src="cloudinary.js"></script>
-
-
-<!-- =========================================================
-     CALL LISTENER
-========================================================= -->
 
 <script src="call-listener.js"></script>
 
 
-<!-- =========================================================
-     EDIT SHORTS LOGIC
-========================================================= -->
+<!-- SHORTS EDITOR -->
 
 <script src="edit-shorts.js"></script>
 

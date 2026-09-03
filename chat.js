@@ -509,9 +509,25 @@
 
         messagesListener: null,
 
-        toastTimer: null
+        toastTimer: null,
+
+        lastMsgCount: 0
 
     };
+
+    function playMessageTone() {
+        try {
+            if (!window.__vieworaMsgTone) {
+                window.__vieworaMsgTone = new Audio("assets/message-tone.mp3");
+                window.__vieworaMsgTone.volume = 0.85;
+            }
+            const a = window.__vieworaMsgTone;
+            a.currentTime = 0;
+            a.play().catch(() => {});
+        } catch (_) {}
+    }
+
+
 
 
     /* ======================================================
@@ -734,20 +750,20 @@
 
 
     function hideLoading() {
-
-        if (!loadingOverlay) {
-            return;
+        if (loadingOverlay) {
+            loadingOverlay.classList.add("hidden");
+            loadingOverlay.style.display = "none";
         }
-
-        loadingOverlay.classList.add(
-            "hidden"
-        );
-
         if (app) {
-            app.classList.remove(
-                "hidden"
-            );
+            app.classList.remove("hidden");
+            app.style.opacity = "1";
+            app.style.visibility = "visible";
         }
+    }
+
+    function showLoading() {
+        /* disabled — open chat instantly */
+        hideLoading();
     }
 
 
@@ -1209,9 +1225,30 @@
         ] =
             state.otherUser.name;
 
-        await db.ref().update(
-            updates
-        );
+        // Seed inbox rows so chat appears in Messages list
+        const myUID = state.currentUser.uid;
+        const chatId = state.chatId;
+
+        const myInboxPath =
+            `userChats/${myUID}/${chatId}`;
+        const otherInboxPath =
+            `userChats/${targetUid}/${chatId}`;
+
+        // Only set defaults if missing fields — do not wipe unread/lastMessage
+        updates[myInboxPath + "/chatId"] = chatId;
+        updates[myInboxPath + "/userId"] = targetUid;
+        updates[myInboxPath + "/name"] = state.otherUser.name;
+        updates[myInboxPath + "/username"] =
+            String(state.otherUser.username || "").replace(/^@/, "");
+        updates[myInboxPath + "/photoURL"] =
+            state.otherUser.photo || DEFAULT_AVATAR;
+        updates[myInboxPath + "/profilePhoto"] =
+            state.otherUser.photo || DEFAULT_AVATAR;
+
+        updates[otherInboxPath + "/chatId"] = chatId;
+        updates[otherInboxPath + "/userId"] = myUID;
+
+        await db.ref().update(updates);
     }
 
 
@@ -1239,6 +1276,9 @@
                     return;
                 }
 
+                const prevCount = state.messages.size;
+                let gotIncoming = false;
+
                 state.messages.clear();
 
                 Object.entries(data)
@@ -1256,12 +1296,35 @@
                                     id
                                 }
                             );
+
+                            if (
+                                message.senderId &&
+                                message.senderId !== state.currentUser.uid
+                            ) {
+                                // will detect growth below
+                            }
                         }
                     );
+
+                if (state.messages.size > prevCount && prevCount > 0) {
+                    // New message while chat open
+                    const last = sortedMessages().slice(-1)[0];
+                    if (
+                        last &&
+                        last.senderId !== state.currentUser.uid &&
+                        !state.muted
+                    ) {
+                        gotIncoming = true;
+                    }
+                }
 
                 renderMessages();
 
                 markIncomingAsSeen();
+
+                if (gotIncoming) {
+                    playMessageTone();
+                }
             };
 
         ref.on(
@@ -1563,15 +1626,10 @@
             content = `
                 <div class="audioMessage">
                     <div class="audioIcon">
-                        <i class="fa-solid fa-music"></i>
+                        <i class="fa-solid fa-microphone"></i>
                     </div>
                     <div class="audioContent">
-                        <strong>
-                            ${escapeHTML(
-                                message.fileName ||
-                                "Voice message"
-                            )}
-                        </strong>
+                        <strong class="audioLabel">Voice message</strong>
                         <audio
                             controls
                             preload="metadata"
@@ -2405,6 +2463,147 @@
        SEND TEXT
     ====================================================== */
 
+    /* ======================================================
+       INBOX SYNC (userChats) — last message + unread
+       Keeps messages.js list updated
+    ====================================================== */
+
+    function previewFromMessage(message) {
+        if (!message) return "New message";
+
+        if (message.deletedForEveryone) {
+            return "Message deleted";
+        }
+
+        const type = String(message.type || "text").toLowerCase();
+
+        if (type === "image") return "📷 Photo";
+        if (type === "video") return "🎬 Video";
+        if (type === "audio") return "🎵 Voice message";
+        if (type === "file" || type === "document") {
+            return "📎 " + (message.fileName || "File");
+        }
+
+        const text = String(message.text || message.caption || "").trim();
+        if (text) {
+            return text.length > 80 ? text.slice(0, 80) + "…" : text;
+        }
+
+        return "New message";
+    }
+
+    async function syncInboxAfterSend(message) {
+        if (!state.currentUser || !targetUid || !state.chatId) {
+            return;
+        }
+
+        const myUID = state.currentUser.uid;
+        const otherUID = targetUid;
+        const chatId = state.chatId;
+        const preview = previewFromMessage(message);
+        const now = serverTimestamp();
+
+        // Current user profile for the other person's inbox entry
+        let myName =
+            state.currentUser.displayName ||
+            "Viewora User";
+        let myPhoto = DEFAULT_AVATAR;
+        let myUsername = "";
+
+        try {
+            const meSnap = await db.ref("users/" + myUID).once("value");
+            if (meSnap.exists()) {
+                const me = meSnap.val() || {};
+                myName =
+                    me.name ||
+                    me.fullName ||
+                    me.displayName ||
+                    me.username ||
+                    myName;
+                myUsername = me.username || "";
+                myPhoto =
+                    me.profilePhoto ||
+                    me.photoURL ||
+                    me.avatar ||
+                    myPhoto;
+            }
+        } catch (e) {}
+
+        const otherName = state.otherUser.name || "Viewora User";
+        const otherPhoto = state.otherUser.photo || DEFAULT_AVATAR;
+        const otherUsername = String(state.otherUser.username || "").replace(/^@/, "");
+
+        const myInbox = {
+            chatId,
+            userId: otherUID,
+            name: otherName,
+            username: otherUsername,
+            photoURL: otherPhoto,
+            profilePhoto: otherPhoto,
+            lastMessage: preview,
+            lastMessageTime: now,
+            lastSenderId: myUID,
+            // sender clears own unread
+            unread: 0,
+            online: Boolean(state.otherUser.online)
+        };
+
+        const otherInbox = {
+            chatId,
+            userId: myUID,
+            name: myName,
+            username: myUsername,
+            photoURL: myPhoto,
+            profilePhoto: myPhoto,
+            lastMessage: preview,
+            lastMessageTime: now,
+            lastSenderId: myUID
+        };
+
+        try {
+            // Update my inbox entry
+            await db.ref("userChats/" + myUID + "/" + chatId).update(myInbox);
+
+            // Update other user's inbox + increment unread
+            const otherRef = db.ref("userChats/" + otherUID + "/" + chatId);
+            const otherSnap = await otherRef.once("value");
+            let unread = 1;
+            if (otherSnap.exists()) {
+                const prev = otherSnap.val() || {};
+                unread = Number(prev.unread || 0) + 1;
+            }
+            otherInbox.unread = unread;
+
+            await otherRef.update(otherInbox);
+
+            // Also keep chat meta updated
+            await db.ref("vieworaChats/" + chatId).update({
+                updatedAt: now,
+                lastMessage: preview,
+                lastMessageTime: now,
+                lastSenderId: myUID
+            });
+        } catch (err) {
+            console.warn("Inbox sync failed:", err);
+        }
+    }
+
+    async function clearMyUnread() {
+        if (!state.currentUser || !state.chatId) return;
+        try {
+            await db
+                .ref(
+                    "userChats/" +
+                    state.currentUser.uid +
+                    "/" +
+                    state.chatId
+                )
+                .update({ unread: 0 });
+        } catch (e) {
+            console.warn("Clear unread failed:", e);
+        }
+    }
+
     async function sendText() {
 
         if (!state.currentUser) {
@@ -2492,6 +2691,9 @@
                 message
             );
 
+            // Update both users' inbox list
+            await syncInboxAfterSend(message);
+
             messageInput.value =
                 "";
 
@@ -2577,6 +2779,11 @@
                 .update(
                     updates
                 );
+
+            // Clear inbox unread when messages are seen
+            if (state.isNearBottom) {
+                await clearMyUnread();
+            }
 
         } catch (error) {
 
@@ -3765,6 +3972,8 @@
             await messageRef.set(
                 message
             );
+
+            await syncInboxAfterSend(message);
 
             clearReply();
 
@@ -5352,9 +5561,8 @@
 
         try {
 
-            setLoadingText(
-                "Checking account..."
-            );
+            // Instant open — no blocking loader
+            hideLoading();
 
             const user =
                 await waitForAuth();
@@ -5380,10 +5588,6 @@
                     targetUid
                 );
 
-            setLoadingText(
-                "Loading conversation..."
-            );
-
             await loadOtherUser();
 
             await ensureChat();
@@ -5405,6 +5609,9 @@
             autoResizeInput();
 
             updateComposerMode();
+
+            // Opening chat → clear unread badge
+            clearMyUnread();
 
             hideLoading();
 

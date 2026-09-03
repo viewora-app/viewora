@@ -32,40 +32,23 @@ const $ = (id) => document.getElementById(id);
 
 function showToast(message, type = "error") {
 
-    const toast = $("adminLoginToast");
+    const toast = $("loginError");
+    const textEl = $("loginErrorText");
 
-    if (!toast) {
-        alert(message);
+    if (toast && textEl) {
+        textEl.textContent = message;
+        toast.classList.remove("hidden");
+        toast.classList.toggle("errorMessage", type === "error" || type === "warning");
+        clearTimeout(window.__vieworaLoginToast);
+        window.__vieworaLoginToast = setTimeout(() => {
+            if (type === "success") {
+                toast.classList.add("hidden");
+            }
+        }, 4000);
         return;
     }
 
-    const text = $("adminLoginToastText");
-
-    if (text) {
-        text.textContent = message;
-    }
-
-    toast.classList.remove(
-        "success",
-        "error",
-        "warning",
-        "show"
-    );
-
-    toast.classList.add(type);
-
-    requestAnimationFrame(() => {
-        toast.classList.add("show");
-    });
-
-    clearTimeout(
-        window.__vieworaLoginToast
-    );
-
-    window.__vieworaLoginToast =
-        setTimeout(() => {
-            toast.classList.remove("show");
-        }, 3500);
+    alert(message);
 }
 
 /* =========================================================
@@ -75,7 +58,7 @@ function showToast(message, type = "error") {
 function setLoading(loading) {
 
     const button =
-        $("adminLoginBtn");
+        $("loginBtn");
 
     if (!button) return;
 
@@ -107,7 +90,7 @@ function setLoading(loading) {
 ========================================================= */
 
 const togglePassword =
-    $("toggleAdminPassword");
+    $("togglePassword");
 
 if (togglePassword) {
 
@@ -400,7 +383,7 @@ if (loginForm) {
 ========================================================= */
 
 const forgotPasswordBtn =
-    $("forgotAdminPassword");
+    $("forgotPasswordBtn");
 
 if (forgotPasswordBtn) {
 

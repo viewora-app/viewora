@@ -1,0 +1,4083 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">
+
+<meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover"
+>
+
+<meta name="theme-color" content="#050505">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+<title>Viewora • Edit Video</title>
+
+<link rel="icon" href="assets/logo.png">
+
+<!-- FONT -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+<link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+    rel="stylesheet"
+>
+
+<!-- ICONS -->
+<link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
+>
+
+<script src="page-loader.js"></script>
+
+<style>
+
+    /* =========================================================
+       VIEWORA • PREMIUM LONG VIDEO EDITOR
+       YouTube-style landscape editor
+    ========================================================= */
+
+    :root {
+        --bg: #050505;
+        --surface: #0d0d0f;
+        --surface-2: #121214;
+        --surface-3: #18181b;
+
+        --border: rgba(255,255,255,.09);
+        --border-strong: rgba(255,255,255,.15);
+
+        --text: #f7f7f8;
+        --muted: #9a9a9f;
+        --muted-2: #6f6f75;
+
+        --accent: #ff1744;
+        --accent-2: #ff3158;
+
+        --success: #32d583;
+
+        --radius: 18px;
+        --shadow:
+            0 25px 80px rgba(0,0,0,.45);
+    }
+
+    * {
+        box-sizing: border-box;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    html {
+        background: var(--bg);
+        color-scheme: dark;
+    }
+
+    body {
+        margin: 0;
+        min-height: 100vh;
+
+        background:
+            radial-gradient(
+                circle at 50% -10%,
+                rgba(255,23,68,.08),
+                transparent 35%
+            ),
+            var(--bg);
+
+        color: var(--text);
+
+        font-family:
+            Inter,
+            system-ui,
+            -apple-system,
+            BlinkMacSystemFont,
+            "Segoe UI",
+            sans-serif;
+    }
+
+    button,
+    input,
+    textarea,
+    select {
+        font: inherit;
+    }
+
+    button {
+        cursor: pointer;
+    }
+
+    .hidden {
+        display: none !important;
+    }
+
+    /* =========================================================
+       TOP BAR
+    ========================================================= */
+
+    .editorTopBar {
+        position: sticky;
+        top: 0;
+        z-index: 1000;
+
+        height: 66px;
+
+        display: flex;
+        align-items: center;
+
+        padding:
+            0 max(18px, env(safe-area-inset-left))
+            0 max(18px, env(safe-area-inset-right));
+
+        background: rgba(5,5,5,.86);
+        border-bottom: 1px solid var(--border);
+
+        backdrop-filter: blur(24px);
+        -webkit-backdrop-filter: blur(24px);
+    }
+
+    .topIconButton {
+        width: 42px;
+        height: 42px;
+
+        display: grid;
+        place-items: center;
+
+        border: 1px solid var(--border);
+        border-radius: 13px;
+
+        background: rgba(255,255,255,.045);
+        color: var(--text);
+
+        transition: .2s ease;
+    }
+
+    .topIconButton:hover {
+        background: rgba(255,255,255,.09);
+        border-color: var(--border-strong);
+    }
+
+    .topIconButton:active {
+        transform: scale(.94);
+    }
+
+    .topBrand {
+        display: flex;
+        align-items: center;
+        gap: 11px;
+
+        margin-left: 15px;
+    }
+
+    .topBrand img {
+        width: 34px;
+        height: 34px;
+
+        object-fit: contain;
+        border-radius: 10px;
+    }
+
+    .topBrandText {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+
+    .topBrandText strong {
+        font-size: 14px;
+        letter-spacing: .16em;
+    }
+
+    .topBrandText span {
+        color: var(--muted-2);
+        font-size: 8px;
+        font-weight: 700;
+        letter-spacing: .15em;
+    }
+
+    .topBarRight {
+        margin-left: auto;
+
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .saveStatus {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+
+        color: var(--muted);
+        font-size: 11px;
+    }
+
+    .saveDot {
+        width: 7px;
+        height: 7px;
+
+        border-radius: 50%;
+        background: var(--success);
+
+        box-shadow: 0 0 12px rgba(50,213,131,.45);
+    }
+
+    .topPreviewButton {
+        min-height: 40px;
+
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+
+        padding: 0 15px;
+
+        border: 1px solid var(--border);
+        border-radius: 12px;
+
+        background: rgba(255,255,255,.055);
+        color: var(--text);
+
+        font-size: 11px;
+        font-weight: 700;
+    }
+
+    .topPreviewButton:hover {
+        background: rgba(255,255,255,.09);
+    }
+
+    /* =========================================================
+       MAIN
+    ========================================================= */
+
+    .editorMain {
+        width: min(1200px, calc(100% - 36px));
+
+        margin: 0 auto;
+
+        padding:
+            34px 0
+            calc(110px + env(safe-area-inset-bottom));
+    }
+
+    .editorIntro {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+
+        gap: 25px;
+        margin-bottom: 28px;
+    }
+
+    .introEyebrow,
+    .cardEyebrow,
+    .previewCardHeader span,
+    .dialogEyebrow,
+    .eyebrow {
+        color: var(--accent);
+
+        font-size: 9px;
+        font-weight: 800;
+
+        letter-spacing: .16em;
+        text-transform: uppercase;
+    }
+
+    .editorIntro h1 {
+        margin: 7px 0 7px;
+
+        font-size: clamp(27px, 4vw, 39px);
+        line-height: 1.05;
+
+        letter-spacing: -.045em;
+    }
+
+    .editorIntro p {
+        margin: 0;
+
+        max-width: 620px;
+
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.7;
+    }
+
+    .videoStateBadge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+
+        flex-shrink: 0;
+
+        padding: 10px 13px;
+
+        border: 1px solid var(--border);
+        border-radius: 100px;
+
+        background: rgba(255,255,255,.035);
+
+        color: var(--muted);
+        font-size: 10px;
+        font-weight: 600;
+    }
+
+    .stateDot {
+        width: 7px;
+        height: 7px;
+
+        border-radius: 50%;
+        background: var(--success);
+
+        box-shadow: 0 0 12px rgba(50,213,131,.5);
+    }
+
+    /* =========================================================
+       GRID
+    ========================================================= */
+
+    .editorGrid {
+        display: grid;
+
+        grid-template-columns:
+            minmax(0, 1fr)
+            350px;
+
+        align-items: start;
+        gap: 20px;
+    }
+
+    .editorLeft {
+        min-width: 0;
+
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+    }
+
+    .editorRight {
+        position: sticky;
+        top: 86px;
+
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+    }
+
+    /* =========================================================
+       CARDS
+    ========================================================= */
+
+    .editorCard,
+    .previewCard,
+    .infoCard,
+    .publishCard {
+        background:
+            linear-gradient(
+                145deg,
+                rgba(255,255,255,.045),
+                rgba(255,255,255,.018)
+            );
+
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+
+        box-shadow: 0 18px 50px rgba(0,0,0,.18);
+    }
+
+    .editorCard {
+        padding: 23px;
+    }
+
+    .cardHeader {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+
+        gap: 18px;
+        margin-bottom: 21px;
+    }
+
+    .cardHeader h2 {
+        margin: 5px 0 6px;
+
+        font-size: 17px;
+        letter-spacing: -.025em;
+    }
+
+    .cardHeader p {
+        margin: 0;
+
+        color: var(--muted);
+        font-size: 10px;
+        line-height: 1.6;
+    }
+
+    /* =========================================================
+       VIDEO PREVIEW — 16:9
+    ========================================================= */
+
+    .mainVideoPreview {
+        position: relative;
+
+        width: 100%;
+        aspect-ratio: 16 / 9;
+
+        overflow: hidden;
+
+        border: 1px solid rgba(255,255,255,.1);
+        border-radius: 15px;
+
+        background: #000;
+
+        box-shadow:
+            0 25px 65px rgba(0,0,0,.45);
+    }
+
+    .mainVideoPreview video {
+        width: 100%;
+        height: 100%;
+
+        display: block;
+
+        object-fit: contain;
+        background: #000;
+    }
+
+    .videoPlaceholder {
+        position: absolute;
+        inset: 0;
+
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+
+        gap: 8px;
+
+        background:
+            radial-gradient(
+                circle at center,
+                rgba(255,255,255,.055),
+                transparent 55%
+            );
+    }
+
+    .placeholderIcon {
+        width: 60px;
+        height: 60px;
+
+        display: grid;
+        place-items: center;
+
+        margin-bottom: 3px;
+
+        border: 1px solid var(--border);
+        border-radius: 18px;
+
+        background: rgba(255,255,255,.06);
+
+        color: var(--text);
+        font-size: 20px;
+    }
+
+    .videoPlaceholder strong {
+        font-size: 13px;
+    }
+
+    .videoPlaceholder span {
+        color: var(--muted);
+        font-size: 10px;
+    }
+
+    .primarySmallButton,
+    .secondarySmallButton {
+        min-height: 38px;
+
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+
+        gap: 8px;
+
+        padding: 0 13px;
+
+        border-radius: 11px;
+
+        font-size: 10px;
+        font-weight: 700;
+
+        transition: .2s ease;
+    }
+
+    .primarySmallButton {
+        border: 1px solid rgba(255,23,68,.35);
+        background: var(--accent);
+        color: #fff;
+    }
+
+    .secondarySmallButton {
+        border: 1px solid var(--border);
+        background: rgba(255,255,255,.045);
+        color: var(--text);
+    }
+
+    .primarySmallButton:active,
+    .secondarySmallButton:active {
+        transform: scale(.96);
+    }
+
+    /* =========================================================
+       VIDEO META
+    ========================================================= */
+
+    .videoMetaBar {
+        display: grid;
+
+        grid-template-columns:
+            repeat(3, 1fr);
+
+        margin-top: 12px;
+
+        overflow: hidden;
+
+        border: 1px solid var(--border);
+        border-radius: 13px;
+
+        background: rgba(255,255,255,.025);
+    }
+
+    .videoMetaItem {
+        min-height: 66px;
+
+        display: flex;
+        align-items: center;
+
+        gap: 10px;
+
+        padding: 12px 14px;
+    }
+
+    .videoMetaItem + .videoMetaItem {
+        border-left: 1px solid var(--border);
+    }
+
+    .videoMetaItem > i {
+        color: var(--muted);
+        font-size: 13px;
+    }
+
+    .videoMetaItem div {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .videoMetaItem span {
+        color: var(--muted-2);
+        font-size: 8px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: .08em;
+    }
+
+    .videoMetaItem strong {
+        font-size: 11px;
+    }
+
+    /* =========================================================
+       FIELDS
+    ========================================================= */
+
+    .fieldGroup {
+        margin-bottom: 19px;
+    }
+
+    .fieldGroup:last-child {
+        margin-bottom: 0;
+    }
+
+    .fieldLabelRow {
+        display: flex;
+        justify-content: space-between;
+
+        margin-bottom: 8px;
+    }
+
+    .fieldLabelRow label {
+        color: var(--text);
+
+        font-size: 10px;
+        font-weight: 700;
+    }
+
+    .fieldLabelRow span {
+        color: var(--muted-2);
+        font-size: 9px;
+    }
+
+    input[type="text"],
+    textarea,
+    select {
+        width: 100%;
+
+        border: 1px solid var(--border);
+        border-radius: 12px;
+
+        outline: none;
+
+        background: rgba(255,255,255,.035);
+        color: var(--text);
+
+        transition:
+            border-color .2s ease,
+            background .2s ease,
+            box-shadow .2s ease;
+    }
+
+    input[type="text"] {
+        height: 50px;
+        padding: 0 14px;
+
+        font-size: 13px;
+    }
+
+    textarea {
+        min-height: 150px;
+
+        padding: 13px 14px;
+
+        resize: vertical;
+
+        font-size: 12px;
+        line-height: 1.65;
+    }
+
+    input:focus,
+    textarea:focus,
+    select:focus {
+        border-color: rgba(255,23,68,.55);
+
+        background: rgba(255,255,255,.05);
+
+        box-shadow:
+            0 0 0 3px rgba(255,23,68,.08);
+    }
+
+    input::placeholder,
+    textarea::placeholder {
+        color: #66666c;
+    }
+
+    .fieldHint {
+        display: flex;
+        align-items: center;
+
+        gap: 6px;
+
+        margin-top: 7px;
+
+        color: var(--muted-2);
+        font-size: 9px;
+    }
+
+    /* =========================================================
+       THUMBNAIL
+    ========================================================= */
+
+    .thumbnailEditor {
+        display: flex;
+        align-items: center;
+        gap: 18px;
+    }
+
+    .thumbnailPreview {
+        position: relative;
+
+        width: min(320px, 100%);
+        aspect-ratio: 16 / 9;
+
+        overflow: hidden;
+
+        border: 1px solid var(--border);
+        border-radius: 13px;
+
+        background: #030303;
+    }
+
+    .thumbnailPreview video,
+    .thumbnailPreview img {
+        width: 100%;
+        height: 100%;
+
+        display: block;
+
+        object-fit: cover;
+    }
+
+    .thumbnailPlaceholder {
+        position: absolute;
+        inset: 0;
+
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+
+        gap: 7px;
+
+        color: var(--muted);
+        font-size: 10px;
+    }
+
+    .thumbnailPlaceholder i {
+        font-size: 22px;
+    }
+
+    .thumbnailBadge {
+        position: absolute;
+        right: 9px;
+        bottom: 9px;
+
+        padding: 5px 7px;
+
+        border-radius: 6px;
+
+        background: rgba(0,0,0,.7);
+        backdrop-filter: blur(8px);
+
+        color: #fff;
+
+        font-size: 7px;
+        font-weight: 800;
+        letter-spacing: .1em;
+    }
+
+    .thumbnailTools {
+        display: flex;
+        flex-direction: column;
+        gap: 9px;
+    }
+
+    /* =========================================================
+       COLLABORATION
+    ========================================================= */
+
+    .collaborationBox {
+        display: flex;
+        align-items: center;
+
+        gap: 12px;
+
+        padding: 13px;
+
+        border: 1px solid var(--border);
+        border-radius: 13px;
+
+        background: rgba(255,255,255,.025);
+    }
+
+    .collaborationIcon {
+        width: 38px;
+        height: 38px;
+
+        display: grid;
+        place-items: center;
+
+        flex-shrink: 0;
+
+        border-radius: 11px;
+
+        background: rgba(255,23,68,.1);
+        color: var(--accent);
+    }
+
+    .collaborationInfo {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+
+        min-width: 0;
+    }
+
+    .collaborationInfo strong {
+        font-size: 11px;
+    }
+
+    .collaborationInfo span {
+        color: var(--muted);
+        font-size: 9px;
+    }
+
+    .collaborationBox .secondarySmallButton {
+        margin-left: auto;
+    }
+
+    .collaboratorList {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 7px;
+
+        margin-top: 10px;
+    }
+
+    /* =========================================================
+       VISIBILITY
+    ========================================================= */
+
+    .visibilityOptions {
+        display: grid;
+        gap: 9px;
+    }
+
+    .visibilityOption {
+        width: 100%;
+
+        display: flex;
+        align-items: center;
+
+        gap: 12px;
+
+        padding: 13px;
+
+        border: 1px solid var(--border);
+        border-radius: 13px;
+
+        background: rgba(255,255,255,.025);
+
+        color: var(--text);
+
+        text-align: left;
+
+        transition: .2s ease;
+    }
+
+    .visibilityOption:hover {
+        background: rgba(255,255,255,.05);
+    }
+
+    .visibilityOption.active {
+        border-color: rgba(255,23,68,.42);
+        background: rgba(255,23,68,.055);
+    }
+
+    .visibilityIcon {
+        width: 38px;
+        height: 38px;
+
+        display: grid;
+        place-items: center;
+
+        flex-shrink: 0;
+
+        border-radius: 11px;
+
+        background: rgba(255,255,255,.055);
+
+        color: var(--muted);
+    }
+
+    .visibilityOption.active .visibilityIcon {
+        background: rgba(255,23,68,.12);
+        color: var(--accent);
+    }
+
+    .visibilityInfo {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .visibilityInfo strong {
+        font-size: 11px;
+    }
+
+    .visibilityInfo small {
+        color: var(--muted);
+        font-size: 9px;
+    }
+
+    .selectionMark {
+        width: 22px;
+        height: 22px;
+
+        display: grid;
+        place-items: center;
+
+        margin-left: auto;
+
+        border: 1px solid var(--border);
+        border-radius: 50%;
+
+        color: transparent;
+        font-size: 8px;
+    }
+
+    .visibilityOption.active .selectionMark {
+        border-color: var(--accent);
+        background: var(--accent);
+        color: #fff;
+    }
+
+    /* =========================================================
+       SETTINGS
+    ========================================================= */
+
+    .settingRows {
+        display: flex;
+        flex-direction: column;
+
+        border: 1px solid var(--border);
+        border-radius: 13px;
+
+        overflow: hidden;
+    }
+
+    .settingRow {
+        min-height: 65px;
+
+        display: flex;
+        align-items: center;
+
+        gap: 11px;
+
+        padding: 11px 13px;
+
+        cursor: pointer;
+
+        background: rgba(255,255,255,.018);
+    }
+
+    .settingRow + .settingRow {
+        border-top: 1px solid var(--border);
+    }
+
+    .settingRowIcon {
+        width: 34px;
+        height: 34px;
+
+        display: grid;
+        place-items: center;
+
+        flex-shrink: 0;
+
+        border-radius: 10px;
+
+        background: rgba(255,255,255,.05);
+
+        color: var(--muted);
+        font-size: 11px;
+    }
+
+    .settingRowInfo {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .settingRowInfo strong {
+        font-size: 10px;
+    }
+
+    .settingRowInfo small {
+        color: var(--muted);
+        font-size: 8px;
+    }
+
+    .settingRow input[type="checkbox"] {
+        display: none;
+    }
+
+    .switch {
+        width: 38px;
+        height: 22px;
+
+        position: relative;
+
+        margin-left: auto;
+
+        flex-shrink: 0;
+
+        border-radius: 100px;
+
+        background: #29292d;
+
+        transition: .2s ease;
+    }
+
+    .switch::after {
+        content: "";
+
+        position: absolute;
+
+        top: 3px;
+        left: 3px;
+
+        width: 16px;
+        height: 16px;
+
+        border-radius: 50%;
+
+        background: #77777d;
+
+        transition: .2s ease;
+    }
+
+    .settingRow input:checked + .switch {
+        background: var(--accent);
+    }
+
+    .settingRow input:checked + .switch::after {
+        transform: translateX(16px);
+        background: #fff;
+    }
+
+    .additionalHeader {
+        width: 100%;
+
+        display: flex;
+        align-items: center;
+
+        gap: 11px;
+
+        border: 0;
+
+        background: transparent;
+
+        color: var(--text);
+
+        text-align: left;
+    }
+
+    .additionalIcon {
+        width: 37px;
+        height: 37px;
+
+        display: grid;
+        place-items: center;
+
+        border-radius: 11px;
+
+        background: rgba(255,255,255,.05);
+        color: var(--muted);
+    }
+
+    .additionalHeader > span {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+    }
+
+    .additionalHeader strong {
+        font-size: 11px;
+    }
+
+    .additionalHeader small {
+        color: var(--muted);
+        font-size: 8px;
+    }
+
+    #additionalChevron {
+        margin-left: auto;
+        color: var(--muted);
+        transition: .2s ease;
+    }
+
+    .additionalSettings {
+        margin-top: 17px;
+    }
+
+    .selectSetting {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+
+        gap: 20px;
+
+        padding: 14px 0;
+
+        border-top: 1px solid var(--border);
+    }
+
+    .selectSetting > div {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .selectSetting strong {
+        font-size: 10px;
+    }
+
+    .selectSetting small {
+        color: var(--muted);
+        font-size: 8px;
+    }
+
+    .selectSetting select {
+        width: 190px;
+        height: 40px;
+
+        padding: 0 10px;
+
+        font-size: 10px;
+    }
+
+    /* =========================================================
+       RIGHT PREVIEW
+    ========================================================= */
+
+    .previewCard {
+        padding: 13px;
+    }
+
+    .previewCardHeader {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+
+        padding: 3px 3px 12px;
+    }
+
+    .previewCardHeader > div {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .previewCardHeader strong {
+        font-size: 11px;
+    }
+
+    .miniIconButton {
+        width: 31px;
+        height: 31px;
+
+        display: grid;
+        place-items: center;
+
+        border: 1px solid var(--border);
+        border-radius: 9px;
+
+        background: rgba(255,255,255,.04);
+        color: var(--muted);
+
+        font-size: 9px;
+    }
+
+    .longPhonePreview {
+        position: relative;
+
+        width: 100%;
+
+        overflow: hidden;
+
+        aspect-ratio: 16 / 9;
+
+        border: 1px solid var(--border);
+        border-radius: 12px;
+
+        background: #000;
+    }
+
+    .longPhonePreview video {
+        width: 100%;
+        height: 100%;
+
+        display: block;
+
+        object-fit: cover;
+    }
+
+    .previewOverlayGradient {
+        position: absolute;
+        inset: 0;
+
+        pointer-events: none;
+
+        background:
+            linear-gradient(
+                to bottom,
+                rgba(0,0,0,.45),
+                transparent 35%,
+                transparent 55%,
+                rgba(0,0,0,.82)
+            );
+    }
+
+    .previewTopBar {
+        position: absolute;
+        top: 11px;
+        left: 12px;
+        right: 12px;
+
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+
+        color: #fff;
+    }
+
+    .previewTopBar span {
+        font-size: 8px;
+        font-weight: 800;
+        letter-spacing: .15em;
+    }
+
+    .previewTopBar i {
+        font-size: 10px;
+    }
+
+    .previewBottom {
+        position: absolute;
+
+        left: 12px;
+        right: 12px;
+        bottom: 11px;
+
+        color: #fff;
+    }
+
+    .previewCreator {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+
+        margin-bottom: 6px;
+    }
+
+    .previewAvatar {
+        width: 21px;
+        height: 21px;
+
+        overflow: hidden;
+
+        border-radius: 50%;
+        background: #222;
+    }
+
+    .previewAvatar img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .previewCreator strong {
+        font-size: 8px;
+    }
+
+    .previewBottom h3 {
+        margin: 0 0 4px;
+
+        font-size: 11px;
+        line-height: 1.35;
+    }
+
+    .previewBottom p {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+
+        overflow: hidden;
+
+        margin: 0;
+
+        color: rgba(255,255,255,.76);
+
+        font-size: 8px;
+        line-height: 1.4;
+    }
+
+    .previewTags {
+        margin-top: 5px;
+
+        color: #fff;
+
+        font-size: 8px;
+    }
+
+    /* =========================================================
+       INFO CARD
+    ========================================================= */
+
+    .infoCard,
+    .publishCard {
+        padding: 17px;
+    }
+
+    .infoCardHeader,
+    .publishHeader {
+        display: flex;
+        align-items: center;
+
+        gap: 10px;
+    }
+
+    .infoCardIcon,
+    .publishIcon {
+        width: 38px;
+        height: 38px;
+
+        display: grid;
+        place-items: center;
+
+        flex-shrink: 0;
+
+        border-radius: 11px;
+
+        background: rgba(255,255,255,.055);
+        color: var(--muted);
+
+        font-size: 12px;
+    }
+
+    .publishIcon {
+        background: rgba(255,23,68,.11);
+        color: var(--accent);
+    }
+
+    .infoCardHeader > div:last-child,
+    .publishHeader > div:last-child {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .infoCardHeader strong,
+    .publishHeader strong {
+        font-size: 11px;
+    }
+
+    .infoCardHeader span,
+    .publishHeader span {
+        color: var(--muted);
+        font-size: 8px;
+    }
+
+    .infoRows {
+        margin-top: 15px;
+
+        display: flex;
+        flex-direction: column;
+
+        border-top: 1px solid var(--border);
+    }
+
+    .infoRows > div {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+
+        padding: 10px 0;
+
+        border-bottom: 1px solid var(--border);
+    }
+
+    .infoRows span {
+        color: var(--muted);
+        font-size: 9px;
+    }
+
+    .infoRows strong {
+        font-size: 9px;
+    }
+
+    /* =========================================================
+       PUBLISH CHECKLIST
+    ========================================================= */
+
+    .publishChecklist {
+        display: flex;
+        flex-direction: column;
+
+        gap: 7px;
+
+        margin: 15px 0;
+    }
+
+    .checkItem {
+        display: flex;
+        align-items: center;
+
+        gap: 8px;
+
+        color: var(--muted);
+
+        font-size: 9px;
+    }
+
+    .checkItem i {
+        color: var(--success);
+        font-size: 10px;
+    }
+
+    .publishButton {
+        width: 100%;
+        min-height: 54px;
+
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+
+        padding: 0 16px;
+
+        border: 1px solid rgba(255,23,68,.35);
+        border-radius: 13px;
+
+        background:
+            linear-gradient(
+                135deg,
+                var(--accent),
+                var(--accent-2)
+            );
+
+        color: #fff;
+
+        box-shadow:
+            0 12px 35px rgba(255,23,68,.16);
+
+        transition: .2s ease;
+    }
+
+    .publishButton:hover {
+        transform: translateY(-1px);
+        box-shadow:
+            0 16px 40px rgba(255,23,68,.23);
+    }
+
+    .publishButton:active {
+        transform: scale(.98);
+    }
+
+    .publishButton span {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 3px;
+    }
+
+    .publishButton small {
+        opacity: .75;
+
+        font-size: 7px;
+        font-weight: 800;
+        letter-spacing: .13em;
+    }
+
+    .publishButton strong {
+        font-size: 12px;
+    }
+
+    .publishButton > i {
+        font-size: 12px;
+    }
+
+    /* =========================================================
+       BOTTOM ACTION
+    ========================================================= */
+
+    .bottomActionBar {
+        position: fixed;
+
+        left: 50%;
+        bottom: max(14px, env(safe-area-inset-bottom));
+
+        z-index: 900;
+
+        width: min(760px, calc(100% - 30px));
+
+        transform: translateX(-50%);
+
+        display: grid;
+        grid-template-columns: 180px 1fr;
+
+        gap: 8px;
+
+        padding: 8px;
+
+        border: 1px solid var(--border-strong);
+        border-radius: 17px;
+
+        background: rgba(15,15,17,.91);
+
+        backdrop-filter: blur(25px);
+        -webkit-backdrop-filter: blur(25px);
+
+        box-shadow:
+            0 20px 60px rgba(0,0,0,.5);
+    }
+
+    .draftButton {
+        min-height: 50px;
+
+        border: 1px solid var(--border);
+        border-radius: 12px;
+
+        background: rgba(255,255,255,.05);
+        color: var(--text);
+
+        font-size: 10px;
+        font-weight: 700;
+    }
+
+    .draftButton:hover {
+        background: rgba(255,255,255,.09);
+    }
+
+    /* =========================================================
+       OVERLAYS
+    ========================================================= */
+
+    .overlay,
+    .dialogOverlay,
+    .previewOverlay,
+    .processingOverlay {
+        position: fixed;
+        inset: 0;
+
+        z-index: 3000;
+
+        background: rgba(0,0,0,.72);
+
+        backdrop-filter: blur(14px);
+        -webkit-backdrop-filter: blur(14px);
+    }
+
+    .frameSheet {
+        position: absolute;
+
+        left: 50%;
+        bottom: 30px;
+
+        width: min(680px, calc(100% - 30px));
+
+        transform: translateX(-50%);
+
+        padding: 22px;
+
+        border: 1px solid var(--border-strong);
+        border-radius: 22px;
+
+        background: #101012;
+
+        box-shadow: var(--shadow);
+    }
+
+    .sheetHandle {
+        display: none;
+
+        width: 38px;
+        height: 4px;
+
+        margin: 0 auto 15px;
+
+        border-radius: 100px;
+
+        background: #444449;
+    }
+
+    .sheetHeader {
+        display: flex;
+        justify-content: space-between;
+
+        gap: 15px;
+
+        margin-bottom: 15px;
+    }
+
+    .sheetHeader h2 {
+        margin: 5px 0;
+
+        font-size: 17px;
+    }
+
+    .sheetHeader p {
+        margin: 0;
+
+        color: var(--muted);
+
+        font-size: 9px;
+    }
+
+    .sheetClose,
+    .dialogClose,
+    .previewCloseButton {
+        width: 36px;
+        height: 36px;
+
+        display: grid;
+        place-items: center;
+
+        flex-shrink: 0;
+
+        border: 1px solid var(--border);
+        border-radius: 11px;
+
+        background: rgba(255,255,255,.05);
+        color: var(--muted);
+    }
+
+    .framePreview {
+        overflow: hidden;
+
+        aspect-ratio: 16 / 9;
+
+        border: 1px solid var(--border);
+        border-radius: 13px;
+
+        background: #000;
+    }
+
+    .framePreview video {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+    }
+
+    .frameTimeline {
+        margin: 17px 0;
+    }
+
+    .frameTimeline input {
+        width: 100%;
+        accent-color: var(--accent);
+    }
+
+    .frameTime {
+        display: flex;
+        justify-content: space-between;
+
+        margin-top: 7px;
+
+        color: var(--muted);
+        font-size: 9px;
+    }
+
+    .widePrimaryButton {
+        width: 100%;
+        min-height: 47px;
+
+        border: 0;
+        border-radius: 12px;
+
+        background: var(--accent);
+        color: #fff;
+
+        font-size: 10px;
+        font-weight: 800;
+    }
+
+    /* =========================================================
+       DIALOG
+    ========================================================= */
+
+    .confirmDialog {
+        position: absolute;
+
+        left: 50%;
+        top: 50%;
+
+        width: min(430px, calc(100% - 30px));
+
+        transform: translate(-50%, -50%);
+
+        padding: 27px;
+
+        border: 1px solid var(--border-strong);
+        border-radius: 22px;
+
+        background: #111113;
+
+        box-shadow: var(--shadow);
+
+        text-align: center;
+    }
+
+    .dialogClose {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+    }
+
+    .dialogIcon {
+        width: 52px;
+        height: 52px;
+
+        display: grid;
+        place-items: center;
+
+        margin: 0 auto 13px;
+
+        border-radius: 16px;
+
+        background: rgba(255,255,255,.06);
+
+        font-size: 17px;
+    }
+
+    .publishDialogIcon {
+        background: rgba(255,23,68,.11);
+        color: var(--accent);
+    }
+
+    .confirmDialog h2 {
+        margin: 8px 0;
+
+        font-size: 19px;
+        letter-spacing: -.03em;
+    }
+
+    .confirmDialog p {
+        margin: 0 auto;
+
+        max-width: 340px;
+
+        color: var(--muted);
+
+        font-size: 10px;
+        line-height: 1.6;
+    }
+
+    .dialogField {
+        margin-top: 18px;
+
+        text-align: left;
+    }
+
+    .dialogField label {
+        display: block;
+
+        margin-bottom: 7px;
+
+        font-size: 9px;
+        font-weight: 700;
+    }
+
+    .dialogField input {
+        width: 100%;
+        height: 44px;
+
+        padding: 0 12px;
+
+        border: 1px solid var(--border);
+        border-radius: 11px;
+
+        outline: none;
+
+        background: rgba(255,255,255,.04);
+        color: #fff;
+    }
+
+    .dialogActions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+
+        gap: 8px;
+
+        margin-top: 21px;
+    }
+
+    .dialogActions button {
+        min-height: 45px;
+
+        border: 1px solid var(--border);
+        border-radius: 11px;
+
+        background: rgba(255,255,255,.045);
+        color: var(--text);
+
+        font-size: 10px;
+        font-weight: 700;
+    }
+
+    .dialogActions .confirmPublishButton {
+        border-color: rgba(255,23,68,.35);
+        background: var(--accent);
+        color: #fff;
+    }
+
+    /* =========================================================
+       FULL PREVIEW
+    ========================================================= */
+
+    .previewCloseButton {
+        position: absolute;
+
+        top: 18px;
+        right: 18px;
+
+        z-index: 10;
+    }
+
+    .fullVideoPreview {
+        position: absolute;
+
+        left: 50%;
+        top: 50%;
+
+        width: min(1000px, calc(100% - 30px));
+
+        transform: translate(-50%, -50%);
+
+        overflow: hidden;
+
+        aspect-ratio: 16 / 9;
+
+        border: 1px solid var(--border);
+        border-radius: 15px;
+
+        background: #000;
+    }
+
+    .fullVideoPreview video {
+        width: 100%;
+        height: 100%;
+
+        display: block;
+
+        object-fit: contain;
+    }
+
+    .fullPreviewGradient {
+        position: absolute;
+        inset: 0;
+
+        pointer-events: none;
+
+        background:
+            linear-gradient(
+                to bottom,
+                transparent 55%,
+                rgba(0,0,0,.8)
+            );
+    }
+
+    .fullPreviewContent {
+        position: absolute;
+
+        left: 22px;
+        right: 22px;
+        bottom: 20px;
+
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+    }
+
+    .fullPreviewContent strong {
+        font-size: 17px;
+    }
+
+    .fullPreviewContent span {
+        max-width: 700px;
+
+        color: rgba(255,255,255,.72);
+
+        font-size: 10px;
+    }
+
+    /* =========================================================
+       PROCESSING
+    ========================================================= */
+
+    .processingCard {
+        position: absolute;
+
+        left: 50%;
+        top: 50%;
+
+        width: min(360px, calc(100% - 30px));
+
+        transform: translate(-50%, -50%);
+
+        padding: 27px;
+
+        border: 1px solid var(--border-strong);
+        border-radius: 20px;
+
+        background: #111113;
+
+        text-align: center;
+    }
+
+    .processingOrb {
+        width: 60px;
+        height: 60px;
+
+        position: relative;
+
+        display: grid;
+        place-items: center;
+
+        margin: 0 auto 15px;
+
+        border-radius: 50%;
+
+        background: rgba(255,23,68,.1);
+        color: var(--accent);
+    }
+
+    .processingSpinner {
+        position: absolute;
+        inset: -2px;
+
+        border: 2px solid transparent;
+        border-top-color: var(--accent);
+
+        border-radius: 50%;
+
+        animation: spin .8s linear infinite;
+    }
+
+    @keyframes spin {
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    .processingCard strong {
+        display: block;
+
+        font-size: 13px;
+    }
+
+    .processingCard > span {
+        display: block;
+
+        margin-top: 6px;
+
+        color: var(--muted);
+        font-size: 9px;
+    }
+
+    .processingProgress {
+        height: 4px;
+
+        overflow: hidden;
+
+        margin-top: 19px;
+
+        border-radius: 100px;
+
+        background: rgba(255,255,255,.08);
+    }
+
+    .processingProgress span {
+        display: block;
+
+        width: 35%;
+        height: 100%;
+
+        border-radius: inherit;
+
+        background: var(--accent);
+
+        animation: progress 1.4s ease-in-out infinite;
+    }
+
+    @keyframes progress {
+        0% {
+            transform: translateX(-120%);
+        }
+
+        100% {
+            transform: translateX(340%);
+        }
+    }
+
+    /* =========================================================
+       TOAST
+    ========================================================= */
+
+    .toast {
+        position: fixed;
+
+        left: 50%;
+        bottom: 25px;
+
+        z-index: 5000;
+
+        transform: translateX(-50%);
+
+        min-width: 260px;
+
+        display: flex;
+        align-items: center;
+
+        gap: 10px;
+
+        padding: 12px 14px;
+
+        border: 1px solid var(--border-strong);
+        border-radius: 13px;
+
+        background: rgba(20,20,22,.94);
+
+        box-shadow: 0 20px 50px rgba(0,0,0,.45);
+
+        backdrop-filter: blur(18px);
+    }
+
+    .toastIcon {
+        color: var(--success);
+    }
+
+    .toast strong {
+        display: block;
+        font-size: 10px;
+    }
+
+    .toast p {
+        margin: 3px 0 0;
+
+        color: var(--muted);
+        font-size: 8px;
+    }
+
+    /* =========================================================
+       TABLET
+    ========================================================= */
+
+    @media (max-width: 1050px) {
+
+        .editorGrid {
+            grid-template-columns: 1fr;
+        }
+
+        .editorRight {
+            position: static;
+
+            display: grid;
+
+            grid-template-columns: 1fr 1fr;
+        }
+
+        .previewCard {
+            grid-row: span 2;
+        }
+
+    }
+
+    /* =========================================================
+       MOBILE
+    ========================================================= */
+
+    @media (max-width: 700px) {
+
+        .editorTopBar {
+            height: 60px;
+
+            padding-left: 11px;
+            padding-right: 11px;
+        }
+
+        .topBrand {
+            margin-left: 9px;
+        }
+
+        .topBrand img {
+            width: 30px;
+            height: 30px;
+        }
+
+        .topBrandText strong {
+            font-size: 12px;
+        }
+
+        .topBrandText span,
+        .saveStatus {
+            display: none;
+        }
+
+        .topPreviewButton {
+            min-height: 36px;
+            padding: 0 11px;
+        }
+
+        .editorMain {
+            width: calc(100% - 18px);
+
+            padding-top: 24px;
+        }
+
+        .editorIntro {
+            align-items: flex-start;
+            flex-direction: column;
+
+            gap: 13px;
+
+            margin-bottom: 18px;
+        }
+
+        .editorIntro h1 {
+            font-size: 29px;
+        }
+
+        .editorIntro p {
+            font-size: 10px;
+        }
+
+        .editorGrid {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .editorRight {
+            display: flex;
+        }
+
+        .editorCard {
+            padding: 16px;
+
+            border-radius: 16px;
+        }
+
+        .cardHeader {
+            flex-direction: column;
+
+            gap: 12px;
+        }
+
+        .cardHeader > button {
+            width: 100%;
+        }
+
+        .mainVideoPreview {
+            border-radius: 12px;
+        }
+
+        .videoMetaBar {
+            grid-template-columns: 1fr;
+        }
+
+        .videoMetaItem + .videoMetaItem {
+            border-left: 0;
+            border-top: 1px solid var(--border);
+        }
+
+        .thumbnailEditor {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .thumbnailPreview {
+            width: 100%;
+        }
+
+        .thumbnailTools {
+            width: 100%;
+        }
+
+        .thumbnailTools button {
+            width: 100%;
+        }
+
+        .selectSetting {
+            align-items: flex-start;
+            flex-direction: column;
+        }
+
+        .selectSetting select {
+            width: 100%;
+        }
+
+        .bottomActionBar {
+            width: calc(100% - 18px);
+
+            bottom: max(
+                9px,
+                env(safe-area-inset-bottom)
+            );
+
+            grid-template-columns: 1fr 1.6fr;
+
+            border-radius: 15px;
+        }
+
+        .draftButton,
+        .publishButton {
+            min-height: 48px;
+        }
+
+        .frameSheet {
+            left: 0;
+            bottom: 0;
+
+            width: 100%;
+
+            transform: none;
+
+            padding:
+                13px 15px
+                calc(15px + env(safe-area-inset-bottom));
+
+            border-radius: 23px 23px 0 0;
+        }
+
+        .sheetHandle {
+            display: block;
+        }
+
+        .confirmDialog {
+            padding: 23px 17px;
+        }
+
+        .dialogActions {
+            grid-template-columns: 1fr;
+
+        }
+
+        .fullVideoPreview {
+            width: calc(100% - 16px);
+            border-radius: 12px;
+        }
+
+        .fullPreviewContent {
+            left: 13px;
+            right: 13px;
+            bottom: 13px;
+        }
+
+        .fullPreviewContent strong {
+            font-size: 12px;
+        }
+
+    }
+
+    @media (max-width: 420px) {
+
+        .topPreviewButton span {
+            display: none;
+        }
+
+        .editorIntro h1 {
+            font-size: 27px;
+        }
+
+        .publishButton small {
+            display: none;
+        }
+
+    }
+
+</style>
+
+</head><body><div id="app" class="longEditorApp"><!-- =====================================================
+     TOP BAR
+====================================================== -->
+
+<header class="editorTopBar">
+
+    <button
+        type="button"
+        id="backBtn"
+        class="topIconButton"
+        aria-label="Go back"
+    >
+        <i class="fa-solid fa-arrow-left"></i>
+    </button>
+
+
+    <div class="topBrand">
+
+        <img
+            src="assets/logo.png"
+            alt="Viewora"
+        >
+
+        <div class="topBrandText">
+
+            <strong>VIEWORA</strong>
+
+            <span>
+                LONG VIDEO STUDIO
+            </span>
+
+        </div>
+
+    </div>
+
+
+    <div class="topBarRight">
+
+        <div
+            id="saveStatus"
+            class="saveStatus"
+        >
+
+            <span class="saveDot"></span>
+
+            <span id="saveStatusText">
+                Saved
+            </span>
+
+        </div>
+
+
+        <button
+            type="button"
+            id="previewBtn"
+            class="topPreviewButton"
+        >
+
+            <i class="fa-regular fa-eye"></i>
+
+            <span>
+                Preview
+            </span>
+
+        </button>
+
+    </div>
+
+</header>
+
+
+<!-- =====================================================
+     MAIN
+====================================================== -->
+
+<main class="editorMain">
+
+
+    <section class="editorIntro">
+
+        <div>
+
+            <span class="introEyebrow">
+                VIEWORA STUDIO
+            </span>
+
+            <h1>
+                Edit your video
+            </h1>
+
+            <p>
+                Add your title, description, thumbnail and
+                publishing settings before sharing your
+                long-form video with Viewora.
+            </p>
+
+        </div>
+
+
+        <div class="videoStateBadge">
+
+            <span
+                id="videoStateDot"
+                class="stateDot"
+            ></span>
+
+            <span id="videoState">
+                Video ready
+            </span>
+
+        </div>
+
+    </section>
+
+
+    <div class="editorGrid">
+
+
+        <!-- =================================================
+             LEFT
+        ================================================== -->
+
+        <div class="editorLeft">
+
+
+            <!-- VIDEO -->
+
+            <section class="editorCard videoCard">
+
+                <div class="cardHeader">
+
+                    <div>
+
+                        <span class="cardEyebrow">
+                            VIDEO
+                        </span>
+
+                        <h2>
+                            Your long video
+                        </h2>
+
+                        <p>
+                            Preview your 16:9 landscape video
+                            before publishing.
+                        </p>
+
+                    </div>
+
+
+                    <button
+                        type="button"
+                        id="replaceVideoBtn"
+                        class="secondarySmallButton"
+                    >
+
+                        <i class="fa-solid fa-arrow-up-from-bracket"></i>
+
+                        Replace video
+
+                    </button>
+
+                </div>
+
+
+                <div class="mainVideoPreview">
+
+                    <video
+                        id="videoPreview"
+                        playsinline
+                        controls
+                        preload="metadata"
+                    ></video>
+
+
+                    <div
+                        id="videoPlaceholder"
+                        class="videoPlaceholder"
+                    >
+
+                        <div class="placeholderIcon">
+                            <i class="fa-solid fa-film"></i>
+                        </div>
+
+                        <strong>
+                            No video loaded
+                        </strong>
+
+                        <span>
+                            Upload a landscape video to continue.
+                        </span>
+
+                        <button
+                            type="button"
+                            id="uploadVideoBtn"
+                            class="primarySmallButton"
+                        >
+
+                            <i class="fa-solid fa-plus"></i>
+
+                            Add video
+
+                        </button>
+
+                    </div>
+
+                </div>
+
+
+                <div class="videoMetaBar">
+
+                    <div class="videoMetaItem">
+
+                        <i class="fa-regular fa-clock"></i>
+
+                        <div>
+
+                            <span>
+                                Duration
+                            </span>
+
+                            <strong id="videoDuration">
+                                00:00
+                            </strong>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="videoMetaItem">
+
+                        <i class="fa-solid fa-display"></i>
+
+                        <div>
+
+                            <span>
+                                Resolution
+                            </span>
+
+                            <strong id="videoResolution">
+                                —
+                            </strong>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="videoMetaItem">
+
+                        <i class="fa-solid fa-file-video"></i>
+
+                        <div>
+
+                            <span>
+                                Format
+                            </span>
+
+                            <strong id="videoFormat">
+                                —
+                            </strong>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+
+            <!-- DETAILS -->
+
+            <section class="editorCard">
+
+                <div class="cardHeader">
+
+                    <div>
+
+                        <span class="cardEyebrow">
+                            DETAILS
+                        </span>
+
+                        <h2>
+                            Tell viewers about your video
+                        </h2>
+
+                        <p>
+                            A clear title and description help
+                            viewers understand your content.
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <div class="fieldGroup">
+
+                    <div class="fieldLabelRow">
+
+                        <label for="longTitle">
+                            Title
+                        </label>
+
+                        <span>
+                            <b id="titleCount">0</b>/150
+                        </span>
+
+                    </div>
+
+
+                    <input
+                        type="text"
+                        id="longTitle"
+                        maxlength="150"
+                        autocomplete="off"
+                        placeholder="Add a title that describes your video..."
+                    >
+
+                </div>
+
+
+                <div class="fieldGroup">
+
+                    <div class="fieldLabelRow">
+
+                        <label for="longDescription">
+                            Description
+                        </label>
+
+                        <span>
+                            <b id="descriptionCount">0</b>/5000
+                        </span>
+
+                    </div>
+
+
+                    <textarea
+                        id="longDescription"
+                        rows="9"
+                        maxlength="5000"
+                        placeholder="Tell viewers what this video is about..."
+                    ></textarea>
+
+                </div>
+
+
+                <div class="fieldGroup">
+
+                    <div class="fieldLabelRow">
+
+                        <label for="longHashtags">
+                            Hashtags
+                        </label>
+
+                        <span>
+                            Optional
+                        </span>
+
+                    </div>
+
+
+                    <input
+                        type="text"
+                        id="longHashtags"
+                        maxlength="500"
+                        autocomplete="off"
+                        placeholder="#viewora #video"
+                    >
+
+
+                    <small class="fieldHint">
+
+                        <i class="fa-solid fa-hashtag"></i>
+
+                        Add relevant hashtags to help viewers
+                        discover your video.
+
+                    </small>
+
+                </div>
+
+
+                <div class="fieldGroup">
+
+                    <div class="fieldLabelRow">
+
+                        <label for="longTags">
+                            Tags
+                        </label>
+
+                        <span>
+                            Optional
+                        </span>
+
+                    </div>
+
+
+                    <input
+                        type="text"
+                        id="longTags"
+                        maxlength="500"
+                        autocomplete="off"
+                        placeholder="Add keywords separated by commas"
+                    >
+
+                </div>
+
+            </section>
+
+
+            <!-- THUMBNAIL -->
+
+            <section class="editorCard thumbnailCard">
+
+                <div class="cardHeader">
+
+                    <div>
+
+                        <span class="cardEyebrow">
+                            THUMBNAIL
+                        </span>
+
+                        <h2>
+                            Choose your cover
+                        </h2>
+
+                        <p>
+                            This image represents your video
+                            across Home, Search and Profile.
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <div class="thumbnailEditor">
+
+                    <div
+                        id="thumbnailPreview"
+                        class="thumbnailPreview"
+                    >
+
+                        <video
+                            id="thumbnailVideo"
+                            muted
+                            playsinline
+                            preload="metadata"
+                        ></video>
+
+
+                        <img
+                            id="thumbnailImage"
+                            class="hidden"
+                            alt="Video thumbnail"
+                        >
+
+
+                        <div
+                            id="thumbnailPlaceholder"
+                            class="thumbnailPlaceholder"
+                        >
+
+                            <i class="fa-regular fa-image"></i>
+
+                            <span>
+                                Video thumbnail
+                            </span>
+
+                        </div>
+
+
+                        <div class="thumbnailBadge">
+                            16:9 VIDEO
+                        </div>
+
+                    </div>
+
+
+                    <div class="thumbnailTools">
+
+                        <button
+                            type="button"
+                            id="changeThumbnailBtn"
+                            class="primarySmallButton"
+                        >
+
+                            <i class="fa-regular fa-image"></i>
+
+                            Upload thumbnail
+
+                        </button>
+
+
+                        <button
+                            type="button"
+                            id="captureFrameBtn"
+                            class="secondarySmallButton"
+                        >
+
+                            <i class="fa-solid fa-film"></i>
+
+                            Capture video frame
+
+                        </button>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+
+            <!-- COLLABORATION -->
+
+            <section class="editorCard">
+
+                <div class="cardHeader">
+
+                    <div>
+
+                        <span class="cardEyebrow">
+                            COLLABORATION
+                        </span>
+
+                        <h2>
+                            Add collaborators
+                        </h2>
+
+                        <p>
+                            Credit other Viewora creators who
+                            worked on this video.
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <div class="collaborationBox">
+
+                    <div class="collaborationIcon">
+                        <i class="fa-solid fa-user-group"></i>
+                    </div>
+
+
+                    <div class="collaborationInfo">
+
+                        <strong>
+                            Collaborators
+                        </strong>
+
+                        <span>
+                            Add creators to your video.
+                        </span>
+
+                    </div>
+
+
+                    <button
+                        type="button"
+                        id="addCollaboratorBtn"
+                        class="secondarySmallButton"
+                    >
+
+                        <i class="fa-solid fa-plus"></i>
+
+                        Add
+
+                    </button>
+
+                </div>
+
+
+                <div
+                    id="collaboratorList"
+                    class="collaboratorList"
+                ></div>
+
+            </section>
+
+
+            <!-- VISIBILITY -->
+
+            <section class="editorCard">
+
+                <div class="cardHeader">
+
+                    <div>
+
+                        <span class="cardEyebrow">
+                            VISIBILITY
+                        </span>
+
+                        <h2>
+                            Who can watch this video?
+                        </h2>
+
+                        <p>
+                            Choose how your long video appears
+                            on Viewora.
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <div class="visibilityOptions">
+
+
+                    <button
+                        type="button"
+                        class="visibilityOption active"
+                        data-visibility="public"
+                    >
+
+                        <span class="visibilityIcon">
+                            <i class="fa-solid fa-earth-americas"></i>
+                        </span>
+
+
+                        <span class="visibilityInfo">
+
+                            <strong>
+                                Public
+                            </strong>
+
+                            <small>
+                                Anyone can watch this video.
+                            </small>
+
+                        </span>
+
+
+                        <span class="selectionMark">
+                            <i class="fa-solid fa-check"></i>
+                        </span>
+
+                    </button>
+
+
+                    <button
+                        type="button"
+                        class="visibilityOption"
+                        data-visibility="unlisted"
+                    >
+
+                        <span class="visibilityIcon">
+                            <i class="fa-solid fa-link"></i>
+                        </span>
+
+
+                        <span class="visibilityInfo">
+
+                            <strong>
+                                Unlisted
+                            </strong>
+
+                            <small>
+                                Only people with the link can watch.
+                            </small>
+
+                        </span>
+
+
+                        <span class="selectionMark">
+                            <i class="fa-solid fa-check"></i>
+                        </span>
+
+                    </button>
+
+
+                    <button
+                        type="button"
+                        class="visibilityOption"
+                        data-visibility="private"
+                    >
+
+                        <span class="visibilityIcon">
+                            <i class="fa-solid fa-lock"></i>
+                        </span>
+
+
+                        <span class="visibilityInfo">
+
+                            <strong>
+                                Private
+                            </strong>
+
+                            <small>
+                                Only you can watch this video.
+                            </small>
+
+                        </span>
+
+
+                        <span class="selectionMark">
+                            <i class="fa-solid fa-check"></i>
+                        </span>
+
+                    </button>
+
+                </div>
+
+            </section>
+
+
+            <!-- ENGAGEMENT -->
+
+            <section class="editorCard">
+
+                <div class="cardHeader">
+
+                    <div>
+
+                        <span class="cardEyebrow">
+                            ENGAGEMENT
+                        </span>
+
+                        <h2>
+                            Interaction settings
+                        </h2>
+
+                        <p>
+                            Control how viewers interact with
+                            your video.
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <div class="settingRows">
+
+
+                    <label class="settingRow">
+
+                        <span class="settingRowIcon">
+                            <i class="fa-solid fa-heart"></i>
+                        </span>
+
+
+                        <span class="settingRowInfo">
+
+                            <strong>
+                                Show like count
+                            </strong>
+
+                            <small>
+                                Let viewers see the number of likes.
+                            </small>
+
+                        </span>
+
+
+                        <input
+                            type="checkbox"
+                            id="showLikeCount"
+                            checked
+                        >
+
+                        <span class="switch"></span>
+
+                    </label>
+
+
+                    <label class="settingRow">
+
+                        <span class="settingRowIcon">
+                            <i class="fa-solid fa-comment"></i>
+                        </span>
+
+
+                        <span class="settingRowInfo">
+
+                            <strong>
+                                Allow comments
+                            </strong>
+
+                            <small>
+                                Let viewers comment on your video.
+                            </small>
+
+                        </span>
+
+
+                        <input
+                            type="checkbox"
+                            id="allowComments"
+                            checked
+                        >
+
+                        <span class="switch"></span>
+
+                    </label>
+
+
+                    <label class="settingRow">
+
+                        <span class="settingRowIcon">
+                            <i class="fa-solid fa-comments"></i>
+                        </span>
+
+
+                        <span class="settingRowInfo">
+
+                            <strong>
+                                Show comment count
+                            </strong>
+
+                            <small>
+                                Display the number of comments.
+                            </small>
+
+                        </span>
+
+
+                        <input
+                            type="checkbox"
+                            id="showCommentCount"
+                            checked
+                        >
+
+                        <span class="switch"></span>
+
+                    </label>
+
+                </div>
+
+            </section>
+
+
+            <!-- ADDITIONAL -->
+
+            <section class="editorCard">
+
+                <button
+                    type="button"
+                    id="additionalSettingsToggle"
+                    class="additionalHeader"
+                    aria-expanded="false"
+                >
+
+                    <span class="additionalIcon">
+                        <i class="fa-solid fa-sliders"></i>
+                    </span>
+
+
+                    <span>
+
+                        <strong>
+                            Additional settings
+                        </strong>
+
+                        <small>
+                            More options for your video
+                        </small>
+
+                    </span>
+
+
+                    <i
+                        id="additionalChevron"
+                        class="fa-solid fa-chevron-down"
+                    ></i>
+
+                </button>
+
+
+                <div
+                    id="additionalSettings"
+                    class="additionalSettings hidden"
+                >
+
+
+                    <label class="settingRow">
+
+                        <span class="settingRowIcon">
+                            <i class="fa-solid fa-download"></i>
+                        </span>
+
+
+                        <span class="settingRowInfo">
+
+                            <strong>
+                                Allow downloads
+                            </strong>
+
+                            <small>
+                                Let viewers save your video to their device.
+                            </small>
+
+                        </span>
+
+
+                        <input
+                            type="checkbox"
+                            id="allowDownload"
+                            checked
+                        >
+
+                        <span class="switch"></span>
+
+                    </label>
+
+
+                    <label class="settingRow">
+
+                        <span class="settingRowIcon">
+                            <i class="fa-solid fa-share-nodes"></i>
+                        </span>
+
+
+                        <span class="settingRowInfo">
+
+                            <strong>
+                                Allow sharing
+                            </strong>
+
+                            <small>
+                                Allow viewers to share your video.
+                            </small>
+
+                        </span>
+
+
+                        <input
+                            type="checkbox"
+                            id="allowSharing"
+                            checked
+                        >
+
+                        <span class="switch"></span>
+
+                    </label>
+
+
+                    <label class="settingRow">
+
+                        <span class="settingRowIcon">
+                            <i class="fa-solid fa-repeat"></i>
+                        </span>
+
+
+                        <span class="settingRowInfo">
+
+                            <strong>
+                                Allow remixing
+                            </strong>
+
+                            <small>
+                                Let other creators create with your video.
+                            </small>
+
+                        </span>
+
+
+                        <input
+                            type="checkbox"
+                            id="allowRemix"
+                            checked
+                        >
+
+                        <span class="switch"></span>
+
+                    </label>
+
+
+                    <div class="selectSetting">
+
+                        <div>
+
+                            <strong>
+                                Audience
+                            </strong>
+
+                            <small>
+                                Choose the appropriate audience.
+                            </small>
+
+                        </div>
+
+
+                        <select id="audienceSetting">
+
+                            <option value="general">
+                                General audience
+                            </option>
+
+                            <option value="teen">
+                                Teen-friendly
+                            </option>
+
+                        </select>
+
+                    </div>
+
+
+                    <div class="selectSetting">
+
+                        <div>
+
+                            <strong>
+                                Video language
+                            </strong>
+
+                            <small>
+                                Help Viewora understand your content.
+                            </small>
+
+                        </div>
+
+
+                        <select id="languageSetting">
+
+                            <option value="auto">
+                                Auto detect
+                            </option>
+
+                            <option value="english">
+                                English
+                            </option>
+
+                            <option value="hindi">
+                                Hindi
+                            </option>
+
+                            <option value="hinglish">
+                                Hinglish
+                            </option>
+
+                            <option value="other">
+                                Other
+                            </option>
+
+                        </select>
+
+                    </div>
+
+
+                    <div class="selectSetting">
+
+                        <div>
+
+                            <strong>
+                                Category
+                            </strong>
+
+                            <small>
+                                Select the category of your video.
+                            </small>
+
+                        </div>
+
+
+                        <select id="categorySetting">
+
+                            <option value="people">
+                                People & Blogs
+                            </option>
+
+                            <option value="entertainment">
+                                Entertainment
+                            </option>
+
+                            <option value="music">
+                                Music
+                            </option>
+
+                            <option value="education">
+                                Education
+                            </option>
+
+                            <option value="gaming">
+                                Gaming
+                            </option>
+
+                            <option value="technology">
+                                Technology
+                            </option>
+
+                            <option value="travel">
+                                Travel
+                            </option>
+
+                            <option value="news">
+                                News
+                            </option>
+
+                            <option value="sports">
+                                Sports
+                            </option>
+
+                            <option value="other">
+                                Other
+                            </option>
+
+                        </select>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+        </div>
+
+
+        <!-- =================================================
+             RIGHT SIDEBAR
+        ================================================== -->
+
+        <aside class="editorRight">
+
+
+            <!-- PREVIEW -->
+
+            <section class="previewCard">
+
+                <div class="previewCardHeader">
+
+                    <div>
+
+                        <span>
+                            PREVIEW
+                        </span>
+
+                        <strong>
+                            How your video appears
+                        </strong>
+
+                    </div>
+
+
+                    <button
+                        type="button"
+                        id="fullscreenPreviewBtn"
+                        class="miniIconButton"
+                        aria-label="Open full preview"
+                    >
+
+                        <i class="fa-solid fa-expand"></i>
+
+                    </button>
+
+                </div>
+
+
+                <div class="longPhonePreview">
+
+                    <video
+                        id="previewVideo"
+                        playsinline
+                        muted
+                        controls
+                        preload="metadata"
+                    ></video>
+
+
+                    <div class="previewOverlayGradient"></div>
+
+
+                    <div class="previewTopBar">
+
+                        <span>
+                            VIEWORA
+                        </span>
+
+                        <i class="fa-solid fa-ellipsis-vertical"></i>
+
+                    </div>
+
+
+                    <div class="previewBottom">
+
+                        <div class="previewCreator">
+
+                            <div class="previewAvatar">
+
+                                <img
+                                    id="previewAvatar"
+                                    src="assets/logo.png"
+                                    alt=""
+                                >
+
+                            </div>
+
+
+                            <strong id="previewUsername">
+                                @you
+                            </strong>
+
+                        </div>
+
+
+                        <h3 id="previewTitle">
+                            Your video title
+                        </h3>
+
+
+                        <p id="previewDescription">
+                            Your video description will appear here.
+                        </p>
+
+
+                        <div class="previewTags">
+
+                            <span id="previewHashtags">
+                                #viewora
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+
+            <!-- STATUS -->
+
+            <section class="infoCard">
+
+                <div class="infoCardHeader">
+
+                    <div class="infoCardIcon">
+                        <i class="fa-solid fa-circle-info"></i>
+                    </div>
+
+
+                    <div>
+
+                        <strong>
+                            Video status
+                        </strong>
+
+                        <span id="rightStatusText">
+                            Ready to publish
+                        </span>
+
+                    </div>
+
+                </div>
+
+
+                <div class="infoRows">
+
+                    <div>
+
+                        <span>
+                            Visibility
+                        </span>
+
+                        <strong id="summaryVisibility">
+                            Public
+                        </strong>
+
+                    </div>
+
+
+                    <div>
+
+                        <span>
+                            Comments
+                        </span>
+
+                        <strong id="summaryComments">
+                            Enabled
+                        </strong>
+
+                    </div>
+
+
+                    <div>
+
+                        <span>
+                            Downloads
+                        </span>
+
+                        <strong id="summaryDownloads">
+                            Enabled
+                        </strong>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+
+            <!-- READY -->
+
+            <section class="publishCard">
+
+                <div class="publishHeader">
+
+                    <div class="publishIcon">
+                        <i class="fa-solid fa-rocket"></i>
+                    </div>
+
+
+                    <div>
+
+                        <strong>
+                            Ready to publish?
+                        </strong>
+
+                        <span id="publishSummary">
+                            Complete the required details.
+                        </span>
+
+                    </div>
+
+                </div>
+
+
+                <div class="publishChecklist">
+
+                    <div
+                        id="checkVideo"
+                        class="checkItem"
+                    >
+
+                        <i class="fa-solid fa-circle-check"></i>
+
+                        <span>
+                            Video ready
+                        </span>
+
+                    </div>
+
+
+                    <div
+                        id="checkTitle"
+                        class="checkItem"
+                    >
+
+                        <i class="fa-solid fa-circle-check"></i>
+
+                        <span>
+                            Title added
+                        </span>
+
+                    </div>
+
+
+                    <div
+                        id="checkThumbnail"
+                        class="checkItem"
+                    >
+
+                        <i class="fa-solid fa-circle-check"></i>
+
+                        <span>
+                            Thumbnail ready
+                        </span>
+
+                    </div>
+
+
+                    <div
+                        id="checkVisibility"
+                        class="checkItem"
+                    >
+
+                        <i class="fa-solid fa-circle-check"></i>
+
+                        <span>
+                            Visibility selected
+                        </span>
+
+                    </div>
+
+                </div>
+
+
+                <button
+                    type="button"
+                    id="publishSideBtn"
+                    class="publishButton"
+                >
+
+                    <span>
+
+                        <small>
+                            VIEWORA
+                        </small>
+
+                        <strong>
+                            Publish Video
+                        </strong>
+
+                    </span>
+
+
+                    <i class="fa-solid fa-arrow-right"></i>
+
+                </button>
+
+            </section>
+
+        </aside>
+
+    </div>
+
+</main>
+
+
+<!-- =====================================================
+     HIDDEN INPUTS
+====================================================== -->
+
+<input
+    type="file"
+    id="videoInput"
+    accept="video/*"
+    hidden
+>
+
+<input
+    type="file"
+    id="thumbnailInput"
+    accept="image/*"
+    hidden
+>
+
+
+<!-- =====================================================
+     FRAME SELECTOR
+====================================================== -->
+
+<div
+    id="frameSelector"
+    class="overlay hidden"
+>
+
+    <div
+        class="overlayBackdrop"
+        data-close-overlay="frameSelector"
+    ></div>
+
+
+    <section class="frameSheet">
+
+        <div class="sheetHandle"></div>
+
+
+        <header class="sheetHeader">
+
+            <div>
+
+                <span class="eyebrow">
+                    THUMBNAIL
+                </span>
+
+                <h2>
+                    Select video frame
+                </h2>
+
+                <p>
+                    Choose the perfect frame for your thumbnail.
+                </p>
+
+            </div>
+
+
+            <button
+                type="button"
+                id="closeFrameSelectorBtn"
+                class="sheetClose"
+                aria-label="Close"
+            >
+
+                <i class="fa-solid fa-xmark"></i>
+
+            </button>
+
+        </header>
+
+
+        <div class="framePreview">
+
+            <video
+                id="frameVideo"
+                playsinline
+                muted
+                preload="metadata"
+            ></video>
+
+        </div>
+
+
+        <div class="frameTimeline">
+
+            <input
+                type="range"
+                id="frameRange"
+                min="0"
+                max="100"
+                value="0"
+            >
+
+
+            <div class="frameTime">
+
+                <span id="frameCurrentTime">
+                    00:00
+                </span>
+
+                <span id="frameDuration">
+                    00:00
+                </span>
+
+            </div>
+
+        </div>
+
+
+        <button
+            type="button"
+            id="useFrameBtn"
+            class="widePrimaryButton"
+        >
+
+            <i class="fa-solid fa-check"></i>
+
+            Use this frame
+
+        </button>
+
+    </section>
+
+</div>
+
+
+<!-- =====================================================
+     COLLABORATOR MODAL
+====================================================== -->
+
+<div
+    id="collaboratorModal"
+    class="dialogOverlay hidden"
+>
+
+    <div class="confirmDialog collaboratorDialog">
+
+        <button
+            type="button"
+            id="closeCollaboratorModalBtn"
+            class="dialogClose"
+            aria-label="Close"
+        >
+
+            <i class="fa-solid fa-xmark"></i>
+
+        </button>
+
+
+        <div class="dialogIcon">
+            <i class="fa-solid fa-user-plus"></i>
+        </div>
+
+
+        <span class="dialogEyebrow">
+            COLLABORATION
+        </span>
+
+
+        <h2>
+            Add collaborator
+        </h2>
+
+
+        <p>
+            Enter a Viewora username to add a collaborator.
+        </p>
+
+
+        <div class="dialogField">
+
+            <label for="collaboratorUsername">
+                Username
+            </label>
+
+            <input
+                type="text"
+                id="collaboratorUsername"
+                placeholder="@username"
+                autocomplete="off"
+            >
+
+        </div>
+
+
+        <div class="dialogActions">
+
+            <button
+                type="button"
+                id="cancelCollaboratorBtn"
+            >
+                Cancel
+            </button>
+
+
+            <button
+                type="button"
+                id="confirmCollaboratorBtn"
+                class="confirmPublishButton"
+            >
+
+                <i class="fa-solid fa-plus"></i>
+
+                Add
+
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- =====================================================
+     FULL PREVIEW
+====================================================== -->
+
+<div
+    id="previewOverlay"
+    class="previewOverlay hidden"
+>
+
+    <button
+        type="button"
+        id="closePreviewBtn"
+        class="previewCloseButton"
+        aria-label="Close preview"
+    >
+
+        <i class="fa-solid fa-xmark"></i>
+
+    </button>
+
+
+    <div class="fullVideoPreview">
+
+        <video
+            id="fullPreviewVideo"
+            controls
+            playsinline
+            preload="metadata"
+        ></video>
+
+
+        <div class="fullPreviewGradient"></div>
+
+
+        <div class="fullPreviewContent">
+
+            <strong id="fullPreviewTitle">
+                Your video title
+            </strong>
+
+            <span id="fullPreviewDescription">
+                Your video description
+            </span>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- =====================================================
+     PUBLISH DIALOG
+====================================================== -->
+
+<div
+    id="publishDialog"
+    class="dialogOverlay hidden"
+>
+
+    <div class="confirmDialog">
+
+        <div class="dialogIcon publishDialogIcon">
+
+            <i class="fa-solid fa-rocket"></i>
+
+        </div>
+
+
+        <span class="dialogEyebrow">
+            VIEWORA
+        </span>
+
+
+        <h2>
+            Publish this video?
+        </h2>
+
+
+        <p id="publishDialogText">
+            Your video will be published with the selected settings.
+        </p>
+
+
+        <div class="dialogActions">
+
+            <button
+                type="button"
+                id="cancelPublishBtn"
+            >
+                Keep editing
+            </button>
+
+
+            <button
+                type="button"
+                id="confirmPublishBtn"
+                class="confirmPublishButton"
+            >
+
+                <i class="fa-solid fa-rocket"></i>
+
+                Publish
+
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- =====================================================
+     PROCESSING
+====================================================== -->
+
+<div
+    id="processingOverlay"
+    class="processingOverlay hidden"
+    aria-live="polite"
+    aria-busy="true"
+>
+
+    <div class="processingCard">
+
+        <div class="processingOrb">
+
+            <div class="processingSpinner"></div>
+
+            <i class="fa-solid fa-wand-magic-sparkles"></i>
+
+        </div>
+
+
+        <strong id="processingTitle">
+            Saving your video
+        </strong>
+
+
+        <span id="processingMessage">
+            Preparing your changes...
+        </span>
+
+
+        <div class="processingProgress">
+
+            <span id="processingProgressBar"></span>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- =====================================================
+     TOAST
+====================================================== -->
+
+<div
+    id="toast"
+    class="toast hidden"
+    role="status"
+    aria-live="polite"
+>
+
+    <span id="toastIcon">
+
+        <i class="fa-solid fa-circle-check"></i>
+
+    </span>
+
+
+    <div>
+
+        <strong id="toastTitle">
+            Done
+        </strong>
+
+        <p id="toastText">
+            Changes saved successfully.
+        </p>
+
+    </div>
+
+</div>
+
+</div><!-- =========================================================
+     FIREBASE
+========================================================= --><script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script><!-- =========================================================
+     VIEWORA CORE
+========================================================= --><script src="firebase.js"></script><script src="call-listener.js"></script><!-- =========================================================
+     LONG VIDEO EDITOR LOGIC
+========================================================= --><script src="edit-video.js"></script></body></html>
