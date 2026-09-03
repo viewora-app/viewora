@@ -2553,22 +2553,25 @@
                 if (snap.exists()) {
                     snap.forEach((child) => {
                         const v = child.val() || {};
-                        const n =
+                        let n =
                             Number(v.unreadCount) ||
                             Number(v.unread) ||
                             Number(v.unreadMessages) ||
+                            Number(v.unread_count) ||
                             0;
-                        if (n > 0) total += n;
-                        // also if last message from other and not read
-                        else if (
+                        // last message from other, not marked read
+                        if (
+                            n <= 0 &&
                             v.lastMessage &&
-                            v.lastSenderId &&
-                            String(v.lastSenderId) !== String(myUid) &&
+                            (v.lastSenderId || v.senderId || v.from) &&
+                            String(v.lastSenderId || v.senderId || v.from) !== String(myUid) &&
                             v.read !== true &&
-                            v.seen !== true
+                            v.seen !== true &&
+                            v.isRead !== true
                         ) {
-                            total += 1;
+                            n = 1;
                         }
+                        if (n > 0) total += n;
                     });
                 }
                 updateMessageBadge(total);
