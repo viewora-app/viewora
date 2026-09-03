@@ -1175,3 +1175,351 @@ body.is-owner .visitorOnly {
         transition-duration: .01ms !important;
     }
 }
+
+/* ============================================================
+   LONG VIDEOS (videoProfileCard) — FIXED / MATCHED
+============================================================ */
+
+.videoProfileCard {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: rgba(255,255,255,.04);
+    border: 1px solid rgba(255,255,255,.08);
+    border-radius: 16px;
+    cursor: pointer;
+    transition: transform .2s ease, border-color .2s ease, background .2s ease;
+}
+
+.videoProfileCard:active {
+    transform: scale(.985);
+}
+
+.videoProfileCard:hover {
+    border-color: rgba(112,103,255,.35);
+    background: rgba(112,103,255,.06);
+}
+
+.videoThumb {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    background: #0d1018;
+    border-radius: 16px 16px 0 0;
+}
+
+.videoThumb img,
+.videoThumb video {
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: cover;
+}
+
+.videoPlay {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    background: linear-gradient(
+        to top,
+        rgba(0,0,0,.55) 0%,
+        transparent 55%
+    );
+    pointer-events: none;
+}
+
+.videoPlay i {
+    width: 48px;
+    height: 48px;
+    display: grid;
+    place-items: center;
+    color: #fff;
+    font-size: 16px;
+    background: rgba(0,0,0,.45);
+    border: 1px solid rgba(255,255,255,.2);
+    border-radius: 50%;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    box-shadow: 0 8px 24px rgba(0,0,0,.35);
+}
+
+.videoInfo {
+    padding: 12px 14px 14px;
+    text-align: left;
+}
+
+.videoInfo h3 {
+    color: #fff;
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1.35;
+    letter-spacing: -.2px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.videoInfo p {
+    margin-top: 5px;
+    color: #8b93a5;
+    font-size: 11px;
+    font-weight: 500;
+}
+
+.contentList {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.contentList .videoProfileCard {
+    min-height: auto;
+}
+
+
+/* ============================================================
+   CONTENT MORE BUTTON
+============================================================ */
+
+.contentMoreBtn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    z-index: 12;
+    width: 32px;
+    height: 32px;
+    display: grid;
+    place-items: center;
+    color: #fff;
+    background: rgba(0,0,0,.5);
+    border: 1px solid rgba(255,255,255,.15);
+    border-radius: 10px;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    cursor: pointer;
+}
+
+.contentMoreBtn:hover {
+    background: rgba(112,103,255,.45);
+}
+
+
+/* ============================================================
+   SHORTS
+============================================================ */
+
+.profileContentCard.shortCard {
+    position: relative;
+    aspect-ratio: 9 / 14;
+    min-height: 160px;
+}
+
+.shortBadge {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    z-index: 5;
+    width: 26px;
+    height: 26px;
+    display: grid;
+    place-items: center;
+    color: #fff;
+    font-size: 10px;
+    background: rgba(0,0,0,.5);
+    border-radius: 8px;
+    backdrop-filter: blur(8px);
+}
+
+
+/* ============================================================
+   PLACEHOLDER
+============================================================ */
+
+.contentPlaceholder {
+    min-height: 145px;
+    display: grid;
+    place-items: center;
+    color: #5c6478;
+    background: #10131b;
+    font-size: 22px;
+}
+
+
+/* ============================================================
+   HIGHLIGHTS
+============================================================ */
+
+#highlightsSection {
+    margin-top: 12px;
+}
+
+.highlightCircle {
+    background: linear-gradient(135deg, #232736, #151822) !important;
+    border: 1px solid rgba(255,255,255,.12);
+    opacity: .95;
+}
+
+.highlightCircle img,
+.highlightCircle video {
+    border-color: #0a0c12;
+}
+
+.highlightEmpty {
+    width: 100%;
+    padding: 16px 0;
+    text-align: center;
+    color: #6b7386;
+    font-size: 12px;
+}
+
+.highlightItem {
+    opacity: .95;
+}
+
+
+/* ============================================================
+   EMPTY / LOADING / ERROR
+============================================================ */
+
+.profileEmpty,
+.profileLoading {
+    min-height: 170px;
+    grid-column: 1 / -1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    color: #747c8f;
+    background: rgba(255,255,255,.025);
+    border: 1px solid rgba(255,255,255,.055);
+    border-radius: 17px;
+    padding: 24px 16px;
+    text-align: center;
+}
+
+.profileEmpty .emptyIcon {
+    font-size: 26px;
+    opacity: .55;
+}
+
+.profileEmpty h3 {
+    color: #aeb4c2;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.profileEmpty p {
+    color: #747c8f;
+    font-size: 11px;
+    max-width: 240px;
+}
+
+.profileSpinner {
+    width: 28px;
+    height: 28px;
+    border: 2px solid rgba(255,255,255,.1);
+    border-top-color: var(--profile-accent);
+    border-radius: 50%;
+    animation: profileSpin .8s linear infinite;
+}
+
+@keyframes profileSpin {
+    to { transform: rotate(360deg); }
+}
+
+.profileError {
+    min-height: 60vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    text-align: center;
+    padding: 30px 20px;
+}
+
+.profileError .errorIcon {
+    font-size: 42px;
+    color: #6b7280;
+    opacity: .7;
+}
+
+.profileError h2 {
+    font-size: 18px;
+    font-weight: 800;
+}
+
+.profileError p {
+    color: #8b93a5;
+    font-size: 13px;
+    max-width: 280px;
+}
+
+.profileError button {
+    margin-top: 8px;
+    min-height: 42px;
+    padding: 0 20px;
+    color: #fff;
+    background: linear-gradient(135deg, #7067ff, #00bfe9);
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+
+/* ============================================================
+   STORY VIDEO SUPPORT
+============================================================ */
+
+.storyCircle video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border: 3px solid #08090f;
+    border-radius: 50%;
+}
+
+
+/* ============================================================
+   HIDDEN
+============================================================ */
+
+.hidden {
+    display: none !important;
+}
+
+
+/* ============================================================
+   MOBILE VIDEO TWEAKS
+============================================================ */
+
+@media (max-width: 520px) {
+
+    .videoThumb {
+        border-radius: 14px 14px 0 0;
+    }
+
+    .videoInfo {
+        padding: 10px 12px 12px;
+    }
+
+    .videoInfo h3 {
+        font-size: 12px;
+    }
+
+    .videoPlay i {
+        width: 42px;
+        height: 42px;
+        font-size: 14px;
+    }
+
+    .contentList {
+        gap: 10px;
+    }
+}

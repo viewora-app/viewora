@@ -1,811 +1,195 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
-
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
-    >
-
-    <meta name="theme-color" content="#070b12">
-
-    <title>Viewora • Settings</title>
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#0a0a0a">
+    <title>Settings • Viewora</title>
     <link rel="stylesheet" href="settings.css">
-
 </head>
-
 <body>
 
-<!-- =====================================================
-     BACKGROUND
-===================================================== -->
-
-<div class="ambient ambient-one"></div>
-<div class="ambient ambient-two"></div>
-<div class="ambient ambient-three"></div>
-
-
-<!-- =====================================================
-     HEADER
-===================================================== -->
-
+<!-- Header -->
 <header class="settings-header">
-
-    <div class="header-content">
-
-        <button
-            class="back-button"
-            type="button"
-            onclick="goBack()"
-            aria-label="Go back"
-        >
-            <span>‹</span>
-        </button>
-
-        <div class="header-title">
-
-            <span class="header-icon">⚙️</span>
-
-            <div>
-                <h1>Settings</h1>
-
-                <p>
-                    Personalize your Viewora
-                </p>
-            </div>
-
-        </div>
-
-    </div>
-
+    <button class="back-btn" type="button" onclick="goBack()" aria-label="Back">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M15 18l-6-6 6-6"/>
+        </svg>
+    </button>
+    <h1>Settings</h1>
 </header>
-
-
-<!-- =====================================================
-     MAIN
-===================================================== -->
 
 <main class="settings-main">
 
-
-    <!-- =================================================
-         PROFILE HERO
-    ================================================== -->
-
-    <section class="profile-hero">
-
-        <div class="profile-glow"></div>
-
-        <div class="profile-avatar-wrap">
-
-            <div class="avatar-ring"></div>
-
-            <img
-                id="profilePhoto"
-                src="non.jpg"
-                alt="Profile photo"
-                class="profile-avatar"
-            >
-
-            <span
-                class="online-dot"
-                title="Online"
-            ></span>
-
+    <!-- Profile Card -->
+    <section class="profile-card" onclick="openPage('account-settings.html')">
+        <img id="profilePhoto" src="non.jpg" alt="Profile" class="profile-avatar" onerror="this.src='non.jpg'">
+        <div class="profile-meta">
+            <h2 id="profileName">Loading...</h2>
+            <p id="profileUsername">@user</p>
         </div>
-
-
-        <div class="profile-info">
-
-            <h2 id="profileName">
-                Loading...
-            </h2>
-
-            <p id="profileUsername">
-                @loading
-            </p>
-
-            <div class="profile-status">
-                <span class="status-dot"></span>
-                Viewora member
-            </div>
-
-        </div>
-
+        <span class="chevron">›</span>
     </section>
 
-
-
-    <!-- =================================================
-         ACCOUNT
-    ================================================== -->
-
-    <section class="settings-section">
-
-        <div class="section-heading">
-
-            <span class="section-icon">👤</span>
-
-            <div>
-                <h3>Account</h3>
-
-                <p>
-                    Manage your personal account
-                </p>
-            </div>
-
-        </div>
-
-
-        <div class="settings-list">
-
-
-            <button
-                class="setting-item"
-                type="button"
-                onclick="openPage('account-settings.html')"
-            >
-
-                <span class="item-icon blue">
-                    👤
+    <!-- Account -->
+    <section class="settings-group">
+        <h3 class="group-title">Account</h3>
+        <div class="group-list">
+            <button class="row" type="button" onclick="openPage('account-settings.html')">
+                <span class="row-icon">👤</span>
+                <span class="row-text">
+                    <strong>Account information</strong>
+                    <small>Name, username, email</small>
                 </span>
-
-                <span class="item-content">
-
-                    <strong>Account Information</strong>
-
-                    <small>
-                        Name, username, email & phone
-                    </small>
-
-                </span>
-
-                <span class="item-arrow">›</span>
-
+                <span class="chevron">›</span>
             </button>
-
-
-            <button
-                class="setting-item"
-                type="button"
-                onclick="openPage('security-settings.html')"
-            >
-
-                <span class="item-icon purple">
-                    🔐
-                </span>
-
-                <span class="item-content">
-
+            <button class="row" type="button" onclick="openPage('security-settings.html')">
+                <span class="row-icon">🔐</span>
+                <span class="row-text">
                     <strong>Security</strong>
-
-                    <small>
-                        Password, verification & login activity
-                    </small>
-
+                    <small>Password & login activity</small>
                 </span>
-
-                <span class="item-arrow">›</span>
-
+                <span class="chevron">›</span>
             </button>
-
-
-            <button
-                class="setting-item"
-                type="button"
-                onclick="openPage('privacy.html')"
-            >
-
-                <span class="item-icon green">
-                    🛡️
-                </span>
-
-                <span class="item-content">
-
+            <button class="row" type="button" onclick="openPage('privacy.html')">
+                <span class="row-icon">🛡️</span>
+                <span class="row-text">
                     <strong>Privacy</strong>
-
-                    <small>
-                        Control your privacy and visibility
-                    </small>
-
+                    <small>Who can see your content</small>
                 </span>
-
-                <span class="item-arrow">›</span>
-
+                <span class="chevron">›</span>
             </button>
-
         </div>
-
     </section>
 
-
-
-    <!-- =================================================
-         PERSONALIZATION
-    ================================================== -->
-
-    <section class="settings-section">
-
-        <div class="section-heading">
-
-            <span class="section-icon">✨</span>
-
-            <div>
-
-                <h3>Personalization</h3>
-
-                <p>
-                    Make Viewora feel like yours
-                </p>
-
-            </div>
-
-        </div>
-
-
-        <div class="settings-list">
-
-
-            <button
-                class="setting-item"
-                type="button"
-                onclick="openPage('appearance-settings.html')"
-            >
-
-                <span class="item-icon pink">
-                    🎨
+    <!-- Creator tools (YouTube / Instagram style) -->
+    <section class="settings-group">
+        <h3 class="group-title">Creator tools</h3>
+        <div class="group-list">
+            <button class="row" type="button" onclick="openPage('monetization.html')">
+                <span class="row-icon">💰</span>
+                <span class="row-text">
+                    <strong>Monetization</strong>
+                    <small>Eligibility, balance & $50 payouts</small>
                 </span>
+                <span class="chevron">›</span>
+            </button>
+            <button class="row" type="button" onclick="openPage('monetization.html')">
+                <span class="row-icon">📊</span>
+                <span class="row-text">
+                    <strong>Earnings</strong>
+                    <small>Balance, history & payout method</small>
+                </span>
+                <span class="chevron">›</span>
+            </button>
+        </div>
+    </section>
 
-                <span class="item-content">
-
+    <!-- Preferences -->
+    <section class="settings-group">
+        <h3 class="group-title">Preferences</h3>
+        <div class="group-list">
+            <button class="row" type="button" onclick="openPage('appearance-settings.html')">
+                <span class="row-icon">🎨</span>
+                <span class="row-text">
                     <strong>Appearance</strong>
-
-                    <small>
-                        Theme, colors & display
-                    </small>
-
+                    <small>Theme & display</small>
                 </span>
-
-                <span class="item-arrow">›</span>
-
+                <span class="chevron">›</span>
             </button>
-
-
-            <button
-                class="setting-item"
-                type="button"
-                onclick="openPage('notification-settings.html')"
-            >
-
-                <span class="item-icon orange notification-icon">
-                    🔔
-                    <span
-                        id="notificationBadge"
-                        class="notification-badge hidden"
-                    >
-                        !
-                    </span>
-                </span>
-
-                <span class="item-content">
-
+            <button class="row" type="button" onclick="openPage('notification-settings.html')">
+                <span class="row-icon">🔔</span>
+                <span class="row-text">
                     <strong>Notifications</strong>
-
-                    <small>
-                        Messages, likes, comments & stories
-                    </small>
-
+                    <small>Likes, comments, stories</small>
                 </span>
-
-                <span class="item-arrow">›</span>
-
+                <span class="chevron">›</span>
             </button>
-
-
-            <button
-                class="setting-item"
-                type="button"
-                onclick="changeLanguage()"
-            >
-
-                <span class="item-icon cyan">
-                    🌐
-                </span>
-
-                <span class="item-content">
-
+            <button class="row" type="button" onclick="changeLanguage()">
+                <span class="row-icon">🌐</span>
+                <span class="row-text">
                     <strong>Language</strong>
-
-                    <small>
-                        English • More languages coming soon
-                    </small>
-
+                    <small>English</small>
                 </span>
-
-                <span class="item-arrow">›</span>
-
+                <span class="chevron">›</span>
             </button>
-
         </div>
-
     </section>
 
-
-
-    <!-- =================================================
-         QUICK ACTIONS
-    ================================================== -->
-
-    <section class="settings-section">
-
-        <div class="section-heading">
-
-            <span class="section-icon">⚡</span>
-
-            <div>
-
-                <h3>Quick Actions</h3>
-
-                <p>
-                    Useful Viewora tools
-                </p>
-
-            </div>
-
-        </div>
-
-
-        <div class="settings-list">
-
-
-            <button
-                class="setting-item"
-                type="button"
-                onclick="shareApp()"
-            >
-
-                <span class="item-icon blue">
-                    📤
-                </span>
-
-                <span class="item-content">
-
+    <!-- More -->
+    <section class="settings-group">
+        <h3 class="group-title">More</h3>
+        <div class="group-list">
+            <button class="row" type="button" onclick="shareApp()">
+                <span class="row-icon">📤</span>
+                <span class="row-text">
                     <strong>Share Viewora</strong>
-
-                    <small>
-                        Invite friends to Viewora
-                    </small>
-
                 </span>
-
-                <span class="item-arrow">›</span>
-
+                <span class="chevron">›</span>
             </button>
-
-
-            <button
-                class="setting-item"
-                type="button"
-                onclick="clearCache()"
-            >
-
-                <span class="item-icon yellow">
-                    🧹
+            <button class="row" type="button" onclick="clearCache()">
+                <span class="row-icon">🧹</span>
+                <span class="row-text">
+                    <strong>Clear cache</strong>
                 </span>
-
-                <span class="item-content">
-
-                    <strong>Clear Cache</strong>
-
-                    <small>
-                        Clean temporary app data
-                    </small>
-
-                </span>
-
-                <span class="item-arrow">›</span>
-
+                <span class="chevron">›</span>
             </button>
-
-
-            <button
-                class="setting-item"
-                type="button"
-                onclick="manageDownloads()"
-            >
-
-                <span class="item-icon green">
-                    📥
+            <button class="row" type="button" onclick="showHelp()">
+                <span class="row-icon">❓</span>
+                <span class="row-text">
+                    <strong>Help & support</strong>
                 </span>
-
-                <span class="item-content">
-
-                    <strong>Downloads</strong>
-
-                    <small>
-                        Manage saved media
-                    </small>
-
-                </span>
-
-                <span class="item-arrow">›</span>
-
+                <span class="chevron">›</span>
             </button>
-
-
-            <button
-                class="setting-item"
-                type="button"
-                onclick="managePermissions()"
-            >
-
-                <span class="item-icon purple">
-                    🔑
-                </span>
-
-                <span class="item-content">
-
-                    <strong>App Permissions</strong>
-
-                    <small>
-                        Camera, microphone & storage
-                    </small>
-
-                </span>
-
-                <span class="item-arrow">›</span>
-
-            </button>
-
-        </div>
-
-    </section>
-
-
-
-    <!-- =================================================
-         SUPPORT
-    ================================================== -->
-
-    <section class="settings-section">
-
-        <div class="section-heading">
-
-            <span class="section-icon">💬</span>
-
-            <div>
-
-                <h3>Support</h3>
-
-                <p>
-                    Need help?
-                </p>
-
-            </div>
-
-        </div>
-
-
-        <div class="settings-list">
-
-
-            <button
-                class="setting-item"
-                type="button"
-                onclick="showHelp()"
-            >
-
-                <span class="item-icon cyan">
-                    ❓
-                </span>
-
-                <span class="item-content">
-
-                    <strong>Help & Support</strong>
-
-                    <small>
-                        Get help with Viewora
-                    </small>
-
-                </span>
-
-                <span class="item-arrow">›</span>
-
-            </button>
-
-
-            <button
-                class="setting-item"
-                type="button"
-                onclick="showAbout()"
-            >
-
-                <span class="item-icon blue">
-                    ℹ️
-                </span>
-
-                <span class="item-content">
-
+            <button class="row" type="button" onclick="showAbout()">
+                <span class="row-icon">ℹ️</span>
+                <span class="row-text">
                     <strong>About Viewora</strong>
-
-                    <small>
-                        Version, privacy & terms
-                    </small>
-
                 </span>
-
-                <span class="item-arrow">›</span>
-
+                <span class="chevron">›</span>
             </button>
-
         </div>
-
     </section>
 
-
-
-    <!-- =================================================
-         ACCOUNT ACTIONS
-    ================================================== -->
-
-    <section class="settings-section danger-section">
-
-        <div class="section-heading">
-
-            <span class="section-icon">⚠️</span>
-
-            <div>
-
-                <h3>Account Actions</h3>
-
-                <p>
-                    Manage your session
-                </p>
-
-            </div>
-
-        </div>
-
-
-        <div class="settings-list">
-
-
-            <button
-                class="setting-item logout-item"
-                type="button"
-                onclick="logout()"
-            >
-
-                <span class="item-icon orange">
-                    🚪
+    <!-- Account actions -->
+    <section class="settings-group">
+        <div class="group-list">
+            <button class="row logout-row" type="button" onclick="logout()">
+                <span class="row-icon">🚪</span>
+                <span class="row-text">
+                    <strong>Log out</strong>
                 </span>
-
-                <span class="item-content">
-
-                    <strong>Logout</strong>
-
-                    <small>
-                        Sign out from this device
-                    </small>
-
-                </span>
-
-                <span class="item-arrow">›</span>
-
             </button>
-
-
-            <button
-                class="setting-item delete-item"
-                type="button"
-                onclick="deleteAccount()"
-            >
-
-                <span class="item-icon red">
-                    🗑️
+            <button class="row delete-row" type="button" onclick="deleteAccount()">
+                <span class="row-icon">🗑️</span>
+                <span class="row-text">
+                    <strong>Delete account</strong>
                 </span>
-
-                <span class="item-content">
-
-                    <strong>Delete Account</strong>
-
-                    <small>
-                        Permanently remove your Viewora account
-                    </small>
-
-                </span>
-
-                <span class="item-arrow">›</span>
-
             </button>
-
         </div>
-
     </section>
 
-
-
-    <!-- =================================================
-         VERSION CARD
-    ================================================== -->
-
-    <section class="version-card">
-
-        <div class="version-logo">
-            V
-        </div>
-
-        <div>
-
-            <h2>Viewora</h2>
-
-            <p>
-                Premium Social Platform
-            </p>
-
-            <span>
-                Version 1.0.0
-            </span>
-
-        </div>
-
-    </section>
-
-
-
-    <!-- =================================================
-         FOOTER
-    ================================================== -->
-
-    <footer class="settings-footer">
-
-        <div class="footer-heart">
-            ❤️
-        </div>
-
-        <h3>
-            Thanks for using Viewora
-        </h3>
-
-        <p>
-            Stay connected with the world.
-        </p>
-
-        <div class="footer-line"></div>
-
-        <small>
-            © 2026 Viewora • All Rights Reserved
-        </small>
-
-    </footer>
+    <p class="version-text">Viewora · Version 1.0.0</p>
 
 </main>
 
-
-
-<!-- =====================================================
-     TOAST
-===================================================== -->
-
-<div
-    id="vieworaToast"
-    class="viewora-toast"
-    aria-live="polite"
->
+<!-- Toast -->
+<div id="vieworaToast" class="toast" aria-live="polite">
     <span id="toastIcon">✓</span>
-    <span id="toastMessage">
-        Done
-    </span>
+    <span id="toastMessage">Done</span>
 </div>
 
-
-
-<!-- =====================================================
-     LOADING
-===================================================== -->
-
-<div
-    id="settingsLoader"
-    class="settings-loader"
->
-
-    <div class="loader-ring"></div>
-
-    <p>
-        Loading Viewora...
-    </p>
-
+<!-- Loader -->
+<div id="settingsLoader" class="loader-overlay">
+    <div class="spinner"></div>
 </div>
 
-
-
-<!-- =====================================================
-     FIREBASE
-===================================================== -->
-
+<!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
-
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
-
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
-
-
-<!-- =====================================================
-     VIEWORA
-===================================================== -->
-
 <script src="firebase.js"></script>
-
 <script src="settings.js"></script>
-
-<script src="nav.js"></script>
-
-
-<!-- =====================================================
-     PAGE START
-===================================================== -->
-
-<script>
-
-document.addEventListener(
-    "DOMContentLoaded",
-    () => {
-
-        document.body.classList.add(
-            "page-ready"
-        );
-
-    }
-);
-
-
-window.addEventListener(
-    "online",
-    () => {
-
-        if (
-            typeof showToast === "function"
-        ) {
-
-            showToast(
-                "🌐 Internet Connected"
-            );
-
-        }
-
-    }
-);
-
-
-window.addEventListener(
-    "offline",
-    () => {
-
-        if (
-            typeof showToast === "function"
-        ) {
-
-            showToast(
-                "⚠️ You're offline"
-            );
-
-        }
-
-    }
-);
-
-
-console.log(
-    "%cVIEWORA PREMIUM SETTINGS",
-    "color:#00c6ff;font-size:18px;font-weight:800"
-);
-
-</script>
 
 </body>
 </html>

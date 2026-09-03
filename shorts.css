@@ -13,7 +13,7 @@
     --muted: rgba(255, 255, 255, .68);
     --danger: #ff3b5f;
     --accent: #ffffff;
-    --nav-height: 64px;
+    --nav-height: 72px;
     --top-height: 60px;
     --radius: 22px;
     --safe-bottom: env(safe-area-inset-bottom, 0px);
@@ -1751,102 +1751,6 @@ img {
     }
 }
 
-/* =========================================================
-   BOTTOM NAV
-========================================================= */
-
-.shortsBottomNav {
-    position: fixed;
-
-    z-index: 150;
-
-    left: 0;
-    right: 0;
-    bottom: 0;
-
-    height:
-        calc(
-            var(--nav-height) +
-            env(safe-area-inset-bottom, 0px)
-        );
-
-    padding:
-        4px
-        10px
-        env(safe-area-inset-bottom, 0px);
-
-    display: grid;
-    grid-template-columns:
-        1fr
-        1fr
-        1fr
-        1fr
-        1fr;
-
-    align-items: center;
-
-    background:
-        linear-gradient(
-            to top,
-            rgba(0, 0, 0, .92),
-            rgba(0, 0, 0, .48),
-            transparent
-        );
-
-    pointer-events: auto;
-}
-
-.bottomNavItem {
-    height: 54px;
-
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-
-    gap: 4px;
-
-    background: transparent;
-    color: rgba(255, 255, 255, .76);
-
-    font-size: 17px;
-}
-
-.bottomNavItem span {
-    font-size: 8px;
-    font-weight: 600;
-}
-
-.bottomNavItem:active {
-    transform: scale(.91);
-}
-
-.bottomCreate {
-    display: grid;
-    place-items: center;
-
-    background: transparent;
-}
-
-.bottomCreate span {
-    width: 45px;
-    height: 34px;
-
-    display: grid;
-    place-items: center;
-
-    border-radius: 11px;
-
-    background: #fff;
-    color: #000;
-
-    box-shadow:
-        0 5px 20px rgba(0, 0, 0, .3);
-}
-
-.bottomCreate i {
-    font-size: 17px;
-}
 
 /* =========================================================
    DESKTOP / TABLET
@@ -1995,3 +1899,84 @@ input:focus-visible {
 /* =========================================================
    END VIEWORA SHORTS CSS
 ========================================================= */
+
+/* =========================================================
+   FOLLOW STATE + CAPTION META (YouTube style)
+========================================================= */
+
+.followBtn.following {
+    background: rgba(255, 255, 255, .14) !important;
+    color: #fff !important;
+    border: 1px solid rgba(255, 255, 255, .22);
+}
+
+.shortCaption {
+    cursor: pointer;
+}
+
+.shortMeta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+
+    margin: 0 0 8px;
+
+    color: rgba(255, 255, 255, .78);
+
+    font-size: 11px;
+    font-weight: 600;
+
+    text-shadow: 0 1px 6px rgba(0, 0, 0, .7);
+
+    animation: metaFade .2s ease;
+}
+
+.shortMeta[hidden] {
+    display: none !important;
+}
+
+.shortMeta .metaDot {
+    opacity: .55;
+}
+
+@keyframes metaFade {
+    from {
+        opacity: 0;
+        transform: translateY(4px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+
+/* =========================================================
+   GLOBAL NAV COMPAT (nav.js / nav.css)
+========================================================= */
+.shortsBottomNav,
+nav.bottomNav:not(#vieworaGlobalNav),
+#bottomNav:not(#vieworaGlobalNav) {
+    display: none !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+    height: 0 !important;
+}
+
+/* Keep short content above global nav */
+body.has-bottom-nav .shortContent {
+    bottom: calc(72px + env(safe-area-inset-bottom, 0px) + 24px);
+}
+
+body.has-bottom-nav .shortActions {
+    bottom: calc(72px + env(safe-area-inset-bottom, 0px) + 26px);
+}
+
+body.has-bottom-nav .shortProgress {
+    bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+}
+
+body.has-bottom-nav .toast {
+    bottom: calc(72px + env(safe-area-inset-bottom, 0px) + 16px);
+}

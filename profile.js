@@ -22,8 +22,10 @@
  • Message
  • Edit profile
  • Profile sharing
- • Stories
- • Story viewer
+ • Stories (active 24h)
+ • Highlights (expired stories after 24h)
+ • Story viewer via stories.html
+ • Upload via story-upload.html
  • Posts
  • Shorts
  • Videos
@@ -31,7 +33,7 @@
  • Archive
  • Delete own content
  • NaN-safe counters
- • Loading timeout protection
+ • Loading UI removed
  • Missing Firebase data protection
  • No duplicate initialization
 ============================================================
@@ -197,6 +199,38 @@
             .replace(/'/g, "&#039;");
 
     }
+
+
+    /* =====================================================
+       VERIFIED / BLUE TICK
+    ===================================================== */
+
+    function isVerifiedUser(data) {
+        if (!data || typeof data !== "object") return false;
+
+        if (
+            data.verified === true ||
+            data.isVerified === true ||
+            data.blueTick === true ||
+            data.verification === true
+        ) {
+            return true;
+        }
+
+        const status = String(
+            data.verificationStatus ||
+            data.badge ||
+            ""
+        ).toLowerCase();
+
+        return (
+            status === "verified" ||
+            status === "creator" ||
+            status === "influencer" ||
+            status === "admin"
+        );
+    }
+
 
 
     /* =====================================================
@@ -389,7 +423,7 @@
                     "Welcome to Viewora 🚀",
 
                 verified:
-                    data.verified === true,
+                    isVerifiedUser(data),
 
                 followers:
                     safeNumber(data.followers),
@@ -635,13 +669,48 @@
         const verifiedBadge =
             $("verifiedBadge");
 
-        if (verifiedBadge) {
+        const verified =
+            isVerifiedUser(user) ||
+            user.verified === true;
 
+        if (verifiedBadge) {
             verifiedBadge.classList.toggle(
                 "hidden",
-                user.verified !== true
+                !verified
             );
+        }
 
+        /* Also support other common badge selectors in HTML */
+        document
+            .querySelectorAll(
+                ".verifiedBadge, .profileVerified, [data-verified-badge], #blueTick, .blueTick"
+            )
+            .forEach((el) => {
+                el.classList.toggle("hidden", !verified);
+                if (verified) {
+                    el.style.display = "";
+                    el.removeAttribute("hidden");
+                }
+            });
+
+        /* Inject tick next to name if badge element missing */
+        const nameEl = $("profileName");
+        if (nameEl && verified) {
+            let tick = nameEl.querySelector(".profileBlueTick");
+            if (!tick) {
+                tick = document.createElement("i");
+                tick.className =
+                    "fa-solid fa-circle-check profileBlueTick verifiedTick";
+                tick.title = "Verified";
+                tick.setAttribute("aria-label", "Verified");
+                tick.style.cssText =
+                    "color:#1d9bf0;margin-left:6px;font-size:0.85em;vertical-align:middle";
+                nameEl.appendChild(tick);
+            }
+        } else if (nameEl) {
+            nameEl
+                .querySelectorAll(".profileBlueTick")
+                .forEach((t) => t.remove());
         }
 
 
@@ -2863,6 +2932,7 @@
             $("storyFile");
 
 
+        // Plus button → open story-upload.html (no file picker)
         $("storyPlusBtn")
             ?.addEventListener(
                 "click",
@@ -2876,12 +2946,14 @@
 
                     }
 
-                    storyInput?.click();
+                    window.location.href =
+                        "story-upload.html";
 
                 }
             );
 
 
+        // New story item → open story-upload.html
         $("newStoryItem")
             ?.addEventListener(
                 "click",
@@ -2889,7 +2961,8 @@
 
                     if (isOwnProfile) {
 
-                        storyInput?.click();
+                        window.location.href =
+                            "story-upload.html";
 
                     } else {
 
@@ -2901,6 +2974,7 @@
             );
 
 
+        // Keep file input support only as fallback (not triggered from UI)
         storyInput
             ?.addEventListener(
                 "change",
@@ -2985,6 +3059,7 @@
                 createdAt:
                     SERVER_TIME,
 
+                // Active for 24 hours, then moves to Highlights
                 expiresAt:
                     Date.now() +
                     (
@@ -3148,28 +3223,13 @@
                 Date.now();
 
 
-            const stories =
+            const allStories =
                 Object.entries(data)
                     .map(
                         ([id, value]) => ({
                             id,
                             ...(value || {})
                         })
-                    )
-                    .filter(
-                        story => {
-
-                            const expiry =
-                                safeNumber(
-                                    story.expiresAt
-                                );
-
-                            return (
-                                !expiry ||
-                                expiry > now
-                            );
-
-                        }
                     )
                     .sort(
                         (a, b) =>
@@ -3180,6 +3240,44 @@
                                 a.createdAt
                             )
                     );
+
+
+            // Active = still within 24 hours
+            const activeStories =
+                allStories.filter(
+                    story => {
+
+                        const expiry =
+                            safeNumber(
+                                story.expiresAt
+                            );
+
+                        return (
+                            !expiry ||
+                            expiry > now
+                        );
+
+                    }
+                );
+
+
+            // Highlights = stories whose 24 hours are over
+            const highlightStories =
+                allStories.filter(
+                    story => {
+
+                        const expiry =
+                            safeNumber(
+                                story.expiresAt
+                            );
+
+                        return (
+                            expiry &&
+                            expiry <= now
+                        );
+
+                    }
+                );
 
 
             const newItem =
@@ -3201,7 +3299,8 @@
             }
 
 
-            stories.forEach(
+            // Render active stories (top ring)
+            activeStories.forEach(
                 story => {
 
                     const item =
@@ -3263,6 +3362,7 @@
                         "click",
                         () => {
 
+                            // Open your stories.html viewer
                             openStoryViewer(
                                 story
                             );
@@ -3279,13 +3379,22 @@
             );
 
 
-            if (!stories.length && !isOwnProfile) {
+            if (
+                !activeStories.length &&
+                !isOwnProfile
+            ) {
 
                 renderStoryEmpty(
                     wrapper
                 );
 
             }
+
+
+            // Render Highlights (expired stories – 24h complete)
+            renderHighlights(
+                highlightStories
+            );
 
         } catch (error) {
 
@@ -3305,115 +3414,32 @@
 
     function openStoryViewer(story) {
 
-        const url =
-            story.mediaUrl ||
-            story.url ||
-            "";
+        /*
+         * Open your stories.html page for proper story viewing.
+         * Passes uid + optional story id.
+         */
 
-
-        if (!url) {
+        if (!profileUID) {
             return;
         }
 
-
-        document
-            .getElementById(
-                "vieworaStoryViewer"
-            )
-            ?.remove();
-
-
-        const viewer =
-            document.createElement(
-                "div"
+        let url =
+            "stories.html?uid=" +
+            encodeURIComponent(
+                profileUID
             );
 
+        if (story?.id) {
 
-        viewer.id =
-            "vieworaStoryViewer";
+            url +=
+                "&story=" +
+                encodeURIComponent(
+                    story.id
+                );
 
+        }
 
-        viewer.innerHTML = `
-
-            <div class="storyViewerBackdrop"></div>
-
-            <div class="storyViewerContent">
-
-                <button
-                    class="storyViewerClose"
-                    type="button"
-                    aria-label="Close"
-                >
-                    <i class="fa-solid fa-xmark"></i>
-                </button>
-
-                ${
-                    story.type === "video"
-                        ? `
-                            <video
-                                src="${escapeHTML(url)}"
-                                controls
-                                autoplay
-                                playsinline
-                            ></video>
-                        `
-                        : `
-                            <img
-                                src="${escapeHTML(url)}"
-                                alt="Story"
-                            >
-                        `
-                }
-
-            </div>
-
-        `;
-
-
-        document.body.appendChild(
-            viewer
-        );
-
-
-        viewer
-            .querySelector(
-                ".storyViewerClose"
-            )
-            ?.addEventListener(
-                "click",
-                () => viewer.remove()
-            );
-
-
-        viewer
-            .querySelector(
-                ".storyViewerBackdrop"
-            )
-            ?.addEventListener(
-                "click",
-                () => viewer.remove()
-            );
-
-
-        document.addEventListener(
-            "keydown",
-            function closeOnEscape(event) {
-
-                if (
-                    event.key === "Escape"
-                ) {
-
-                    viewer.remove();
-
-                    document.removeEventListener(
-                        "keydown",
-                        closeOnEscape
-                    );
-
-                }
-
-            }
-        );
+        window.location.href = url;
 
     }
 
@@ -3424,24 +3450,16 @@
 
     function openProfileStories() {
 
-        const firstStory =
-            document.querySelector(
-                ".storyItem:not(#newStoryItem)"
-            );
-
-
-        if (firstStory) {
-
-            firstStory.click();
-
+        if (!profileUID) {
             return;
-
         }
 
-
-        showToast(
-            "No active stories"
-        );
+        // Open stories.html for this profile
+        window.location.href =
+            "stories.html?uid=" +
+            encodeURIComponent(
+                profileUID
+            );
 
     }
 
@@ -3485,6 +3503,146 @@
 
 
     /* =====================================================
+       HIGHLIGHTS (expired stories – 24h complete)
+    ===================================================== */
+
+    function renderHighlights(stories) {
+
+        /*
+         * Supports common container IDs used in profile.html
+         */
+
+        const container =
+            $("highlightsWrapper") ||
+            $("highlightsList") ||
+            $("profileHighlights") ||
+            document.querySelector(
+                ".highlightsWrapper"
+            ) ||
+            document.querySelector(
+                ".highlights"
+            );
+
+
+        if (!container) {
+            return;
+        }
+
+
+        if (
+            !stories ||
+            !stories.length
+        ) {
+
+            container.innerHTML = "";
+
+            // Optional empty state
+            const empty =
+                document.createElement(
+                    "div"
+                );
+
+            empty.className =
+                "highlightEmpty";
+
+            empty.innerHTML = `
+                <p>No highlights yet</p>
+            `;
+
+            container.appendChild(
+                empty
+            );
+
+            return;
+
+        }
+
+
+        container.innerHTML = "";
+
+
+        stories.forEach(
+            story => {
+
+                const item =
+                    document.createElement(
+                        "div"
+                    );
+
+
+                item.className =
+                    "highlightItem storyItem";
+
+
+                const media =
+                    story.mediaUrl ||
+                    story.url ||
+                    story.thumbnail ||
+                    "";
+
+
+                item.innerHTML = `
+
+                    <div class="storyCircle highlightCircle">
+
+                        ${
+                            story.type === "video"
+                                ? `
+                                    <video
+                                        src="${escapeHTML(media)}"
+                                        muted
+                                        playsinline
+                                        preload="metadata"
+                                    ></video>
+                                `
+                                : `
+                                    <img
+                                        src="${escapeHTML(
+                                            media ||
+                                            DEFAULT_AVATAR
+                                        )}"
+                                        alt="Highlight"
+                                    >
+                                `
+                        }
+
+                    </div>
+
+                    <p>
+                        ${
+                            escapeHTML(
+                                story.title ||
+                                "Highlight"
+                            )
+                        }
+                    </p>
+
+                `;
+
+
+                item.addEventListener(
+                    "click",
+                    () => {
+
+                        openStoryViewer(
+                            story
+                        );
+
+                    }
+                );
+
+
+                container.appendChild(
+                    item
+                );
+
+            }
+        );
+
+    }
+
+
+    /* =====================================================
        LOADING
     ===================================================== */
 
@@ -3492,21 +3650,10 @@
         container,
         text
     ) {
-
-        container.innerHTML = `
-
-            <div class="profileLoading">
-
-                <div class="profileSpinner"></div>
-
-                <span>
-                    ${escapeHTML(text)}
-                </span>
-
-            </div>
-
-        `;
-
+        // Loading UI removed as requested – keep container empty while data loads
+        if (container) {
+            container.innerHTML = "";
+        }
     }
 
 
@@ -3679,24 +3826,7 @@
     ===================================================== */
 
     function startLoaderProtection() {
-
-        setTimeout(
-            () => {
-
-                if (profileLoadFinished) {
-                    return;
-                }
-
-                console.warn(
-                    "Profile loader timeout."
-                );
-
-                hidePageLoader();
-
-            },
-            10000
-        );
-
+        // Disabled – loading UI removed
     }
 
 
@@ -3757,7 +3887,8 @@
 
     async function initProfile() {
 
-        startLoaderProtection();
+        // Loading removed – hide page loader immediately
+        hidePageLoader();
 
 
         try {
@@ -3786,6 +3917,10 @@
 
             profileUID =
                 resolveProfileUID();
+
+            // Expose for HTML helpers (View all, story ring, etc.)
+            window.profileUID =
+                profileUID;
 
 
             if (!profileUID) {
@@ -4021,10 +4156,18 @@
         openContent:
             openContent,
 
+        openStoryViewer:
+            openStoryViewer,
+
         refreshCounts:
             refreshRealFollowCounts
 
     };
+
+
+    // Also expose for older HTML helpers
+    window.openStoryViewer =
+        openStoryViewer;
 
 
 })();

@@ -61,11 +61,6 @@
         href="nav.css"
     >
 
-    <link
-        rel="stylesheet"
-        href="viewora-loader.css"
-    >
-
 
     <style>
 
@@ -1547,6 +1542,41 @@
 
 
         /* =====================================================
+           HIGHLIGHTS (expired stories)
+        ====================================================== */
+
+        #highlightsSection {
+            margin-top: 12px;
+        }
+
+        .highlightCircle {
+            background: linear-gradient(
+                135deg,
+                #2a2f42,
+                #1a1e2b
+            ) !important;
+            border: 1px solid rgba(255,255,255,.12);
+        }
+
+        .highlightCircle img,
+        .highlightCircle video {
+            border-color: #0c0e16;
+        }
+
+        .highlightEmpty {
+            width: 100%;
+            text-align: center;
+            color: #6b7280;
+            font-size: 12px;
+            padding: 18px 0;
+        }
+
+        .highlightItem .storyCircle {
+            opacity: 0.92;
+        }
+
+
+        /* =====================================================
            CONTENT TABS
         ====================================================== */
 
@@ -2899,58 +2929,26 @@
 
 
         <!-- =================================================
-             STORIES / HIGHLIGHTS
+             HIGHLIGHTS (Expired stories – 24h complete)
         ================================================== -->
 
-        <section class="storySection">
+        <section class="storySection" id="highlightsSection">
 
             <div class="sectionHeader">
 
                 <h3>
-                    Story Highlights
+                    Highlights
                 </h3>
-
-                <a
-                    href="stories.html"
-                    id="storiesLink"
-                >
-                    View all
-                </a>
 
             </div>
 
 
             <div
-                id="storiesWrapper"
+                id="highlightsWrapper"
                 class="storiesWrapper"
             >
 
-
-                <!-- New Story -->
-
-                <div
-                    id="newStoryItem"
-                    class="storyItem ownerOnly"
-                >
-
-                    <div
-                        class="storyCircle addStory"
-                    >
-
-                        <i
-                            class="fa-solid fa-plus"
-                        ></i>
-
-                    </div>
-
-                    <p>
-                        New
-                    </p>
-
-                </div>
-
-
-                <!-- Dynamic stories inserted by JS -->
+                <!-- Expired stories (after 24h) inserted by profile.js -->
 
             </div>
 
@@ -3500,40 +3498,37 @@
 
 
                 /* =================================================
-                   STORY PICKER
+                   STORY UPLOAD BUTTONS
+                   → Open story-upload.html (no file picker)
                 ================================================= */
 
-                function openStoryPicker() {
+                function openStoryUploadPage(event) {
 
-                    if (!storyFile) {
-                        return;
+                    if (event) {
+                        event.preventDefault();
+                        event.stopPropagation();
                     }
 
-                    storyFile.click();
+                    window.location.href =
+                        "story-upload.html";
 
                 }
 
 
                 storyPlusBtn?.addEventListener(
                     "click",
-                    function (event) {
-
-                        event.stopPropagation();
-
-                        openStoryPicker();
-
-                    }
+                    openStoryUploadPage
                 );
 
 
                 newStoryItem?.addEventListener(
                     "click",
-                    openStoryPicker
+                    openStoryUploadPage
                 );
 
 
                 /* =================================================
-                   STORY FILE CHANGE
+                   STORY FILE CHANGE (fallback only – not used by UI)
                 ================================================= */
 
                 storyFile?.addEventListener(
@@ -3546,12 +3541,6 @@
                         if (!file) {
                             return;
                         }
-
-
-                        /*
-                         * profile.js may expose
-                         * createStoryFromFile().
-                         */
 
                         try {
 
@@ -3576,7 +3565,7 @@
                             } else {
 
                                 vieworaProfileToast(
-                                    "Story upload is being prepared."
+                                    "Please use story-upload.html to add a story."
                                 );
 
                             }
@@ -3594,9 +3583,7 @@
 
                         }
 
-
-                        storyFile.value =
-                            "";
+                        storyFile.value = "";
 
                     }
                 );
@@ -3755,6 +3742,32 @@
                     );
 
                 }
+
+
+                // Keep "View all" stories link correct
+                (function updateStoriesLink() {
+
+                    const link =
+                        document.getElementById(
+                            "storiesLink"
+                        );
+
+                    if (!link) {
+                        return;
+                    }
+
+                    const uid =
+                        getProfileUID();
+
+                    if (uid) {
+                        link.href =
+                            "stories.html?uid=" +
+                            encodeURIComponent(
+                                uid
+                            );
+                    }
+
+                })();
 
 
                 function openPeoplePage(
@@ -3996,7 +4009,7 @@
 
 
                 /* =================================================
-                   AVATAR STORY VIEW
+                   AVATAR / STORY RING → open stories.html
                 ================================================= */
 
                 document
@@ -4005,43 +4018,37 @@
                     )
                     ?.addEventListener(
                         "click",
-                        function () {
+                        function (event) {
 
-                            /*
-                             * Do not trigger viewer when
-                             * owner clicks the plus button.
-                             */
-
-                            const hasStory =
-                                this.dataset.hasStory ===
-                                "true";
-
-
-                            if (!hasStory) {
-
+                            // Ignore clicks that come from the + button
+                            if (
+                                event.target.closest(
+                                    "#storyPlusBtn"
+                                )
+                            ) {
                                 return;
-
                             }
 
+                            const uid =
+                                getProfileUID();
 
+                            if (!uid) {
+                                return;
+                            }
+
+                            // Prefer profile.js openStoryViewer if available
                             if (
-                                typeof window.openStoryViewer ===
+                                typeof window.VieworaProfile?.openContent ===
                                 "function"
                             ) {
-
-                                window.openStoryViewer(
-                                    getProfileUID()
-                                );
-
-                            } else {
-
-                                window.location.href =
-                                    "stories.html?uid=" +
-                                    encodeURIComponent(
-                                        getProfileUID()
-                                    );
-
+                                // fallback to direct navigation
                             }
+
+                            window.location.href =
+                                "stories.html?uid=" +
+                                encodeURIComponent(
+                                    uid
+                                );
 
                         }
                     );

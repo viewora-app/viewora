@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Viewora · Music</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+    <link rel="stylesheet" href="nav.css">
+    <style>
+        :root {
+            --bg: #0a0a0f;
+            --card: rgba(255,255,255,0.05);
+            --border: rgba(255,255,255,0.08);
+            --text: #fff;
+            --muted: #9ca3af;
+            --accent: #7c5cff;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            min-height: 100vh;
+            background: var(--bg);
+            color: var(--text);
+            font-family: Inter, system-ui, sans-serif;
+            padding-bottom: 90px;
+        }
+        .msHeader {
+            position: sticky; top: 0; z-index: 20;
+            display: flex; align-items: center; gap: 12px;
+            padding: 14px 16px;
+            background: rgba(10,10,15,0.9);
+            border-bottom: 1px solid var(--border);
+            backdrop-filter: blur(16px);
+        }
+        .msHeader h1 { font-size: 18px; font-weight: 800; flex: 1; }
+        .msBack, .msIconBtn {
+            width: 40px; height: 40px;
+            border: 0; border-radius: 12px;
+            background: var(--card); color: var(--text);
+            display: grid; place-items: center; cursor: pointer;
+        }
+        .msSearchWrap {
+            padding: 12px 16px;
+        }
+        .msSearch {
+            display: flex; align-items: center; gap: 10px;
+            height: 44px; padding: 0 14px;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+        }
+        .msSearch input {
+            flex: 1; border: 0; outline: 0;
+            background: transparent; color: var(--text);
+            font-size: 14px;
+        }
+        .msTabs {
+            display: flex; gap: 8px; padding: 0 16px 12px;
+            overflow-x: auto;
+        }
+        .msTab {
+            flex-shrink: 0;
+            padding: 8px 14px;
+            border-radius: 999px;
+            border: 1px solid var(--border);
+            background: transparent;
+            color: var(--muted);
+            font-size: 12px; font-weight: 600;
+            cursor: pointer;
+        }
+        .msTab.active {
+            background: linear-gradient(135deg, #7c5cff, #4f8cff);
+            color: #fff; border-color: transparent;
+        }
+        .msList { padding: 0 12px 20px; display: grid; gap: 8px; }
+        .msTrack {
+            display: flex; align-items: center; gap: 12px;
+            padding: 12px;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .msTrack:hover { border-color: rgba(124,92,255,0.4); }
+        .msTrack.selected {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 2px rgba(124,92,255,0.25);
+        }
+        .msCover {
+            width: 52px; height: 52px;
+            border-radius: 12px;
+            object-fit: cover;
+            background: #1a1a24;
+        }
+        .msMeta { flex: 1; min-width: 0; }
+        .msMeta strong {
+            display: block; font-size: 13px;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .msMeta span {
+            display: block; margin-top: 3px;
+            color: var(--muted); font-size: 11px;
+        }
+        .msUse {
+            color: var(--muted); font-size: 10px;
+            white-space: nowrap;
+        }
+        .msEmpty {
+            padding: 60px 20px; text-align: center; color: var(--muted);
+        }
+        .msEmpty i { font-size: 36px; margin-bottom: 12px; display: block; }
+        .msFooter {
+            position: fixed; left: 0; right: 0; bottom: 74px;
+            padding: 12px 16px;
+            background: rgba(10,10,15,0.95);
+            border-top: 1px solid var(--border);
+            display: none;
+        }
+        .msFooter.show { display: block; }
+        .msUseBtn {
+            width: 100%; height: 48px;
+            border: 0; border-radius: 14px;
+            background: linear-gradient(135deg, #7c5cff, #4f8cff);
+            color: #fff; font-weight: 700; font-size: 14px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+<header class="msHeader">
+    <button class="msBack" type="button" onclick="history.back()">
+        <i class="fa-solid fa-arrow-left"></i>
+    </button>
+    <h1>Music</h1>
+    <button class="msIconBtn" type="button" title="Trending">
+        <i class="fa-solid fa-fire"></i>
+    </button>
+</header>
+
+<div class="msSearchWrap">
+    <div class="msSearch">
+        <i class="fa-solid fa-magnifying-glass" style="color:#9ca3af"></i>
+        <input id="musicSearch" type="search" placeholder="Search songs, artists...">
+    </div>
+</div>
+
+<div class="msTabs" id="musicTabs">
+    <button class="msTab active" data-genre="all">All</button>
+    <button class="msTab" data-genre="Trending">Trending</button>
+    <button class="msTab" data-genre="Pop">Pop</button>
+    <button class="msTab" data-genre="Hip-Hop">Hip-Hop</button>
+    <button class="msTab" data-genre="Desi">Desi</button>
+    <button class="msTab" data-genre="Other">Other</button>
+</div>
+
+<div class="msList" id="musicList">
+    <div class="msEmpty">
+        <i class="fa-solid fa-music"></i>
+        Loading music...
+    </div>
+</div>
+
+<div class="msFooter" id="musicFooter">
+    <button class="msUseBtn" id="useMusicBtn" type="button">
+        Use this sound
+    </button>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+<script src="firebase.js"></script>
+<script src="viewora-stores.js"></script>
+<script src="nav.js" defer></script>
+<script>
+(function () {
+    const listEl = document.getElementById("musicList");
+    const footer = document.getElementById("musicFooter");
+    const searchInput = document.getElementById("musicSearch");
+    let tracks = [];
+    let selected = null;
+    let genre = "all";
+
+    function cover(t) {
+        return t.coverUrl || "assets/default-avatar.png";
+    }
+
+    function render(items) {
+        if (!items.length) {
+            listEl.innerHTML = `
+                <div class="msEmpty">
+                    <i class="fa-solid fa-music"></i>
+                    No tracks found. Admin can add music in panel.
+                </div>`;
+            return;
+        }
+        listEl.innerHTML = items.map((t) => `
+            <div class="msTrack ${selected && selected.id === t.id ? "selected" : ""}" data-id="${t.id}">
+                <img class="msCover" src="${cover(t)}" alt="" onerror="this.src='assets/default-avatar.png'">
+                <div class="msMeta">
+                    <strong>${VieworaStores.escapeHTML(t.title || "Untitled")}</strong>
+                    <span>${VieworaStores.escapeHTML(t.artist || "Unknown")} · ${VieworaStores.escapeHTML(t.genre || "")}</span>
+                </div>
+                <span class="msUse">${VieworaStores.formatCount(t.uses || 0)} uses</span>
+            </div>
+        `).join("");
+
+        listEl.querySelectorAll(".msTrack").forEach((el) => {
+            el.addEventListener("click", () => {
+                selected = tracks.find((x) => x.id === el.dataset.id) || null;
+                render(filterTracks());
+                footer.classList.toggle("show", !!selected);
+            });
+        });
+    }
+
+    function filterTracks() {
+        let items = tracks.slice();
+        const q = (searchInput.value || "").toLowerCase().trim();
+        if (genre === "Trending") {
+            items = items.filter((t) => t.trending || (t.uses || 0) > 10);
+        } else if (genre !== "all") {
+            items = items.filter(
+                (t) => (t.genre || "").toLowerCase() === genre.toLowerCase()
+            );
+        }
+        if (q) {
+            items = items.filter(
+                (t) =>
+                    (t.title || "").toLowerCase().includes(q) ||
+                    (t.artist || "").toLowerCase().includes(q)
+            );
+        }
+        return items;
+    }
+
+    async function load() {
+        try {
+            tracks = await VieworaStores.MusicStore.list(80);
+            render(filterTracks());
+        } catch (e) {
+            console.error(e);
+            listEl.innerHTML = `
+                <div class="msEmpty">
+                    <i class="fa-solid fa-circle-exclamation"></i>
+                    Unable to load music library.
+                </div>`;
+        }
+    }
+
+    searchInput.addEventListener("input", () => render(filterTracks()));
+
+    document.querySelectorAll(".msTab").forEach((tab) => {
+        tab.addEventListener("click", () => {
+            document.querySelectorAll(".msTab").forEach((t) => t.classList.remove("active"));
+            tab.classList.add("active");
+            genre = tab.dataset.genre;
+            render(filterTracks());
+        });
+    });
+
+    document.getElementById("useMusicBtn").addEventListener("click", async () => {
+        if (!selected) return;
+        await VieworaStores.MusicStore.incrementUse(selected.id);
+        try {
+            sessionStorage.setItem(
+                "vieworaSelectedMusic",
+                JSON.stringify(selected)
+            );
+        } catch (_) {}
+        const returnTo =
+            new URLSearchParams(location.search).get("return") ||
+            "upload.html";
+        location.href = returnTo;
+    });
+
+    load();
+})();
+</script>
+</body>
+</html>

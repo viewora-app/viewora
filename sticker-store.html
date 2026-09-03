@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Viewora · Stickers</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+    <link rel="stylesheet" href="nav.css">
+    <style>
+        :root {
+            --bg: #0a0a0f;
+            --card: rgba(255,255,255,0.05);
+            --border: rgba(255,255,255,0.08);
+            --text: #fff;
+            --muted: #9ca3af;
+            --accent: #7c5cff;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            min-height: 100vh;
+            background: var(--bg);
+            color: var(--text);
+            font-family: Inter, system-ui, sans-serif;
+            padding-bottom: 90px;
+        }
+        .ssHeader {
+            position: sticky; top: 0; z-index: 20;
+            display: flex; align-items: center; gap: 12px;
+            padding: 14px 16px;
+            background: rgba(10,10,15,0.9);
+            border-bottom: 1px solid var(--border);
+            backdrop-filter: blur(16px);
+        }
+        .ssHeader h1 { font-size: 18px; font-weight: 800; flex: 1; }
+        .ssBack {
+            width: 40px; height: 40px; border: 0; border-radius: 12px;
+            background: var(--card); color: var(--text);
+            display: grid; place-items: center; cursor: pointer;
+        }
+        .ssPacks {
+            padding: 16px;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+        .ssPack {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .ssPack:hover { border-color: rgba(124,92,255,0.45); }
+        .ssPackCover {
+            width: 100%; aspect-ratio: 1;
+            object-fit: cover; background: #16161f;
+        }
+        .ssPackInfo { padding: 10px 12px 14px; }
+        .ssPackInfo strong { display: block; font-size: 13px; }
+        .ssPackInfo span {
+            display: block; margin-top: 4px;
+            color: var(--muted); font-size: 11px;
+        }
+        .ssPrice {
+            display: inline-block; margin-top: 8px;
+            padding: 3px 8px; border-radius: 999px;
+            background: rgba(124,92,255,0.15);
+            color: #c4b5fd; font-size: 10px; font-weight: 700;
+        }
+        .ssEmpty {
+            grid-column: 1 / -1;
+            padding: 50px 20px; text-align: center; color: var(--muted);
+        }
+        .ssDrawer {
+            position: fixed; left: 0; right: 0; bottom: 0;
+            max-height: 70vh; z-index: 40;
+            background: #12121a;
+            border-radius: 22px 22px 0 0;
+            border: 1px solid var(--border);
+            transform: translateY(110%);
+            transition: transform 0.28s ease;
+            padding: 16px 16px 100px;
+            overflow-y: auto;
+        }
+        .ssDrawer.open { transform: translateY(0); }
+        .ssDrawer h2 { font-size: 16px; margin-bottom: 12px; }
+        .ssGrid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+        }
+        .ssSticker {
+            aspect-ratio: 1;
+            border-radius: 14px;
+            background: var(--card);
+            border: 1px solid var(--border);
+            display: grid; place-items: center;
+            cursor: pointer; padding: 6px;
+        }
+        .ssSticker img { max-width: 100%; max-height: 100%; object-fit: contain; }
+        .ssBackdrop {
+            position: fixed; inset: 0; z-index: 35;
+            background: rgba(0,0,0,0.55);
+            display: none;
+        }
+        .ssBackdrop.show { display: block; }
+    </style>
+</head>
+<body>
+
+<header class="ssHeader">
+    <button class="ssBack" type="button" onclick="history.back()">
+        <i class="fa-solid fa-arrow-left"></i>
+    </button>
+    <h1>Stickers</h1>
+</header>
+
+<div class="ssPacks" id="stickerPacks">
+    <div class="ssEmpty">Loading packs...</div>
+</div>
+
+<div class="ssBackdrop" id="ssBackdrop"></div>
+<div class="ssDrawer" id="ssDrawer">
+    <h2 id="ssDrawerTitle">Pack</h2>
+    <div class="ssGrid" id="ssGrid"></div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+<script src="firebase.js"></script>
+<script src="viewora-stores.js"></script>
+<script src="nav.js" defer></script>
+<script>
+(function () {
+    const packsEl = document.getElementById("stickerPacks");
+    const drawer = document.getElementById("ssDrawer");
+    const backdrop = document.getElementById("ssBackdrop");
+    const grid = document.getElementById("ssGrid");
+    const title = document.getElementById("ssDrawerTitle");
+    let packs = [];
+
+    function closeDrawer() {
+        drawer.classList.remove("open");
+        backdrop.classList.remove("show");
+    }
+
+    backdrop.addEventListener("click", closeDrawer);
+
+    function openPack(pack) {
+        title.textContent = pack.name || "Stickers";
+        const stickers = Array.isArray(pack.stickers) ? pack.stickers : [];
+        if (!stickers.length) {
+            grid.innerHTML = `<div class="ssEmpty" style="grid-column:1/-1">No stickers in this pack</div>`;
+        } else {
+            grid.innerHTML = stickers.map((s, i) => `
+                <button type="button" class="ssSticker" data-idx="${i}">
+                    <img src="${s.url || s}" alt="">
+                </button>
+            `).join("");
+
+            grid.querySelectorAll(".ssSticker").forEach((btn) => {
+                btn.addEventListener("click", async () => {
+                    const s = stickers[Number(btn.dataset.idx)];
+                    try {
+                        sessionStorage.setItem(
+                            "vieworaSelectedSticker",
+                            JSON.stringify({
+                                packId: pack.id,
+                                sticker: s
+                            })
+                        );
+                    } catch (_) {}
+                    await VieworaStores.StickerStore.incrementUse(pack.id);
+                    const returnTo =
+                        new URLSearchParams(location.search).get("return") ||
+                        "stories-upload.html";
+                    location.href = returnTo;
+                });
+            });
+        }
+        backdrop.classList.add("show");
+        drawer.classList.add("open");
+    }
+
+    async function load() {
+        try {
+            packs = await VieworaStores.StickerStore.listPacks(40);
+            if (!packs.length) {
+                packsEl.innerHTML = `
+                    <div class="ssEmpty">
+                        No sticker packs yet.<br>Admin can add packs from panel.
+                    </div>`;
+                return;
+            }
+            packsEl.innerHTML = packs.map((p) => `
+                <div class="ssPack" data-id="${p.id}">
+                    <img class="ssPackCover" src="${p.coverUrl || "assets/default-avatar.png"}" alt=""
+                         onerror="this.src='assets/default-avatar.png'">
+                    <div class="ssPackInfo">
+                        <strong>${VieworaStores.escapeHTML(p.name || "Pack")}</strong>
+                        <span>${VieworaStores.escapeHTML(p.category || "General")} · ${(p.stickers || []).length} stickers</span>
+                        <span class="ssPrice">${Number(p.price) > 0 ? "₹" + p.price : "Free"}</span>
+                    </div>
+                </div>
+            `).join("");
+
+            packsEl.querySelectorAll(".ssPack").forEach((el) => {
+                el.addEventListener("click", () => {
+                    const pack = packs.find((x) => x.id === el.dataset.id);
+                    if (pack) openPack(pack);
+                });
+            });
+        } catch (e) {
+            console.error(e);
+            packsEl.innerHTML = `<div class="ssEmpty">Failed to load stickers.</div>`;
+        }
+    }
+
+    load();
+})();
+</script>
+</body>
+</html>

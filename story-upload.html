@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#000000">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+    <title>Viewora • Add Story</title>
+    <link rel="icon" href="assets/logo.png">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+    <script src="page-loader.js"></script>
+    <link rel="stylesheet" href="story-upload.css">
+</head>
+<body>
+
+<div id="app" class="storyApp">
+
+    <!-- ===================== PICK SCREEN ===================== -->
+    <section id="pickScreen" class="pickScreen">
+        <header class="pickTop">
+            <button type="button" id="pickBackBtn" class="iconBtn" aria-label="Back">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <strong>Add to Story</strong>
+            <span class="spacer"></span>
+        </header>
+
+        <div class="pickBody">
+            <div class="pickHero">
+                <div class="pickIcon">
+                    <i class="fa-solid fa-camera"></i>
+                </div>
+                <h1>Create a Story</h1>
+                <p>Photo or video · lasts 24 hours · only your followers see it</p>
+            </div>
+
+            <div class="pickActions">
+                <button type="button" id="pickGalleryBtn" class="pickCard">
+                    <span class="pickCardIcon"><i class="fa-regular fa-images"></i></span>
+                    <span class="pickCardText">
+                        <strong>Gallery</strong>
+                        <small>Photo or video from device</small>
+                    </span>
+                    <i class="fa-solid fa-chevron-right"></i>
+                </button>
+
+                <button type="button" id="pickCameraBtn" class="pickCard">
+                    <span class="pickCardIcon"><i class="fa-solid fa-camera"></i></span>
+                    <span class="pickCardText">
+                        <strong>Camera</strong>
+                        <small>Take a photo or record</small>
+                    </span>
+                    <i class="fa-solid fa-chevron-right"></i>
+                </button>
+            </div>
+        </div>
+
+        <input type="file" id="fileInput" accept="image/*,video/*" hidden>
+        <input type="file" id="cameraInput" accept="image/*,video/*" capture="environment" hidden>
+    </section>
+
+
+    <!-- ===================== EDITOR ===================== -->
+    <section id="editorScreen" class="editorScreen hidden">
+
+        <header class="editorTop">
+            <button type="button" id="editorBackBtn" class="iconBtn" aria-label="Back">
+                <i class="fa-solid fa-arrow-left"></i>
+            </button>
+            <div class="editorBrand">
+                <strong>Story</strong>
+                <span>24H</span>
+            </div>
+            <button type="button" id="editorDoneBtn" class="doneBtn">Done</button>
+        </header>
+
+        <!-- Canvas stage -->
+        <div id="stage" class="stage">
+            <div id="mediaWrap" class="mediaWrap">
+                <img id="previewImage" class="previewMedia hidden" alt="">
+                <video id="previewVideo" class="previewMedia hidden" playsinline muted loop></video>
+                <div id="filterOverlay" class="filterOverlay"></div>
+            </div>
+
+            <!-- Draggable text layers -->
+            <div id="textLayer" class="textLayer"></div>
+
+            <!-- Stickers layer -->
+            <div id="stickerLayer" class="stickerLayer"></div>
+
+            <!-- Music badge -->
+            <div id="musicBadge" class="musicBadge hidden">
+                <i class="fa-solid fa-music"></i>
+                <span id="musicBadgeText">Original audio</span>
+            </div>
+        </div>
+
+        <!-- Tool rail -->
+        <div class="toolRail">
+            <button type="button" class="toolBtn active" data-tool="text" aria-label="Text">
+                <i class="fa-solid fa-font"></i>
+                <span>Text</span>
+            </button>
+            <button type="button" class="toolBtn" data-tool="sticker" aria-label="Sticker">
+                <i class="fa-solid fa-face-smile"></i>
+                <span>Sticker</span>
+            </button>
+            <button type="button" class="toolBtn" data-tool="filter" aria-label="Filter">
+                <i class="fa-solid fa-wand-magic-sparkles"></i>
+                <span>Filter</span>
+            </button>
+            <button type="button" class="toolBtn" data-tool="music" aria-label="Music">
+                <i class="fa-solid fa-music"></i>
+                <span>Music</span>
+            </button>
+        </div>
+
+        <!-- Bottom share bar -->
+        <footer class="shareBar">
+            <div class="shareMeta">
+                <img id="shareAvatar" src="assets/default-avatar.png" alt="" class="shareAvatar">
+                <div>
+                    <strong id="shareName">Your Story</strong>
+                    <small>Visible to followers · 24 hours</small>
+                </div>
+            </div>
+            <button type="button" id="shareStoryBtn" class="shareBtn">
+                <i class="fa-solid fa-paper-plane"></i>
+                Share Story
+            </button>
+        </footer>
+    </section>
+
+
+    <!-- ===================== TEXT PANEL ===================== -->
+    <div id="textPanel" class="sheet hidden" aria-hidden="true">
+        <div class="sheetBackdrop" data-close="textPanel"></div>
+        <div class="sheetCard">
+            <div class="sheetHandle"></div>
+            <header class="sheetHead">
+                <strong>Add text</strong>
+                <button type="button" class="sheetClose" data-close="textPanel"><i class="fa-solid fa-xmark"></i></button>
+            </header>
+            <textarea id="textInput" maxlength="120" placeholder="Type something..." rows="3"></textarea>
+            <div class="colorRow" id="textColors">
+                <button type="button" class="colorDot active" data-color="#ffffff" style="background:#fff"></button>
+                <button type="button" class="colorDot" data-color="#000000" style="background:#111"></button>
+                <button type="button" class="colorDot" data-color="#ff3b5f" style="background:#ff3b5f"></button>
+                <button type="button" class="colorDot" data-color="#ffd60a" style="background:#ffd60a"></button>
+                <button type="button" class="colorDot" data-color="#30d158" style="background:#30d158"></button>
+                <button type="button" class="colorDot" data-color="#0a84ff" style="background:#0a84ff"></button>
+                <button type="button" class="colorDot" data-color="#bf5af2" style="background:#bf5af2"></button>
+            </div>
+            <div class="styleRow">
+                <button type="button" class="styleChip active" data-style="classic">Classic</button>
+                <button type="button" class="styleChip" data-style="bold">Bold</button>
+                <button type="button" class="styleChip" data-style="neon">Neon</button>
+                <button type="button" class="styleChip" data-style="type">Type</button>
+            </div>
+            <button type="button" id="addTextBtn" class="primaryBtn">Add text</button>
+        </div>
+    </div>
+
+
+    <!-- ===================== STICKER PANEL ===================== -->
+    <div id="stickerPanel" class="sheet hidden" aria-hidden="true">
+        <div class="sheetBackdrop" data-close="stickerPanel"></div>
+        <div class="sheetCard">
+            <div class="sheetHandle"></div>
+            <header class="sheetHead">
+                <strong>Stickers</strong>
+                <button type="button" class="sheetClose" data-close="stickerPanel"><i class="fa-solid fa-xmark"></i></button>
+            </header>
+            <div class="stickerGrid" id="stickerGrid">
+                <!-- filled by JS -->
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ===================== FILTER PANEL ===================== -->
+    <div id="filterPanel" class="sheet hidden" aria-hidden="true">
+        <div class="sheetBackdrop" data-close="filterPanel"></div>
+        <div class="sheetCard sheetCardCompact">
+            <div class="sheetHandle"></div>
+            <header class="sheetHead">
+                <strong>Filters</strong>
+                <button type="button" class="sheetClose" data-close="filterPanel"><i class="fa-solid fa-xmark"></i></button>
+            </header>
+            <div class="filterRow" id="filterRow">
+                <!-- filled by JS -->
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ===================== MUSIC PANEL ===================== -->
+    <div id="musicPanel" class="sheet hidden" aria-hidden="true">
+        <div class="sheetBackdrop" data-close="musicPanel"></div>
+        <div class="sheetCard">
+            <div class="sheetHandle"></div>
+            <header class="sheetHead">
+                <strong>Music</strong>
+                <button type="button" class="sheetClose" data-close="musicPanel"><i class="fa-solid fa-xmark"></i></button>
+            </header>
+            <div class="musicList" id="musicList">
+                <!-- filled by JS -->
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ===================== UPLOADING OVERLAY ===================== -->
+    <div id="uploadOverlay" class="uploadOverlay hidden">
+        <div class="uploadCard">
+            <div class="uploadRing">
+                <svg viewBox="0 0 80 80">
+                    <circle class="ringTrack" cx="40" cy="40" r="34"></circle>
+                    <circle id="uploadRingProgress" class="ringProgress" cx="40" cy="40" r="34"></circle>
+                </svg>
+                <img id="uploadAvatar" src="assets/default-avatar.png" alt="">
+            </div>
+            <strong id="uploadTitle">Uploading story…</strong>
+            <p id="uploadSub">Please wait</p>
+            <div class="uploadBar"><span id="uploadBarFill"></span></div>
+            <span id="uploadPercent">0%</span>
+        </div>
+    </div>
+
+
+    <!-- TOAST -->
+    <div id="toast" class="toast hidden" role="status">
+        <i id="toastIcon" class="fa-solid fa-circle-check"></i>
+        <span id="toastText">Done</span>
+    </div>
+
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
+<script src="firebase.js"></script>
+<script src="viewora-stores.js"></script>
+<script src="story-upload.js"></script>
+</body>
+</html>

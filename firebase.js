@@ -1,7 +1,7 @@
 /*==========================================================
         VIEWORA V12
         firebase.js
-        FINAL • PREMIUM AUTH + DATABASE CORE
+        FINAL • PREMIUM AUTH + DATABASE + NOTIFICATION CORE
 
         Firebase:
         • Authentication
@@ -12,6 +12,12 @@
         • Storage
         • Presence
         • Safe Database Helpers
+        • Like Notifications
+        • Comment Notifications
+        • Follow Notifications
+        • Story Mention Notifications
+        • Story Reaction Notifications
+        • Story Reply Notifications
 ==========================================================*/
 
 "use strict";
@@ -110,12 +116,14 @@ let storage = null;
 
 try {
 
-    auth = firebase.auth();
+    auth =
+        firebase.auth();
 
-    db = firebase.database();
+    db =
+        firebase.database();
 
     /*
-     * Cloudinary is currently used for media upload.
+     * Cloudinary can be used for media uploads.
      * Firebase Storage remains optional.
      */
 
@@ -143,14 +151,6 @@ try {
 /*==========================================================
   5. AUTH PROVIDERS
 ==========================================================*/
-
-/*
- * IMPORTANT:
- *
- * These are declared ONLY HERE.
- *
- * login.js should NOT create these again.
- */
 
 let googleProvider = null;
 let facebookProvider = null;
@@ -181,7 +181,6 @@ try {
 
     twitterProvider =
         new firebase.auth.TwitterAuthProvider();
-
 
 } catch (error) {
 
@@ -290,6 +289,18 @@ const notificationsRef = (uid) =>
     db.ref("notifications/" + uid);
 
 
+const notificationRef = (
+    uid,
+    notificationId
+) =>
+    db.ref(
+        "notifications/" +
+        uid +
+        "/" +
+        notificationId
+    );
+
+
 const chatsRef = () =>
     db.ref("chats");
 
@@ -325,7 +336,7 @@ const blockedRef = (uid) =>
 const usernamesRef = (username) =>
     db.ref(
         "usernames/" +
-        username.toLowerCase()
+        String(username || "").toLowerCase()
     );
 
 
@@ -346,7 +357,39 @@ const SERVER_TIME =
 
 
 /*==========================================================
-  9. SAFE DATABASE HELPERS
+  9. SAFE NUMBER HELPER
+==========================================================*/
+
+/*
+ * Prevents Firebase errors such as:
+ *
+ * values argument contains NaN
+ *
+ * This is especially important for:
+ * followers
+ * following
+ * likes
+ * comments
+ * views
+ */
+
+function safeNumber(
+    value,
+    fallback = 0
+) {
+
+    const number =
+        Number(value);
+
+    return Number.isFinite(number)
+        ? number
+        : fallback;
+
+}
+
+
+/*==========================================================
+  10. SAFE DATABASE HELPERS
 ==========================================================*/
 
 async function safeRead(path) {
@@ -459,7 +502,7 @@ async function safeRemove(path) {
 
 
 /*==========================================================
-  10. PRESENCE SYSTEM
+  11. PRESENCE SYSTEM
 ==========================================================*/
 
 function setupPresence(uid) {
@@ -468,8 +511,10 @@ function setupPresence(uid) {
         return;
     }
 
+
     const connectedRef =
         db.ref(".info/connected");
+
 
     const statusRef =
         presenceRef(uid);
@@ -516,7 +561,7 @@ function setupPresence(uid) {
 
 
 /*==========================================================
-  11. USER ONLINE SYSTEM
+  12. USER ONLINE SYSTEM
 ==========================================================*/
 
 function setupUserOnline(uid) {
@@ -579,7 +624,7 @@ function setupUserOnline(uid) {
 
 
 /*==========================================================
-  12. AUTH HELPERS
+  13. AUTH HELPERS
 ==========================================================*/
 
 function requireAuth() {
@@ -648,7 +693,7 @@ function getUID() {
 
 
 /*==========================================================
-  13. DEFAULT USER OBJECT
+  14. DEFAULT USER OBJECT
 ==========================================================*/
 
 function createDefaultUser(
@@ -697,19 +742,29 @@ function createDefaultUser(
         online: true,
 
         followers:
-            Number(data.followers || 0),
+            safeNumber(
+                data.followers
+            ),
 
         following:
-            Number(data.following || 0),
+            safeNumber(
+                data.following
+            ),
 
         posts:
-            Number(data.posts || 0),
+            safeNumber(
+                data.posts
+            ),
 
         videos:
-            Number(data.videos || 0),
+            safeNumber(
+                data.videos
+            ),
 
         shorts:
-            Number(data.shorts || 0),
+            safeNumber(
+                data.shorts
+            ),
 
         createdAt:
             data.createdAt ||
@@ -727,7 +782,1247 @@ function createDefaultUser(
 
 
 /*==========================================================
-  14. GLOBAL EXPORTS
+  15. USER PROFILE SNAPSHOT
+==========================================================*/
+
+/*
+ * Gets the latest sender/user information.
+ *
+ * Notification will still work if some profile fields
+ * are missing.
+ */
+
+async function getNotificationUser(
+    uid
+) {
+
+    if (!uid) {
+
+        return {
+
+            uid: "",
+
+            name: "Viewora User",
+
+            username: "",
+
+            profilePhoto:
+                "assets/default-avatar.png"
+
+        };
+
+    }
+
+
+    try {
+
+        const snapshot =
+            await userRef(uid)
+                .once("value");
+
+
+        const user =
+            snapshot.exists()
+                ? snapshot.val()
+                : {};
+
+
+        return {
+
+            uid: uid,
+
+            name:
+                user.name ||
+                user.fullName ||
+                "Viewora User",
+
+            username:
+                user.username ||
+                "",
+
+            profilePhoto:
+                user.profilePhoto ||
+                user.photoURL ||
+                "assets/default-avatar.png"
+
+        };
+
+    } catch (error) {
+
+        console.error(
+            "❌ getNotificationUser:",
+            error
+        );
+
+
+        return {
+
+            uid: uid,
+
+            name: "Viewora User",
+
+            username: "",
+
+            profilePhoto:
+                "assets/default-avatar.png"
+
+        };
+
+    }
+
+}
+
+
+/*==========================================================
+  16. NOTIFICATION MESSAGE BUILDER
+==========================================================*/
+
+function getNotificationMessage(
+    type,
+    data = {},
+    fromName = "Someone"
+) {
+
+    switch (type) {
+
+        case "like":
+
+            return (
+                fromName +
+                " liked your post"
+            );
+
+
+        case "comment":
+
+            return (
+                fromName +
+                " commented on your post"
+            );
+
+
+        case "follow":
+
+            return (
+                fromName +
+                " started following you"
+            );
+
+
+        case "story_mention":
+
+            return (
+                fromName +
+                " mentioned you in their story"
+            );
+
+
+        case "story_reaction":
+
+            return (
+                fromName +
+                " reacted to your story" +
+                (
+                    data.reaction
+                        ? " " + data.reaction
+                        : ""
+                )
+            );
+
+
+        case "story_reply":
+
+            return (
+                fromName +
+                " replied to your story"
+            );
+
+
+        default:
+
+            return (
+                data.message ||
+                (
+                    fromName +
+                    " interacted with you"
+                )
+            );
+
+    }
+
+}
+
+
+/*==========================================================
+  17. CREATE NOTIFICATION
+==========================================================*/
+
+/*
+ * MAIN NOTIFICATION FUNCTION
+ *
+ * Usage:
+ *
+ * createNotification({
+ *     toUid: authorUid,
+ *     fromUid: currentUid,
+ *     type: "like",
+ *     postId: postId
+ * });
+ *
+ * Self notification is automatically blocked.
+ */
+
+async function createNotification(
+    options = {}
+) {
+
+    try {
+
+        const {
+
+            toUid,
+
+            fromUid,
+
+            type = "general",
+
+            postId = null,
+
+            storyId = null,
+
+            commentId = null,
+
+            reaction = null,
+
+            message = "",
+
+            actionUrl = "",
+
+            extra = {}
+
+        } = options;
+
+
+        /*------------------------------------------
+          REQUIRED USER CHECK
+        ------------------------------------------*/
+
+        if (!toUid) {
+
+            console.warn(
+                "⚠️ Notification skipped: missing toUid"
+            );
+
+            return false;
+
+        }
+
+
+        if (!fromUid) {
+
+            console.warn(
+                "⚠️ Notification skipped: missing fromUid"
+            );
+
+            return false;
+
+        }
+
+
+        /*------------------------------------------
+          SELF NOTIFICATION BLOCK
+        ------------------------------------------*/
+
+        if (
+            String(toUid) ===
+            String(fromUid)
+        ) {
+
+            console.log(
+                "ℹ️ Self notification skipped:",
+                type
+            );
+
+            return false;
+
+        }
+
+
+        /*------------------------------------------
+          GET SENDER PROFILE
+        ------------------------------------------*/
+
+        const sender =
+            await getNotificationUser(
+                fromUid
+            );
+
+
+        const notificationMessage =
+            message ||
+            getNotificationMessage(
+                type,
+                {
+                    reaction:
+                        reaction
+                },
+                sender.name
+            );
+
+
+        /*------------------------------------------
+          CREATE UNIQUE ID
+        ------------------------------------------*/
+
+        const notificationKey =
+            notificationsRef(toUid)
+                .push()
+                .key;
+
+
+        if (!notificationKey) {
+
+            console.error(
+                "❌ Could not create notification key"
+            );
+
+            return false;
+
+        }
+
+
+        /*------------------------------------------
+          NOTIFICATION OBJECT
+        ------------------------------------------*/
+
+        const notification = {
+
+            id:
+                notificationKey,
+
+            type:
+                type,
+
+            uid:
+                fromUid,
+
+            fromUid:
+                fromUid,
+
+            fromName:
+                sender.name,
+
+            fromPhoto:
+                sender.profilePhoto,
+
+            fromAvatar:
+                sender.profilePhoto,
+
+            fromUsername:
+                sender.username || "",
+
+            message:
+                notificationMessage,
+
+            postId:
+                postId || null,
+
+            storyId:
+                storyId || null,
+
+            commentId:
+                commentId || null,
+
+            reaction:
+                reaction || null,
+
+            actionUrl:
+                actionUrl ||
+                (
+                    postId
+                        ? "post.html?id=" +
+                          encodeURIComponent(postId)
+
+                        : storyId
+                            ? "stories.html?id=" +
+                              encodeURIComponent(storyId)
+
+                            : "profile.html?id=" +
+                              encodeURIComponent(fromUid)
+                ),
+
+            isRead:
+                false,
+
+            createdAt:
+                SERVER_TIME
+
+        };
+
+
+        /*------------------------------------------
+          ADD EXTRA FIELDS SAFELY
+        ------------------------------------------*/
+
+        Object.keys(extra || {})
+            .forEach(key => {
+
+                if (
+                    key === "id" ||
+                    key === "createdAt" ||
+                    key === "isRead"
+                ) {
+
+                    return;
+
+                }
+
+
+                notification[key] =
+                    extra[key];
+
+            });
+
+
+        /*------------------------------------------
+          SAVE NOTIFICATION
+        ------------------------------------------*/
+
+        await notificationRef(
+            toUid,
+            notificationKey
+        ).set(
+            notification
+        );
+
+
+        console.log(
+            "🔔 Notification created:",
+            type,
+            "→",
+            toUid
+        );
+
+
+        return true;
+
+    } catch (error) {
+
+        console.error(
+            "❌ createNotification Error:",
+            error
+        );
+
+        return false;
+
+    }
+
+}
+
+
+/*==========================================================
+  18. LIKE NOTIFICATION
+==========================================================*/
+
+async function notifyPostLike(
+    postId,
+    postAuthorUid,
+    likerUid
+) {
+
+    if (
+        !postId ||
+        !postAuthorUid ||
+        !likerUid
+    ) {
+
+        return false;
+
+    }
+
+
+    return await createNotification({
+
+        toUid:
+            postAuthorUid,
+
+        fromUid:
+            likerUid,
+
+        type:
+            "like",
+
+        postId:
+            postId,
+
+        actionUrl:
+            "post.html?id=" +
+            encodeURIComponent(postId)
+
+    });
+
+}
+
+
+/*==========================================================
+  19. COMMENT NOTIFICATION
+==========================================================*/
+
+async function notifyPostComment(
+    postId,
+    postAuthorUid,
+    commenterUid,
+    commentId = null
+) {
+
+    if (
+        !postId ||
+        !postAuthorUid ||
+        !commenterUid
+    ) {
+
+        return false;
+
+    }
+
+
+    return await createNotification({
+
+        toUid:
+            postAuthorUid,
+
+        fromUid:
+            commenterUid,
+
+        type:
+            "comment",
+
+        postId:
+            postId,
+
+        commentId:
+            commentId,
+
+        actionUrl:
+            "post.html?id=" +
+            encodeURIComponent(postId)
+
+    });
+
+}
+
+
+/*==========================================================
+  20. FOLLOW NOTIFICATION
+==========================================================*/
+
+async function notifyFollow(
+    targetUid,
+    followerUid
+) {
+
+    if (
+        !targetUid ||
+        !followerUid
+    ) {
+
+        return false;
+
+    }
+
+
+    return await createNotification({
+
+        toUid:
+            targetUid,
+
+        fromUid:
+            followerUid,
+
+        type:
+            "follow",
+
+        actionUrl:
+            "profile.html?id=" +
+            encodeURIComponent(followerUid)
+
+    });
+
+}
+
+
+/*==========================================================
+  21. STORY MENTION NOTIFICATION
+==========================================================*/
+
+/*
+ * Call this when @username is mentioned in a story.
+ */
+
+async function notifyStoryMention(
+    storyId,
+    storyOwnerUid,
+    mentionedUid
+) {
+
+    if (
+        !storyId ||
+        !storyOwnerUid ||
+        !mentionedUid
+    ) {
+
+        return false;
+
+    }
+
+
+    return await createNotification({
+
+        toUid:
+            mentionedUid,
+
+        fromUid:
+            storyOwnerUid,
+
+        type:
+            "story_mention",
+
+        storyId:
+            storyId,
+
+        actionUrl:
+            "stories.html?id=" +
+            encodeURIComponent(storyId)
+
+    });
+
+}
+
+
+/*==========================================================
+  22. STORY REACTION NOTIFICATION
+==========================================================*/
+
+/*
+ * reaction example:
+ *
+ * "❤️"
+ * "😍"
+ * "😂"
+ * "😮"
+ * "😢"
+ * "🔥"
+ */
+
+async function notifyStoryReaction(
+    storyId,
+    storyOwnerUid,
+    reactorUid,
+    reaction
+) {
+
+    if (
+        !storyId ||
+        !storyOwnerUid ||
+        !reactorUid
+    ) {
+
+        return false;
+
+    }
+
+
+    return await createNotification({
+
+        toUid:
+            storyOwnerUid,
+
+        fromUid:
+            reactorUid,
+
+        type:
+            "story_reaction",
+
+        storyId:
+            storyId,
+
+        reaction:
+            reaction || "",
+
+        actionUrl:
+            "stories.html?id=" +
+            encodeURIComponent(storyId)
+
+    });
+
+}
+
+
+/*==========================================================
+  23. STORY REPLY NOTIFICATION
+==========================================================*/
+
+async function notifyStoryReply(
+    storyId,
+    storyOwnerUid,
+    replierUid,
+    replyId = null
+) {
+
+    if (
+        !storyId ||
+        !storyOwnerUid ||
+        !replierUid
+    ) {
+
+        return false;
+
+    }
+
+
+    return await createNotification({
+
+        toUid:
+            storyOwnerUid,
+
+        fromUid:
+            replierUid,
+
+        type:
+            "story_reply",
+
+        storyId:
+            storyId,
+
+        commentId:
+            replyId,
+
+        actionUrl:
+            "stories.html?id=" +
+            encodeURIComponent(storyId)
+
+    });
+
+}
+
+
+/*==========================================================
+  24. MARK NOTIFICATION AS READ
+==========================================================*/
+
+async function markNotificationRead(
+    uid,
+    notificationId
+) {
+
+    if (
+        !uid ||
+        !notificationId
+    ) {
+
+        return false;
+
+    }
+
+
+    return await safeUpdate(
+        "notifications/" +
+        uid +
+        "/" +
+        notificationId,
+        {
+
+            isRead:
+                true,
+
+            readAt:
+                SERVER_TIME
+
+        }
+    );
+
+}
+
+
+/*==========================================================
+  25. MARK ALL NOTIFICATIONS AS READ
+==========================================================*/
+
+async function markAllNotificationsRead(
+    uid
+) {
+
+    if (!uid) {
+
+        return false;
+
+    }
+
+
+    try {
+
+        const snapshot =
+            await notificationsRef(uid)
+                .once("value");
+
+
+        if (
+            !snapshot.exists()
+        ) {
+
+            return true;
+
+        }
+
+
+        const updates = {};
+
+
+        snapshot.forEach(
+            child => {
+
+                const notification =
+                    child.val();
+
+
+                if (
+                    notification &&
+                    notification.isRead !== true
+                ) {
+
+                    updates[
+                        child.key +
+                        "/isRead"
+                    ] = true;
+
+                    updates[
+                        child.key +
+                        "/readAt"
+                    ] = SERVER_TIME;
+
+                }
+
+            }
+        );
+
+
+        if (
+            Object.keys(updates).length
+        ) {
+
+            await notificationsRef(uid)
+                .update(updates);
+
+        }
+
+
+        return true;
+
+    } catch (error) {
+
+        console.error(
+            "❌ markAllNotificationsRead:",
+            error
+        );
+
+        return false;
+
+    }
+
+}
+
+
+/*==========================================================
+  26. GET UNREAD NOTIFICATION COUNT
+==========================================================*/
+
+async function getUnreadNotificationCount(
+    uid
+) {
+
+    if (!uid) {
+
+        return 0;
+
+    }
+
+
+    try {
+
+        const snapshot =
+            await notificationsRef(uid)
+                .once("value");
+
+
+        let count = 0;
+
+
+        if (
+            snapshot.exists()
+        ) {
+
+            snapshot.forEach(
+                child => {
+
+                    const item =
+                        child.val();
+
+
+                    if (
+                        item &&
+                        item.isRead !== true
+                    ) {
+
+                        count++;
+
+                    }
+
+                }
+            );
+
+        }
+
+
+        return count;
+
+    } catch (error) {
+
+        console.error(
+            "❌ getUnreadNotificationCount:",
+            error
+        );
+
+        return 0;
+
+    }
+
+}
+
+
+/*==========================================================
+  27. REALTIME UNREAD NOTIFICATION LISTENER
+==========================================================*/
+
+/*
+ * callback(count)
+ *
+ * Example:
+ *
+ * listenUnreadNotifications(uid, count => {
+ *     badge.textContent = count;
+ * });
+ */
+
+function listenUnreadNotifications(
+    uid,
+    callback
+) {
+
+    if (
+        !uid ||
+        typeof callback !== "function"
+    ) {
+
+        return null;
+
+    }
+
+
+    const ref =
+        notificationsRef(uid);
+
+
+    const listener =
+        ref.on(
+            "value",
+            snapshot => {
+
+                let count = 0;
+
+
+                if (
+                    snapshot.exists()
+                ) {
+
+                    snapshot.forEach(
+                        child => {
+
+                            const item =
+                                child.val();
+
+
+                            if (
+                                item &&
+                                item.isRead !== true
+                            ) {
+
+                                count++;
+
+                            }
+
+                        }
+                    );
+
+                }
+
+
+                callback(
+                    count
+                );
+
+            },
+            error => {
+
+                console.error(
+                    "❌ Notification listener:",
+                    error
+                );
+
+                callback(
+                    0
+                );
+
+            }
+        );
+
+
+    return {
+
+        ref:
+            ref,
+
+        event:
+            "value",
+
+        callback:
+            listener
+
+    };
+
+}
+
+
+/*==========================================================
+  28. DELETE NOTIFICATION
+==========================================================*/
+
+async function deleteNotification(
+    uid,
+    notificationId
+) {
+
+    if (
+        !uid ||
+        !notificationId
+    ) {
+
+        return false;
+
+    }
+
+
+    return await safeRemove(
+        "notifications/" +
+        uid +
+        "/" +
+        notificationId
+    );
+
+}
+
+
+/*==========================================================
+  29. CLEAR ALL NOTIFICATIONS
+==========================================================*/
+
+async function clearAllNotifications(
+    uid
+) {
+
+    if (!uid) {
+
+        return false;
+
+    }
+
+
+    return await safeRemove(
+        "notifications/" +
+        uid
+    );
+
+}
+
+
+/*==========================================================
+  30. FOLLOW DATABASE HELPERS
+==========================================================*/
+
+/*
+ * Safe follow count update.
+ *
+ * Never allows:
+ *
+ * NaN
+ * negative values
+ */
+
+async function updateFollowerCounts(
+    followerUid,
+    targetUid,
+    isFollowing
+) {
+
+    if (
+        !followerUid ||
+        !targetUid ||
+        followerUid === targetUid
+    ) {
+
+        return false;
+
+    }
+
+
+    try {
+
+        const followerSnapshot =
+            await userRef(followerUid)
+                .once("value");
+
+
+        const targetSnapshot =
+            await userRef(targetUid)
+                .once("value");
+
+
+        const follower =
+            followerSnapshot.val() || {};
+
+
+        const target =
+            targetSnapshot.val() || {};
+
+
+        const currentFollowing =
+            safeNumber(
+                follower.following
+            );
+
+
+        const currentFollowers =
+            safeNumber(
+                target.followers
+            );
+
+
+        let newFollowing;
+        let newFollowers;
+
+
+        if (isFollowing) {
+
+            newFollowing =
+                currentFollowing + 1;
+
+            newFollowers =
+                currentFollowers + 1;
+
+        } else {
+
+            newFollowing =
+                Math.max(
+                    0,
+                    currentFollowing - 1
+                );
+
+            newFollowers =
+                Math.max(
+                    0,
+                    currentFollowers - 1
+                );
+
+        }
+
+
+        const updates = {};
+
+
+        updates[
+            "users/" +
+            followerUid +
+            "/following"
+        ] =
+            newFollowing;
+
+
+        updates[
+            "users/" +
+            targetUid +
+            "/followers"
+        ] =
+            newFollowers;
+
+
+        if (isFollowing) {
+
+            updates[
+                "following/" +
+                followerUid +
+                "/" +
+                targetUid
+            ] = true;
+
+
+            updates[
+                "followers/" +
+                targetUid +
+                "/" +
+                followerUid
+            ] = true;
+
+        } else {
+
+            updates[
+                "following/" +
+                followerUid +
+                "/" +
+                targetUid
+            ] = null;
+
+
+            updates[
+                "followers/" +
+                targetUid +
+                "/" +
+                followerUid
+            ] = null;
+
+        }
+
+
+        await db.ref()
+            .update(updates);
+
+
+        return true;
+
+    } catch (error) {
+
+        console.error(
+            "❌ updateFollowerCounts:",
+            error
+        );
+
+        return false;
+
+    }
+
+}
+
+
+/*==========================================================
+  31. GLOBAL EXPORTS
 ==========================================================*/
 
 window.firebaseConfig =
@@ -758,11 +2053,6 @@ window.twitterProvider =
     twitterProvider;
 
 
-/*
- * Alias for X login.
- * login.js can use either name.
- */
-
 window.xProvider =
     twitterProvider;
 
@@ -775,8 +2065,12 @@ window.FIELDS =
     FIELDS;
 
 
+window.safeNumber =
+    safeNumber;
+
+
 /*==========================================================
-  15. DATABASE REFERENCE EXPORTS
+  32. DATABASE REFERENCE EXPORTS
 ==========================================================*/
 
 window.usersRef =
@@ -815,6 +2109,9 @@ window.savedPostsRef =
 window.notificationsRef =
     notificationsRef;
 
+window.notificationRef =
+    notificationRef;
+
 window.chatsRef =
     chatsRef;
 
@@ -850,7 +2147,7 @@ window.feedsRef =
 
 
 /*==========================================================
-  16. HELPER EXPORTS
+  33. HELPER EXPORTS
 ==========================================================*/
 
 window.safeRead =
@@ -885,7 +2182,75 @@ window.createDefaultUser =
 
 
 /*==========================================================
-  17. AUTH STATE
+  34. NOTIFICATION EXPORTS
+==========================================================*/
+
+window.getNotificationUser =
+    getNotificationUser;
+
+
+window.getNotificationMessage =
+    getNotificationMessage;
+
+
+window.createNotification =
+    createNotification;
+
+
+window.notifyPostLike =
+    notifyPostLike;
+
+
+window.notifyPostComment =
+    notifyPostComment;
+
+
+window.notifyFollow =
+    notifyFollow;
+
+
+window.notifyStoryMention =
+    notifyStoryMention;
+
+
+window.notifyStoryReaction =
+    notifyStoryReaction;
+
+
+window.notifyStoryReply =
+    notifyStoryReply;
+
+
+window.markNotificationRead =
+    markNotificationRead;
+
+
+window.markAllNotificationsRead =
+    markAllNotificationsRead;
+
+
+window.getUnreadNotificationCount =
+    getUnreadNotificationCount;
+
+
+window.listenUnreadNotifications =
+    listenUnreadNotifications;
+
+
+window.deleteNotification =
+    deleteNotification;
+
+
+window.clearAllNotifications =
+    clearAllNotifications;
+
+
+window.updateFollowerCounts =
+    updateFollowerCounts;
+
+
+/*==========================================================
+  35. AUTH STATE
 ==========================================================*/
 
 auth.onAuthStateChanged(
@@ -921,7 +2286,7 @@ auth.onAuthStateChanged(
 
 
 /*==========================================================
-  18. DATABASE CONNECTION MONITOR
+  36. DATABASE CONNECTION MONITOR
 ==========================================================*/
 
 const firebaseConnection =
@@ -953,7 +2318,7 @@ firebaseConnection.on(
 
 
 /*==========================================================
-  19. FINAL STARTUP
+  37. FINAL STARTUP
 ==========================================================*/
 
 console.log(
@@ -997,9 +2362,60 @@ console.log(
 );
 
 console.log(
-    "✅ Database Helpers Ready"
+    "✅ Safe Database Helpers Ready"
+);
+
+console.log(
+    "❤️ Like Notification Ready"
+);
+
+console.log(
+    "💬 Comment Notification Ready"
+);
+
+console.log(
+    "➕ Follow Notification Ready"
+);
+
+console.log(
+    "📖 Story Mention Notification Ready"
+);
+
+console.log(
+    "😍 Story Reaction Notification Ready"
+);
+
+console.log(
+    "↩️ Story Reply Notification Ready"
+);
+
+console.log(
+    "🔔 Notification System Ready"
 );
 
 console.log(
     "=========================================="
+);
+
+/*==========================================================
+  CLOUDINARY (Shorts / media upload)
+==========================================================*/
+
+window.VIEWORA_CLOUDINARY_CLOUD =
+    window.VIEWORA_CLOUDINARY_CLOUD ||
+    "z5m6wjdf";
+
+window.VIEWORA_CLOUDINARY_PRESET =
+    window.VIEWORA_CLOUDINARY_PRESET ||
+    "Viewora-upload";
+
+window.VIEWORA_CLOUDINARY_FOLDER =
+    window.VIEWORA_CLOUDINARY_FOLDER ||
+    "";
+
+console.log(
+    "☁️ Cloudinary:",
+    window.VIEWORA_CLOUDINARY_CLOUD,
+    "/",
+    window.VIEWORA_CLOUDINARY_PRESET
 );

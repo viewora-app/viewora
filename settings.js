@@ -1,17 +1,9 @@
 /* =========================================================
-   VIEWORA SETTINGS V3.0
-   Premium • Firebase Safe • Loading Fixed
+   VIEWORA SETTINGS — Clean & Firebase Safe
 ========================================================= */
 
 (function () {
-
     "use strict";
-
-    console.log("⚙️ Viewora Settings JS starting...");
-
-    /* =====================================================
-       ELEMENTS
-    ===================================================== */
 
     const loader = document.getElementById("settingsLoader");
     const profilePhoto = document.getElementById("profilePhoto");
@@ -21,842 +13,221 @@
     const toastMessage = document.getElementById("toastMessage");
     const toastIcon = document.getElementById("toastIcon");
 
-
-    /* =====================================================
-       LOADER
-    ===================================================== */
-
     let loaderHidden = false;
 
     function hideLoader() {
-
         if (loaderHidden) return;
-
         loaderHidden = true;
-
         if (loader) {
-
             loader.classList.add("hidden");
-
             setTimeout(() => {
-
-                loader.style.display = "none";
-
-            }, 450);
-
+                if (loader) loader.style.display = "none";
+            }, 300);
         }
-
-        document.body.classList.add("settings-loaded");
-
-        console.log("✅ Settings loader hidden");
-
     }
 
-
-    /*
-       IMPORTANT:
-       Even if Firebase has an error, the page must
-       not remain stuck on Loading Viewora forever.
-    */
-
+    // Safety timeout so page never stays stuck
     setTimeout(() => {
+        if (!loaderHidden) hideLoader();
+    }, 7000);
 
-        if (!loaderHidden) {
-
-            console.warn(
-                "⚠️ Settings loader timeout. Continuing without profile."
-            );
-
-            hideLoader();
-
-        }
-
-    }, 8000);
-
-
-    /* =====================================================
-       TOAST
-    ===================================================== */
-
+    /* Toast */
     window.showToast = function (message, icon = "✓") {
-
         if (!toast) return;
-
-        if (toastMessage) {
-            toastMessage.textContent = message;
-        }
-
-        if (toastIcon) {
-            toastIcon.textContent = icon;
-        }
-
+        if (toastMessage) toastMessage.textContent = message;
+        if (toastIcon) toastIcon.textContent = icon;
         toast.classList.add("show");
-
-        clearTimeout(window.__vieworaToastTimer);
-
-        window.__vieworaToastTimer = setTimeout(() => {
-
+        clearTimeout(window.__toastTimer);
+        window.__toastTimer = setTimeout(() => {
             toast.classList.remove("show");
-
-        }, 2800);
-
+        }, 2600);
     };
 
-
-    /* =====================================================
-       PAGE NAVIGATION
-    ===================================================== */
-
+    /* Navigation */
     window.goBack = function () {
-
         if (window.history.length > 1) {
-
             window.history.back();
-
         } else {
-
             window.location.href = "index.html";
-
         }
-
     };
-
 
     window.openPage = function (page) {
-
-        if (!page) return;
-
-        window.location.href = page;
-
+        if (page) window.location.href = page;
     };
 
-
-    /* =====================================================
-       PROFILE
-    ===================================================== */
-
+    /* Profile helpers */
     function setDefaultProfile() {
-
-        if (profileName) {
-            profileName.textContent = "Viewora User";
-        }
-
-        if (profileUsername) {
-            profileUsername.textContent = "@user";
-        }
-
-        if (profilePhoto) {
-            profilePhoto.src = "non.jpg";
-        }
-
+        if (profileName) profileName.textContent = "Viewora User";
+        if (profileUsername) profileUsername.textContent = "@user";
+        if (profilePhoto) profilePhoto.src = "non.jpg";
     }
-
 
     function loadProfile(uid) {
-
-        if (!uid) {
-
+        if (!uid || !window.db || typeof window.db.ref !== "function") {
             setDefaultProfile();
             hideLoader();
             return;
-
         }
 
-
-        /*
-           Check database safely.
-        */
-
-        if (
-            typeof window.db === "undefined" ||
-            !window.db ||
-            typeof window.db.ref !== "function"
-        ) {
-
-            console.error(
-                "❌ Firebase Database (db) is not available."
-            );
-
-            setDefaultProfile();
-            hideLoader();
-
-            return;
-
-        }
-
-
-        window.db
-            .ref("users/" + uid)
-            .once("value")
-
-            .then((snapshot) => {
-
-                if (!snapshot.exists()) {
-
-                    console.warn(
-                        "⚠️ User profile not found."
-                    );
-
+        window.db.ref("users/" + uid).once("value")
+            .then((snap) => {
+                if (!snap.exists()) {
                     setDefaultProfile();
-
                     hideLoader();
-
                     return;
-
                 }
 
-
-                const user = snapshot.val() || {};
-
-
-                /* -----------------------------
-                   NAME
-                ----------------------------- */
+                const user = snap.val() || {};
 
                 if (profileName) {
-
-                    profileName.textContent =
-                        user.name ||
-                        user.displayName ||
-                        "Viewora User";
-
+                    profileName.textContent = user.name || user.displayName || "Viewora User";
                 }
-
-
-                /* -----------------------------
-                   USERNAME
-                ----------------------------- */
 
                 if (profileUsername) {
-
-                    let username =
-                        user.username ||
-                        user.userName ||
-                        "user";
-
-                    username = String(username);
-
-                    if (!username.startsWith("@")) {
-
-                        username = "@" + username;
-
-                    }
-
-                    profileUsername.textContent =
-                        username;
-
+                    let uname = user.username || user.userName || "user";
+                    uname = String(uname);
+                    if (!uname.startsWith("@")) uname = "@" + uname;
+                    profileUsername.textContent = uname;
                 }
-
-
-                /* -----------------------------
-                   PROFILE PHOTO
-                ----------------------------- */
 
                 if (profilePhoto) {
-
-                    const photo =
-                        user.profilePhoto ||
-                        user.photoURL ||
-                        user.photoUrl ||
-                        "non.jpg";
-
+                    const photo = user.profilePhoto || user.photoURL || user.photoUrl || "non.jpg";
                     profilePhoto.src = photo;
-
                     profilePhoto.onerror = function () {
-
                         this.onerror = null;
-
                         this.src = "non.jpg";
-
                     };
-
                 }
 
-
-                console.log(
-                    "✅ Profile loaded:",
-                    user.username || user.name || "User"
-                );
-
-
                 hideLoader();
-
             })
-
-            .catch((error) => {
-
-                console.error(
-                    "❌ Profile loading error:",
-                    error
-                );
-
+            .catch(() => {
                 setDefaultProfile();
-
-                showToast(
-                    "Could not load profile",
-                    "⚠️"
-                );
-
+                showToast("Could not load profile", "⚠️");
                 hideLoader();
-
             });
-
     }
 
-
-    /* =====================================================
-       AUTH STATE
-    ===================================================== */
-
-    function startAuthentication() {
-
-        /*
-           Firebase Auth may not have loaded yet.
-        */
-
-        if (
-            typeof window.auth === "undefined" ||
-            !window.auth ||
-            typeof window.auth.onAuthStateChanged !== "function"
-        ) {
-
-            console.error(
-                "❌ Firebase Auth (auth) is not available."
-            );
-
+    /* Auth */
+    function startAuth() {
+        if (!window.auth || typeof window.auth.onAuthStateChanged !== "function") {
             setDefaultProfile();
-
-            showToast(
-                "Firebase connection unavailable",
-                "⚠️"
-            );
-
+            showToast("Firebase unavailable", "⚠️");
             hideLoader();
-
             return;
-
         }
-
-
-        console.log(
-            "🔐 Waiting for Firebase authentication..."
-        );
-
 
         window.auth.onAuthStateChanged((user) => {
-
-            console.log(
-                "🔐 Auth state:",
-                user ? "Logged in" : "Logged out"
-            );
-
-
-            /* -----------------------------
-               NOT LOGGED IN
-            ----------------------------- */
-
             if (!user) {
-
                 hideLoader();
-
                 setTimeout(() => {
-
-                    window.location.href =
-                        "login.html";
-
-                }, 500);
-
+                    window.location.href = "login.html";
+                }, 400);
                 return;
-
             }
-
-
-            /* -----------------------------
-               LOGGED IN
-            ----------------------------- */
-
             loadProfile(user.uid);
-
         });
-
     }
 
-
-    /* =====================================================
-       EDIT PROFILE
-    ===================================================== */
-
-    window.editProfile = function () {
-
-        window.location.href =
-            "account-settings.html";
-
-    };
-
-
-    /* =====================================================
-       LANGUAGE
-    ===================================================== */
-
+    /* Actions */
     window.changeLanguage = function () {
-
-        showToast(
-            "🌐 English selected",
-            "✓"
-        );
-
+        showToast("English selected", "🌐");
     };
-
-
-    /* =====================================================
-       SHARE APP
-    ===================================================== */
 
     window.shareApp = async function () {
-
-        const shareData = {
-
+        const data = {
             title: "Viewora",
-
-            text:
-                "Join me on Viewora 🚀",
-
-            url:
-                window.location.origin
-
+            text: "Join me on Viewora",
+            url: window.location.origin
         };
-
-
         try {
-
-            if (
-                navigator.share
-            ) {
-
-                await navigator.share(
-                    shareData
-                );
-
-                return;
-
+            if (navigator.share) {
+                await navigator.share(data);
+            } else if (navigator.clipboard) {
+                await navigator.clipboard.writeText(window.location.origin);
+                showToast("Link copied", "📋");
+            } else {
+                window.prompt("Copy link:", window.location.origin);
             }
-
-
-            if (
-                navigator.clipboard &&
-                navigator.clipboard.writeText
-            ) {
-
-                await navigator.clipboard.writeText(
-                    window.location.origin
-                );
-
-                showToast(
-                    "Viewora link copied",
-                    "📋"
-                );
-
-                return;
-
-            }
-
-
-            window.prompt(
-                "Copy Viewora link:",
-                window.location.origin
-            );
-
-        }
-
-        catch (error) {
-
-            console.log(
-                "Share cancelled:",
-                error
-            );
-
-        }
-
+        } catch (e) {}
     };
-
-
-    /* =====================================================
-       CLEAR CACHE
-    ===================================================== */
 
     window.clearCache = function () {
-
-        const confirmed =
-            window.confirm(
-                "Clear temporary Viewora data?"
-            );
-
-        if (!confirmed) return;
-
-
+        if (!confirm("Clear temporary Viewora data?")) return;
         try {
-
-            /*
-               Don't clear Firebase auth/session data.
-               Only clear Viewora local cache keys.
-            */
-
-            const keysToRemove = [];
-
-            for (
-                let i = 0;
-                i < localStorage.length;
-                i++
-            ) {
-
-                const key =
-                    localStorage.key(i);
-
-                if (!key) continue;
-
-                if (
-                    key.startsWith("viewora_") ||
-                    key.startsWith("Viewora_")
-                ) {
-
-                    keysToRemove.push(key);
-
+            const keys = [];
+            for (let i = 0; i < localStorage.length; i++) {
+                const k = localStorage.key(i);
+                if (k && (k.startsWith("viewora_") || k.startsWith("Viewora_"))) {
+                    keys.push(k);
                 }
-
             }
-
-
-            keysToRemove.forEach(
-                key => localStorage.removeItem(key)
-            );
-
-
-            showToast(
-                "Cache cleared successfully",
-                "🧹"
-            );
-
+            keys.forEach(k => localStorage.removeItem(k));
+            showToast("Cache cleared", "🧹");
+        } catch (e) {
+            showToast("Unable to clear cache", "⚠️");
         }
-
-        catch (error) {
-
-            console.error(
-                "Cache error:",
-                error
-            );
-
-            showToast(
-                "Unable to clear cache",
-                "⚠️"
-            );
-
-        }
-
     };
-
-
-    /* =====================================================
-       DOWNLOADS
-    ===================================================== */
-
-    window.manageDownloads = function () {
-
-        showToast(
-            "📥 Downloads manager coming soon",
-            "🚀"
-        );
-
-    };
-
-
-    /* =====================================================
-       PERMISSIONS
-    ===================================================== */
-
-    window.managePermissions = function () {
-
-        showToast(
-            "🔑 Manage permissions from device settings",
-            "ℹ️"
-        );
-
-    };
-
-
-    /* =====================================================
-       HELP
-    ===================================================== */
 
     window.showHelp = function () {
-
-        window.location.href =
-            "support-settings.html";
-
+        window.location.href = "support-settings.html";
     };
-
-
-    /* =====================================================
-       ABOUT
-    ===================================================== */
 
     window.showAbout = function () {
-
-        alert(
-`Viewora
-
-Version 1.0.0
-
-Premium Social Platform
-
-Made with ❤️
-
-© 2026 Viewora`
-        );
-
+        alert("Viewora\nVersion 1.0.0\n\nPremium Social Platform\n© 2026 Viewora");
     };
-
-
-    /* =====================================================
-       LOGOUT
-    ===================================================== */
 
     window.logout = async function () {
-
-        const confirmed =
-            window.confirm(
-                "Do you want to logout from Viewora?"
-            );
-
-        if (!confirmed) return;
-
-
-        if (
-            typeof window.auth === "undefined" ||
-            !window.auth
-        ) {
-
-            window.location.href =
-                "login.html";
-
-            return;
-
-        }
-
-
+        if (!confirm("Log out of Viewora?")) return;
         try {
-
-            await window.auth.signOut();
-
-            showToast(
-                "Logged out successfully",
-                "👋"
-            );
-
-
+            if (window.auth) await window.auth.signOut();
+            showToast("Logged out", "👋");
             setTimeout(() => {
-
-                window.location.href =
-                    "login.html";
-
-            }, 700);
-
+                window.location.href = "login.html";
+            }, 600);
+        } catch (e) {
+            showToast("Logout failed", "⚠️");
         }
-
-        catch (error) {
-
-            console.error(
-                "Logout error:",
-                error
-            );
-
-            showToast(
-                "Logout failed",
-                "⚠️"
-            );
-
-        }
-
     };
-
-
-    /* =====================================================
-       DELETE ACCOUNT
-    ===================================================== */
 
     window.deleteAccount = function () {
-
-        window.location.href =
-            "delete-account.html";
-
+        window.location.href = "delete-account.html";
     };
 
-
-    /* =====================================================
-       PROFILE IMAGE CLICK
-    ===================================================== */
-
-    if (profilePhoto) {
-
-        profilePhoto.addEventListener(
-            "error",
-            function () {
-
-                this.onerror = null;
-
-                this.src = "non.jpg";
-
-            }
-        );
-
-    }
-
-
-    /* =====================================================
-       ONLINE / OFFLINE
-    ===================================================== */
-
-    window.addEventListener(
-        "online",
-        () => {
-
-            showToast(
-                "Internet connected",
-                "🌐"
-            );
-
-        }
-    );
-
-
-    window.addEventListener(
-        "offline",
-        () => {
-
-            showToast(
-                "You're offline",
-                "⚠️"
-            );
-
-        }
-    );
-
-
-    /* =====================================================
-       START
-    ===================================================== */
-
-    function initializeSettings() {
-
-        console.log(
-            "🚀 Initializing Viewora Settings..."
-        );
-
-
-        /*
-           Firebase.js must be loaded before settings.js.
-        */
-
-        if (
-            typeof window.firebase === "undefined"
-        ) {
-
-            console.error(
-                "❌ Firebase SDK not loaded."
-            );
-
+    /* Init */
+    function init() {
+        if (typeof window.firebase === "undefined") {
             setDefaultProfile();
             hideLoader();
-
             return;
-
         }
 
+        let tries = 0;
+        const timer = setInterval(() => {
+            tries++;
+            const authOk = window.auth && typeof window.auth.onAuthStateChanged === "function";
+            const dbOk = window.db && typeof window.db.ref === "function";
 
-        /*
-           Give firebase.js a tiny amount of time
-           to create auth/db if needed.
-        */
-
-        let attempts = 0;
-
-        const waitForFirebase = setInterval(() => {
-
-            attempts++;
-
-
-            const authReady =
-                typeof window.auth !== "undefined" &&
-                window.auth &&
-                typeof window.auth.onAuthStateChanged === "function";
-
-
-            const dbReady =
-                typeof window.db !== "undefined" &&
-                window.db &&
-                typeof window.db.ref === "function";
-
-
-            if (authReady && dbReady) {
-
-                clearInterval(
-                    waitForFirebase
-                );
-
-                console.log(
-                    "✅ Firebase Auth + Database ready"
-                );
-
-                startAuthentication();
-
+            if (authOk && dbOk) {
+                clearInterval(timer);
+                startAuth();
                 return;
-
             }
 
-
-            if (attempts >= 30) {
-
-                clearInterval(
-                    waitForFirebase
-                );
-
-                console.error(
-                    "❌ Firebase initialization timeout."
-                );
-
+            if (tries >= 25) {
+                clearInterval(timer);
                 setDefaultProfile();
-
-                showToast(
-                    "Firebase could not connect",
-                    "⚠️"
-                );
-
+                showToast("Could not connect", "⚠️");
                 hideLoader();
-
             }
-
-        }, 100);
-
+        }, 120);
     }
 
-
-    /* =====================================================
-       DOM READY
-    ===================================================== */
-
-    if (
-        document.readyState === "loading"
-    ) {
-
-        document.addEventListener(
-            "DOMContentLoaded",
-            initializeSettings
-        );
-
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", init);
     } else {
-
-        initializeSettings();
-
+        init();
     }
-
 
 })();

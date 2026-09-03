@@ -1,0 +1,3696 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    >
+
+    <meta
+        name="theme-color"
+        content="#06070c"
+    >
+
+    <meta
+        name="description"
+        content="Viewora Followers"
+    >
+
+    <title>Viewora • Followers</title>
+
+    <!-- =====================================================
+         FONTS
+    ====================================================== -->
+
+    <link
+        rel="preconnect"
+        href="https://fonts.googleapis.com"
+    >
+
+    <link
+        rel="preconnect"
+        href="https://fonts.gstatic.com"
+        crossorigin
+    >
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet"
+    >
+
+    <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
+    >
+
+    <link
+        rel="stylesheet"
+        href="nav.css"
+    >
+
+</head>
+
+
+<body>
+
+
+    <!-- =====================================================
+         BACKGROUND
+    ====================================================== -->
+
+    <div class="bg">
+
+        <div class="orb orb1"></div>
+
+        <div class="orb orb2"></div>
+
+        <div class="orb orb3"></div>
+
+    </div>
+
+
+    <!-- =====================================================
+         LOADER
+    ====================================================== -->
+
+    <div
+        id="pageLoader"
+        class="loaderScreen"
+    >
+
+        <div class="loaderRing">
+
+            <span></span>
+
+            <span></span>
+
+        </div>
+
+        <div class="loaderText">
+            Loading followers...
+        </div>
+
+    </div>
+
+
+    <!-- =====================================================
+         APP
+    ====================================================== -->
+
+    <main
+        id="app"
+        class="app hidden"
+    >
+
+
+        <!-- =================================================
+             HEADER
+        ================================================== -->
+
+        <header class="pageHeader">
+
+            <button
+                id="backBtn"
+                class="headerBtn"
+                type="button"
+                aria-label="Go back"
+            >
+
+                <i class="fa-solid fa-arrow-left"></i>
+
+            </button>
+
+
+            <div class="headerTitle">
+
+                <h1>Followers</h1>
+
+                <span id="headerCount">
+                    0 followers
+                </span>
+
+            </div>
+
+
+            <button
+                id="refreshBtn"
+                class="headerBtn"
+                type="button"
+                aria-label="Refresh"
+            >
+
+                <i class="fa-solid fa-rotate"></i>
+
+            </button>
+
+        </header>
+
+
+        <!-- =================================================
+             SEARCH
+        ================================================== -->
+
+        <section class="searchSection">
+
+            <div class="searchBox">
+
+                <i class="fa-solid fa-magnifying-glass"></i>
+
+                <input
+                    id="searchInput"
+                    type="search"
+                    placeholder="Search followers..."
+                    autocomplete="off"
+                    spellcheck="false"
+                >
+
+                <button
+                    id="clearSearch"
+                    type="button"
+                    aria-label="Clear search"
+                    class="clearSearch"
+                >
+
+                    <i class="fa-solid fa-xmark"></i>
+
+                </button>
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================================
+             PROFILE PREVIEW
+        ================================================== -->
+
+        <section class="profileMiniCard">
+
+            <div class="miniAvatarWrap">
+
+                <img
+                    id="ownerAvatar"
+                    src="assets/default-avatar.png"
+                    alt="Profile"
+                >
+
+            </div>
+
+
+            <div class="miniInfo">
+
+                <strong id="ownerName">
+                    Viewora User
+                </strong>
+
+                <span id="ownerUsername">
+                    @user
+                </span>
+
+            </div>
+
+
+            <div class="miniCount">
+
+                <strong id="miniFollowerCount">
+                    0
+                </strong>
+
+                <span>
+                    Followers
+                </span>
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================================
+             LIST
+        ================================================== -->
+
+        <section class="followersSection">
+
+            <div class="sectionHeader">
+
+                <div>
+
+                    <h2>
+                        People following
+                    </h2>
+
+                    <p id="resultText">
+                        Everyone who follows this profile
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <div
+                id="followersList"
+                class="followersList"
+            ></div>
+
+
+            <!-- =================================================
+                 EMPTY STATE
+            ================================================== -->
+
+            <div
+                id="emptyState"
+                class="stateCard hidden"
+            >
+
+                <div class="stateIcon">
+
+                    <i class="fa-solid fa-user-group"></i>
+
+                </div>
+
+                <strong>
+                    No followers yet
+                </strong>
+
+                <span>
+                    When people follow this profile,
+                    they will appear here.
+                </span>
+
+            </div>
+
+
+            <!-- =================================================
+                 SEARCH EMPTY
+            ================================================== -->
+
+            <div
+                id="searchEmpty"
+                class="stateCard hidden"
+            >
+
+                <div class="stateIcon">
+
+                    <i class="fa-solid fa-magnifying-glass"></i>
+
+                </div>
+
+                <strong>
+                    No matching followers
+                </strong>
+
+                <span>
+                    Try searching with another name or username.
+                </span>
+
+            </div>
+
+
+            <!-- =================================================
+                 ERROR
+            ================================================== -->
+
+            <div
+                id="errorState"
+                class="stateCard hidden"
+            >
+
+                <div class="stateIcon errorIcon">
+
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+
+                </div>
+
+                <strong>
+                    Couldn't load followers
+                </strong>
+
+                <span id="errorMessage">
+                    Please try again.
+                </span>
+
+                <button
+                    id="retryBtn"
+                    class="retryBtn"
+                    type="button"
+                >
+
+                    <i class="fa-solid fa-rotate"></i>
+
+                    Try Again
+
+                </button>
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================================
+             BOTTOM NAV
+        ================================================== -->
+
+        <nav class="bottomNav">
+
+            <a href="index.html">
+
+                <div class="activeIndicator"></div>
+
+                <i class="fa-solid fa-house"></i>
+
+                <span>
+                    Home
+                </span>
+
+            </a>
+
+
+            <a href="shorts.html">
+
+                <div class="activeIndicator"></div>
+
+                <i class="fa-solid fa-clapperboard"></i>
+
+                <span>
+                    Shorts
+                </span>
+
+            </a>
+
+
+            <a
+                href="upload.html"
+                class="uploadNav"
+            >
+
+                <i class="fa-solid fa-plus"></i>
+
+                <span>
+                    Upload
+                </span>
+
+            </a>
+
+
+            <a href="users.html">
+
+                <div class="activeIndicator"></div>
+
+                <i class="fa-solid fa-users"></i>
+
+                <span>
+                    Users
+                </span>
+
+            </a>
+
+
+            <a
+                href="profile.html"
+                class="active"
+            >
+
+                <div class="activeIndicator"></div>
+
+                <i class="fa-solid fa-user"></i>
+
+                <span>
+                    Profile
+                </span>
+
+            </a>
+
+        </nav>
+
+
+    </main>
+
+
+    <!-- =====================================================
+         TOAST
+    ====================================================== -->
+
+    <div
+        id="toast"
+        class="toast"
+        role="status"
+        aria-live="polite"
+    ></div>
+
+
+    <!-- =====================================================
+         FIREBASE SDK
+    ====================================================== -->
+
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+
+
+    <!-- =====================================================
+         VIEWORA CORE
+    ====================================================== -->
+
+    <script src="firebase.js"></script>
+
+    <script src="utils.js"></script>
+
+    <script src="nav.js"></script>
+
+
+    <!-- =====================================================
+         FOLLOWERS JS
+    ====================================================== -->
+
+    <script>
+
+    "use strict";
+
+
+    /* =========================================================
+       VIEWORA FOLLOWERS V12
+    ========================================================= */
+
+    (() => {
+
+
+        /* =====================================================
+           ELEMENTS
+        ===================================================== */
+
+        const loader =
+            document.getElementById("pageLoader");
+
+        const app =
+            document.getElementById("app");
+
+        const list =
+            document.getElementById("followersList");
+
+        const emptyState =
+            document.getElementById("emptyState");
+
+        const searchEmpty =
+            document.getElementById("searchEmpty");
+
+        const errorState =
+            document.getElementById("errorState");
+
+        const errorMessage =
+            document.getElementById("errorMessage");
+
+        const searchInput =
+            document.getElementById("searchInput");
+
+        const clearSearch =
+            document.getElementById("clearSearch");
+
+        const headerCount =
+            document.getElementById("headerCount");
+
+        const miniFollowerCount =
+            document.getElementById("miniFollowerCount");
+
+        const ownerAvatar =
+            document.getElementById("ownerAvatar");
+
+        const ownerName =
+            document.getElementById("ownerName");
+
+        const ownerUsername =
+            document.getElementById("ownerUsername");
+
+        const resultText =
+            document.getElementById("resultText");
+
+        const toast =
+            document.getElementById("toast");
+
+
+        /* =====================================================
+           STATE
+        ===================================================== */
+
+        let profileUID = "";
+
+        let currentUID = "";
+
+        let followers = [];
+
+        let filteredFollowers = [];
+
+        let followingMap = {};
+
+        let loading = false;
+
+
+        /* =====================================================
+           HELPERS
+        ===================================================== */
+
+        function safeNumber(value) {
+
+            const number =
+                Number(value);
+
+            return Number.isFinite(number)
+                ? number
+                : 0;
+
+        }
+
+
+        function safeString(value, fallback = "") {
+
+            if (
+                value === null ||
+                value === undefined
+            ) {
+
+                return fallback;
+
+            }
+
+            return String(value);
+
+        }
+
+
+        function escapeHTML(value) {
+
+            return safeString(value)
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+
+        }
+
+
+        function getQueryUID() {
+
+            const params =
+                new URLSearchParams(
+                    window.location.search
+                );
+
+            return (
+                params.get("uid") ||
+                params.get("user") ||
+                ""
+            ).trim();
+
+        }
+
+
+        function showToast(message) {
+
+            if (!toast) {
+                return;
+            }
+
+            toast.textContent =
+                safeString(message);
+
+            toast.classList.add("show");
+
+            clearTimeout(
+                window.__followersToastTimer
+            );
+
+            window.__followersToastTimer =
+                setTimeout(() => {
+
+                    toast.classList.remove("show");
+
+                }, 2300);
+
+        }
+
+
+        function showLoader() {
+
+            loader?.classList.remove("hidden");
+
+            app?.classList.add("hidden");
+
+        }
+
+
+        function hideLoader() {
+
+            loader?.classList.add("hidden");
+
+            app?.classList.remove("hidden");
+
+        }
+
+
+        function hideStates() {
+
+            emptyState?.classList.add("hidden");
+
+            searchEmpty?.classList.add("hidden");
+
+            errorState?.classList.add("hidden");
+
+        }
+
+
+        /* =====================================================
+           USER DATA
+        ===================================================== */
+
+        async function getUser(uid) {
+
+            if (!uid) {
+                return null;
+            }
+
+            try {
+
+                const snapshot =
+                    await userRef(uid)
+                        .once("value");
+
+                if (!snapshot.exists()) {
+                    return null;
+                }
+
+                return snapshot.val();
+
+            } catch (error) {
+
+                console.error(
+                    "getUser failed:",
+                    error
+                );
+
+                return null;
+
+            }
+
+        }
+
+
+        /* =====================================================
+           PROFILE
+        ===================================================== */
+
+        async function loadProfile() {
+
+            const user =
+                await getUser(profileUID);
+
+            if (!user) {
+
+                throw new Error(
+                    "Profile not found."
+                );
+
+            }
+
+
+            const avatar =
+                user.profilePhoto ||
+                user.photoURL ||
+                "assets/default-avatar.png";
+
+
+            const name =
+                user.name ||
+                user.fullName ||
+                "Viewora User";
+
+
+            const username =
+                user.username ||
+                "user";
+
+
+            ownerAvatar.src =
+                avatar;
+
+            ownerName.textContent =
+                name;
+
+            ownerUsername.textContent =
+                username.startsWith("@")
+                    ? username
+                    : "@" + username;
+
+
+            const storedCount =
+                safeNumber(
+                    user.followers
+                );
+
+
+            miniFollowerCount.textContent =
+                formatCount(storedCount);
+
+        }
+
+
+        /* =====================================================
+           FOLLOWER IDS
+        ===================================================== */
+
+        async function loadFollowerIDs() {
+
+            const snapshot =
+                await followersRef(
+                    profileUID
+                ).once("value");
+
+
+            if (!snapshot.exists()) {
+
+                return [];
+
+            }
+
+
+            const data =
+                snapshot.val();
+
+
+            /*
+             * Supported structures:
+             *
+             * followers/profileUID/followerUID = true
+             *
+             * followers/profileUID/followerUID = timestamp
+             *
+             * followers/profileUID = [...]
+             */
+
+            if (Array.isArray(data)) {
+
+                return data
+                    .filter(Boolean)
+                    .map(String);
+
+            }
+
+
+            if (
+                typeof data === "object" &&
+                data !== null
+            ) {
+
+                return Object.keys(data)
+                    .filter(Boolean);
+
+            }
+
+
+            return [];
+
+        }
+
+
+        /* =====================================================
+           LOAD FOLLOWING MAP
+        ===================================================== */
+
+        async function loadFollowingMap() {
+
+            followingMap = {};
+
+
+            if (!currentUID) {
+                return;
+            }
+
+
+            try {
+
+                const snapshot =
+                    await followingRef(
+                        currentUID
+                    ).once("value");
+
+
+                if (!snapshot.exists()) {
+                    return;
+                }
+
+
+                const data =
+                    snapshot.val();
+
+
+                if (Array.isArray(data)) {
+
+                    data.forEach(uid => {
+
+                        if (uid) {
+
+                            followingMap[
+                                String(uid)
+                            ] = true;
+
+                        }
+
+                    });
+
+                    return;
+
+                }
+
+
+                if (
+                    typeof data === "object" &&
+                    data !== null
+                ) {
+
+                    Object.keys(data)
+                        .forEach(uid => {
+
+                            followingMap[
+                                String(uid)
+                            ] = true;
+
+                        });
+
+                }
+
+            } catch (error) {
+
+                console.warn(
+                    "Following map failed:",
+                    error
+                );
+
+            }
+
+        }
+
+
+        /* =====================================================
+           LOAD FOLLOWERS
+        ===================================================== */
+
+        async function loadFollowers() {
+
+            if (loading) {
+                return;
+            }
+
+            loading = true;
+
+
+            showLoader();
+
+            hideStates();
+
+            list.innerHTML = "";
+
+
+            try {
+
+                if (!profileUID) {
+
+                    throw new Error(
+                        "Profile UID is missing."
+                    );
+
+                }
+
+
+                await loadProfile();
+
+
+                const ids =
+                    await loadFollowerIDs();
+
+
+                await loadFollowingMap();
+
+
+                /*
+                 * Fetch users in parallel.
+                 */
+
+                const users =
+                    await Promise.all(
+                        ids.map(
+                            uid => getUser(uid)
+                        )
+                    );
+
+
+                followers =
+                    users
+                        .map((user, index) => {
+
+                            if (!user) {
+                                return null;
+                            }
+
+                            return {
+
+                                uid:
+                                    safeString(
+                                        user.uid ||
+                                        ids[index]
+                                    ),
+
+                                name:
+                                    safeString(
+                                        user.name ||
+                                        user.fullName ||
+                                        "Viewora User"
+                                    ),
+
+                                username:
+                                    safeString(
+                                        user.username ||
+                                        "user"
+                                    ),
+
+                                profilePhoto:
+                                    safeString(
+                                        user.profilePhoto ||
+                                        user.photoURL ||
+                                        "assets/default-avatar.png"
+                                    ),
+
+                                verified:
+                                    user.verified === true,
+
+                                followers:
+                                    safeNumber(
+                                        user.followers
+                                    ),
+
+                                following:
+                                    user.following === true
+
+                            };
+
+                        })
+                        .filter(Boolean);
+
+
+                /*
+                 * Newest / stable order:
+                 * Firebase object key order is retained.
+                 */
+
+                filteredFollowers =
+                    [...followers];
+
+
+                updateCount();
+
+                renderFollowers();
+
+
+                hideLoader();
+
+
+            } catch (error) {
+
+                console.error(
+                    "Followers load failed:",
+                    error
+                );
+
+
+                hideLoader();
+
+                list.innerHTML = "";
+
+                errorState?.classList.remove(
+                    "hidden"
+                );
+
+
+                if (errorMessage) {
+
+                    errorMessage.textContent =
+                        error?.message ||
+                        "Please try again.";
+
+                }
+
+            } finally {
+
+                loading = false;
+
+            }
+
+        }
+
+
+        /* =====================================================
+           COUNT
+        ===================================================== */
+
+        function updateCount() {
+
+            const total =
+                safeNumber(
+                    followers.length
+                );
+
+
+            headerCount.textContent =
+                total +
+                (
+                    total === 1
+                        ? " follower"
+                        : " followers"
+                );
+
+
+            miniFollowerCount.textContent =
+                formatCount(total);
+
+        }
+
+
+        function formatCount(number) {
+
+            const n =
+                safeNumber(number);
+
+
+            if (n >= 1000000) {
+
+                return (
+                    (n / 1000000)
+                        .toFixed(
+                            n >= 10000000
+                                ? 0
+                                : 1
+                        )
+                        .replace(".0", "") +
+                    "M"
+                );
+
+            }
+
+
+            if (n >= 1000) {
+
+                return (
+                    (n / 1000)
+                        .toFixed(
+                            n >= 10000
+                                ? 0
+                                : 1
+                        )
+                        .replace(".0", "") +
+                    "K"
+                );
+
+            }
+
+
+            return String(n);
+
+        }
+
+
+        /* =====================================================
+           RENDER
+        ===================================================== */
+
+        function renderFollowers() {
+
+            hideStates();
+
+            list.innerHTML = "";
+
+
+            const total =
+                filteredFollowers.length;
+
+
+            if (!followers.length) {
+
+                emptyState?.classList.remove(
+                    "hidden"
+                );
+
+                resultText.textContent =
+                    "No one follows this profile yet.";
+
+                return;
+
+            }
+
+
+            if (!total) {
+
+                searchEmpty?.classList.remove(
+                    "hidden"
+                );
+
+                resultText.textContent =
+                    "No followers match your search.";
+
+                return;
+
+            }
+
+
+            resultText.textContent =
+                total +
+                (
+                    total === 1
+                        ? " follower found"
+                        : " followers found"
+                );
+
+
+            const fragment =
+                document.createDocumentFragment();
+
+
+            filteredFollowers.forEach(
+                user => {
+
+                    fragment.appendChild(
+                        createFollowerCard(
+                            user
+                        )
+                    );
+
+                }
+            );
+
+
+            list.appendChild(
+                fragment
+            );
+
+        }
+
+
+        /* =====================================================
+           CREATE CARD
+        ===================================================== */
+
+        function createFollowerCard(user) {
+
+            const article =
+                document.createElement("article");
+
+
+            article.className =
+                "followerCard";
+
+
+            article.dataset.uid =
+                user.uid;
+
+
+            const isSelf =
+                currentUID &&
+                user.uid === currentUID;
+
+
+            const isFollowing =
+                !!followingMap[user.uid];
+
+
+            const buttonText =
+                isSelf
+                    ? "You"
+                    : isFollowing
+                        ? "Following"
+                        : "Follow";
+
+
+            const buttonClass =
+                isSelf
+                    ? "followButton selfButton"
+                    : isFollowing
+                        ? "followButton following"
+                        : "followButton";
+
+
+            const icon =
+                isSelf
+                    ? "fa-user"
+                    : isFollowing
+                        ? "fa-user-check"
+                        : "fa-user-plus";
+
+
+            article.innerHTML = `
+
+                <button
+                    class="userIdentity"
+                    type="button"
+                    data-open-profile="${escapeHTML(user.uid)}"
+                >
+
+                    <div class="avatarWrap">
+
+                        <img
+                            class="userAvatar"
+                            src="${escapeHTML(user.profilePhoto)}"
+                            alt="${escapeHTML(user.name)}"
+                            loading="lazy"
+                            onerror="this.src='assets/default-avatar.png'"
+                        >
+
+                        <span
+                            class="onlineDot"
+                            data-online-uid="${escapeHTML(user.uid)}"
+                        ></span>
+
+                    </div>
+
+
+                    <div class="userDetails">
+
+                        <div class="userNameRow">
+
+                            <strong>
+                                ${escapeHTML(user.name)}
+                            </strong>
+
+                            ${
+                                user.verified
+                                    ? `
+                                        <i
+                                            class="fa-solid fa-circle-check verified"
+                                            title="Verified"
+                                        ></i>
+                                      `
+                                    : ""
+                            }
+
+                        </div>
+
+
+                        <span>
+                            ${
+                                user.username.startsWith("@")
+                                    ? escapeHTML(user.username)
+                                    : "@" +
+                                      escapeHTML(user.username)
+                            }
+                        </span>
+
+                    </div>
+
+                </button>
+
+
+                ${
+                    isSelf
+                        ? `
+                            <div class="youBadge">
+                                <i class="fa-solid fa-user"></i>
+                                You
+                            </div>
+                          `
+                        : `
+                            <button
+                                class="${buttonClass}"
+                                type="button"
+                                data-follow-uid="${escapeHTML(user.uid)}"
+                                data-following="${isFollowing ? "true" : "false"}"
+                            >
+
+                                <i class="fa-solid ${icon}"></i>
+
+                                <span>
+                                    ${buttonText}
+                                </span>
+
+                            </button>
+                          `
+                }
+
+            `;
+
+
+            return article;
+
+        }
+
+
+        /* =====================================================
+           SEARCH
+        ===================================================== */
+
+        function performSearch() {
+
+            const query =
+                safeString(
+                    searchInput.value
+                )
+                    .trim()
+                    .toLowerCase();
+
+
+            clearSearch?.classList.toggle(
+                "visible",
+                !!query
+            );
+
+
+            if (!query) {
+
+                filteredFollowers =
+                    [...followers];
+
+                renderFollowers();
+
+                return;
+
+            }
+
+
+            filteredFollowers =
+                followers.filter(
+                    user => {
+
+                        const name =
+                            safeString(
+                                user.name
+                            )
+                                .toLowerCase();
+
+
+                        const username =
+                            safeString(
+                                user.username
+                            )
+                                .toLowerCase();
+
+
+                        return (
+                            name.includes(query) ||
+                            username.includes(query)
+                        );
+
+                    }
+                );
+
+
+            renderFollowers();
+
+        }
+
+
+        /* =====================================================
+           FOLLOW / UNFOLLOW
+        ===================================================== */
+
+        async function toggleFollow(
+            targetUID,
+            button
+        ) {
+
+            if (
+                !targetUID ||
+                !button
+            ) {
+                return;
+            }
+
+
+            if (!currentUID) {
+
+                showToast(
+                    "Please login first."
+                );
+
+                return;
+
+            }
+
+
+            if (
+                targetUID === currentUID
+            ) {
+
+                return;
+
+            }
+
+
+            const currentlyFollowing =
+                followingMap[targetUID] === true;
+
+
+            button.disabled =
+                true;
+
+            button.classList.add(
+                "loading"
+            );
+
+
+            try {
+
+                /*
+                 * IMPORTANT:
+                 * Never write NaN to Firebase.
+                 */
+
+                const mySnapshot =
+                    await userRef(
+                        currentUID
+                    ).once("value");
+
+
+                const targetSnapshot =
+                    await userRef(
+                        targetUID
+                    ).once("value");
+
+
+                const me =
+                    mySnapshot.val() || {};
+
+
+                const target =
+                    targetSnapshot.val() || {};
+
+
+                const myFollowers =
+                    safeNumber(
+                        me.followers
+                    );
+
+
+                const myFollowing =
+                    safeNumber(
+                        me.following
+                    );
+
+
+                const targetFollowers =
+                    safeNumber(
+                        target.followers
+                    );
+
+
+                const targetFollowing =
+                    safeNumber(
+                        target.following
+                    );
+
+
+                let nextMyFollowing =
+                    myFollowing;
+
+                let nextTargetFollowers =
+                    targetFollowers;
+
+
+                if (currentlyFollowing) {
+
+                    nextMyFollowing =
+                        Math.max(
+                            0,
+                            myFollowing - 1
+                        );
+
+
+                    nextTargetFollowers =
+                        Math.max(
+                            0,
+                            targetFollowers - 1
+                        );
+
+
+                } else {
+
+                    nextMyFollowing =
+                        myFollowing + 1;
+
+
+                    nextTargetFollowers =
+                        targetFollowers + 1;
+
+                }
+
+
+                const updates = {};
+
+
+                if (currentlyFollowing) {
+
+                    updates[
+                        "following/" +
+                        currentUID +
+                        "/" +
+                        targetUID
+                    ] = null;
+
+
+                    updates[
+                        "followers/" +
+                        targetUID +
+                        "/" +
+                        currentUID
+                    ] = null;
+
+                } else {
+
+                    updates[
+                        "following/" +
+                        currentUID +
+                        "/" +
+                        targetUID
+                    ] = true;
+
+
+                    updates[
+                        "followers/" +
+                        targetUID +
+                        "/" +
+                        currentUID
+                    ] = true;
+
+                }
+
+
+                updates[
+                    "users/" +
+                    currentUID +
+                    "/following"
+                ] =
+                    safeNumber(
+                        nextMyFollowing
+                    );
+
+
+                updates[
+                    "users/" +
+                    targetUID +
+                    "/followers"
+                ] =
+                    safeNumber(
+                        nextTargetFollowers
+                    );
+
+
+                await db
+                    .ref()
+                    .update(updates);
+
+
+                /*
+                 * Local state update.
+                 */
+
+                followingMap[targetUID] =
+                    !currentlyFollowing;
+
+
+                button.dataset.following =
+                    followingMap[targetUID]
+                        ? "true"
+                        : "false";
+
+
+                button.classList.toggle(
+                    "following",
+                    followingMap[targetUID]
+                );
+
+
+                button.innerHTML =
+                    followingMap[targetUID]
+                        ? `
+                            <i class="fa-solid fa-user-check"></i>
+                            <span>Following</span>
+                          `
+                        : `
+                            <i class="fa-solid fa-user-plus"></i>
+                            <span>Follow</span>
+                          `;
+
+
+                showToast(
+                    followingMap[targetUID]
+                        ? "Following"
+                        : "Unfollowed"
+                );
+
+
+            } catch (error) {
+
+                console.error(
+                    "Follow update failed:",
+                    error
+                );
+
+
+                showToast(
+                    "Follow action failed."
+                );
+
+            } finally {
+
+                button.disabled =
+                    false;
+
+                button.classList.remove(
+                    "loading"
+                );
+
+            }
+
+        }
+
+
+        /* =====================================================
+           EVENTS
+        ===================================================== */
+
+        list.addEventListener(
+            "click",
+            event => {
+
+                const profileButton =
+                    event.target.closest(
+                        "[data-open-profile]"
+                    );
+
+
+                if (profileButton) {
+
+                    const uid =
+                        profileButton.dataset.openProfile;
+
+
+                    if (!uid) {
+                        return;
+                    }
+
+
+                    window.location.href =
+                        "profile.html?uid=" +
+                        encodeURIComponent(uid);
+
+
+                    return;
+
+                }
+
+
+                const followButton =
+                    event.target.closest(
+                        "[data-follow-uid]"
+                    );
+
+
+                if (followButton) {
+
+                    const uid =
+                        followButton.dataset.followUid;
+
+
+                    toggleFollow(
+                        uid,
+                        followButton
+                    );
+
+                }
+
+            }
+        );
+
+
+        searchInput?.addEventListener(
+            "input",
+            performSearch
+        );
+
+
+        clearSearch?.addEventListener(
+            "click",
+            () => {
+
+                searchInput.value = "";
+
+                searchInput.focus();
+
+                performSearch();
+
+            }
+        );
+
+
+        document
+            .getElementById("backBtn")
+            ?.addEventListener(
+                "click",
+                () => {
+
+                    if (
+                        window.history.length > 1
+                    ) {
+
+                        window.history.back();
+
+                    } else {
+
+                        window.location.href =
+                            "profile.html?uid=" +
+                            encodeURIComponent(
+                                profileUID
+                            );
+
+                    }
+
+                }
+            );
+
+
+        document
+            .getElementById("refreshBtn")
+            ?.addEventListener(
+                "click",
+                () => {
+
+                    loadFollowers();
+
+                }
+            );
+
+
+        document
+            .getElementById("retryBtn")
+            ?.addEventListener(
+                "click",
+                () => {
+
+                    loadFollowers();
+
+                }
+            );
+
+
+        /* =====================================================
+           AUTH + BOOT
+        ===================================================== */
+
+        async function boot() {
+
+            try {
+
+                if (
+                    typeof requireAuth ===
+                    "function"
+                ) {
+
+                    const user =
+                        await requireAuth();
+
+                    currentUID =
+                        user?.uid ||
+                        "";
+
+                } else {
+
+                    currentUID =
+                        window.auth?.currentUser?.uid ||
+                        "";
+
+                }
+
+
+                profileUID =
+                    getQueryUID() ||
+                    currentUID;
+
+
+                if (!profileUID) {
+
+                    throw new Error(
+                        "Profile UID is missing."
+                    );
+
+                }
+
+
+                await loadFollowers();
+
+            } catch (error) {
+
+                console.error(
+                    "Followers boot failed:",
+                    error
+                );
+
+
+                hideLoader();
+
+                errorState?.classList.remove(
+                    "hidden"
+                );
+
+
+                if (errorMessage) {
+
+                    errorMessage.textContent =
+                        error?.message ||
+                        "Please login and try again.";
+
+                }
+
+            }
+
+        }
+
+
+        /*
+         * Start after Firebase/core is loaded.
+         */
+
+        if (
+            document.readyState ===
+            "loading"
+        ) {
+
+            document.addEventListener(
+                "DOMContentLoaded",
+                boot
+            );
+
+        } else {
+
+            boot();
+
+        }
+
+
+    })();
+
+    </script>
+
+
+    <!-- =====================================================
+         PREMIUM CSS
+    ====================================================== -->
+
+    <style>
+
+    :root {
+
+        --bg: #06070c;
+
+        --surface:
+            rgba(255,255,255,.045);
+
+        --surface2:
+            rgba(255,255,255,.065);
+
+        --border:
+            rgba(255,255,255,.085);
+
+        --text:
+            #ffffff;
+
+        --muted:
+            #8e95a8;
+
+        --accent:
+            #7067ff;
+
+        --cyan:
+            #00d9ff;
+
+        --pink:
+            #ff4fd8;
+
+        --green:
+            #36e6a0;
+
+        --danger:
+            #ff6077;
+
+    }
+
+
+    * {
+
+        box-sizing:
+            border-box;
+
+        margin:
+            0;
+
+        padding:
+            0;
+
+        font-family:
+            Inter,
+            sans-serif;
+
+        -webkit-tap-highlight-color:
+            transparent;
+
+    }
+
+
+    html {
+
+        scroll-behavior:
+            smooth;
+
+    }
+
+
+    body {
+
+        min-height:
+            100vh;
+
+        color:
+            var(--text);
+
+        background:
+            var(--bg);
+
+        overflow-x:
+            hidden;
+
+    }
+
+
+    button,
+    input {
+
+        font:
+            inherit;
+
+    }
+
+
+    button {
+
+        border:
+            0;
+
+        outline:
+            0;
+
+    }
+
+
+    /* =====================================================
+       BACKGROUND
+    ====================================================== */
+
+    .bg {
+
+        position:
+            fixed;
+
+        inset:
+            0;
+
+        z-index:
+            -10;
+
+        overflow:
+            hidden;
+
+        background:
+
+            radial-gradient(
+                circle at 5% 0%,
+                rgba(112,103,255,.15),
+                transparent 30%
+            ),
+
+            radial-gradient(
+                circle at 100% 25%,
+                rgba(0,217,255,.09),
+                transparent 28%
+            ),
+
+            radial-gradient(
+                circle at 45% 100%,
+                rgba(255,79,216,.08),
+                transparent 32%
+            ),
+
+            #06070c;
+
+    }
+
+
+    .orb {
+
+        position:
+            absolute;
+
+        width:
+            300px;
+
+        height:
+            300px;
+
+        border-radius:
+            50%;
+
+        filter:
+            blur(100px);
+
+        opacity:
+            .18;
+
+        animation:
+            floatOrb 12s ease-in-out infinite;
+
+    }
+
+
+    .orb1 {
+
+        left:
+            -140px;
+
+        top:
+            8%;
+
+        background:
+            #7067ff;
+
+    }
+
+
+    .orb2 {
+
+        right:
+            -150px;
+
+        top:
+            45%;
+
+        background:
+            #00d9ff;
+
+        animation-delay:
+            -4s;
+
+    }
+
+
+    .orb3 {
+
+        left:
+            25%;
+
+        bottom:
+            -180px;
+
+        background:
+            #ff4fd8;
+
+        animation-delay:
+            -8s;
+
+    }
+
+
+    @keyframes floatOrb {
+
+        0%,
+        100% {
+
+            transform:
+                translate3d(0,0,0)
+                scale(1);
+
+        }
+
+        50% {
+
+            transform:
+                translate3d(35px,-30px,0)
+                scale(1.1);
+
+        }
+
+    }
+
+
+    /* =====================================================
+       LOADER
+    ====================================================== */
+
+    .loaderScreen {
+
+        position:
+            fixed;
+
+        inset:
+            0;
+
+        z-index:
+            99999;
+
+        display:
+            flex;
+
+        flex-direction:
+            column;
+
+        align-items:
+            center;
+
+        justify-content:
+            center;
+
+        gap:
+            15px;
+
+        background:
+            #06070c;
+
+        transition:
+            .35s ease;
+
+    }
+
+
+    .loaderScreen.hidden {
+
+        opacity:
+            0;
+
+        visibility:
+            hidden;
+
+        pointer-events:
+            none;
+
+    }
+
+
+    .loaderRing {
+
+        position:
+            relative;
+
+        width:
+            58px;
+
+        height:
+            58px;
+
+    }
+
+
+    .loaderRing span {
+
+        position:
+            absolute;
+
+        inset:
+            0;
+
+        border:
+            3px solid
+            rgba(255,255,255,.07);
+
+        border-top-color:
+            var(--accent);
+
+        border-right-color:
+            var(--cyan);
+
+        border-radius:
+            50%;
+
+        animation:
+            spin 1s linear infinite;
+
+    }
+
+
+    .loaderRing span:nth-child(2) {
+
+        inset:
+            9px;
+
+        border:
+            2px solid
+            rgba(255,255,255,.05);
+
+        border-bottom-color:
+            var(--pink);
+
+        animation-direction:
+            reverse;
+
+        animation-duration:
+            1.5s;
+
+    }
+
+
+    @keyframes spin {
+
+        to {
+
+            transform:
+                rotate(360deg);
+
+        }
+
+    }
+
+
+    .loaderText {
+
+        color:
+            #9299aa;
+
+        font-size:
+            12px;
+
+        font-weight:
+            600;
+
+    }
+
+
+    /* =====================================================
+       APP
+    ====================================================== */
+
+    .app {
+
+        width:
+            100%;
+
+        max-width:
+            760px;
+
+        min-height:
+            100vh;
+
+        margin:
+            auto;
+
+        padding-bottom:
+            110px;
+
+        animation:
+            pageEnter .5s ease both;
+
+    }
+
+
+    .app.hidden {
+
+        display:
+            none;
+
+    }
+
+
+    @keyframes pageEnter {
+
+        from {
+
+            opacity:
+                0;
+
+            transform:
+                translateY(10px);
+
+        }
+
+        to {
+
+            opacity:
+                1;
+
+            transform:
+                translateY(0);
+
+        }
+
+    }
+
+
+    /* =====================================================
+       HEADER
+    ====================================================== */
+
+    .pageHeader {
+
+        position:
+            sticky;
+
+        top:
+            0;
+
+        z-index:
+            100;
+
+        min-height:
+            72px;
+
+        display:
+            grid;
+
+        grid-template-columns:
+            46px 1fr 46px;
+
+        align-items:
+            center;
+
+        padding:
+            10px 14px;
+
+        border-bottom:
+            1px solid
+            rgba(255,255,255,.07);
+
+        background:
+            rgba(6,7,12,.78);
+
+        backdrop-filter:
+            blur(24px);
+
+        -webkit-backdrop-filter:
+            blur(24px);
+
+    }
+
+
+    .headerBtn {
+
+        width:
+            42px;
+
+        height:
+            42px;
+
+        display:
+            grid;
+
+        place-items:
+            center;
+
+        color:
+            #fff;
+
+        border:
+            1px solid
+            rgba(255,255,255,.09);
+
+        border-radius:
+            13px;
+
+        background:
+            rgba(255,255,255,.045);
+
+        cursor:
+            pointer;
+
+        transition:
+            .2s ease;
+
+    }
+
+
+    .headerBtn:hover {
+
+        background:
+            rgba(112,103,255,.18);
+
+        border-color:
+            rgba(112,103,255,.35);
+
+    }
+
+
+    .headerTitle {
+
+        text-align:
+            center;
+
+    }
+
+
+    .headerTitle h1 {
+
+        font-size:
+            17px;
+
+        font-weight:
+            800;
+
+        letter-spacing:
+            -.3px;
+
+    }
+
+
+    .headerTitle span {
+
+        display:
+            block;
+
+        margin-top:
+            3px;
+
+        color:
+            #777f91;
+
+        font-size:
+            9px;
+
+        font-weight:
+            600;
+
+    }
+
+
+    /* =====================================================
+       SEARCH
+    ====================================================== */
+
+    .searchSection {
+
+        padding:
+            15px 14px 8px;
+
+    }
+
+
+    .searchBox {
+
+        position:
+            relative;
+
+        height:
+            48px;
+
+        display:
+            flex;
+
+        align-items:
+            center;
+
+        gap:
+            11px;
+
+        padding:
+            0 13px;
+
+        border:
+            1px solid
+            rgba(255,255,255,.08);
+
+        border-radius:
+            16px;
+
+        background:
+            rgba(255,255,255,.045);
+
+        transition:
+            .25s ease;
+
+    }
+
+
+    .searchBox:focus-within {
+
+        border-color:
+            rgba(112,103,255,.55);
+
+        box-shadow:
+            0 0 0 3px
+            rgba(112,103,255,.08);
+
+    }
+
+
+    .searchBox > i {
+
+        color:
+            #747d91;
+
+        font-size:
+            14px;
+
+    }
+
+
+    .searchBox input {
+
+        width:
+            100%;
+
+        height:
+            100%;
+
+        color:
+            #fff;
+
+        background:
+            transparent;
+
+        border:
+            0;
+
+        outline:
+            0;
+
+        font-size:
+            13px;
+
+    }
+
+
+    .searchBox input::placeholder {
+
+        color:
+            #697184;
+
+    }
+
+
+    .clearSearch {
+
+        width:
+            30px;
+
+        height:
+            30px;
+
+        display:
+            grid;
+
+        place-items:
+            center;
+
+        color:
+            #858da0;
+
+        background:
+            transparent;
+
+        opacity:
+            0;
+
+        pointer-events:
+            none;
+
+        cursor:
+            pointer;
+
+        transition:
+            .2s ease;
+
+    }
+
+
+    .clearSearch.visible {
+
+        opacity:
+            1;
+
+        pointer-events:
+            auto;
+
+    }
+
+
+    /* =====================================================
+       PROFILE MINI
+    ====================================================== */
+
+    .profileMiniCard {
+
+        display:
+            flex;
+
+        align-items:
+            center;
+
+        gap:
+            12px;
+
+        margin:
+            8px 14px 15px;
+
+        padding:
+            12px;
+
+        border:
+            1px solid
+            rgba(255,255,255,.075);
+
+        border-radius:
+            20px;
+
+        background:
+            linear-gradient(
+                145deg,
+                rgba(255,255,255,.065),
+                rgba(255,255,255,.025)
+            );
+
+        box-shadow:
+            0 18px 55px
+            rgba(0,0,0,.2);
+
+    }
+
+
+    .miniAvatarWrap {
+
+        width:
+            50px;
+
+        height:
+            50px;
+
+        flex:
+            0 0 50px;
+
+        padding:
+            2px;
+
+        border-radius:
+            50%;
+
+        background:
+            conic-gradient(
+                var(--accent),
+                var(--cyan),
+                var(--pink),
+                var(--accent)
+            );
+
+    }
+
+
+    .miniAvatarWrap img {
+
+        width:
+            100%;
+
+        height:
+            100%;
+
+        object-fit:
+            cover;
+
+        border:
+            2px solid
+            #08090f;
+
+        border-radius:
+            50%;
+
+    }
+
+
+    .miniInfo {
+
+        min-width:
+            0;
+
+        flex:
+            1;
+
+    }
+
+
+    .miniInfo strong {
+
+        display:
+            block;
+
+        overflow:
+            hidden;
+
+        color:
+            #fff;
+
+        font-size:
+            13px;
+
+        font-weight:
+            750;
+
+        white-space:
+            nowrap;
+
+        text-overflow:
+            ellipsis;
+
+    }
+
+
+    .miniInfo span {
+
+        display:
+            block;
+
+        margin-top:
+            3px;
+
+        overflow:
+            hidden;
+
+        color:
+            #7e8698;
+
+        font-size:
+            10px;
+
+        white-space:
+            nowrap;
+
+        text-overflow:
+            ellipsis;
+
+    }
+
+
+    .miniCount {
+
+        text-align:
+            right;
+
+    }
+
+
+    .miniCount strong {
+
+        display:
+            block;
+
+        font-size:
+            16px;
+
+        font-weight:
+            800;
+
+    }
+
+
+    .miniCount span {
+
+        display:
+            block;
+
+        margin-top:
+            2px;
+
+        color:
+            #747c8f;
+
+        font-size:
+            8px;
+
+    }
+
+
+    /* =====================================================
+       SECTION
+    ====================================================== */
+
+    .followersSection {
+
+        margin:
+            0 14px;
+
+    }
+
+
+    .sectionHeader {
+
+        padding:
+            3px 2px 10px;
+
+    }
+
+
+    .sectionHeader h2 {
+
+        font-size:
+            14px;
+
+        font-weight:
+            750;
+
+    }
+
+
+    .sectionHeader p {
+
+        margin-top:
+            4px;
+
+        color:
+            #737b8d;
+
+        font-size:
+            10px;
+
+    }
+
+
+    /* =====================================================
+       LIST
+    ====================================================== */
+
+    .followersList {
+
+        display:
+            flex;
+
+        flex-direction:
+            column;
+
+        gap:
+            7px;
+
+    }
+
+
+    .followerCard {
+
+        min-height:
+            72px;
+
+        display:
+            flex;
+
+        align-items:
+            center;
+
+        gap:
+            9px;
+
+        padding:
+            8px 9px;
+
+        border:
+            1px solid
+            rgba(255,255,255,.065);
+
+        border-radius:
+            18px;
+
+        background:
+            rgba(255,255,255,.035);
+
+        transition:
+            .22s ease;
+
+    }
+
+
+    .followerCard:hover {
+
+        border-color:
+            rgba(112,103,255,.2);
+
+        background:
+            rgba(255,255,255,.05);
+
+        transform:
+            translateY(-1px);
+
+    }
+
+
+    .userIdentity {
+
+        min-width:
+            0;
+
+        flex:
+            1;
+
+        display:
+            flex;
+
+        align-items:
+            center;
+
+        gap:
+            11px;
+
+        color:
+            #fff;
+
+        background:
+            transparent;
+
+        text-align:
+            left;
+
+        cursor:
+            pointer;
+
+    }
+
+
+    .avatarWrap {
+
+        position:
+            relative;
+
+        width:
+            49px;
+
+        height:
+            49px;
+
+        flex:
+            0 0 49px;
+
+    }
+
+
+    .userAvatar {
+
+        width:
+            49px;
+
+        height:
+            49px;
+
+        display:
+            block;
+
+        object-fit:
+            cover;
+
+        border:
+            2px solid
+            rgba(255,255,255,.10);
+
+        border-radius:
+            50%;
+
+        background:
+            #11141c;
+
+    }
+
+
+    .onlineDot {
+
+        position:
+            absolute;
+
+        right:
+            1px;
+
+        bottom:
+            2px;
+
+        width:
+            11px;
+
+        height:
+            11px;
+
+        border:
+            2px solid
+            #11131b;
+
+        border-radius:
+            50%;
+
+        background:
+            #4d5567;
+
+    }
+
+
+    .onlineDot.online {
+
+        background:
+            var(--green);
+
+        box-shadow:
+            0 0 9px
+            rgba(54,230,160,.5);
+
+    }
+
+
+    .userDetails {
+
+        min-width:
+            0;
+
+        flex:
+            1;
+
+    }
+
+
+    .userNameRow {
+
+        display:
+            flex;
+
+        align-items:
+            center;
+
+        gap:
+            5px;
+
+        min-width:
+            0;
+
+    }
+
+
+    .userNameRow strong {
+
+        max-width:
+            100%;
+
+        overflow:
+            hidden;
+
+        color:
+            #fff;
+
+        font-size:
+            12px;
+
+        font-weight:
+            700;
+
+        white-space:
+            nowrap;
+
+        text-overflow:
+            ellipsis;
+
+    }
+
+
+    .verified {
+
+        flex:
+            0 0 auto;
+
+        color:
+            #24cfff;
+
+        font-size:
+            11px;
+
+    }
+
+
+    .userDetails > span {
+
+        display:
+            block;
+
+        margin-top:
+            4px;
+
+        overflow:
+            hidden;
+
+        color:
+            #747c8f;
+
+        font-size:
+            10px;
+
+        white-space:
+            nowrap;
+
+        text-overflow:
+            ellipsis;
+
+    }
+
+
+    /* =====================================================
+       FOLLOW BUTTON
+    ====================================================== */
+
+    .followButton {
+
+        min-width:
+            88px;
+
+        height:
+            36px;
+
+        display:
+            inline-flex;
+
+        align-items:
+            center;
+
+        justify-content:
+            center;
+
+        gap:
+            6px;
+
+        flex:
+            0 0 auto;
+
+        padding:
+            0 11px;
+
+        color:
+            #fff;
+
+        border:
+            1px solid
+            transparent;
+
+        border-radius:
+            12px;
+
+        background:
+            linear-gradient(
+                135deg,
+                var(--accent),
+                #00bfe9
+            );
+
+        box-shadow:
+            0 7px 20px
+            rgba(82,102,255,.18);
+
+        font-size:
+            10px;
+
+        font-weight:
+            750;
+
+        cursor:
+            pointer;
+
+        transition:
+            .2s ease;
+
+    }
+
+
+    .followButton:hover {
+
+        transform:
+            translateY(-1px);
+
+    }
+
+
+    .followButton.following {
+
+        color:
+            #e8eaf1;
+
+        border-color:
+            rgba(255,255,255,.12);
+
+        background:
+            rgba(255,255,255,.07);
+
+        box-shadow:
+            none;
+
+    }
+
+
+    .followButton.loading {
+
+        opacity:
+            .6;
+
+        pointer-events:
+            none;
+
+    }
+
+
+    .selfButton {
+
+        display:
+            none;
+
+    }
+
+
+    .youBadge {
+
+        min-width:
+            65px;
+
+        height:
+            32px;
+
+        display:
+            inline-flex;
+
+        align-items:
+            center;
+
+        justify-content:
+            center;
+
+        gap:
+            5px;
+
+        color:
+            #8e96a8;
+
+        border:
+            1px solid
+            rgba(255,255,255,.08);
+
+        border-radius:
+            11px;
+
+        background:
+            rgba(255,255,255,.035);
+
+        font-size:
+            9px;
+
+        font-weight:
+            700;
+
+    }
+
+
+    /* =====================================================
+       STATES
+    ====================================================== */
+
+    .stateCard {
+
+        min-height:
+            240px;
+
+        display:
+            flex;
+
+        flex-direction:
+            column;
+
+        align-items:
+            center;
+
+        justify-content:
+            center;
+
+        gap:
+            8px;
+
+        padding:
+            25px;
+
+        text-align:
+            center;
+
+        border:
+            1px solid
+            rgba(255,255,255,.06);
+
+        border-radius:
+            22px;
+
+        background:
+            rgba(255,255,255,.025);
+
+    }
+
+
+    .stateCard.hidden {
+
+        display:
+            none;
+
+    }
+
+
+    .stateIcon {
+
+        width:
+            58px;
+
+        height:
+            58px;
+
+        display:
+            grid;
+
+        place-items:
+            center;
+
+        margin-bottom:
+            5px;
+
+        color:
+            #8b84ff;
+
+        border:
+            1px solid
+            rgba(112,103,255,.18);
+
+        border-radius:
+            18px;
+
+        background:
+            rgba(112,103,255,.08);
+
+        font-size:
+            21px;
+
+    }
+
+
+    .stateCard strong {
+
+        color:
+            #c8ccd7;
+
+        font-size:
+            13px;
+
+    }
+
+
+    .stateCard > span {
+
+        max-width:
+            290px;
+
+        color:
+            #737b8e;
+
+        font-size:
+            10px;
+
+        line-height:
+            1.5;
+
+    }
+
+
+    .errorIcon {
+
+        color:
+            var(--danger);
+
+        border-color:
+            rgba(255,96,119,.18);
+
+        background:
+            rgba(255,96,119,.07);
+
+    }
+
+
+    .retryBtn {
+
+        min-height:
+            38px;
+
+        display:
+            inline-flex;
+
+        align-items:
+            center;
+
+        justify-content:
+            center;
+
+        gap:
+            7px;
+
+        margin-top:
+            8px;
+
+        padding:
+            0 15px;
+
+        color:
+            #fff;
+
+        border:
+            1px solid
+            rgba(255,255,255,.10);
+
+        border-radius:
+            12px;
+
+        background:
+            rgba(255,255,255,.06);
+
+        font-size:
+            10px;
+
+        font-weight:
+            700;
+
+        cursor:
+            pointer;
+
+    }
+
+
+    /* =====================================================
+       TOAST
+    ====================================================== */
+
+    .toast {
+
+        position:
+            fixed;
+
+        left:
+            50%;
+
+        bottom:
+            85px;
+
+        z-index:
+            9999;
+
+        max-width:
+            calc(100vw - 30px);
+
+        padding:
+            11px 16px;
+
+        color:
+            #fff;
+
+        border:
+            1px solid
+            rgba(255,255,255,.10);
+
+        border-radius:
+            14px;
+
+        background:
+            rgba(18,20,29,.95);
+
+        box-shadow:
+            0 18px 45px
+            rgba(0,0,0,.35);
+
+        backdrop-filter:
+            blur(18px);
+
+        opacity:
+            0;
+
+        pointer-events:
+            none;
+
+        transform:
+            translate(-50%,18px);
+
+        transition:
+            .25s ease;
+
+        font-size:
+            11px;
+
+    }
+
+
+    .toast.show {
+
+        opacity:
+            1;
+
+        transform:
+            translate(-50%,0);
+
+    }
+
+
+    /* =====================================================
+       MOBILE
+    ====================================================== */
+
+    @media (max-width:520px) {
+
+        .app {
+
+            padding-bottom:
+                94px;
+
+        }
+
+
+        .pageHeader {
+
+            min-height:
+                66px;
+
+            padding:
+                8px 10px;
+
+        }
+
+
+        .searchSection {
+
+            padding:
+                12px 10px 7px;
+
+        }
+
+
+        .profileMiniCard {
+
+            margin-left:
+                10px;
+
+            margin-right:
+                10px;
+
+            border-radius:
+                18px;
+
+        }
+
+
+        .followersSection {
+
+            margin-left:
+                10px;
+
+            margin-right:
+                10px;
+
+        }
+
+
+        .followerCard {
+
+            min-height:
+                68px;
+
+            border-radius:
+                16px;
+
+        }
+
+
+        .userAvatar,
+        .avatarWrap {
+
+            width:
+                45px;
+
+            height:
+                45px;
+
+        }
+
+
+        .avatarWrap {
+
+            flex-basis:
+                45px;
+
+        }
+
+
+        .followButton {
+
+            min-width:
+                80px;
+
+            height:
+                34px;
+
+            font-size:
+                9px;
+
+        }
+
+    }
+
+
+    @media (max-width:370px) {
+
+        .followButton {
+
+            min-width:
+                70px;
+
+            padding:
+                0 8px;
+
+        }
+
+
+        .followButton i {
+
+            display:
+                none;
+
+        }
+
+
+        .miniCount {
+
+            display:
+                none;
+
+        }
+
+    }
+
+    </style>
+
+</body>
+
+</html>

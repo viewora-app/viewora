@@ -20,6 +20,10 @@
 
     <title>Messages • VIEWORA</title>
 
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
     <!-- Font Awesome -->
     <link
         rel="stylesheet"
@@ -29,37 +33,14 @@
     <!-- VIEWORA Messages CSS -->
     <link
         rel="stylesheet"
-        href="messages.css"
+        href="messages.css">
+    <link rel="stylesheet" href="nav.css"
     >
 </head>
 
 <body>
 
-<!-- ======================================================
-     LOADING OVERLAY
-====================================================== -->
-
-<div
-    id="loadingOverlay"
-    class="loadingOverlay"
->
-
-    <div class="loadingGlass">
-
-        <div class="loadingLogo">
-            <span>V</span>
-        </div>
-
-        <div class="loadingSpinner"></div>
-
-        <strong>VIEWORA</strong>
-
-        <small>Loading messages...</small>
-
-    </div>
-
-</div>
-
+  
 
 <!-- ======================================================
      APP
@@ -67,7 +48,7 @@
 
 <main
     id="app"
-    class="app hidden"
+    class="app"
 >
 
     <!-- ==================================================
@@ -611,8 +592,10 @@
 <!-- Your Firebase configuration -->
 <script src="firebase.js"></script>
 
+  <script src="call-listener.js"></script>
 <!-- Messages logic -->
 <script src="messages.js"></script>
+<script src="nav.js"></script>
 
 </body>
 </html>

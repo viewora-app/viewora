@@ -2590,3 +2590,517 @@ video {
 .swipeFeed {
     -webkit-overflow-scrolling: touch;
 }
+
+/* =========================================================
+   JS CARD CLASSES (index.js) — posts + long videos
+   vieworaPostCard / longVideoCard
+========================================================= */
+
+/* ---------- POSTS (vieworaPostCard) ---------- */
+.vieworaPostCard {
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background:
+        linear-gradient(
+            145deg,
+            rgba(23,23,33,.95),
+            rgba(14,14,21,.95)
+        );
+    box-shadow: 0 12px 42px rgba(0,0,0,.24);
+    animation: cardReveal .45s ease both;
+}
+
+.vieworaPostCard .postHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 13px 14px;
+}
+
+.vieworaPostCard .postUser {
+    min-width: 0;
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: transparent;
+    color: inherit;
+    text-align: left;
+    padding: 0;
+}
+
+.vieworaPostCard .postAvatar {
+    width: 42px;
+    height: 42px;
+    flex: 0 0 42px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid rgba(124,92,255,.4);
+    background: #1a1a24;
+}
+
+.vieworaPostCard .postUserInfo {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.vieworaPostCard .postUserInfo strong {
+    font-size: 13px;
+    font-weight: 700;
+    color: #fff;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.vieworaPostCard .postUserInfo small {
+    color: var(--muted);
+    font-size: 10px;
+}
+
+.vieworaPostCard .postMore {
+    width: 36px;
+    height: 36px;
+    flex: 0 0 36px;
+    display: grid;
+    place-items: center;
+    border-radius: 12px;
+    color: #aaaab6;
+    background: transparent;
+}
+
+.vieworaPostCard .postMore:hover {
+    background: rgba(255,255,255,.06);
+    color: #fff;
+}
+
+.vieworaPostCard .postMediaWrap {
+    width: 100%;
+    background: #0d0d12;
+    overflow: hidden;
+}
+
+.vieworaPostCard .postMedia {
+    width: 100%;
+    max-height: 600px;
+    object-fit: cover;
+    display: block;
+}
+
+.vieworaPostCard .postCaption {
+    padding: 12px 14px 4px;
+    color: #e8e8ef;
+    font-size: 13px;
+    line-height: 1.45;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.vieworaPostCard .postActions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 8px 10px 6px;
+}
+
+.vieworaPostCard .postAction {
+    min-height: 40px;
+    padding: 0 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    border-radius: 12px;
+    color: #c9c9d3;
+    background: transparent;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.vieworaPostCard .postAction i {
+    font-size: 18px;
+}
+
+.vieworaPostCard .postAction:hover {
+    background: rgba(255,255,255,.05);
+    color: #fff;
+}
+
+.vieworaPostCard .postAction.saveAction {
+    margin-left: auto;
+}
+
+.vieworaPostCard .postStats {
+    padding: 0 14px 14px;
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 600;
+}
+
+
+/* ---------- LONG VIDEOS (longVideoCard) ---------- */
+.longVideoCard {
+    position: relative;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--card-solid);
+    box-shadow: 0 10px 35px rgba(0,0,0,.2);
+    animation: cardReveal .45s ease both;
+    transition: transform .25s ease, border-color .25s ease;
+    cursor: pointer;
+}
+
+.longVideoCard:hover {
+    transform: translateY(-3px);
+    border-color: rgba(124,92,255,.25);
+}
+
+.longVideoCard .videoThumbnailWrap {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    background: #111118;
+}
+
+.longVideoCard .videoThumbnail {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform .45s ease;
+}
+
+.longVideoCard:hover .videoThumbnail {
+    transform: scale(1.04);
+}
+
+.longVideoCard .videoThumbnailFallback {
+    width: 100%;
+    height: 100%;
+    display: grid;
+    place-items: center;
+    color: #5a5a6e;
+    font-size: 28px;
+    background: #15151e;
+}
+
+.longVideoCard .videoPlayButton {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 48px;
+    height: 48px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    color: #fff;
+    background: rgba(0,0,0,.5);
+    border: 1px solid rgba(255,255,255,.22);
+    backdrop-filter: blur(10px);
+    opacity: .85;
+    pointer-events: none;
+}
+
+.longVideoCard .videoInfo {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 11px 12px 13px;
+}
+
+.longVideoCard .videoAvatar {
+    width: 38px;
+    height: 38px;
+    flex: 0 0 38px;
+    border-radius: 50%;
+    object-fit: cover;
+    background: #1a1a24;
+    border: 2px solid rgba(124,92,255,.35);
+}
+
+.longVideoCard .videoMeta {
+    min-width: 0;
+    flex: 1;
+}
+
+.longVideoCard .videoMeta h3 {
+    color: #fff;
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1.35;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.longVideoCard .videoSubMeta {
+    margin-top: 5px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 5px;
+    color: var(--muted);
+    font-size: 10px;
+    font-weight: 500;
+}
+
+.longVideoCard .videoMore {
+    width: 32px;
+    height: 32px;
+    flex: 0 0 32px;
+    display: grid;
+    place-items: center;
+    border-radius: 10px;
+    color: #9b9ba8;
+    background: transparent;
+}
+
+.longVideoCard .videoMore:hover {
+    background: rgba(255,255,255,.06);
+    color: #fff;
+}
+
+
+/* ---------- STORY SEEN / UNSEEN RINGS ---------- */
+.storyCard.storyUnseen .storyImageWrap {
+    background: linear-gradient(135deg, #7c5cff, #ec4899, #f59e0b) !important;
+    box-shadow: 0 7px 24px rgba(124,92,255,.25);
+}
+
+.storyCard.storySeen .storyImageWrap {
+    background: rgba(255,255,255,.32) !important;
+    box-shadow: none;
+}
+
+.storyCard.storySeen .storyName {
+    color: #7a7a88;
+}
+
+
+/* ---------- SEARCH SUGGESTIONS ---------- */
+.searchSuggestBlock {
+    padding: 6px 2px 10px;
+}
+
+.searchSuggestTitle {
+    padding: 6px 10px;
+    color: #8b8b9a;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+.searchSuggestItem {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 11px 12px;
+    border: 0;
+    border-radius: 12px;
+    background: transparent;
+    color: #fff;
+    text-align: left;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.searchSuggestItem:hover {
+    background: rgba(255,255,255,.06);
+}
+
+.searchSuggestItem i {
+    width: 18px;
+    text-align: center;
+    color: #8b8b9a;
+}
+
+.searchUser {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    color: #fff;
+}
+
+.searchUser:hover {
+    background: rgba(255,255,255,.06);
+}
+
+.searchUser img {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    background: #1a1a24;
+}
+
+
+/* ---------- HOME 3-DOT MENU ---------- */
+.homeContentMenu {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+}
+
+.homeContentMenu.hidden {
+    display: none !important;
+}
+
+.homeMenuBackdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,.55);
+}
+
+.homeMenuSheet {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    max-height: 80vh;
+    overflow: auto;
+    padding: 10px 12px calc(16px + env(safe-area-inset-bottom));
+    border-radius: 22px 22px 0 0;
+    background: #14151d;
+    box-shadow: 0 -20px 60px rgba(0,0,0,.5);
+}
+
+.homeMenuHandle {
+    width: 40px;
+    height: 4px;
+    margin: 4px auto 10px;
+    border-radius: 99px;
+    background: rgba(255,255,255,.2);
+}
+
+.homeMenuTitle {
+    padding: 4px 8px 12px;
+    font-size: 14px;
+    font-weight: 800;
+}
+
+.homeMenuItem {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 10px;
+    border: 0;
+    border-radius: 14px;
+    background: transparent;
+    color: #fff;
+    text-align: left;
+    cursor: pointer;
+}
+
+.homeMenuItem:hover {
+    background: rgba(255,255,255,.06);
+}
+
+.homeMenuItem.danger {
+    color: #ff5b75;
+}
+
+.homeMenuIcon {
+    width: 40px;
+    height: 40px;
+    flex: 0 0 40px;
+    display: grid;
+    place-items: center;
+    border-radius: 12px;
+    background: rgba(255,255,255,.08);
+}
+
+.homeMenuText {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.homeMenuText strong {
+    font-size: 13px;
+}
+
+.homeMenuText small {
+    font-size: 10px;
+    color: #8b93a5;
+}
+
+.homeMenuItem.danger .homeMenuText small {
+    color: rgba(255,91,117,.7);
+}
+
+.homeMenuCancel {
+    width: 100%;
+    min-height: 44px;
+    margin-top: 8px;
+    border: 0;
+    border-radius: 14px;
+    color: #fff;
+    background: rgba(255,255,255,.08);
+    font-weight: 700;
+    cursor: pointer;
+}
+
+
+/* Mobile tweaks for JS cards */
+@media (max-width: 600px) {
+    .vieworaPostCard {
+        border-radius: 19px;
+    }
+
+    .longVideoCard {
+        border-radius: 16px;
+    }
+
+    .longVideoCard .videoMeta h3 {
+        font-size: 12px;
+    }
+
+    .longVideoCard .videoPlayButton {
+        width: 40px;
+        height: 40px;
+    }
+
+    .longVideoCard .videoInfo {
+        padding: 9px;
+    }
+}
+
+.vieworaPostCard .postAction.liked i,
+.vieworaPostCard .postAction.liked {
+    color: #ff4d67;
+}
+
+.vieworaPostCard .postAction.saved i,
+.vieworaPostCard .postAction.saved {
+    color: #f59e0b;
+}
+
+
+.verifiedTick {
+    color: #27cfff !important;
+    font-size: 12px !important;
+    margin-left: 5px;
+    vertical-align: middle;
+}
+
+.vieworaPostCard .postAvatar {
+    background: #1a1a24;
+}
+
+.vieworaPostCard .postUserInfo strong {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+}

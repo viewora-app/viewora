@@ -94,6 +94,32 @@
             opacity: 0.4;
         }
     </style>
+
+    <style id="headerIconsFix">
+        .headerActions {
+            display: flex !important;
+            align-items: center !important;
+            gap: 8px !important;
+            flex-shrink: 0 !important;
+        }
+        .headerActions .headerIcon {
+            display: grid !important;
+            place-items: center !important;
+            width: 42px !important;
+            height: 42px !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+        }
+        #messageBtn, #searchBtn, #subscriptionBtn {
+            display: grid !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+        }
+        #messageCount.notificationBadge:not(.hidden) {
+            display: grid !important;
+        }
+    </style>
+
 </head>
 
 <body>
@@ -112,15 +138,9 @@
             </div>
         </a>
 
-        <div class="headerActions">
+                        <div class="headerActions">
             <button id="searchBtn" class="headerIcon" type="button" aria-label="Search">
                 <i class="fa-solid fa-magnifying-glass"></i>
-            </button>
-
-            <button id="notificationBtn" class="headerIcon" type="button" aria-label="Notifications"
-                    onclick="location.href='notifications.html'">
-                <i class="fa-regular fa-bell"></i>
-                <span id="notificationCount" class="notificationBadge hidden">0</span>
             </button>
 
             <button id="messageBtn" class="headerIcon" type="button" aria-label="Messages"
@@ -128,7 +148,14 @@
                 <i class="fa-regular fa-paper-plane"></i>
                 <span id="messageCount" class="notificationBadge hidden">0</span>
             </button>
+
+            <button id="subscriptionBtn" class="headerIcon" type="button" aria-label="Subscription"
+                    onclick="location.href='subscription.html'">
+                <i class="fa-solid fa-crown"></i>
+            </button>
         </div>
+
+
     </header>
 
     <!-- SEARCH PANEL -->
@@ -350,39 +377,6 @@
         <span>You're offline</span>
     </div>
 
-    <nav class="bottomNav">
-
-    <a href="index.html">
-        <div class="activeIndicator"></div>
-        <i class="fa-solid fa-house"></i>
-        <span>Home</span>
-    </a>
-
-    <a href="shorts.html">
-        <div class="activeIndicator"></div>
-        <i class="fa-solid fa-clapperboard"></i>
-        <span>Shorts</span>
-    </a>
-
-    <a href="upload.html" class="uploadNav" aria-label="Upload">
-        <i class="fa-solid fa-plus"></i>
-        <span>Upload</span>
-    </a>
-
-    <a href="users.html">
-        <div class="activeIndicator"></div>
-        <i class="fa-solid fa-users"></i>
-        <span>Users</span>
-    </a>
-
-    <a href="profile.html">
-        <div class="activeIndicator"></div>
-        <i class="fa-solid fa-user"></i>
-        <span>Profile</span>
-    </a>
-
-    </nav>
-
 <!-- FIREBASE SDK -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
@@ -393,7 +387,7 @@
 <script src="firebase.js"></script>
 <script src="index.js"></script>
 <script src="call-listener.js"></script>
-<script src="notifications.js"></script>
+<script src="notification.js"></script>
 <script src="chat.js"></script>
 <script src="profile.js"></script>
 <script src="nav.js"></script>

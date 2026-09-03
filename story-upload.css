@@ -1,0 +1,2024 @@
+/* =========================================================
+   VIEWORA — STORY UPLOAD
+   Premium Mobile Story Creator
+   Matches: story-upload.html
+========================================================= */
+
+:root {
+    --bg: #000;
+    --surface: #141414;
+    --surface-2: #1c1c1c;
+    --surface-3: #242424;
+
+    --border: rgba(255,255,255,.10);
+    --border-strong: rgba(255,255,255,.16);
+
+    --text: #fff;
+    --muted: rgba(255,255,255,.58);
+    --muted-2: rgba(255,255,255,.38);
+
+    --accent: #fff;
+    --danger: #ff375f;
+
+    --radius-sm: 10px;
+    --radius-md: 14px;
+    --radius-lg: 20px;
+    --radius-xl: 26px;
+
+    --safe-t: env(safe-area-inset-top, 0px);
+    --safe-b: env(safe-area-inset-bottom, 0px);
+
+    --top: 56px;
+    --rail: 76px;
+    --share: 82px;
+
+    --shadow: 0 20px 60px rgba(0,0,0,.45);
+
+    font-synthesis: none;
+}
+
+
+/* =========================================================
+   RESET
+========================================================= */
+
+* {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+}
+
+html,
+body {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    background: #000;
+    color: var(--text);
+    font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    overscroll-behavior: none;
+}
+
+body {
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+}
+
+button,
+input,
+textarea {
+    margin: 0;
+    border: 0;
+    outline: 0;
+    font: inherit;
+    color: inherit;
+    background: transparent;
+}
+
+button {
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+img,
+video {
+    display: block;
+    max-width: 100%;
+}
+
+.hidden {
+    display: none !important;
+}
+
+
+/* =========================================================
+   APP
+========================================================= */
+
+#app,
+.storyApp {
+    position: relative;
+    width: 100%;
+    height: 100dvh;
+    min-height: 100dvh;
+    overflow: hidden;
+    background: #000;
+}
+
+
+/* =========================================================
+   SCROLLBAR
+========================================================= */
+
+*::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+}
+
+* {
+    scrollbar-width: none;
+}
+
+
+/* =========================================================
+   SHARED BUTTONS
+========================================================= */
+
+.iconBtn {
+    width: 42px;
+    height: 42px;
+
+    display: grid;
+    place-items: center;
+
+    border-radius: 50%;
+
+    color: #fff;
+    background: rgba(0,0,0,.40);
+
+    border: 1px solid rgba(255,255,255,.08);
+
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+
+    transition:
+        transform .16s ease,
+        background .16s ease;
+}
+
+.iconBtn i {
+    font-size: 17px;
+}
+
+.iconBtn:active {
+    transform: scale(.90);
+    background: rgba(255,255,255,.12);
+}
+
+
+.primaryBtn {
+    width: 100%;
+    min-height: 50px;
+
+    padding: 0 18px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 15px;
+
+    background: #fff;
+    color: #000;
+
+    font-size: 14px;
+    font-weight: 800;
+
+    box-shadow: 0 10px 30px rgba(255,255,255,.08);
+
+    transition:
+        transform .15s ease,
+        opacity .15s ease;
+}
+
+.primaryBtn:active {
+    transform: scale(.98);
+}
+
+.primaryBtn:disabled {
+    opacity: .45;
+    pointer-events: none;
+}
+
+
+/* =========================================================
+   PICK SCREEN
+========================================================= */
+
+.pickScreen {
+    position: absolute;
+    inset: 0;
+
+    display: flex;
+    flex-direction: column;
+
+    background:
+        radial-gradient(
+            circle at 50% -10%,
+            rgba(128, 52, 176, .24),
+            transparent 42%
+        ),
+        radial-gradient(
+            circle at 100% 100%,
+            rgba(221, 42, 123, .10),
+            transparent 40%
+        ),
+        #000;
+}
+
+.pickTop {
+    position: relative;
+    z-index: 5;
+
+    height: calc(var(--top) + var(--safe-t));
+
+    padding:
+        var(--safe-t)
+        14px
+        0;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    border-bottom: 1px solid rgba(255,255,255,.04);
+}
+
+.pickTop strong {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+
+    white-space: nowrap;
+
+    font-size: 16px;
+    font-weight: 800;
+    letter-spacing: -.2px;
+}
+
+.spacer {
+    width: 42px;
+}
+
+
+.pickBody {
+    flex: 1;
+
+    width: 100%;
+    max-width: 520px;
+
+    margin: 0 auto;
+
+    padding:
+        24px
+        20px
+        calc(28px + var(--safe-b));
+
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+
+    gap: 34px;
+}
+
+
+.pickHero {
+    text-align: center;
+}
+
+
+.pickIcon {
+    width: 88px;
+    height: 88px;
+
+    margin: 0 auto 18px;
+
+    display: grid;
+    place-items: center;
+
+    border-radius: 28px;
+
+    background:
+        linear-gradient(
+            135deg,
+            #f58529 0%,
+            #dd2a7b 35%,
+            #8134af 70%,
+            #515bd4 100%
+        );
+
+    box-shadow:
+        0 18px 50px rgba(221,42,123,.28);
+
+    font-size: 31px;
+}
+
+.pickHero h1 {
+    margin: 0 0 8px;
+
+    font-size: 26px;
+    line-height: 1.15;
+    font-weight: 800;
+    letter-spacing: -.6px;
+}
+
+.pickHero p {
+    max-width: 290px;
+
+    margin: 0 auto;
+
+    color: var(--muted);
+
+    font-size: 13px;
+    line-height: 1.55;
+}
+
+
+.pickActions {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+
+.pickCard {
+    width: 100%;
+
+    padding: 15px;
+
+    display: flex;
+    align-items: center;
+
+    gap: 14px;
+
+    border-radius: 19px;
+
+    background: rgba(255,255,255,.055);
+    border: 1px solid var(--border);
+
+    text-align: left;
+
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+
+    transition:
+        transform .15s ease,
+        background .15s ease,
+        border-color .15s ease;
+}
+
+.pickCard:active {
+    transform: scale(.985);
+    background: rgba(255,255,255,.09);
+    border-color: rgba(255,255,255,.16);
+}
+
+
+.pickCardIcon {
+    width: 50px;
+    height: 50px;
+
+    flex: 0 0 50px;
+
+    display: grid;
+    place-items: center;
+
+    border-radius: 15px;
+
+    background: rgba(255,255,255,.09);
+
+    font-size: 19px;
+}
+
+
+.pickCardText {
+    min-width: 0;
+    flex: 1;
+
+    display: flex;
+    flex-direction: column;
+
+    gap: 4px;
+}
+
+.pickCardText strong {
+    font-size: 15px;
+    font-weight: 750;
+}
+
+.pickCardText small {
+    color: var(--muted);
+
+    font-size: 12px;
+    line-height: 1.3;
+}
+
+.pickCard > .fa-chevron-right {
+    margin-left: 4px;
+
+    color: rgba(255,255,255,.32);
+
+    font-size: 12px;
+}
+
+
+/* =========================================================
+   EDITOR SCREEN
+========================================================= */
+
+.editorScreen {
+    position: absolute;
+    inset: 0;
+
+    display: flex;
+    flex-direction: column;
+
+    background: #000;
+}
+
+
+/* =========================================================
+   EDITOR TOP
+========================================================= */
+
+.editorTop {
+    position: absolute;
+
+    z-index: 50;
+
+    top: 0;
+    left: 0;
+    right: 0;
+
+    height: calc(var(--top) + var(--safe-t));
+
+    padding:
+        var(--safe-t)
+        12px
+        0;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    pointer-events: none;
+
+    background:
+        linear-gradient(
+            to bottom,
+            rgba(0,0,0,.72),
+            rgba(0,0,0,.18),
+            transparent
+        );
+}
+
+.editorTop > * {
+    pointer-events: auto;
+}
+
+
+.editorBrand {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.editorBrand strong {
+    font-size: 15px;
+    font-weight: 800;
+}
+
+.editorBrand span {
+    padding: 4px 8px;
+
+    border-radius: 999px;
+
+    background: rgba(255,255,255,.13);
+
+    color: rgba(255,255,255,.82);
+
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: .6px;
+}
+
+
+.doneBtn {
+    min-width: 62px;
+    height: 38px;
+
+    padding: 0 15px;
+
+    border-radius: 999px;
+
+    background: rgba(255,255,255,.12);
+    border: 1px solid rgba(255,255,255,.10);
+
+    color: #fff;
+
+    font-size: 13px;
+    font-weight: 750;
+
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+
+    transition: transform .15s ease;
+}
+
+.doneBtn:active {
+    transform: scale(.94);
+}
+
+
+/* =========================================================
+   STORY STAGE
+========================================================= */
+
+.stage {
+    position: relative;
+
+    width: 100%;
+    height: 100%;
+
+    overflow: hidden;
+
+    background: #050505;
+
+    isolation: isolate;
+}
+
+
+/*
+   Media itself is centered inside stage.
+   JS can update object-fit / transform later.
+*/
+
+.mediaWrap {
+    position: absolute;
+
+    inset: 0;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    overflow: hidden;
+
+    background: #050505;
+
+    z-index: 1;
+}
+
+
+.previewMedia {
+    position: absolute;
+
+    inset: 0;
+
+    width: 100%;
+    height: 100%;
+
+    object-fit: cover;
+
+    user-select: none;
+    -webkit-user-select: none;
+
+    pointer-events: none;
+
+    transition:
+        filter .25s ease,
+        transform .25s ease;
+}
+
+
+/* =========================================================
+   FILTER OVERLAY
+========================================================= */
+
+.filterOverlay {
+    position: absolute;
+
+    inset: 0;
+
+    z-index: 4;
+
+    pointer-events: none;
+
+    opacity: 0;
+
+    transition:
+        opacity .25s ease,
+        background .25s ease,
+        mix-blend-mode .25s ease;
+}
+
+
+/* =========================================================
+   EDITOR CONTENT LAYERS
+========================================================= */
+
+.textLayer,
+.stickerLayer {
+    position: absolute;
+
+    inset: 0;
+
+    z-index: 15;
+
+    overflow: hidden;
+
+    pointer-events: none;
+}
+
+
+/* Individual text/sticker elements created by JS */
+
+.storyTextItem,
+.storyStickerItem {
+    position: absolute;
+
+    pointer-events: auto;
+
+    touch-action: none;
+
+    user-select: none;
+    -webkit-user-select: none;
+
+    cursor: grab;
+}
+
+.storyTextItem:active,
+.storyStickerItem:active {
+    cursor: grabbing;
+}
+
+
+.storyTextItem {
+    max-width: 82%;
+
+    padding: 8px 12px;
+
+    color: #fff;
+
+    font-size: 27px;
+    line-height: 1.15;
+    font-weight: 600;
+
+    text-align: center;
+
+    white-space: pre-wrap;
+    word-break: break-word;
+
+    text-shadow:
+        0 2px 10px rgba(0,0,0,.55);
+
+    transform-origin: center;
+}
+
+.storyTextItem.selected,
+.storyStickerItem.selected {
+    outline: 1px dashed rgba(255,255,255,.75);
+    outline-offset: 7px;
+}
+
+
+.storyStickerItem {
+    font-size: 54px;
+
+    line-height: 1;
+
+    filter:
+        drop-shadow(
+            0 5px 12px rgba(0,0,0,.38)
+        );
+}
+
+
+/* =========================================================
+   MUSIC BADGE
+========================================================= */
+
+.musicBadge {
+    position: absolute;
+
+    z-index: 25;
+
+    left: 14px;
+    bottom: calc(var(--rail) + var(--share) + 22px);
+
+    max-width: calc(100% - 28px);
+
+    min-height: 36px;
+
+    padding: 8px 12px;
+
+    display: flex;
+    align-items: center;
+
+    gap: 8px;
+
+    border-radius: 999px;
+
+    background: rgba(0,0,0,.55);
+    border: 1px solid rgba(255,255,255,.10);
+
+    color: #fff;
+
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+
+    box-shadow: 0 10px 30px rgba(0,0,0,.22);
+
+    pointer-events: none;
+}
+
+.musicBadge i {
+    font-size: 12px;
+}
+
+.musicBadge span {
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    font-size: 11px;
+    font-weight: 600;
+}
+
+
+/* =========================================================
+   TOOL RAIL
+========================================================= */
+
+.toolRail {
+    position: absolute;
+
+    z-index: 40;
+
+    right: 10px;
+
+    bottom:
+        calc(
+            var(--share)
+            + var(--safe-b)
+            + 10px
+        );
+
+    width: 62px;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    gap: 9px;
+
+    padding: 9px 5px;
+
+    border-radius: 22px;
+
+    background: rgba(0,0,0,.42);
+    border: 1px solid rgba(255,255,255,.08);
+
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+}
+
+
+.toolBtn {
+    width: 52px;
+    height: 54px;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+    gap: 4px;
+
+    border-radius: 15px;
+
+    color: rgba(255,255,255,.68);
+
+    transition:
+        background .16s ease,
+        color .16s ease,
+        transform .16s ease;
+}
+
+.toolBtn i {
+    font-size: 16px;
+}
+
+.toolBtn span {
+    font-size: 9px;
+    font-weight: 650;
+}
+
+.toolBtn:active {
+    transform: scale(.91);
+}
+
+.toolBtn.active {
+    background: rgba(255,255,255,.12);
+    color: #fff;
+}
+
+
+/* =========================================================
+   SHARE BAR
+========================================================= */
+
+.shareBar {
+    position: absolute;
+
+    z-index: 45;
+
+    left: 0;
+    right: 0;
+    bottom: 0;
+
+    min-height:
+        calc(
+            var(--share)
+            + var(--safe-b)
+        );
+
+    padding:
+        10px
+        12px
+        calc(10px + var(--safe-b));
+
+    display: flex;
+    align-items: center;
+
+    gap: 12px;
+
+    background:
+        linear-gradient(
+            to top,
+            rgba(0,0,0,.96),
+            rgba(0,0,0,.78),
+            rgba(0,0,0,.30),
+            transparent
+        );
+
+    pointer-events: none;
+}
+
+.shareBar > * {
+    pointer-events: auto;
+}
+
+
+.shareMeta {
+    min-width: 0;
+    flex: 1;
+
+    display: flex;
+    align-items: center;
+
+    gap: 9px;
+}
+
+
+.shareMeta > div {
+    min-width: 0;
+
+    display: flex;
+    flex-direction: column;
+
+    gap: 3px;
+}
+
+
+.shareAvatar {
+    width: 38px;
+    height: 38px;
+
+    flex: 0 0 38px;
+
+    border-radius: 50%;
+
+    object-fit: cover;
+
+    background: #222;
+
+    border: 2px solid rgba(255,255,255,.25);
+}
+
+
+.shareMeta strong {
+    max-width: 130px;
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    font-size: 12px;
+    font-weight: 750;
+}
+
+
+.shareMeta small {
+    color: rgba(255,255,255,.52);
+
+    font-size: 9px;
+    line-height: 1.2;
+}
+
+
+.shareBtn {
+    min-width: 130px;
+    height: 48px;
+
+    padding: 0 15px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    gap: 8px;
+
+    border-radius: 15px;
+
+    background: #fff;
+    color: #000;
+
+    font-size: 12px;
+    font-weight: 800;
+
+    box-shadow:
+        0 10px 30px rgba(0,0,0,.30);
+
+    transition:
+        transform .15s ease,
+        opacity .15s ease;
+}
+
+.shareBtn i {
+    font-size: 13px;
+}
+
+.shareBtn:active {
+    transform: scale(.96);
+}
+
+.shareBtn:disabled {
+    opacity: .5;
+    pointer-events: none;
+}
+
+
+/* =========================================================
+   BOTTOM SHEETS
+========================================================= */
+
+.sheet {
+    position: fixed;
+
+    z-index: 100;
+
+    inset: 0;
+
+    display: flex;
+    align-items: flex-end;
+
+    pointer-events: auto;
+}
+
+.sheetBackdrop {
+    position: absolute;
+
+    inset: 0;
+
+    background: rgba(0,0,0,.62);
+
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+
+    animation: fadeIn .18s ease both;
+}
+
+
+.sheetCard {
+    position: relative;
+
+    z-index: 2;
+
+    width: 100%;
+
+    max-height: min(72dvh, 620px);
+
+    padding:
+        10px
+        16px
+        calc(18px + var(--safe-b));
+
+    overflow-y: auto;
+
+    border-radius: 25px 25px 0 0;
+
+    background:
+        linear-gradient(
+            180deg,
+            #191919 0%,
+            #111 100%
+        );
+
+    border-top: 1px solid rgba(255,255,255,.12);
+
+    box-shadow:
+        0 -20px 60px rgba(0,0,0,.55);
+
+    animation: sheetUp .24s cubic-bezier(.22,.8,.25,1) both;
+}
+
+
+.sheetCardCompact {
+    max-height: 42dvh;
+}
+
+
+.sheetHandle {
+    width: 38px;
+    height: 4px;
+
+    margin: 1px auto 13px;
+
+    border-radius: 999px;
+
+    background: rgba(255,255,255,.22);
+}
+
+
+.sheetHead {
+    min-height: 38px;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    margin-bottom: 12px;
+}
+
+
+.sheetHead strong {
+    font-size: 15px;
+    font-weight: 800;
+}
+
+
+.sheetClose {
+    width: 34px;
+    height: 34px;
+
+    display: grid;
+    place-items: center;
+
+    border-radius: 50%;
+
+    background: rgba(255,255,255,.07);
+
+    color: rgba(255,255,255,.75);
+
+    transition: transform .15s ease;
+}
+
+.sheetClose:active {
+    transform: scale(.90);
+}
+
+
+/* =========================================================
+   TEXT PANEL
+========================================================= */
+
+#textInput {
+    width: 100%;
+
+    min-height: 90px;
+
+    resize: none;
+
+    padding: 14px;
+
+    border-radius: 15px;
+
+    background: rgba(255,255,255,.065);
+    border: 1px solid rgba(255,255,255,.08);
+
+    color: #fff;
+
+    font-size: 15px;
+    line-height: 1.45;
+
+    caret-color: #fff;
+}
+
+#textInput::placeholder {
+    color: rgba(255,255,255,.32);
+}
+
+
+.colorRow {
+    display: flex;
+    align-items: center;
+
+    gap: 11px;
+
+    margin: 14px 0;
+}
+
+.colorDot {
+    position: relative;
+
+    width: 31px;
+    height: 31px;
+
+    flex: 0 0 31px;
+
+    border-radius: 50%;
+
+    border: 2px solid transparent;
+
+    box-shadow:
+        inset 0 0 0 1px rgba(0,0,0,.15);
+
+    transition:
+        transform .15s ease,
+        border-color .15s ease;
+}
+
+.colorDot.active {
+    border-color: #fff;
+    transform: scale(1.12);
+}
+
+.colorDot:active {
+    transform: scale(.92);
+}
+
+
+.styleRow {
+    display: flex;
+
+    gap: 8px;
+
+    overflow-x: auto;
+
+    padding-bottom: 3px;
+
+    margin-bottom: 14px;
+}
+
+
+.styleChip {
+    flex: 0 0 auto;
+
+    min-height: 34px;
+
+    padding: 0 13px;
+
+    border-radius: 999px;
+
+    background: rgba(255,255,255,.065);
+    border: 1px solid rgba(255,255,255,.08);
+
+    color: rgba(255,255,255,.65);
+
+    font-size: 11px;
+    font-weight: 650;
+}
+
+.styleChip.active {
+    background: #fff;
+    color: #000;
+
+    border-color: #fff;
+}
+
+
+/* =========================================================
+   STICKERS
+========================================================= */
+
+.stickerGrid {
+    display: grid;
+
+    grid-template-columns:
+        repeat(6, minmax(0, 1fr));
+
+    gap: 8px;
+}
+
+
+.stickerItem {
+    aspect-ratio: 1;
+
+    display: grid;
+    place-items: center;
+
+    border-radius: 15px;
+
+    background: rgba(255,255,255,.055);
+    border: 1px solid rgba(255,255,255,.06);
+
+    font-size: 28px;
+
+    transition:
+        transform .15s ease,
+        background .15s ease;
+}
+
+.stickerItem:active {
+    transform: scale(.88);
+    background: rgba(255,255,255,.12);
+}
+
+
+/* =========================================================
+   FILTERS
+========================================================= */
+
+.filterRow {
+    display: flex;
+
+    gap: 12px;
+
+    overflow-x: auto;
+
+    padding: 3px 2px 8px;
+}
+
+
+.filterItem {
+    position: relative;
+
+    flex: 0 0 76px;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    gap: 6px;
+
+    color: rgba(255,255,255,.65);
+
+    font-size: 10px;
+    font-weight: 650;
+}
+
+
+.filterThumb {
+    width: 70px;
+    height: 70px;
+
+    border-radius: 15px;
+
+    overflow: hidden;
+
+    background: #222;
+
+    border: 2px solid transparent;
+
+    box-shadow:
+        0 5px 15px rgba(0,0,0,.20);
+}
+
+.filterThumb img,
+.filterThumb video {
+    width: 100%;
+    height: 100%;
+
+    object-fit: cover;
+}
+
+
+.filterItem.active {
+    color: #fff;
+}
+
+.filterItem.active .filterThumb {
+    border-color: #fff;
+}
+
+
+/* =========================================================
+   MUSIC PANEL
+========================================================= */
+
+.musicList {
+    display: flex;
+    flex-direction: column;
+
+    gap: 8px;
+}
+
+
+.musicItem {
+    width: 100%;
+
+    min-height: 62px;
+
+    padding: 9px 11px;
+
+    display: flex;
+    align-items: center;
+
+    gap: 12px;
+
+    border-radius: 15px;
+
+    background: rgba(255,255,255,.055);
+    border: 1px solid rgba(255,255,255,.07);
+
+    text-align: left;
+
+    transition:
+        background .15s ease,
+        transform .15s ease;
+}
+
+
+.musicItem:active {
+    transform: scale(.985);
+    background: rgba(255,255,255,.10);
+}
+
+
+.musicCover {
+    width: 44px;
+    height: 44px;
+
+    flex: 0 0 44px;
+
+    display: grid;
+    place-items: center;
+
+    border-radius: 11px;
+
+    background:
+        linear-gradient(
+            135deg,
+            #2a2a2a,
+            #111
+        );
+
+    overflow: hidden;
+
+    font-size: 15px;
+}
+
+
+.musicCover img {
+    width: 100%;
+    height: 100%;
+
+    object-fit: cover;
+}
+
+
+.musicInfo {
+    min-width: 0;
+    flex: 1;
+
+    display: flex;
+    flex-direction: column;
+
+    gap: 3px;
+}
+
+
+.musicInfo strong {
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    font-size: 12px;
+    font-weight: 750;
+}
+
+
+.musicInfo small {
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    color: var(--muted);
+
+    font-size: 10px;
+}
+
+
+.musicItem > i {
+    color: rgba(255,255,255,.38);
+
+    font-size: 12px;
+}
+
+
+/* =========================================================
+   UPLOAD OVERLAY
+========================================================= */
+
+.uploadOverlay {
+    position: fixed;
+
+    z-index: 300;
+
+    inset: 0;
+
+    display: grid;
+    place-items: center;
+
+    padding: 24px;
+
+    background: rgba(0,0,0,.78);
+
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+
+    animation: fadeIn .2s ease both;
+}
+
+
+.uploadCard {
+    width: min(88vw, 330px);
+
+    padding: 30px 24px 25px;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    border-radius: 25px;
+
+    background:
+        linear-gradient(
+            180deg,
+            rgba(31,31,31,.97),
+            rgba(17,17,17,.97)
+        );
+
+    border: 1px solid rgba(255,255,255,.10);
+
+    box-shadow:
+        0 30px 100px rgba(0,0,0,.65);
+}
+
+
+.uploadRing {
+    position: relative;
+
+    width: 112px;
+    height: 112px;
+
+    margin-bottom: 19px;
+}
+
+
+.uploadRing svg {
+    position: absolute;
+
+    inset: 0;
+
+    width: 100%;
+    height: 100%;
+
+    transform: rotate(-90deg);
+}
+
+
+.ringTrack,
+.ringProgress {
+    fill: none;
+
+    stroke-width: 5;
+
+    vector-effect: non-scaling-stroke;
+}
+
+
+.ringTrack {
+    stroke: rgba(255,255,255,.09);
+}
+
+
+.ringProgress {
+    stroke: #fff;
+
+    stroke-linecap: round;
+
+    stroke-dasharray: 213.63;
+    stroke-dashoffset: 213.63;
+
+    transition:
+        stroke-dashoffset .18s ease;
+}
+
+
+.uploadRing img {
+    position: absolute;
+
+    left: 50%;
+    top: 50%;
+
+    width: 76px;
+    height: 76px;
+
+    transform: translate(-50%,-50%);
+
+    border-radius: 50%;
+
+    object-fit: cover;
+
+    background: #222;
+
+    border: 3px solid #111;
+
+    box-shadow:
+        0 5px 25px rgba(0,0,0,.35);
+}
+
+
+#uploadTitle {
+    margin-bottom: 6px;
+
+    text-align: center;
+
+    font-size: 15px;
+    font-weight: 800;
+}
+
+
+#uploadSub {
+    margin: 0 0 18px;
+
+    color: var(--muted);
+
+    text-align: center;
+
+    font-size: 11px;
+}
+
+
+.uploadBar {
+    width: 100%;
+    height: 5px;
+
+    overflow: hidden;
+
+    border-radius: 999px;
+
+    background: rgba(255,255,255,.08);
+}
+
+
+#uploadBarFill {
+    display: block;
+
+    width: 0;
+    height: 100%;
+
+    border-radius: inherit;
+
+    background: #fff;
+
+    transition: width .18s ease;
+}
+
+
+#uploadPercent {
+    margin-top: 9px;
+
+    color: rgba(255,255,255,.65);
+
+    font-size: 11px;
+    font-weight: 700;
+}
+
+
+/* =========================================================
+   TOAST
+========================================================= */
+
+.toast {
+    position: fixed;
+
+    z-index: 500;
+
+    left: 50%;
+    bottom: calc(22px + var(--safe-b));
+
+    max-width: calc(100vw - 30px);
+
+    min-height: 44px;
+
+    padding: 10px 15px;
+
+    display: flex;
+    align-items: center;
+
+    gap: 9px;
+
+    transform: translateX(-50%);
+
+    border-radius: 999px;
+
+    background: rgba(28,28,28,.94);
+
+    border: 1px solid rgba(255,255,255,.10);
+
+    box-shadow:
+        0 15px 45px rgba(0,0,0,.45);
+
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+
+    animation:
+        toastIn .25s cubic-bezier(.22,.8,.25,1) both;
+}
+
+
+.toast i {
+    color: #fff;
+
+    font-size: 14px;
+}
+
+
+.toast span {
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    font-size: 12px;
+    font-weight: 650;
+}
+
+
+/* =========================================================
+   EDITOR EMPTY / LOADING STATE
+========================================================= */
+
+.editorLoading {
+    position: absolute;
+
+    inset: 0;
+
+    z-index: 60;
+
+    display: grid;
+    place-items: center;
+
+    background: #000;
+}
+
+
+.editorLoadingSpinner {
+    width: 34px;
+    height: 34px;
+
+    border: 3px solid rgba(255,255,255,.15);
+    border-top-color: #fff;
+
+    border-radius: 50%;
+
+    animation: spin .75s linear infinite;
+}
+
+
+/* =========================================================
+   MEDIA FILTER CLASSES
+   JS can apply these to #mediaWrap / media
+========================================================= */
+
+.filter-normal {
+    filter: none;
+}
+
+.filter-vivid {
+    filter:
+        saturate(1.35)
+        contrast(1.08);
+}
+
+.filter-warm {
+    filter:
+        saturate(1.12)
+        sepia(.18)
+        contrast(1.04)
+        brightness(1.04);
+}
+
+.filter-cool {
+    filter:
+        saturate(.95)
+        hue-rotate(8deg)
+        contrast(1.08)
+        brightness(1.03);
+}
+
+.filter-noir {
+    filter:
+        grayscale(1)
+        contrast(1.18);
+}
+
+.filter-fade {
+    filter:
+        saturate(.72)
+        contrast(.92)
+        brightness(1.08);
+}
+
+.filter-dream {
+    filter:
+        saturate(1.12)
+        brightness(1.08)
+        contrast(.92);
+}
+
+.filter-drama {
+    filter:
+        contrast(1.28)
+        saturate(1.15)
+        brightness(.94);
+}
+
+
+/* =========================================================
+   TEXT STYLES
+========================================================= */
+
+.text-classic {
+    font-family: "Inter", sans-serif;
+    font-weight: 600;
+}
+
+.text-bold {
+    font-family: "Inter", sans-serif;
+    font-weight: 800;
+
+    text-shadow:
+        0 3px 14px rgba(0,0,0,.60);
+}
+
+.text-neon {
+    font-family: "Inter", sans-serif;
+    font-weight: 800;
+
+    text-shadow:
+        0 0 5px currentColor,
+        0 0 14px currentColor,
+        0 0 28px currentColor;
+}
+
+.text-type {
+    font-family: monospace;
+    font-weight: 600;
+
+    letter-spacing: .3px;
+
+    background: rgba(0,0,0,.45);
+
+    border-radius: 4px;
+}
+
+
+/* =========================================================
+   SAFE AREA / SMALL DEVICES
+========================================================= */
+
+@media (max-height: 680px) {
+
+    :root {
+        --rail: 68px;
+        --share: 76px;
+    }
+
+    .toolRail {
+        gap: 5px;
+        padding: 6px 4px;
+    }
+
+    .toolBtn {
+        width: 49px;
+        height: 47px;
+    }
+
+    .toolBtn span {
+        font-size: 8px;
+    }
+
+    .shareBtn {
+        height: 44px;
+        min-width: 120px;
+    }
+
+    .shareAvatar {
+        width: 34px;
+        height: 34px;
+        flex-basis: 34px;
+    }
+
+    .pickBody {
+        gap: 24px;
+    }
+
+    .pickIcon {
+        width: 72px;
+        height: 72px;
+        margin-bottom: 12px;
+        border-radius: 22px;
+        font-size: 26px;
+    }
+
+    .pickHero h1 {
+        font-size: 22px;
+    }
+}
+
+
+/* =========================================================
+   TABLET / LARGE SCREEN
+========================================================= */
+
+@media (min-width: 600px) {
+
+    .pickBody {
+        padding-left: 28px;
+        padding-right: 28px;
+    }
+
+    .toolRail {
+        right: 18px;
+    }
+
+    .shareBar {
+        padding-left: 24px;
+        padding-right: 24px;
+    }
+
+    .sheetCard {
+        width: min(560px, 100%);
+        margin: 0 auto;
+
+        border-left: 1px solid rgba(255,255,255,.08);
+        border-right: 1px solid rgba(255,255,255,.08);
+    }
+}
+
+
+/* =========================================================
+   LANDSCAPE
+========================================================= */
+
+@media (orientation: landscape) and (max-height: 600px) {
+
+    .editorTop {
+        height: calc(48px + var(--safe-t));
+    }
+
+    .toolRail {
+        right: 10px;
+        bottom: calc(var(--share) + 8px);
+    }
+
+    .shareBar {
+        min-height: calc(68px + var(--safe-b));
+    }
+
+    .shareBtn {
+        height: 42px;
+    }
+
+    .musicBadge {
+        bottom: calc(var(--share) + 14px);
+    }
+}
+
+
+/* =========================================================
+   ACCESSIBILITY
+========================================================= */
+
+button:focus-visible,
+textarea:focus-visible {
+    outline: 2px solid rgba(255,255,255,.75);
+    outline-offset: 2px;
+}
+
+
+/* =========================================================
+   ANIMATIONS
+========================================================= */
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+
+@keyframes sheetUp {
+    from {
+        transform: translateY(100%);
+        opacity: .7;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+
+@keyframes toastIn {
+    from {
+        opacity: 0;
+        transform:
+            translate(-50%, 18px)
+            scale(.96);
+    }
+
+    to {
+        opacity: 1;
+        transform:
+            translate(-50%, 0)
+            scale(1);
+    }
+}
+
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+
+/* =========================================================
+   REDUCED MOTION
+========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+
+    *,
+    *::before,
+    *::after {
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: .01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+/* Image stickers from store */
+.storySticker {
+    position: absolute;
+    pointer-events: auto;
+    touch-action: none;
+    user-select: none;
+    cursor: grab;
+    font-size: 54px;
+    line-height: 1;
+    filter: drop-shadow(0 5px 12px rgba(0,0,0,.38));
+    left: 50%;
+    top: 45%;
+    transform: translate(-50%, -50%);
+}
+
+.storySticker img {
+    width: 72px;
+    height: 72px;
+    object-fit: contain;
+    display: block;
+    pointer-events: none;
+}
+
+.storyText {
+    position: absolute;
+    pointer-events: auto;
+    touch-action: none;
+    user-select: none;
+    cursor: grab;
+    max-width: 82%;
+    padding: 8px 12px;
+    color: #fff;
+    font-size: 27px;
+    line-height: 1.15;
+    font-weight: 600;
+    text-align: center;
+    white-space: pre-wrap;
+    word-break: break-word;
+    text-shadow: 0 2px 10px rgba(0,0,0,.55);
+    left: 50%;
+    top: 40%;
+    transform: translate(-50%, -50%);
+}
+
+.musicItem.active {
+    border-color: rgba(255,255,255,.35);
+    background: rgba(255,255,255,.12);
+}

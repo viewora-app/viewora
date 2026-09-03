@@ -1,0 +1,3288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0,
+               maximum-scale=1.0,user-scalable=no">
+
+<meta name="theme-color" content="#000000">
+
+<title>Viewora • Shorts</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect"
+      href="https://fonts.gstatic.com"
+      crossorigin>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet">
+
+<link rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+
+<style>
+
+/* =========================================================
+   VIEWORA SHORTS
+   PREMIUM REELS / TIKTOK STYLE
+========================================================= */
+
+:root{
+    --bg:#000;
+    --white:#fff;
+    --muted:#a7a7af;
+    --accent:#7067ff;
+    --cyan:#00d9ff;
+    --danger:#ff315f;
+}
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:"Inter",sans-serif;
+    -webkit-tap-highlight-color:transparent;
+}
+
+html,
+body{
+    width:100%;
+    height:100%;
+    overflow:hidden;
+    background:#000;
+    color:#fff;
+}
+
+button{
+    font:inherit;
+    border:0;
+    outline:none;
+}
+
+#app{
+    position:relative;
+    width:100%;
+    height:100dvh;
+    background:#000;
+}
+
+/* =========================================================
+   LOADER
+========================================================= */
+
+#loader{
+    position:fixed;
+    inset:0;
+    z-index:99999;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    flex-direction:column;
+    gap:14px;
+    background:#000;
+    transition:.35s ease;
+}
+
+#loader.hidden{
+    opacity:0;
+    visibility:hidden;
+    pointer-events:none;
+}
+
+.loaderRing{
+    width:52px;
+    height:52px;
+    border:3px solid rgba(255,255,255,.12);
+    border-top-color:#7067ff;
+    border-right-color:#00d9ff;
+    border-radius:50%;
+    animation:spin .8s linear infinite;
+}
+
+@keyframes spin{
+    to{transform:rotate(360deg);}
+}
+
+#loader span{
+    font-size:12px;
+    color:#9da0ad;
+}
+
+/* =========================================================
+   SHORTS FEED
+========================================================= */
+
+#shortsFeed{
+    width:100%;
+    height:100%;
+    overflow-y:auto;
+    overflow-x:hidden;
+
+    scroll-snap-type:y mandatory;
+    overscroll-behavior-y:contain;
+
+    scrollbar-width:none;
+
+    background:#000;
+}
+
+#shortsFeed::-webkit-scrollbar{
+    display:none;
+}
+
+/* =========================================================
+   SHORT ITEM
+========================================================= */
+
+.shortItem{
+    position:relative;
+    width:100%;
+    height:100dvh;
+
+    flex:none;
+
+    scroll-snap-align:start;
+    scroll-snap-stop:always;
+
+    overflow:hidden;
+    background:#050505;
+}
+
+/* =========================================================
+   MEDIA
+========================================================= */
+
+.shortMedia{
+    position:absolute;
+    inset:0;
+    width:100%;
+    height:100%;
+
+    display:block;
+
+    object-fit:cover;
+    background:#000;
+}
+
+.shortMedia.image{
+    object-position:center;
+}
+
+.shortMedia.video{
+    object-position:center;
+}
+
+/* =========================================================
+   MEDIA GRADIENT
+========================================================= */
+
+.shortGradient{
+    position:absolute;
+    inset:0;
+    z-index:2;
+    pointer-events:none;
+
+    background:
+        linear-gradient(
+            to bottom,
+            rgba(0,0,0,.35),
+            transparent 25%,
+            transparent 52%,
+            rgba(0,0,0,.15) 65%,
+            rgba(0,0,0,.88) 100%
+        );
+}
+
+/* =========================================================
+   TOP BAR
+========================================================= */
+
+.topBar{
+    position:absolute;
+    top:0;
+    left:0;
+    right:0;
+
+    z-index:10;
+
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+
+    padding:
+        max(15px,env(safe-area-inset-top))
+        16px
+        12px;
+}
+
+.topTitle{
+    font-size:18px;
+    font-weight:800;
+    letter-spacing:-.4px;
+}
+
+.topTitle span{
+    color:#aeb2bf;
+    font-size:11px;
+    font-weight:500;
+}
+
+.topBtn{
+    width:42px;
+    height:42px;
+
+    display:grid;
+    place-items:center;
+
+    color:#fff;
+
+    background:rgba(0,0,0,.35);
+
+    border:1px solid rgba(255,255,255,.12);
+    border-radius:50%;
+
+    backdrop-filter:blur(14px);
+    -webkit-backdrop-filter:blur(14px);
+
+    cursor:pointer;
+}
+
+/* =========================================================
+   RIGHT ACTIONS
+========================================================= */
+
+.shortActions{
+    position:absolute;
+
+    right:10px;
+    bottom:105px;
+
+    z-index:15;
+
+    width:56px;
+
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:18px;
+}
+
+.action{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:5px;
+
+    color:#fff;
+
+    cursor:pointer;
+}
+
+.actionCircle{
+    width:46px;
+    height:46px;
+
+    display:grid;
+    place-items:center;
+
+    border-radius:50%;
+
+    background:
+        rgba(0,0,0,.34);
+
+    border:
+        1px solid
+        rgba(255,255,255,.12);
+
+    backdrop-filter:blur(13px);
+    -webkit-backdrop-filter:blur(13px);
+
+    transition:.2s ease;
+}
+
+.actionCircle i{
+    font-size:21px;
+}
+
+.action small{
+    font-size:10px;
+    font-weight:600;
+
+    max-width:55px;
+
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+
+    text-shadow:0 1px 5px #000;
+}
+
+.action.liked .actionCircle{
+    color:#ff315f;
+}
+
+.action.liked .actionCircle i{
+    animation:likePop .25s ease;
+}
+
+@keyframes likePop{
+    0%{transform:scale(.7);}
+    70%{transform:scale(1.25);}
+    100%{transform:scale(1);}
+}
+
+.action.saved .actionCircle{
+    color:#ffe36e;
+}
+
+/* =========================================================
+   CREATOR INFO
+========================================================= */
+
+.shortInfo{
+    position:absolute;
+
+    left:15px;
+    right:74px;
+    bottom:25px;
+
+    z-index:12;
+}
+
+.creatorRow{
+    display:flex;
+    align-items:center;
+    gap:10px;
+
+    margin-bottom:11px;
+}
+
+.creatorAvatar{
+    width:43px;
+    height:43px;
+
+    border-radius:50%;
+
+    object-fit:cover;
+
+    border:2px solid #fff;
+
+    background:#171820;
+
+    cursor:pointer;
+}
+
+.creatorDetails{
+    min-width:0;
+    flex:1;
+}
+
+.creatorName{
+    display:flex;
+    align-items:center;
+    gap:5px;
+
+    font-size:14px;
+    font-weight:800;
+
+    cursor:pointer;
+}
+
+.creatorName i{
+    color:#27cfff;
+    font-size:12px;
+}
+
+.creatorUsername{
+    margin-top:2px;
+
+    color:#c2c3cb;
+    font-size:10px;
+}
+
+.followBtn{
+    min-width:68px;
+    height:32px;
+
+    padding:0 13px;
+
+    border-radius:10px;
+
+    color:#fff;
+
+    background:
+        linear-gradient(
+            135deg,
+            #7067ff,
+            #00bfe9
+        );
+
+    font-size:10px;
+    font-weight:800;
+
+    cursor:pointer;
+
+    box-shadow:
+        0 7px 22px
+        rgba(78,95,255,.25);
+}
+
+.followBtn.following{
+    background:
+        rgba(255,255,255,.12);
+
+    border:
+        1px solid
+        rgba(255,255,255,.15);
+
+    box-shadow:none;
+}
+
+/* =========================================================
+   CAPTION
+========================================================= */
+
+.caption{
+    max-width:500px;
+
+    color:#fff;
+
+    font-size:13px;
+    line-height:1.45;
+
+    text-shadow:
+        0 2px 10px rgba(0,0,0,.8);
+
+    white-space:pre-wrap;
+}
+
+.caption.hasMore{
+    max-height:40px;
+    overflow:hidden;
+}
+
+.captionToggle{
+    margin-top:4px;
+
+    color:#bfc1cb;
+
+    background:none;
+
+    font-size:10px;
+    font-weight:700;
+
+    cursor:pointer;
+}
+
+/* =========================================================
+   MUSIC / AUDIO
+========================================================= */
+
+.musicRow{
+    display:flex;
+    align-items:center;
+    gap:7px;
+
+    margin-top:9px;
+
+    color:#ddd;
+
+    font-size:10px;
+
+    max-width:270px;
+}
+
+.musicDisc{
+    width:18px;
+    height:18px;
+
+    display:grid;
+    place-items:center;
+
+    border-radius:50%;
+
+    background:#15161c;
+
+    border:1px solid rgba(255,255,255,.15);
+
+    animation:musicSpin 3s linear infinite;
+}
+
+@keyframes musicSpin{
+    to{
+        transform:rotate(360deg);
+    }
+}
+
+/* =========================================================
+   VIDEO CONTROLS
+========================================================= */
+
+.progress{
+    position:absolute;
+
+    left:0;
+    right:0;
+    bottom:0;
+
+    height:3px;
+
+    z-index:20;
+
+    background:rgba(255,255,255,.15);
+}
+
+.progressBar{
+    width:0%;
+    height:100%;
+
+    background:#fff;
+}
+
+/* =========================================================
+   PAUSE ICON
+========================================================= */
+
+.pauseOverlay{
+    position:absolute;
+
+    inset:0;
+
+    z-index:25;
+
+    display:grid;
+    place-items:center;
+
+    pointer-events:none;
+
+    opacity:0;
+
+    transition:.18s ease;
+}
+
+.pauseOverlay.show{
+    opacity:1;
+}
+
+.pauseOverlay span{
+    width:66px;
+    height:66px;
+
+    display:grid;
+    place-items:center;
+
+    border-radius:50%;
+
+    background:
+        rgba(0,0,0,.48);
+
+    backdrop-filter:blur(10px);
+}
+
+.pauseOverlay i{
+    font-size:25px;
+}
+
+/* =========================================================
+   COMMENTS SHEET
+========================================================= */
+
+#commentSheet{
+    position:fixed;
+
+    left:0;
+    right:0;
+    bottom:0;
+
+    z-index:500;
+
+    height:min(68dvh,560px);
+
+    display:flex;
+    flex-direction:column;
+
+    background:
+        rgba(14,15,21,.98);
+
+    border-radius:
+        25px 25px 0 0;
+
+    border:
+        1px solid
+        rgba(255,255,255,.09);
+
+    transform:translateY(105%);
+
+    transition:
+        transform .3s
+        cubic-bezier(.22,.8,.25,1);
+
+    box-shadow:
+        0 -20px 80px
+        rgba(0,0,0,.6);
+
+    backdrop-filter:blur(22px);
+    -webkit-backdrop-filter:blur(22px);
+}
+
+#commentSheet.open{
+    transform:translateY(0);
+}
+
+.sheetHeader{
+    height:58px;
+
+    flex:none;
+
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+
+    padding:0 18px;
+
+    border-bottom:
+        1px solid
+        rgba(255,255,255,.07);
+}
+
+.sheetHeader strong{
+    font-size:14px;
+}
+
+.sheetClose{
+    width:34px;
+    height:34px;
+
+    display:grid;
+    place-items:center;
+
+    border-radius:50%;
+
+    color:#fff;
+    background:rgba(255,255,255,.07);
+
+    cursor:pointer;
+}
+
+.commentsList{
+    flex:1;
+
+    overflow-y:auto;
+
+    padding:16px;
+
+    scrollbar-width:none;
+}
+
+.commentsList::-webkit-scrollbar{
+    display:none;
+}
+
+.commentEmpty{
+    height:100%;
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    flex-direction:column;
+
+    gap:8px;
+
+    color:#777b89;
+
+    font-size:11px;
+}
+
+.commentEmpty i{
+    font-size:28px;
+}
+
+.comment{
+    display:flex;
+    gap:10px;
+
+    margin-bottom:18px;
+}
+
+.commentAvatar{
+    width:34px;
+    height:34px;
+
+    flex:none;
+
+    object-fit:cover;
+
+    border-radius:50%;
+}
+
+.commentBody{
+    min-width:0;
+}
+
+.commentBody strong{
+    font-size:11px;
+}
+
+.commentBody p{
+    margin-top:3px;
+
+    color:#d2d3d9;
+
+    font-size:12px;
+    line-height:1.4;
+}
+
+.commentForm{
+    display:flex;
+    gap:8px;
+
+    padding:
+        10px
+        14px
+        max(10px,env(safe-area-inset-bottom));
+
+    border-top:
+        1px solid
+        rgba(255,255,255,.07);
+}
+
+.commentInput{
+    flex:1;
+
+    min-width:0;
+
+    height:42px;
+
+    padding:0 14px;
+
+    border:1px solid
+        rgba(255,255,255,.10);
+
+    border-radius:14px;
+
+    outline:none;
+
+    color:#fff;
+
+    background:#1b1d26;
+}
+
+.commentSend{
+    width:44px;
+    height:42px;
+
+    border-radius:14px;
+
+    color:#fff;
+
+    background:
+        linear-gradient(
+            135deg,
+            #7067ff,
+            #00c9ed
+        );
+
+    cursor:pointer;
+}
+
+/* =========================================================
+   SHARE SHEET
+========================================================= */
+
+#shareSheet{
+    position:fixed;
+
+    left:50%;
+    bottom:25px;
+
+    z-index:600;
+
+    width:min(92%,390px);
+
+    padding:18px;
+
+    border-radius:22px;
+
+    background:
+        rgba(18,19,27,.98);
+
+    border:
+        1px solid
+        rgba(255,255,255,.10);
+
+    box-shadow:
+        0 20px 80px
+        rgba(0,0,0,.65);
+
+    transform:
+        translate(-50%,130%);
+
+    transition:.3s ease;
+}
+
+#shareSheet.open{
+    transform:
+        translate(-50%,0);
+}
+
+.shareTitle{
+    font-size:14px;
+    font-weight:800;
+
+    margin-bottom:14px;
+}
+
+.shareOptions{
+    display:grid;
+
+    grid-template-columns:
+        repeat(4,1fr);
+
+    gap:8px;
+}
+
+.shareOption{
+    min-height:68px;
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    flex-direction:column;
+
+    gap:7px;
+
+    color:#fff;
+
+    border-radius:15px;
+
+    background:
+        rgba(255,255,255,.055);
+
+    cursor:pointer;
+}
+
+.shareOption i{
+    font-size:18px;
+}
+
+.shareOption span{
+    font-size:9px;
+    color:#b5b7c1;
+}
+
+.shareCancel{
+    width:100%;
+    height:40px;
+
+    margin-top:10px;
+
+    border-radius:13px;
+
+    color:#fff;
+
+    background:
+        rgba(255,255,255,.07);
+
+    cursor:pointer;
+}
+
+/* =========================================================
+   BACKDROP
+========================================================= */
+
+#sheetBackdrop{
+    position:fixed;
+    inset:0;
+
+    z-index:450;
+
+    background:rgba(0,0,0,.55);
+
+    opacity:0;
+    visibility:hidden;
+
+    transition:.25s ease;
+}
+
+#sheetBackdrop.show{
+    opacity:1;
+    visibility:visible;
+}
+
+/* =========================================================
+   TOAST
+========================================================= */
+
+#toast{
+    position:fixed;
+
+    left:50%;
+    bottom:78px;
+
+    z-index:1000;
+
+    max-width:
+        calc(100% - 30px);
+
+    padding:11px 16px;
+
+    border-radius:14px;
+
+    color:#fff;
+
+    background:
+        rgba(20,21,28,.95);
+
+    border:
+        1px solid
+        rgba(255,255,255,.10);
+
+    font-size:11px;
+
+    transform:
+        translate(-50%,20px);
+
+    opacity:0;
+    pointer-events:none;
+
+    transition:.25s ease;
+}
+
+#toast.show{
+    opacity:1;
+    transform:
+        translate(-50%,0);
+}
+
+/* =========================================================
+   EMPTY
+========================================================= */
+
+#empty{
+    position:absolute;
+    inset:0;
+
+    display:none;
+
+    align-items:center;
+    justify-content:center;
+    flex-direction:column;
+
+    gap:10px;
+
+    background:#000;
+
+    color:#858895;
+}
+
+#empty.show{
+    display:flex;
+}
+
+#empty i{
+    font-size:38px;
+}
+
+#empty strong{
+    color:#fff;
+    font-size:15px;
+}
+
+#empty span{
+    font-size:11px;
+}
+
+/* =========================================================
+   DESKTOP
+========================================================= */
+
+@media(min-width:700px){
+
+    #app{
+        width:430px;
+        margin:auto;
+
+        box-shadow:
+            0 0 100px
+            rgba(0,0,0,.8);
+    }
+
+    .shortItem{
+        height:100dvh;
+    }
+
+}
+
+/* =========================================================
+   SAFE AREA
+========================================================= */
+
+@supports(padding:max(0px)){
+
+    .shortInfo{
+        bottom:
+            max(25px,env(safe-area-inset-bottom));
+    }
+
+}
+
+</style>
+</head>
+
+<body>
+
+<div id="app">
+
+    <!-- LOADER -->
+
+    <div id="loader">
+        <div class="loaderRing"></div>
+        <span>Loading Shorts...</span>
+    </div>
+
+
+    <!-- FEED -->
+
+    <main id="shortsFeed"></main>
+
+
+    <!-- EMPTY -->
+
+    <section id="empty">
+
+        <i class="fa-solid fa-clapperboard"></i>
+
+        <strong>No Shorts Yet</strong>
+
+        <span>Short videos will appear here.</span>
+
+    </section>
+
+
+    <!-- COMMENT BACKDROP -->
+
+    <div id="sheetBackdrop"></div>
+
+
+    <!-- COMMENTS -->
+
+    <section id="commentSheet">
+
+        <div class="sheetHeader">
+
+            <strong id="commentTitle">
+                Comments
+            </strong>
+
+            <button
+                class="sheetClose"
+                id="commentClose"
+                type="button"
+            >
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+        </div>
+
+
+        <div
+            id="commentsList"
+            class="commentsList"
+        ></div>
+
+
+        <form
+            id="commentForm"
+            class="commentForm"
+        >
+
+            <input
+                id="commentInput"
+                class="commentInput"
+                type="text"
+                maxlength="500"
+                placeholder="Add a comment..."
+                autocomplete="off"
+            >
+
+            <button
+                class="commentSend"
+                type="submit"
+            >
+                <i class="fa-solid fa-paper-plane"></i>
+            </button>
+
+        </form>
+
+    </section>
+
+
+    <!-- SHARE -->
+
+    <section id="shareSheet">
+
+        <div class="shareTitle">
+            Share Short
+        </div>
+
+        <div class="shareOptions">
+
+            <button
+                class="shareOption"
+                data-share="copy"
+            >
+                <i class="fa-solid fa-link"></i>
+                <span>Copy</span>
+            </button>
+
+            <button
+                class="shareOption"
+                data-share="system"
+            >
+                <i class="fa-solid fa-share-nodes"></i>
+                <span>Share</span>
+            </button>
+
+            <button
+                class="shareOption"
+                data-share="whatsapp"
+            >
+                <i class="fa-brands fa-whatsapp"></i>
+                <span>WhatsApp</span>
+            </button>
+
+            <button
+                class="shareOption"
+                data-share="telegram"
+            >
+                <i class="fa-brands fa-telegram"></i>
+                <span>Telegram</span>
+            </button>
+
+        </div>
+
+        <button
+            class="shareCancel"
+            id="shareCancel"
+            type="button"
+        >
+            Cancel
+        </button>
+
+    </section>
+
+
+    <!-- TOAST -->
+
+    <div id="toast"></div>
+
+</div>
+
+
+<!-- =========================================================
+     FIREBASE
+========================================================= -->
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+
+<script src="firebase.js"></script>
+
+
+<script>
+
+/* =========================================================
+   VIEWORA SHORTS ENGINE
+========================================================= */
+
+"use strict";
+
+(() => {
+
+    if(window.__VIEWORA_SHORT_INITIALIZED__){
+        return;
+    }
+
+    window.__VIEWORA_SHORT_INITIALIZED__ = true;
+
+
+    /* =====================================================
+       ELEMENTS
+    ===================================================== */
+
+    const feed =
+        document.getElementById("shortsFeed");
+
+    const loader =
+        document.getElementById("loader");
+
+    const empty =
+        document.getElementById("empty");
+
+    const toast =
+        document.getElementById("toast");
+
+    const commentSheet =
+        document.getElementById("commentSheet");
+
+    const commentsList =
+        document.getElementById("commentsList");
+
+    const commentForm =
+        document.getElementById("commentForm");
+
+    const commentInput =
+        document.getElementById("commentInput");
+
+    const commentClose =
+        document.getElementById("commentClose");
+
+    const sheetBackdrop =
+        document.getElementById("sheetBackdrop");
+
+    const shareSheet =
+        document.getElementById("shareSheet");
+
+    const shareCancel =
+        document.getElementById("shareCancel");
+
+
+    /* =====================================================
+       STATE
+    ===================================================== */
+
+    let currentUser = null;
+
+    let shorts = [];
+
+    let currentShortId = null;
+
+    let activeCommentShort = null;
+
+    let activeShareShort = null;
+
+    let observer = null;
+
+
+    /* =====================================================
+       TOAST
+    ===================================================== */
+
+    function showToast(message){
+
+        if(!toast){
+            return;
+        }
+
+        toast.textContent =
+            String(message || "");
+
+        toast.classList.add("show");
+
+        clearTimeout(
+            window.__VIEWORA_SHORT_TOAST__
+        );
+
+        window.__VIEWORA_SHORT_TOAST__ =
+            setTimeout(() => {
+
+                toast.classList.remove("show");
+
+            },2200);
+
+    }
+
+
+    /* =====================================================
+       SAFE NUMBER
+    ===================================================== */
+
+    function safeNumber(value){
+
+        const number =
+            Number(value);
+
+        return Number.isFinite(number)
+            ? number
+            : 0;
+
+    }
+
+
+    /* =====================================================
+       FORMAT COUNT
+    ===================================================== */
+
+    function formatCount(value){
+
+        const n =
+            safeNumber(value);
+
+        if(n >= 1000000){
+
+            return (
+                (n / 1000000)
+                .toFixed(n >= 10000000 ? 0 : 1)
+                .replace(".0","")
+                + "M"
+            );
+
+        }
+
+        if(n >= 1000){
+
+            return (
+                (n / 1000)
+                .toFixed(n >= 10000 ? 0 : 1)
+                .replace(".0","")
+                + "K"
+            );
+
+        }
+
+        return String(n);
+
+    }
+
+
+    /* =====================================================
+       ESCAPE HTML
+    ===================================================== */
+
+    function escapeHTML(value){
+
+        return String(value ?? "")
+            .replace(/&/g,"&amp;")
+            .replace(/</g,"&lt;")
+            .replace(/>/g,"&gt;")
+            .replace(/"/g,"&quot;")
+            .replace(/'/g,"&#039;");
+
+    }
+
+
+    /* =====================================================
+       CURRENT USER
+    ===================================================== */
+
+    function getUID(){
+
+        if(
+            typeof window.getUID ===
+            "function"
+        ){
+
+            return window.getUID();
+
+        }
+
+        return firebase.auth().currentUser
+            ? firebase.auth().currentUser.uid
+            : null;
+
+    }
+
+
+    /* =====================================================
+       USER DATA
+    ===================================================== */
+
+    async function getUser(uid){
+
+        if(!uid){
+            return null;
+        }
+
+        try{
+
+            const snap =
+                await db
+                    .ref("users/" + uid)
+                    .once("value");
+
+            return snap.exists()
+                ? snap.val()
+                : null;
+
+        }catch(error){
+
+            console.error(
+                "User read failed:",
+                error
+            );
+
+            return null;
+
+        }
+
+    }
+
+
+    /* =====================================================
+       AUTH
+    ===================================================== */
+
+    function waitForAuth(){
+
+        return new Promise(resolve => {
+
+            const unsubscribe =
+                firebase.auth()
+                    .onAuthStateChanged(
+                        user => {
+
+                            currentUser =
+                                user || null;
+
+                            unsubscribe();
+
+                            resolve(user || null);
+
+                        }
+                    );
+
+        });
+
+    }
+
+
+    /* =====================================================
+       MEDIA URL
+    ===================================================== */
+
+    function getMediaURL(short){
+
+        return (
+            short.videoUrl ||
+            short.videoURL ||
+            short.mediaUrl ||
+            short.mediaURL ||
+            short.url ||
+            short.fileUrl ||
+            short.fileURL ||
+            short.imageUrl ||
+            short.imageURL ||
+            ""
+        );
+
+    }
+
+
+    /* =====================================================
+       THUMBNAIL
+    ===================================================== */
+
+    function getThumbnail(short){
+
+        return (
+            short.thumbnail ||
+            short.thumbnailUrl ||
+            short.thumbnailURL ||
+            short.cover ||
+            short.coverUrl ||
+            short.poster ||
+            ""
+        );
+
+    }
+
+
+    /* =====================================================
+       CREATOR ID
+    ===================================================== */
+
+    function getCreatorId(short){
+
+        return (
+            short.uid ||
+            short.userId ||
+            short.authorId ||
+            short.creatorId ||
+            short.ownerId ||
+            ""
+        );
+
+    }
+
+
+    /* =====================================================
+       CREATE SHORT ELEMENT
+    ===================================================== */
+
+    async function createShortElement(short){
+
+        const id =
+            String(
+                short.id ||
+                short.shortId ||
+                short.key ||
+                ""
+            );
+
+        if(!id){
+            return null;
+        }
+
+        const creatorId =
+            getCreatorId(short);
+
+        const creator =
+            await getUser(creatorId);
+
+        const creatorName =
+            short.name ||
+            short.fullName ||
+            creator?.name ||
+            creator?.fullName ||
+            "Viewora User";
+
+        const username =
+            short.username ||
+            creator?.username ||
+            "user";
+
+        const avatar =
+            short.profilePhoto ||
+            short.photoURL ||
+            creator?.profilePhoto ||
+            creator?.photoURL ||
+            "assets/default-avatar.png";
+
+        const caption =
+            short.caption ||
+            short.description ||
+            short.text ||
+            "";
+
+        const media =
+            getMediaURL(short);
+
+        const thumbnail =
+            getThumbnail(short);
+
+        const verified =
+            short.verified === true ||
+            creator?.verified === true;
+
+        const likes =
+            safeNumber(
+                short.likes ||
+                short.likeCount
+            );
+
+        const comments =
+            safeNumber(
+                short.comments ||
+                short.commentCount
+            );
+
+        const shares =
+            safeNumber(
+                short.shares ||
+                short.shareCount
+            );
+
+        const saves =
+            safeNumber(
+                short.saves ||
+                short.saveCount
+            );
+
+        const article =
+            document.createElement("article");
+
+        article.className =
+            "shortItem";
+
+        article.dataset.shortId =
+            id;
+
+        article.dataset.uid =
+            creatorId;
+
+
+        /* =================================================
+           MEDIA
+        ================================================== */
+
+        let mediaElement;
+
+        const isVideo =
+            short.type === "video" ||
+            short.mediaType === "video" ||
+            /\.(mp4|webm|mov|m4v|ogg)(\?|$)/i.test(media);
+
+        if(isVideo){
+
+            mediaElement =
+                document.createElement("video");
+
+            mediaElement.className =
+                "shortMedia video";
+
+            mediaElement.src =
+                media;
+
+            mediaElement.loop =
+                true;
+
+            mediaElement.muted =
+                true;
+
+            mediaElement.playsInline =
+                true;
+
+            mediaElement.preload =
+                "metadata";
+
+            if(thumbnail){
+                mediaElement.poster =
+                    thumbnail;
+            }
+
+        }else{
+
+            mediaElement =
+                document.createElement("img");
+
+            mediaElement.className =
+                "shortMedia image";
+
+            mediaElement.src =
+                media ||
+                "assets/default-banner.jpg";
+
+            mediaElement.alt =
+                "Viewora Short";
+
+            mediaElement.loading =
+                "lazy";
+
+        }
+
+        mediaElement.addEventListener(
+            "error",
+            () => {
+
+                console.warn(
+                    "Short media failed:",
+                    media
+                );
+
+            }
+        );
+
+
+        /* =================================================
+           HTML
+        ================================================== */
+
+        const verifiedHTML =
+            verified
+                ? '<i class="fa-solid fa-circle-check"></i>'
+                : "";
+
+        const self =
+            currentUser &&
+            creatorId === currentUser.uid;
+
+        const followHTML =
+            self
+                ? ""
+                : `
+                    <button
+                        class="followBtn"
+                        data-action="follow"
+                        data-uid="${escapeHTML(creatorId)}"
+                    >
+                        Follow
+                    </button>
+                `;
+
+        article.innerHTML = `
+
+            <div class="shortGradient"></div>
+
+            <div class="topBar">
+
+                <div class="topTitle">
+                    Shorts
+                    <span>For you</span>
+                </div>
+
+                <button
+                    class="topBtn"
+                    data-action="back"
+                    type="button"
+                    aria-label="Back"
+                >
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+
+            </div>
+
+
+            <div class="shortActions">
+
+                <button
+                    class="action likeAction"
+                    data-action="like"
+                    type="button"
+                >
+
+                    <div class="actionCircle">
+                        <i class="fa-regular fa-heart"></i>
+                    </div>
+
+                    <small>
+                        ${formatCount(likes)}
+                    </small>
+
+                </button>
+
+
+                <button
+                    class="action"
+                    data-action="comment"
+                    type="button"
+                >
+
+                    <div class="actionCircle">
+                        <i class="fa-regular fa-comment"></i>
+                    </div>
+
+                    <small>
+                        ${formatCount(comments)}
+                    </small>
+
+                </button>
+
+
+                <button
+                    class="action"
+                    data-action="share"
+                    type="button"
+                >
+
+                    <div class="actionCircle">
+                        <i class="fa-solid fa-share"></i>
+                    </div>
+
+                    <small>
+                        ${formatCount(shares)}
+                    </small>
+
+                </button>
+
+
+                <button
+                    class="action saveAction"
+                    data-action="save"
+                    type="button"
+                >
+
+                    <div class="actionCircle">
+                        <i class="fa-regular fa-bookmark"></i>
+                    </div>
+
+                    <small>
+                        ${formatCount(saves)}
+                    </small>
+
+                </button>
+
+            </div>
+
+
+            <div class="shortInfo">
+
+                <div class="creatorRow">
+
+                    <img
+                        class="creatorAvatar"
+                        src="${escapeHTML(avatar)}"
+                        alt="${escapeHTML(creatorName)}"
+                        data-action="profile"
+                        data-uid="${escapeHTML(creatorId)}"
+                    >
+
+                    <div
+                        class="creatorDetails"
+                        data-action="profile"
+                        data-uid="${escapeHTML(creatorId)}"
+                    >
+
+                        <div class="creatorName">
+
+                            ${escapeHTML(creatorName)}
+
+                            ${verifiedHTML}
+
+                        </div>
+
+                        <div class="creatorUsername">
+                            @${escapeHTML(
+                                String(username)
+                                .replace(/^@/,"")
+                            )}
+                        </div>
+
+                    </div>
+
+                    ${followHTML}
+
+                </div>
+
+
+                ${
+                    caption
+                    ? `
+                        <div
+                            class="caption"
+                            data-caption
+                        >
+                            ${escapeHTML(caption)}
+                        </div>
+                    `
+                    : ""
+                }
+
+
+                ${
+                    caption.length > 100
+                    ? `
+                        <button
+                            class="captionToggle"
+                            data-action="caption"
+                            type="button"
+                        >
+                            more
+                        </button>
+                    `
+                    : ""
+                }
+
+
+                <div class="musicRow">
+
+                    <div class="musicDisc">
+                        <i class="fa-solid fa-music"></i>
+                    </div>
+
+                    <span>
+                        Original sound •
+                        ${escapeHTML(
+                            String(username)
+                            .replace(/^@/,"")
+                        )}
+                    </span>
+
+                </div>
+
+            </div>
+
+
+            <div class="pauseOverlay">
+
+                <span>
+                    <i class="fa-solid fa-pause"></i>
+                </span>
+
+            </div>
+
+
+            <div class="progress">
+                <div class="progressBar"></div>
+            </div>
+        `;
+
+
+        article.prepend(
+            mediaElement
+        );
+
+
+        /* =================================================
+           CLICK HANDLER
+        ================================================== */
+
+        article.addEventListener(
+            "click",
+            event => {
+
+                const target =
+                    event.target.closest(
+                        "[data-action]"
+                    );
+
+                if(target){
+
+                    handleAction(
+                        target.dataset.action,
+                        target,
+                        article,
+                        short
+                    );
+
+                    return;
+
+                }
+
+
+                if(isVideo){
+
+                    toggleVideo(
+                        article,
+                        mediaElement
+                    );
+
+                }
+
+            }
+        );
+
+
+        /* =================================================
+           VIDEO PROGRESS
+        ================================================== */
+
+        if(isVideo){
+
+            mediaElement.addEventListener(
+                "timeupdate",
+                () => {
+
+                    const bar =
+                        article.querySelector(
+                            ".progressBar"
+                        );
+
+                    if(
+                        bar &&
+                        mediaElement.duration
+                    ){
+
+                        bar.style.width =
+                            (
+                                mediaElement.currentTime /
+                                mediaElement.duration *
+                                100
+                            ) + "%";
+
+                    }
+
+                }
+            );
+
+        }
+
+
+        return article;
+
+    }
+
+
+    /* =====================================================
+       HANDLE ACTION
+    ===================================================== */
+
+    async function handleAction(
+        action,
+        target,
+        article,
+        short
+    ){
+
+        switch(action){
+
+            case "like":
+
+                await toggleLike(
+                    article,
+                    short
+                );
+
+                break;
+
+
+            case "comment":
+
+                openComments(
+                    short
+                );
+
+                break;
+
+
+            case "share":
+
+                openShare(
+                    short
+                );
+
+                break;
+
+
+            case "save":
+
+                await toggleSave(
+                    article,
+                    short
+                );
+
+                break;
+
+
+            case "follow":
+
+                await toggleFollow(
+                    target,
+                    target.dataset.uid
+                );
+
+                break;
+
+
+            case "profile":
+
+                openProfile(
+                    target.dataset.uid
+                );
+
+                break;
+
+
+            case "back":
+
+                history.length > 1
+                    ? history.back()
+                    : (
+                        window.location.href =
+                        "index.html"
+                    );
+
+                break;
+
+
+            case "caption":
+
+                const caption =
+                    article.querySelector(
+                        "[data-caption]"
+                    );
+
+                if(caption){
+
+                    caption.classList.toggle(
+                        "hasMore"
+                    );
+
+                    target.textContent =
+                        caption.classList.contains(
+                            "hasMore"
+                        )
+                        ? "more"
+                        : "less";
+
+                }
+
+                break;
+
+        }
+
+    }
+
+
+    /* =====================================================
+       TOGGLE VIDEO
+    ===================================================== */
+
+    function toggleVideo(
+        article,
+        video
+    ){
+
+        if(video.paused){
+
+            video.play()
+                .catch(() => {});
+
+            article
+                .querySelector(".pauseOverlay")
+                ?.classList.remove("show");
+
+        }else{
+
+            video.pause();
+
+            article
+                .querySelector(".pauseOverlay")
+                ?.classList.add("show");
+
+        }
+
+    }
+
+
+    /* =====================================================
+       LIKE
+    ===================================================== */
+
+    async function toggleLike(
+        article,
+        short
+    ){
+
+        if(!currentUser){
+
+            showToast(
+                "Login required to like."
+            );
+
+            return;
+
+        }
+
+        const id =
+            String(
+                short.id ||
+                short.shortId ||
+                short.key
+            );
+
+        const uid =
+            currentUser.uid;
+
+        const likeRef =
+            db.ref(
+                "shortLikes/" +
+                id +
+                "/" +
+                uid
+            );
+
+        try{
+
+            const snap =
+                await likeRef.once("value");
+
+            const icon =
+                article.querySelector(
+                    ".likeAction i"
+                );
+
+            const label =
+                article.querySelector(
+                    ".likeAction small"
+                );
+
+            let count =
+                safeNumber(
+                    short.likes ||
+                    short.likeCount
+                );
+
+            if(snap.exists()){
+
+                await likeRef.remove();
+
+                count =
+                    Math.max(0,count - 1);
+
+                article
+                    .querySelector(".likeAction")
+                    ?.classList.remove("liked");
+
+                if(icon){
+
+                    icon.className =
+                        "fa-regular fa-heart";
+
+                }
+
+            }else{
+
+                await likeRef.set(true);
+
+                count++;
+
+                article
+                    .querySelector(".likeAction")
+                    ?.classList.add("liked");
+
+                if(icon){
+
+                    icon.className =
+                        "fa-solid fa-heart";
+
+                }
+
+            }
+
+            short.likes =
+                count;
+
+            if(label){
+
+                label.textContent =
+                    formatCount(count);
+
+            }
+
+            await db.ref(
+                "shorts/" + id
+            ).update({
+
+                likes:count
+
+            });
+
+        }catch(error){
+
+            console.error(
+                "Short like failed:",
+                error
+            );
+
+            showToast(
+                "Like failed."
+            );
+
+        }
+
+    }
+
+
+    /* =====================================================
+       SAVE
+    ===================================================== */
+
+    async function toggleSave(
+        article,
+        short
+    ){
+
+        if(!currentUser){
+
+            showToast(
+                "Login required to save."
+            );
+
+            return;
+
+        }
+
+        const id =
+            String(
+                short.id ||
+                short.shortId ||
+                short.key
+            );
+
+        const uid =
+            currentUser.uid;
+
+        const saveRef =
+            db.ref(
+                "savedShorts/" +
+                uid +
+                "/" +
+                id
+            );
+
+        try{
+
+            const snap =
+                await saveRef.once("value");
+
+            const action =
+                article.querySelector(
+                    ".saveAction"
+                );
+
+            const icon =
+                article.querySelector(
+                    ".saveAction i"
+                );
+
+            if(snap.exists()){
+
+                await saveRef.remove();
+
+                action?.classList.remove(
+                    "saved"
+                );
+
+                if(icon){
+
+                    icon.className =
+                        "fa-regular fa-bookmark";
+
+                }
+
+                showToast(
+                    "Removed from saved."
+                );
+
+            }else{
+
+                await saveRef.set({
+
+                    shortId:id,
+
+                    createdAt:
+                        firebase.database
+                            .ServerValue
+                            .TIMESTAMP
+
+                });
+
+                action?.classList.add(
+                    "saved"
+                );
+
+                if(icon){
+
+                    icon.className =
+                        "fa-solid fa-bookmark";
+
+                }
+
+                showToast(
+                    "Short saved."
+                );
+
+            }
+
+        }catch(error){
+
+            console.error(
+                "Save failed:",
+                error
+            );
+
+            showToast(
+                "Save failed."
+            );
+
+        }
+
+    }
+
+
+    /* =====================================================
+       FOLLOW
+    ===================================================== */
+
+    async function toggleFollow(
+        button,
+        uid
+    ){
+
+        if(!currentUser){
+
+            showToast(
+                "Login required to follow."
+            );
+
+            return;
+
+        }
+
+        if(!uid || uid === currentUser.uid){
+            return;
+        }
+
+        const followingRef =
+            db.ref(
+                "following/" +
+                currentUser.uid +
+                "/" +
+                uid
+            );
+
+        const followerRef =
+            db.ref(
+                "followers/" +
+                uid +
+                "/" +
+                currentUser.uid
+            );
+
+        try{
+
+            const snap =
+                await followingRef.once("value");
+
+            if(snap.exists()){
+
+                await Promise.all([
+
+                    followingRef.remove(),
+
+                    followerRef.remove()
+
+                ]);
+
+                button.textContent =
+                    "Follow";
+
+                button.classList.remove(
+                    "following"
+                );
+
+            }else{
+
+                await Promise.all([
+
+                    followingRef.set({
+
+                        uid:uid,
+
+                        createdAt:
+                            firebase.database
+                                .ServerValue
+                                .TIMESTAMP
+
+                    }),
+
+                    followerRef.set({
+
+                        uid:currentUser.uid,
+
+                        createdAt:
+                            firebase.database
+                                .ServerValue
+                                .TIMESTAMP
+
+                    })
+
+                ]);
+
+                button.textContent =
+                    "Following";
+
+                button.classList.add(
+                    "following"
+                );
+
+            }
+
+        }catch(error){
+
+            console.error(
+                "Follow failed:",
+                error
+            );
+
+            showToast(
+                "Follow action failed."
+            );
+
+        }
+
+    }
+
+
+    /* =====================================================
+       PROFILE
+    ===================================================== */
+
+    function openProfile(uid){
+
+        if(!uid){
+            return;
+        }
+
+        window.location.href =
+            "profile.html?uid=" +
+            encodeURIComponent(uid);
+
+    }
+
+
+    /* =====================================================
+       LOAD SHORTS
+    ===================================================== */
+
+    async function loadShorts(){
+
+        try{
+
+            let snapshot =
+                await db
+                    .ref("shorts")
+                    .once("value");
+
+            const value =
+                snapshot.val();
+
+            if(!value){
+
+                showEmpty();
+
+                return;
+
+            }
+
+            shorts =
+                Object.entries(value)
+                    .map(([key,data]) => {
+
+                        if(
+                            !data ||
+                            typeof data !==
+                            "object"
+                        ){
+
+                            return null;
+
+                        }
+
+                        return {
+
+                            ...data,
+
+                            id:
+                                data.id ||
+                                key
+
+                        };
+
+                    })
+                    .filter(Boolean)
+                    .filter(
+                        short =>
+                            !!getMediaURL(short)
+                    )
+                    .sort(
+                        (a,b) =>
+                            safeNumber(
+                                b.createdAt
+                            ) -
+                            safeNumber(
+                                a.createdAt
+                            )
+                    );
+
+
+            if(!shorts.length){
+
+                showEmpty();
+
+                return;
+
+            }
+
+
+            await renderShorts();
+
+
+        }catch(error){
+
+            console.error(
+                "Shorts load failed:",
+                error
+            );
+
+            showToast(
+                "Unable to load Shorts."
+            );
+
+            showEmpty();
+
+        }
+
+    }
+
+
+    /* =====================================================
+       RENDER
+    ===================================================== */
+
+    async function renderShorts(){
+
+        feed.innerHTML =
+            "";
+
+        for(
+            const short
+            of shorts
+        ){
+
+            const element =
+                await createShortElement(
+                    short
+                );
+
+            if(element){
+
+                feed.appendChild(
+                    element
+                );
+
+            }
+
+        }
+
+
+        setupObserver();
+
+
+        /* ================================================
+           OPEN SPECIFIC SHORT
+        ================================================= */
+
+        const params =
+            new URLSearchParams(
+                window.location.search
+            );
+
+        const requestedId =
+            params.get("id") ||
+            params.get("short") ||
+            params.get("shortId");
+
+
+        if(requestedId){
+
+            const target =
+                feed.querySelector(
+                    `[data-short-id="${CSS.escape(requestedId)}"]`
+                );
+
+            if(target){
+
+                setTimeout(
+                    () => {
+
+                        target.scrollIntoView({
+                            behavior:"instant",
+                            block:"start"
+                        });
+
+                    },
+                    100
+                );
+
+            }
+
+        }
+
+    }
+
+
+    /* =====================================================
+       OBSERVER
+    ===================================================== */
+
+    function setupObserver(){
+
+        if(observer){
+
+            observer.disconnect();
+
+        }
+
+        observer =
+            new IntersectionObserver(
+                entries => {
+
+                    entries.forEach(
+                        entry => {
+
+                            const item =
+                                entry.target;
+
+                            const video =
+                                item.querySelector(
+                                    "video"
+                                );
+
+                            if(
+                                entry.isIntersecting &&
+                                entry.intersectionRatio >= .65
+                            ){
+
+                                currentShortId =
+                                    item.dataset.shortId;
+
+                                if(video){
+
+                                    video.currentTime =
+                                        0;
+
+                                    video.play()
+                                        .catch(
+                                            () => {}
+                                        );
+
+                                }
+
+                            }else{
+
+                                if(video){
+
+                                    video.pause();
+
+                                }
+
+                            }
+
+                        }
+                    );
+
+                },
+                {
+                    threshold:[
+                        .25,
+                        .65,
+                        .9
+                    ]
+                }
+            );
+
+
+        document
+            .querySelectorAll(".shortItem")
+            .forEach(
+                item =>
+                    observer.observe(item)
+            );
+
+    }
+
+
+    /* =====================================================
+       COMMENTS
+    ===================================================== */
+
+    async function openComments(short){
+
+        activeCommentShort =
+            short;
+
+        const id =
+            String(
+                short.id ||
+                short.shortId ||
+                short.key
+            );
+
+        commentSheet
+            .classList.add("open");
+
+        sheetBackdrop
+            .classList.add("show");
+
+        commentInput.value =
+            "";
+
+        await loadComments(id);
+
+    }
+
+
+    async function loadComments(id){
+
+        commentsList.innerHTML = `
+            <div class="commentEmpty">
+                <i class="fa-regular fa-comment"></i>
+                <span>Loading comments...</span>
+            </div>
+        `;
+
+        try{
+
+            const snapshot =
+                await db
+                    .ref("comments/" + id)
+                    .once("value");
+
+            const value =
+                snapshot.val();
+
+            if(!value){
+
+                commentsList.innerHTML = `
+                    <div class="commentEmpty">
+                        <i class="fa-regular fa-comment"></i>
+                        <strong>No comments yet</strong>
+                        <span>Be the first to comment.</span>
+                    </div>
+                `;
+
+                return;
+
+            }
+
+            const entries =
+                Object.entries(value)
+                    .map(
+                        ([key,data]) => ({
+                            ...data,
+                            id:key
+                        })
+                    )
+                    .sort(
+                        (a,b) =>
+                            safeNumber(
+                                a.createdAt
+                            ) -
+                            safeNumber(
+                                b.createdAt
+                            )
+                    );
+
+            commentsList.innerHTML =
+                "";
+
+            for(
+                const comment
+                of entries
+            ){
+
+                const user =
+                    await getUser(
+                        comment.uid ||
+                        comment.userId
+                    );
+
+                const avatar =
+                    comment.profilePhoto ||
+                    user?.profilePhoto ||
+                    user?.photoURL ||
+                    "assets/default-avatar.png";
+
+                const name =
+                    comment.username ||
+                    comment.name ||
+                    user?.username ||
+                    user?.name ||
+                    "User";
+
+                const row =
+                    document.createElement(
+                        "div"
+                    );
+
+                row.className =
+                    "comment";
+
+                row.innerHTML = `
+
+                    <img
+                        class="commentAvatar"
+                        src="${escapeHTML(avatar)}"
+                        alt=""
+                    >
+
+                    <div class="commentBody">
+
+                        <strong>
+                            ${escapeHTML(name)}
+                        </strong>
+
+                        <p>
+                            ${escapeHTML(
+                                comment.text ||
+                                comment.comment ||
+                                ""
+                            )}
+                        </p>
+
+                    </div>
+                `;
+
+                commentsList.appendChild(
+                    row
+                );
+
+            }
+
+        }catch(error){
+
+            console.error(
+                "Comments failed:",
+                error
+            );
+
+            commentsList.innerHTML = `
+                <div class="commentEmpty">
+                    <span>Comments unavailable.</span>
+                </div>
+            `;
+
+        }
+
+    }
+
+
+    /* =====================================================
+       COMMENT SUBMIT
+    ===================================================== */
+
+    commentForm.addEventListener(
+        "submit",
+        async event => {
+
+            event.preventDefault();
+
+            if(!currentUser){
+
+                showToast(
+                    "Login required to comment."
+                );
+
+                return;
+
+            }
+
+            if(!activeCommentShort){
+                return;
+            }
+
+            const text =
+                commentInput.value.trim();
+
+            if(!text){
+                return;
+            }
+
+            const id =
+                String(
+                    activeCommentShort.id ||
+                    activeCommentShort.shortId ||
+                    activeCommentShort.key
+                );
+
+            const commentRef =
+                db
+                    .ref("comments/" + id)
+                    .push();
+
+            try{
+
+                await commentRef.set({
+
+                    uid:
+                        currentUser.uid,
+
+                    text:text,
+
+                    name:
+                        currentUser.displayName ||
+                        "Viewora User",
+
+                    profilePhoto:
+                        currentUser.photoURL ||
+                        "assets/default-avatar.png",
+
+                    createdAt:
+                        firebase.database
+                            .ServerValue
+                            .TIMESTAMP
+
+                });
+
+                commentInput.value =
+                    "";
+
+                showToast(
+                    "Comment added."
+                );
+
+                await loadComments(id);
+
+            }catch(error){
+
+                console.error(
+                    "Comment failed:",
+                    error
+                );
+
+                showToast(
+                    "Comment failed."
+                );
+
+            }
+
+        }
+    );
+
+
+    /* =====================================================
+       CLOSE COMMENTS
+    ===================================================== */
+
+    function closeComments(){
+
+        commentSheet
+            .classList.remove("open");
+
+        sheetBackdrop
+            .classList.remove("show");
+
+        activeCommentShort =
+            null;
+
+    }
+
+    commentClose.addEventListener(
+        "click",
+        closeComments
+    );
+
+
+    /* =====================================================
+       SHARE
+    ===================================================== */
+
+    function openShare(short){
+
+        activeShareShort =
+            short;
+
+        shareSheet
+            .classList.add("open");
+
+    }
+
+
+    function closeShare(){
+
+        shareSheet
+            .classList.remove("open");
+
+        activeShareShort =
+            null;
+
+    }
+
+
+    shareCancel.addEventListener(
+        "click",
+        closeShare
+    );
+
+
+    document
+        .querySelectorAll(".shareOption")
+        .forEach(
+            button => {
+
+                button.addEventListener(
+                    "click",
+                    async () => {
+
+                        if(
+                            !activeShareShort
+                        ){
+
+                            return;
+
+                        }
+
+                        const id =
+                            String(
+                                activeShareShort.id ||
+                                activeShareShort.shortId ||
+                                activeShareShort.key
+                            );
+
+                        const url =
+                            window.location.origin +
+                            window.location.pathname +
+                            "?id=" +
+                            encodeURIComponent(id);
+
+                        const type =
+                            button.dataset.share;
+
+                        try{
+
+                            if(
+                                type === "copy"
+                            ){
+
+                                await navigator.clipboard
+                                    .writeText(url);
+
+                                showToast(
+                                    "Short link copied."
+                                );
+
+                            }
+
+                            else if(
+                                type === "system"
+                            ){
+
+                                if(
+                                    navigator.share
+                                ){
+
+                                    await navigator.share({
+
+                                        title:
+                                            "Viewora Short",
+
+                                        text:
+                                            "Watch this Short on Viewora",
+
+                                        url:url
+
+                                    });
+
+                                }else{
+
+                                    await navigator.clipboard
+                                        .writeText(url);
+
+                                    showToast(
+                                        "Link copied."
+                                    );
+
+                                }
+
+                            }
+
+                            else if(
+                                type === "whatsapp"
+                            ){
+
+                                window.open(
+                                    "https://wa.me/?text=" +
+                                    encodeURIComponent(
+                                        url
+                                    ),
+                                    "_blank"
+                                );
+
+                            }
+
+                            else if(
+                                type === "telegram"
+                            ){
+
+                                window.open(
+                                    "https://t.me/share/url?url=" +
+                                    encodeURIComponent(
+                                        url
+                                    ),
+                                    "_blank"
+                                );
+
+                            }
+
+                            closeShare();
+
+                        }catch(error){
+
+                            if(
+                                error?.name !==
+                                "AbortError"
+                            ){
+
+                                console.error(
+                                    "Share failed:",
+                                    error
+                                );
+
+                                showToast(
+                                    "Share failed."
+                                );
+
+                            }
+
+                        }
+
+                    }
+                );
+
+            }
+        );
+
+
+    /* =====================================================
+       BACKDROP
+    ===================================================== */
+
+    sheetBackdrop.addEventListener(
+        "click",
+        () => {
+
+            closeComments();
+
+        }
+    );
+
+
+    /* =====================================================
+       EMPTY
+    ===================================================== */
+
+    function showEmpty(){
+
+        loader.classList.add(
+            "hidden"
+        );
+
+        empty.classList.add(
+            "show"
+        );
+
+    }
+
+
+    /* =====================================================
+       INIT
+    ===================================================== */
+
+    async function init(){
+
+        try{
+
+            await waitForAuth();
+
+            await loadShorts();
+
+        }catch(error){
+
+            console.error(
+                "Short init failed:",
+                error
+            );
+
+        }finally{
+
+            setTimeout(
+                () => {
+
+                    loader.classList.add(
+                        "hidden"
+                    );
+
+                },
+                250
+            );
+
+        }
+
+    }
+
+
+    init();
+
+
+})();
+
+</script>
+
+</body>
+</html>

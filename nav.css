@@ -1,300 +1,286 @@
 /*=========================================
-        VIEWORA V10 PREMIUM
-              nav.css
+   VIEWORA — GLOBAL FIXED BOTTOM NAV
+   Home · Shorts · + · Activity · Profile
 =========================================*/
 
-:root{
-    --nav-bg:rgba(18,18,22,.82);
-    --nav-border:rgba(255,255,255,.08);
-    --primary:#00AAFF;
-    --secondary:#6366f1;
-    --text:#ffffff;
-    --text2:#9ca3af;
+:root {
+    --nav-bg: rgba(12, 12, 16, 0.92);
+    --nav-border: rgba(255, 255, 255, 0.08);
+    --primary: #00aaff;
+    --secondary: #6366f1;
+    --text: #ffffff;
+    --text2: #9ca3af;
+    --nav-height: 72px;
+}
+
+/* Space for fixed nav on every page */
+html.has-bottom-nav,
+body.has-bottom-nav {
+    padding-bottom: calc(var(--nav-height) + env(safe-area-inset-bottom, 0px)) !important;
 }
 
 /* Bottom Navigation */
+.bottomNav,
+#vieworaGlobalNav {
+    position: fixed !important;
+    left: 50% !important;
+    bottom: 0 !important;
+    transform: translateX(-50%) !important;
 
-.bottomNav{
+    width: 100% !important;
+    max-width: 650px !important;
 
-    position:fixed;
+    height: calc(var(--nav-height) + env(safe-area-inset-bottom, 0px)) !important;
 
-    left:50%;
-    bottom:0;
+    display: grid !important;
+    grid-template-columns: repeat(5, 1fr) !important;
+    align-items: center !important;
 
-    transform:translateX(-50%);
+    background: var(--nav-bg) !important;
+    backdrop-filter: blur(22px) !important;
+    -webkit-backdrop-filter: blur(22px) !important;
 
-    width:100%;
-    max-width:650px;
+    border-top: 1px solid var(--nav-border) !important;
+    border-left: 0 !important;
+    border-right: 0 !important;
+    border-bottom: 0 !important;
+    border-radius: 0 !important;
 
-    height:74px;
+    z-index: 99999 !important;
 
-    display:grid;
-    grid-template-columns:repeat(5,1fr);
+    padding: 0 4px env(safe-area-inset-bottom, 0px) !important;
+    margin: 0 !important;
 
-    align-items:center;
-
-    background:var(--nav-bg);
-
-    backdrop-filter:blur(22px);
-    -webkit-backdrop-filter:blur(22px);
-
-    border-top:1px solid var(--nav-border);
-
-    z-index:99999;
-
-    padding-bottom:env(safe-area-inset-bottom);
+    box-shadow: 0 -8px 40px rgba(0, 0, 0, 0.35) !important;
 }
 
-/* Navigation Links */
+/* Nav items */
+.bottomNav a,
+#vieworaGlobalNav a {
+    width: 100%;
+    height: 100%;
+    min-height: 56px;
 
-.bottomNav a{
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 3px;
 
-    width:100%;
-    height:100%;
+    text-decoration: none;
+    color: var(--text2);
 
-    display:flex;
-    flex-direction:column;
-    justify-content:center;
-    align-items:center;
+    font-size: 10px;
+    font-weight: 600;
+    font-family: Inter, system-ui, sans-serif;
 
-    gap:4px;
+    position: relative;
+    overflow: hidden;
 
-    text-decoration:none;
-
-    color:var(--text2);
-
-    font-size:11px;
-    font-weight:600;
-
-    position:relative;
-
-    overflow:hidden;
-
-    transition:.25s;
-
-    -webkit-tap-highlight-color:transparent;
-
+    transition: color 0.22s ease, transform 0.22s ease;
+    -webkit-tap-highlight-color: transparent;
+    background: transparent;
+    border: 0;
 }
 
-.bottomNav a i{
-
-    font-size:22px;
-
-    transition:.25s;
-
+.bottomNav a i,
+#vieworaGlobalNav a i {
+    font-size: 20px;
+    transition: transform 0.22s ease, color 0.22s ease;
 }
 
-.bottomNav a span{
-
-    transition:.25s;
-
+.bottomNav a span:not(.navBadge):not(.uploadNavInner),
+#vieworaGlobalNav a span:not(.navBadge):not(.uploadNavInner) {
+    line-height: 1;
+    transition: color 0.22s ease;
 }
 
 /* Active */
-
-.bottomNav a.active{
-
-    color:var(--primary);
-
+.bottomNav a.active,
+#vieworaGlobalNav a.active {
+    color: var(--primary);
 }
 
-.bottomNav a.active i{
-
-    transform:translateY(-4px) scale(1.12);
-
+.bottomNav a.active i,
+#vieworaGlobalNav a.active i {
+    transform: translateY(-2px) scale(1.08);
+    color: var(--primary);
 }
 
-.bottomNav a.active span{
-
-    color:var(--text);
-
+.bottomNav a.active span:not(.navBadge),
+#vieworaGlobalNav a.active span:not(.navBadge) {
+    color: #fff;
 }
 
-/* Active Indicator */
-
-.activeIndicator{
-
-    position:absolute;
-
-    top:0;
-
-    left:50%;
-
-    transform:translateX(-50%);
-
-    width:36px;
-    height:4px;
-
-    border-radius:20px;
-
-    background:var(--primary);
-
-    box-shadow:0 0 15px var(--primary);
-
-    opacity:0;
-
-    transition:.25s;
-
+/* Active top bar */
+.activeIndicator {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 28px;
+    height: 3px;
+    border-radius: 20px;
+    background: var(--primary);
+    box-shadow: 0 0 12px var(--primary);
+    opacity: 0;
+    transition: opacity 0.22s ease;
 }
 
-.bottomNav a.active .activeIndicator{
-
-    opacity:1;
-
+.bottomNav a.active .activeIndicator,
+#vieworaGlobalNav a.active .activeIndicator {
+    opacity: 1;
 }
 
-/* Upload Button */
+/* Center + button */
+.uploadNav {
+    width: 100% !important;
+    height: 100% !important;
+    justify-self: center;
+    align-self: center;
+}
 
-.uploadNav{
+.uploadNav .uploadNavInner {
+    width: 48px;
+    height: 48px;
+    margin-top: -10px;
 
-    width:60px !important;
-    height:60px !important;
+    display: grid;
+    place-items: center;
 
-    justify-self:center;
-    align-self:flex-start;
-
-    margin-top:-20px;
-
-    border-radius:50%;
-
-    display:flex;
-    justify-content:center;
-    align-items:center;
-
-    background:linear-gradient(135deg,var(--primary),var(--secondary));
-
-    color:#fff !important;
-
+    border-radius: 16px;
+    background: linear-gradient(135deg, #00aaff, #6366f1);
+    color: #fff !important;
     box-shadow:
-    0 10px 28px rgba(0,170,255,.45);
-
+        0 8px 24px rgba(0, 170, 255, 0.4),
+        0 0 0 4px rgba(12, 12, 16, 0.9);
 }
 
-.uploadNav span{
-
-    display:none;
-
+.uploadNav span:not(.uploadNavInner) {
+    display: none !important;
 }
 
-.uploadNav i{
-
-    font-size:28px !important;
-
+.uploadNav .activeIndicator {
+    display: none !important;
 }
 
-.uploadNav:hover{
+.uploadNav i {
+    font-size: 22px !important;
+    transform: none !important;
+    color: #fff !important;
+}
 
-    transform:translateY(-4px);
+.uploadNav.active .uploadNavInner,
+.uploadNav:hover .uploadNavInner {
+    transform: translateY(-2px) scale(1.04);
+    box-shadow:
+        0 10px 28px rgba(0, 170, 255, 0.5),
+        0 0 0 4px rgba(12, 12, 16, 0.9);
+}
 
+/* Activity badge */
+.navBadge {
+    position: absolute;
+    top: 8px;
+    right: calc(50% - 16px);
+
+    min-width: 16px;
+    height: 16px;
+    padding: 0 4px;
+
+    display: grid;
+    place-items: center;
+
+    border-radius: 50px;
+    background: #ff4d67;
+    color: #fff;
+    font-size: 9px;
+    font-weight: 800;
+    border: 2px solid #0c0c10;
+    line-height: 1;
+}
+
+.navBadge.hidden {
+    display: none !important;
 }
 
 /* Ripple */
-
-.navRipple{
-
-    position:absolute;
-
-    width:12px;
-    height:12px;
-
-    border-radius:50%;
-
-    background:rgba(255,255,255,.35);
-
-    transform:translate(-50%,-50%) scale(0);
-
-    pointer-events:none;
-
-    animation:navRipple .6s linear;
-
+.navRipple {
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.3);
+    transform: translate(-50%, -50%) scale(0);
+    pointer-events: none;
+    animation: navRipple 0.55s linear;
 }
 
-@keyframes navRipple{
-
-    to{
-
-        transform:translate(-50%,-50%) scale(18);
-
-        opacity:0;
-
+@keyframes navRipple {
+    to {
+        transform: translate(-50%, -50%) scale(16);
+        opacity: 0;
     }
-
 }
 
-/* Hover */
+.bottomNav a:hover,
+#vieworaGlobalNav a:hover {
+    color: #fff;
+}
 
-.bottomNav a:hover{
+/* Hide every other bottom nav */
+.bottomNav:not(#vieworaGlobalNav),
+#bottomNav:not(#vieworaGlobalNav),
+.vieworaBottomNav,
+.shortsBottomNav,
+nav.bottom-nav:not(#vieworaGlobalNav),
+.appBottomNav,
+.mainBottomNav {
+    display: none !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+    height: 0 !important;
+    overflow: hidden !important;
+}
 
-    color:#fff;
-
+#vieworaGlobalNav {
+    display: grid !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
 }
 
 /* Mobile */
-
-@media(max-width:650px){
-
-    .bottomNav{
-
-        max-width:100%;
-
+@media (max-width: 480px) {
+    :root {
+        --nav-height: 68px;
     }
 
+    .bottomNav a i,
+    #vieworaGlobalNav a i {
+        font-size: 19px;
+    }
+
+    .bottomNav a,
+    #vieworaGlobalNav a {
+        font-size: 9px;
+    }
+
+    .uploadNav .uploadNavInner {
+        width: 46px;
+        height: 46px;
+        margin-top: -12px;
+        border-radius: 14px;
+    }
 }
 
-/* Small Phones */
-
-@media(max-width:480px){
-
-    .bottomNav{
-
-        height:68px;
-
+@media (max-width: 360px) {
+    .bottomNav a i,
+    #vieworaGlobalNav a i {
+        font-size: 18px;
     }
 
-    .bottomNav a i{
-
-        font-size:20px;
-
+    .uploadNav .uploadNavInner {
+        width: 44px;
+        height: 44px;
     }
-
-    .bottomNav a{
-
-        font-size:10px;
-
-    }
-
-    .uploadNav{
-
-        width:56px !important;
-        height:56px !important;
-
-        margin-top:-18px;
-
-    }
-
-}
-
-/* Extra Small */
-
-@media(max-width:360px){
-
-    .bottomNav{
-
-        height:66px;
-
-    }
-
-    .bottomNav a i{
-
-        font-size:18px;
-
-    }
-
-    .uploadNav{
-
-        width:52px !important;
-        height:52px !important;
-
-    }
-
 }

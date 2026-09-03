@@ -1,205 +1,300 @@
-<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html><html lang="en">
+<head><meta charset="UTF-8">
 
-<head>
-    <meta charset="UTF-8">
+<meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
+>
 
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+<meta name="theme-color" content="#050507">
+
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+<title>Viewora • Short Details</title>
+
+<link rel="icon" href="assets/logo.png">
+
+<!-- =====================================================
+     FONT
+====================================================== -->
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+<link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+    rel="stylesheet"
+>
+
+<!-- =====================================================
+     ICONS
+====================================================== -->
+
+<link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
+>
+
+<!-- =====================================================
+     LOADER
+====================================================== -->
+
+<script src="page-loader.js"></script>
+
+<!-- =====================================================
+     PAGE CSS
+====================================================== -->
+
+<link rel="stylesheet" href="short-edit.css">
+
+</head><body><!-- =========================================================
+     AMBIENT BACKGROUND
+========================================================= --><div class="ambientBackground" aria-hidden="true"><span class="ambientOrb ambientOrbOne"></span>
+<span class="ambientOrb ambientOrbTwo"></span>
+<span class="ambientOrb ambientOrbThree"></span>
+
+</div><!-- =========================================================
+     APP
+========================================================= --><div id="app" class="detailsApp"><!-- =====================================================
+     TOP BAR
+====================================================== -->
+
+<header class="detailsTopBar">
+
+    <button
+        type="button"
+        id="backToEditorBtn"
+        class="topIconButton"
+        aria-label="Back to editor"
+    >
+        <i class="fa-solid fa-arrow-left"></i>
+    </button>
+
+
+    <div class="topBrand">
+
+        <div class="topBrandLogo">
+
+            <img
+                src="assets/logo.png"
+                alt="Viewora"
+            >
+
+        </div>
+
+        <div class="topBrandText">
+
+            <strong>VIEWORA</strong>
+
+            <span>SHORT DETAILS</span>
+
+        </div>
+
+    </div>
+
+
+    <button
+        type="button"
+        id="previewBtn"
+        class="previewTopButton"
     >
 
-    <meta
-        name="theme-color"
-        content="#050507"
-    >
+        <i class="fa-regular fa-eye"></i>
 
-    <meta
-        name="mobile-web-app-capable"
-        content="yes"
-    >
+        <span>Preview</span>
 
-    <title>Viewora • Edit Short Details</title>
+    </button>
 
-    <link
-        rel="icon"
-        href="assets/logo.png"
-    >
-
-    <!-- =====================================================
-         FONT
-    ====================================================== -->
-
-    <link
-        rel="preconnect"
-        href="https://fonts.googleapis.com"
-    >
-
-    <link
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
-        rel="stylesheet"
-    >
-
-    <!-- =====================================================
-         ICONS
-    ====================================================== -->
-
-    <link
-        rel="stylesheet"
-        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
-    >
-
-    <!-- =====================================================
-         PAGE LOADER
-    ====================================================== -->
-
-    <script src="page-loader.js"></script>
-
-    <!-- =====================================================
-         SHORT EDIT CSS
-    ====================================================== -->
-
-    <link
-        rel="stylesheet"
-        href="short-edit.css"
-    >
-
-</head>
+</header>
 
 
-<body>
 
-<div id="app">
+<!-- =====================================================
+     MAIN
+====================================================== -->
 
-    <!-- =====================================================
-         PAGE
-    ====================================================== -->
+<main class="detailsMain">
 
-    <main class="shortEditPage">
+
+    <!-- =================================================
+         PAGE INTRO
+    ================================================== -->
+
+    <section class="pageIntro">
+
+        <div class="introContent">
+
+            <span class="eyebrow">
+                <span class="eyebrowDot"></span>
+                FINAL STEP
+            </span>
+
+            <h1>
+                Finish your Short
+            </h1>
+
+            <p>
+                Add details, choose visibility and publish your Short.
+            </p>
+
+        </div>
+
+
+        <div
+            class="statusBadge"
+            id="statusBadge"
+        >
+
+            <span class="statusDot"></span>
+
+            <span id="saveStatus">
+                Draft
+            </span>
+
+        </div>
+
+    </section>
+
+
+
+    <!-- =================================================
+         CONTENT GRID
+    ================================================== -->
+
+    <div class="detailsGrid">
 
 
         <!-- =================================================
-             TOP BAR
+             LEFT COLUMN
         ================================================== -->
 
-        <header class="topBar">
-
-            <button
-                type="button"
-                id="backBtn"
-                class="topIconButton"
-                aria-label="Back"
-            >
-                <i class="fa-solid fa-arrow-left"></i>
-            </button>
+        <div class="detailsLeft">
 
 
-            <div class="topTitle">
+            <!-- =================================================
+                 THUMBNAIL CARD
+            ================================================== -->
 
-                <strong>
-                    Edit Short
-                </strong>
+            <section class="settingsCard thumbnailCard">
 
-                <span>
-                    VIEWORA
-                </span>
+                <div class="cardHeader">
 
-            </div>
+                    <div>
 
-
-            <button
-                type="button"
-                id="previewBtn"
-                class="previewButton"
-            >
-
-                <i class="fa-regular fa-eye"></i>
-
-                Preview
-
-            </button>
-
-        </header>
-
-
-
-        <!-- =================================================
-             CONTENT
-        ================================================== -->
-
-        <section class="content">
-
-
-            <!-- =============================================
-                 SHORT PREVIEW
-            ============================================== -->
-
-            <section class="previewCard">
-
-                <div class="previewMedia">
-
-                    <video
-                        id="shortPreview"
-                        playsinline
-                        muted
-                        preload="metadata"
-                    ></video>
-
-
-                    <div
-                        id="previewFallback"
-                        class="previewFallback hidden"
-                    >
-
-                        <i class="fa-solid fa-video-slash"></i>
-
-                        <span>
-                            Preview unavailable
+                        <span class="cardEyebrow">
+                            COVER
                         </span>
 
-                    </div>
+                        <h2>
+                            Thumbnail
+                        </h2>
 
-
-                    <button
-                        type="button"
-                        id="previewPlayBtn"
-                        class="previewPlayButton"
-                        aria-label="Play preview"
-                    >
-
-                        <i class="fa-solid fa-play"></i>
-
-                    </button>
-
-
-                    <div class="previewDuration">
-
-                        <span id="previewDuration">
-                            00:00
-                        </span>
+                        <p>
+                            Choose the image viewers will see before your Short plays.
+                        </p>
 
                     </div>
 
                 </div>
 
 
-                <div class="previewInfo">
+                <div class="thumbnailEditor">
 
-                    <div class="previewInfoIcon">
 
-                        <i class="fa-solid fa-bolt"></i>
+                    <!-- THUMBNAIL -->
+
+                    <div
+                        id="thumbnailPreview"
+                        class="thumbnailPreview"
+                    >
+
+                        <video
+                            id="thumbnailVideo"
+                            playsinline
+                            muted
+                            preload="metadata"
+                        ></video>
+
+
+                        <img
+                            id="thumbnailImage"
+                            class="hidden"
+                            alt="Short thumbnail"
+                        >
+
+
+                        <div
+                            id="thumbnailPlaceholder"
+                            class="thumbnailPlaceholder"
+                        >
+
+                            <div class="placeholderIcon">
+
+                                <i class="fa-regular fa-image"></i>
+
+                            </div>
+
+                            <span>
+                                Thumbnail
+                            </span>
+
+                            <small>
+                                Choose a cover image
+                            </small>
+
+                        </div>
+
+
+                        <div class="thumbnailOverlay">
+
+                            <span>SHORT</span>
+
+                        </div>
+
+
+                        <div
+                            class="thumbnailShimmer"
+                            aria-hidden="true"
+                        ></div>
 
                     </div>
 
-                    <div>
 
-                        <strong>
-                            Your Short
-                        </strong>
 
-                        <span id="previewStatus">
-                            Ready to publish
-                        </span>
+                    <!-- ACTIONS -->
+
+                    <div class="thumbnailActions">
+
+                        <button
+                            type="button"
+                            id="changeThumbnailBtn"
+                            class="primarySmallButton"
+                        >
+
+                            <i class="fa-regular fa-image"></i>
+
+                            <span>
+                                Change thumbnail
+                            </span>
+
+                        </button>
+
+
+                        <button
+                            type="button"
+                            id="captureFrameBtn"
+                            class="secondarySmallButton"
+                        >
+
+                            <i class="fa-solid fa-film"></i>
+
+                            <span>
+                                Select video frame
+                            </span>
+
+                        </button>
 
                     </div>
 
@@ -209,122 +304,141 @@
 
 
 
-            <!-- =============================================
-                 TITLE
-            ============================================== -->
+            <!-- =================================================
+                 DETAILS CARD
+            ================================================== -->
 
-            <section class="formSection">
+            <section class="settingsCard">
 
-                <div class="sectionHeading">
+                <div class="cardHeader">
 
                     <div>
 
-                        <span class="sectionEyebrow">
+                        <span class="cardEyebrow">
                             DETAILS
                         </span>
 
                         <h2>
-                            Title
+                            Tell viewers about your Short
                         </h2>
+
+                        <p>
+                            Add a clear title and description so viewers know what your Short is about.
+                        </p>
 
                     </div>
 
-                    <span
-                        id="titleCount"
-                        class="counter"
-                    >
-                        0/100
-                    </span>
-
                 </div>
 
 
-                <div class="inputBox">
+                <!-- TITLE -->
 
-                    <input
-                        type="text"
-                        id="shortTitle"
-                        maxlength="100"
-                        autocomplete="off"
-                        placeholder="Add a title..."
-                    >
+                <div class="fieldGroup">
 
-                    <i class="fa-solid fa-pen"></i>
+                    <div class="fieldLabelRow">
 
-                </div>
+                        <label for="shortTitle">
+                            Title
+                        </label>
 
-            </section>
-
-
-
-            <!-- =============================================
-                 DESCRIPTION
-            ============================================== -->
-
-            <section class="formSection">
-
-                <div class="sectionHeading">
-
-                    <div>
-
-                        <span class="sectionEyebrow">
-                            STORY
+                        <span>
+                            <b id="titleCount">0</b>/100
                         </span>
 
-                        <h2>
-                            Description
-                        </h2>
+                    </div>
+
+
+                    <div class="inputShell">
+
+                        <input
+                            type="text"
+                            id="shortTitle"
+                            maxlength="100"
+                            placeholder="Add a title to your Short..."
+                            autocomplete="off"
+                        >
+
+                        <span class="inputGlow"></span>
 
                     </div>
 
-                    <span
-                        id="descriptionCount"
-                        class="counter"
-                    >
-                        0/5000
-                    </span>
+                </div>
+
+
+
+                <!-- DESCRIPTION -->
+
+                <div class="fieldGroup">
+
+                    <div class="fieldLabelRow">
+
+                        <label for="shortDescription">
+                            Description
+                        </label>
+
+                        <span>
+                            <b id="descriptionCount">0</b>/5000
+                        </span>
+
+                    </div>
+
+
+                    <div class="inputShell textareaShell">
+
+                        <textarea
+                            id="shortDescription"
+                            maxlength="5000"
+                            rows="7"
+                            placeholder="Tell viewers what your Short is about..."
+                        ></textarea>
+
+                        <span class="inputGlow"></span>
+
+                    </div>
 
                 </div>
 
 
-                <div class="textareaBox">
 
-                    <textarea
-                        id="shortDescription"
-                        maxlength="5000"
-                        rows="5"
-                        placeholder="Tell people about your Short..."
-                    ></textarea>
+                <!-- HASHTAGS -->
 
-                </div>
+                <div class="fieldGroup">
+
+                    <div class="fieldLabelRow">
+
+                        <label for="shortHashtags">
+                            Hashtags
+                        </label>
+
+                        <span>
+                            Optional
+                        </span>
+
+                    </div>
 
 
-                <div class="descriptionTools">
+                    <div class="inputShell">
 
-                    <button
-                        type="button"
-                        class="miniTool"
-                        id="addHashtagBtn"
-                    >
+                        <input
+                            type="text"
+                            id="shortHashtags"
+                            maxlength="500"
+                            placeholder="#shorts #viewora"
+                            autocomplete="off"
+                        >
+
+                        <span class="inputGlow"></span>
+
+                    </div>
+
+
+                    <small class="fieldHint">
 
                         <i class="fa-solid fa-hashtag"></i>
 
-                        Hashtag
+                        Add relevant hashtags to help people discover your Short.
 
-                    </button>
-
-
-                    <button
-                        type="button"
-                        class="miniTool"
-                        id="mentionBtn"
-                    >
-
-                        <i class="fa-solid fa-at"></i>
-
-                        Mention
-
-                    </button>
+                    </small>
 
                 </div>
 
@@ -332,113 +446,27 @@
 
 
 
-            <!-- =============================================
-                 TAGS
-            ============================================== -->
-
-            <section class="formSection">
-
-                <div class="sectionHeading">
-
-                    <div>
-
-                        <span class="sectionEyebrow">
-                            DISCOVERY
-                        </span>
-
-                        <h2>
-                            Tags
-                        </h2>
-
-                    </div>
-
-                </div>
-
-
-                <div class="tagsBox">
-
-                    <div
-                        id="selectedTags"
-                        class="selectedTags"
-                    ></div>
-
-
-                    <input
-                        type="text"
-                        id="tagInput"
-                        maxlength="30"
-                        autocomplete="off"
-                        placeholder="Add tags..."
-                    >
-
-                </div>
-
-
-                <p class="helperText">
-                    Add relevant tags to help people discover your Short.
-                </p>
-
-            </section>
-
-
-
-            <!-- =============================================
-                 COLLABORATION
-            ============================================== -->
+            <!-- =================================================
+                 VISIBILITY
+            ================================================== -->
 
             <section class="settingsCard">
 
-                <button
-                    type="button"
-                    id="collaborationBtn"
-                    class="settingItem"
-                >
-
-                    <span class="settingIcon">
-
-                        <i class="fa-solid fa-user-group"></i>
-
-                    </span>
-
-
-                    <span class="settingContent">
-
-                        <strong>
-                            Collaboration
-                        </strong>
-
-                        <small id="collaborationValue">
-                            Invite someone to collaborate
-                        </small>
-
-                    </span>
-
-
-                    <i class="fa-solid fa-chevron-right settingArrow"></i>
-
-                </button>
-
-            </section>
-
-
-
-            <!-- =============================================
-                 VISIBILITY
-            ============================================== -->
-
-            <section class="formSection">
-
-                <div class="sectionHeading">
+                <div class="cardHeader">
 
                     <div>
 
-                        <span class="sectionEyebrow">
-                            PRIVACY
+                        <span class="cardEyebrow">
+                            VISIBILITY
                         </span>
 
                         <h2>
-                            Visibility
+                            Who can watch this Short?
                         </h2>
+
+                        <p>
+                            Choose who can access your Short.
+                        </p>
 
                     </div>
 
@@ -448,77 +476,83 @@
                 <div class="visibilityOptions">
 
 
+                    <!-- PUBLIC -->
+
                     <button
                         type="button"
                         class="visibilityOption active"
                         data-visibility="public"
                     >
 
-                        <span class="visibilityIcon">
+                        <span class="visibilityIcon publicIcon">
 
                             <i class="fa-solid fa-earth-americas"></i>
 
                         </span>
 
 
-                        <span class="visibilityText">
+                        <span class="visibilityInfo">
 
                             <strong>
                                 Public
                             </strong>
 
                             <small>
-                                Anyone can watch this Short
+                                Anyone can watch your Short.
                             </small>
 
                         </span>
 
 
-                        <span class="radioCircle">
+                        <span class="selectionMark">
 
-                            <span></span>
+                            <i class="fa-solid fa-check"></i>
 
                         </span>
 
                     </button>
 
 
+
+                    <!-- UNLISTED -->
 
                     <button
                         type="button"
                         class="visibilityOption"
-                        data-visibility="followers"
+                        data-visibility="unlisted"
                     >
 
                         <span class="visibilityIcon">
 
-                            <i class="fa-solid fa-users"></i>
+                            <i class="fa-solid fa-link"></i>
 
                         </span>
 
 
-                        <span class="visibilityText">
+                        <span class="visibilityInfo">
 
                             <strong>
-                                Followers
+                                Unlisted
                             </strong>
 
                             <small>
-                                Only your followers can watch
+                                Only people with the link can watch.
                             </small>
 
                         </span>
 
 
-                        <span class="radioCircle">
+                        <span class="selectionMark">
 
-                            <span></span>
+                            <i class="fa-solid fa-check"></i>
 
                         </span>
 
                     </button>
 
 
+
+                    <!-- PRIVATE -->
 
                     <button
                         type="button"
@@ -533,22 +567,22 @@
                         </span>
 
 
-                        <span class="visibilityText">
+                        <span class="visibilityInfo">
 
                             <strong>
                                 Private
                             </strong>
 
                             <small>
-                                Only you can watch this Short
+                                Only you can watch this Short.
                             </small>
 
                         </span>
 
 
-                        <span class="radioCircle">
+                        <span class="selectionMark">
 
-                            <span></span>
+                            <i class="fa-solid fa-check"></i>
 
                         </span>
 
@@ -560,174 +594,142 @@
 
 
 
-            <!-- =============================================
-                 COVER
-            ============================================== -->
+            <!-- =================================================
+                 ENGAGEMENT
+            ================================================== -->
 
             <section class="settingsCard">
 
-                <button
-                    type="button"
-                    id="coverBtn"
-                    class="settingItem"
-                >
+                <div class="cardHeader">
 
-                    <span class="settingIcon">
+                    <div>
 
-                        <i class="fa-regular fa-image"></i>
+                        <span class="cardEyebrow">
+                            ENGAGEMENT
+                        </span>
 
-                    </span>
+                        <h2>
+                            Interaction settings
+                        </h2>
 
+                        <p>
+                            Control how viewers interact with your Short.
+                        </p>
 
-                    <span class="settingContent">
+                    </div>
 
-                        <strong>
-                            Cover
-                        </strong>
-
-                        <small id="coverValue">
-                            Choose a thumbnail for your Short
-                        </small>
-
-                    </span>
+                </div>
 
 
-                    <span
-                        id="coverPreview"
-                        class="coverMini hidden"
+                <div class="settingRows">
+
+
+                    <!-- LIKE -->
+
+                    <label class="settingRow">
+
+                        <span class="settingRowIcon likeIcon">
+
+                            <i class="fa-solid fa-heart"></i>
+
+                        </span>
+
+
+                        <span class="settingRowInfo">
+
+                            <strong>
+                                Show like count
+                            </strong>
+
+                            <small>
+                                Let viewers see how many likes your Short has.
+                            </small>
+
+                        </span>
+
+
+                        <input
+                            type="checkbox"
+                            id="showLikeCount"
+                            checked
+                        >
+
+                        <span class="switch"></span>
+
+                    </label>
+
+
+
+                    <!-- COMMENTS -->
+
+                    <label class="settingRow">
+
+                        <span class="settingRowIcon commentIcon">
+
+                            <i class="fa-solid fa-comment"></i>
+
+                        </span>
+
+
+                        <span class="settingRowInfo">
+
+                            <strong>
+                                Allow comments
+                            </strong>
+
+                            <small>
+                                Let viewers comment on your Short.
+                            </small>
+
+                        </span>
+
+
+                        <input
+                            type="checkbox"
+                            id="allowComments"
+                            checked
+                        >
+
+                        <span class="switch"></span>
+
+                    </label>
+
+
+
+                    <!-- COMMENT COUNT -->
+
+                    <label
+                        class="settingRow"
+                        id="commentCountSetting"
                     >
-                        <img
-                            id="coverImage"
-                            alt="Short cover"
-                        >
-                    </span>
+
+                        <span class="settingRowIcon">
+
+                            <i class="fa-solid fa-comments"></i>
+
+                        </span>
 
 
-                    <i class="fa-solid fa-chevron-right settingArrow"></i>
+                        <span class="settingRowInfo">
 
-                </button>
+                            <strong>
+                                Show comment count
+                            </strong>
 
-            </section>
+                            <small>
+                                Display the number of comments to viewers.
+                            </small>
 
+                        </span>
 
-
-            <!-- =============================================
-                 COMMENTS
-            ============================================== -->
-
-            <section class="settingsCard">
-
-                <div class="settingItem static">
-
-                    <span class="settingIcon">
-
-                        <i class="fa-regular fa-comment"></i>
-
-                    </span>
-
-
-                    <span class="settingContent">
-
-                        <strong>
-                            Allow comments
-                        </strong>
-
-                        <small>
-                            Let people comment on your Short
-                        </small>
-
-                    </span>
-
-
-                    <label class="toggle">
 
                         <input
                             type="checkbox"
-                            id="commentsToggle"
+                            id="showCommentCount"
                             checked
                         >
 
-                        <span class="toggleSlider"></span>
-
-                    </label>
-
-                </div>
-
-
-                <div class="settingDivider"></div>
-
-
-                <div class="settingItem static">
-
-                    <span class="settingIcon">
-
-                        <i class="fa-solid fa-share-nodes"></i>
-
-                    </span>
-
-
-                    <span class="settingContent">
-
-                        <strong>
-                            Allow sharing
-                        </strong>
-
-                        <small>
-                            Let people share your Short
-                        </small>
-
-                    </span>
-
-
-                    <label class="toggle">
-
-                        <input
-                            type="checkbox"
-                            id="sharingToggle"
-                            checked
-                        >
-
-                        <span class="toggleSlider"></span>
-
-                    </label>
-
-                </div>
-
-
-                <div class="settingDivider"></div>
-
-
-                <div class="settingItem static">
-
-                    <span class="settingIcon">
-
-                        <i class="fa-solid fa-repeat"></i>
-
-                    </span>
-
-
-                    <span class="settingContent">
-
-                        <strong>
-                            Allow remix
-                        </strong>
-
-                        <small>
-                            Let people remix this Short
-                        </small>
-
-                    </span>
-
-
-                    <label class="toggle">
-
-                        <input
-                            type="checkbox"
-                            id="remixToggle"
-                            checked
-                        >
-
-                        <span class="toggleSlider"></span>
+                        <span class="switch"></span>
 
                     </label>
 
@@ -737,29 +739,30 @@
 
 
 
-            <!-- =============================================
-                 ADVANCED
-            ============================================== -->
+            <!-- =================================================
+                 ADDITIONAL SETTINGS
+            ================================================== -->
 
-            <section class="settingsCard">
+            <section class="settingsCard additionalCard">
 
                 <button
                     type="button"
-                    id="advancedBtn"
-                    class="settingItem"
+                    id="additionalSettingsToggle"
+                    class="additionalHeader"
+                    aria-expanded="false"
                 >
 
-                    <span class="settingIcon">
+                    <span class="additionalIcon">
 
                         <i class="fa-solid fa-sliders"></i>
 
                     </span>
 
 
-                    <span class="settingContent">
+                    <span class="additionalHeaderText">
 
                         <strong>
-                            Advanced settings
+                            Additional settings
                         </strong>
 
                         <small>
@@ -769,32 +772,498 @@
                     </span>
 
 
-                    <i class="fa-solid fa-chevron-right settingArrow"></i>
+                    <span class="additionalChevronWrap">
+
+                        <i
+                            id="additionalChevron"
+                            class="fa-solid fa-chevron-down"
+                        ></i>
+
+                    </span>
 
                 </button>
+
+
+                <div
+                    id="additionalSettings"
+                    class="additionalSettings hidden"
+                >
+
+
+                    <!-- REMIX -->
+
+                    <label class="settingRow">
+
+                        <span class="settingRowIcon">
+
+                            <i class="fa-solid fa-repeat"></i>
+
+                        </span>
+
+
+                        <span class="settingRowInfo">
+
+                            <strong>
+                                Allow remixing
+                            </strong>
+
+                            <small>
+                                Allow other users to create with your Short.
+                            </small>
+
+                        </span>
+
+
+                        <input
+                            type="checkbox"
+                            id="allowRemix"
+                            checked
+                        >
+
+                        <span class="switch"></span>
+
+                    </label>
+
+
+
+                    <!-- DOWNLOAD -->
+
+                    <label class="settingRow">
+
+                        <span class="settingRowIcon">
+
+                            <i class="fa-solid fa-download"></i>
+
+                        </span>
+
+
+                        <span class="settingRowInfo">
+
+                            <strong>
+                                Allow downloads
+                            </strong>
+
+                            <small>
+                                Let viewers save your Short to their device.
+                            </small>
+
+                        </span>
+
+
+                        <input
+                            type="checkbox"
+                            id="allowDownload"
+                            checked
+                        >
+
+                        <span class="switch"></span>
+
+                    </label>
+
+
+
+                    <!-- SHARE -->
+
+                    <label class="settingRow">
+
+                        <span class="settingRowIcon">
+
+                            <i class="fa-solid fa-share-nodes"></i>
+
+                        </span>
+
+
+                        <span class="settingRowInfo">
+
+                            <strong>
+                                Allow sharing
+                            </strong>
+
+                            <small>
+                                Allow viewers to share your Short.
+                            </small>
+
+                        </span>
+
+
+                        <input
+                            type="checkbox"
+                            id="allowSharing"
+                            checked
+                        >
+
+                        <span class="switch"></span>
+
+                    </label>
+
+
+
+                    <!-- AUDIENCE -->
+
+                    <div class="selectSetting">
+
+                        <div>
+
+                            <strong>
+                                Audience
+                            </strong>
+
+                            <small>
+                                Choose the appropriate audience.
+                            </small>
+
+                        </div>
+
+
+                        <select id="audienceSetting">
+
+                            <option value="general">
+                                General audience
+                            </option>
+
+                            <option value="teen">
+                                Teen-friendly
+                            </option>
+
+                        </select>
+
+                    </div>
+
+
+
+                    <!-- LANGUAGE -->
+
+                    <div class="selectSetting">
+
+                        <div>
+
+                            <strong>
+                                Video language
+                            </strong>
+
+                            <small>
+                                Help Viewora understand your content.
+                            </small>
+
+                        </div>
+
+
+                        <select id="languageSetting">
+
+                            <option value="auto">
+                                Auto detect
+                            </option>
+
+                            <option value="english">
+                                English
+                            </option>
+
+                            <option value="hindi">
+                                Hindi
+                            </option>
+
+                            <option value="hinglish">
+                                Hinglish
+                            </option>
+
+                            <option value="other">
+                                Other
+                            </option>
+
+                        </select>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+        </div>
+
+
+
+        <!-- =================================================
+             RIGHT COLUMN
+        ================================================== -->
+
+        <aside class="detailsRight">
+
+
+            <!-- =================================================
+                 PREVIEW CARD
+            ================================================== -->
+
+            <section class="previewCard">
+
+                <div class="previewCardHeader">
+
+                    <div>
+
+                        <span>
+                            PREVIEW
+                        </span>
+
+                        <strong>
+                            How it looks
+                        </strong>
+
+                    </div>
+
+
+                    <button
+                        type="button"
+                        id="fullscreenPreviewBtn"
+                        class="miniIconButton"
+                        aria-label="Open preview"
+                    >
+
+                        <i class="fa-solid fa-expand"></i>
+
+                    </button>
+
+                </div>
+
+
+                <!-- PHONE -->
+
+                <div class="phonePreview">
+
+                    <div class="phoneNotch"></div>
+
+
+                    <video
+                        id="previewVideo"
+                        playsinline
+                        muted
+                        loop
+                        preload="metadata"
+                    ></video>
+
+
+                    <div
+                        id="previewFilter"
+                        class="previewFilter"
+                    ></div>
+
+
+                    <div class="previewGradient"></div>
+
+
+                    <!-- TOP -->
+
+                    <div class="previewTop">
+
+                        <span>
+                            Shorts
+                        </span>
+
+                        <i class="fa-solid fa-ellipsis-vertical"></i>
+
+                    </div>
+
+
+                    <!-- SIDE ACTIONS -->
+
+                    <div class="previewSideActions">
+
+
+                        <div>
+
+                            <i class="fa-solid fa-heart"></i>
+
+                            <span id="previewLikes">
+                                0
+                            </span>
+
+                        </div>
+
+
+                        <div id="previewCommentAction">
+
+                            <i class="fa-solid fa-comment"></i>
+
+                            <span id="previewComments">
+                                0
+                            </span>
+
+                        </div>
+
+
+                        <div>
+
+                            <i class="fa-solid fa-share"></i>
+
+                            <span>
+                                Share
+                            </span>
+
+                        </div>
+
+
+                        <div>
+
+                            <i class="fa-regular fa-bookmark"></i>
+
+                            <span>
+                                Save
+                            </span>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- BOTTOM -->
+
+                    <div class="previewBottomContent">
+
+
+                        <div class="previewCreator">
+
+                            <div class="creatorAvatar">
+
+                                <img
+                                    id="previewAvatar"
+                                    src="assets/logo.png"
+                                    alt=""
+                                >
+
+                            </div>
+
+
+                            <strong id="previewUsername">
+                                @you
+                            </strong>
+
+                        </div>
+
+
+                        <h3 id="previewTitle">
+                            Your Short title
+                        </h3>
+
+
+                        <p id="previewDescription">
+                            Your description will appear here.
+                        </p>
+
+
+                        <div
+                            id="previewMusic"
+                            class="previewMusic"
+                        >
+
+                            <i class="fa-solid fa-music"></i>
+
+                            <span>
+                                Original audio
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                </div>
 
             </section>
 
 
 
-            <!-- =============================================
-                 SAVE / POST
-            ============================================== -->
+            <!-- =================================================
+                 PUBLISH CARD
+            ================================================== -->
 
-            <section class="publishSection">
+            <section class="publishCard">
 
-                <button
-                    type="button"
-                    id="saveDraftBtn"
-                    class="draftButton"
-                >
+                <div class="publishHeader">
 
-                    <i class="fa-regular fa-bookmark"></i>
+                    <div class="publishIcon">
 
-                    Save Draft
+                        <i class="fa-solid fa-rocket"></i>
 
-                </button>
+                    </div>
 
+
+                    <div>
+
+                        <strong>
+                            Ready to publish?
+                        </strong>
+
+                        <span id="publishSummary">
+                            Your Short will be public.
+                        </span>
+
+                    </div>
+
+                </div>
+
+
+                <!-- CHECKLIST -->
+
+                <div class="publishChecklist">
+
+
+                    <div
+                        id="checkVideo"
+                        class="checkItem"
+                    >
+
+                        <span class="checkIcon">
+
+                            <i class="fa-solid fa-circle-check"></i>
+
+                        </span>
+
+                        <span>
+                            Video ready
+                        </span>
+
+                    </div>
+
+
+
+                    <div
+                        id="checkTitle"
+                        class="checkItem"
+                    >
+
+                        <span class="checkIcon">
+
+                            <i class="fa-solid fa-circle-check"></i>
+
+                        </span>
+
+                        <span>
+                            Title added
+                        </span>
+
+                    </div>
+
+
+
+                    <div
+                        id="checkVisibility"
+                        class="checkItem"
+                    >
+
+                        <span class="checkIcon">
+
+                            <i class="fa-solid fa-circle-check"></i>
+
+                        </span>
+
+                        <span>
+                            Visibility selected
+                        </span>
+
+                    </div>
+
+                </div>
+
+
+
+                <!-- PUBLISH -->
 
                 <button
                     type="button"
@@ -802,460 +1271,219 @@
                     class="publishButton"
                 >
 
-                    <span id="publishButtonText">
-                        Post Short
+                    <span>
+
+                        <small>
+                            PUBLISH
+                        </small>
+
+                        <strong>
+                            Publish Short
+                        </strong>
+
                     </span>
 
-                    <i class="fa-solid fa-arrow-up"></i>
+
+                    <span class="publishArrow">
+
+                        <i class="fa-solid fa-arrow-right"></i>
+
+                    </span>
+
+                </button>
+
+
+
+                <!-- DRAFT -->
+
+                <button
+                    type="button"
+                    id="saveDraftBtn"
+                    class="draftButton"
+                >
+
+                    <i class="fa-regular fa-floppy-disk"></i>
+
+                    Save as draft
 
                 </button>
 
             </section>
 
-
-            <p class="publishNote">
-
-                By posting, your Short will be published according
-                to your selected visibility settings.
-
-            </p>
-
-
-        </section>
-
-    </main>
-
-
-
-    <!-- =====================================================
-         COLLABORATION SHEET
-    ====================================================== -->
-
-    <div
-        id="collaborationSheet"
-        class="overlay hidden"
-    >
-
-        <div class="overlayBackdrop"></div>
-
-
-        <section class="bottomSheet">
-
-            <div class="sheetHandle"></div>
-
-
-            <header class="sheetHeader">
-
-                <div>
-
-                    <span class="sectionEyebrow">
-                        VIEWORA
-                    </span>
-
-                    <h2>
-                        Collaboration
-                    </h2>
-
-                    <p>
-                        Invite another creator to collaborate.
-                    </p>
-
-                </div>
-
-
-                <button
-                    type="button"
-                    id="closeCollaborationBtn"
-                    class="sheetCloseButton"
-                >
-
-                    <i class="fa-solid fa-xmark"></i>
-
-                </button>
-
-            </header>
-
-
-            <div class="searchBox">
-
-                <i class="fa-solid fa-magnifying-glass"></i>
-
-                <input
-                    type="search"
-                    id="collaborationSearch"
-                    placeholder="Search users..."
-                    autocomplete="off"
-                >
-
-            </div>
-
-
-            <div
-                id="collaborationList"
-                class="userList"
-            >
-
-                <div class="emptyState">
-
-                    <i class="fa-solid fa-user-plus"></i>
-
-                    <strong>
-                        Add a collaborator
-                    </strong>
-
-                    <span>
-                        Search for a Viewora user.
-                    </span>
-
-                </div>
-
-            </div>
-
-        </section>
+        </aside>
 
     </div>
 
+</main>
 
 
-    <!-- =====================================================
-         COVER SHEET
-    ====================================================== -->
+
+<!-- =========================================================
+     THUMBNAIL INPUT
+========================================================== -->
+
+<input
+    type="file"
+    id="thumbnailInput"
+    accept="image/*"
+    hidden
+>
+
+
+
+<!-- =========================================================
+     FRAME SELECTOR
+========================================================== -->
+
+<div
+    id="frameSelector"
+    class="overlay hidden"
+>
 
     <div
-        id="coverSheet"
-        class="overlay hidden"
-    >
-
-        <div class="overlayBackdrop"></div>
+        class="overlayBackdrop"
+        data-close-overlay="frameSelector"
+    ></div>
 
 
-        <section class="bottomSheet">
+    <section class="frameSheet">
 
-            <div class="sheetHandle"></div>
-
-
-            <header class="sheetHeader">
-
-                <div>
-
-                    <span class="sectionEyebrow">
-                        VIEWORA
-                    </span>
-
-                    <h2>
-                        Short Cover
-                    </h2>
-
-                    <p>
-                        Select the thumbnail people will see.
-                    </p>
-
-                </div>
+        <div class="sheetHandle"></div>
 
 
-                <button
-                    type="button"
-                    id="closeCoverBtn"
-                    class="sheetCloseButton"
-                >
+        <header class="sheetHeader">
 
-                    <i class="fa-solid fa-xmark"></i>
+            <div>
 
-                </button>
+                <span class="eyebrow">
+                    THUMBNAIL
+                </span>
 
-            </header>
+                <h2>
+                    Select video frame
+                </h2>
+
+                <p>
+                    Choose a frame from your Short.
+                </p>
+
+            </div>
 
 
             <button
                 type="button"
-                id="useCurrentFrameBtn"
-                class="sheetOption"
+                id="closeFrameSelectorBtn"
+                class="sheetClose"
+                aria-label="Close"
             >
 
-                <span class="sheetOptionIcon">
-
-                    <i class="fa-solid fa-camera"></i>
-
-                </span>
-
-
-                <span>
-
-                    <strong>
-                        Use current frame
-                    </strong>
-
-                    <small>
-                        Use the current video frame
-                    </small>
-
-                </span>
-
-
-                <i class="fa-solid fa-chevron-right"></i>
+                <i class="fa-solid fa-xmark"></i>
 
             </button>
 
+        </header>
 
-            <button
-                type="button"
-                id="chooseCoverBtn"
-                class="sheetOption"
-            >
 
-                <span class="sheetOptionIcon">
+        <div class="framePreview">
 
-                    <i class="fa-regular fa-image"></i>
-
-                </span>
-
-
-                <span>
-
-                    <strong>
-                        Choose from gallery
-                    </strong>
-
-                    <small>
-                        Select an image from your device
-                    </small>
-
-                </span>
-
-
-                <i class="fa-solid fa-chevron-right"></i>
-
-            </button>
-
-        </section>
-
-    </div>
-
-
-
-    <!-- =====================================================
-         ADVANCED SHEET
-    ====================================================== -->
-
-    <div
-        id="advancedSheet"
-        class="overlay hidden"
-    >
-
-        <div class="overlayBackdrop"></div>
-
-
-        <section class="bottomSheet">
-
-            <div class="sheetHandle"></div>
-
-
-            <header class="sheetHeader">
-
-                <div>
-
-                    <span class="sectionEyebrow">
-                        ADVANCED
-                    </span>
-
-                    <h2>
-                        Advanced settings
-                    </h2>
-
-                    <p>
-                        Control additional publishing options.
-                    </p>
-
-                </div>
-
-
-                <button
-                    type="button"
-                    id="closeAdvancedBtn"
-                    class="sheetCloseButton"
-                >
-
-                    <i class="fa-solid fa-xmark"></i>
-
-                </button>
-
-            </header>
-
-
-            <div class="advancedRow">
-
-                <div>
-
-                    <strong>
-                        Show like count
-                    </strong>
-
-                    <small>
-                        Let viewers see the number of likes.
-                    </small>
-
-                </div>
-
-
-                <label class="toggle">
-
-                    <input
-                        type="checkbox"
-                        id="likeCountToggle"
-                        checked
-                    >
-
-                    <span class="toggleSlider"></span>
-
-                </label>
-
-            </div>
-
-
-            <div class="advancedRow">
-
-                <div>
-
-                    <strong>
-                        Show view count
-                    </strong>
-
-                    <small>
-                        Let viewers see Short views.
-                    </small>
-
-                </div>
-
-
-                <label class="toggle">
-
-                    <input
-                        type="checkbox"
-                        id="viewCountToggle"
-                        checked
-                    >
-
-                    <span class="toggleSlider"></span>
-
-                </label>
-
-            </div>
-
-
-            <div class="advancedRow">
-
-                <div>
-
-                    <strong>
-                        Save to profile
-                    </strong>
-
-                    <small>
-                        Keep this Short visible on your profile.
-                    </small>
-
-                </div>
-
-
-                <label class="toggle">
-
-                    <input
-                        type="checkbox"
-                        id="profileToggle"
-                        checked
-                    >
-
-                    <span class="toggleSlider"></span>
-
-                </label>
-
-            </div>
-
-        </section>
-
-    </div>
-
-
-
-    <!-- =====================================================
-         COVER FILE INPUT
-    ====================================================== -->
-
-    <input
-        type="file"
-        id="coverInput"
-        accept="image/jpeg,image/png,image/webp"
-        hidden
-    >
-
-
-
-    <!-- =====================================================
-         PUBLISH PROCESSING
-    ====================================================== -->
-
-    <div
-        id="processingOverlay"
-        class="processingOverlay hidden"
-    >
-
-        <div class="processingOrb">
-
-            <div class="processingSpinner"></div>
-
-            <i class="fa-solid fa-cloud-arrow-up"></i>
+            <video
+                id="frameVideo"
+                playsinline
+                muted
+                preload="metadata"
+            ></video>
 
         </div>
 
 
-        <h2 id="processingTitle">
-            Publishing your Short
-        </h2>
+        <div class="frameTimeline">
+
+            <input
+                type="range"
+                id="frameRange"
+                min="0"
+                max="100"
+                value="0"
+            >
 
 
-        <p id="processingText">
-            Preparing your Short...
-        </p>
+            <div class="frameTime">
 
+                <span id="frameCurrentTime">
+                    00:00
+                </span>
 
-        <div class="processingProgress">
+                <span id="frameDuration">
+                    00:00
+                </span>
 
-            <span></span>
+            </div>
 
         </div>
 
-    </div>
+
+        <button
+            type="button"
+            id="useFrameBtn"
+            class="widePrimaryButton"
+        >
+
+            <i class="fa-solid fa-check"></i>
+
+            Use this frame
+
+        </button>
+
+    </section>
+
+</div>
 
 
 
-    <!-- =====================================================
-         TOAST
-    ====================================================== -->
+<!-- =========================================================
+     FULL PREVIEW
+========================================================== -->
 
-    <div
-        id="toast"
-        class="toast hidden"
+<div
+    id="previewOverlay"
+    class="previewOverlay hidden"
+>
+
+    <button
+        type="button"
+        id="closePreviewOverlayBtn"
+        class="previewCloseButton"
+        aria-label="Close preview"
     >
 
-        <span class="toastIcon">
+        <i class="fa-solid fa-xmark"></i>
 
-            <i
-                id="toastIconElement"
-                class="fa-solid fa-circle-check"
-            ></i>
-
-        </span>
+    </button>
 
 
-        <div>
+    <div class="fullPreviewPhone">
 
-            <strong id="toastTitle">
-                Done
+        <video
+            id="fullPreviewVideo"
+            playsinline
+            controls
+            loop
+            preload="metadata"
+        ></video>
+
+
+        <div class="fullPreviewGradient"></div>
+
+
+        <div class="fullPreviewContent">
+
+            <strong id="fullPreviewTitle">
+                Your Short title
             </strong>
 
-            <p id="toastText">
-                Your changes have been saved.
-            </p>
+            <span id="fullPreviewDescription">
+                Your description
+            </span>
 
         </div>
 
@@ -1266,49 +1494,150 @@
 
 
 <!-- =========================================================
-     FIREBASE SDK
-========================================================= -->
+     PUBLISH CONFIRMATION
+========================================================== -->
 
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<div
+    id="publishDialog"
+    class="dialogOverlay hidden"
+>
 
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+    <div class="confirmDialog">
 
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+        <div class="dialogIcon publishDialogIcon">
 
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
+            <i class="fa-solid fa-rocket"></i>
+
+        </div>
+
+
+        <span class="dialogEyebrow">
+            VIEWORA
+        </span>
+
+
+        <h2>
+            Publish your Short?
+        </h2>
+
+
+        <p id="publishDialogText">
+            Your Short will be published with the selected settings.
+        </p>
+
+
+        <div class="dialogActions">
+
+            <button
+                type="button"
+                id="cancelPublishBtn"
+            >
+                Keep editing
+            </button>
+
+
+            <button
+                type="button"
+                id="confirmPublishBtn"
+                class="confirmPublishButton"
+            >
+
+                <i class="fa-solid fa-rocket"></i>
+
+                Publish
+
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
 
 
 
 <!-- =========================================================
+     PROCESSING
+========================================================== -->
+
+<div
+    id="processingOverlay"
+    class="processingOverlay hidden"
+    aria-live="polite"
+    aria-busy="true"
+>
+
+    <div class="processingCard">
+
+        <div class="processingOrb">
+
+            <div class="processingSpinner"></div>
+
+            <i class="fa-solid fa-wand-magic-sparkles"></i>
+
+        </div>
+
+
+        <strong id="processingTitle">
+            Publishing your Short
+        </strong>
+
+
+        <span id="processingMessage">
+            Preparing your content...
+        </span>
+
+
+        <div class="processingProgress">
+
+            <span id="processingProgressBar"></span>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+
+<!-- =========================================================
+     TOAST
+========================================================== -->
+
+<div
+    id="toast"
+    class="toast hidden"
+    role="status"
+    aria-live="polite"
+>
+
+    <span id="toastIcon">
+
+        <i class="fa-solid fa-circle-check"></i>
+
+    </span>
+
+
+    <div>
+
+        <strong id="toastTitle">
+            Done
+        </strong>
+
+
+        <p id="toastText">
+            Changes saved successfully.
+        </p>
+
+    </div>
+
+</div>
+
+</div><!-- =========================================================
+     FIREBASE
+========================================================= --><script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script><!-- =========================================================
      VIEWORA CORE
-========================================================= -->
-
-<script src="firebase.js"></script>
-
-
-
-<!-- =========================================================
-     CLOUDINARY
-========================================================= -->
-
-<script src="cloudinary.js"></script>
-
-
-
-<!-- =========================================================
-     CALL LISTENER
-========================================================= -->
-
-<script src="call-listener.js"></script>
-
-
-
-<!-- =========================================================
-     SHORT EDIT LOGIC
-========================================================= -->
-
-<script src="short-edit.js"></script>
-
-
-</body>
+========================================================= --><script src="firebase.js"></script><script src="call-listener.js"></script><!-- =========================================================
+     SHORT DETAILS ENGINE
+========================================================= --><script src="short-edit.js"></script></body>
 </html>

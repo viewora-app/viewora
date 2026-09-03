@@ -1,0 +1,1794 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width,
+                 initial-scale=1.0,
+                 maximum-scale=1.0,
+                 user-scalable=no,
+                 viewport-fit=cover"
+    >
+
+    <meta name="theme-color" content="#050507">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+
+    <title>Viewora • Search</title>
+
+    <!-- =====================================================
+         GOOGLE FONT
+    ====================================================== -->
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet"
+    >
+
+    <!-- =====================================================
+         ICONS
+    ====================================================== -->
+
+    <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+    >
+
+    <!-- =====================================================
+         SEARCH PAGE CSS
+    ====================================================== -->
+
+    <style>
+
+        /* =================================================
+           ROOT
+        ================================================= */
+
+        :root {
+
+            --bg: #050507;
+            --surface: #0d0d10;
+            --surface-2: #121216;
+            --surface-3: #18181d;
+
+            --border: rgba(255,255,255,.08);
+            --border-strong: rgba(255,255,255,.13);
+
+            --text: #ffffff;
+            --muted: rgba(255,255,255,.55);
+            --muted-2: rgba(255,255,255,.38);
+
+            --accent: #ffffff;
+
+            --nav-height: 68px;
+
+            --radius: 18px;
+
+            --safe-top: env(safe-area-inset-top);
+            --safe-bottom: env(safe-area-inset-bottom);
+        }
+
+
+        /* =================================================
+           RESET
+        ================================================= */
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        html {
+            width: 100%;
+            min-height: 100%;
+            background: var(--bg);
+            color-scheme: dark;
+        }
+
+        body {
+
+            width: 100%;
+            min-height: 100vh;
+
+            background:
+                radial-gradient(
+                    circle at 50% -10%,
+                    rgba(255,255,255,.055),
+                    transparent 38%
+                ),
+                var(--bg);
+
+            color: var(--text);
+
+            font-family: "Inter", sans-serif;
+
+            overflow-x: hidden;
+
+            padding-top: var(--safe-top);
+            padding-bottom: calc(
+                var(--nav-height) +
+                var(--safe-bottom)
+            );
+        }
+
+        button,
+        input {
+            font: inherit;
+        }
+
+        button {
+            border: 0;
+            background: none;
+            color: inherit;
+        }
+
+        a {
+            color: inherit;
+            text-decoration: none;
+        }
+
+
+        /* =================================================
+           PAGE
+        ================================================= */
+
+        .searchPage {
+
+            width: 100%;
+            max-width: 720px;
+
+            min-height: 100vh;
+
+            margin: 0 auto;
+        }
+
+
+        /* =================================================
+           HEADER
+        ================================================= */
+
+        .searchHeader {
+
+            position: sticky;
+            top: 0;
+            z-index: 100;
+
+            padding:
+                12px
+                14px
+                10px;
+
+            background:
+                rgba(5,5,7,.86);
+
+            backdrop-filter: blur(22px);
+            -webkit-backdrop-filter: blur(22px);
+
+            border-bottom: 1px solid var(--border);
+        }
+
+
+        /* =================================================
+           SEARCH BOX
+        ================================================= */
+
+        .searchBox {
+
+            width: 100%;
+            height: 50px;
+
+            display: flex;
+            align-items: center;
+
+            gap: 11px;
+
+            padding: 0 15px;
+
+            border-radius: 16px;
+
+            background:
+                linear-gradient(
+                    145deg,
+                    rgba(255,255,255,.075),
+                    rgba(255,255,255,.035)
+                );
+
+            border: 1px solid var(--border);
+
+            transition:
+                border-color .2s ease,
+                background .2s ease,
+                box-shadow .2s ease;
+        }
+
+        .searchBox:focus-within {
+
+            border-color:
+                rgba(255,255,255,.18);
+
+            background:
+                rgba(255,255,255,.065);
+
+            box-shadow:
+                0 0 0 4px
+                rgba(255,255,255,.025);
+        }
+
+        .searchIcon {
+
+            width: 20px;
+
+            flex: 0 0 20px;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            color: var(--muted);
+
+            font-size: 17px;
+        }
+
+        .searchInput {
+
+            width: 100%;
+            height: 100%;
+
+            outline: none;
+            border: 0;
+
+            background: transparent;
+
+            color: var(--text);
+
+            font-size: 15px;
+            font-weight: 500;
+        }
+
+        .searchInput::placeholder {
+            color: var(--muted-2);
+        }
+
+
+        /* =================================================
+           CLEAR BUTTON
+        ================================================= */
+
+        .clearSearch {
+
+            width: 30px;
+            height: 30px;
+
+            flex: 0 0 30px;
+
+            display: none;
+
+            align-items: center;
+            justify-content: center;
+
+            border-radius: 50%;
+
+            background:
+                rgba(255,255,255,.10);
+
+            color:
+                rgba(255,255,255,.7);
+
+            font-size: 12px;
+
+            cursor: pointer;
+        }
+
+        .clearSearch.visible {
+            display: flex;
+        }
+
+
+        /* =================================================
+           CONTENT
+        ================================================= */
+
+        .searchContent {
+
+            padding: 20px 14px 30px;
+        }
+
+
+        /* =================================================
+           SECTION HEADER
+        ================================================= */
+
+        .sectionHeader {
+
+            display: flex;
+
+            align-items: center;
+            justify-content: space-between;
+
+            margin-bottom: 13px;
+        }
+
+        .sectionTitle {
+
+            font-size: 14px;
+
+            font-weight: 700;
+
+            letter-spacing: -.2px;
+        }
+
+        .sectionAction {
+
+            font-size: 12px;
+
+            font-weight: 600;
+
+            color: var(--muted);
+
+            cursor: pointer;
+        }
+
+        .sectionAction:active {
+            opacity: .6;
+        }
+
+
+        /* =================================================
+           RECENT SEARCHES
+        ================================================= */
+
+        .recentList {
+
+            display: flex;
+
+            flex-direction: column;
+
+            gap: 4px;
+        }
+
+        .recentItem {
+
+            width: 100%;
+
+            min-height: 62px;
+
+            display: flex;
+
+            align-items: center;
+
+            gap: 12px;
+
+            padding: 8px 6px;
+
+            border-radius: 15px;
+
+            transition:
+                background .18s ease;
+        }
+
+        .recentItem:active {
+            background:
+                rgba(255,255,255,.045);
+        }
+
+
+        /* =================================================
+           RECENT ICON
+        ================================================= */
+
+        .recentIcon {
+
+            width: 44px;
+            height: 44px;
+
+            flex: 0 0 44px;
+
+            display: flex;
+
+            align-items: center;
+            justify-content: center;
+
+            border-radius: 50%;
+
+            background:
+                rgba(255,255,255,.065);
+
+            border: 1px solid var(--border);
+
+            color: var(--muted);
+
+            font-size: 15px;
+        }
+
+
+        /* =================================================
+           RECENT TEXT
+        ================================================= */
+
+        .recentInfo {
+
+            flex: 1;
+
+            min-width: 0;
+        }
+
+        .recentQuery {
+
+            font-size: 14px;
+
+            font-weight: 600;
+
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .recentMeta {
+
+            margin-top: 3px;
+
+            font-size: 11px;
+
+            color: var(--muted);
+        }
+
+
+        /* =================================================
+           REMOVE RECENT
+        ================================================= */
+
+        .removeRecent {
+
+            width: 34px;
+            height: 34px;
+
+            display: flex;
+
+            align-items: center;
+            justify-content: center;
+
+            border-radius: 50%;
+
+            color:
+                rgba(255,255,255,.38);
+
+            font-size: 13px;
+        }
+
+
+        /* =================================================
+           SEARCH RESULTS
+        ================================================= */
+
+        .resultsSection {
+            display: none;
+        }
+
+        .resultsSection.active {
+            display: block;
+        }
+
+
+        /* =================================================
+           RESULT COUNT
+        ================================================= */
+
+        .resultCount {
+
+            margin-bottom: 13px;
+
+            font-size: 12px;
+
+            color: var(--muted);
+        }
+
+
+        /* =================================================
+           USER RESULT
+        ================================================= */
+
+        .userResults {
+
+            display: flex;
+
+            flex-direction: column;
+
+            gap: 4px;
+        }
+
+        .userResult {
+
+            width: 100%;
+
+            min-height: 70px;
+
+            display: flex;
+
+            align-items: center;
+
+            gap: 12px;
+
+            padding: 9px 6px;
+
+            border-radius: 16px;
+        }
+
+        .userResult:active {
+
+            background:
+                rgba(255,255,255,.045);
+        }
+
+
+        /* =================================================
+           AVATAR
+        ================================================= */
+
+        .avatar {
+
+            width: 52px;
+            height: 52px;
+
+            flex: 0 0 52px;
+
+            border-radius: 50%;
+
+            overflow: hidden;
+
+            background:
+                linear-gradient(
+                    135deg,
+                    #222,
+                    #111
+                );
+
+            border:
+                1px solid
+                rgba(255,255,255,.10);
+        }
+
+        .avatar img {
+
+            width: 100%;
+            height: 100%;
+
+            display: block;
+
+            object-fit: cover;
+        }
+
+
+        /* =================================================
+           USER INFO
+        ================================================= */
+
+        .userInfo {
+
+            min-width: 0;
+            flex: 1;
+        }
+
+        .userNameRow {
+
+            display: flex;
+
+            align-items: center;
+
+            gap: 5px;
+        }
+
+        .userName {
+
+            max-width: 100%;
+
+            font-size: 14px;
+
+            font-weight: 700;
+
+            white-space: nowrap;
+
+            overflow: hidden;
+
+            text-overflow: ellipsis;
+        }
+
+        .verified {
+
+            width: 15px;
+            height: 15px;
+
+            display: inline-flex;
+
+            align-items: center;
+            justify-content: center;
+
+            flex: 0 0 15px;
+
+            border-radius: 50%;
+
+            background: #fff;
+
+            color: #000;
+
+            font-size: 8px;
+        }
+
+        .username {
+
+            margin-top: 3px;
+
+            font-size: 12px;
+
+            color: var(--muted);
+
+            white-space: nowrap;
+
+            overflow: hidden;
+
+            text-overflow: ellipsis;
+        }
+
+        .followText {
+
+            margin-top: 3px;
+
+            font-size: 10px;
+
+            color: var(--muted-2);
+        }
+
+
+        /* =================================================
+           FOLLOW BUTTON
+        ================================================= */
+
+        .followBtn {
+
+            min-width: 78px;
+
+            height: 34px;
+
+            padding: 0 13px;
+
+            border-radius: 11px;
+
+            background: #fff;
+
+            color: #000;
+
+            font-size: 11px;
+
+            font-weight: 700;
+        }
+
+        .followBtn.following {
+
+            background:
+                rgba(255,255,255,.08);
+
+            color: #fff;
+
+            border:
+                1px solid
+                var(--border-strong);
+        }
+
+
+        /* =================================================
+           EMPTY STATE
+        ================================================= */
+
+        .emptyState {
+
+            min-height: 55vh;
+
+            display: none;
+
+            flex-direction: column;
+
+            align-items: center;
+
+            justify-content: center;
+
+            text-align: center;
+
+            padding: 30px;
+        }
+
+        .emptyState.active {
+            display: flex;
+        }
+
+        .emptyIcon {
+
+            width: 72px;
+            height: 72px;
+
+            display: flex;
+
+            align-items: center;
+            justify-content: center;
+
+            border-radius: 24px;
+
+            background:
+                rgba(255,255,255,.055);
+
+            border:
+                1px solid var(--border);
+
+            color:
+                rgba(255,255,255,.55);
+
+            font-size: 25px;
+
+            margin-bottom: 18px;
+        }
+
+        .emptyTitle {
+
+            font-size: 16px;
+
+            font-weight: 700;
+
+            margin-bottom: 7px;
+        }
+
+        .emptyText {
+
+            max-width: 270px;
+
+            font-size: 12px;
+
+            line-height: 1.6;
+
+            color: var(--muted);
+        }
+
+
+        /* =================================================
+           TRENDING
+        ================================================= */
+
+        .trendingSection {
+            margin-top: 28px;
+        }
+
+        .trendGrid {
+
+            display: grid;
+
+            grid-template-columns:
+                repeat(2, minmax(0, 1fr));
+
+            gap: 9px;
+        }
+
+        .trendCard {
+
+            min-height: 82px;
+
+            padding: 13px;
+
+            display: flex;
+
+            flex-direction: column;
+
+            justify-content: space-between;
+
+            border-radius: 17px;
+
+            background:
+                linear-gradient(
+                    145deg,
+                    rgba(255,255,255,.065),
+                    rgba(255,255,255,.025)
+                );
+
+            border:
+                1px solid var(--border);
+        }
+
+        .trendNumber {
+
+            font-size: 10px;
+
+            color: var(--muted-2);
+        }
+
+        .trendName {
+
+            margin-top: 5px;
+
+            font-size: 13px;
+
+            font-weight: 700;
+        }
+
+        .trendMeta {
+
+            margin-top: 4px;
+
+            font-size: 10px;
+
+            color: var(--muted);
+        }
+
+
+        /* =================================================
+           BOTTOM NAVIGATION
+        ================================================= */
+
+        .bottomNav {
+
+            position: fixed;
+
+            left: 0;
+            right: 0;
+            bottom: 0;
+
+            z-index: 500;
+
+            height:
+                calc(
+                    var(--nav-height) +
+                    var(--safe-bottom)
+                );
+
+            padding-bottom:
+                var(--safe-bottom);
+
+            display: flex;
+
+            align-items: center;
+            justify-content: space-around;
+
+            background:
+                rgba(5,5,7,.92);
+
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+
+            border-top:
+                1px solid var(--border);
+        }
+
+        .bottomNav a {
+
+            width: 20%;
+
+            height: 100%;
+
+            display: flex;
+
+            flex-direction: column;
+
+            align-items: center;
+            justify-content: center;
+
+            gap: 5px;
+
+            color:
+                rgba(255,255,255,.42);
+
+            font-size: 18px;
+
+            transition:
+                color .18s ease,
+                transform .18s ease;
+        }
+
+        .bottomNav a span {
+
+            font-size: 9px;
+
+            font-weight: 600;
+        }
+
+        .bottomNav a.active {
+
+            color: #fff;
+        }
+
+        .bottomNav a:active {
+
+            transform: scale(.9);
+        }
+
+
+        /* =================================================
+           RESPONSIVE
+        ================================================= */
+
+        @media (min-width: 700px) {
+
+            body {
+                background:
+                    #030304;
+            }
+
+            .searchPage {
+
+                border-left:
+                    1px solid var(--border);
+
+                border-right:
+                    1px solid var(--border);
+
+                background:
+                    rgba(255,255,255,.008);
+            }
+
+            .bottomNav {
+
+                max-width: 720px;
+
+                left: 50%;
+
+                right: auto;
+
+                width: 100%;
+
+                transform:
+                    translateX(-50%);
+
+                border-left:
+                    1px solid var(--border);
+
+                border-right:
+                    1px solid var(--border);
+            }
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+    <!-- =====================================================
+         PAGE
+    ====================================================== -->
+
+    <main class="searchPage">
+
+
+        <!-- =================================================
+             HEADER
+        ================================================== -->
+
+        <header class="searchHeader">
+
+            <div class="searchBox">
+
+                <div class="searchIcon">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                </div>
+
+                <input
+                    id="searchInput"
+                    class="searchInput"
+                    type="search"
+                    autocomplete="off"
+                    autocorrect="off"
+                    autocapitalize="none"
+                    spellcheck="false"
+                    placeholder="Search Viewora"
+                    aria-label="Search Viewora"
+                >
+
+                <button
+                    id="clearSearch"
+                    class="clearSearch"
+                    type="button"
+                    aria-label="Clear search"
+                >
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+
+            </div>
+
+        </header>
+
+
+        <!-- =================================================
+             CONTENT
+        ================================================== -->
+
+        <section class="searchContent">
+
+
+            <!-- =================================================
+                 RECENT SEARCHES
+            ================================================== -->
+
+            <section
+                id="recentSection"
+                class="recentSection"
+            >
+
+                <div class="sectionHeader">
+
+                    <h2 class="sectionTitle">
+                        Recent searches
+                    </h2>
+
+                    <button
+                        id="clearAllRecent"
+                        class="sectionAction"
+                        type="button"
+                    >
+                        Clear all
+                    </button>
+
+                </div>
+
+
+                <div
+                    id="recentList"
+                    class="recentList"
+                >
+
+                    <!-- JS inserts recent searches -->
+
+                </div>
+
+            </section>
+
+
+            <!-- =================================================
+                 TRENDING
+            ================================================== -->
+
+            <section
+                id="trendingSection"
+                class="trendingSection"
+            >
+
+                <div class="sectionHeader">
+
+                    <h2 class="sectionTitle">
+                        Explore
+                    </h2>
+
+                </div>
+
+
+                <div class="trendGrid">
+
+                    <button
+                        class="trendCard"
+                        type="button"
+                        data-search="technology"
+                    >
+
+                        <span class="trendNumber">
+                            Explore
+                        </span>
+
+                        <span class="trendName">
+                            Technology
+                        </span>
+
+                        <span class="trendMeta">
+                            Discover creators
+                        </span>
+
+                    </button>
+
+
+                    <button
+                        class="trendCard"
+                        type="button"
+                        data-search="music"
+                    >
+
+                        <span class="trendNumber">
+                            Explore
+                        </span>
+
+                        <span class="trendName">
+                            Music
+                        </span>
+
+                        <span class="trendMeta">
+                            Find new content
+                        </span>
+
+                    </button>
+
+
+                    <button
+                        class="trendCard"
+                        type="button"
+                        data-search="gaming"
+                    >
+
+                        <span class="trendNumber">
+                            Explore
+                        </span>
+
+                        <span class="trendName">
+                            Gaming
+                        </span>
+
+                        <span class="trendMeta">
+                            Discover gamers
+                        </span>
+
+                    </button>
+
+
+                    <button
+                        class="trendCard"
+                        type="button"
+                        data-search="travel"
+                    >
+
+                        <span class="trendNumber">
+                            Explore
+                        </span>
+
+                        <span class="trendName">
+                            Travel
+                        </span>
+
+                        <span class="trendMeta">
+                            Explore places
+                        </span>
+
+                    </button>
+
+                </div>
+
+            </section>
+
+
+            <!-- =================================================
+                 RESULTS
+            ================================================== -->
+
+            <section
+                id="resultsSection"
+                class="resultsSection"
+            >
+
+                <div class="sectionHeader">
+
+                    <h2 class="sectionTitle">
+                        People
+                    </h2>
+
+                </div>
+
+                <div
+                    id="resultCount"
+                    class="resultCount"
+                >
+                    Searching...
+                </div>
+
+
+                <div
+                    id="userResults"
+                    class="userResults"
+                >
+
+                    <!-- JS inserts users -->
+
+                </div>
+
+            </section>
+
+
+            <!-- =================================================
+                 EMPTY STATE
+            ================================================== -->
+
+            <section
+                id="emptyState"
+                class="emptyState"
+            >
+
+                <div class="emptyIcon">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                </div>
+
+                <h2
+                    id="emptyTitle"
+                    class="emptyTitle"
+                >
+                    No results found
+                </h2>
+
+                <p
+                    id="emptyText"
+                    class="emptyText"
+                >
+                    Try searching for another username,
+                    creator or topic.
+                </p>
+
+            </section>
+
+
+        </section>
+
+    </main>
+
+
+    <!-- =====================================================
+         BOTTOM NAVIGATION
+    ====================================================== -->
+
+    <nav
+        class="bottomNav"
+        aria-label="Main navigation"
+    >
+
+        <a href="index.html">
+
+            <i class="fa-solid fa-house"></i>
+
+            <span>
+                Home
+            </span>
+
+        </a>
+
+
+        <a
+            href="search-page.html"
+            class="active"
+            aria-current="page"
+        >
+
+            <i class="fa-solid fa-magnifying-glass"></i>
+
+            <span>
+                Search
+            </span>
+
+        </a>
+
+
+        <a href="shorts.html">
+
+            <i class="fa-solid fa-clapperboard"></i>
+
+            <span>
+                Shorts
+            </span>
+
+        </a>
+
+
+        <a href="activity.html">
+
+            <i class="fa-regular fa-heart"></i>
+
+            <span>
+                Activity
+            </span>
+
+        </a>
+
+
+        <a href="profile.html">
+
+            <i class="fa-regular fa-user"></i>
+
+            <span>
+                Profile
+            </span>
+
+        </a>
+
+    </nav>
+
+
+    <!-- =====================================================
+         BASIC SEARCH UI
+         Firebase logic can be connected separately
+    ====================================================== -->
+
+    <script>
+
+        "use strict";
+
+
+        /* =====================================================
+           ELEMENTS
+        ====================================================== */
+
+        const searchInput =
+            document.getElementById("searchInput");
+
+        const clearSearch =
+            document.getElementById("clearSearch");
+
+        const recentSection =
+            document.getElementById("recentSection");
+
+        const recentList =
+            document.getElementById("recentList");
+
+        const clearAllRecent =
+            document.getElementById("clearAllRecent");
+
+        const trendingSection =
+            document.getElementById("trendingSection");
+
+        const resultsSection =
+            document.getElementById("resultsSection");
+
+        const userResults =
+            document.getElementById("userResults");
+
+        const resultCount =
+            document.getElementById("resultCount");
+
+        const emptyState =
+            document.getElementById("emptyState");
+
+
+        /* =====================================================
+           RECENT SEARCH STORAGE
+        ====================================================== */
+
+        const RECENT_KEY =
+            "viewora_recent_searches";
+
+
+        function getRecentSearches() {
+
+            try {
+
+                const data =
+                    localStorage.getItem(RECENT_KEY);
+
+                if (!data) {
+                    return [];
+                }
+
+                const parsed =
+                    JSON.parse(data);
+
+                return Array.isArray(parsed)
+                    ? parsed
+                    : [];
+
+            } catch (error) {
+
+                return [];
+            }
+        }
+
+
+        function saveRecentSearch(query) {
+
+            const clean =
+                String(query || "")
+                    .trim();
+
+            if (!clean) return;
+
+            let recent =
+                getRecentSearches();
+
+            recent =
+                recent.filter(
+                    item =>
+                        String(item).toLowerCase()
+                        !== clean.toLowerCase()
+                );
+
+            recent.unshift(clean);
+
+            recent =
+                recent.slice(0, 10);
+
+            localStorage.setItem(
+                RECENT_KEY,
+                JSON.stringify(recent)
+            );
+
+            renderRecentSearches();
+        }
+
+
+        function removeRecentSearch(query) {
+
+            let recent =
+                getRecentSearches();
+
+            recent =
+                recent.filter(
+                    item =>
+                        item !== query
+                );
+
+            localStorage.setItem(
+                RECENT_KEY,
+                JSON.stringify(recent)
+            );
+
+            renderRecentSearches();
+        }
+
+
+        function clearRecentSearches() {
+
+            localStorage.removeItem(
+                RECENT_KEY
+            );
+
+            renderRecentSearches();
+        }
+
+
+        /* =====================================================
+           RENDER RECENT
+        ====================================================== */
+
+        function renderRecentSearches() {
+
+            const recent =
+                getRecentSearches();
+
+            recentList.innerHTML = "";
+
+            if (!recent.length) {
+
+                recentSection.style.display =
+                    "none";
+
+                return;
+            }
+
+            recentSection.style.display =
+                "block";
+
+
+            recent.forEach(query => {
+
+                const item =
+                    document.createElement("div");
+
+                item.className =
+                    "recentItem";
+
+                item.innerHTML = `
+
+                    <button
+                        class="recentIcon"
+                        type="button"
+                        aria-label="Search ${escapeHtml(query)}"
+                    >
+                        <i class="fa-solid fa-clock-rotate-left"></i>
+                    </button>
+
+                    <button
+                        class="recentInfo"
+                        type="button"
+                        style="text-align:left;"
+                    >
+
+                        <div class="recentQuery">
+                            ${escapeHtml(query)}
+                        </div>
+
+                        <div class="recentMeta">
+                            Recent search
+                        </div>
+
+                    </button>
+
+                    <button
+                        class="removeRecent"
+                        type="button"
+                        aria-label="Remove recent search"
+                    >
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+
+                `;
+
+
+                item
+                    .querySelector(".recentIcon")
+                    .addEventListener(
+                        "click",
+                        () => performSearch(query)
+                    );
+
+
+                item
+                    .querySelector(".recentInfo")
+                    .addEventListener(
+                        "click",
+                        () => performSearch(query)
+                    );
+
+
+                item
+                    .querySelector(".removeRecent")
+                    .addEventListener(
+                        "click",
+                        event => {
+
+                            event.stopPropagation();
+
+                            removeRecentSearch(query);
+                        }
+                    );
+
+
+                recentList.appendChild(item);
+
+            });
+
+        }
+
+
+        /* =====================================================
+           SEARCH
+        ====================================================== */
+
+        function performSearch(query) {
+
+            const clean =
+                String(query || "")
+                    .trim();
+
+            if (!clean) return;
+
+            searchInput.value =
+                clean;
+
+            updateSearchButton();
+
+            saveRecentSearch(clean);
+
+            recentSection.style.display =
+                "none";
+
+            trendingSection.style.display =
+                "none";
+
+            resultsSection.classList.add(
+                "active"
+            );
+
+            emptyState.classList.remove(
+                "active"
+            );
+
+            /*
+             * Firebase search will be connected here.
+             *
+             * Example:
+             *
+             * searchUsers(clean);
+             *
+             */
+
+            resultCount.textContent =
+                `Search results for "${clean}"`;
+
+            userResults.innerHTML = "";
+
+            showSearchPlaceholder(clean);
+        }
+
+
+        /* =====================================================
+           TEMP RESULT PLACEHOLDER
+        ====================================================== */
+
+        function showSearchPlaceholder(query) {
+
+            emptyState.classList.add(
+                "active"
+            );
+
+            document.getElementById(
+                "emptyTitle"
+            ).textContent =
+                "Search Viewora";
+
+            document.getElementById(
+                "emptyText"
+            ).textContent =
+                `Results for "${query}" will appear here.`;
+
+            resultsSection.classList.remove(
+                "active"
+            );
+        }
+
+
+        /* =====================================================
+           INPUT
+        ====================================================== */
+
+        searchInput.addEventListener(
+            "input",
+            () => {
+
+                updateSearchButton();
+
+                const value =
+                    searchInput.value.trim();
+
+                if (!value) {
+
+                    recentSection.style.display =
+                        getRecentSearches().length
+                            ? "block"
+                            : "none";
+
+                    trendingSection.style.display =
+                        "block";
+
+                    resultsSection.classList.remove(
+                        "active"
+                    );
+
+                    emptyState.classList.remove(
+                        "active"
+                    );
+                }
+
+            }
+        );
+
+
+        searchInput.addEventListener(
+            "keydown",
+            event => {
+
+                if (
+                    event.key === "Enter"
+                ) {
+
+                    event.preventDefault();
+
+                    performSearch(
+                        searchInput.value
+                    );
+                }
+
+            }
+        );
+
+
+        /* =====================================================
+           CLEAR INPUT
+        ====================================================== */
+
+        clearSearch.addEventListener(
+            "click",
+            () => {
+
+                searchInput.value = "";
+
+                updateSearchButton();
+
+                searchInput.focus();
+
+                resultsSection.classList.remove(
+                    "active"
+                );
+
+                emptyState.classList.remove(
+                    "active"
+                );
+
+                trendingSection.style.display =
+                    "block";
+
+                recentSection.style.display =
+                    getRecentSearches().length
+                        ? "block"
+                        : "none";
+
+            }
+        );
+
+
+        function updateSearchButton() {
+
+            const hasValue =
+                searchInput.value.trim().length > 0;
+
+            clearSearch.classList.toggle(
+                "visible",
+                hasValue
+            );
+        }
+
+
+        /* =====================================================
+           CLEAR ALL
+        ====================================================== */
+
+        clearAllRecent.addEventListener(
+            "click",
+            clearRecentSearches
+        );
+
+
+        /* =====================================================
+           TREND CARDS
+        ====================================================== */
+
+        document
+            .querySelectorAll("[data-search]")
+            .forEach(card => {
+
+                card.addEventListener(
+                    "click",
+                    () => {
+
+                        performSearch(
+                            card.dataset.search
+                        );
+
+                    }
+                );
+
+            });
+
+
+        /* =====================================================
+           ESCAPE HTML
+        ====================================================== */
+
+        function escapeHtml(value) {
+
+            return String(value)
+                .replace(
+                    /&/g,
+                    "&amp;"
+                )
+                .replace(
+                    /</g,
+                    "&lt;"
+                )
+                .replace(
+                    />/g,
+                    "&gt;"
+                )
+                .replace(
+                    /"/g,
+                    "&quot;"
+                )
+                .replace(
+                    /'/g,
+                    "&#039;"
+                );
+        }
+
+
+        /* =====================================================
+           INIT
+        ====================================================== */
+
+        renderRecentSearches();
+
+    </script>
+
+
+</body>
+</html>

@@ -126,11 +126,11 @@ const messagesEmptyUsers =
 ========================================================= */
 
 function messagesShowLoading() {
-
+    /* Disabled — open messages instantly, no full-screen loader */
     if (messagesLoading) {
-        messagesLoading.classList.remove("hidden");
+        messagesLoading.classList.add("hidden");
+        messagesLoading.style.display = "none";
     }
-
 }
 
 function messagesHideLoading() {
@@ -301,7 +301,13 @@ async function messagesInitialize() {
         return;
     }
 
-    messagesShowLoading();
+    // Instant UI — no blocking loader
+    if (messagesApp) {
+        messagesApp.classList.remove("hidden");
+        messagesApp.style.opacity = "1";
+    }
+    messagesHideLoading();
+    // Brief skeleton only while first data loads
     messagesShowSkeleton();
 
     try {
@@ -310,10 +316,6 @@ async function messagesInitialize() {
 
         messagesListenConnection();
         messagesListenChats();
-
-        if (messagesApp) {
-            messagesApp.classList.remove("hidden");
-        }
 
         messagesInitialized = true;
 
@@ -329,8 +331,6 @@ async function messagesInitialize() {
             error
         );
 
-        // IMPORTANT:
-        // Allow initialization to retry after failure.
         messagesInitialized = false;
 
         messagesToast(
@@ -454,6 +454,41 @@ function messagesListenChats() {
             messagesSortChats();
 
             messagesUpdateUnread();
+
+            // Enrich verified + photo from users/
+            Promise.all(
+                messagesChats.map(async (chat) => {
+                    const uid = chat.userId || chat.uid || "";
+                    if (!uid) return;
+                    if (messagesIsVerified(chat) && (chat.photoURL || chat.profilePhoto)) return;
+                    try {
+                        const snap = await db.ref("users/" + uid).once("value");
+                        if (!snap.exists()) return;
+                        const u = snap.val() || {};
+                        if (messagesIsVerified(u)) {
+                            chat.verified = true;
+                            chat.isVerified = true;
+                        }
+                        if (!chat.photoURL && !chat.profilePhoto) {
+                            chat.photoURL =
+                                u.profilePhoto ||
+                                u.photoURL ||
+                                u.avatar ||
+                                "";
+                            chat.profilePhoto = chat.photoURL;
+                        }
+                        if (!chat.name || chat.name === "Unknown User") {
+                            chat.name =
+                                u.displayName ||
+                                u.name ||
+                                u.username ||
+                                chat.name;
+                        }
+                    } catch (_) {}
+                })
+            ).then(() => {
+                messagesRender();
+            });
 
             messagesRender();
 
@@ -772,6 +807,8 @@ function messagesRender() {
         return;
     }
 
+    messagesHideSkeleton();
+
     const result =
         messagesGetFilteredChats();
 
@@ -828,6 +865,24 @@ function messagesRender() {
 /* =========================================================
    CHAT CARD
 ========================================================= */
+
+
+function messagesIsVerified(data) {
+    if (!data || typeof data !== "object") return false;
+    return (
+        data.verified === true ||
+        data.isVerified === true ||
+        data.blueTick === true ||
+        data.badge === "verified" ||
+        data.verification === true ||
+        data.verificationStatus === "verified"
+    );
+}
+
+function messagesVerifiedHTML(data) {
+    if (!messagesIsVerified(data)) return "";
+    return '<span class="verifiedTick" title="Verified"><i class="fa-solid fa-circle-check"></i></span>';
+}
 
 function messagesCreateCard(chat) {
 
@@ -927,7 +982,7 @@ function messagesCreateCard(chat) {
                 <div class="chatNameWrap">
 
                     <h3 class="chatName">
-                        ${name}
+                        ${name}${messagesVerifiedHTML(chat)}
                     </h3>
 
                     ${pinHTML}
@@ -1781,11 +1836,8 @@ async function messagesDeleteChat(chat) {
 
         messagesCloseActionSheet();
 
-        messagesShowLoading();
-
         /*
          * Deletes only YOUR inbox entry.
-         *
          * The actual chat remains available
          * for the other participant.
          */
@@ -1796,8 +1848,6 @@ async function messagesDeleteChat(chat) {
             "/" +
             chat.chatId
         ).remove();
-
-        messagesHideLoading();
 
         messagesToast(
             "Chat deleted"
@@ -2421,7 +2471,7 @@ function messagesCreateUserCard(uid, user) {
             <h3>
                 ${messagesEscape(
                     user.name || "Unknown"
-                )}
+                )}${messagesVerifiedHTML(user)}
             </h3>
 
             <p>

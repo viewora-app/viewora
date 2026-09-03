@@ -1,429 +1,150 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-
-<meta charset="UTF-8">
-
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
-
-<title>Viewora Stories</title>
-
-<link rel="stylesheet" href="style.css">
-<link rel="stylesheet" href="stories.css">
-
-<style>
-
-*{
-margin:0;
-padding:0;
-box-sizing:border-box;
-font-family:Arial,sans-serif;
-}
-
-body{
-
-background:#000;
-color:#fff;
-overflow:hidden;
-
-}
-
-/* Viewer */
-
-#storyViewer{
-
-position:fixed;
-
-top:0;
-left:0;
-
-width:100%;
-height:100vh;
-
-background:#000;
-
-display:none;
-
-z-index:9999;
-
-}
-
-/* Progress */
-
-#storyProgress{
-
-position:absolute;
-
-top:15px;
-
-left:15px;
-
-right:15px;
-
-display:flex;
-
-gap:6px;
-
-z-index:20;
-
-}
-
-/* Header */
-
-.storyHeader{
-
-position:absolute;
-
-top:35px;
-
-left:15px;
-
-right:15px;
-
-display:flex;
-
-align-items:center;
-
-justify-content:space-between;
-
-z-index:20;
-
-}
-
-.storyUser{
-
-display:flex;
-
-align-items:center;
-
-gap:12px;
-
-}
-
-.storyUser img{
-
-width:45px;
-
-height:45px;
-
-border-radius:50%;
-
-border:2px solid #00aaff;
-
-object-fit:cover;
-
-}
-
-.storyUser h3{
-
-font-size:16px;
-
-}
-
-.storyUser small{
-
-color:#bbb;
-
-}
-
-/* Close */
-
-.closeBtn{
-
-font-size:34px;
-
-cursor:pointer;
-
-}
-
-/* Image */
-
-#storyImage{
-
-width:100%;
-
-height:100%;
-
-display:none;
-
-object-fit:contain;
-
-}
-
-/* Video */
-
-#storyVideo{
-
-width:100%;
-
-height:100%;
-
-display:none;
-
-object-fit:contain;
-
-background:#000;
-
-}
-
-/* Navigation */
-
-.storyLeft{
-
-position:absolute;
-
-left:0;
-
-top:0;
-
-width:50%;
-
-height:100%;
-
-z-index:10;
-
-}
-
-.storyRight{
-
-position:absolute;
-
-right:0;
-
-top:0;
-
-width:50%;
-
-height:100%;
-
-z-index:10;
-
-}
-
-/* Bottom */
-
-.storyBottom{
-
-position:absolute;
-
-bottom:20px;
-
-left:15px;
-
-right:15px;
-
-display:flex;
-
-gap:10px;
-
-z-index:20;
-
-}
-
-.storyBottom input{
-
-flex:1;
-
-padding:12px;
-
-border:none;
-
-border-radius:30px;
-
-outline:none;
-
-}
-
-.storyBottom button{
-
-padding:12px 18px;
-
-border:none;
-
-border-radius:30px;
-
-background:#00aaff;
-
-color:#fff;
-
-font-weight:bold;
-
-cursor:pointer;
-
-}
-
-/* Upload */
-
-.uploadStory{
-
-position:fixed;
-
-right:20px;
-
-bottom:95px;
-
-width:65px;
-
-height:65px;
-
-border-radius:50%;
-
-background:linear-gradient(135deg,#00aaff,#0066ff);
-
-display:flex;
-
-align-items:center;
-
-justify-content:center;
-
-font-size:34px;
-
-cursor:pointer;
-
-box-shadow:0 10px 30px rgba(0,170,255,.4);
-
-animation:pulse 2s infinite;
-
-z-index:100;
-
-}
-
-@keyframes pulse{
-
-0%,100%{
-
-transform:scale(1);
-
-}
-
-50%{
-
-transform:scale(1.08);
-
-}
-
-}
-
-</style>
-
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#000000">
+    <title>Viewora • Stories</title>
+    <link rel="icon" href="assets/logo.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+    <link rel="stylesheet" href="stories.css">
 </head>
-
 <body>
+<div id="app" class="storiesApp">
 
-<!-- Upload Story -->
+    <!-- Progress -->
+    <div id="progressRow" class="progressRow"></div>
 
-<div class="uploadStory"
+    <!-- Top bar -->
+    <header class="storiesTop">
+        <div class="storiesUser" id="storiesUser">
+            <img id="storiesAvatar" src="assets/default-avatar.png" alt="">
+            <div>
+                <strong id="storiesName">User</strong>
+                <small id="storiesTime"></small>
+            </div>
+        </div>
+        <div class="storiesTopActions">
+            <button type="button" id="storiesMoreBtn" class="storiesIconBtn" aria-label="More">
+                <i class="fa-solid fa-ellipsis"></i>
+            </button>
+            <button type="button" id="storiesCloseBtn" class="storiesIconBtn" aria-label="Close">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+    </header>
 
-onclick="createStory()">
+    <!-- Media stage -->
+    <div id="stage" class="stage">
+        <img id="storyImg" class="storyMedia hidden" alt="">
+        <video id="storyVid" class="storyMedia hidden" playsinline></video>
+        <div id="tapLeft" class="tapZone tapLeft"></div>
+        <div id="tapRight" class="tapZone tapRight"></div>
 
-+
+        <div id="storyMusicBadge" class="storyMusicBadge hidden">
+            <i class="fa-solid fa-music"></i>
+            <span id="storyMusicBadgeText">Music</span>
+        </div>
+    </div>
 
+    <!-- Reply / react (viewer) -->
+    <footer id="viewerFooter" class="storiesFooter">
+        <div class="reactRow" id="reactRow">
+            <button type="button" class="reactBtn" data-reaction="❤️">❤️</button>
+            <button type="button" class="reactBtn" data-reaction="😂">😂</button>
+            <button type="button" class="reactBtn" data-reaction="🔥">🔥</button>
+            <button type="button" class="reactBtn" data-reaction="😍">😍</button>
+            <button type="button" class="reactBtn" data-reaction="😮">😮</button>
+        </div>
+        <div class="replyRow">
+            <input id="replyInput" type="text" maxlength="300" placeholder="Reply to story…" autocomplete="off">
+            <button type="button" id="replySendBtn" aria-label="Send">
+                <i class="fa-solid fa-paper-plane"></i>
+            </button>
+        </div>
+    </footer>
+
+    <!-- Owner footer -->
+    <footer id="ownerFooter" class="storiesFooter ownerFooter hidden">
+        <button type="button" id="viewersBtn" class="ownerChip">
+            <i class="fa-solid fa-eye"></i>
+            <span id="viewersCount">0 views</span>
+        </button>
+        <button type="button" id="deleteStoryBtn" class="ownerChip danger">
+            <i class="fa-regular fa-trash-can"></i>
+            Delete
+        </button>
+    </footer>
+
+    <!-- More sheet -->
+    <div id="moreSheet" class="sheet hidden">
+        <div class="sheetBackdrop" data-close="moreSheet"></div>
+        <div class="sheetCard">
+            <div class="sheetHandle"></div>
+            <div id="ownerMenu" class="menuGroup hidden">
+                <button type="button" id="mentionBtn" class="menuItem">
+                    <i class="fa-solid fa-at"></i>
+                    <span><strong>Mention</strong><small>Tag someone in this story</small></span>
+                </button>
+                <button type="button" id="collabBtn" class="menuItem">
+                    <i class="fa-solid fa-user-plus"></i>
+                    <span><strong>Collab</strong><small>Invite collaborator</small></span>
+                </button>
+                <button type="button" id="deleteFromMenuBtn" class="menuItem danger">
+                    <i class="fa-regular fa-trash-can"></i>
+                    <span><strong>Delete story</strong><small>Remove permanently</small></span>
+                </button>
+            </div>
+            <div id="viewerMenu" class="menuGroup hidden">
+                <button type="button" id="reportBtn" class="menuItem danger">
+                    <i class="fa-regular fa-flag"></i>
+                    <span><strong>Report</strong><small>Report this story</small></span>
+                </button>
+            </div>
+            <button type="button" class="menuItem" data-close="moreSheet">
+                <i class="fa-solid fa-xmark"></i>
+                <span><strong>Cancel</strong></span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Mention / Collab sheet -->
+    <div id="peopleSheet" class="sheet hidden">
+        <div class="sheetBackdrop" data-close="peopleSheet"></div>
+        <div class="sheetCard">
+            <div class="sheetHandle"></div>
+            <header class="sheetHead">
+                <strong id="peopleSheetTitle">Mention</strong>
+                <button type="button" class="sheetClose" data-close="peopleSheet"><i class="fa-solid fa-xmark"></i></button>
+            </header>
+            <input id="peopleSearch" type="search" placeholder="Search users…" autocomplete="off">
+            <div id="peopleList" class="peopleList"></div>
+        </div>
+    </div>
+
+    <!-- Viewers sheet -->
+    <div id="viewersSheet" class="sheet hidden">
+        <div class="sheetBackdrop" data-close="viewersSheet"></div>
+        <div class="sheetCard">
+            <div class="sheetHandle"></div>
+            <header class="sheetHead">
+                <strong>Viewers</strong>
+                <button type="button" class="sheetClose" data-close="viewersSheet"><i class="fa-solid fa-xmark"></i></button>
+            </header>
+            <div id="viewersList" class="peopleList"></div>
+        </div>
+    </div>
+
+    <audio id="storyAudio" playsinline preload="auto" loop style="display:none"></audio>
+    <div id="toast" class="toast hidden"><span id="toastText">Done</span></div>
 </div>
 
-<!-- Story Viewer -->
-
-<div id="storyViewer">
-
-<div id="storyProgress"></div>
-
-<div class="storyHeader">
-
-<div class="storyUser">
-
-<img id="storyProfile"
-
-src="non.jpg">
-
-<div>
-
-<h3 id="storyName">
-
-User
-
-</h3>
-
-<small id="storyTime">
-
-Just now
-
-</small>
-
-</div>
-
-</div>
-
-<div
-
-class="closeBtn"
-
-onclick="closeStoryViewer()">
-
-✕
-
-</div>
-
-</div>
-
-<img
-
-id="storyImage">
-
-<video
-
-id="storyVideo"
-
-playsinline>
-
-</video>
-
-<div
-
-class="storyLeft"
-
-onclick="prevStory()">
-
-</div>
-
-<div
-
-class="storyRight"
-
-onclick="nextStory()">
-
-</div>
-
-<div class="storyBottom">
-
-<input
-
-id="storyReply"
-
-placeholder="Reply...">
-
-<button
-
-onclick="replyStory()">
-
-Send
-
-</button>
-
-</div>
-
-</div>
-
-<!-- Firebase SDK -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
-
 <script src="firebase.js"></script>
-<script src="utils.js"></script>
-<script src="nav.js"></script>
-<script src="stories.js"></script>   <!-- YE ADD KARO -->
-<script src="profile.js"></script>
-  
+<script src="stories.js"></script>
 </body>
-
 </html>

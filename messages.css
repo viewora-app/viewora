@@ -3595,3 +3595,128 @@ input:focus-visible {
     }
 
 }
+
+
+/* =========================================================
+   REAL COLOR EMOJI (Apple / Google style)
+========================================================= */
+
+html, body, button, input, textarea, .chatPreview, .chatName,
+.userDetails, .emptyChats, .toast, .messageActionItem,
+.newChatUserList, .headerTitle, .filter {
+    font-family:
+        "Inter",
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        Roboto,
+        Helvetica,
+        Arial,
+        "Apple Color Emoji",
+        "Segoe UI Emoji",
+        "Segoe UI Symbol",
+        "Noto Color Emoji",
+        "Android Emoji",
+        "EmojiSymbols",
+        sans-serif !important;
+}
+
+/* Force colorful emoji rendering */
+.chatPreview,
+.chatName,
+.userDetails p,
+.userDetails h3,
+.emptyChats p,
+.emptyChats h3,
+#toastText,
+.messageActionItem,
+.onlinePerson small,
+.headerMeta {
+    font-variant-emoji: emoji;
+    font-feature-settings: "liga" 1;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* Emoji in message preview — slightly larger, natural */
+.chatPreview {
+    font-size: 13px;
+    line-height: 1.45;
+}
+
+.chatPreview .emoji,
+.emoji {
+    font-family:
+        "Apple Color Emoji",
+        "Segoe UI Emoji",
+        "Noto Color Emoji",
+        sans-serif !important;
+    font-style: normal !important;
+    font-weight: normal !important;
+    font-size: 1.15em;
+    line-height: 1;
+    vertical-align: -0.08em;
+    display: inline;
+}
+
+/* Prevent emoji from becoming monochrome / text-style */
+@supports (font-variant-emoji: emoji) {
+    .chatPreview,
+    .chatName,
+    .emoji {
+        font-variant-emoji: emoji;
+    }
+}
+
+/* Chat list polish for emoji + text mix */
+.chatCard .chatPreview {
+    letter-spacing: 0.01em;
+}
+
+/* Global nav spacing */
+body.has-bottom-nav .app {
+    padding-bottom: calc(110px + env(safe-area-inset-bottom, 0px)) !important;
+}
+
+body.has-bottom-nav .newMessageFab {
+    bottom: calc(78px + env(safe-area-inset-bottom, 0px)) !important;
+}
+
+body.has-bottom-nav .toast {
+    bottom: calc(88px + env(safe-area-inset-bottom, 0px)) !important;
+}
+
+.bottomNav:not(#vieworaGlobalNav),
+.messagesBottomNav {
+    display: none !important;
+}
+
+
+/* Verified blue tick */
+.verifiedTick {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 4px;
+    color: #27cfff !important;
+    font-size: 13px !important;
+    vertical-align: middle;
+    line-height: 1;
+}
+
+.verifiedTick i {
+    color: #27cfff !important;
+}
+
+.chatNameWrap .chatName {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    max-width: 100%;
+}
+
+.userDetails h3 {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}

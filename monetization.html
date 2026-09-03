@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#0a0a0f">
+    <title>Viewora • Monetization</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+    <link rel="stylesheet" href="monetization.css">
+</head>
+
+<body>
+
+<div class="monoBg">
+    <div class="glow a"></div>
+    <div class="glow b"></div>
+</div>
+
+<header class="monoHeader">
+    <button type="button" class="backBtn" id="backBtn" aria-label="Back">
+        <i class="fa-solid fa-arrow-left"></i>
+    </button>
+    <div class="headerTitle">
+        <h1>Monetization</h1>
+        <p>Earn from your content</p>
+    </div>
+</header>
+
+<main class="monoMain">
+
+    <!-- Balance card -->
+    <section class="balanceCard" id="balanceCard">
+        <div class="balanceTop">
+            <span class="balanceLabel">Available balance</span>
+            <span class="statusPill" id="monoStatusPill">Checking…</span>
+        </div>
+        <div class="balanceAmount">
+            <span class="currency">$</span>
+            <strong id="balanceValue">0.00</strong>
+        </div>
+        <p class="balanceHint" id="balanceHint">
+            Minimum payout: $50.00
+        </p>
+        <div class="balanceActions">
+            <button type="button" class="primaryAction" id="withdrawBtn" disabled>
+                <i class="fa-solid fa-building-columns"></i>
+                Request payout
+            </button>
+            <button type="button" class="ghostAction" id="historyBtn">
+                <i class="fa-solid fa-clock-rotate-left"></i>
+                History
+            </button>
+        </div>
+    </section>
+
+    <!-- Eligibility -->
+    <section class="monoSection">
+        <div class="sectionHead">
+            <h2>Eligibility</h2>
+            <p>YouTube-style requirements to unlock monetization</p>
+        </div>
+
+        <div class="reqList" id="reqList">
+            <div class="reqItem" data-req="views">
+                <div class="reqIcon"><i class="fa-solid fa-eye"></i></div>
+                <div class="reqBody">
+                    <strong>Total views</strong>
+                    <span id="reqViewsText">0 / 300,000</span>
+                    <div class="progressTrack"><div class="progressFill" id="reqViewsBar" style="width:0%"></div></div>
+                </div>
+                <i class="fa-solid fa-circle-check reqCheck" id="reqViewsCheck"></i>
+            </div>
+
+            <div class="reqItem" data-req="followers">
+                <div class="reqIcon"><i class="fa-solid fa-users"></i></div>
+                <div class="reqBody">
+                    <strong>Followers</strong>
+                    <span id="reqFollowersText">0 / 600</span>
+                    <div class="progressTrack"><div class="progressFill" id="reqFollowersBar" style="width:0%"></div></div>
+                </div>
+                <i class="fa-solid fa-circle-check reqCheck" id="reqFollowersCheck"></i>
+            </div>
+
+            <div class="reqItem" data-req="stories">
+                <div class="reqIcon"><i class="fa-solid fa-circle"></i></div>
+                <div class="reqBody">
+                    <strong>Stories posted</strong>
+                    <span id="reqStoriesText">0 / 100</span>
+                    <div class="progressTrack"><div class="progressFill" id="reqStoriesBar" style="width:0%"></div></div>
+                </div>
+                <i class="fa-solid fa-circle-check reqCheck" id="reqStoriesCheck"></i>
+            </div>
+        </div>
+
+        <div class="eligibleBanner" id="eligibleBanner">
+            <i class="fa-solid fa-shield-halved"></i>
+            <div>
+                <strong id="eligibleTitle">Checking requirements…</strong>
+                <p id="eligibleText">Please wait while we verify your stats.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Earnings overview -->
+    <section class="monoSection">
+        <div class="sectionHead">
+            <h2>Earnings overview</h2>
+            <p>Lifetime & lifetime</p>
+        </div>
+        <div class="statsRow">
+            <div class="statBox">
+                <span>This month</span>
+                <strong id="monthEarn">$0.00</strong>
+            </div>
+            <div class="statBox">
+                <span>Lifetime earned</span>
+                <strong id="lifetimeEarn">$0.00</strong>
+            </div>
+            <div class="statBox">
+                <span>Pending</span>
+                <strong id="pendingEarn">$0.00</strong>
+            </div>
+        </div>
+    </section>
+
+    <!-- Payment method -->
+    <section class="monoSection">
+        <div class="sectionHead">
+            <h2>Payout method</h2>
+            <p>Where we send your money</p>
+        </div>
+        <button type="button" class="methodCard" id="paymentMethodBtn">
+            <div class="methodIcon"><i class="fa-solid fa-wallet"></i></div>
+            <div class="methodInfo">
+                <strong id="methodTitle">Add payout method</strong>
+                <small id="methodSub">UPI · Bank · PayPal</small>
+            </div>
+            <i class="fa-solid fa-chevron-right"></i>
+        </button>
+    </section>
+
+    <!-- How it works -->
+    <section class="monoSection">
+        <div class="sectionHead">
+            <h2>How payouts work</h2>
+        </div>
+        <ul class="howList">
+            <li><i class="fa-solid fa-1"></i> Meet all eligibility thresholds</li>
+            <li><i class="fa-solid fa-2"></i> Admin enables monetization for your account</li>
+            <li><i class="fa-solid fa-3"></i> Earnings credit to your balance from views</li>
+            <li><i class="fa-solid fa-4"></i> When balance reaches <b>$50</b>, request a payout</li>
+            <li><i class="fa-solid fa-5"></i> Admin reviews and releases payment</li>
+        </ul>
+    </section>
+
+    <p class="monoFooter">Policy: 300,000 views · 600 followers · 100 stories · Min $50</p>
+</main>
+
+<!-- Withdraw modal -->
+<div id="withdrawModal" class="monoModal hidden">
+    <div class="modalBackdrop" data-close="1"></div>
+    <div class="modalSheet">
+        <div class="modalHandle"></div>
+        <h2>Request payout</h2>
+        <p class="modalLead">Minimum withdrawal is <strong>$50.00</strong>. Full available balance will be requested.</p>
+
+        <div class="field">
+            <label>Amount (USD)</label>
+            <input type="number" id="withdrawAmount" min="50" step="0.01" readonly>
+        </div>
+        <div class="field">
+            <label>Note (optional)</label>
+            <input type="text" id="withdrawNote" placeholder="e.g. March payout" maxlength="80">
+        </div>
+
+        <p class="modalError hidden" id="withdrawError"></p>
+
+        <div class="modalActions">
+            <button type="button" class="ghostAction" data-close="1">Cancel</button>
+            <button type="button" class="primaryAction" id="confirmWithdrawBtn">
+                Submit request
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Payment method modal -->
+<div id="methodModal" class="monoModal hidden">
+    <div class="modalBackdrop" data-close="1"></div>
+    <div class="modalSheet">
+        <div class="modalHandle"></div>
+        <h2>Payout method</h2>
+        <p class="modalLead">Add details for receiving payments.</p>
+
+        <div class="field">
+            <label>Method</label>
+            <select id="methodType">
+                <option value="upi">UPI</option>
+                <option value="bank">Bank transfer</option>
+                <option value="paypal">PayPal</option>
+            </select>
+        </div>
+        <div class="field">
+            <label>Account / UPI / Email</label>
+            <input type="text" id="methodValue" placeholder="name@upi or account details" maxlength="120">
+        </div>
+        <div class="field">
+            <label>Full name</label>
+            <input type="text" id="methodName" placeholder="As on bank / PayPal" maxlength="80">
+        </div>
+
+        <div class="modalActions">
+            <button type="button" class="ghostAction" data-close="1">Cancel</button>
+            <button type="button" class="primaryAction" id="saveMethodBtn">Save</button>
+        </div>
+    </div>
+</div>
+
+<!-- History modal -->
+<div id="historyModal" class="monoModal hidden">
+    <div class="modalBackdrop" data-close="1"></div>
+    <div class="modalSheet tall">
+        <div class="modalHandle"></div>
+        <h2>Payout history</h2>
+        <div id="historyList" class="historyList">
+            <div class="emptyHistory">No payouts yet</div>
+        </div>
+        <button type="button" class="ghostAction full" data-close="1">Close</button>
+    </div>
+</div>
+
+<div id="monoToast" class="monoToast">
+    <i class="fa-solid fa-circle-check"></i>
+    <span id="monoToastText">Done</span>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+<script src="firebase.js"></script>
+<script src="monetization.js"></script>
+
+</body>
+</html>
