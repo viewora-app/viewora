@@ -1,0 +1,1132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0,
+                 maximum-scale=1.0, user-scalable=no,
+                 viewport-fit=cover"
+    >
+
+    <meta name="theme-color" content="#050507">
+
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+
+    <title>Viewora • Video</title>
+
+    <link rel="icon" href="assets/logo.png">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+
+    <link
+        rel="preconnect"
+        href="https://fonts.gstatic.com"
+        crossorigin
+    >
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet"
+    >
+
+    <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
+    >
+
+    <link rel="stylesheet" href="video.css">
+
+</head>
+
+<body>
+
+<div id="app" class="videoApp">
+
+    <!-- =====================================================
+         HEADER
+    ====================================================== -->
+
+    <header class="videoHeader">
+
+        <button
+            id="backBtn"
+            class="headerIcon"
+            type="button"
+            aria-label="Back"
+        >
+            <i class="fa-solid fa-arrow-left"></i>
+        </button>
+
+
+        <a href="index.html" class="videoBrand">
+
+            <img
+                src="assets/logo.png"
+                alt="Viewora"
+            >
+
+            <strong>VIEWORA</strong>
+
+        </a>
+
+
+        <div class="headerActions">
+
+            <button
+                id="searchBtn"
+                class="headerIcon"
+                type="button"
+                aria-label="Search"
+            >
+                <i class="fa-solid fa-magnifying-glass"></i>
+            </button>
+
+            <button
+                id="headerMoreBtn"
+                class="headerIcon"
+                type="button"
+                aria-label="More"
+            >
+                <i class="fa-solid fa-ellipsis-vertical"></i>
+            </button>
+
+        </div>
+
+    </header>
+
+
+    <!-- =====================================================
+         MAIN
+    ====================================================== -->
+
+    <main class="videoMain">
+
+        <!-- VIDEO PLAYER -->
+
+        <section class="playerSection">
+
+            <div
+                id="playerShell"
+                class="playerShell"
+            >
+
+                <video
+                    id="mainVideo"
+                    class="mainVideo"
+                    playsinline
+                    webkit-playsinline
+                    controls
+                    preload="metadata"
+                    playsinline
+                    controls
+                    preload="metadata"
+                ></video>
+
+
+                <div
+                    id="playerLoading"
+                    class="playerLoading"
+                >
+
+                    <div class="loadingSpinner"></div>
+
+                    <span>
+                        Loading video...
+                    </span>
+
+                </div>
+
+
+                <div
+                    id="playerError"
+                    class="playerMessage hidden"
+                >
+
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+
+                    <strong>
+                        Video unavailable
+                    </strong>
+
+                    <span>
+                        This video could not be loaded.
+                    </span>
+
+                    <button
+                        id="retryVideoBtn"
+                        type="button"
+                    >
+                        Retry
+                    </button>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================================
+             VIDEO INFO
+        ================================================== -->
+
+        <section class="videoInfoSection">
+
+            <div class="videoTitleRow">
+
+                <h1 id="videoTitle">
+                    Loading video...
+                </h1>
+
+
+                <button
+                    id="videoMoreBtn"
+                    class="moreButton"
+                    type="button"
+                    aria-label="More options"
+                >
+                    <i class="fa-solid fa-ellipsis-vertical"></i>
+                </button>
+
+            </div>
+
+
+            <div class="videoStatsLine">
+
+                <span id="videoViews">
+                    0 views
+                </span>
+
+                <span class="dot">•</span>
+
+                <span id="videoDate">
+                    —
+                </span>
+
+                <span
+                    id="videoVisibility"
+                    class="visibilityBadge hidden"
+                >
+                    Public
+                </span>
+
+            </div>
+
+
+            <!-- CREATOR -->
+
+            <div class="creatorRow">
+
+                <button
+                    id="creatorProfileBtn"
+                    class="creatorIdentity"
+                    type="button"
+                >
+
+                    <div class="creatorAvatar">
+
+                        <img
+                            id="creatorAvatar"
+                            src="assets/logo.png"
+                            alt=""
+                        >
+
+                    </div>
+
+
+                    <div class="creatorText">
+
+                        <strong id="creatorName">
+                            Viewora Creator
+                        </strong>
+
+                        <span id="creatorUsername">
+                            @creator
+                        </span>
+
+                    </div>
+
+                </button>
+
+
+                <button
+                    id="followBtn"
+                    class="followButton"
+                    type="button"
+                >
+                    Follow
+                </button>
+
+            </div>
+
+
+            <!-- ACTIONS -->
+
+            <div class="videoActions">
+
+                <button
+                    id="likeBtn"
+                    class="actionButton"
+                    type="button"
+                >
+
+                    <i class="fa-regular fa-heart"></i>
+
+                    <span id="likeCount">
+                        0
+                    </span>
+
+                </button>
+
+
+                <button
+                    id="dislikeBtn"
+                    class="actionButton"
+                    type="button"
+                >
+
+                    <i class="fa-regular fa-thumbs-down"></i>
+
+                </button>
+
+
+                <button
+                    id="commentBtn"
+                    class="actionButton"
+                    type="button"
+                >
+
+                    <i class="fa-regular fa-comment"></i>
+
+                    <span id="commentCount">
+                        0
+                    </span>
+
+                </button>
+
+
+                <button
+                    id="shareBtn"
+                    class="actionButton"
+                    type="button"
+                >
+
+                    <i class="fa-solid fa-share-nodes"></i>
+
+                    <span>
+                        Share
+                    </span>
+
+                </button>
+
+
+                <button
+                    id="saveBtn"
+                    class="actionButton"
+                    type="button"
+                >
+
+                    <i class="fa-regular fa-bookmark"></i>
+
+                    <span>
+                        Save
+                    </span>
+
+                </button>
+
+            </div>
+
+
+            <!-- OWNER TOOLS -->
+
+            <div
+                id="ownerTools"
+                class="ownerTools hidden"
+            >
+
+                <div class="ownerToolsTitle">
+
+                    <span>
+                        CREATOR STUDIO
+                    </span>
+
+                    <strong>
+                        Manage your video
+                    </strong>
+
+                </div>
+
+
+                <div class="ownerToolsActions">
+
+                    <button
+                        id="editVideoBtn"
+                        type="button"
+                        class="ownerAction"
+                    >
+
+                        <i class="fa-solid fa-pen"></i>
+
+                        <span>
+                            Edit
+                        </span>
+
+                    </button>
+
+
+                    <button
+                        id="analyticsBtn"
+                        type="button"
+                        class="ownerAction"
+                    >
+
+                        <i class="fa-solid fa-chart-line"></i>
+
+                        <span>
+                            Analytics
+                        </span>
+
+                    </button>
+
+                </div>
+
+            </div>
+
+
+            <!-- DESCRIPTION -->
+
+            <section
+                id="descriptionBox"
+                class="descriptionBox"
+            >
+
+                <div class="descriptionHeader">
+
+                    <strong id="descriptionSummary">
+                        Description
+                    </strong>
+
+                    <button
+                        id="descriptionToggle"
+                        type="button"
+                    >
+                        Show more
+                    </button>
+
+                </div>
+
+
+                <div
+                    id="videoDescription"
+                    class="videoDescription"
+                >
+                    Loading description...
+                </div>
+
+
+                <div
+                    id="videoHashtags"
+                    class="videoHashtags"
+                ></div>
+
+            </section>
+
+        </section>
+
+
+        <!-- =================================================
+             RECOMMENDED VIDEOS
+        ================================================== -->
+
+        <section class="recommendSection">
+
+            <div class="sectionHeading">
+
+                <div>
+
+                    <span>
+                        KEEP WATCHING
+                    </span>
+
+                    <h2>
+                        Recommended videos
+                    </h2>
+
+                </div>
+
+
+                <button
+                    id="refreshRecommendations"
+                    class="refreshButton"
+                    type="button"
+                >
+
+                    <i class="fa-solid fa-rotate"></i>
+
+                </button>
+
+            </div>
+
+
+            <div
+                id="recommendedVideos"
+                class="videoRecommendationGrid"
+            ></div>
+
+
+            <div
+                id="videoRecommendationsEmpty"
+                class="emptyRecommendation hidden"
+            >
+
+                <i class="fa-regular fa-circle-play"></i>
+
+                <span>
+                    More videos are coming soon.
+                </span>
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================================
+             SHORTS
+        ================================================== -->
+
+        <section class="shortsSection">
+
+            <div class="sectionHeading">
+
+                <div>
+
+                    <span>
+                        SHORTS
+                    </span>
+
+                    <h2>
+                        Quick videos for you
+                    </h2>
+
+                </div>
+
+
+                <button
+                    id="openShortsBtn"
+                    class="textButton"
+                    type="button"
+                >
+                    See all
+                </button>
+
+            </div>
+
+
+            <div
+                id="recommendedShorts"
+                class="shortsRail"
+            ></div>
+
+        </section>
+
+
+        <!-- =================================================
+             COMMENTS
+        ================================================== -->
+
+        <section
+            id="commentsSection"
+            class="commentsSection"
+        >
+
+            <div class="sectionHeading commentsHeading">
+
+                <div>
+
+                    <span>
+                        COMMUNITY
+                    </span>
+
+                    <h2>
+                        Comments
+                        <b id="commentsHeadingCount">
+                            0
+                        </b>
+                    </h2>
+
+                </div>
+
+            </div>
+
+
+            <div class="commentComposer">
+
+                <div class="commentAvatar">
+
+                    <img
+                        id="currentUserAvatar"
+                        src="assets/logo.png"
+                        alt=""
+                    >
+
+                </div>
+
+
+                <div class="commentInputWrap">
+
+                    <input
+                        id="commentInput"
+                        type="text"
+                        maxlength="1000"
+                        autocomplete="off"
+                        placeholder="Add a comment..."
+                    >
+
+                    <button
+                        id="postCommentBtn"
+                        type="button"
+                    >
+                        Post
+                    </button>
+
+                </div>
+
+            </div>
+
+
+            <div
+                id="commentsList"
+                class="commentsList"
+            ></div>
+
+
+            <div
+                id="commentsEmpty"
+                class="commentsEmpty hidden"
+            >
+
+                <i class="fa-regular fa-comments"></i>
+
+                <strong>
+                    No comments yet
+                </strong>
+
+                <span>
+                    Be the first to start the conversation.
+                </span>
+
+            </div>
+
+        </section>
+
+    </main>
+
+
+    <!-- =====================================================
+         SHARE SHEET
+    ====================================================== -->
+
+    <div
+        id="shareOverlay"
+        class="overlay hidden"
+    >
+
+        <div
+            class="overlayBackdrop"
+            data-close="shareOverlay"
+        ></div>
+
+
+        <section class="bottomSheet">
+
+            <div class="sheetHandle"></div>
+
+            <div class="sheetHeader">
+
+                <div>
+
+                    <span>
+                        SHARE
+                    </span>
+
+                    <h2>
+                        Share this video
+                    </h2>
+
+                </div>
+
+
+                <button
+                    id="closeShareBtn"
+                    class="sheetClose"
+                    type="button"
+                >
+
+                    <i class="fa-solid fa-xmark"></i>
+
+                </button>
+
+            </div>
+
+
+            <div class="shareOptions">
+
+                <button
+                    id="copyLinkBtn"
+                    type="button"
+                >
+
+                    <span class="shareIcon">
+                        <i class="fa-solid fa-link"></i>
+                    </span>
+
+                    <span>
+                        Copy link
+                    </span>
+
+                </button>
+
+
+                <button
+                    id="nativeShareBtn"
+                    type="button"
+                >
+
+                    <span class="shareIcon">
+                        <i class="fa-solid fa-share-nodes"></i>
+                    </span>
+
+                    <span>
+                        Share
+                    </span>
+
+                </button>
+
+            </div>
+
+        </section>
+
+    </div>
+
+
+    <!-- =====================================================
+         MORE MENU
+    ====================================================== -->
+
+    <div
+        id="moreOverlay"
+        class="overlay hidden"
+    >
+
+        <div
+            class="overlayBackdrop"
+            data-close="moreOverlay"
+        ></div>
+
+
+        <section class="actionSheet">
+
+            <button
+                id="sheetEditBtn"
+                type="button"
+                class="hidden"
+            >
+
+                <i class="fa-solid fa-pen"></i>
+
+                Edit video
+
+            </button>
+
+
+            <button
+                id="sheetAnalyticsBtn"
+                type="button"
+                class="hidden"
+            >
+
+                <i class="fa-solid fa-chart-line"></i>
+
+                View analytics
+
+            </button>
+
+
+            <button
+                id="sheetSaveBtn"
+                type="button"
+            >
+
+                <i class="fa-regular fa-bookmark"></i>
+
+                Save video
+
+            </button>
+
+
+            <button
+                id="sheetFullscreenBtn"
+                type="button"
+            >
+
+                <i class="fa-solid fa-expand"></i>
+
+                Full screen
+
+            </button>
+
+
+            <button
+                id="sheetWakeLockBtn"
+                type="button"
+            >
+
+                <i class="fa-solid fa-sun"></i>
+
+                Keep screen on
+
+            </button>
+
+
+            <button
+                id="sheetCopyLinkBtn"
+                type="button"
+            >
+
+                <i class="fa-solid fa-link"></i>
+
+                Copy link
+
+            </button>
+
+
+            <button
+                id="reportBtn"
+                type="button"
+            >
+
+                <i class="fa-regular fa-flag"></i>
+
+                Report
+
+            </button>
+
+        </section>
+
+    </div>
+
+
+    <!-- =====================================================
+         ANALYTICS MODAL
+    ====================================================== -->
+
+    <div
+        id="analyticsOverlay"
+        class="overlay hidden"
+    >
+
+        <div
+            class="overlayBackdrop"
+            data-close="analyticsOverlay"
+        ></div>
+
+
+        <section class="analyticsModal">
+
+            <div class="analyticsHeader">
+
+                <div>
+
+                    <span>
+                        CREATOR STUDIO
+                    </span>
+
+                    <h2>
+                        Video analytics
+                    </h2>
+
+                </div>
+
+
+                <button
+                    id="closeAnalyticsBtn"
+                    type="button"
+                    class="sheetClose"
+                >
+
+                    <i class="fa-solid fa-xmark"></i>
+
+                </button>
+
+            </div>
+
+
+            <div class="analyticsVideo">
+
+                <img
+                    id="analyticsThumbnail"
+                    src="assets/logo.png"
+                    alt=""
+                >
+
+                <div>
+
+                    <strong id="analyticsTitle">
+                        Your video
+                    </strong>
+
+                    <span>
+                        Performance overview
+                    </span>
+
+                </div>
+
+            </div>
+
+
+            <div class="analyticsGrid">
+
+                <div class="analyticsMetric">
+
+                    <i class="fa-solid fa-eye"></i>
+
+                    <strong id="analyticsViews">
+                        0
+                    </strong>
+
+                    <span>
+                        Views
+                    </span>
+
+                </div>
+
+
+                <div class="analyticsMetric">
+
+                    <i class="fa-solid fa-heart"></i>
+
+                    <strong id="analyticsLikes">
+                        0
+                    </strong>
+
+                    <span>
+                        Likes
+                    </span>
+
+                </div>
+
+
+                <div class="analyticsMetric">
+
+                    <i class="fa-solid fa-comment"></i>
+
+                    <strong id="analyticsComments">
+                        0
+                    </strong>
+
+                    <span>
+                        Comments
+                    </span>
+
+                </div>
+
+
+                <div class="analyticsMetric">
+
+                    <i class="fa-solid fa-share-nodes"></i>
+
+                    <strong id="analyticsShares">
+                        0
+                    </strong>
+
+                    <span>
+                        Shares
+                    </span>
+
+                </div>
+
+
+                <div class="analyticsMetric">
+
+                    <i class="fa-regular fa-bookmark"></i>
+
+                    <strong id="analyticsSaves">
+                        0
+                    </strong>
+
+                    <span>
+                        Saves
+                    </span>
+
+                </div>
+
+
+                <div class="analyticsMetric">
+
+                    <i class="fa-solid fa-chart-line"></i>
+
+                    <strong id="analyticsEngagement">
+                        0%
+                    </strong>
+
+                    <span>
+                        Engagement
+                    </span>
+
+                </div>
+
+            </div>
+
+
+            <div class="analyticsInfo">
+
+                <div>
+
+                    <span>
+                        Visibility
+                    </span>
+
+                    <strong id="analyticsVisibility">
+                        Public
+                    </strong>
+
+                </div>
+
+
+                <div>
+
+                    <span>
+                        Category
+                    </span>
+
+                    <strong id="analyticsCategory">
+                        —
+                    </strong>
+
+                </div>
+
+
+                <div>
+
+                    <span>
+                        Language
+                    </span>
+
+                    <strong id="analyticsLanguage">
+                        —
+                    </strong>
+
+                </div>
+
+            </div>
+
+
+            <button
+                id="analyticsEditBtn"
+                type="button"
+                class="analyticsEditButton"
+            >
+
+                <i class="fa-solid fa-pen"></i>
+
+                Edit video details
+
+            </button>
+
+        </section>
+
+    </div>
+
+
+    <!-- =====================================================
+         TOAST
+    ====================================================== -->
+
+    <div
+        id="toast"
+        class="toast hidden"
+        role="status"
+        aria-live="polite"
+    >
+
+        <span id="toastIcon">
+
+            <i class="fa-solid fa-circle-check"></i>
+
+        </span>
+
+
+        <div>
+
+            <strong id="toastTitle">
+                Done
+            </strong>
+
+            <p id="toastText">
+                Action completed.
+            </p>
+
+        </div>
+
+    </div>
+
+
+    <!-- =====================================================
+         LOADER
+    ====================================================== -->
+
+    <div
+        id="pageLoader"
+        class="pageLoader"
+    >
+
+        <div class="pageLoaderOrb">
+
+            <img
+                src="assets/logo.png"
+                alt="Viewora"
+            >
+
+        </div>
+
+        <strong>
+            VIEWORA
+        </strong>
+
+        <span>
+            Preparing your video...
+        </span>
+
+    </div>
+
+</div>
+
+
+<!-- =========================================================
+     FIREBASE
+========================================================= -->
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
+
+
+<script src="firebase.js"></script>
+
+
+<!-- =========================================================
+     VIDEO PAGE
+========================================================= -->
+
+<script src="video.js"></script>
+
+</body>
+</html>
