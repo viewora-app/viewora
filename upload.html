@@ -6,72 +6,127 @@
 
     <meta
         name="viewport"
-        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
     >
 
-    <meta name="theme-color" content="#050507">
-    <meta name="mobile-web-app-capable" content="yes">
+    <meta
+        name="theme-color"
+        content="#050507"
+    >
+
+    <meta
+        name="mobile-web-app-capable"
+        content="yes"
+    >
+
+    <meta
+        name="apple-mobile-web-app-capable"
+        content="yes"
+    >
+
+    <meta
+        name="apple-mobile-web-app-status-bar-style"
+        content="black-translucent"
+    >
 
     <title>Viewora • Create</title>
 
-    <link rel="icon" href="assets/logo.png">
+    <link
+        rel="icon"
+        href="assets/logo.png"
+    >
 
-    <!-- FONT -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <!-- =====================================================
+         FONT
+    ====================================================== -->
+
+    <link
+        rel="preconnect"
+        href="https://fonts.googleapis.com"
+    >
+
+    <link
+        rel="preconnect"
+        href="https://fonts.gstatic.com"
+        crossorigin
+    >
+
     <link
         href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
         rel="stylesheet"
     >
 
-    <!-- ICONS -->
+    <!-- =====================================================
+         ICONS
+    ====================================================== -->
+
     <link
         rel="stylesheet"
         href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
     >
 
-    <!-- GLOBAL SPLASH ROUTER -->
+    <!-- =====================================================
+         GLOBAL PAGE LOADER
+    ====================================================== -->
+
     <script src="page-loader.js"></script>
 
-    <!-- UPLOAD CSS -->
-    <link rel="stylesheet" href="upload.css">
+    <!-- =====================================================
+         CREATE / UPLOAD CSS
+    ====================================================== -->
+
+    <link
+        rel="stylesheet"
+        href="upload.css"
+    >
 
 </head>
+
 
 <body>
 
 <div id="app">
 
     <!-- =====================================================
-         CREATOR
+         CREATE STUDIO
     ====================================================== -->
 
     <main class="creator">
 
-        <!-- CAMERA -->
+        <!-- =================================================
+             CAMERA PREVIEW
+        ================================================== -->
+
         <video
             id="cameraPreview"
             class="cameraPreview"
             autoplay
             muted
             playsinline
+            webkit-playsinline
         ></video>
 
 
-        <!-- CAMERA FALLBACK -->
+        <!-- =================================================
+             CAMERA FALLBACK
+        ================================================== -->
 
-        <div
+        <section
             id="cameraFallback"
             class="cameraFallback hidden"
+            aria-live="polite"
         >
 
             <div class="fallbackIcon">
                 <i class="fa-solid fa-camera"></i>
             </div>
 
-            <h2>Camera unavailable</h2>
+            <h2>
+                Camera unavailable
+            </h2>
 
             <p id="cameraErrorText">
-                Allow camera permission to use Viewora Camera.
+                Allow camera permission to use the Viewora camera.
             </p>
 
             <button
@@ -83,7 +138,7 @@
                 Try Again
             </button>
 
-        </div>
+        </section>
 
 
         <!-- =================================================
@@ -111,8 +166,15 @@
                 >
 
                 <div class="brandText">
-                    <strong>VIEWORA</strong>
-                    <span id="creatorModeLabel">CREATE</span>
+
+                    <strong>
+                        VIEWORA
+                    </strong>
+
+                    <span id="creatorModeLabel">
+                        CREATE
+                    </span>
+
                 </div>
 
             </div>
@@ -163,6 +225,7 @@
             type="button"
             id="musicBtn"
             class="musicButton"
+            aria-label="Add music"
         >
 
             <span class="musicIcon">
@@ -170,18 +233,29 @@
             </span>
 
             <span class="musicInfo">
-                <strong>Add Music</strong>
-                <small>Choose a sound</small>
+
+                <strong>
+                    Add Music
+                </strong>
+
+                <small>
+                    Choose a sound
+                </small>
+
             </span>
 
-            <i class="fa-solid fa-chevron-right musicArrow"></i>
+            <i
+                class="fa-solid fa-chevron-right musicArrow"
+            ></i>
 
             <span class="musicGlow"></span>
 
         </button>
 
 
-        <!-- SELECTED MUSIC -->
+        <!-- =================================================
+             SELECTED MUSIC
+        ================================================== -->
 
         <div
             id="selectedMusic"
@@ -205,17 +279,20 @@
             </div>
 
             <div class="musicWave">
+
                 <span></span>
                 <span></span>
                 <span></span>
                 <span></span>
                 <span></span>
+
             </div>
 
             <button
                 type="button"
                 id="removeMusicBtn"
                 class="miniButton"
+                aria-label="Remove music"
             >
                 <i class="fa-solid fa-xmark"></i>
             </button>
@@ -227,53 +304,84 @@
              CAMERA TOOLS
         ================================================== -->
 
-        <aside class="cameraTools">
+        <aside
+            class="cameraTools"
+            aria-label="Camera tools"
+        >
+
+            <!-- FLASH -->
 
             <button
                 type="button"
                 id="flashBtn"
                 class="cameraTool"
             >
+
                 <span class="toolCircle">
                     <i class="fa-solid fa-bolt"></i>
                 </span>
-                <small>Flash</small>
+
+                <small>
+                    Flash
+                </small>
+
             </button>
 
+
+            <!-- FLIP -->
 
             <button
                 type="button"
                 id="flipCameraBtn"
                 class="cameraTool"
             >
+
                 <span class="toolCircle">
                     <i class="fa-solid fa-camera-rotate"></i>
                 </span>
-                <small>Flip</small>
+
+                <small>
+                    Flip
+                </small>
+
             </button>
 
+
+            <!-- TIMER -->
 
             <button
                 type="button"
                 id="timerBtn"
                 class="cameraTool"
             >
+
                 <span class="toolCircle">
                     <i class="fa-regular fa-clock"></i>
                 </span>
-                <small>Timer</small>
+
+                <small>
+                    Timer
+                </small>
+
             </button>
 
+
+            <!-- SPEED -->
 
             <button
                 type="button"
                 id="speedBtn"
                 class="cameraTool"
             >
+
                 <span class="toolCircle">
                     <i class="fa-solid fa-gauge-high"></i>
                 </span>
-                <small>Speed</small>
+
+                <small>
+                    Speed
+                </small>
+
             </button>
 
         </aside>
@@ -286,6 +394,7 @@
         <div
             id="recordingStatus"
             class="recordingStatus hidden"
+            aria-live="polite"
         >
 
             <span class="recordDot"></span>
@@ -294,18 +403,22 @@
                 00:00
             </strong>
 
-            <span>REC</span>
+            <span>
+                REC
+            </span>
 
         </div>
 
 
         <!-- =================================================
-             BOTTOM CAMERA AREA
+             CAMERA BOTTOM
         ================================================== -->
 
         <section class="cameraBottom">
 
-            <!-- FILE -->
+            <!-- =================================================
+                 FILE / GALLERY
+            ================================================== -->
 
             <button
                 type="button"
@@ -332,7 +445,9 @@
             </button>
 
 
-            <!-- RECORD -->
+            <!-- =================================================
+                 RECORD
+            ================================================== -->
 
             <div class="recordWrapper">
 
@@ -340,7 +455,7 @@
                     type="button"
                     id="recordBtn"
                     class="recordButton"
-                    aria-label="Record"
+                    aria-label="Start recording"
                 >
 
                     <span class="recordRing">
@@ -369,18 +484,22 @@
             </div>
 
 
-            <!-- GALLERY -->
+            <!-- =================================================
+                 GALLERY
+            ================================================== -->
 
             <button
                 type="button"
                 id="galleryBtn"
                 class="galleryButton"
-                aria-label="Gallery"
+                aria-label="Open gallery"
             >
 
                 <i class="fa-regular fa-images"></i>
 
-                <span>Gallery</span>
+                <span>
+                    Gallery
+                </span>
 
             </button>
 
@@ -421,9 +540,13 @@
                         <i class="fa-solid fa-image"></i>
                     </span>
 
-                    <strong>Post</strong>
+                    <strong>
+                        Post
+                    </strong>
 
-                    <small>Photo</small>
+                    <small>
+                        Photo
+                    </small>
 
                 </button>
 
@@ -440,9 +563,13 @@
                         <i class="fa-solid fa-bolt"></i>
                     </span>
 
-                    <strong>Shorts</strong>
+                    <strong>
+                        Shorts
+                    </strong>
 
-                    <small>Vertical</small>
+                    <small>
+                        Vertical
+                    </small>
 
                 </button>
 
@@ -459,9 +586,13 @@
                         <i class="fa-solid fa-video"></i>
                     </span>
 
-                    <strong>Long Video</strong>
+                    <strong>
+                        Long Video
+                    </strong>
 
-                    <small>Video</small>
+                    <small>
+                        Video
+                    </small>
 
                 </button>
 
@@ -478,9 +609,13 @@
                         <i class="fa-solid fa-tower-broadcast"></i>
                     </span>
 
-                    <strong>Live</strong>
+                    <strong>
+                        Live
+                    </strong>
 
-                    <small>Go live</small>
+                    <small>
+                        Go live
+                    </small>
 
                 </button>
 
@@ -489,16 +624,21 @@
         </section>
 
 
-        <!-- MODE PROGRESS -->
+        <!-- =================================================
+             MODE PROGRESS
+        ================================================== -->
 
         <div class="modeProgress">
 
             <span data-progress="post"></span>
+
             <span
                 data-progress="shorts"
                 class="active"
             ></span>
+
             <span data-progress="long"></span>
+
             <span data-progress="live"></span>
 
         </div>
@@ -508,39 +648,54 @@
 
     <!-- =====================================================
          FILE INPUTS
+         
+         IMPORTANT:
+         Every input has a UNIQUE ID.
     ====================================================== -->
 
-    <!-- POST = PHOTO ONLY -->
+
+    <!-- POST PHOTO -->
 
     <input
-    type="file"
-    id="mediaInput"
-    accept="Photo/*"
-    hidden
->
+        type="file"
+        id="postMediaInput"
+        accept="image/*"
+        hidden
+    >
 
 
-    <!-- SHORTS = VIDEO ONLY -->
-
-    <input
-    type="file"
-    id="mediaInput"
-    accept="video/*"
-    hidden
->
-
-
-    <!-- LONG VIDEO = VIDEO ONLY -->
+    <!-- SHORTS VIDEO -->
 
     <input
-    type="file"
-    id="mediaInput"
-    accept="video/*"
-    hidden
->
+        type="file"
+        id="shortsMediaInput"
+        accept="video/*"
+        hidden
+    >
 
 
-    <!-- THUMBNAIL -->
+    <!-- LONG VIDEO -->
+
+    <input
+        type="file"
+        id="longVideoInput"
+        accept="video/*"
+        hidden
+    >
+
+
+    <!-- GENERIC MEDIA INPUT
+         upload.js can use this one dynamically -->
+
+    <input
+        type="file"
+        id="mediaInput"
+        accept="video/*"
+        hidden
+    >
+
+
+    <!-- LIVE THUMBNAIL -->
 
     <input
         type="file"
@@ -548,6 +703,160 @@
         accept="image/*"
         hidden
     >
+
+
+    <!-- CAMERA CAPTURE -->
+
+    <input
+        type="file"
+        id="cameraPhotoInput"
+        accept="image/*"
+        capture="environment"
+        hidden
+    >
+
+
+    <!-- =====================================================
+         FILE SHEET
+         
+         Kept because upload.js checks for fileSheet.
+    ====================================================== -->
+
+    <div
+        id="fileSheet"
+        class="overlay hidden"
+    >
+
+        <div
+            class="overlayBackdrop"
+            data-close-sheet="fileSheet"
+        ></div>
+
+
+        <section class="uploadSheet">
+
+            <div class="sheetHandle"></div>
+
+
+            <header class="sheetHeader">
+
+                <div>
+
+                    <span class="eyebrow">
+                        VIEWORA CREATE
+                    </span>
+
+                    <h2 id="fileSheetTitle">
+                        Upload to Shorts
+                    </h2>
+
+                    <p id="fileSheetDescription">
+                        Create a vertical short video.
+                    </p>
+
+                </div>
+
+
+                <button
+                    type="button"
+                    id="closeFileBtn"
+                    class="sheetCloseButton"
+                    aria-label="Close upload"
+                >
+
+                    <i class="fa-solid fa-xmark"></i>
+
+                </button>
+
+            </header>
+
+
+            <!-- SELECTED MODE NOTICE -->
+
+            <div class="uploadNotice">
+
+                <span
+                    class="uploadNoticeIcon"
+                    id="fileModeIcon"
+                >
+                    <i class="fa-solid fa-bolt"></i>
+                </span>
+
+                <div>
+
+                    <strong id="noticeTitle">
+                        Shorts selected
+                    </strong>
+
+                    <p id="noticeText">
+                        Choose a vertical video for your Short.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <!-- CHOOSE MEDIA -->
+
+            <button
+                type="button"
+                id="chooseMediaBtn"
+                class="uploadOption primaryUpload"
+            >
+
+                <span class="uploadOptionIcon">
+                    <i class="fa-solid fa-folder-open"></i>
+                </span>
+
+                <span class="uploadOptionText">
+
+                    <strong>
+                        Choose from Gallery
+                    </strong>
+
+                    <small id="chooseMediaHint">
+                        Select a video from your gallery
+                    </small>
+
+                </span>
+
+                <i class="fa-solid fa-chevron-right"></i>
+
+            </button>
+
+
+            <!-- OPEN GALLERY -->
+
+            <button
+                type="button"
+                id="openGalleryBtn"
+                class="uploadOption"
+            >
+
+                <span class="uploadOptionIcon">
+                    <i class="fa-regular fa-images"></i>
+                </span>
+
+                <span class="uploadOptionText">
+
+                    <strong>
+                        Browse Media
+                    </strong>
+
+                    <small>
+                        Photos and videos on your device
+                    </small>
+
+                </span>
+
+                <i class="fa-solid fa-chevron-right"></i>
+
+            </button>
+
+        </section>
+
+    </div>
 
 
     <!-- =====================================================
@@ -559,11 +868,16 @@
         class="overlay hidden"
     >
 
-        <div class="overlayBackdrop"></div>
+        <div
+            class="overlayBackdrop"
+            data-close-sheet="postSheet"
+        ></div>
+
 
         <section class="uploadSheet">
 
             <div class="sheetHandle"></div>
+
 
             <header class="sheetHeader">
 
@@ -578,17 +892,21 @@
                     </h2>
 
                     <p>
-                        Choose photos from your device.
+                        Share a photo with your audience.
                     </p>
 
                 </div>
+
 
                 <button
                     type="button"
                     id="closePostBtn"
                     class="sheetCloseButton"
+                    aria-label="Close post"
                 >
+
                     <i class="fa-solid fa-xmark"></i>
+
                 </button>
 
             </header>
@@ -638,7 +956,7 @@
                     </strong>
 
                     <small>
-                        Use the back camera
+                        Use your camera
                     </small>
 
                 </span>
@@ -653,7 +971,7 @@
 
 
     <!-- =====================================================
-         VIDEO FILE SHEET
+         VIDEO SHEET
     ====================================================== -->
 
     <div
@@ -661,11 +979,16 @@
         class="overlay hidden"
     >
 
-        <div class="overlayBackdrop"></div>
+        <div
+            class="overlayBackdrop"
+            data-close-sheet="videoSheet"
+        ></div>
+
 
         <section class="uploadSheet">
 
             <div class="sheetHandle"></div>
+
 
             <header class="sheetHeader">
 
@@ -685,12 +1008,16 @@
 
                 </div>
 
+
                 <button
                     type="button"
                     id="closeVideoBtn"
                     class="sheetCloseButton"
+                    aria-label="Close video upload"
                 >
+
                     <i class="fa-solid fa-xmark"></i>
+
                 </button>
 
             </header>
@@ -740,7 +1067,7 @@
                     </strong>
 
                     <small>
-                        Use the back camera
+                        Use your camera
                     </small>
 
                 </span>
@@ -755,7 +1082,7 @@
 
 
     <!-- =====================================================
-         LIVE SETUP — YOUTUBE STYLE
+         LIVE SETUP
     ====================================================== -->
 
     <div
@@ -763,17 +1090,23 @@
         class="overlay hidden"
     >
 
-        <div class="overlayBackdrop"></div>
+        <div
+            class="overlayBackdrop"
+            data-close-sheet="livePanel"
+        ></div>
+
 
         <section class="liveSheet">
 
             <div class="sheetHandle"></div>
+
 
             <header class="liveHeader">
 
                 <div class="liveHeaderIcon">
                     <i class="fa-solid fa-tower-broadcast"></i>
                 </div>
+
 
                 <div>
 
@@ -791,18 +1124,24 @@
 
                 </div>
 
+
                 <button
                     type="button"
                     id="closeLiveBtn"
                     class="sheetCloseButton"
+                    aria-label="Close live setup"
                 >
+
                     <i class="fa-solid fa-xmark"></i>
+
                 </button>
 
             </header>
 
 
-            <!-- LIVE THUMBNAIL -->
+            <!-- =================================================
+                 LIVE THUMBNAIL
+            ================================================== -->
 
             <button
                 type="button"
@@ -823,6 +1162,7 @@
 
                 </div>
 
+
                 <div class="thumbnailText">
 
                     <strong>
@@ -835,12 +1175,15 @@
 
                 </div>
 
+
                 <i class="fa-solid fa-chevron-right"></i>
 
             </button>
 
 
-            <!-- LIVE TITLE -->
+            <!-- =================================================
+                 TITLE
+            ================================================== -->
 
             <div class="fieldGroup">
 
@@ -863,7 +1206,9 @@
             </div>
 
 
-            <!-- LIVE DESCRIPTION -->
+            <!-- =================================================
+                 DESCRIPTION
+            ================================================== -->
 
             <div class="fieldGroup">
 
@@ -885,7 +1230,9 @@
             </div>
 
 
-            <!-- VISIBILITY -->
+            <!-- =================================================
+                 VISIBILITY
+            ================================================== -->
 
             <div class="fieldGroup">
 
@@ -912,30 +1259,39 @@
             </div>
 
 
-            <!-- LIVE INFO -->
+            <!-- =================================================
+                 LIVE INFO
+            ================================================== -->
 
             <div class="liveInfo">
 
                 <div>
+
                     <i class="fa-solid fa-shield-halved"></i>
 
                     <span>
                         Your stream will follow Viewora's community rules.
                     </span>
+
                 </div>
 
+
                 <div>
+
                     <i class="fa-solid fa-bolt"></i>
 
                     <span>
-                        You can add the stream details before going live.
+                        Review your stream details before going live.
                     </span>
+
                 </div>
 
             </div>
 
 
-            <!-- START LIVE -->
+            <!-- =================================================
+                 START LIVE
+            ================================================== -->
 
             <button
                 type="button"
@@ -963,11 +1319,16 @@
         class="overlay hidden"
     >
 
-        <div class="overlayBackdrop"></div>
+        <div
+            class="overlayBackdrop"
+            data-close-sheet="musicSheet"
+        ></div>
+
 
         <section class="musicSheet">
 
             <div class="sheetHandle"></div>
+
 
             <header class="sheetHeader">
 
@@ -983,16 +1344,22 @@
 
                 </div>
 
+
                 <button
                     type="button"
                     id="closeMusicBtn"
                     class="sheetCloseButton"
+                    aria-label="Close music"
                 >
+
                     <i class="fa-solid fa-xmark"></i>
+
                 </button>
 
             </header>
 
+
+            <!-- SEARCH -->
 
             <div class="musicSearch">
 
@@ -1009,49 +1376,75 @@
                     type="button"
                     id="clearMusicSearch"
                     class="hidden"
+                    aria-label="Clear search"
                 >
+
                     <i class="fa-solid fa-xmark"></i>
+
                 </button>
 
             </div>
 
+
+            <!-- CATEGORIES -->
 
             <div class="musicCategories">
 
                 <button
+                    type="button"
                     class="musicCategory active"
                     data-category="trending"
                 >
+
                     <i class="fa-solid fa-fire"></i>
+
                     Trending
+
                 </button>
 
+
                 <button
+                    type="button"
                     class="musicCategory"
                     data-category="popular"
                 >
+
                     <i class="fa-solid fa-star"></i>
+
                     Popular
+
                 </button>
 
+
                 <button
+                    type="button"
                     class="musicCategory"
                     data-category="new"
                 >
+
                     <i class="fa-solid fa-sparkles"></i>
+
                     New
+
                 </button>
 
+
                 <button
+                    type="button"
                     class="musicCategory"
                     data-category="saved"
                 >
+
                     <i class="fa-regular fa-bookmark"></i>
+
                     Saved
+
                 </button>
 
             </div>
 
+
+            <!-- MUSIC LIST -->
 
             <div
                 id="musicList"
@@ -1072,25 +1465,41 @@
         class="overlay hidden"
     >
 
-        <div class="overlayBackdrop"></div>
+        <div
+            class="overlayBackdrop"
+            data-close-sheet="timerSheet"
+        ></div>
+
 
         <section class="smallSheet">
 
             <div class="sheetHandle"></div>
 
+
             <header class="simpleSheetHeader">
 
                 <div>
-                    <span class="eyebrow">CAMERA</span>
-                    <h2>Timer</h2>
+
+                    <span class="eyebrow">
+                        CAMERA
+                    </span>
+
+                    <h2>
+                        Timer
+                    </h2>
+
                 </div>
+
 
                 <button
                     type="button"
                     id="closeTimerBtn"
                     class="sheetCloseButton"
+                    aria-label="Close timer"
                 >
+
                     <i class="fa-solid fa-xmark"></i>
+
                 </button>
 
             </header>
@@ -1099,27 +1508,34 @@
             <div class="choiceGrid">
 
                 <button
+                    type="button"
                     class="choiceItem active"
                     data-time="0"
                 >
                     Off
                 </button>
 
+
                 <button
+                    type="button"
                     class="choiceItem"
                     data-time="3"
                 >
                     3 sec
                 </button>
 
+
                 <button
+                    type="button"
                     class="choiceItem"
                     data-time="5"
                 >
                     5 sec
                 </button>
 
+
                 <button
+                    type="button"
                     class="choiceItem"
                     data-time="10"
                 >
@@ -1142,25 +1558,41 @@
         class="overlay hidden"
     >
 
-        <div class="overlayBackdrop"></div>
+        <div
+            class="overlayBackdrop"
+            data-close-sheet="speedSheet"
+        ></div>
+
 
         <section class="smallSheet">
 
             <div class="sheetHandle"></div>
 
+
             <header class="simpleSheetHeader">
 
                 <div>
-                    <span class="eyebrow">CAMERA</span>
-                    <h2>Recording Speed</h2>
+
+                    <span class="eyebrow">
+                        CAMERA
+                    </span>
+
+                    <h2>
+                        Recording Speed
+                    </h2>
+
                 </div>
+
 
                 <button
                     type="button"
                     id="closeSpeedBtn"
                     class="sheetCloseButton"
+                    aria-label="Close speed"
                 >
+
                     <i class="fa-solid fa-xmark"></i>
+
                 </button>
 
             </header>
@@ -1169,27 +1601,34 @@
             <div class="speedGrid">
 
                 <button
+                    type="button"
                     class="speedItem"
                     data-speed="0.5"
                 >
                     0.5x
                 </button>
 
+
                 <button
+                    type="button"
                     class="speedItem active"
                     data-speed="1"
                 >
                     1x
                 </button>
 
+
                 <button
+                    type="button"
                     class="speedItem"
                     data-speed="2"
                 >
                     2x
                 </button>
 
+
                 <button
+                    type="button"
                     class="speedItem"
                     data-speed="3"
                 >
@@ -1212,11 +1651,16 @@
         class="overlay hidden"
     >
 
-        <div class="overlayBackdrop"></div>
+        <div
+            class="overlayBackdrop"
+            data-close-sheet="settingsSheet"
+        ></div>
+
 
         <section class="settingsSheet">
 
             <div class="sheetHandle"></div>
+
 
             <header class="simpleSheetHeader">
 
@@ -1232,18 +1676,24 @@
 
                 </div>
 
+
                 <button
                     type="button"
                     id="closeSettingsBtn"
                     class="sheetCloseButton"
+                    aria-label="Close settings"
                 >
+
                     <i class="fa-solid fa-xmark"></i>
+
                 </button>
 
             </header>
 
 
             <div class="settingsList">
+
+                <!-- MICROPHONE -->
 
                 <label class="settingRow">
 
@@ -1254,11 +1704,19 @@
                         </span>
 
                         <span>
-                            <strong>Microphone</strong>
-                            <small>Record camera audio</small>
+
+                            <strong>
+                                Microphone
+                            </strong>
+
+                            <small>
+                                Record camera audio
+                            </small>
+
                         </span>
 
                     </span>
+
 
                     <input
                         type="checkbox"
@@ -1269,6 +1727,8 @@
                 </label>
 
 
+                <!-- HD -->
+
                 <label class="settingRow">
 
                     <span class="settingInfo">
@@ -1278,11 +1738,19 @@
                         </span>
 
                         <span>
-                            <strong>HD Quality</strong>
-                            <small>Use high quality camera</small>
+
+                            <strong>
+                                HD Quality
+                            </strong>
+
+                            <small>
+                                Use high quality camera
+                            </small>
+
                         </span>
 
                     </span>
+
 
                     <input
                         type="checkbox"
@@ -1293,6 +1761,8 @@
                 </label>
 
 
+                <!-- FULL SCREEN -->
+
                 <label class="settingRow">
 
                     <span class="settingInfo">
@@ -1302,11 +1772,19 @@
                         </span>
 
                         <span>
-                            <strong>Full Screen Camera</strong>
-                            <small>Immersive camera preview</small>
+
+                            <strong>
+                                Full Screen Camera
+                            </strong>
+
+                            <small>
+                                Immersive camera preview
+                            </small>
+
                         </span>
 
                     </span>
+
 
                     <input
                         type="checkbox"
@@ -1337,6 +1815,8 @@
             class="recordedVideo"
             controls
             playsinline
+            webkit-playsinline
+            preload="metadata"
         ></video>
 
 
@@ -1346,13 +1826,19 @@
                 type="button"
                 id="closePreviewBtn"
                 class="iconButton glass"
+                aria-label="Close preview"
             >
+
                 <i class="fa-solid fa-xmark"></i>
+
             </button>
+
 
             <div>
 
-                <span>PREVIEW</span>
+                <span>
+                    PREVIEW
+                </span>
 
                 <strong id="previewModeTitle">
                     Shorts
@@ -1370,17 +1856,24 @@
                 id="retakeBtn"
                 class="secondaryAction"
             >
+
                 <i class="fa-solid fa-rotate-left"></i>
+
                 Retake
+
             </button>
+
 
             <button
                 type="button"
                 id="continueVideoBtn"
                 class="primaryAction"
             >
+
                 Continue
+
                 <i class="fa-solid fa-arrow-right"></i>
+
             </button>
 
         </div>
@@ -1395,6 +1888,8 @@
     <div
         id="processingOverlay"
         class="processingOverlay hidden"
+        aria-live="polite"
+        aria-busy="true"
     >
 
         <div class="processingOrb">
@@ -1405,16 +1900,21 @@
 
         </div>
 
+
         <h2>
             Preparing your content
         </h2>
+
 
         <p id="processingText">
             Opening editor...
         </p>
 
+
         <div class="processingProgress">
+
             <span></span>
+
         </div>
 
     </div>
@@ -1427,11 +1927,16 @@
     <div
         id="toast"
         class="toast hidden"
+        role="status"
+        aria-live="polite"
     >
 
         <span id="toastIcon">
+
             <i class="fa-solid fa-circle-check"></i>
+
         </span>
+
 
         <div>
 
@@ -1449,7 +1954,7 @@
 
 
     <!-- =====================================================
-         AUDIO
+         MUSIC AUDIO
     ====================================================== -->
 
     <audio
@@ -1460,27 +1965,47 @@
 </div>
 
 
-<!-- =====================================================
+<!-- =========================================================
      FIREBASE
-====================================================== -->
+========================================================= -->
 
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script
+    src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"
+></script>
 
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script
+    src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"
+></script>
 
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+<script
+    src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"
+></script>
 
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
+<script
+    src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"
+></script>
+
+
+<!-- =========================================================
+     VIEWORA FIREBASE CORE
+========================================================= -->
 
 <script src="firebase.js"></script>
-  <script src="call-listener.js"></script>
 
 
-<!-- =====================================================
-     UPLOAD LOGIC
-====================================================== -->
+<!-- =========================================================
+     CALL LISTENER
+========================================================= -->
+
+<script src="call-listener.js"></script>
+
+
+<!-- =========================================================
+     VIEWORA CREATE / UPLOAD ENGINE
+========================================================= -->
 
 <script src="upload.js"></script>
+
 
 </body>
 </html>

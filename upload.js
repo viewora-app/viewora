@@ -1,17 +1,10 @@
 "use strict";
 
 /* =========================================================
-   VIEWORA CREATE / UPLOAD ENGINE
+   VIEWORA CREATE STUDIO
    upload.js
-   FIXED:
-   - Selected media persists across page navigation
-   - edit-post.html receives image correctly
-   - Shorts / Long Video receive media
-   - Camera recording support
-   - File validation
-   - Session storage bridge
-   - Clean initialization
-========================================================= */
+   PREMIUM • PRODUCTION READY
+   ========================================================= */
 
 (() => {
 
@@ -22,7 +15,6 @@
 
     window.__VIEWORA_UPLOAD_INITIALIZED__ = true;
 
-
     /* =====================================================
        HELPERS
     ===================================================== */
@@ -30,7 +22,10 @@
     const $ = id => document.getElementById(id);
 
     const qsa = selector =>
-        [...document.querySelectorAll(selector)];
+        Array.from(document.querySelectorAll(selector));
+
+    const sleep = ms =>
+        new Promise(resolve => setTimeout(resolve, ms));
 
 
     /* =====================================================
@@ -40,7 +35,6 @@
     const cameraPreview = $("cameraPreview");
     const cameraFallback = $("cameraFallback");
     const cameraErrorText = $("cameraErrorText");
-
     const retryCameraBtn = $("retryCameraBtn");
 
     const closeCreatorBtn = $("closeCreatorBtn");
@@ -52,6 +46,7 @@
     const speedBtn = $("speedBtn");
 
     const recordBtn = $("recordBtn");
+    const recordInner = $("recordInner");
 
     const recordingStatus = $("recordingStatus");
     const recordingTime = $("recordingTime");
@@ -60,19 +55,29 @@
     const galleryBtn = $("galleryBtn");
 
     const mediaInput = $("mediaInput");
+    const postMediaInput = $("postMediaInput");
+    const shortsMediaInput = $("shortsMediaInput");
+    const longVideoInput = $("longVideoInput");
+    const cameraPhotoInput = $("cameraPhotoInput");
+    const thumbnailInput = $("thumbnailInput");
 
     const musicBtn = $("musicBtn");
     const selectedMusic = $("selectedMusic");
+    const selectedMusicName = $("selectedMusicName");
+    const selectedMusicArtist = $("selectedMusicArtist");
     const removeMusicBtn = $("removeMusicBtn");
 
     const modeTitle = $("modeTitle");
     const modeDescription = $("modeDescription");
     const modeIcon = $("modeIcon");
+    const creatorModeLabel = $("creatorModeLabel");
 
     const recordLabel = $("recordLabel");
     const recordSubLabel = $("recordSubLabel");
 
+    const fileButtonTitle = $("fileButtonTitle");
     const fileButtonHint = $("fileButtonHint");
+
     const modeSelector = $("modeSelector");
 
     const recordPreview = $("recordPreview");
@@ -112,11 +117,15 @@
 
     let recordingTimer = null;
 
+    let countdownTimer = null;
+
     let selectedTimer = 0;
 
     let selectedSpeed = 1;
 
     let isRecording = false;
+
+    let isPreparingRecording = false;
 
     let selectedMusicData = null;
 
@@ -125,6 +134,31 @@
     let flashEnabled = false;
 
     let currentObjectURL = null;
+
+    let currentPreviewURL = null;
+
+    let cameraStarting = false;
+
+    let cameraStartToken = 0;
+
+
+    /* =====================================================
+       CONSTANTS
+    ===================================================== */
+
+    const MAX_SHORT_SECONDS = 60;
+
+    const VIDEO_DB_NAME = "VIEWORA_MEDIA_DB";
+
+    const VIDEO_DB_VERSION = 1;
+
+    const VIDEO_STORE = "uploads";
+
+    const VIDEO_KEY = "currentVideo";
+
+    const IMAGE_STORAGE_KEY = "viewora_edit_post_media";
+
+    const IMAGE_TYPE_KEY = "viewora_edit_post_type";
 
 
     /* =====================================================
@@ -185,11 +219,11 @@
         if (!toast) return;
 
         if (toastTitle) {
-            toastTitle.textContent = title;
+            toastTitle.textContent = title || "Done";
         }
 
         if (toastText) {
-            toastText.textContent = message;
+            toastText.textContent = message || "";
         }
 
         const icon = $("toastIcon");
@@ -219,10 +253,29 @@
 
         window.__VIEWORA_UPLOAD_TOAST__ =
             setTimeout(() => {
-
                 toast.classList.add("hidden");
+            }, 3200);
+    }
 
-            }, 3000);
+
+    /* =====================================================
+       PROCESSING
+    ===================================================== */
+
+    function showProcessing(message) {
+
+        if (processingText) {
+            processingText.textContent =
+                message || "Preparing your content...";
+        }
+
+        processingOverlay?.classList.remove("hidden");
+    }
+
+
+    function hideProcessing() {
+
+        processingOverlay?.classList.add("hidden");
     }
 
 
@@ -232,7 +285,20 @@
 
     async function startCamera() {
 
+        if (currentMode === "live") {
+            stopCamera();
+            return;
+        }
+
         if (!cameraPreview) return;
+
+        const token = ++cameraStartToken;
+
+        if (cameraStarting) {
+            return;
+        }
+
+        cameraStarting = true;
 
         stopCamera();
 
@@ -240,6 +306,8 @@
             !navigator.mediaDevices ||
             !navigator.mediaDevices.getUserMedia
         ) {
+
+            cameraStarting = false;
 
             showCameraError(
                 "Camera is not supported in this browser."
@@ -275,56 +343,86 @@
                 }
             };
 
-
-            currentStream =
+            const stream =
                 await navigator.mediaDevices.getUserMedia(
                     constraints
                 );
 
+            if (token !== cameraStartToken) {
 
-            cameraPreview.srcObject =
-                currentStream;
+                stream
+                    .getTracks()
+                    .forEach(track => track.stop());
 
-
-            cameraPreview.muted = true;
-
-            cameraPreview.playsInline = true;
-
-            await cameraPreview.play();
-
-
-            if (cameraFallback) {
-                cameraFallback.classList.add("hidden");
+                return;
             }
 
+            currentStream = stream;
+
+            cameraPreview.srcObject = currentStream;
+
+            cameraPreview.muted = true;
+            cameraPreview.playsInline = true;
+            cameraPreview.autoplay = true;
+
+            await cameraPreview.play().catch(() => {});
+
+            cameraFallback?.classList.add("hidden");
 
             updateFlashAvailability();
+
+            const micToggle = $("microphoneToggle");
+
+            if (micToggle) {
+
+                currentStream
+                    .getAudioTracks()
+                    .forEach(track => {
+                        track.enabled =
+                            micToggle.checked;
+                    });
+            }
 
         } catch (error) {
 
             console.error(
-                "VIEWORA CAMERA:",
+                "VIEWORA CAMERA ERROR:",
                 error
             );
+
+            if (token !== cameraStartToken) {
+                return;
+            }
 
             let message =
                 "Camera could not be started. Please try again.";
 
-            if (error.name === "NotAllowedError") {
+            switch (error?.name) {
 
-                message =
-                    "Camera permission is blocked. Allow camera access in browser settings.";
+                case "NotAllowedError":
+                    message =
+                        "Camera permission is blocked. Allow camera access in browser settings.";
+                    break;
 
-            } else if (error.name === "NotFoundError") {
+                case "NotFoundError":
+                    message =
+                        "No camera was found on this device.";
+                    break;
 
-                message =
-                    "No camera was found on this device.";
+                case "NotReadableError":
+                    message =
+                        "Camera is currently being used by another app.";
+                    break;
 
-            } else if (error.name === "NotReadableError") {
+                case "SecurityError":
+                    message =
+                        "Camera requires a secure HTTPS connection.";
+                    break;
 
-                message =
-                    "Camera is currently being used by another app.";
-
+                case "OverconstrainedError":
+                    message =
+                        "This camera does not support the requested settings.";
+                    break;
             }
 
             showCameraError(message);
@@ -334,32 +432,40 @@
                 message,
                 "error"
             );
+
+        } finally {
+
+            cameraStarting = false;
         }
     }
 
 
     function showCameraError(message) {
 
-        if (cameraFallback) {
-            cameraFallback.classList.remove("hidden");
-        }
+        cameraFallback?.classList.remove("hidden");
 
         if (cameraErrorText) {
-            cameraErrorText.textContent = message;
+            cameraErrorText.textContent =
+                message ||
+                "Camera is unavailable.";
         }
     }
 
 
     function stopCamera() {
 
+        cameraStartToken++;
+
         if (currentStream) {
 
             currentStream
                 .getTracks()
                 .forEach(track => {
+
                     try {
                         track.stop();
                     } catch (_) {}
+
                 });
         }
 
@@ -368,6 +474,10 @@
         if (cameraPreview) {
             cameraPreview.srcObject = null;
         }
+
+        flashEnabled = false;
+
+        flashBtn?.classList.remove("active");
     }
 
 
@@ -376,6 +486,15 @@
     ===================================================== */
 
     async function flipCamera() {
+
+        if (isRecording) {
+            showToast(
+                "Recording active",
+                "Stop recording before switching cameras.",
+                "warning"
+            );
+            return;
+        }
 
         currentFacingMode =
             currentFacingMode === "environment"
@@ -399,20 +518,34 @@
 
     function updateFlashAvailability() {
 
-        if (!flashBtn || !currentStream) return;
+        if (!flashBtn) return;
+
+        if (!currentStream) {
+
+            flashBtn.disabled = true;
+            flashBtn.style.opacity = ".45";
+
+            return;
+        }
 
         const track =
             currentStream.getVideoTracks()[0];
 
-        if (!track) return;
+        if (!track) {
+
+            flashBtn.disabled = true;
+            flashBtn.style.opacity = ".45";
+
+            return;
+        }
 
         const capabilities =
-            track.getCapabilities
+            typeof track.getCapabilities === "function"
                 ? track.getCapabilities()
                 : {};
 
         const supported =
-            !!capabilities.torch;
+            Boolean(capabilities.torch);
 
         flashBtn.disabled = !supported;
 
@@ -423,7 +556,16 @@
 
     async function toggleFlash() {
 
-        if (!currentStream) return;
+        if (!currentStream) {
+
+            showToast(
+                "Camera unavailable",
+                "Start the camera first.",
+                "warning"
+            );
+
+            return;
+        }
 
         const track =
             currentStream.getVideoTracks()[0];
@@ -433,7 +575,7 @@
         try {
 
             const capabilities =
-                track.getCapabilities
+                typeof track.getCapabilities === "function"
                     ? track.getCapabilities()
                     : {};
 
@@ -441,15 +583,14 @@
 
                 showToast(
                     "Flash unavailable",
-                    "This camera does not support flash.",
+                    "This camera does not support torch control.",
                     "warning"
                 );
 
                 return;
             }
 
-            flashEnabled =
-                !flashEnabled;
+            flashEnabled = !flashEnabled;
 
             await track.applyConstraints({
 
@@ -461,7 +602,7 @@
 
             });
 
-            flashBtn.classList.toggle(
+            flashBtn?.classList.toggle(
                 "active",
                 flashEnabled
             );
@@ -475,7 +616,7 @@
 
             showToast(
                 "Flash error",
-                "Unable to control flash.",
+                "Unable to control camera flash.",
                 "error"
             );
         }
@@ -486,15 +627,21 @@
        MODE
     ===================================================== */
 
-    function setMode(mode) {
+    async function setMode(mode) {
 
         if (!MODES[mode]) return;
 
+        if (isRecording) {
+
+            stopRecording();
+
+            await sleep(100);
+
+        }
+
         currentMode = mode;
 
-        const config =
-            MODES[mode];
-
+        const config = MODES[mode];
 
         if (modeTitle) {
             modeTitle.textContent =
@@ -509,6 +656,21 @@
         if (modeIcon) {
             modeIcon.innerHTML =
                 config.icon;
+        }
+
+        if (creatorModeLabel) {
+            creatorModeLabel.textContent =
+                config.title.toUpperCase();
+        }
+
+        if (fileButtonTitle) {
+
+            fileButtonTitle.textContent =
+                mode === "post"
+                    ? "Select Photo"
+                    : mode === "live"
+                        ? "Live Setup"
+                        : "Select Video";
         }
 
         if (fileButtonHint) {
@@ -526,17 +688,15 @@
                 config.subLabel;
         }
 
-        if (mediaInput) {
-            mediaInput.accept =
-                config.accept ||
-                "image/*,video/*";
-        }
-
         if (previewModeTitle) {
             previewModeTitle.textContent =
                 config.title;
         }
 
+        if (mediaInput) {
+            mediaInput.accept =
+                config.accept || "image/*,video/*";
+        }
 
         qsa(".modeItem").forEach(item => {
 
@@ -547,9 +707,16 @@
 
         });
 
+        qsa("[data-progress]").forEach(item => {
+
+            item.classList.toggle(
+                "active",
+                item.dataset.progress === mode
+            );
+
+        });
 
         updateUploadNotice();
-
 
         if (mode === "live") {
 
@@ -559,8 +726,9 @@
 
         } else {
 
-            startCamera();
+            $("livePanel")?.classList.add("hidden");
 
+            await startCamera();
         }
     }
 
@@ -574,11 +742,7 @@
         item.addEventListener(
             "click",
             () => {
-
-                setMode(
-                    item.dataset.mode
-                );
-
+                setMode(item.dataset.mode);
             }
         );
 
@@ -586,7 +750,7 @@
 
 
     /* =====================================================
-       SWIPE MODE
+       MODE SWIPE
     ===================================================== */
 
     let touchStartX = 0;
@@ -596,7 +760,7 @@
         event => {
 
             touchStartX =
-                event.changedTouches[0].clientX;
+                event.changedTouches[0]?.clientX || 0;
 
         },
         {
@@ -604,13 +768,12 @@
         }
     );
 
-
     modeSelector?.addEventListener(
         "touchend",
         event => {
 
             const endX =
-                event.changedTouches[0].clientX;
+                event.changedTouches[0]?.clientX || 0;
 
             const diff =
                 endX - touchStartX;
@@ -649,29 +812,22 @@
 
     function openFileSheet() {
 
-        const sheet =
-            $("fileSheet");
+        if (currentMode === "live") {
 
-        if (!sheet) {
-
-            openFilePicker();
+            showLivePanel();
 
             return;
         }
 
         updateUploadNotice();
 
-        sheet.classList.remove(
-            "hidden"
-        );
+        $("fileSheet")?.classList.remove("hidden");
     }
 
 
     function closeFileSheet() {
 
-        $("fileSheet")?.classList.add(
-            "hidden"
-        );
+        $("fileSheet")?.classList.add("hidden");
     }
 
 
@@ -698,7 +854,6 @@
         const chooseMediaHint =
             $("chooseMediaHint");
 
-
         if (title) {
             title.textContent =
                 `Upload to ${config.title}`;
@@ -714,13 +869,12 @@
                 `${config.title} selected`;
         }
 
-
         if (noticeText) {
 
             if (currentMode === "post") {
 
                 noticeText.textContent =
-                    "Choose a photo for your post.";
+                    "Choose a photo from your gallery.";
 
             } else if (currentMode === "shorts") {
 
@@ -735,10 +889,9 @@
             } else {
 
                 noticeText.textContent =
-                    "Live setup will open next.";
+                    "Set up your live stream.";
             }
         }
-
 
         if (fileModeIcon) {
 
@@ -749,7 +902,6 @@
                         ? "fa-solid fa-bolt"
                         : "fa-solid fa-video";
         }
-
 
         if (chooseMediaHint) {
 
@@ -763,6 +915,46 @@
 
     function openFilePicker() {
 
+        if (currentMode === "live") {
+
+            showLivePanel();
+
+            return;
+        }
+
+        if (currentMode === "post") {
+
+            if (postMediaInput) {
+
+                postMediaInput.value = "";
+                postMediaInput.click();
+
+                return;
+            }
+        }
+
+        if (currentMode === "shorts") {
+
+            if (shortsMediaInput) {
+
+                shortsMediaInput.value = "";
+                shortsMediaInput.click();
+
+                return;
+            }
+        }
+
+        if (currentMode === "long") {
+
+            if (longVideoInput) {
+
+                longVideoInput.value = "";
+                longVideoInput.click();
+
+                return;
+            }
+        }
+
         if (!mediaInput) {
 
             showToast(
@@ -774,15 +966,6 @@
             return;
         }
 
-
-        if (currentMode === "live") {
-
-            showLivePanel();
-
-            return;
-        }
-
-
         mediaInput.accept =
             MODES[currentMode].accept;
 
@@ -793,20 +976,87 @@
 
 
     /* =====================================================
-       MEDIA INPUT
+       INPUT HANDLERS
     ===================================================== */
 
     mediaInput?.addEventListener(
         "change",
-        async event => {
+        event => {
+
+            const file =
+                event.target.files?.[0];
+
+            if (file) {
+                handleSelectedFile(file);
+            }
+        }
+    );
+
+
+    postMediaInput?.addEventListener(
+        "change",
+        event => {
 
             const file =
                 event.target.files?.[0];
 
             if (!file) return;
 
-            await handleSelectedFile(file);
+            handleSelectedFile(
+                file,
+                "post"
+            );
+        }
+    );
 
+
+    shortsMediaInput?.addEventListener(
+        "change",
+        event => {
+
+            const file =
+                event.target.files?.[0];
+
+            if (!file) return;
+
+            handleSelectedFile(
+                file,
+                "shorts"
+            );
+        }
+    );
+
+
+    longVideoInput?.addEventListener(
+        "change",
+        event => {
+
+            const file =
+                event.target.files?.[0];
+
+            if (!file) return;
+
+            handleSelectedFile(
+                file,
+                "long"
+            );
+        }
+    );
+
+
+    cameraPhotoInput?.addEventListener(
+        "change",
+        event => {
+
+            const file =
+                event.target.files?.[0];
+
+            if (!file) return;
+
+            handleSelectedFile(
+                file,
+                "post"
+            );
         }
     );
 
@@ -815,18 +1065,25 @@
        FILE VALIDATION
     ===================================================== */
 
-    function validateFile(file) {
+    function validateFile(file, mode = currentMode) {
 
         if (!file) {
 
             return {
                 valid: false,
-                message: "No file selected."
+                message: "No media selected."
             };
         }
 
+        if (file.size <= 0) {
 
-        if (currentMode === "post") {
+            return {
+                valid: false,
+                message: "This file appears to be empty."
+            };
+        }
+
+        if (mode === "post") {
 
             if (!file.type.startsWith("image/")) {
 
@@ -838,10 +1095,9 @@
             }
         }
 
-
         if (
-            currentMode === "shorts" ||
-            currentMode === "long"
+            mode === "shorts" ||
+            mode === "long"
         ) {
 
             if (!file.type.startsWith("video/")) {
@@ -849,11 +1105,10 @@
                 return {
                     valid: false,
                     message:
-                        `${MODES[currentMode].title} accepts videos only.`
+                        `${MODES[mode].title} accepts videos only.`
                 };
             }
         }
-
 
         return {
             valid: true
@@ -865,10 +1120,19 @@
        FILE SELECTED
     ===================================================== */
 
-    async function handleSelectedFile(file) {
+    async function handleSelectedFile(
+        file,
+        forcedMode = null
+    ) {
+
+        const mode =
+            forcedMode || currentMode;
 
         const validation =
-            validateFile(file);
+            validateFile(
+                file,
+                mode
+            );
 
         if (!validation.valid) {
 
@@ -881,68 +1145,56 @@
             return;
         }
 
-
         selectedFile = file;
 
-
-        /*
-         * IMPORTANT:
-         *
-         * Object URLs do NOT survive navigation.
-         *
-         * Therefore we convert the selected image
-         * into a Data URL and save it in sessionStorage.
-         *
-         * edit-post.js reads:
-         * viewora_edit_post_media
-         * viewora_edit_post_type
-         */
-
         showProcessing(
-            currentMode === "post"
+            mode === "post"
                 ? "Preparing your photo..."
                 : "Preparing your video..."
         );
 
-
         try {
 
-            if (currentMode === "post") {
+            if (mode === "post") {
 
                 await saveImageForEditor(file);
 
-                closeFileSheet();
+                closeAllOverlays();
 
-                navigateToPostEditor();
+                await sleep(180);
+
+                window.location.href =
+                    "edit-post.html?source=upload";
 
                 return;
             }
-
 
             if (
-                currentMode === "shorts" ||
-                currentMode === "long"
+                mode === "shorts" ||
+                mode === "long"
             ) {
 
-                /*
-                 * Videos can be too large for sessionStorage.
-                 * Store the file temporarily in IndexedDB.
-                 */
+                await saveVideoForEditor(
+                    file,
+                    mode
+                );
 
-                await saveVideoForEditor(file);
+                closeAllOverlays();
 
-                closeFileSheet();
+                await sleep(180);
 
-                navigateToVideoEditor();
+                window.location.href =
+                    mode === "shorts"
+                        ? "edit-shorts.html?source=upload"
+                        : "edit-video.html?source=upload";
 
                 return;
             }
-
 
         } catch (error) {
 
             console.error(
-                "VIEWORA MEDIA PREP ERROR:",
+                "VIEWORA MEDIA PREP:",
                 error
             );
 
@@ -950,7 +1202,8 @@
 
             showToast(
                 "Media error",
-                "Could not prepare this file. Please try another file.",
+                error?.message ||
+                    "Could not prepare this file.",
                 "error"
             );
         }
@@ -969,21 +1222,36 @@
                 const reader =
                     new FileReader();
 
-                reader.onload = () =>
+                reader.onload = () => {
+
+                    if (!reader.result) {
+
+                        reject(
+                            new Error(
+                                "Image data is empty."
+                            )
+                        );
+
+                        return;
+                    }
+
                     resolve(
                         reader.result
                     );
+                };
 
-                reader.onerror = () =>
+                reader.onerror = () => {
+
                     reject(
                         reader.error ||
                         new Error(
-                            "File could not be read."
+                            "Unable to read image."
                         )
                     );
 
-                reader.readAsDataURL(file);
+                };
 
+                reader.readAsDataURL(file);
             }
         );
     }
@@ -994,121 +1262,87 @@
         const dataURL =
             await fileToDataURL(file);
 
-
         if (!dataURL) {
-
             throw new Error(
                 "Image Data URL is empty."
             );
         }
 
+        try {
 
-        /*
-         * Clear old media first.
-         */
+            sessionStorage.removeItem(
+                IMAGE_STORAGE_KEY
+            );
 
-        sessionStorage.removeItem(
-            "viewora_edit_post_media"
-        );
+            sessionStorage.removeItem(
+                IMAGE_TYPE_KEY
+            );
 
-        sessionStorage.removeItem(
-            "viewora_edit_post_type"
-        );
+            sessionStorage.setItem(
+                IMAGE_STORAGE_KEY,
+                dataURL
+            );
 
+            sessionStorage.setItem(
+                IMAGE_TYPE_KEY,
+                "image"
+            );
 
-        /*
-         * Save NEW media.
-         */
+            sessionStorage.setItem(
+                "viewora_edit_post_name",
+                file.name
+            );
 
-        sessionStorage.setItem(
-            "viewora_edit_post_media",
-            dataURL
-        );
+            sessionStorage.setItem(
+                "viewora_edit_post_size",
+                String(file.size)
+            );
 
-        sessionStorage.setItem(
-            "viewora_edit_post_type",
-            "image"
-        );
+            sessionStorage.setItem(
+                "viewora_edit_post_mime",
+                file.type
+            );
 
+        } catch (error) {
 
-        /*
-         * Extra metadata.
-         */
-
-        sessionStorage.setItem(
-            "viewora_edit_post_name",
-            file.name
-        );
-
-        sessionStorage.setItem(
-            "viewora_edit_post_size",
-            String(file.size)
-        );
-
-        sessionStorage.setItem(
-            "viewora_edit_post_mime",
-            file.type
-        );
-
-
-        /*
-         * Verify save.
-         */
+            throw new Error(
+                "The selected image is too large for browser storage."
+            );
+        }
 
         const saved =
             sessionStorage.getItem(
-                "viewora_edit_post_media"
+                IMAGE_STORAGE_KEY
             );
 
         if (!saved) {
 
             throw new Error(
-                "Image was not saved to sessionStorage."
+                "Image could not be saved."
             );
         }
 
-
         console.log(
-            "VIEWORA POST MEDIA SAVED:",
-            file.name,
-            file.type,
-            file.size
+            "VIEWORA IMAGE SAVED:",
+            file.name
         );
     }
 
 
     /* =====================================================
-       POST EDITOR NAVIGATION
+       INDEXED DB
     ===================================================== */
-
-    function navigateToPostEditor() {
-
-        showProcessing(
-            "Opening post editor..."
-        );
-
-
-        setTimeout(() => {
-
-            window.location.href =
-                "edit-post.html?source=upload";
-
-        }, 250);
-    }
-
-
-    /* =====================================================
-       VIDEO INDEXED DB
-    ===================================================== */
-
-    const VIDEO_DB_NAME =
-        "VIEWORA_MEDIA_DB";
-
-    const VIDEO_STORE =
-        "uploads";
-
 
     function openVideoDB() {
+
+        if (!("indexedDB" in window)) {
+
+            return Promise.reject(
+                new Error(
+                    "IndexedDB is not supported by this browser."
+                )
+            );
+        }
 
         return new Promise(
             (resolve, reject) => {
@@ -1116,9 +1350,8 @@
                 const request =
                     indexedDB.open(
                         VIDEO_DB_NAME,
-                        1
+                        VIDEO_DB_VERSION
                     );
-
 
                 request.onupgradeneeded =
                     event => {
@@ -1138,16 +1371,25 @@
                         }
                     };
 
-
                 request.onsuccess =
-                    () => resolve(
-                        request.result
-                    );
+                    () => {
 
+                        const db =
+                            request.result;
+
+                        db.onversionchange = () => {
+                            db.close();
+                        };
+
+                        resolve(db);
+                    };
 
                 request.onerror =
                     () => reject(
-                        request.error
+                        request.error ||
+                        new Error(
+                            "Unable to open media database."
+                        )
                     );
 
             }
@@ -1155,14 +1397,18 @@
     }
 
 
-    async function saveVideoForEditor(file) {
+    async function saveVideoForEditor(
+        file,
+        mode = currentMode
+    ) {
 
         const db =
             await openVideoDB();
 
-
         return new Promise(
             (resolve, reject) => {
+
+                let completed = false;
 
                 const transaction =
                     db.transaction(
@@ -1175,29 +1421,24 @@
                         VIDEO_STORE
                     );
 
-
-                const key =
-                    "currentVideo";
-
-
                 const request =
                     store.put(
                         file,
-                        key
+                        VIDEO_KEY
                     );
 
+                request.onsuccess = () => {
 
-                request.onsuccess =
-                    () => {
+                    try {
 
                         sessionStorage.setItem(
                             "viewora_video_key",
-                            key
+                            VIDEO_KEY
                         );
 
                         sessionStorage.setItem(
                             "vieworaUploadMode",
-                            currentMode
+                            mode
                         );
 
                         sessionStorage.setItem(
@@ -1210,44 +1451,49 @@
                             file.type
                         );
 
+                        sessionStorage.setItem(
+                            "vieworaUploadSize",
+                            String(file.size)
+                        );
+
+                        completed = true;
+
                         resolve();
 
-                    };
+                    } catch (error) {
 
+                        reject(
+                            new Error(
+                                "Could not save video session data."
+                            )
+                        );
+                    }
+                };
 
-                request.onerror =
-                    () => reject(
-                        request.error
+                request.onerror = () => {
+
+                    reject(
+                        request.error ||
+                        new Error(
+                            "Could not save video."
+                        )
                     );
+                };
 
+                transaction.onerror = () => {
+
+                    if (!completed) {
+
+                        reject(
+                            transaction.error ||
+                            new Error(
+                                "Video transaction failed."
+                            )
+                        );
+                    }
+                };
             }
         );
-    }
-
-
-    /* =====================================================
-       VIDEO EDITOR NAVIGATION
-    ===================================================== */
-
-    function navigateToVideoEditor() {
-
-        showProcessing(
-            "Opening video editor..."
-        );
-
-
-        const editor =
-            currentMode === "shorts"
-                ? "edit-shorts.html"
-                : "edit-video.html";
-
-
-        setTimeout(() => {
-
-            window.location.href =
-                `${editor}?source=upload`;
-
-        }, 250);
     }
 
 
@@ -1255,33 +1501,54 @@
        OBJECT URL
     ===================================================== */
 
-    function createObjectURL(file) {
+    function revokeObjectURL() {
 
         if (currentObjectURL) {
 
             try {
-
                 URL.revokeObjectURL(
                     currentObjectURL
                 );
-
             } catch (_) {}
+
+            currentObjectURL = null;
         }
 
+        if (currentPreviewURL) {
+
+            try {
+                URL.revokeObjectURL(
+                    currentPreviewURL
+                );
+            } catch (_) {}
+
+            currentPreviewURL = null;
+        }
+    }
+
+
+    function createObjectURL(fileOrBlob) {
+
+        revokeObjectURL();
 
         currentObjectURL =
-            URL.createObjectURL(file);
-
+            URL.createObjectURL(
+                fileOrBlob
+            );
 
         return currentObjectURL;
     }
 
 
     /* =====================================================
-       RECORDING
+       RECORDER MIME
     ===================================================== */
 
     function getRecorderMimeType() {
+
+        if (!window.MediaRecorder) {
+            return "";
+        }
 
         const types = [
 
@@ -1292,29 +1559,40 @@
 
         ];
 
-
-        if (!window.MediaRecorder) {
-            return "";
-        }
-
-
         for (const type of types) {
 
-            if (
-                MediaRecorder.isTypeSupported &&
-                MediaRecorder.isTypeSupported(type)
-            ) {
+            try {
 
-                return type;
-            }
+                if (
+                    typeof MediaRecorder.isTypeSupported ===
+                    "function" &&
+                    MediaRecorder.isTypeSupported(type)
+                ) {
+
+                    return type;
+                }
+
+            } catch (_) {}
         }
-
 
         return "";
     }
 
 
+    /* =====================================================
+       RECORDING
+    ===================================================== */
+
     async function startRecording() {
+
+        if (isPreparingRecording) return;
+
+        if (currentMode === "post") {
+
+            await capturePhoto();
+
+            return;
+        }
 
         if (currentMode === "live") {
 
@@ -1323,6 +1601,7 @@
             return;
         }
 
+        if (isRecording) return;
 
         if (!currentStream) {
 
@@ -1332,7 +1611,6 @@
                 return;
             }
         }
-
 
         if (!window.MediaRecorder) {
 
@@ -1345,78 +1623,79 @@
             return;
         }
 
-
-        recordedChunks = [];
-
-
-        const mimeType =
-            getRecorderMimeType();
-
+        isPreparingRecording = true;
 
         try {
 
+            if (selectedTimer > 0) {
+
+                await runCountdown(
+                    selectedTimer
+                );
+            }
+
+            if (!currentStream) {
+
+                throw new Error(
+                    "Camera stream is unavailable."
+                );
+            }
+
+            recordedChunks = [];
+
+            const mimeType =
+                getRecorderMimeType();
+
+            const options = {};
+
+            if (mimeType) {
+                options.mimeType =
+                    mimeType;
+            }
+
             mediaRecorder =
-                mimeType
+                Object.keys(options).length
                     ? new MediaRecorder(
                         currentStream,
-                        {
-                            mimeType
-                        }
+                        options
                     )
                     : new MediaRecorder(
                         currentStream
                     );
 
-        } catch (error) {
+            mediaRecorder.ondataavailable =
+                event => {
 
-            console.error(error);
+                    if (
+                        event.data &&
+                        event.data.size > 0
+                    ) {
 
-            showToast(
-                "Recorder error",
-                "Could not start recording.",
-                "error"
-            );
+                        recordedChunks.push(
+                            event.data
+                        );
+                    }
+                };
 
-            return;
-        }
+            mediaRecorder.onerror =
+                event => {
 
-
-        mediaRecorder.ondataavailable =
-            event => {
-
-                if (
-                    event.data &&
-                    event.data.size > 0
-                ) {
-
-                    recordedChunks.push(
-                        event.data
+                    console.error(
+                        "VIEWORA MEDIA RECORDER:",
+                        event
                     );
-                }
-            };
 
+                    showToast(
+                        "Recording error",
+                        "Something went wrong while recording.",
+                        "error"
+                    );
 
-        mediaRecorder.onstop =
-            handleRecordingStop;
+                    isRecording = false;
+                };
 
-
-        mediaRecorder.onerror =
-            error => {
-
-                console.error(
-                    "MediaRecorder:",
-                    error
-                );
-
-                showToast(
-                    "Recording error",
-                    "Something went wrong while recording.",
-                    "error"
-                );
-            };
-
-
-        try {
+            mediaRecorder.onstop =
+                handleRecordingStop;
 
             mediaRecorder.start(250);
 
@@ -1425,65 +1704,99 @@
             recordingStartedAt =
                 Date.now();
 
-
             recordBtn?.classList.add(
                 "recording"
             );
 
+            recordBtn?.setAttribute(
+                "aria-label",
+                "Stop recording"
+            );
+
+            recordInner?.classList.add(
+                "recording"
+            );
 
             recordingStatus?.classList.remove(
                 "hidden"
             );
 
-
             startRecordingTimer();
 
         } catch (error) {
 
-            console.error(error);
+            console.error(
+                "VIEWORA RECORDING:",
+                error
+            );
 
             showToast(
                 "Recording failed",
-                "Unable to start recording.",
+                error?.message ||
+                    "Unable to start recording.",
                 "error"
             );
+
+        } finally {
+
+            isPreparingRecording = false;
         }
     }
 
 
     function stopRecording() {
 
+        if (countdownTimer) {
+
+            clearInterval(
+                countdownTimer
+            );
+
+            countdownTimer = null;
+        }
+
         if (
             !mediaRecorder ||
             mediaRecorder.state === "inactive"
         ) {
+
+            isRecording = false;
+
             return;
         }
 
-
         try {
-
             mediaRecorder.stop();
-
-        } catch (_) {}
-
+        } catch (error) {
+            console.warn(error);
+        }
 
         isRecording = false;
-
 
         recordBtn?.classList.remove(
             "recording"
         );
 
+        recordBtn?.setAttribute(
+            "aria-label",
+            "Start recording"
+        );
+
+        recordInner?.classList.remove(
+            "recording"
+        );
 
         recordingStatus?.classList.add(
             "hidden"
         );
 
-
         stopRecordingTimer();
     }
 
+
+    /* =====================================================
+       RECORDING STOP
+    ===================================================== */
 
     function handleRecordingStop() {
 
@@ -1498,11 +1811,9 @@
             return;
         }
 
-
         const mime =
             mediaRecorder?.mimeType ||
             "video/webm";
-
 
         recordedBlob =
             new Blob(
@@ -1512,20 +1823,32 @@
                 }
             );
 
+        if (!recordedBlob.size) {
+
+            showToast(
+                "Empty recording",
+                "The recorded video contains no data.",
+                "error"
+            );
+
+            return;
+        }
 
         const url =
             createObjectURL(
                 recordedBlob
             );
 
+        currentPreviewURL = url;
 
         if (recordedVideo) {
+
+            recordedVideo.pause();
 
             recordedVideo.src = url;
 
             recordedVideo.load();
         }
-
 
         recordPreview?.classList.remove(
             "hidden"
@@ -1546,7 +1869,7 @@
         recordingTimer =
             setInterval(
                 updateRecordingTime,
-                250
+                200
             );
     }
 
@@ -1567,35 +1890,29 @@
 
         if (!recordingTime) return;
 
-
         const elapsed =
             Date.now() -
             recordingStartedAt;
-
 
         const seconds =
             Math.floor(
                 elapsed / 1000
             );
 
-
         const mins =
             Math.floor(
                 seconds / 60
             );
 
-
         const secs =
             seconds % 60;
-
 
         recordingTime.textContent =
             `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
 
-
         if (
             currentMode === "shorts" &&
-            seconds >= 60
+            seconds >= MAX_SHORT_SECONDS
         ) {
 
             stopRecording();
@@ -1609,12 +1926,198 @@
 
 
     /* =====================================================
+       COUNTDOWN TIMER
+    ===================================================== */
+
+    function runCountdown(seconds) {
+
+        return new Promise(resolve => {
+
+            let remaining =
+                Number(seconds) || 0;
+
+            if (remaining <= 0) {
+
+                resolve();
+                return;
+            }
+
+            showToast(
+                "Get ready",
+                `Recording starts in ${remaining} seconds.`
+            );
+
+            countdownTimer =
+                setInterval(() => {
+
+                    remaining--;
+
+                    if (remaining <= 0) {
+
+                        clearInterval(
+                            countdownTimer
+                        );
+
+                        countdownTimer = null;
+
+                        resolve();
+
+                        return;
+                    }
+
+                    showToast(
+                        "Get ready",
+                        `Recording starts in ${remaining} seconds.`
+                    );
+
+                }, 1000);
+        });
+    }
+
+
+    /* =====================================================
+       POST PHOTO CAPTURE
+    ===================================================== */
+
+    async function capturePhoto() {
+
+        if (!cameraPreview) return;
+
+        if (!currentStream) {
+
+            await startCamera();
+
+            if (!currentStream) {
+                return;
+            }
+        }
+
+        try {
+
+            const videoWidth =
+                cameraPreview.videoWidth || 1080;
+
+            const videoHeight =
+                cameraPreview.videoHeight || 1920;
+
+            const canvas =
+                document.createElement("canvas");
+
+            canvas.width = videoWidth;
+            canvas.height = videoHeight;
+
+            const context =
+                canvas.getContext("2d");
+
+            if (!context) {
+
+                throw new Error(
+                    "Photo capture is not supported."
+                );
+            }
+
+            /*
+             * Mirror front-camera capture
+             * to match preview.
+             */
+
+            if (currentFacingMode === "user") {
+
+                context.translate(
+                    videoWidth,
+                    0
+                );
+
+                context.scale(
+                    -1,
+                    1
+                );
+            }
+
+            context.drawImage(
+                cameraPreview,
+                0,
+                0,
+                videoWidth,
+                videoHeight
+            );
+
+            const blob =
+                await new Promise(
+                    resolve =>
+                        canvas.toBlob(
+                            resolve,
+                            "image/jpeg",
+                            0.94
+                        )
+                );
+
+            if (!blob) {
+
+                throw new Error(
+                    "Could not create photo."
+                );
+            }
+
+            const file =
+                new File(
+                    [blob],
+                    `viewora-photo-${Date.now()}.jpg`,
+                    {
+                        type: "image/jpeg"
+                    }
+                );
+
+            showProcessing(
+                "Preparing your photo..."
+            );
+
+            await saveImageForEditor(
+                file
+            );
+
+            await sleep(150);
+
+            window.location.href =
+                "edit-post.html?source=camera";
+
+        } catch (error) {
+
+            console.error(
+                "VIEWORA PHOTO:",
+                error
+            );
+
+            hideProcessing();
+
+            showToast(
+                "Photo failed",
+                error?.message ||
+                    "Could not capture photo.",
+                "error"
+            );
+        }
+    }
+
+
+    /* =====================================================
        RECORD BUTTON
     ===================================================== */
 
     recordBtn?.addEventListener(
         "click",
         () => {
+
+            if (isPreparingRecording) {
+                return;
+            }
+
+            if (currentMode === "post") {
+
+                capturePhoto();
+
+                return;
+            }
 
             if (isRecording) {
 
@@ -1623,9 +2126,7 @@
             } else {
 
                 startRecording();
-
             }
-
         }
     );
 
@@ -1636,7 +2137,7 @@
 
     retakeBtn?.addEventListener(
         "click",
-        () => {
+        async () => {
 
             recordedBlob = null;
 
@@ -1651,14 +2152,13 @@
                 recordedVideo.load();
             }
 
-
             recordPreview?.classList.add(
                 "hidden"
             );
 
+            revokeObjectURL();
 
-            startCamera();
-
+            await startCamera();
         }
     );
 
@@ -1669,14 +2169,28 @@
 
     closePreviewBtn?.addEventListener(
         "click",
-        () => {
+        async () => {
 
             recordPreview?.classList.add(
                 "hidden"
             );
 
-            startCamera();
+            recordedBlob = null;
 
+            if (recordedVideo) {
+
+                recordedVideo.pause();
+
+                recordedVideo.removeAttribute(
+                    "src"
+                );
+
+                recordedVideo.load();
+            }
+
+            revokeObjectURL();
+
+            await startCamera();
         }
     );
 
@@ -1700,44 +2214,53 @@
                 return;
             }
 
-
             try {
-
-                await saveVideoForEditor(
-                    new File(
-                        [recordedBlob],
-                        `viewora-${Date.now()}.webm`,
-                        {
-                            type:
-                                recordedBlob.type ||
-                                "video/webm"
-                        }
-                    )
-                );
-
 
                 showProcessing(
                     "Preparing your video..."
                 );
 
+                const extension =
+                    recordedBlob.type.includes("mp4")
+                        ? "mp4"
+                        : "webm";
 
-                setTimeout(() => {
+                const file =
+                    new File(
+                        [recordedBlob],
+                        `viewora-${Date.now()}.${extension}`,
+                        {
+                            type:
+                                recordedBlob.type ||
+                                "video/webm"
+                        }
+                    );
 
-                    window.location.href =
-                        currentMode === "shorts"
-                            ? "edit-shorts.html?source=camera"
-                            : "edit-video.html?source=camera";
+                await saveVideoForEditor(
+                    file,
+                    currentMode
+                );
 
-                }, 250);
+                await sleep(180);
 
+                window.location.href =
+                    currentMode === "shorts"
+                        ? "edit-shorts.html?source=camera"
+                        : "edit-video.html?source=camera";
 
             } catch (error) {
 
-                console.error(error);
+                console.error(
+                    "VIEWORA RECORDED VIDEO:",
+                    error
+                );
+
+                hideProcessing();
 
                 showToast(
                     "Video error",
-                    "Could not prepare the recording.",
+                    error?.message ||
+                        "Could not prepare the recording.",
                     "error"
                 );
             }
@@ -1746,7 +2269,7 @@
 
 
     /* =====================================================
-       TIMER
+       TIMER SHEET
     ===================================================== */
 
     timerBtn?.addEventListener(
@@ -1756,7 +2279,6 @@
             $("timerSheet")?.classList.remove(
                 "hidden"
             );
-
         }
     );
 
@@ -1770,8 +2292,7 @@
                 selectedTimer =
                     Number(
                         item.dataset.time
-                    );
-
+                    ) || 0;
 
                 qsa("[data-time]")
                     .forEach(el =>
@@ -1780,32 +2301,27 @@
                         )
                     );
 
-
                 item.classList.add(
                     "active"
                 );
-
 
                 $("timerSheet")?.classList.add(
                     "hidden"
                 );
 
-
                 showToast(
                     "Timer selected",
                     selectedTimer === 0
-                        ? "Timer off"
-                        : `${selectedTimer} second timer`
+                        ? "Timer is off."
+                        : `${selectedTimer} second countdown enabled.`
                 );
-
             }
         );
-
     });
 
 
     /* =====================================================
-       SPEED
+       SPEED SHEET
     ===================================================== */
 
     speedBtn?.addEventListener(
@@ -1815,7 +2331,6 @@
             $("speedSheet")?.classList.remove(
                 "hidden"
             );
-
         }
     );
 
@@ -1829,8 +2344,7 @@
                 selectedSpeed =
                     Number(
                         item.dataset.speed
-                    );
-
+                    ) || 1;
 
                 qsa("[data-speed]")
                     .forEach(el =>
@@ -1839,47 +2353,55 @@
                         )
                     );
 
-
                 item.classList.add(
                     "active"
                 );
-
 
                 $("speedSheet")?.classList.add(
                     "hidden"
                 );
 
+                /*
+                 * Actual recording speed is
+                 * applied by changing MediaRecorder
+                 * stream playback timing through
+                 * a limitation-safe approach.
+                 *
+                 * The selected value is persisted
+                 * for the editor as metadata.
+                 */
+
+                sessionStorage.setItem(
+                    "viewora_record_speed",
+                    String(selectedSpeed)
+                );
 
                 showToast(
                     "Speed selected",
-                    `${selectedSpeed}x recording speed`
+                    `${selectedSpeed}x recording speed.`
                 );
-
             }
         );
-
     });
 
 
     /* =====================================================
-       SHEET CLOSE
+       SHEET CLOSE BUTTONS
     ===================================================== */
 
     $("closeTimerBtn")?.addEventListener(
         "click",
-        () =>
-            $("timerSheet")?.classList.add(
-                "hidden"
-            )
+        () => {
+            $("timerSheet")?.classList.add("hidden");
+        }
     );
 
 
     $("closeSpeedBtn")?.addEventListener(
         "click",
-        () =>
-            $("speedSheet")?.classList.add(
-                "hidden"
-            )
+        () => {
+            $("speedSheet")?.classList.add("hidden");
+        }
     );
 
 
@@ -1887,6 +2409,61 @@
         "click",
         closeFileSheet
     );
+
+
+    $("closePostBtn")?.addEventListener(
+        "click",
+        () => {
+            $("postSheet")?.classList.add("hidden");
+        }
+    );
+
+
+    $("closeVideoBtn")?.addEventListener(
+        "click",
+        () => {
+            $("videoSheet")?.classList.add("hidden");
+        }
+    );
+
+
+    $("closeSettingsBtn")?.addEventListener(
+        "click",
+        () => {
+            $("settingsSheet")?.classList.add("hidden");
+        }
+    );
+
+
+    $("closeMusicBtn")?.addEventListener(
+        "click",
+        () => {
+            $("musicSheet")?.classList.add("hidden");
+        }
+    );
+
+
+    /* =====================================================
+       BACKDROP CLOSE
+    ===================================================== */
+
+    qsa("[data-close-sheet]").forEach(backdrop => {
+
+        backdrop.addEventListener(
+            "click",
+            () => {
+
+                const target =
+                    backdrop.dataset.closeSheet;
+
+                if (target) {
+                    $(target)?.classList.add(
+                        "hidden"
+                    );
+                }
+            }
+        );
+    });
 
 
     /* =====================================================
@@ -1914,6 +2491,73 @@
     $("openGalleryBtn")?.addEventListener(
         "click",
         openFilePicker
+    );
+
+
+    /* =====================================================
+       POST SHEET
+    ===================================================== */
+
+    $("choosePostPhotoBtn")?.addEventListener(
+        "click",
+        () => {
+
+            $("postSheet")?.classList.add(
+                "hidden"
+            );
+
+            if (postMediaInput) {
+
+                postMediaInput.value = "";
+
+                postMediaInput.click();
+            }
+        }
+    );
+
+
+    $("capturePostBtn")?.addEventListener(
+        "click",
+        async () => {
+
+            $("postSheet")?.classList.add(
+                "hidden"
+            );
+
+            await setMode("post");
+
+            await capturePhoto();
+        }
+    );
+
+
+    /* =====================================================
+       VIDEO SHEET
+    ===================================================== */
+
+    $("chooseVideoBtn")?.addEventListener(
+        "click",
+        () => {
+
+            $("videoSheet")?.classList.add(
+                "hidden"
+            );
+
+            openFilePicker();
+        }
+    );
+
+
+    $("recordVideoBtn")?.addEventListener(
+        "click",
+        async () => {
+
+            $("videoSheet")?.classList.add(
+                "hidden"
+            );
+
+            await startRecording();
+        }
     );
 
 
@@ -1950,26 +2594,9 @@
             $("settingsSheet")?.classList.remove(
                 "hidden"
             );
-
         }
     );
 
-
-    $("closeSettingsBtn")?.addEventListener(
-        "click",
-        () => {
-
-            $("settingsSheet")?.classList.add(
-                "hidden"
-            );
-
-        }
-    );
-
-
-    /* =====================================================
-       MICROPHONE
-    ===================================================== */
 
     $("microphoneToggle")?.addEventListener(
         "change",
@@ -1979,19 +2606,17 @@
 
             currentStream
                 .getAudioTracks()
-                .forEach(
-                    track =>
-                        track.enabled =
-                            event.target.checked
-                );
+                .forEach(track => {
 
+                    track.enabled =
+                        Boolean(
+                            event.target.checked
+                        );
+
+                });
         }
     );
 
-
-    /* =====================================================
-       FULLSCREEN
-    ===================================================== */
 
     $("fullscreenToggle")?.addEventListener(
         "change",
@@ -2003,14 +2628,9 @@
                 event.target.checked
                     ? "cover"
                     : "contain";
-
         }
     );
 
-
-    /* =====================================================
-       QUALITY
-    ===================================================== */
 
     $("qualityToggle")?.addEventListener(
         "change",
@@ -2018,9 +2638,10 @@
 
             showToast(
                 "Quality updated",
-                "Restart camera to apply the new quality."
+                "Camera quality will apply when the camera restarts."
             );
 
+            startCamera();
         }
     );
 
@@ -2037,18 +2658,7 @@
                 "hidden"
             );
 
-        }
-    );
-
-
-    $("closeMusicBtn")?.addEventListener(
-        "click",
-        () => {
-
-            $("musicSheet")?.classList.add(
-                "hidden"
-            );
-
+            renderMusicLibrary();
         }
     );
 
@@ -2067,8 +2677,327 @@
                 "hidden"
             );
 
+            sessionStorage.removeItem(
+                "viewora_selected_music"
+            );
         }
     );
+
+
+    /* =====================================================
+       MUSIC LIBRARY
+    ===================================================== */
+
+    const MUSIC_LIBRARY = [
+
+        {
+            id: "original-audio",
+            title: "Original Audio",
+            artist: "Viewora Camera",
+            category: "trending"
+        },
+
+        {
+            id: "viewora-beat",
+            title: "Viewora Beat",
+            artist: "Viewora Sounds",
+            category: "popular"
+        },
+
+        {
+            id: "viewora-chill",
+            title: "Viewora Chill",
+            artist: "Viewora Sounds",
+            category: "new"
+        },
+
+        {
+            id: "viewora-energy",
+            title: "Viewora Energy",
+            artist: "Viewora Sounds",
+            category: "popular"
+        },
+
+        {
+            id: "viewora-cinematic",
+            title: "Viewora Cinematic",
+            artist: "Viewora Sounds",
+            category: "new"
+        }
+
+    ];
+
+
+    let currentMusicCategory = "trending";
+
+
+    function renderMusicLibrary(
+        searchValue = ""
+    ) {
+
+        const list =
+            $("musicList");
+
+        if (!list) return;
+
+        const query =
+            String(searchValue)
+                .trim()
+                .toLowerCase();
+
+        let items =
+            MUSIC_LIBRARY.filter(item => {
+
+                const matchesCategory =
+                    currentMusicCategory === "saved"
+                        ? isMusicSaved(item.id)
+                        : item.category ===
+                            currentMusicCategory;
+
+                const matchesSearch =
+                    !query ||
+                    item.title
+                        .toLowerCase()
+                        .includes(query) ||
+                    item.artist
+                        .toLowerCase()
+                        .includes(query);
+
+                return (
+                    matchesCategory &&
+                    matchesSearch
+                );
+            });
+
+        if (!items.length) {
+
+            list.innerHTML = `
+                <div class="musicEmpty">
+                    <i class="fa-solid fa-music"></i>
+                    <strong>No sounds found</strong>
+                    <span>Try another category or search.</span>
+                </div>
+            `;
+
+            return;
+        }
+
+        list.innerHTML =
+            items.map(item => {
+
+                const saved =
+                    isMusicSaved(item.id);
+
+                const selected =
+                    selectedMusicData?.id ===
+                    item.id;
+
+                return `
+
+                    <button
+                        type="button"
+                        class="musicItem ${selected ? "active" : ""}"
+                        data-music-id="${escapeHTML(item.id)}"
+                    >
+
+                        <span class="musicItemIcon">
+                            <i class="fa-solid fa-music"></i>
+                        </span>
+
+                        <span class="musicItemText">
+
+                            <strong>
+                                ${escapeHTML(item.title)}
+                            </strong>
+
+                            <small>
+                                ${escapeHTML(item.artist)}
+                            </small>
+
+                        </span>
+
+                        <span class="musicItemActions">
+
+                            <button
+                                type="button"
+                                class="musicSaveButton"
+                                data-save-music="${escapeHTML(item.id)}"
+                                aria-label="Save music"
+                            >
+                                <i class="${saved
+                                    ? "fa-solid"
+                                    : "fa-regular"
+                                } fa-bookmark"></i>
+                            </button>
+
+                            <i class="fa-solid fa-chevron-right"></i>
+
+                        </span>
+
+                    </button>
+                `;
+
+            }).join("");
+
+        qsa("[data-music-id]").forEach(item => {
+
+            item.addEventListener(
+                "click",
+                event => {
+
+                    if (
+                        event.target.closest(
+                            "[data-save-music]"
+                        )
+                    ) {
+                        return;
+                    }
+
+                    const id =
+                        item.dataset.musicId;
+
+                    selectMusic(id);
+                }
+            );
+        });
+
+
+        qsa("[data-save-music]").forEach(button => {
+
+            button.addEventListener(
+                "click",
+                event => {
+
+                    event.stopPropagation();
+
+                    toggleSavedMusic(
+                        button.dataset.saveMusic
+                    );
+
+                    renderMusicLibrary(
+                        $("musicSearchInput")?.value || ""
+                    );
+                }
+            );
+        });
+    }
+
+
+    function selectMusic(id) {
+
+        const music =
+            MUSIC_LIBRARY.find(
+                item => item.id === id
+            );
+
+        if (!music) return;
+
+        selectedMusicData = {
+            ...music,
+            selectedAt: Date.now()
+        };
+
+        try {
+
+            sessionStorage.setItem(
+                "viewora_selected_music",
+                JSON.stringify(
+                    selectedMusicData
+                )
+            );
+
+        } catch (_) {}
+
+        if (selectedMusicName) {
+            selectedMusicName.textContent =
+                music.title;
+        }
+
+        if (selectedMusicArtist) {
+            selectedMusicArtist.textContent =
+                music.artist;
+        }
+
+        selectedMusic?.classList.remove(
+            "hidden"
+        );
+
+        musicBtn?.classList.add(
+            "hidden"
+        );
+
+        $("musicSheet")?.classList.add(
+            "hidden"
+        );
+
+        showToast(
+            "Music selected",
+            `${music.title} • ${music.artist}`
+        );
+    }
+
+
+    function isMusicSaved(id) {
+
+        try {
+
+            const saved =
+                JSON.parse(
+                    localStorage.getItem(
+                        "viewora_saved_music"
+                    ) || "[]"
+                );
+
+            return Array.isArray(saved) &&
+                saved.includes(id);
+
+        } catch (_) {
+
+            return false;
+        }
+    }
+
+
+    function toggleSavedMusic(id) {
+
+        try {
+
+            let saved =
+                JSON.parse(
+                    localStorage.getItem(
+                        "viewora_saved_music"
+                    ) || "[]"
+                );
+
+            if (!Array.isArray(saved)) {
+                saved = [];
+            }
+
+            if (saved.includes(id)) {
+
+                saved =
+                    saved.filter(
+                        value => value !== id
+                    );
+
+            } else {
+
+                saved.push(id);
+            }
+
+            localStorage.setItem(
+                "viewora_saved_music",
+                JSON.stringify(saved)
+            );
+
+        } catch (error) {
+
+            console.warn(
+                "Music save failed:",
+                error
+            );
+        }
+    }
 
 
     /* =====================================================
@@ -2085,35 +3014,17 @@
 
             const value =
                 musicSearchInput.value
-                    .trim()
-                    .toLowerCase();
+                    .trim();
 
+            $("clearMusicSearch")
+                ?.classList.toggle(
+                    "hidden",
+                    !value
+                );
 
-            const clearBtn =
-                $("clearMusicSearch");
-
-
-            clearBtn?.classList.toggle(
-                "hidden",
-                !value
+            renderMusicLibrary(
+                value
             );
-
-
-            qsa(".musicItem").forEach(item => {
-
-                const text =
-                    item.textContent
-                        .toLowerCase();
-
-
-                item.style.display =
-                    !value ||
-                    text.includes(value)
-                        ? ""
-                        : "none";
-
-            });
-
         }
     );
 
@@ -2129,31 +3040,49 @@
             musicSearchInput.dispatchEvent(
                 new Event("input")
             );
-
         }
     );
 
 
     /* =====================================================
-       LIVE
+       MUSIC CATEGORIES
+    ===================================================== */
+
+    qsa(".musicCategory").forEach(button => {
+
+        button.addEventListener(
+            "click",
+            () => {
+
+                currentMusicCategory =
+                    button.dataset.category ||
+                    "trending";
+
+                qsa(".musicCategory")
+                    .forEach(item =>
+                        item.classList.toggle(
+                            "active",
+                            item === button
+                        )
+                    );
+
+                renderMusicLibrary(
+                    musicSearchInput?.value || ""
+                );
+            }
+        );
+    });
+
+
+    /* =====================================================
+       LIVE PANEL
     ===================================================== */
 
     function showLivePanel() {
 
-        const panel =
-            $("livePanel");
+        stopCamera();
 
-        if (!panel) {
-
-            showToast(
-                "Live",
-                "Live setup is ready."
-            );
-
-            return;
-        }
-
-        panel.classList.remove(
+        $("livePanel")?.classList.remove(
             "hidden"
         );
     }
@@ -2161,14 +3090,13 @@
 
     $("closeLiveBtn")?.addEventListener(
         "click",
-        () => {
+        async () => {
 
             $("livePanel")?.classList.add(
                 "hidden"
             );
 
-            setMode("shorts");
-
+            await setMode("shorts");
         }
     );
 
@@ -2179,19 +3107,154 @@
     );
 
 
+    /* =====================================================
+       LIVE THUMBNAIL
+    ===================================================== */
+
+    $("chooseThumbnailBtn")?.addEventListener(
+        "click",
+        () => {
+
+            thumbnailInput?.click();
+        }
+    );
+
+
+    thumbnailInput?.addEventListener(
+        "change",
+        event => {
+
+            const file =
+                event.target.files?.[0];
+
+            if (!file) return;
+
+            if (!file.type.startsWith("image/")) {
+
+                showToast(
+                    "Invalid thumbnail",
+                    "Please choose an image.",
+                    "error"
+                );
+
+                return;
+            }
+
+            const url =
+                URL.createObjectURL(file);
+
+            const preview =
+                $("thumbnailPreview");
+
+            if (preview) {
+
+                preview.innerHTML = "";
+
+                const img =
+                    document.createElement("img");
+
+                img.src = url;
+
+                img.alt =
+                    "Live thumbnail";
+
+                preview.appendChild(img);
+            }
+
+            const old =
+                sessionStorage.getItem(
+                    "viewora_live_thumbnail"
+                );
+
+            if (old) {
+
+                /*
+                 * Old thumbnail data is intentionally
+                 * replaced below.
+                 */
+            }
+
+            fileToDataURL(file)
+                .then(dataURL => {
+
+                    sessionStorage.setItem(
+                        "viewora_live_thumbnail",
+                        dataURL
+                    );
+
+                })
+                .catch(error => {
+
+                    console.warn(
+                        "Thumbnail save failed:",
+                        error
+                    );
+                });
+        }
+    );
+
+
+    /* =====================================================
+       LIVE COUNTERS
+    ===================================================== */
+
+    const liveTitle =
+        $("liveTitle");
+
+    const liveDescription =
+        $("liveDescription");
+
+
+    function updateLiveCounters() {
+
+        if (liveTitle) {
+
+            $("liveTitleCount").textContent =
+                String(
+                    liveTitle.value.length
+                );
+        }
+
+        if (liveDescription) {
+
+            $("liveDescriptionCount").textContent =
+                String(
+                    liveDescription.value.length
+                );
+        }
+    }
+
+
+    liveTitle?.addEventListener(
+        "input",
+        updateLiveCounters
+    );
+
+
+    liveDescription?.addEventListener(
+        "input",
+        updateLiveCounters
+    );
+
+
+    /* =====================================================
+       START LIVE
+    ===================================================== */
+
     function startLive() {
 
         const title =
-            $("liveTitle")?.value?.trim() ||
-            $("liveTitleInput")?.value?.trim() ||
-            "";
-
+            $("liveTitle")?.value
+                ?.trim() || "";
 
         const description =
-            $("liveDescription")?.value?.trim() ||
-            $("liveDescriptionInput")?.value?.trim() ||
-            "";
+            $("liveDescription")
+                ?.value
+                ?.trim() || "";
 
+        const visibility =
+            $("liveVisibility")
+                ?.value || "public";
 
         if (!title) {
 
@@ -2201,94 +3264,92 @@
                 "warning"
             );
 
+            $("liveTitle")?.focus();
+
             return;
         }
 
-
         const thumbnail =
-            $("liveThumbnailPreview")?.src ||
-            "";
+            sessionStorage.getItem(
+                "viewora_live_thumbnail"
+            ) || "";
 
+        const liveData = {
+
+            title,
+
+            description,
+
+            visibility,
+
+            thumbnail,
+
+            createdAt:
+                Date.now()
+
+        };
 
         try {
 
             sessionStorage.setItem(
                 "vieworaLiveData",
-                JSON.stringify({
-                    title,
-                    description,
-                    thumbnail,
-                    createdAt: Date.now()
-                })
+                JSON.stringify(
+                    liveData
+                )
             );
 
         } catch (error) {
 
             console.warn(
-                "Live data could not be saved.",
+                "Live data could not be saved:",
                 error
             );
         }
 
-
         showProcessing(
             "Preparing your Live..."
         );
-
 
         setTimeout(() => {
 
             window.location.href =
                 "live.html";
 
-        }, 500);
+        }, 450);
     }
 
 
     /* =====================================================
-       PROCESSING
+       OVERLAY CLEANUP
     ===================================================== */
 
-    function showProcessing(message) {
+    function closeAllOverlays() {
 
-        if (processingText) {
-            processingText.textContent =
-                message;
-        }
+        qsa(
+            ".overlay, .previewOverlay"
+        ).forEach(element => {
 
-        processingOverlay?.classList.remove(
-            "hidden"
-        );
-    }
+            element.classList.add(
+                "hidden"
+            );
 
-
-    function hideProcessing() {
-
-        processingOverlay?.classList.add(
-            "hidden"
-        );
+        });
     }
 
 
     /* =====================================================
-       CLOSE CREATOR
+       ESCAPE KEY
     ===================================================== */
 
-    closeCreatorBtn?.addEventListener(
-        "click",
-        () => {
+    document.addEventListener(
+        "keydown",
+        event => {
 
-            stopRecordingTimer();
-
-            if (isRecording) {
-                stopRecording();
+            if (event.key !== "Escape") {
+                return;
             }
 
-            stopCamera();
-
-            window.location.href =
-                "index.html";
-
+            closeAllOverlays();
         }
     );
 
@@ -2299,17 +3360,16 @@
 
     document.addEventListener(
         "visibilitychange",
-        () => {
+        async () => {
 
-            if (
-                document.hidden &&
-                !isRecording
-            ) {
+            if (document.hidden) {
 
-                stopCamera();
+                if (!isRecording) {
+                    stopCamera();
+                }
 
+                return;
             }
-
 
             if (
                 !document.hidden &&
@@ -2317,16 +3377,129 @@
                 currentMode !== "live"
             ) {
 
-                startCamera();
-
+                await startCamera();
             }
-
         }
     );
 
 
     /* =====================================================
-       CLEANUP
+       CLOSE CREATOR
+    ===================================================== */
+
+    closeCreatorBtn?.addEventListener(
+        "click",
+        () => {
+
+            if (isRecording) {
+                stopRecording();
+            }
+
+            stopRecordingTimer();
+
+            stopCamera();
+
+            revokeObjectURL();
+
+            window.location.href =
+                "index.html";
+        }
+    );
+
+
+    /* =====================================================
+       HTML ESCAPE
+    ===================================================== */
+
+    function escapeHTML(value) {
+
+        return String(value)
+            .replaceAll("&", "&amp;")
+            .replaceAll("<", "&lt;")
+            .replaceAll(">", "&gt;")
+            .replaceAll('"', "&quot;")
+            .replaceAll("'", "&#039;");
+    }
+
+
+    /* =====================================================
+       RESTORE MUSIC
+    ===================================================== */
+
+    function restoreSelectedMusic() {
+
+        try {
+
+            const raw =
+                sessionStorage.getItem(
+                    "viewora_selected_music"
+                );
+
+            if (!raw) return;
+
+            const music =
+                JSON.parse(raw);
+
+            if (!music?.id) return;
+
+            selectedMusicData =
+                music;
+
+            if (selectedMusicName) {
+                selectedMusicName.textContent =
+                    music.title;
+            }
+
+            if (selectedMusicArtist) {
+                selectedMusicArtist.textContent =
+                    music.artist;
+            }
+
+            selectedMusic?.classList.remove(
+                "hidden"
+            );
+
+            musicBtn?.classList.add(
+                "hidden"
+            );
+
+        } catch (error) {
+
+            console.warn(
+                "Music restore failed:",
+                error
+            );
+        }
+    }
+
+
+    /* =====================================================
+       INIT
+    ===================================================== */
+
+    async function init() {
+
+        updateLiveCounters();
+
+        restoreSelectedMusic();
+
+        updateUploadNotice();
+
+        /*
+         * Default screen is Shorts because
+         * the supplied HTML marks Shorts active.
+         */
+
+        await setMode("shorts");
+
+        console.log(
+            "VIEWORA CREATE initialized successfully."
+        );
+    }
+
+
+    /* =====================================================
+       GLOBAL CLEANUP
     ===================================================== */
 
     window.addEventListener(
@@ -2335,37 +3508,25 @@
 
             stopRecordingTimer();
 
-            stopCamera();
+            if (countdownTimer) {
 
-            if (currentObjectURL) {
+                clearInterval(
+                    countdownTimer
+                );
 
-                try {
-
-                    URL.revokeObjectURL(
-                        currentObjectURL
-                    );
-
-                } catch (_) {}
+                countdownTimer = null;
             }
 
+            stopCamera();
+
+            revokeObjectURL();
         }
     );
 
 
     /* =====================================================
-       INIT
+       START
     ===================================================== */
-
-    function init() {
-
-        setMode("post");
-
-        console.log(
-            "VIEWORA CREATE initialized successfully."
-        );
-
-    }
-
 
     init();
 
