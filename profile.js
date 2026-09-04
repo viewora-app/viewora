@@ -207,28 +207,47 @@
 
     function isVerifiedUser(data) {
         if (!data || typeof data !== "object") return false;
-
+        if (window.VieworaBadges && typeof VieworaBadges.isVerified === "function") {
+            return VieworaBadges.isVerified(data);
+        }
         if (
+            data.redTick === true ||
+            data.vip === true ||
             data.verified === true ||
             data.isVerified === true ||
             data.blueTick === true ||
+            data.whiteTick === true ||
             data.verification === true
         ) {
             return true;
         }
-
         const status = String(
             data.verificationStatus ||
             data.badge ||
             ""
         ).toLowerCase();
-
         return (
             status === "verified" ||
             status === "creator" ||
             status === "influencer" ||
-            status === "admin"
+            status === "admin" ||
+            status === "vip" ||
+            status === "monetized"
         );
+    }
+
+    function badgeHTMLFor(data) {
+        if (window.VieworaBadges && typeof VieworaBadges.resolve === "function") {
+            return VieworaBadges.resolve(data).html || "";
+        }
+        if (!isVerifiedUser(data)) return "";
+        if (data.redTick || data.vip || String(data.badge||"").toLowerCase()==="vip") {
+            return '<i class="fa-solid fa-certificate vieworaTick redTick" title="VIP Elite"></i>';
+        }
+        if (data.whiteTick && !data.blueTick && !data.verified) {
+            return '<i class="fa-solid fa-circle-check vieworaTick whiteTick" title="Monetized"></i>';
+        }
+        return '<i class="fa-solid fa-circle-check vieworaTick blueTick verifiedTick" title="Verified"></i>';
     }
 
 
@@ -693,24 +712,35 @@
                 }
             });
 
-        /* Inject tick next to name if badge element missing */
+        /* Inject hierarchical tick next to name */
         const nameEl = $("profileName");
-        if (nameEl && verified) {
-            let tick = nameEl.querySelector(".profileBlueTick");
-            if (!tick) {
-                tick = document.createElement("i");
-                tick.className =
-                    "fa-solid fa-circle-check profileBlueTick verifiedTick";
-                tick.title = "Verified";
-                tick.setAttribute("aria-label", "Verified");
-                tick.style.cssText =
-                    "color:#1d9bf0;margin-left:6px;font-size:0.85em;vertical-align:middle";
+        if (nameEl) {
+            nameEl.querySelectorAll(".profileBlueTick, .profileRedTick, .profileWhiteTick, .vieworaTick").forEach((x) => x.remove());
+            if (verified || (window.VieworaBadges && VieworaBadges.isVerified(user))) {
+                const badge = (window.VieworaBadges && VieworaBadges.resolve(user)) || null;
+                const tick = document.createElement("i");
+                if (badge && badge.level === "red") {
+                    tick.className = "fa-solid fa-certificate profileRedTick vieworaTick redTick";
+                    tick.title = "VIP Elite";
+                    tick.style.cssText = "color:#ff3b5c;margin-left:6px;font-size:0.9em;vertical-align:middle";
+                } else if (badge && badge.level === "white") {
+                    tick.className = "fa-solid fa-circle-check profileWhiteTick vieworaTick whiteTick";
+                    tick.title = "Monetized creator";
+                    tick.style.cssText = "color:#f0f4fa;margin-left:6px;font-size:0.85em;vertical-align:middle";
+                } else {
+                    tick.className = "fa-solid fa-circle-check profileBlueTick vieworaTick blueTick verifiedTick";
+                    tick.title = "Verified";
+                    tick.style.cssText = "color:#1d9bf0;margin-left:6px;font-size:0.85em;vertical-align:middle";
+                }
+                tick.setAttribute("aria-label", tick.title);
                 nameEl.appendChild(tick);
+                if (verifiedBadge) {
+                    verifiedBadge.classList.remove("hidden");
+                    verifiedBadge.innerHTML = tick.outerHTML;
+                }
+            } else if (verifiedBadge) {
+                verifiedBadge.classList.add("hidden");
             }
-        } else if (nameEl) {
-            nameEl
-                .querySelectorAll(".profileBlueTick")
-                .forEach((t) => t.remove());
         }
 
 
@@ -4130,7 +4160,25 @@
        GLOBAL API
     ===================================================== */
 
+    
+    /* =====================================================
+       REPORT USER → report.html
+    ===================================================== */
+
+    function reportProfileUser() {
+        if (!profileUID || isOwnProfile) return;
+        const params = new URLSearchParams();
+        params.set("type", "user");
+        params.set("uid", profileUID);
+        window.location.href = "report.html?" + params.toString();
+    }
+
+
     window.VieworaProfile = {
+
+        report:
+            reportProfileUser,
+
 
         reload:
             initProfile,

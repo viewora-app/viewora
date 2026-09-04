@@ -843,22 +843,16 @@
       loadViewers();
     });
 
-    $("reportBtn")?.addEventListener("click", async () => {
+    $("reportBtn")?.addEventListener("click", () => {
       closeSheet("moreSheet");
-      if (!state.user) { showToast("Login required"); return; }
       const item = currentItem();
+      const g = currentGroup();
       if (!item) return;
-      try {
-        await firebase.database().ref(`reports/${item.id}/${state.user.uid}`).set({
-          uid: state.user.uid,
-          storyId: item.id,
-          reason: "inappropriate",
-          createdAt: firebase.database.ServerValue.TIMESTAMP
-        });
-        showToast("Reported");
-      } catch (_) {
-        showToast("Report failed");
-      }
+      const params = new URLSearchParams();
+      params.set("type", "story");
+      params.set("id", item.id);
+      if (g?.uid) params.set("uid", g.uid);
+      window.location.href = "report.html?" + params.toString();
     });
 
     $("storiesUser")?.addEventListener("click", () => {

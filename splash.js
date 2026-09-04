@@ -1,120 +1,395 @@
 "use strict";
 
+/*
+==============================================================
+ VIEWORA — SPLASH.JS
+ Premium App Launch Controller
+ YouTube-style entry behavior
+
+ FEATURES
+ --------------------------------------------------------------
+ • Splash only acts as an entry screen
+ • Does NOT run on every page
+ • Prevents splash from browser-history stack
+ • Smooth exit animation
+ • Handles slow / fast loading safely
+ • Prevents double redirect
+ • Works with mobile browsers / PWA
+==============================================================
+*/
+
 (() => {
-    if (window.__VIEWORA_SPLASH_INITIALIZED__) return;
+
+    /* =========================================================
+       PREVENT DOUBLE INITIALIZATION
+    ========================================================= */
+
+    if (window.__VIEWORA_SPLASH_INITIALIZED__) {
+        return;
+    }
+
     window.__VIEWORA_SPLASH_INITIALIZED__ = true;
 
-    const loadingText = document.getElementById("loadingText");
-    const loaderFill  = document.querySelector(".loaderFill");
-    const loaderGlow  = document.querySelector(".loader-glow");
-    const particlesEl = document.getElementById("particles");
 
     /* =========================================================
-       DESTINATION + SECURITY
-       ========================================================= */
-    const params = new URLSearchParams(window.location.search);
-    let nextPage = params.get("next");
+       CONFIG
+    ========================================================= */
 
-    if (
-        !nextPage ||
-        nextPage.includes("://") ||
-        nextPage.startsWith("//") ||
-        nextPage.includes("splash.html")
-    ) {
-        nextPage = "index.html";
+    const CONFIG = {
+
+        /*
+         * Main Viewora home page.
+         */
+        HOME_PAGE: "index.html",
+
+        /*
+         * Minimum time the splash remains visible.
+         * Keeps the animation smooth instead of flashing.
+         */
+        MINIMUM_TIME: 1150,
+
+        /*
+         * Maximum time before navigation.
+         * Prevents splash getting stuck forever.
+         */
+        MAXIMUM_TIME: 4500,
+
+        /*
+         * CSS exit duration.
+         */
+        EXIT_DURATION: 420,
+
+        /*
+         * Session key.
+         */
+        SESSION_KEY:
+            "VIEWORA_SPLASH_SESSION",
+
+        /*
+         * Prevent duplicate redirects.
+         */
+        REDIRECT_KEY:
+            "VIEWORA_SPLASH_REDIRECTED"
+    };
+
+
+    /* =========================================================
+       DOM
+    ========================================================= */
+
+    const splash =
+        document.getElementById("splash");
+
+
+    if (!splash) {
+
+        console.warn(
+            "Viewora Splash: #splash element not found."
+        );
+
+        return;
     }
 
+
     /* =========================================================
-       GENERATE PARTICLES
-       ========================================================= */
-    const PARTICLE_COUNT = 18;
+       STATE
+    ========================================================= */
 
-    for (let i = 0; i < PARTICLE_COUNT; i++) {
-        const span = document.createElement("span");
-        const size = 2 + Math.random() * 3.5;
+    let redirectStarted = false;
 
-        span.style.width  = `${size}px`;
-        span.style.height = `${size}px`;
-        span.style.left   = `${Math.random() * 100}%`;
-        span.style.top    = `${Math.random() * 100}%`;
-        span.style.animationDelay    = `${-Math.random() * 8}s`;
-        span.style.animationDuration = `${6 + Math.random() * 5}s`;
+    const startTime =
+        performance.now();
 
-        particlesEl.appendChild(span);
+
+    /* =========================================================
+       SESSION CHECK
+    ========================================================= */
+
+    /*
+     * This session flag is intentionally lightweight.
+     *
+     * The splash page itself is only supposed to be opened
+     * from the app's entry point.
+     */
+
+    try {
+
+        sessionStorage.setItem(
+            CONFIG.SESSION_KEY,
+            "active"
+        );
+
+    } catch (error) {
+
+        console.warn(
+            "Viewora Splash: sessionStorage unavailable."
+        );
+
     }
 
-    /* =========================================================
-       LOADING MESSAGES
-       ========================================================= */
-    const messages = [
-        "Initializing...",
-        "Preparing Viewora...",
-        "Loading your experience...",
-        "Almost ready..."
-    ];
-
-    let messageIndex = 0;
-
-    const messageTimer = setInterval(() => {
-        messageIndex++;
-        if (messageIndex < messages.length) {
-            loadingText.style.opacity = "0";
-            setTimeout(() => {
-                loadingText.textContent = messages[messageIndex];
-                loadingText.style.opacity = "1";
-            }, 180);
-        }
-    }, 620);
 
     /* =========================================================
-       SMOOTH PROGRESS
-       ========================================================= */
-    let progress = 0;
+       DOCUMENT VISIBILITY
+    ========================================================= */
 
-    const progressTimer = setInterval(() => {
-        // Ease-out style increments
-        const remaining = 100 - progress;
-        progress += Math.random() * (remaining * 0.18) + 1.2;
+    /*
+     * If the user temporarily switches apps while splash
+     * is showing, don't restart the animation.
+     */
 
-        if (progress > 100) progress = 100;
+    let pageHidden = false;
 
-        loaderFill.style.width = `${progress}%`;
+    document.addEventListener(
+        "visibilitychange",
+        () => {
 
-        if (loaderGlow) {
-            loaderGlow.style.left    = `calc(${progress}% - 20px)`;
-            loaderGlow.style.opacity = progress > 5 && progress < 98 ? "1" : "0";
+            pageHidden =
+                document.visibilityState !== "visible";
+
         }
+    );
 
-        if (progress >= 100) {
-            clearInterval(progressTimer);
+
+    /* =========================================================
+       REDIRECT LOCK
+    ========================================================= */
+
+    function hasRedirected() {
+
+        try {
+
+            return (
+                sessionStorage.getItem(
+                    CONFIG.REDIRECT_KEY
+                ) === "true"
+            );
+
+        } catch {
+
+            return false;
         }
-    }, 110);
+    }
+
+
+    function setRedirectLock() {
+
+        try {
+
+            sessionStorage.setItem(
+                CONFIG.REDIRECT_KEY,
+                "true"
+            );
+
+        } catch {
+
+            /* Ignore storage errors */
+        }
+    }
+
+
+    /* =========================================================
+       HOME URL
+    ========================================================= */
+
+    function getHomeURL() {
+
+        /*
+         * Preserve the current folder.
+         *
+         * Example:
+         *
+         * /viewora/splash.html
+         *       ↓
+         * /viewora/index.html
+         */
+
+        return CONFIG.HOME_PAGE;
+    }
+
 
     /* =========================================================
        REDIRECT
-       ========================================================= */
-    setTimeout(() => {
-        clearInterval(messageTimer);
-        clearInterval(progressTimer);
+    ========================================================= */
 
-        loaderFill.style.width = "100%";
-        if (loaderGlow) loaderGlow.style.opacity = "0";
+    function redirectToHome() {
 
-        loadingText.style.opacity = "0";
-        setTimeout(() => {
-            loadingText.textContent = "Welcome to Viewora";
-            loadingText.style.opacity = "1";
-        }, 160);
+        if (redirectStarted) {
+            return;
+        }
 
-        setTimeout(() => {
-            // Soft exit animation
-            document.querySelector(".splash").style.transition = "opacity 0.4s ease, transform 0.4s ease";
-            document.querySelector(".splash").style.opacity = "0";
-            document.querySelector(".splash").style.transform = "scale(1.04)";
+        if (hasRedirected()) {
+            return;
+        }
 
-            setTimeout(() => {
-                window.location.replace(nextPage);
-            }, 380);
-        }, 420);
-    }, 2800);
+        redirectStarted = true;
+
+        setRedirectLock();
+
+
+        /* -----------------------------------------------------
+           Start premium fade-out
+        ----------------------------------------------------- */
+
+        splash.classList.add("hide");
+
+
+        /* -----------------------------------------------------
+           Wait for CSS transition
+        ----------------------------------------------------- */
+
+        window.setTimeout(() => {
+
+            /*
+             * replace() is important.
+             *
+             * It prevents:
+             *
+             * splash → index
+             *
+             * from leaving splash in browser history.
+             */
+
+            window.location.replace(
+                getHomeURL()
+            );
+
+        }, CONFIG.EXIT_DURATION);
+
+    }
+
+
+    /* =========================================================
+       MINIMUM SPLASH TIMER
+    ========================================================= */
+
+    function waitForMinimumTime() {
+
+        const elapsed =
+            performance.now() - startTime;
+
+        const remaining =
+            Math.max(
+                0,
+                CONFIG.MINIMUM_TIME - elapsed
+            );
+
+        return new Promise(resolve => {
+
+            window.setTimeout(
+                resolve,
+                remaining
+            );
+
+        });
+
+    }
+
+
+    /* =========================================================
+       PAGE READY
+    ========================================================= */
+
+    async function startSplash() {
+
+        /*
+         * Wait until page resources are ready.
+         *
+         * This prevents a very fast device from showing
+         * an unfinished splash frame.
+         */
+
+        if (
+            document.readyState !==
+            "complete"
+        ) {
+
+            await new Promise(resolve => {
+
+                window.addEventListener(
+                    "load",
+                    resolve,
+                    { once: true }
+                );
+
+            });
+
+        }
+
+
+        /*
+         * Maintain minimum visual duration.
+         */
+
+        await waitForMinimumTime();
+
+
+        /*
+         * Don't restart anything when the page was hidden.
+         * Continue normally when visible again.
+         */
+
+        if (pageHidden) {
+
+            await new Promise(resolve => {
+
+                const checkVisibility = () => {
+
+                    if (
+                        document.visibilityState ===
+                        "visible"
+                    ) {
+
+                        document.removeEventListener(
+                            "visibilitychange",
+                            checkVisibility
+                        );
+
+                        resolve();
+
+                    }
+
+                };
+
+                document.addEventListener(
+                    "visibilitychange",
+                    checkVisibility
+                );
+
+            });
+
+        }
+
+
+        redirectToHome();
+
+    }
+
+
+    /* =========================================================
+       FAIL-SAFE
+    ========================================================= */
+
+    /*
+     * If something unexpected prevents the normal flow,
+     * never leave the user stuck on the splash forever.
+     */
+
+    window.setTimeout(() => {
+
+        if (!redirectStarted) {
+
+            redirectToHome();
+
+        }
+
+    }, CONFIG.MAXIMUM_TIME);
+
+
+    /* =========================================================
+       START
+    ========================================================= */
+
+    startSplash();
+
+
 })();

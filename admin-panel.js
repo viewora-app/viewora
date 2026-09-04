@@ -153,6 +153,23 @@ function getUserAvatar(user) {
     );
 }
 
+
+function getUserTickHTML(user) {
+    if (!user) return "";
+    // Priority: Red (VIP) > Blue > White
+    if (user.redTick === true || user.vip === true || user.plan === "elite" || (user.subscription && (user.subscription.plan === "elite" || user.subscription.tier === "elite"))) {
+        return '<span class="tickBadge red" title="VIP Red Tick"><i class="fa-solid fa-check"></i></span>';
+    }
+    if (user.verified === true || user.isVerified === true || user.blueTick === true || user.verificationStatus === "verified") {
+        return '<span class="tickBadge blue" title="Blue Tick"><i class="fa-solid fa-check"></i></span>';
+    }
+    if (user.whiteTick === true || user.monetizationEnabled === true || user.monetizationStatus === "active") {
+        return '<span class="tickBadge white" title="White Tick (Monetized)"><i class="fa-solid fa-check"></i></span>';
+    }
+    return "";
+}
+
+
 /* =========================================================
    TOAST
 ========================================================= */
@@ -856,7 +873,7 @@ function renderRecentUsers(users) {
                     <div class="recentUserInfo">
 
                         <strong>
-                            ${name}
+                            ${name}${getUserTickHTML(user)}
                         </strong>
 
                         <span>
@@ -1138,7 +1155,7 @@ function renderUsersTable() {
                             <div>
 
                                 <strong>
-                                    ${name}
+                                    ${name}${getUserTickHTML(user)}
                                 </strong>
 
                                 <span>
@@ -1965,8 +1982,22 @@ function renderReports() {
     container.innerHTML =
         entries.map(([id, report]) => {
 
+            const reasonKey = String(report?.reason || "other").toLowerCase();
+            const reasonLabels = {
+                spam: "Spam or misleading",
+                impersonation: "Impersonation or fake account",
+                harassment: "Harassment or bullying",
+                hate: "Hate or abusive content",
+                inappropriate: "Inappropriate content",
+                dangerous: "Dangerous or harmful",
+                copyright: "Copyright issue",
+                privacy: "Privacy violation",
+                scam: "Scam or fraud",
+                other: "Something else"
+            };
             const reason =
                 escapeHTML(
+                    reasonLabels[reasonKey] ||
                     report?.reason ||
                     "Reported content"
                 );
@@ -1980,8 +2011,20 @@ function renderReports() {
             const reporter =
                 escapeHTML(
                     report?.reporterName ||
+                    report?.reporterEmail ||
                     report?.username ||
                     "Community member"
+                );
+
+            const reportType =
+                escapeHTML(
+                    report?.type ||
+                    "content"
+                );
+
+            const details =
+                escapeHTML(
+                    (report?.details || "").slice(0, 120)
                 );
 
             const resolved =
@@ -2004,7 +2047,7 @@ function renderReports() {
                         </span>
 
                         <strong>
-                            Reported by ${reporter}
+                            ${reportType.toUpperCase()} · Reported by ${reporter}
                         </strong>
 
                         <small>
@@ -2012,7 +2055,10 @@ function renderReports() {
                                 report?.createdAt ||
                                 report?.timestamp
                             )}
+                            ${report?.contentId ? " · ID: " + escapeHTML(String(report.contentId).slice(0, 12)) : ""}
                         </small>
+
+                        ${details ? `<span class="reportMeta">${details}</span>` : ""}
 
                     </div>
 

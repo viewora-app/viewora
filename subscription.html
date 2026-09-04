@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#08090d">
+    <title>Subscription • VIEWORA</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link rel="stylesheet" href="subscription.css">
+    <link rel="stylesheet" href="nav.css">
+</head>
+<body>
+
+<div class="subBg" aria-hidden="true">
+    <div class="glow g1"></div>
+    <div class="glow g2"></div>
+    <div class="glow g3"></div>
+</div>
+
+<!-- loading -->
+<div id="subscriptionLoading" class="subLoading">
+    <div class="subLoadingCard">
+        <div class="loadingSpinner"></div>
+        <span class="loadingText">Processing...</span>
+    </div>
+</div>
+
+<header class="subHeader">
+    <button class="backBtn" type="button" id="backBtn" aria-label="Back">
+        <i class="fa-solid fa-arrow-left"></i>
+    </button>
+    <div class="headerTitle">
+        <span class="eyebrow">VIEWORA</span>
+        <h1>Subscription</h1>
+    </div>
+    <button class="helpBtn" type="button" id="helpBtn" aria-label="Help">
+        <i class="fa-regular fa-circle-question"></i>
+    </button>
+</header>
+
+<main class="subApp">
+
+    <section class="heroCard">
+        <div class="heroCrown"><i class="fa-solid fa-crown"></i></div>
+        <h2>Unlock Viewora Premium</h2>
+        <p>Support creators, exclusive content, blue-tick tools, and ad-free experience.</p>
+        <div class="heroBadges">
+            <span><i class="fa-solid fa-bolt"></i> Instant access</span>
+            <span><i class="fa-solid fa-shield-halved"></i> Razorpay secure</span>
+            <span><i class="fa-solid fa-rotate"></i> Cancel anytime</span>
+        </div>
+    </section>
+
+    <section class="currentPlan" id="currentPlan">
+        <div class="planLabel">Your plan</div>
+        <div class="planRow">
+            <div>
+                <strong id="planName" data-current-plan>Free</strong>
+                <span id="planMeta" data-subscription-status>Basic features</span>
+            </div>
+            <span class="planChip" id="planChip">Free</span>
+        </div>
+    </section>
+
+    <section class="billingToggle">
+        <button type="button" class="billBtn active" data-cycle="monthly" id="billMonthly">Monthly</button>
+        <button type="button" class="billBtn" data-cycle="yearly" id="billYearly">
+            Yearly <em>Best deal · Save ~44%</em>
+        </button>
+    </section>
+
+    <section class="plansGrid" id="plansGrid">
+
+        <article class="planCard" data-plan="plus">
+            <div class="planTop">
+                <div class="planIcon plus"><i class="fa-solid fa-star"></i></div>
+                <h3>Plus</h3>
+                <p>For fans who want more</p>
+            </div>
+            <div class="priceBlock">
+                <span class="price" data-price data-monthly="149" data-yearly="83">₹149</span>
+                <span class="per">/month</span>
+            </div>
+            <ul class="features">
+                <li><i class="fa-solid fa-check"></i> Ad-free feed</li>
+                <li><i class="fa-solid fa-check"></i> Exclusive stories access</li>
+                <li><i class="fa-solid fa-check"></i> HD video quality</li>
+                <li><i class="fa-solid fa-check"></i> Priority support</li>
+                <li><i class="fa-solid fa-circle-check" style="color:#1d9bf0"></i> <strong>Blue Tick</strong> while active</li>
+            </ul>
+            <div class="dealTag yearlyDeal">Yearly = ₹996/year · ₹83/mo</div>
+            <button class="selectBtn" type="button" data-plan="plus">Choose Plus</button>
+        </article>
+
+        <article class="planCard popular" data-plan="pro">
+            <div class="popularTag">Most popular</div>
+            <div class="planTop">
+                <div class="planIcon pro"><i class="fa-solid fa-crown"></i></div>
+                <h3>Pro</h3>
+                <p>Creators & power users</p>
+            </div>
+            <div class="priceBlock">
+                <span class="price" data-price data-monthly="299" data-yearly="167">₹299</span>
+                <span class="per">/month</span>
+            </div>
+            <ul class="features">
+                <li><i class="fa-solid fa-check"></i> Everything in Plus</li>
+                <li><i class="fa-solid fa-check"></i> Creator analytics</li>
+                <li><i class="fa-solid fa-check"></i> Custom stickers & music</li>
+                <li><i class="fa-solid fa-check"></i> Monetization tools</li>
+                <li><i class="fa-solid fa-circle-check" style="color:#1d9bf0"></i> <strong>Blue Tick</strong> · verified creator</li>
+                <li><i class="fa-solid fa-check"></i> Faster support & boosts</li>
+            </ul>
+            <div class="dealTag yearlyDeal">Yearly = ₹2004/year · ₹167/mo</div>
+            <button class="selectBtn primary" type="button" data-plan="pro">Choose Pro</button>
+        </article>
+
+        <article class="planCard" data-plan="elite">
+            <div class="planTop">
+                <div class="planIcon elite"><i class="fa-solid fa-gem"></i></div>
+                <h3>Elite</h3>
+                <p>Full influencer suite</p>
+            </div>
+            <div class="priceBlock">
+                <span class="price" data-price data-monthly="499" data-yearly="292">₹499</span>
+                <span class="per">/month</span>
+            </div>
+            <ul class="features">
+                <li><i class="fa-solid fa-check"></i> Everything in Pro</li>
+                <li><i class="fa-solid fa-certificate" style="color:#ff3b5c"></i> <strong>Red VIP Tick</strong> (highest badge)</li>
+                <li><i class="fa-solid fa-check"></i> Higher upload limits</li>
+                <li><i class="fa-solid fa-check"></i> Fan subscriptions</li>
+                <li><i class="fa-solid fa-check"></i> Dedicated partner support</li>
+                <li><i class="fa-solid fa-check"></i> Elite seal on profile & posts</li>
+            </ul>
+            <div class="dealTag yearlyDeal">Yearly = ₹3504/year · ₹292/mo</div>
+            <button class="selectBtn" type="button" data-plan="elite">Choose Elite</button>
+        </article>
+
+    </section>
+
+    <!-- Selected summary + pay (matches subscription.js) -->
+    <section class="checkoutBar">
+        <div class="checkoutBarInfo">
+            <div><span>Plan</span><strong id="selectedPlanName">No plan selected</strong></div>
+            <div><span>Billing</span><strong id="selectedBillingCycle">Monthly</strong></div>
+            <div><span>Amount</span><strong id="selectedPlanPrice">—</strong></div>
+        </div>
+        <button class="payBtn" type="button" id="payBtn" disabled>
+            <i class="fa-solid fa-lock"></i>
+            Select a plan
+        </button>
+    </section>
+
+    <section class="perks">
+        <h3>Why go Premium?</h3>
+        <div class="perkGrid">
+            <div class="perk">
+                <i class="fa-solid fa-clapperboard"></i>
+                <strong>Exclusive content</strong>
+                <span>Unlock subscriber-only posts & stories</span>
+            </div>
+            <div class="perk">
+                <i class="fa-solid fa-chart-line"></i>
+                <strong>Grow faster</strong>
+                <span>Insights that help you reach more fans</span>
+            </div>
+            <div class="perk">
+                <i class="fa-solid fa-certificate"></i>
+                <strong>Get verified</strong>
+                <span>Blue tick path for creators & influencers</span>
+            </div>
+            <div class="perk">
+                <i class="fa-solid fa-wallet"></i>
+                <strong>Earn more</strong>
+                <span>Monetization when you hit the goals</span>
+            </div>
+        </div>
+    </section>
+
+    <section class="policyCard">
+        <h3><i class="fa-solid fa-scale-balanced"></i> Monetization eligibility</h3>
+        <p>To apply for monetization you need approximately:</p>
+        <ul>
+            <li><strong>3,00,000+</strong> views</li>
+            <li><strong>600+</strong> followers</li>
+            <li><strong>100+</strong> stories</li>
+        </ul>
+        <p class="policyNote">Admin reviews verification & monetization from the Viewora panel.</p>
+    </section>
+
+    <p class="legal">
+        Secure payments by Razorpay. By paying you agree to Viewora Terms & Community Guidelines.
+    </p>
+
+</main>
+
+<div id="monoToast" class="toast">
+    <i class="fa-solid fa-circle-check"></i>
+    <span id="monoToastText">Done</span>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-functions-compat.js"></script>
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script src="firebase.js"></script>
+<script src="badges.js"></script>
+<script src="subscription.js"></script>
+<script src="nav.js"></script>
+</body>
+</html>

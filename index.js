@@ -1265,16 +1265,12 @@
                 card?.remove();
                 showToast("We'll show fewer like this");
             } else if (action === "report") {
-                if (myUID) {
-                    await db.ref("reports").push({
-                        type: type || "post",
-                        contentId: id,
-                        fromUID: myUID,
-                        reason: "other",
-                        createdAt: Date.now()
-                    });
-                }
-                showToast("Report submitted");
+                const params = new URLSearchParams();
+                params.set("type", type || "post");
+                if (id) params.set("id", id);
+                if (target.uid) params.set("uid", target.uid);
+                window.location.href = "report.html?" + params.toString();
+                return;
             }
         } catch (err) {
             console.error("Menu action failed:", err);

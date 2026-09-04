@@ -850,14 +850,23 @@
 
     function openReportSheet() {
         closeMoreMenu();
-        const reportModal = $("reportModal");
-        if (!reportModal) {
-            showToast("Report unavailable");
-            return;
-        }
-        reportModal.classList.remove("hidden");
-        reportModal.setAttribute("aria-hidden", "false");
-        document.body.classList.add("modalOpen");
+        const id = getActiveShortId() ||
+            (activeShort
+                ? String(activeShort.id || activeShort.shortId || activeShort.key || "")
+                : "") ||
+            (menuShort
+                ? String(menuShort.id || menuShort.shortId || menuShort.key || "")
+                : "");
+        const uid =
+            (menuShort && getCreatorId(menuShort)) ||
+            (activeShort && getCreatorId(activeShort)) ||
+            (menuCard && menuCard.dataset.uid) ||
+            "";
+        const params = new URLSearchParams();
+        params.set("type", "short");
+        if (id) params.set("id", id);
+        if (uid) params.set("uid", uid);
+        window.location.href = "report.html?" + params.toString();
     }
 
     function closeReportSheet() {

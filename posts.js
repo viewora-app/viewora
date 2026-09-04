@@ -3008,7 +3008,40 @@
         closeMenu
     );
 
-    menuCancel?.addEventListener(
+    
+    /* =====================================================
+       REPORT → report.html
+    ===================================================== */
+
+    document.getElementById("reportPostBtn")?.addEventListener(
+        "click",
+        () => {
+
+            if (!activePost) {
+                return;
+            }
+
+            const uid = getAuthorUID(activePost);
+
+            const params = new URLSearchParams();
+
+            params.set("type", "post");
+
+            params.set("id", String(activePost.id));
+
+            if (uid) {
+                params.set("uid", uid);
+            }
+
+            window.location.href =
+                "report.html?" +
+                params.toString();
+
+        }
+    );
+
+
+menuCancel?.addEventListener(
         "click",
         closeMenu
     );

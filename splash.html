@@ -2,69 +2,643 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta
+        name="viewport"
+        content="width=device-width,
+                 initial-scale=1.0,
+                 maximum-scale=1.0,
+                 user-scalable=no,
+                 viewport-fit=cover"
+    >
+
+    <meta name="theme-color" content="#050507">
+    <meta name="mobile-web-app-capable" content="yes">
+
     <title>Viewora</title>
 
-    <link rel="stylesheet" href="splash.css">
+    <style>
+        /* =====================================================
+           VIEWORA
+           PREMIUM SPLASH SCREEN
+           YouTube-style app launch experience
+        ===================================================== */
 
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        html,
+        body {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+
+            background: #050507;
+
+            font-family:
+                Inter,
+                -apple-system,
+                BlinkMacSystemFont,
+                "Segoe UI",
+                sans-serif;
+        }
+
+        body {
+            position: relative;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            color: #fff;
+
+            isolation: isolate;
+        }
+
+
+        /* =====================================================
+           BACKGROUND
+        ===================================================== */
+
+        .splash-background {
+            position: absolute;
+            inset: 0;
+
+            overflow: hidden;
+
+            background:
+                radial-gradient(
+                    circle at 50% 45%,
+                    rgba(255,255,255,.055),
+                    transparent 32%
+                ),
+                #050507;
+
+            z-index: -3;
+        }
+
+        .splash-background::before {
+            content: "";
+
+            position: absolute;
+
+            width: 70vw;
+            height: 70vw;
+
+            max-width: 420px;
+            max-height: 420px;
+
+            left: 50%;
+            top: 50%;
+
+            transform: translate(-50%, -50%);
+
+            border-radius: 50%;
+
+            background:
+                radial-gradient(
+                    circle,
+                    rgba(255,255,255,.055) 0%,
+                    rgba(255,255,255,.018) 35%,
+                    transparent 70%
+                );
+
+            filter: blur(18px);
+
+            animation: backgroundPulse 2.8s ease-in-out infinite;
+        }
+
+
+        /* =====================================================
+           MAIN
+        ===================================================== */
+
+        .splash {
+            width: 100%;
+            height: 100%;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            position: relative;
+
+            opacity: 1;
+
+            transition:
+                opacity .42s cubic-bezier(.4,0,.2,1),
+                transform .42s cubic-bezier(.4,0,.2,1);
+        }
+
+        .splash.hide {
+            opacity: 0;
+            transform: scale(1.025);
+            pointer-events: none;
+        }
+
+
+        /* =====================================================
+           BRAND
+        ===================================================== */
+
+        .brand {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+
+            transform: translateY(-2vh);
+
+            animation:
+                brandEnter .72s cubic-bezier(.22,1,.36,1) forwards;
+        }
+
+
+        /* =====================================================
+           VIEWORA ICON
+        ===================================================== */
+
+        .logo-wrap {
+            position: relative;
+
+            width: 86px;
+            height: 86px;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            margin-bottom: 20px;
+        }
+
+        .logo-glow {
+            position: absolute;
+            inset: -22px;
+
+            border-radius: 50%;
+
+            background:
+                radial-gradient(
+                    circle,
+                    rgba(255,255,255,.11),
+                    transparent 67%
+                );
+
+            filter: blur(8px);
+
+            opacity: .65;
+
+            animation:
+                logoGlow 2.2s ease-in-out infinite;
+        }
+
+        .logo {
+            width: 74px;
+            height: 74px;
+
+            position: relative;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            border-radius: 22px;
+
+            background:
+                linear-gradient(
+                    145deg,
+                    #202024,
+                    #0e0e11
+                );
+
+            border: 1px solid rgba(255,255,255,.10);
+
+            box-shadow:
+                0 18px 45px rgba(0,0,0,.48),
+                inset 0 1px 0 rgba(255,255,255,.09);
+
+            transform: scale(.78);
+
+            animation:
+                logoEnter .75s cubic-bezier(.22,1,.36,1) .08s forwards;
+        }
+
+
+        /* =====================================================
+           V MARK
+        ===================================================== */
+
+        .logo-mark {
+            width: 35px;
+            height: 35px;
+
+            position: relative;
+
+            transform: rotate(0deg);
+        }
+
+        .logo-mark::before,
+        .logo-mark::after {
+            content: "";
+
+            position: absolute;
+
+            top: 3px;
+
+            width: 13px;
+            height: 31px;
+
+            border-radius: 8px;
+
+            background: #fff;
+        }
+
+        .logo-mark::before {
+            left: 5px;
+            transform: rotate(28deg);
+        }
+
+        .logo-mark::after {
+            right: 5px;
+            transform: rotate(-28deg);
+        }
+
+
+        /* =====================================================
+           TEXT
+        ===================================================== */
+
+        .brand-name {
+            font-size: 28px;
+
+            font-weight: 700;
+
+            letter-spacing: -0.8px;
+
+            line-height: 1;
+
+            opacity: 0;
+
+            animation:
+                textEnter .65s cubic-bezier(.22,1,.36,1) .34s
+                forwards;
+        }
+
+        .brand-tagline {
+            margin-top: 10px;
+
+            font-size: 11px;
+
+            font-weight: 500;
+
+            letter-spacing: 2.8px;
+
+            text-transform: uppercase;
+
+            color: rgba(255,255,255,.42);
+
+            opacity: 0;
+
+            animation:
+                textEnter .65s cubic-bezier(.22,1,.36,1) .48s
+                forwards;
+        }
+
+
+        /* =====================================================
+           LOADING INDICATOR
+        ===================================================== */
+
+        .loading {
+            position: absolute;
+
+            bottom: calc(
+                28px + env(safe-area-inset-bottom)
+            );
+
+            left: 50%;
+
+            transform: translateX(-50%);
+
+            width: 32px;
+            height: 3px;
+
+            overflow: hidden;
+
+            border-radius: 999px;
+
+            background: rgba(255,255,255,.07);
+
+            opacity: 0;
+
+            animation:
+                loadingAppear .5s ease .65s forwards;
+        }
+
+        .loading::after {
+            content: "";
+
+            position: absolute;
+
+            left: -100%;
+
+            top: 0;
+
+            width: 70%;
+            height: 100%;
+
+            border-radius: inherit;
+
+            background: rgba(255,255,255,.75);
+
+            animation:
+                loadingMove 1.35s
+                cubic-bezier(.4,0,.2,1)
+                infinite;
+        }
+
+
+        /* =====================================================
+           ANIMATIONS
+        ===================================================== */
+
+        @keyframes brandEnter {
+            from {
+                opacity: 0;
+                transform:
+                    translateY(10px)
+                    scale(.97);
+            }
+
+            to {
+                opacity: 1;
+                transform:
+                    translateY(-2vh)
+                    scale(1);
+            }
+        }
+
+        @keyframes logoEnter {
+            0% {
+                opacity: 0;
+                transform: scale(.72);
+            }
+
+            60% {
+                opacity: 1;
+                transform: scale(1.045);
+            }
+
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        @keyframes textEnter {
+            from {
+                opacity: 0;
+                transform: translateY(7px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes logoGlow {
+            0%,
+            100% {
+                opacity: .42;
+                transform: scale(.96);
+            }
+
+            50% {
+                opacity: .75;
+                transform: scale(1.05);
+            }
+        }
+
+        @keyframes backgroundPulse {
+            0%,
+            100% {
+                opacity: .55;
+            }
+
+            50% {
+                opacity: .9;
+            }
+        }
+
+        @keyframes loadingAppear {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes loadingMove {
+            from {
+                left: -75%;
+            }
+
+            to {
+                left: 110%;
+            }
+        }
+
+
+        /* =====================================================
+           REDUCED MOTION
+        ===================================================== */
+
+        @media (prefers-reduced-motion: reduce) {
+
+            *,
+            *::before,
+            *::after {
+                animation-duration: .01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: .01ms !important;
+            }
+        }
+
+
+        /* =====================================================
+           SMALL DEVICES
+        ===================================================== */
+
+        @media (max-height: 620px) {
+
+            .logo-wrap {
+                width: 72px;
+                height: 72px;
+                margin-bottom: 15px;
+            }
+
+            .logo {
+                width: 62px;
+                height: 62px;
+                border-radius: 18px;
+            }
+
+            .brand-name {
+                font-size: 24px;
+            }
+
+            .brand-tagline {
+                margin-top: 8px;
+                font-size: 9px;
+            }
+        }
+    </style>
 </head>
 
 <body>
-    <!-- BACKGROUND LAYERS -->
-    <div class="gradient"></div>
-    <div class="mesh"></div>
 
-    <div class="blob blob1"></div>
-    <div class="blob blob2"></div>
-    <div class="blob blob3"></div>
-    <div class="blob blob4"></div>
+    <div class="splash-background"></div>
 
-    <div class="particles" id="particles"></div>
+    <main
+        class="splash"
+        id="splash"
+        aria-label="Viewora"
+    >
 
-    <!-- FLYING DRAGON -->
-    <div class="dragon-orbit">
-        <div class="dragon">🐉</div>
-    </div>
+        <section class="brand">
 
-    <!-- SPLASH CONTENT -->
-    <main class="splash">
-        <div class="logoBox">
-            <div class="logoGlow"></div>
-            <div class="logoRing logoRing1"></div>
-            <div class="logoRing logoRing2"></div>
-            <div class="logoRing logoRing3"></div>
+            <div class="logo-wrap">
 
-            <img src="file.jpg" class="logo" alt="Viewora Logo">
-        </div>
+                <div class="logo-glow"></div>
 
-        <h1 class="brand">
-            <span class="letter">V</span><span class="letter">i</span><span class="letter">e</span><span class="letter">w</span><span class="letter">o</span><span class="letter">r</span><span class="letter">a</span>
-        </h1>
+                <div class="logo">
+                    <div class="logo-mark"></div>
+                </div>
 
-        <p class="tagline">
-            <span class="tag-item">Connect</span>
-            <span class="dot">•</span>
-            <span class="tag-item">Create</span>
-            <span class="dot">•</span>
-            <span class="tag-item">Earn</span>
-        </p>
-
-        <div class="loader-wrap">
-            <div class="loader">
-                <div class="loaderFill"></div>
             </div>
-            <div class="loader-glow"></div>
-        </div>
 
-        <p id="loadingText">Initializing...</p>
+            <div class="brand-name">
+                Viewora
+            </div>
 
-        <div class="version">VERSION 1.0</div>
+            <div class="brand-tagline">
+                See More. Connect More.
+            </div>
+
+        </section>
+
+        <div
+            class="loading"
+            aria-hidden="true"
+        ></div>
+
     </main>
 
-    <script src="splash.js"></script>
+
+    <script>
+        "use strict";
+
+        /*
+        ============================================================
+          VIEWORA SPLASH CONTROLLER
+
+          IMPORTANT:
+          This page is ONLY the entry screen.
+
+          It should NOT be opened from every page.
+        ============================================================
+        */
+
+        (() => {
+
+            const splash =
+                document.getElementById("splash");
+
+            /*
+            --------------------------------------------------------
+            TARGET PAGE
+            --------------------------------------------------------
+            Change this only if your main home page has
+            another filename.
+            */
+
+            const HOME_PAGE = "index.html";
+
+
+            /*
+            --------------------------------------------------------
+            SPLASH DURATION
+            --------------------------------------------------------
+            Premium short launch animation.
+            */
+
+            const MIN_SPLASH_TIME = 1150;
+
+
+            /*
+            --------------------------------------------------------
+            START TIME
+            --------------------------------------------------------
+            */
+
+            const startedAt = performance.now();
+
+
+            /*
+            --------------------------------------------------------
+            REDIRECT
+            --------------------------------------------------------
+            */
+
+            function openHome() {
+
+                const elapsed =
+                    performance.now() - startedAt;
+
+                const remaining =
+                    Math.max(
+                        0,
+                        MIN_SPLASH_TIME - elapsed
+                    );
+
+                setTimeout(() => {
+
+                    splash.classList.add("hide");
+
+                    setTimeout(() => {
+
+                        window.location.replace(
+                            HOME_PAGE
+                        );
+
+                    }, 420);
+
+                }, remaining);
+            }
+
+
+            /*
+            --------------------------------------------------------
+            START
+            --------------------------------------------------------
+            */
+
+            window.addEventListener(
+                "load",
+                openHome,
+                { once: true }
+            );
+
+
+        })();
+    </script>
+
 </body>
 </html>

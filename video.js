@@ -336,14 +336,11 @@
     ======================================================== */
 
     function hidePageLoader() {
-
         const loader = $("pageLoader");
-
-        if (!loader) return;
-
-        setTimeout(() => {
+        if (loader) {
             loader.classList.add("hidden");
-        }, 300);
+            try { loader.remove(); } catch (_) {}
+        }
     }
 
     /* ========================================================
@@ -745,6 +742,9 @@
 
         if (!player) return;
 
+        hide($("playerLoading"));
+        hidePageLoader();
+
         /*
          * Mobile / iOS friendly defaults
          */
@@ -752,7 +752,7 @@
         player.setAttribute("webkit-playsinline", "");
         player.playsInline = true;
         player.controls = true;
-        player.preload = "metadata";
+        player.preload = "auto";
 
         const video = state.video || {};
 
@@ -773,7 +773,8 @@
         });
 
         player.addEventListener("waiting", () => {
-            show($("playerLoading"));
+            /* keep UI clean – no loading overlay */
+            hide($("playerLoading"));
         });
 
         player.addEventListener("playing", () => {
@@ -797,32 +798,22 @@
          * Expose fullscreen helper for menu.
          */
         window.__vieworaToggleFullscreen = function () {
-
-            const shell =
-                $("playerShell") || player;
-
-            try {
-
-                if (document.fullscreenElement) {
-
-                    document.exitFullscreen?.();
-
-                } else if (shell.requestFullscreen) {
-
-                    shell.requestFullscreen();
-
-                } else if (player.webkitEnterFullscreen) {
-
-                    player.webkitEnterFullscreen();
-
-                }
-
-            } catch (e) {
-
-                console.warn("Fullscreen failed:", e);
-
+            if (typeof togglePlayerFullscreen === "function") {
+                togglePlayerFullscreen();
+                return;
             }
-
+            const shell = $("playerShell") || player;
+            try {
+                if (document.fullscreenElement) {
+                    document.exitFullscreen?.();
+                } else if (shell.requestFullscreen) {
+                    shell.requestFullscreen();
+                } else if (player.webkitEnterFullscreen) {
+                    player.webkitEnterFullscreen();
+                }
+            } catch (e) {
+                console.warn("Fullscreen failed:", e);
+            }
         };
 
     }
@@ -2765,18 +2756,237 @@ function updateLikeCount() {
 
         closeMore();
 
-        toast(
-            "Report received",
-            "Thanks. We'll review this video.",
-            "info"
-        );
+        const params = new URLSearchParams();
+        params.set("type", "video");
+        if (state.videoId) params.set("id", state.videoId);
+        const creatorId = getCreatorId(state.video || {});
+        if (creatorId) params.set("uid", creatorId);
+        window.location.href = "report.html?" + params.toString();
     }
 
     /* ========================================================
        INTERACTIONS
     ======================================================== */
 
+    
+    /* ========================================================
+       PLAYER SETTINGS (YouTube-style 3-dot)
+    ======================================================== */
+
+    const playerSettings = {
+        quality: "auto",
+        speed: 1,
+        loop: false,
+        ambient: false,
+        stable: false,
+        lock: false,
+        sleepMin: 0,
+        sleepTimer: null
+    };
+
+    function openPlayerSettings() {
+        show($("playerSettingsOverlay"));
+        syncPlayerSettingsUI();
+    }
+
+    function closePlayerSettings() {
+        hide($("playerSettingsOverlay"));
+        hide($("psQualityOverlay"));
+        hide($("psSpeedOverlay"));
+        hide($("psSleepOverlay"));
+    }
+
+    function syncPlayerSettingsUI() {
+        const q = $("psQualityLabel");
+        if (q) q.textContent = playerSettings.quality === "auto" ? "Auto" : playerSettings.quality + "p";
+        const s = $("psSpeedLabel");
+        if (s) s.textContent = playerSettings.speed === 1 ? "1x" : playerSettings.speed + "x";
+        const loop = $("psLoopLabel");
+        if (loop) loop.textContent = playerSettings.loop ? "On" : "Off";
+        const amb = $("psAmbientLabel");
+        if (amb) amb.textContent = playerSettings.ambient ? "On" : "Off";
+        const st = $("psStableLabel");
+        if (st) st.textContent = playerSettings.stable ? "On" : "Off";
+        const lk = $("psLockLabel");
+        if (lk) lk.textContent = playerSettings.lock ? "On" : "Off";
+        const sl = $("psSleepLabel");
+        if (sl) {
+            sl.textContent = playerSettings.sleepMin
+                ? (playerSettings.sleepMin >= 60 ? "1 hour" : playerSettings.sleepMin + " min")
+                : "Off";
+        }
+    }
+
+    function applyPlaybackRate() {
+        const player = $("mainVideo");
+        if (player) player.playbackRate = playerSettings.speed || 1;
+    }
+
+    function applyLoop() {
+        const player = $("mainVideo");
+        if (player) player.loop = !!playerSettings.loop;
+    }
+
+    function applyAmbient() {
+        document.body.classList.toggle("ambientOn", !!playerSettings.ambient);
+    }
+
+    function applyStableVolume() {
+        const player = $("mainVideo");
+        if (!player) return;
+        // Soft normalize: clamp volume a bit when enabled
+        if (playerSettings.stable) {
+            player.volume = Math.min(0.85, Math.max(0.4, player.volume || 0.85));
+        }
+    }
+
+    function setSleepTimer(minutes) {
+        if (playerSettings.sleepTimer) {
+            clearTimeout(playerSettings.sleepTimer);
+            playerSettings.sleepTimer = null;
+        }
+        playerSettings.sleepMin = minutes || 0;
+        if (!minutes) {
+            syncPlayerSettingsUI();
+            return;
+        }
+        playerSettings.sleepTimer = setTimeout(() => {
+            const player = $("mainVideo");
+            try { player?.pause(); } catch (_) {}
+            toast("Sleep timer", "Video paused.", "info");
+            playerSettings.sleepMin = 0;
+            playerSettings.sleepTimer = null;
+            syncPlayerSettingsUI();
+        }, minutes * 60 * 1000);
+        syncPlayerSettingsUI();
+        toast("Sleep timer", "Video will pause in " + minutes + " min.", "info");
+    }
+
+    function togglePlayerFullscreen() {
+        const shell = $("playerShell") || $("mainVideo");
+        const player = $("mainVideo");
+        try {
+            if (document.fullscreenElement || document.webkitFullscreenElement) {
+                (document.exitFullscreen || document.webkitExitFullscreen)?.call(document);
+            } else if (shell?.requestFullscreen) {
+                shell.requestFullscreen();
+            } else if (shell?.webkitRequestFullscreen) {
+                shell.webkitRequestFullscreen();
+            } else if (player?.webkitEnterFullscreen) {
+                player.webkitEnterFullscreen();
+            }
+        } catch (e) {
+            console.warn("Fullscreen failed:", e);
+        }
+    }
+
+    function setupPlayerSettings() {
+        $("playerSettingsBtn")?.addEventListener("click", (e) => {
+            e.stopPropagation();
+            openPlayerSettings();
+        });
+
+        $("playerFsBtn")?.addEventListener("click", (e) => {
+            e.stopPropagation();
+            togglePlayerFullscreen();
+        });
+
+        // Also wire header/video more to open player settings when appropriate? keep page more separate.
+
+        document.querySelectorAll("[data-close]").forEach((el) => {
+            el.addEventListener("click", () => {
+                const id = el.dataset.close;
+                if (id === "playerSettingsOverlay") closePlayerSettings();
+                if (id === "psQualityOverlay") hide($("psQualityOverlay"));
+                if (id === "psSpeedOverlay") hide($("psSpeedOverlay"));
+                if (id === "psSleepOverlay") hide($("psSleepOverlay"));
+            });
+        });
+
+        document.querySelectorAll("[data-ps]").forEach((btn) => {
+            btn.addEventListener("click", () => {
+                const key = btn.dataset.ps;
+                if (key === "quality") {
+                    hide($("playerSettingsOverlay"));
+                    show($("psQualityOverlay"));
+                } else if (key === "speed") {
+                    hide($("playerSettingsOverlay"));
+                    show($("psSpeedOverlay"));
+                } else if (key === "sleep") {
+                    hide($("playerSettingsOverlay"));
+                    show($("psSleepOverlay"));
+                } else if (key === "loop") {
+                    playerSettings.loop = !playerSettings.loop;
+                    applyLoop();
+                    syncPlayerSettingsUI();
+                    toast("Loop", playerSettings.loop ? "On" : "Off", "info");
+                } else if (key === "ambient") {
+                    playerSettings.ambient = !playerSettings.ambient;
+                    applyAmbient();
+                    syncPlayerSettingsUI();
+                    toast("Ambient mode", playerSettings.ambient ? "On" : "Off", "info");
+                } else if (key === "stable") {
+                    playerSettings.stable = !playerSettings.stable;
+                    applyStableVolume();
+                    syncPlayerSettingsUI();
+                    toast("Stable volume", playerSettings.stable ? "On" : "Off", "info");
+                } else if (key === "lock") {
+                    playerSettings.lock = !playerSettings.lock;
+                    document.body.classList.toggle("playerLocked", playerSettings.lock);
+                    syncPlayerSettingsUI();
+                    toast("Screen lock", playerSettings.lock ? "Controls locked" : "Unlocked", "info");
+                } else if (key === "captions") {
+                    toast("Captions", "Captions unavailable for this video.", "info");
+                } else if (key === "music") {
+                    toast("Music", "Music mode coming soon.", "info");
+                } else if (key === "vr") {
+                    toast("VR", "VR mode is not available on this device.", "info");
+                } else if (key === "help") {
+                    toast("Help", "Report issues from the video menu.", "info");
+                    closePlayerSettings();
+                } else if (key === "fullscreen") {
+                    closePlayerSettings();
+                    togglePlayerFullscreen();
+                }
+            });
+        });
+
+        document.querySelectorAll(".psQualityOpt").forEach((btn) => {
+            btn.addEventListener("click", () => {
+                playerSettings.quality = btn.dataset.quality || "auto";
+                // Single-stream CDN: label only (real ABR needs multi-bitrate sources)
+                syncPlayerSettingsUI();
+                hide($("psQualityOverlay"));
+                show($("playerSettingsOverlay"));
+                toast("Quality", playerSettings.quality === "auto" ? "Auto" : playerSettings.quality + "p", "info");
+            });
+        });
+
+        document.querySelectorAll(".psSpeedOpt").forEach((btn) => {
+            btn.addEventListener("click", () => {
+                playerSettings.speed = Number(btn.dataset.speed) || 1;
+                applyPlaybackRate();
+                syncPlayerSettingsUI();
+                hide($("psSpeedOverlay"));
+                show($("playerSettingsOverlay"));
+                toast("Speed", playerSettings.speed + "x", "info");
+            });
+        });
+
+        document.querySelectorAll(".psSleepOpt").forEach((btn) => {
+            btn.addEventListener("click", () => {
+                const mins = Number(btn.dataset.sleep) || 0;
+                setSleepTimer(mins);
+                hide($("psSleepOverlay"));
+                show($("playerSettingsOverlay"));
+            });
+        });
+    }
+
+
     function setupInteractions() {
+
+        setupPlayerSettings();
 
         $("backBtn")?.addEventListener(
             "click",
@@ -2987,7 +3197,7 @@ function updateLikeCount() {
             () => {
                 clearPlayerError();
 
-                show($("playerLoading"));
+                hide($("playerLoading"));
 
                 $("mainVideo").load();
 
@@ -3116,6 +3326,9 @@ function updateLikeCount() {
     ======================================================== */
 
     async function init() {
+
+        hidePageLoader();
+        hide($("playerLoading"));
 
         setupAuthListener();
 

@@ -2929,6 +2929,65 @@
 
 
         <!-- =================================================
+             STORIES (Active – within 24h)
+        ================================================== -->
+
+        <section class="storySection">
+
+            <div class="sectionHeader">
+
+                <h3>
+                    Stories
+                </h3>
+
+                <a
+                    href="stories.html"
+                    id="storiesLink"
+                >
+                    View all
+                </a>
+
+            </div>
+
+
+            <div
+                id="storiesWrapper"
+                class="storiesWrapper"
+            >
+
+
+                <!-- New Story (opens stories-upload.html) -->
+
+                <div
+                    id="newStoryItem"
+                    class="storyItem ownerOnly"
+                >
+
+                    <div
+                        class="storyCircle addStory"
+                    >
+
+                        <i
+                            class="fa-solid fa-plus"
+                        ></i>
+
+                    </div>
+
+                    <p>
+                        New
+                    </p>
+
+                </div>
+
+
+                <!-- Dynamic active stories inserted by profile.js -->
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================================
              HIGHLIGHTS (Expired stories – 24h complete)
         ================================================== -->
 
@@ -3383,6 +3442,7 @@
     ====================================================== -->
 
     <script src="firebase.js"></script>
+<script src="badges.js"></script>
 
   
 <script src="call-listener.js"></script>
@@ -3499,7 +3559,7 @@
 
                 /* =================================================
                    STORY UPLOAD BUTTONS
-                   → Open story-upload.html (no file picker)
+                   → Open stories-upload.html (no file picker)
                 ================================================= */
 
                 function openStoryUploadPage(event) {
@@ -3510,7 +3570,7 @@
                     }
 
                     window.location.href =
-                        "story-upload.html";
+                        "stories-upload.html";
 
                 }
 
@@ -3565,7 +3625,7 @@
                             } else {
 
                                 vieworaProfileToast(
-                                    "Please use story-upload.html to add a story."
+                                    "Please use stories-upload.html to add a story."
                                 );
 
                             }
@@ -4000,9 +4060,39 @@
                         "click",
                         function () {
 
-                            vieworaProfileToast(
-                                "More profile options coming soon."
-                            );
+                            const currentUID =
+                                typeof window.getUID === "function"
+                                    ? window.getUID()
+                                    : window.auth?.currentUser?.uid || null;
+
+                            const uid =
+                                getProfileUID() ||
+                                window.profileUID ||
+                                "";
+
+                            if (
+                                currentUID &&
+                                uid &&
+                                String(currentUID) === String(uid)
+                            ) {
+                                vieworaProfileToast(
+                                    "More profile options coming soon."
+                                );
+                                return;
+                            }
+
+                            if (!uid) {
+                                vieworaProfileToast(
+                                    "Profile still loading."
+                                );
+                                return;
+                            }
+
+                            const params = new URLSearchParams();
+                            params.set("type", "user");
+                            params.set("uid", uid);
+                            window.location.href =
+                                "report.html?" + params.toString();
 
                         }
                     );

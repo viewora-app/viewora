@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    >
+
+    <meta name="theme-color" content="#08080d">
+
+    <meta
+        name="description"
+        content="Report content or an account on Viewora."
+    >
+
+    <title>Report • Viewora</title>
+
+    <!-- FONT -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet"
+    >
+
+    <!-- FONT AWESOME -->
+    <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
+    >
+
+    <!-- VIEWORA REPORT CSS -->
+    <link rel="stylesheet" href="report.css">
+</head>
+
+<body>
+
+<div class="reportPage">
+
+    <!-- TOP BAR -->
+    <header class="reportHeader">
+
+        <button
+            id="backBtn"
+            class="iconButton"
+            type="button"
+            aria-label="Go back"
+        >
+            <i class="fa-solid fa-arrow-left"></i>
+        </button>
+
+        <div class="headerTitle">
+            <span class="headerEyebrow">VIEWORA SAFETY</span>
+            <h1>Report</h1>
+        </div>
+
+        <div class="headerShield">
+            <i class="fa-solid fa-shield-halved"></i>
+        </div>
+
+    </header>
+
+
+    <!-- MAIN -->
+    <main class="reportMain">
+
+        <!-- INTRO -->
+        <section class="introCard">
+
+            <div class="introIcon">
+                <i class="fa-solid fa-flag"></i>
+            </div>
+
+            <div class="introContent">
+                <h2>Help keep Viewora safe</h2>
+
+                <p>
+                    Tell us what is wrong with this content or account.
+                    Your report will be reviewed by the Viewora moderation team.
+                </p>
+            </div>
+
+        </section>
+
+
+        <!-- TARGET -->
+        <section id="targetCard" class="targetCard">
+
+            <div class="targetIcon">
+                <i id="targetIcon" class="fa-solid fa-circle-user"></i>
+            </div>
+
+            <div class="targetInfo">
+
+                <span class="targetLabel">REPORTING</span>
+
+                <strong id="targetTitle">
+                    Viewora content
+                </strong>
+
+                <span id="targetSubtitle">
+                    Please select a reason below.
+                </span>
+
+            </div>
+
+        </section>
+
+
+        <!-- REASONS -->
+        <section class="sectionBlock">
+
+            <div class="sectionHeading">
+                <div>
+                    <span class="sectionEyebrow">STEP 1</span>
+                    <h2>Why are you reporting this?</h2>
+                </div>
+
+                <span class="requiredBadge">Required</span>
+            </div>
+
+
+            <div
+                id="reasonList"
+                class="reasonList"
+                role="radiogroup"
+                aria-label="Report reason"
+            >
+
+                <!-- SPAM -->
+                <button
+                    class="reasonCard"
+                    type="button"
+                    data-reason="spam"
+                >
+                    <span class="reasonIcon">
+                        <i class="fa-solid fa-bullhorn"></i>
+                    </span>
+
+                    <span class="reasonText">
+                        <strong>Spam or misleading</strong>
+                        <small>Unwanted, repetitive or deceptive content</small>
+                    </span>
+
+                    <span class="reasonCheck">
+                        <i class="fa-solid fa-check"></i>
+                    </span>
+                </button>
+
+
+                <!-- IMPERSONATION -->
+                <button
+                    class="reasonCard"
+                    type="button"
+                    data-reason="impersonation"
+                >
+                    <span class="reasonIcon">
+                        <i class="fa-solid fa-user-secret"></i>
+                    </span>
+
+                    <span class="reasonText">
+                        <strong>Impersonation or fake account</strong>
+                        <small>Someone is pretending to be another person</small>
+                    </span>
+
+                    <span class="reasonCheck">
+                        <i class="fa-solid fa-check"></i>
+                    </span>
+                </button>
+
+
+                <!-- HARASSMENT -->
+                <button
+                    class="reasonCard"
+                    type="button"
+                    data-reason="harassment"
+                >
+                    <span class="reasonIcon">
+                        <i class="fa-solid fa-hand"></i>
+                    </span>
+
+                    <span class="reasonText">
+                        <strong>Harassment or bullying</strong>
+                        <small>Targeted abuse, bullying or unwanted harassment</small>
+                    </span>
+
+                    <span class="reasonCheck">
+                        <i class="fa-solid fa-check"></i>
+                    </span>
+                </button>
+
+
+                <!-- HATE -->
+                <button
+                    class="reasonCard"
+                    type="button"
+                    data-reason="hate"
+                >
+                    <span class="reasonIcon">
+                        <i class="fa-solid fa-comment-slash"></i>
+                    </span>
+
+                    <span class="reasonText">
+                        <strong>Hate or abusive content</strong>
+                        <small>Content attacking people or groups</small>
+                    </span>
+
+                    <span class="reasonCheck">
+                        <i class="fa-solid fa-check"></i>
+                    </span>
+                </button>
+
+
+                <!-- INAPPROPRIATE -->
+                <button
+                    class="reasonCard"
+                    type="button"
+                    data-reason="inappropriate"
+                >
+                    <span class="reasonIcon">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                    </span>
+
+                    <span class="reasonText">
+                        <strong>Inappropriate content</strong>
+                        <small>Content that violates Viewora's community standards</small>
+                    </span>
+
+                    <span class="reasonCheck">
+                        <i class="fa-solid fa-check"></i>
+                    </span>
+                </button>
+
+
+                <!-- DANGEROUS -->
+                <button
+                    class="reasonCard"
+                    type="button"
+                    data-reason="dangerous"
+                >
+                    <span class="reasonIcon">
+                        <i class="fa-solid fa-shield-virus"></i>
+                    </span>
+
+                    <span class="reasonText">
+                        <strong>Dangerous or harmful</strong>
+                        <small>Content that could put people at risk</small>
+                    </span>
+
+                    <span class="reasonCheck">
+                        <i class="fa-solid fa-check"></i>
+                    </span>
+                </button>
+
+
+                <!-- COPYRIGHT -->
+                <button
+                    class="reasonCard"
+                    type="button"
+                    data-reason="copyright"
+                >
+                    <span class="reasonIcon">
+                        <i class="fa-solid fa-copyright"></i>
+                    </span>
+
+                    <span class="reasonText">
+                        <strong>Copyright issue</strong>
+                        <small>Someone may be using copyrighted content improperly</small>
+                    </span>
+
+                    <span class="reasonCheck">
+                        <i class="fa-solid fa-check"></i>
+                    </span>
+                </button>
+
+
+                <!-- PRIVACY -->
+                <button
+                    class="reasonCard"
+                    type="button"
+                    data-reason="privacy"
+                >
+                    <span class="reasonIcon">
+                        <i class="fa-solid fa-lock"></i>
+                    </span>
+
+                    <span class="reasonText">
+                        <strong>Privacy violation</strong>
+                        <small>Personal information shared without permission</small>
+                    </span>
+
+                    <span class="reasonCheck">
+                        <i class="fa-solid fa-check"></i>
+                    </span>
+                </button>
+
+
+                <!-- SCAM -->
+                <button
+                    class="reasonCard"
+                    type="button"
+                    data-reason="scam"
+                >
+                    <span class="reasonIcon">
+                        <i class="fa-solid fa-shield-exclamation"></i>
+                    </span>
+
+                    <span class="reasonText">
+                        <strong>Scam or fraud</strong>
+                        <small>Fraudulent, deceptive or suspicious activity</small>
+                    </span>
+
+                    <span class="reasonCheck">
+                        <i class="fa-solid fa-check"></i>
+                    </span>
+                </button>
+
+
+                <!-- OTHER -->
+                <button
+                    class="reasonCard"
+                    type="button"
+                    data-reason="other"
+                >
+                    <span class="reasonIcon">
+                        <i class="fa-solid fa-ellipsis"></i>
+                    </span>
+
+                    <span class="reasonText">
+                        <strong>Something else</strong>
+                        <small>Another issue that isn't listed above</small>
+                    </span>
+
+                    <span class="reasonCheck">
+                        <i class="fa-solid fa-check"></i>
+                    </span>
+                </button>
+
+            </div>
+
+        </section>
+
+
+        <!-- DETAILS -->
+        <section class="sectionBlock detailsSection">
+
+            <div class="sectionHeading">
+
+                <div>
+                    <span class="sectionEyebrow">STEP 2</span>
+                    <h2>Tell us more</h2>
+                </div>
+
+                <span class="optionalBadge">Optional</span>
+
+            </div>
+
+
+            <div class="textareaWrap">
+
+                <textarea
+                    id="reportDetails"
+                    maxlength="1000"
+                    placeholder="Add any details that may help our moderation team..."
+                    autocomplete="off"
+                    spellcheck="true"
+                ></textarea>
+
+                <div class="textareaBottom">
+
+                    <span>
+                        Please don't include passwords or sensitive account information.
+                    </span>
+
+                    <strong>
+                        <span id="characterCount">0</span>/1000
+                    </strong>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- PRIVACY NOTE -->
+        <section class="privacyNote">
+
+            <div class="privacyIcon">
+                <i class="fa-solid fa-user-shield"></i>
+            </div>
+
+            <div>
+                <strong>Your report is private</strong>
+
+                <p>
+                    Reports are reviewed by Viewora's moderation system.
+                    We may use the information you provide to investigate
+                    violations of our rules.
+                </p>
+            </div>
+
+        </section>
+
+
+        <!-- SUBMIT -->
+        <section class="submitSection">
+
+            <button
+                id="submitReportBtn"
+                class="submitButton"
+                type="button"
+                disabled
+            >
+
+                <span class="submitIcon">
+                    <i class="fa-solid fa-flag"></i>
+                </span>
+
+                <span class="submitText">
+                    <strong>Submit Report</strong>
+                    <small>We'll review your report</small>
+                </span>
+
+                <i class="fa-solid fa-arrow-right submitArrow"></i>
+
+            </button>
+
+        </section>
+
+    </main>
+
+
+    <!-- SUCCESS -->
+    <div id="successOverlay" class="modalOverlay hidden">
+
+        <div class="successModal">
+
+            <div class="successCircle">
+                <i class="fa-solid fa-check"></i>
+            </div>
+
+            <span class="successEyebrow">
+                REPORT RECEIVED
+            </span>
+
+            <h2>Thank you for speaking up.</h2>
+
+            <p>
+                Your report has been submitted successfully.
+                Our moderation team can now review it.
+            </p>
+
+            <button
+                id="successDoneBtn"
+                class="successButton"
+                type="button"
+            >
+                Done
+            </button>
+
+        </div>
+
+    </div>
+
+
+    <!-- TOAST -->
+    <div
+        id="toast"
+        class="toast"
+        role="status"
+        aria-live="polite"
+    >
+        <i id="toastIcon" class="fa-solid fa-circle-check"></i>
+        <span id="toastText">Done</span>
+    </div>
+
+
+    <!-- LOADING -->
+    <div id="loadingOverlay" class="loadingOverlay hidden">
+
+        <div class="loadingCard">
+
+            <div class="loadingLogo">
+                <img src="viewora2.jpg" alt="Viewora">
+            </div>
+
+            <div class="loadingSpinner"></div>
+
+            <strong>Submitting report</strong>
+            <span>Please wait...</span>
+
+        </div>
+
+    </div>
+
+
+    <!-- FIREBASE -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+
+    <!-- VIEWORA FIREBASE CORE -->
+    <script src="firebase.js"></script>
+
+    <!-- REPORT LOGIC -->
+    <script src="report.js"></script>
+
+</div>
+
+</body>
+</html>

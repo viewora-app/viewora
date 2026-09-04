@@ -2066,3 +2066,212 @@ img{
     }
 
 }
+/* ============================================================
+   PLAYER CHROME + SETTINGS (YouTube-style)
+============================================================ */
+
+.playerShell {
+    position: relative;
+}
+
+.playerChrome {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 8;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .2s ease;
+}
+
+.playerShell:hover .playerChrome,
+.playerShell:focus-within .playerChrome,
+.playerChrome:focus-within {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+@media (hover: none) {
+    .playerChrome {
+        opacity: 1;
+        pointer-events: auto;
+    }
+}
+
+.playerChromeBtn {
+    width: 40px;
+    height: 40px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    border: 0;
+    color: #fff;
+    background: rgba(0, 0, 0, .45);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,.12);
+    cursor: pointer;
+    transition: transform .15s ease, background .15s ease;
+}
+
+.playerChromeBtn:active {
+    transform: scale(.92);
+}
+
+.playerChromeBtn:hover {
+    background: rgba(0, 0, 0, .6);
+}
+
+/* Hide default loading overlay completely */
+.playerLoading {
+    display: none !important;
+}
+
+.pageLoader {
+    display: none !important;
+}
+
+/* Ambient mode */
+body.ambientOn {
+    background: #000 !important;
+}
+
+body.ambientOn .videoHeader,
+body.ambientOn .recommendSection,
+body.ambientOn .shortsSection,
+body.ambientOn .commentsSection,
+body.ambientOn .videoInfoSection {
+    opacity: .35;
+    transition: opacity .35s ease;
+}
+
+body.ambientOn .playerSection,
+body.ambientOn .playerShell {
+    opacity: 1;
+}
+
+/* Screen lock - dim non-player UI taps */
+body.playerLocked .videoInfoSection,
+body.playerLocked .recommendSection,
+body.playerLocked .shortsSection,
+body.playerLocked .commentsSection,
+body.playerLocked .videoHeader {
+    pointer-events: none;
+    filter: grayscale(.2);
+    opacity: .55;
+}
+
+body.playerLocked .playerChrome {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* Settings sheet rows */
+.playerSettingsSheet {
+    padding: 8px 10px calc(18px + env(safe-area-inset-bottom, 0px));
+    max-height: 85dvh;
+    overflow-y: auto;
+}
+
+.playerSettingsTitle {
+    padding: 8px 12px 12px;
+    font-size: 14px;
+    font-weight: 800;
+    color: #fff;
+}
+
+.psItem {
+    width: 100%;
+    min-height: 52px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 12px;
+    border: 0;
+    border-radius: 12px;
+    background: transparent;
+    color: #eee;
+    text-align: left;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.psItem:hover,
+.psItem:active {
+    background: rgba(255, 255, 255, .06);
+}
+
+.psLeft {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+}
+
+.psLeft i {
+    width: 22px;
+    text-align: center;
+    color: #a0a0aa;
+    font-size: 14px;
+}
+
+.psRight {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: #8b8b98;
+    font-size: 12px;
+    font-weight: 600;
+    flex-shrink: 0;
+}
+
+.psRight i {
+    font-size: 10px;
+    opacity: .7;
+}
+
+.psItem .check::after {
+    content: "";
+}
+
+/* Fullscreen player polish */
+.playerShell:fullscreen,
+.playerShell:-webkit-full-screen {
+    width: 100vw;
+    height: 100vh;
+    border-radius: 0;
+    border: 0;
+    background: #000;
+}
+
+.playerShell:fullscreen .mainVideo,
+.playerShell:-webkit-full-screen .mainVideo {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.playerShell:fullscreen .playerChrome,
+.playerShell:-webkit-full-screen .playerChrome {
+    opacity: 1;
+    pointer-events: auto;
+    top: max(12px, env(safe-area-inset-top));
+    right: max(12px, env(safe-area-inset-right));
+}
+
+/* Mobile player edge-to-edge already handled; ensure chrome visible */
+@media (max-width: 700px) {
+    .playerChrome {
+        top: 8px;
+        right: 8px;
+    }
+    .playerChromeBtn {
+        width: 38px;
+        height: 38px;
+    }
+}
