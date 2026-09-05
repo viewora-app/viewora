@@ -2137,18 +2137,21 @@
             state.visibility ||
             "public";
 
+        // Keep state in sync with live form (important for public video edits)
+        state.title = getInputValue("longTitle");
+        state.description = getInputValue("longDescription");
+        state.hashtags = getInputValue("longHashtags");
+        state.tags = getInputValue("longTags");
+        state.visibility = visibility;
+
 
         return {
 
             title:
-                getInputValue(
-                    "longTitle"
-                ),
+                state.title,
 
             description:
-                getInputValue(
-                    "longDescription"
-                ),
+                state.description,
 
             hashtags:
                 getInputValue(
@@ -2373,6 +2376,96 @@
     }
 
 
+    /* =========================================================
+       LOCAL MEDIA DB (replace previous upload cleanly)
+    ========================================================= */
+
+    const LOCAL_VIDEO_DB = "VIEWORA_MEDIA_DB";
+    const LOCAL_VIDEO_STORE = "uploads";
+    const LOCAL_VIDEO_KEY = "currentVideo";
+
+
+    function openLocalVideoDB() {
+
+        return new Promise((resolve, reject) => {
+
+            if (!("indexedDB" in window)) {
+                reject(new Error("IndexedDB not supported"));
+                return;
+            }
+
+            const request = indexedDB.open(LOCAL_VIDEO_DB, 1);
+
+            request.onupgradeneeded = (event) => {
+                const db = event.target.result;
+                if (!db.objectStoreNames.contains(LOCAL_VIDEO_STORE)) {
+                    db.createObjectStore(LOCAL_VIDEO_STORE);
+                }
+            };
+
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = () =>
+                reject(request.error || new Error("Could not open media DB"));
+        });
+    }
+
+
+    async function saveLocalVideoBlob(blob) {
+
+        if (!blob) return false;
+
+        try {
+            const db = await openLocalVideoDB();
+            await new Promise((resolve, reject) => {
+                const tx = db.transaction(LOCAL_VIDEO_STORE, "readwrite");
+                const store = tx.objectStore(LOCAL_VIDEO_STORE);
+                const req = store.put(blob, LOCAL_VIDEO_KEY);
+                req.onsuccess = () => resolve();
+                req.onerror = () => reject(req.error);
+            });
+            try { db.close(); } catch (_) {}
+            return true;
+        } catch (error) {
+            console.warn("Local video save failed:", error);
+            return false;
+        }
+    }
+
+
+    async function clearLocalVideoBlob() {
+
+        try {
+            const db = await openLocalVideoDB();
+            await new Promise((resolve, reject) => {
+                const tx = db.transaction(LOCAL_VIDEO_STORE, "readwrite");
+                const store = tx.objectStore(LOCAL_VIDEO_STORE);
+                const req = store.delete(LOCAL_VIDEO_KEY);
+                req.onsuccess = () => resolve();
+                req.onerror = () => reject(req.error);
+            });
+            try { db.close(); } catch (_) {}
+        } catch (error) {
+            console.warn("Local video clear failed:", error);
+        }
+
+        // Also clear stale session keys so next upload is not stuck on old video id
+        [
+            "viewora_edit_video_id",
+            "vieworaEditVideoId",
+            "viewora_video_id",
+            "vieworaVideoId",
+            "editVideoId",
+            "longVideoId",
+            "viewora_long_video_id",
+            "vieworaLongVideoId",
+            "viewora_pending_new_video"
+        ].forEach((key) => {
+            try { sessionStorage.removeItem(key); } catch (_) {}
+            try { localStorage.removeItem(key); } catch (_) {}
+        });
+    }
+
+
     function setVideoSource(
         source
     ) {
@@ -2467,6 +2560,11 @@
         state.videoChanged =
             true;
 
+        state.isNewVideo =
+            true;
+
+        // Keep IndexedDB in sync with active blob
+        saveLocalVideoBlob(state.videoFile).catch(() => {});
 
         setVideoSource(
             url
@@ -2561,8 +2659,7 @@
 
                     const file =
                         event.target
-                            ?.files
-                            ?. [0];
+                            ?.files?.[0];
 
                     if (!file) {
                         return;
@@ -2629,6 +2726,11 @@
 
                     releaseCurrentObjectURL();
 
+                    // New selection always replaces previous local file
+                    if (state.thumbnailObjectURL) {
+                        try { URL.revokeObjectURL(state.thumbnailObjectURL); } catch (_) {}
+                        state.thumbnailObjectURL = "";
+                    }
 
                     const url =
                         URL.createObjectURL(
@@ -2648,11 +2750,37 @@
                     state.videoURL =
                         url;
 
+                    // Selecting a fresh file means this is a NEW video draft
+                    // (unless user is on an existing published edit page)
+                    if (
+                        !state.originalVideo ||
+                        state.isNewVideo
+                    ) {
+                        state.isNewVideo = true;
+                        state.originalVideo = null;
+                        state.videoId = "";
+                        // Clear previous id so second upload is not tied to first
+                        [
+                            "viewora_edit_video_id",
+                            "vieworaEditVideoId",
+                            "viewora_video_id",
+                            "vieworaVideoId"
+                        ].forEach((key) => {
+                            try { sessionStorage.removeItem(key); } catch (_) {}
+                        });
+                    }
+
+                    // Persist replacement so reload does not restore the first file
+                    saveLocalVideoBlob(file).catch(() => {});
 
                     setVideoSource(
                         url
                     );
 
+                    updateVideoPlaceholder();
+                    updateVideoMetadata();
+                    updatePreview();
+                    updateSummary();
 
                     setVideoState(
                         "New video ready",
@@ -2669,8 +2797,8 @@
 
 
                     showToast(
-                        "Video added",
-                        "Your new video is ready to edit."
+                        "Video replaced",
+                        "Previous file cleared. New video is ready."
                     );
 
 
@@ -2868,8 +2996,7 @@
 
                     const file =
                         event.target
-                            ?.files
-                            ?. [0];
+                            ?.files?.[0];
 
                     if (!file) {
                         return;
@@ -4878,6 +5005,37 @@
 
 
         renderState();
+
+        // Show existing published video in all players
+        if (state.videoURL) {
+            setVideoSource(state.videoURL);
+        }
+
+        if (state.thumbnailURL) {
+            const thumbImg = $("thumbnailImage") || $("thumbnailPreviewImg");
+            if (thumbImg) {
+                thumbImg.src = state.thumbnailURL;
+                thumbImg.classList?.remove?.("hidden");
+            }
+            const thumbVideo = $("thumbnailVideo");
+            if (thumbVideo && !state.thumbnailURL) {
+                // leave as is
+            }
+        }
+
+        updateVideoPlaceholder();
+        updateVideoMetadata();
+        updatePreview();
+        updateSummary();
+        updateCounters();
+
+        setVideoState("Ready to edit", true);
+
+        setSaveStatus("Saved");
+
+        state.dirty = false;
+        state.videoChanged = false;
+        state.isNewVideo = false;
 
 
         updateProcessing(
@@ -7220,6 +7378,13 @@
 
         state.dirty =
             false;
+
+        // After publish, clear local staged video so next upload is not the old file
+        if (publishMode === "publish") {
+            clearLocalVideoBlob().catch(() => {});
+            state.isNewVideo = false;
+            state.videoChanged = false;
+        }
 
 
         setSaveStatus(
