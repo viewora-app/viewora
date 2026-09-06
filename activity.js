@@ -566,6 +566,29 @@
 
     }
 
+    function isFollowRequest(notification) {
+        const type = safeString(notification?.type).toLowerCase();
+        const msg = safeString(
+            notification?.message || notification?.text || ""
+        ).toLowerCase();
+        return (
+            type === "follow_request" ||
+            type.includes("follow_request") ||
+            type === "followrequest" ||
+            (type.includes("follow") &&
+                (msg.includes("request") || type.includes("request")))
+        );
+    }
+
+    function isFollowAccepted(notification) {
+        const type = safeString(notification?.type).toLowerCase();
+        return (
+            type === "follow_accepted" ||
+            type.includes("follow_accepted") ||
+            type.includes("accepted")
+        );
+    }
+
 
     function isMessage(notification) {
 
@@ -640,28 +663,25 @@
 
         }
 
-        if (isFollow(notification)) {
-
-            if (
-                safeString(
-                    notification.type
-                ).includes("request")
-            ) {
-
-                return {
-                    name,
-                    message:
-                        "sent you a follow request."
-                };
-
-            }
-
+        if (isFollowRequest(notification)) {
             return {
                 name,
-                message:
-                    "started following you."
+                message: custom || "requested to follow you"
             };
+        }
 
+        if (isFollowAccepted(notification)) {
+            return {
+                name,
+                message: custom || "accepted your follow request"
+            };
+        }
+
+        if (isFollow(notification)) {
+            return {
+                name,
+                message: custom || "started following you."
+            };
         }
 
         if (
@@ -719,6 +739,25 @@
                     "Your account status was updated."
             };
 
+        }
+
+        if (
+            safeString(notification.type).includes("login") ||
+            safeString(notification.type).includes("device") ||
+            safeString(notification.type).includes("security")
+        ) {
+            const device =
+                notification.deviceName ||
+                notification.device ||
+                notification.phoneName ||
+                notification.browser ||
+                "another device";
+            return {
+                name: "Security",
+                message:
+                    custom ||
+                    ("New login on " + device)
+            };
         }
 
         return {
@@ -809,6 +848,17 @@
                 className: "message"
             };
 
+        }
+
+        if (
+            type.includes("login") ||
+            type.includes("device") ||
+            type.includes("security")
+        ) {
+            return {
+                icon: "fa-shield-halved",
+                className: "verified"
+            };
         }
 
         return {
@@ -1195,6 +1245,50 @@
        NOTIFICATION LISTENER
        ============================================================ */
 
+    
+    function dedupeFollowNotifications(list) {
+        const seenFollow = new Set();
+        const seenRequest = new Set();
+        const out = [];
+
+        for (const n of list) {
+            if (!n) continue;
+
+            const sid = safeString(n.senderUID);
+            const type = safeString(n.type).toLowerCase();
+
+            // Device login alerts always keep
+            if (
+                type.includes("login") ||
+                type.includes("device") ||
+                type.includes("security")
+            ) {
+                out.push(n);
+                continue;
+            }
+
+            if (isFollowRequest(n)) {
+                if (sid && seenRequest.has(sid)) continue;
+                if (sid) seenRequest.add(sid);
+                out.push(n);
+                continue;
+            }
+
+            if (isFollow(n) && !isFollowAccepted(n)) {
+                // Skip plain "started following" if we already show a request from same user
+                if (sid && seenRequest.has(sid)) continue;
+                if (sid && seenFollow.has(sid)) continue;
+                if (sid) seenFollow.add(sid);
+                out.push(n);
+                continue;
+            }
+
+            out.push(n);
+        }
+
+        return out;
+    }
+
     function startListener() {
 
         if (!currentUser) {
@@ -1248,6 +1342,9 @@
                                 b.createdAt -
                                 a.createdAt
                         );
+
+                // One follow / follow_request per sender (keep newest)
+                allNotifications = dedupeFollowNotifications(allNotifications);
 
                 render();
 
@@ -1466,22 +1563,29 @@
 
         let actionHTML = "";
 
-        if (isFollow(notification)) {
-
+        if (isFollowRequest(notification)) {
+            // Private account: Accept / Decline first
+            actionHTML = `
+                <div class="followRequestActions" data-request-from="${escapeHTML(notification.senderUID)}" data-notif-id="${escapeHTML(notification.id)}">
+                    <button type="button" class="notificationAcceptBtn" data-accept-request="${escapeHTML(notification.senderUID)}">
+                        Accept
+                    </button>
+                    <button type="button" class="notificationDeclineBtn" data-decline-request="${escapeHTML(notification.senderUID)}">
+                        Decline
+                    </button>
+                </div>
+            `;
+        } else if (isFollow(notification)) {
             actionHTML = `
                 <button
                     type="button"
                     class="notificationFollowBtn"
-                    data-follow-back="${escapeHTML(
-                        notification.senderUID
-                    )}"
+                    data-follow-back="${escapeHTML(notification.senderUID)}"
                 >
                     Follow back
                 </button>
             `;
-
         } else if (target) {
-
             actionHTML = `
                 <button
                     type="button"
@@ -1491,7 +1595,6 @@
                     <i class="fa-solid fa-chevron-right"></i>
                 </button>
             `;
-
         }
 
 
@@ -1619,6 +1722,31 @@
                 }
             );
 
+        }
+
+        // Accept follow request
+        const acceptBtn = item.querySelector("[data-accept-request]");
+        if (acceptBtn) {
+            acceptBtn.addEventListener("click", async (event) => {
+                event.stopPropagation();
+                await acceptFollowRequest(
+                    notification.senderUID,
+                    notification.id,
+                    item
+                );
+            });
+        }
+
+        const declineBtn = item.querySelector("[data-decline-request]");
+        if (declineBtn) {
+            declineBtn.addEventListener("click", async (event) => {
+                event.stopPropagation();
+                await declineFollowRequest(
+                    notification.senderUID,
+                    notification.id,
+                    item
+                );
+            });
         }
 
 
@@ -1814,6 +1942,101 @@
     /* ============================================================
        FOLLOW BACK
        ============================================================ */
+
+    
+    async function acceptFollowRequest(fromUID, notifId, itemEl) {
+        if (!currentUser || !fromUID || busy) return;
+        if (fromUID === currentUser.uid) return;
+
+        busy = true;
+        try {
+            const me = currentUser.uid;
+
+            // Add as follower
+            const updates = {};
+            updates["followers/" + me + "/" + fromUID] = true;
+            updates["following/" + fromUID + "/" + me] = true;
+            updates["followRequests/" + me + "/" + fromUID] = null;
+            updates["users/" + me + "/followers/" + fromUID] = true;
+            updates["users/" + fromUID + "/following/" + me] = true;
+
+            await db.ref().update(updates);
+
+            try {
+                await incrementSafeCount("users/" + me + "/followersCount", 1);
+                await incrementSafeCount("users/" + fromUID + "/followingCount", 1);
+            } catch (_) {}
+
+            // Notify requester
+            try {
+                const nref = db.ref("notifications/" + fromUID).push();
+                await nref.set({
+                    type: "follow_accepted",
+                    senderUID: me,
+                    recipientUID: fromUID,
+                    message: "accepted your follow request",
+                    createdAt: firebase.database.ServerValue.TIMESTAMP,
+                    read: false
+                });
+            } catch (_) {}
+
+            // Mark / remove request notification
+            if (notifId) {
+                try {
+                    await db.ref("notifications/" + me + "/" + notifId).update({
+                        type: "follow",
+                        message: "started following you.",
+                        requestAccepted: true,
+                        read: true
+                    });
+                } catch (_) {}
+            }
+
+            if (itemEl) {
+                const actions = itemEl.querySelector(".followRequestActions");
+                if (actions) {
+                    actions.innerHTML =
+                        '<button type="button" class="notificationFollowBtn" data-follow-back="' +
+                        escapeHTML(fromUID) +
+                        '">Follow back</button>';
+                    const fb = actions.querySelector("[data-follow-back]");
+                    if (fb) {
+                        fb.addEventListener("click", async (e) => {
+                            e.stopPropagation();
+                            await followBack(fromUID, fb);
+                        });
+                        await updateFollowButton(fb, fromUID);
+                    }
+                }
+            }
+
+            showToast("Request accepted");
+        } catch (e) {
+            console.error(e);
+            showToast("Could not accept request");
+        } finally {
+            busy = false;
+        }
+    }
+
+    async function declineFollowRequest(fromUID, notifId, itemEl) {
+        if (!currentUser || !fromUID || busy) return;
+        busy = true;
+        try {
+            const me = currentUser.uid;
+            await db.ref("followRequests/" + me + "/" + fromUID).remove();
+            if (notifId) {
+                await db.ref("notifications/" + me + "/" + notifId).remove();
+            }
+            if (itemEl) itemEl.remove();
+            showToast("Request declined");
+        } catch (e) {
+            console.error(e);
+            showToast("Could not decline");
+        } finally {
+            busy = false;
+        }
+    }
 
     async function followBack(
         targetUID,
