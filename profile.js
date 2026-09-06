@@ -986,15 +986,59 @@
         } else {
 
             show(followBtn);
-            show(messageBtn);
-
             hide(editBtn);
             hide(settingsBtn);
+
+            // Private: Message only after accepted follow
+            updateMessageButtonVisibility();
 
         }
 
         updateFollowButton();
 
+    }
+
+    function updateMessageButtonVisibility() {
+        const messageBtn = $("messageBtn");
+        if (!messageBtn) return;
+
+        if (isOwnProfile) {
+            hide(messageBtn);
+            return;
+        }
+
+        const privateTarget = !!(
+            isPrivateProfile ||
+            profileData?.privateAccount === true ||
+            profileData?.isPrivate === true ||
+            profileUser?.privateAccount === true
+        );
+
+        // Public → message always; Private → only if following
+        if (privateTarget && !isFollowing) {
+            hide(messageBtn);
+            messageBtn.style.display = "none";
+            messageBtn.setAttribute("aria-hidden", "true");
+        } else {
+            show(messageBtn);
+            messageBtn.style.removeProperty("display");
+            messageBtn.removeAttribute("aria-hidden");
+        }
+
+        // Also hide any visitor message variants
+        document.querySelectorAll(
+            "#messageBtn, .messageBtn, [data-message-btn], #visitorMessageBtn"
+        ).forEach((el) => {
+            if (privateTarget && !isFollowing && !isOwnProfile) {
+                el.classList.add("hidden");
+                el.style.display = "none";
+            } else if (!isOwnProfile) {
+                el.classList.remove("hidden");
+                if (el.id === "messageBtn" || el.classList.contains("messageBtn")) {
+                    el.style.removeProperty("display");
+                }
+            }
+        });
     }
 
 
@@ -1090,6 +1134,8 @@
         if (storiesWrap && !canViewContent && !isOwnProfile) {
             // keep structure but show lock message in highlights gone
         }
+
+        updateMessageButtonVisibility();
     }
 
 
@@ -1617,6 +1663,12 @@
     ===================================================== */
 
     function openMessage() {
+        // Private account: no DM until accepted follow
+        if (!isOwnProfile && isPrivateProfile && !isFollowing) {
+            showToast("Follow request must be accepted to message");
+            return;
+        }
+
 
         if (
             isOwnProfile ||
