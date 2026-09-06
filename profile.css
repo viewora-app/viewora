@@ -1523,3 +1523,91 @@ body.is-owner .visitorOnly {
         gap: 10px;
     }
 }
+
+
+/* ============================================================
+   LIGHT MODE (from settings.html viewora_theme)
+============================================================ */
+
+html[data-theme="light"] body,
+body[data-theme="light"] {
+    --profile-bg: #f2f3f7;
+    --profile-card: rgba(255,255,255,.92);
+    --profile-card-soft: rgba(0,0,0,.04);
+    --profile-border: rgba(0,0,0,.08);
+    --profile-text: #111118;
+    --profile-muted: #667085;
+    background: #f2f3f7 !important;
+    color: #111118 !important;
+}
+
+html[data-theme="light"] .profileCard,
+body[data-theme="light"] .profileCard {
+    background: #fff !important;
+    border-color: rgba(0,0,0,.08) !important;
+    box-shadow: 0 12px 40px rgba(0,0,0,.08) !important;
+}
+
+html[data-theme="light"] #profileName,
+html[data-theme="light"] .stat h2,
+html[data-theme="light"] .sectionHeader h3,
+body[data-theme="light"] #profileName {
+    color: #111118 !important;
+}
+
+html[data-theme="light"] .username,
+html[data-theme="light"] .bio,
+html[data-theme="light"] .stat span,
+html[data-theme="light"] .profileMeta,
+body[data-theme="light"] .username {
+    color: #667085 !important;
+}
+
+html[data-theme="light"] .stat,
+html[data-theme="light"] .storySection,
+html[data-theme="light"] .profileTabs,
+html[data-theme="light"] .toolLink,
+body[data-theme="light"] .stat {
+    background: #fff !important;
+    border-color: rgba(0,0,0,.08) !important;
+}
+
+html[data-theme="light"] .tabBtn {
+    color: #667085 !important;
+}
+
+html[data-theme="light"] .tabBtn.active {
+    color: #111 !important;
+    background: rgba(112,103,255,.12) !important;
+}
+
+html[data-theme="light"] .profileButtons button,
+html[data-theme="light"] .profileButtons a {
+    background: #f2f3f7 !important;
+    color: #111 !important;
+    border-color: rgba(0,0,0,.08) !important;
+}
+
+html[data-theme="light"] .premiumBackground {
+    background: #f2f3f7 !important;
+}
+
+html[data-theme="light"] #pageLoader {
+    background: #f2f3f7 !important;
+}
+
+/* Private lock empty */
+.profilePrivateLock {
+    min-height: 200px !important;
+    gap: 10px;
+}
+.profilePrivateLock i {
+    font-size: 28px;
+    opacity: .7;
+}
+
+/* Highlights removed */
+#highlightsSection,
+#manageHighlightsBtn {
+    display: none !important;
+}

@@ -40,6 +40,9 @@
         href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
     >
 
+  <link rel="stylesheet" href="nav.css"
+    >
+
     <!-- =====================================================
          SEARCH PAGE CSS
     ====================================================== -->
@@ -823,85 +826,7 @@
         }
 
 
-        /* =================================================
-           BOTTOM NAVIGATION
-        ================================================= */
-
-        .bottomNav {
-
-            position: fixed;
-
-            left: 0;
-            right: 0;
-            bottom: 0;
-
-            z-index: 500;
-
-            height:
-                calc(
-                    var(--nav-height) +
-                    var(--safe-bottom)
-                );
-
-            padding-bottom:
-                var(--safe-bottom);
-
-            display: flex;
-
-            align-items: center;
-            justify-content: space-around;
-
-            background:
-                rgba(5,5,7,.92);
-
-            backdrop-filter: blur(24px);
-            -webkit-backdrop-filter: blur(24px);
-
-            border-top:
-                1px solid var(--border);
-        }
-
-        .bottomNav a {
-
-            width: 20%;
-
-            height: 100%;
-
-            display: flex;
-
-            flex-direction: column;
-
-            align-items: center;
-            justify-content: center;
-
-            gap: 5px;
-
-            color:
-                rgba(255,255,255,.42);
-
-            font-size: 18px;
-
-            transition:
-                color .18s ease,
-                transform .18s ease;
-        }
-
-        .bottomNav a span {
-
-            font-size: 9px;
-
-            font-weight: 600;
-        }
-
-        .bottomNav a.active {
-
-            color: #fff;
-        }
-
-        .bottomNav a:active {
-
-            transform: scale(.9);
-        }
+        
 
 
         /* =================================================
@@ -983,7 +908,7 @@
                     autocorrect="off"
                     autocapitalize="none"
                     spellcheck="false"
-                    placeholder="Search Viewora"
+                    placeholder="Search videos, @users..."
                     aria-label="Search Viewora"
                 >
 
@@ -1163,14 +1088,6 @@
                 class="resultsSection"
             >
 
-                <div class="sectionHeader">
-
-                    <h2 class="sectionTitle">
-                        People
-                    </h2>
-
-                </div>
-
                 <div
                     id="resultCount"
                     class="resultCount"
@@ -1179,12 +1096,34 @@
                 </div>
 
 
-                <div
-                    id="userResults"
-                    class="userResults"
-                >
+                <div id="peopleBlock" style="margin-bottom:22px;">
 
-                    <!-- JS inserts users -->
+                    <div class="sectionHeader">
+                        <h2 class="sectionTitle">People</h2>
+                    </div>
+
+                    <div
+                        id="userResults"
+                        class="userResults"
+                    >
+                        <!-- JS inserts users -->
+                    </div>
+
+                </div>
+
+
+                <div id="videosBlock" style="margin-bottom:22px;display:none;">
+
+                    <div class="sectionHeader">
+                        <h2 class="sectionTitle">Videos</h2>
+                    </div>
+
+                    <div
+                        id="videoResults"
+                        class="videoResults"
+                    >
+                        <!-- JS inserts videos -->
+                    </div>
 
                 </div>
 
@@ -1297,498 +1236,15 @@
     </nav>
 
 
-    <!-- =====================================================
-         BASIC SEARCH UI
-         Firebase logic can be connected separately
-    ====================================================== -->
-
-    <script>
-
-        "use strict";
-
-
-        /* =====================================================
-           ELEMENTS
-        ====================================================== */
-
-        const searchInput =
-            document.getElementById("searchInput");
-
-        const clearSearch =
-            document.getElementById("clearSearch");
-
-        const recentSection =
-            document.getElementById("recentSection");
-
-        const recentList =
-            document.getElementById("recentList");
-
-        const clearAllRecent =
-            document.getElementById("clearAllRecent");
-
-        const trendingSection =
-            document.getElementById("trendingSection");
-
-        const resultsSection =
-            document.getElementById("resultsSection");
-
-        const userResults =
-            document.getElementById("userResults");
-
-        const resultCount =
-            document.getElementById("resultCount");
-
-        const emptyState =
-            document.getElementById("emptyState");
-
-
-        /* =====================================================
-           RECENT SEARCH STORAGE
-        ====================================================== */
-
-        const RECENT_KEY =
-            "viewora_recent_searches";
-
-
-        function getRecentSearches() {
-
-            try {
-
-                const data =
-                    localStorage.getItem(RECENT_KEY);
-
-                if (!data) {
-                    return [];
-                }
-
-                const parsed =
-                    JSON.parse(data);
-
-                return Array.isArray(parsed)
-                    ? parsed
-                    : [];
-
-            } catch (error) {
-
-                return [];
-            }
-        }
-
-
-        function saveRecentSearch(query) {
-
-            const clean =
-                String(query || "")
-                    .trim();
-
-            if (!clean) return;
-
-            let recent =
-                getRecentSearches();
-
-            recent =
-                recent.filter(
-                    item =>
-                        String(item).toLowerCase()
-                        !== clean.toLowerCase()
-                );
-
-            recent.unshift(clean);
-
-            recent =
-                recent.slice(0, 10);
-
-            localStorage.setItem(
-                RECENT_KEY,
-                JSON.stringify(recent)
-            );
-
-            renderRecentSearches();
-        }
-
-
-        function removeRecentSearch(query) {
-
-            let recent =
-                getRecentSearches();
-
-            recent =
-                recent.filter(
-                    item =>
-                        item !== query
-                );
-
-            localStorage.setItem(
-                RECENT_KEY,
-                JSON.stringify(recent)
-            );
-
-            renderRecentSearches();
-        }
-
-
-        function clearRecentSearches() {
-
-            localStorage.removeItem(
-                RECENT_KEY
-            );
-
-            renderRecentSearches();
-        }
-
-
-        /* =====================================================
-           RENDER RECENT
-        ====================================================== */
-
-        function renderRecentSearches() {
-
-            const recent =
-                getRecentSearches();
-
-            recentList.innerHTML = "";
-
-            if (!recent.length) {
-
-                recentSection.style.display =
-                    "none";
-
-                return;
-            }
-
-            recentSection.style.display =
-                "block";
-
-
-            recent.forEach(query => {
-
-                const item =
-                    document.createElement("div");
-
-                item.className =
-                    "recentItem";
-
-                item.innerHTML = `
-
-                    <button
-                        class="recentIcon"
-                        type="button"
-                        aria-label="Search ${escapeHtml(query)}"
-                    >
-                        <i class="fa-solid fa-clock-rotate-left"></i>
-                    </button>
-
-                    <button
-                        class="recentInfo"
-                        type="button"
-                        style="text-align:left;"
-                    >
-
-                        <div class="recentQuery">
-                            ${escapeHtml(query)}
-                        </div>
-
-                        <div class="recentMeta">
-                            Recent search
-                        </div>
-
-                    </button>
-
-                    <button
-                        class="removeRecent"
-                        type="button"
-                        aria-label="Remove recent search"
-                    >
-                        <i class="fa-solid fa-xmark"></i>
-                    </button>
-
-                `;
-
-
-                item
-                    .querySelector(".recentIcon")
-                    .addEventListener(
-                        "click",
-                        () => performSearch(query)
-                    );
-
-
-                item
-                    .querySelector(".recentInfo")
-                    .addEventListener(
-                        "click",
-                        () => performSearch(query)
-                    );
-
-
-                item
-                    .querySelector(".removeRecent")
-                    .addEventListener(
-                        "click",
-                        event => {
-
-                            event.stopPropagation();
-
-                            removeRecentSearch(query);
-                        }
-                    );
-
-
-                recentList.appendChild(item);
-
-            });
-
-        }
-
-
-        /* =====================================================
-           SEARCH
-        ====================================================== */
-
-        function performSearch(query) {
-
-            const clean =
-                String(query || "")
-                    .trim();
-
-            if (!clean) return;
-
-            searchInput.value =
-                clean;
-
-            updateSearchButton();
-
-            saveRecentSearch(clean);
-
-            recentSection.style.display =
-                "none";
-
-            trendingSection.style.display =
-                "none";
-
-            resultsSection.classList.add(
-                "active"
-            );
-
-            emptyState.classList.remove(
-                "active"
-            );
-
-            /*
-             * Firebase search will be connected here.
-             *
-             * Example:
-             *
-             * searchUsers(clean);
-             *
-             */
-
-            resultCount.textContent =
-                `Search results for "${clean}"`;
-
-            userResults.innerHTML = "";
-
-            showSearchPlaceholder(clean);
-        }
-
-
-        /* =====================================================
-           TEMP RESULT PLACEHOLDER
-        ====================================================== */
-
-        function showSearchPlaceholder(query) {
-
-            emptyState.classList.add(
-                "active"
-            );
-
-            document.getElementById(
-                "emptyTitle"
-            ).textContent =
-                "Search Viewora";
-
-            document.getElementById(
-                "emptyText"
-            ).textContent =
-                `Results for "${query}" will appear here.`;
-
-            resultsSection.classList.remove(
-                "active"
-            );
-        }
-
-
-        /* =====================================================
-           INPUT
-        ====================================================== */
-
-        searchInput.addEventListener(
-            "input",
-            () => {
-
-                updateSearchButton();
-
-                const value =
-                    searchInput.value.trim();
-
-                if (!value) {
-
-                    recentSection.style.display =
-                        getRecentSearches().length
-                            ? "block"
-                            : "none";
-
-                    trendingSection.style.display =
-                        "block";
-
-                    resultsSection.classList.remove(
-                        "active"
-                    );
-
-                    emptyState.classList.remove(
-                        "active"
-                    );
-                }
-
-            }
-        );
-
-
-        searchInput.addEventListener(
-            "keydown",
-            event => {
-
-                if (
-                    event.key === "Enter"
-                ) {
-
-                    event.preventDefault();
-
-                    performSearch(
-                        searchInput.value
-                    );
-                }
-
-            }
-        );
-
-
-        /* =====================================================
-           CLEAR INPUT
-        ====================================================== */
-
-        clearSearch.addEventListener(
-            "click",
-            () => {
-
-                searchInput.value = "";
-
-                updateSearchButton();
-
-                searchInput.focus();
-
-                resultsSection.classList.remove(
-                    "active"
-                );
-
-                emptyState.classList.remove(
-                    "active"
-                );
-
-                trendingSection.style.display =
-                    "block";
-
-                recentSection.style.display =
-                    getRecentSearches().length
-                        ? "block"
-                        : "none";
-
-            }
-        );
-
-
-        function updateSearchButton() {
-
-            const hasValue =
-                searchInput.value.trim().length > 0;
-
-            clearSearch.classList.toggle(
-                "visible",
-                hasValue
-            );
-        }
-
-
-        /* =====================================================
-           CLEAR ALL
-        ====================================================== */
-
-        clearAllRecent.addEventListener(
-            "click",
-            clearRecentSearches
-        );
-
-
-        /* =====================================================
-           TREND CARDS
-        ====================================================== */
-
-        document
-            .querySelectorAll("[data-search]")
-            .forEach(card => {
-
-                card.addEventListener(
-                    "click",
-                    () => {
-
-                        performSearch(
-                            card.dataset.search
-                        );
-
-                    }
-                );
-
-            });
-
-
-        /* =====================================================
-           ESCAPE HTML
-        ====================================================== */
-
-        function escapeHtml(value) {
-
-            return String(value)
-                .replace(
-                    /&/g,
-                    "&amp;"
-                )
-                .replace(
-                    /</g,
-                    "&lt;"
-                )
-                .replace(
-                    />/g,
-                    "&gt;"
-                )
-                .replace(
-                    /"/g,
-                    "&quot;"
-                )
-                .replace(
-                    /'/g,
-                    "&#039;"
-                );
-        }
-
-
-        /* =====================================================
-           INIT
-        ====================================================== */
-
-        renderRecentSearches();
-
-    </script>
-
+    
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+    <script src="firebase.js"></script>
+    <script src="badges.js"></script>
+    <script src="search-page.js"></script>
+    <script src="nav.js"></script>
 
 </body>
 </html>

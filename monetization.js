@@ -14,6 +14,19 @@
         minPayout: 50
     };
 
+    /* Firebase helpers — works with firebase.js exposing auth/db OR global firebase */
+    function getAuth() {
+        if (window.auth) return window.auth;
+        try { return firebase.auth(); } catch (_) { return null; }
+    }
+    function getDb() {
+        if (window.db) return window.db;
+        try { return firebase.database(); } catch (_) { return null; }
+    }
+    function serverTs() {
+        try { return firebase.database.ServerValue.TIMESTAMP; } catch (_) { return Date.now(); }
+    }
+
     let currentUser = null;
     let earnings = {
         balance: 0,
@@ -64,7 +77,8 @@
 
     async function getCreatorStats(uid) {
         const out = { views: 0, followers: 0, stories: 0 };
-        if (!uid || !window.db) return out;
+        const db = getDb();
+        if (!uid || !db) return out;
 
         try {
             const folSnap = await db.ref("followers/" + uid).once("value");
@@ -75,9 +89,10 @@
             const userSnap = await db.ref("users/" + uid).once("value");
             const user = userSnap.val() || {};
 
+            const fc = user.followersCount || user.followerCount || user.followers || 0;
             out.followers = Math.max(
                 out.followers,
-                Number(user.followersCount || user.followerCount || user.followers || 0)
+                typeof fc === "object" ? Object.keys(fc || {}).length : Number(fc) || 0
             );
 
             const sumViews = (obj) => {
@@ -247,7 +262,7 @@
 
     async function loadEarnings(uid) {
         try {
-            const snap = await db.ref("earnings/" + uid).once("value");
+            const snap = await getDb().ref("earnings/" + uid).once("value");
             const data = snap.val() || {};
             earnings = {
                 balance: Number(data.balance || 0),
@@ -268,7 +283,7 @@
 
     async function loadPayoutMethod(uid) {
         try {
-            const snap = await db.ref("payoutMethods/" + uid).once("value");
+            const snap = await getDb().ref("payoutMethods/" + uid).once("value");
             payoutMethod = snap.exists() ? snap.val() : null;
         } catch (e) {
             payoutMethod = null;
@@ -292,7 +307,7 @@
 
     async function loadUserFlags(uid) {
         try {
-            const snap = await db.ref("users/" + uid).once("value");
+            const snap = await getDb().ref("users/" + uid).once("value");
             const user = snap.val() || {};
             monetizationEnabled = user.monetizationEnabled === true;
         } catch (e) {
@@ -329,67 +344,97 @@
 
     async function submitWithdraw() {
         if (!currentUser) return;
+        const db = getDb();
+        if (!db) {
+            showToast("Database unavailable", "error");
+            return;
+        }
 
         const amount = Number(earnings.balance);
         if (amount < RULES.minPayout) {
             showToast("Minimum is $50", "error");
             return;
         }
+        if (!payoutMethod || !payoutMethod.value) {
+            showToast("Add a payout method first", "error");
+            return;
+        }
 
-        const note = ($("withdrawNote")?.value || "").trim();
+        const note = ($("withdrawNote") && $("withdrawNote").value || "").trim();
         const btn = $("confirmWithdrawBtn");
-        if (btn) btn.disabled = true;
+        if (btn) {
+            btn.disabled = true;
+            btn.textContent = "Submitting…";
+        }
 
         try {
+            // Re-read balance to avoid double-spend
+            const earnRef = db.ref("earnings/" + currentUser.uid);
+            const earnSnap = await earnRef.once("value");
+            const cur = earnSnap.val() || {};
+            const liveBalance = Number(cur.balance || 0);
+            if (liveBalance < RULES.minPayout) {
+                showToast("Balance below $50 minimum", "error");
+                return;
+            }
+
+            const withdrawAmount = liveBalance;
             const ref = db.ref("withdrawals").push();
             const payload = {
                 id: ref.key,
                 uid: currentUser.uid,
-                amount: amount,
+                amount: withdrawAmount,
                 currency: "USD",
                 status: "pending",
                 note: note || "",
                 method: payoutMethod || {},
-                createdAt: firebase.database.ServerValue.TIMESTAMP,
-                updatedAt: firebase.database.ServerValue.TIMESTAMP
+                displayName: (currentUser.displayName || ""),
+                email: (currentUser.email || ""),
+                createdAt: serverTs(),
+                updatedAt: serverTs()
             };
 
             await ref.set(payload);
 
-            /* Move balance → pending */
-            const earnRef = db.ref("earnings/" + currentUser.uid);
-            const earnSnap = await earnRef.once("value");
-            const cur = earnSnap.val() || {};
-            const newBalance = 0;
-            const newPending = Number(cur.pending || 0) + amount;
-
+            const newPending = Number(cur.pending || 0) + withdrawAmount;
             await earnRef.update({
-                balance: newBalance,
+                balance: 0,
                 pending: newPending,
-                lastWithdrawAt: firebase.database.ServerValue.TIMESTAMP
+                lastWithdrawAt: serverTs(),
+                lastWithdrawId: ref.key
             });
 
-            /* Mirror under user for quick admin list */
-            await db.ref("users/" + currentUser.uid + "/lastWithdrawal").set({
+            await getDb().ref("users/" + currentUser.uid + "/lastWithdrawal").set({
                 id: ref.key,
-                amount,
+                amount: withdrawAmount,
                 status: "pending",
-                at: firebase.database.ServerValue.TIMESTAMP
+                at: serverTs()
+            });
+
+            // Admin inbox path
+            await db.ref("admin/withdrawalQueue/" + ref.key).set({
+                uid: currentUser.uid,
+                amount: withdrawAmount,
+                status: "pending",
+                createdAt: Date.now()
             });
 
             earnings.balance = 0;
             earnings.pending = newPending;
-            $("balanceValue").textContent = formatMoney(0);
-            $("pendingEarn").textContent = "$" + formatMoney(newPending);
+            if ($("balanceValue")) $("balanceValue").textContent = formatMoney(0);
+            if ($("pendingEarn")) $("pendingEarn").textContent = "$" + formatMoney(newPending);
 
             closeModal("withdrawModal");
-            showToast("Payout request submitted");
+            showToast("Payout request submitted — wait for admin");
             updateEligibilityUI();
         } catch (e) {
             console.error(e);
             showToast(e.message || "Request failed", "error");
         } finally {
-            if (btn) btn.disabled = false;
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = "Submit request";
+            }
         }
     }
 
@@ -411,11 +456,11 @@
             type,
             value,
             name,
-            updatedAt: firebase.database.ServerValue.TIMESTAMP
+            updatedAt: serverTs()
         };
 
         try {
-            await db.ref("payoutMethods/" + currentUser.uid).set(payload);
+            await getDb().ref("payoutMethods/" + currentUser.uid).set(payload);
             payoutMethod = payload;
             closeModal("methodModal");
             await loadPayoutMethod(currentUser.uid);
@@ -436,7 +481,7 @@
         list.innerHTML = '<div class="emptyHistory">Loading…</div>';
 
         try {
-            const snap = await db
+            const snap = await getDb()
                 .ref("withdrawals")
                 .orderByChild("uid")
                 .equalTo(currentUser.uid)
@@ -522,14 +567,19 @@
     async function start() {
         wireUI();
 
-        if (!window.auth || !window.db) {
+        const auth = getAuth();
+        const database = getDb();
+        if (!auth || !database) {
             showToast("Firebase not ready", "error");
             return;
         }
+        // expose for internal helpers that use db global pattern
+        window.db = database;
+        window.auth = auth;
 
         auth.onAuthStateChanged(async (user) => {
             if (!user) {
-                location.href = "login.html";
+                location.href = "index.html";
                 return;
             }
             currentUser = user;
@@ -542,6 +592,22 @@
 
             stats = await getCreatorStats(user.uid);
             updateEligibilityUI();
+
+            // live balance updates
+            database.ref("earnings/" + user.uid).on("value", (snap) => {
+                const data = snap.val() || {};
+                earnings = {
+                    balance: Number(data.balance || 0),
+                    month: Number(data.month || data.thisMonth || 0),
+                    lifetime: Number(data.lifetime || data.totalEarned || 0),
+                    pending: Number(data.pending || 0)
+                };
+                if ($("balanceValue")) $("balanceValue").textContent = formatMoney(earnings.balance);
+                if ($("monthEarn")) $("monthEarn").textContent = "$" + formatMoney(earnings.month);
+                if ($("lifetimeEarn")) $("lifetimeEarn").textContent = "$" + formatMoney(earnings.lifetime);
+                if ($("pendingEarn")) $("pendingEarn").textContent = "$" + formatMoney(earnings.pending);
+                updateEligibilityUI();
+            });
         });
     }
 

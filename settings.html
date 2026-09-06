@@ -1,196 +1,711 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="theme-color" content="#0a0a0a">
-    <title>Settings • Viewora</title>
-    <link rel="stylesheet" href="settings.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#050507">
+<title>Settings • Viewora</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+<style>
+:root, html[data-theme="dark"] {
+  --bg:#050507; --surface:#0d0d10; --card:#141418; --card2:#1a1a20;
+  --border:rgba(255,255,255,.08); --text:#f4f4f5; --muted:rgba(255,255,255,.55);
+  --muted2:rgba(255,255,255,.35); --accent:#3b82f6; --danger:#ef4444; --ok:#22c55e;
+  --row-hover:rgba(255,255,255,.04); --switch-off:#3a3a42; --input-bg:rgba(0,0,0,.35);
+}
+html[data-theme="light"] {
+  --bg:#f4f4f5; --surface:#ffffff; --card:#ffffff; --card2:#f0f0f2;
+  --border:rgba(0,0,0,.08); --text:#111118; --muted:rgba(0,0,0,.55);
+  --muted2:rgba(0,0,0,.38); --accent:#2563eb; --danger:#dc2626; --ok:#16a34a;
+  --row-hover:rgba(0,0,0,.04); --switch-off:#d4d4d8; --input-bg:#f4f4f5;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{
+  min-height:100vh;background:var(--bg);color:var(--text);
+  font-family:"Inter",system-ui,sans-serif;
+  padding-bottom:calc(28px + env(safe-area-inset-bottom));
+  transition:background .2s,color .2s;
+}
+a{color:inherit;text-decoration:none}
+button{font:inherit;border:0;background:none;color:inherit;cursor:pointer}
+
+.topbar{
+  position:sticky;top:0;z-index:40;
+  display:flex;align-items:center;gap:12px;
+  padding:12px 16px;padding-top:calc(12px + env(safe-area-inset-top));
+  background:color-mix(in srgb, var(--bg) 88%, transparent);
+  backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+  border-bottom:1px solid var(--border);
+}
+.back{
+  width:40px;height:40px;border-radius:12px;border:1px solid var(--border);
+  background:var(--card);display:flex;align-items:center;justify-content:center;
+}
+.topbar h1{font-size:17px;font-weight:800;letter-spacing:-.2px}
+.topbar .sub{font-size:11px;color:var(--muted);font-weight:500}
+
+.wrap{max-width:560px;margin:0 auto;padding:16px 14px 40px}
+
+.profileCard{
+  display:flex;align-items:center;gap:14px;
+  padding:14px;border-radius:18px;background:var(--card);
+  border:1px solid var(--border);margin-bottom:18px;
+}
+.avatar{
+  width:56px;height:56px;border-radius:50%;overflow:hidden;
+  background:linear-gradient(135deg,#333,#111);flex:0 0 56px;border:1px solid var(--border);
+}
+.avatar img{width:100%;height:100%;object-fit:cover;display:block}
+.pInfo{flex:1;min-width:0}
+.pName{font-size:15px;font-weight:750;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pMeta{font-size:12px;color:var(--muted);margin-top:2px}
+.pEdit{
+  padding:8px 12px;border-radius:10px;background:var(--card2);
+  border:1px solid var(--border);font-size:11px;font-weight:700;
+}
+
+.group{margin-bottom:18px}
+.groupTitle{
+  font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--muted2);padding:0 6px 8px;
+}
+.groupCard{
+  background:var(--card);border:1px solid var(--border);border-radius:16px;overflow:hidden;
+}
+.row{
+  width:100%;display:flex;align-items:center;gap:12px;
+  padding:13px 14px;text-align:left;transition:background .15s;
+  border-bottom:1px solid var(--border);
+}
+.row:last-child{border-bottom:0}
+.row:active,.row:hover{background:var(--row-hover)}
+.rowIcon{
+  width:36px;height:36px;border-radius:11px;display:flex;align-items:center;justify-content:center;
+  background:var(--card2);color:var(--text);font-size:14px;flex:0 0 36px;
+}
+.rowIcon.blue{background:rgba(59,130,246,.15);color:#60a5fa}
+.rowIcon.green{background:rgba(34,197,94,.15);color:#4ade80}
+.rowIcon.red{background:rgba(239,68,68,.12);color:#f87171}
+.rowIcon.orange{background:rgba(245,158,11,.15);color:#fbbf24}
+.rowIcon.purple{background:rgba(139,92,246,.15);color:#a78bfa}
+.rowBody{flex:1;min-width:0}
+.rowTitle{font-size:14px;font-weight:650}
+.rowDesc{font-size:11px;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rowRight{display:flex;align-items:center;gap:8px;color:var(--muted2);font-size:12px;flex-shrink:0}
+.chev{opacity:.5;font-size:11px}
+.badge{
+  font-size:10px;font-weight:700;padding:3px 7px;border-radius:999px;
+  background:rgba(34,197,94,.15);color:#4ade80;
+}
+.badge.warn{background:rgba(245,158,11,.15);color:#fbbf24}
+.badge.off{background:var(--card2);color:var(--muted)}
+
+/* switch */
+.switch{
+  width:44px;height:26px;border-radius:999px;background:var(--switch-off);
+  position:relative;transition:background .2s;flex-shrink:0;
+}
+.switch.on{background:var(--accent)}
+.switch i{
+  position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;
+  background:#fff;transition:transform .2s;box-shadow:0 1px 3px rgba(0,0,0,.25);
+}
+.switch.on i{transform:translateX(18px)}
+
+/* sheet modal */
+.sheetMask{
+  position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:90;
+  opacity:0;pointer-events:none;transition:opacity .2s;
+}
+.sheetMask.open{opacity:1;pointer-events:auto}
+.sheet{
+  position:fixed;left:0;right:0;bottom:0;z-index:91;
+  max-width:560px;margin:0 auto;
+  background:var(--surface);border-radius:20px 20px 0 0;
+  border:1px solid var(--border);border-bottom:0;
+  padding:16px 16px calc(20px + env(safe-area-inset-bottom));
+  transform:translateY(110%);transition:transform .28s ease;
+}
+.sheet.open{transform:translateY(0)}
+.sheetHandle{width:40px;height:4px;border-radius:4px;background:var(--muted2);margin:0 auto 14px}
+.sheet h3{font-size:16px;font-weight:750;margin-bottom:6px}
+.sheet p{font-size:12px;color:var(--muted);margin-bottom:14px;line-height:1.5}
+.field{margin-bottom:12px}
+.field label{display:block;font-size:11px;font-weight:700;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em}
+.field input{
+  width:100%;height:46px;padding:0 14px;border-radius:12px;border:1px solid var(--border);
+  background:var(--input-bg);color:var(--text);font-size:14px;outline:none;
+}
+.field input:focus{border-color:var(--accent)}
+.otpRow{display:flex;gap:8px}
+.otpRow input{letter-spacing:4px;text-align:center;font-weight:700}
+.sheetActions{display:flex;gap:8px;margin-top:8px}
+.btn{
+  flex:1;height:46px;border-radius:12px;font-weight:700;font-size:13px;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-ghost{background:var(--card2);border:1px solid var(--border);color:var(--text)}
+.btn-danger{background:var(--danger);color:#fff}
+.btn:disabled{opacity:.45}
+
+.toast{
+  position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));
+  transform:translateX(-50%) translateY(12px);opacity:0;
+  background:var(--card);border:1px solid var(--border);color:var(--text);
+  padding:10px 16px;border-radius:12px;font-size:13px;font-weight:600;
+  transition:.25s;z-index:100;pointer-events:none;box-shadow:0 8px 30px rgba(0,0,0,.25);
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+.footerLinks{
+  display:flex;flex-wrap:wrap;gap:8px;justify-content:center;
+  padding:8px 4px 20px;font-size:11px;color:var(--muted2);
+}
+.footerLinks a{color:var(--muted)}
+.version{text-align:center;font-size:11px;color:var(--muted2);padding-bottom:8px}
+</style>
 </head>
 <body>
 
-<!-- Header -->
-<header class="settings-header">
-    <button class="back-btn" type="button" onclick="goBack()" aria-label="Back">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M15 18l-6-6 6-6"/>
-        </svg>
-    </button>
+<header class="topbar">
+  <button class="back" type="button" id="backBtn" aria-label="Back"><i class="fa-solid fa-arrow-left"></i></button>
+  <div>
     <h1>Settings</h1>
+    <div class="sub">Account, privacy & preferences</div>
+  </div>
 </header>
 
-<main class="settings-main">
+<main class="wrap">
 
-    <!-- Profile Card -->
-    <section class="profile-card" onclick="openPage('account-settings.html')">
-        <img id="profilePhoto" src="non.jpg" alt="Profile" class="profile-avatar" onerror="this.src='non.jpg'">
-        <div class="profile-meta">
-            <h2 id="profileName">Loading...</h2>
-            <p id="profileUsername">@user</p>
-        </div>
-        <span class="chevron">›</span>
-    </section>
+  <!-- Profile strip -->
+  <a class="profileCard" href="edit-profile.html" id="profileCard">
+    <div class="avatar"><img id="setAvatar" src="assets/default-avatar.png" alt=""></div>
+    <div class="pInfo">
+      <div class="pName" id="setName">Loading…</div>
+      <div class="pMeta" id="setMeta">@username</div>
+    </div>
+    <span class="pEdit">Edit</span>
+  </a>
 
-    <!-- Account -->
-    <section class="settings-group">
-        <h3 class="group-title">Account</h3>
-        <div class="group-list">
-            <button class="row" type="button" onclick="openPage('account-settings.html')">
-                <span class="row-icon">👤</span>
-                <span class="row-text">
-                    <strong>Account information</strong>
-                    <small>Name, username, email</small>
-                </span>
-                <span class="chevron">›</span>
-            </button>
-            <button class="row" type="button" onclick="openPage('security-settings.html')">
-                <span class="row-icon">🔐</span>
-                <span class="row-text">
-                    <strong>Security</strong>
-                    <small>Password & login activity</small>
-                </span>
-                <span class="chevron">›</span>
-            </button>
-            <button class="row" type="button" onclick="openPage('privacy.html')">
-                <span class="row-icon">🛡️</span>
-                <span class="row-text">
-                    <strong>Privacy</strong>
-                    <small>Who can see your content</small>
-                </span>
-                <span class="chevron">›</span>
-            </button>
-        </div>
-    </section>
+  <!-- Account -->
+  <section class="group">
+    <div class="groupTitle">Account</div>
+    <div class="groupCard">
+      <button class="row" type="button" data-href="edit-profile.html">
+        <span class="rowIcon blue"><i class="fa-solid fa-user"></i></span>
+        <span class="rowBody"><span class="rowTitle">Edit profile</span><span class="rowDesc">Name, bio, photo, username</span></span>
+        <span class="rowRight"><i class="fa-solid fa-chevron-right chev"></i></span>
+      </button>
+      <button class="row" type="button" id="btnEmailVerify">
+        <span class="rowIcon green"><i class="fa-solid fa-envelope"></i></span>
+        <span class="rowBody"><span class="rowTitle">Email</span><span class="rowDesc" id="emailDesc">Not signed in</span></span>
+        <span class="rowRight"><span class="badge off" id="emailBadge">—</span><i class="fa-solid fa-chevron-right chev"></i></span>
+      </button>
+      <button class="row" type="button" id="btnPhoneVerify">
+        <span class="rowIcon orange"><i class="fa-solid fa-mobile-screen"></i></span>
+        <span class="rowBody"><span class="rowTitle">Phone number</span><span class="rowDesc" id="phoneDesc">Add phone for verification</span></span>
+        <span class="rowRight"><span class="badge off" id="phoneBadge">Add</span><i class="fa-solid fa-chevron-right chev"></i></span>
+      </button>
+      <button class="row" type="button" id="btnPassword">
+        <span class="rowIcon purple"><i class="fa-solid fa-lock"></i></span>
+        <span class="rowBody"><span class="rowTitle">Password & security</span><span class="rowDesc">Change password</span></span>
+        <span class="rowRight"><i class="fa-solid fa-chevron-right chev"></i></span>
+      </button>
+    </div>
+  </section>
 
-    <!-- Creator tools (YouTube / Instagram style) -->
-    <section class="settings-group">
-        <h3 class="group-title">Creator tools</h3>
-        <div class="group-list">
-            <button class="row" type="button" onclick="openPage('monetization.html')">
-                <span class="row-icon">💰</span>
-                <span class="row-text">
-                    <strong>Monetization</strong>
-                    <small>Eligibility, balance & $50 payouts</small>
-                </span>
-                <span class="chevron">›</span>
-            </button>
-            <button class="row" type="button" onclick="openPage('monetization.html')">
-                <span class="row-icon">📊</span>
-                <span class="row-text">
-                    <strong>Earnings</strong>
-                    <small>Balance, history & payout method</small>
-                </span>
-                <span class="chevron">›</span>
-            </button>
-        </div>
-    </section>
+  <!-- Privacy -->
+  <section class="group">
+    <div class="groupTitle">Privacy & safety</div>
+    <div class="groupCard">
+      <button class="row" type="button" data-href="blocked-users.html">
+        <span class="rowIcon red"><i class="fa-solid fa-ban"></i></span>
+        <span class="rowBody"><span class="rowTitle">Blocked users</span><span class="rowDesc">Manage blocked accounts</span></span>
+        <span class="rowRight"><i class="fa-solid fa-chevron-right chev"></i></span>
+      </button>
+      <button class="row" type="button" id="btnPrivateAccount">
+        <span class="rowIcon"><i class="fa-solid fa-user-shield"></i></span>
+        <span class="rowBody"><span class="rowTitle">Private account</span><span class="rowDesc">Only approved followers see posts</span></span>
+        <span class="rowRight"><span class="switch" id="swPrivate"><i></i></span></span>
+      </button>
+      <button class="row" type="button" id="btnMsgPrivacy">
+        <span class="rowIcon"><i class="fa-solid fa-comments"></i></span>
+        <span class="rowBody"><span class="rowTitle">Message requests</span><span class="rowDesc" id="msgPrivacyDesc">Everyone</span></span>
+        <span class="rowRight"><i class="fa-solid fa-chevron-right chev"></i></span>
+      </button>
+    </div>
+  </section>
 
-    <!-- Preferences -->
-    <section class="settings-group">
-        <h3 class="group-title">Preferences</h3>
-        <div class="group-list">
-            <button class="row" type="button" onclick="openPage('appearance-settings.html')">
-                <span class="row-icon">🎨</span>
-                <span class="row-text">
-                    <strong>Appearance</strong>
-                    <small>Theme & display</small>
-                </span>
-                <span class="chevron">›</span>
-            </button>
-            <button class="row" type="button" onclick="openPage('notification-settings.html')">
-                <span class="row-icon">🔔</span>
-                <span class="row-text">
-                    <strong>Notifications</strong>
-                    <small>Likes, comments, stories</small>
-                </span>
-                <span class="chevron">›</span>
-            </button>
-            <button class="row" type="button" onclick="changeLanguage()">
-                <span class="row-icon">🌐</span>
-                <span class="row-text">
-                    <strong>Language</strong>
-                    <small>English</small>
-                </span>
-                <span class="chevron">›</span>
-            </button>
-        </div>
-    </section>
+  <!-- Notifications -->
+  <section class="group">
+    <div class="groupTitle">Notifications</div>
+    <div class="groupCard">
+      <button class="row" type="button" id="btnNotifLikes">
+        <span class="rowIcon red"><i class="fa-solid fa-heart"></i></span>
+        <span class="rowBody"><span class="rowTitle">Likes & comments</span></span>
+        <span class="rowRight"><span class="switch on" id="swLikes"><i></i></span></span>
+      </button>
+      <button class="row" type="button" id="btnNotifMsg">
+        <span class="rowIcon blue"><i class="fa-solid fa-message"></i></span>
+        <span class="rowBody"><span class="rowTitle">Messages</span></span>
+        <span class="rowRight"><span class="switch on" id="swMsg"><i></i></span></span>
+      </button>
+      <button class="row" type="button" id="btnNotifFollow">
+        <span class="rowIcon green"><i class="fa-solid fa-user-plus"></i></span>
+        <span class="rowBody"><span class="rowTitle">New followers</span></span>
+        <span class="rowRight"><span class="switch on" id="swFollow"><i></i></span></span>
+      </button>
+    </div>
+  </section>
 
-    <!-- More -->
-    <section class="settings-group">
-        <h3 class="group-title">More</h3>
-        <div class="group-list">
-            <button class="row" type="button" onclick="shareApp()">
-                <span class="row-icon">📤</span>
-                <span class="row-text">
-                    <strong>Share Viewora</strong>
-                </span>
-                <span class="chevron">›</span>
-            </button>
-            <button class="row" type="button" onclick="clearCache()">
-                <span class="row-icon">🧹</span>
-                <span class="row-text">
-                    <strong>Clear cache</strong>
-                </span>
-                <span class="chevron">›</span>
-            </button>
-            <button class="row" type="button" onclick="showHelp()">
-                <span class="row-icon">❓</span>
-                <span class="row-text">
-                    <strong>Help & support</strong>
-                </span>
-                <span class="chevron">›</span>
-            </button>
-            <button class="row" type="button" onclick="showAbout()">
-                <span class="row-icon">ℹ️</span>
-                <span class="row-text">
-                    <strong>About Viewora</strong>
-                </span>
-                <span class="chevron">›</span>
-            </button>
-        </div>
-    </section>
+  <!-- Appearance -->
+  <section class="group">
+    <div class="groupTitle">Appearance</div>
+    <div class="groupCard">
+      <button class="row" type="button" id="btnTheme">
+        <span class="rowIcon purple"><i class="fa-solid fa-moon" id="themeIcon"></i></span>
+        <span class="rowBody"><span class="rowTitle">Dark mode</span><span class="rowDesc" id="themeDesc">On</span></span>
+        <span class="rowRight"><span class="switch on" id="swTheme"><i></i></span></span>
+      </button>
+    </div>
+  </section>
 
-    <!-- Account actions -->
-    <section class="settings-group">
-        <div class="group-list">
-            <button class="row logout-row" type="button" onclick="logout()">
-                <span class="row-icon">🚪</span>
-                <span class="row-text">
-                    <strong>Log out</strong>
-                </span>
-            </button>
-            <button class="row delete-row" type="button" onclick="deleteAccount()">
-                <span class="row-icon">🗑️</span>
-                <span class="row-text">
-                    <strong>Delete account</strong>
-                </span>
-            </button>
-        </div>
-    </section>
+  <!-- Creator / money -->
+  <section class="group">
+    <div class="groupTitle">Creator & payments</div>
+    <div class="groupCard">
+      <button class="row" type="button" data-href="subscription.html">
+        <span class="rowIcon orange"><i class="fa-solid fa-crown"></i></span>
+        <span class="rowBody"><span class="rowTitle">Subscription</span><span class="rowDesc" id="subDesc">Free plan</span></span>
+        <span class="rowRight"><i class="fa-solid fa-chevron-right chev"></i></span>
+      </button>
+      <button class="row" type="button" data-href="monetization.html">
+        <span class="rowIcon green"><i class="fa-solid fa-sack-dollar"></i></span>
+        <span class="rowBody"><span class="rowTitle">Monetization</span><span class="rowDesc">Eligibility, payouts, policy</span></span>
+        <span class="rowRight"><i class="fa-solid fa-chevron-right chev"></i></span>
+      </button>
+      <button class="row" type="button" data-href="music-store.html">
+        <span class="rowIcon"><i class="fa-solid fa-music"></i></span>
+        <span class="rowBody"><span class="rowTitle">Music store</span><span class="rowDesc">Tracks for stories & shorts</span></span>
+        <span class="rowRight"><i class="fa-solid fa-chevron-right chev"></i></span>
+      </button>
+      <button class="row" type="button" data-href="sticker-store.html">
+        <span class="rowIcon"><i class="fa-solid fa-face-smile"></i></span>
+        <span class="rowBody"><span class="rowTitle">Sticker store</span></span>
+        <span class="rowRight"><i class="fa-solid fa-chevron-right chev"></i></span>
+      </button>
+    </div>
+  </section>
 
-    <p class="version-text">Viewora · Version 1.0.0</p>
+  <!-- Support -->
+  <section class="group">
+    <div class="groupTitle">Support & about</div>
+    <div class="groupCard">
+      <button class="row" type="button" data-href="help.html">
+        <span class="rowIcon blue"><i class="fa-solid fa-circle-question"></i></span>
+        <span class="rowBody"><span class="rowTitle">Help Center</span></span>
+        <span class="rowRight"><i class="fa-solid fa-chevron-right chev"></i></span>
+      </button>
+      <button class="row" type="button" data-href="contact.html">
+        <span class="rowIcon"><i class="fa-solid fa-envelope"></i></span>
+        <span class="rowBody"><span class="rowTitle">Contact us</span></span>
+        <span class="rowRight"><i class="fa-solid fa-chevron-right chev"></i></span>
+      </button>
+      <button class="row" type="button" data-href="about.html">
+        <span class="rowIcon"><i class="fa-solid fa-info"></i></span>
+        <span class="rowBody"><span class="rowTitle">About Viewora</span></span>
+        <span class="rowRight"><i class="fa-solid fa-chevron-right chev"></i></span>
+      </button>
+      <button class="row" type="button" data-href="community-guidelines.html">
+        <span class="rowIcon"><i class="fa-solid fa-people-group"></i></span>
+        <span class="rowBody"><span class="rowTitle">Community Guidelines</span></span>
+        <span class="rowRight"><i class="fa-solid fa-chevron-right chev"></i></span>
+      </button>
+      <button class="row" type="button" data-href="privacy-policy.html">
+        <span class="rowIcon"><i class="fa-solid fa-shield-halved"></i></span>
+        <span class="rowBody"><span class="rowTitle">Privacy Policy</span></span>
+        <span class="rowRight"><i class="fa-solid fa-chevron-right chev"></i></span>
+      </button>
+      <button class="row" type="button" data-href="terms.html">
+        <span class="rowIcon"><i class="fa-solid fa-file-contract"></i></span>
+        <span class="rowBody"><span class="rowTitle">Terms of Service</span></span>
+        <span class="rowRight"><i class="fa-solid fa-chevron-right chev"></i></span>
+      </button>
+      <button class="row" type="button" data-href="copyright.html">
+        <span class="rowIcon"><i class="fa-solid fa-copyright"></i></span>
+        <span class="rowBody"><span class="rowTitle">Copyright</span></span>
+        <span class="rowRight"><i class="fa-solid fa-chevron-right chev"></i></span>
+      </button>
+      <button class="row" type="button" data-href="report.html">
+        <span class="rowIcon red"><i class="fa-solid fa-flag"></i></span>
+        <span class="rowBody"><span class="rowTitle">Report a problem</span></span>
+        <span class="rowRight"><i class="fa-solid fa-chevron-right chev"></i></span>
+      </button>
+    </div>
+  </section>
 
+  <!-- Danger -->
+  <section class="group">
+    <div class="groupTitle">Account actions</div>
+    <div class="groupCard">
+      <button class="row" type="button" id="btnLogout">
+        <span class="rowIcon orange"><i class="fa-solid fa-right-from-bracket"></i></span>
+        <span class="rowBody"><span class="rowTitle">Log out</span></span>
+      </button>
+      <button class="row" type="button" data-href="account-delete.html">
+        <span class="rowIcon red"><i class="fa-solid fa-user-slash"></i></span>
+        <span class="rowBody"><span class="rowTitle" style="color:var(--danger)">Delete account</span><span class="rowDesc">Permanent request to admin</span></span>
+        <span class="rowRight"><i class="fa-solid fa-chevron-right chev"></i></span>
+      </button>
+    </div>
+  </section>
+
+  <div class="footerLinks">
+    <a href="about.html">About</a>·
+    <a href="help.html">Help</a>·
+    <a href="privacy-policy.html">Privacy</a>·
+    <a href="terms.html">Terms</a>
+  </div>
+  <div class="version">Viewora · Settings</div>
 </main>
 
-<!-- Toast -->
-<div id="vieworaToast" class="toast" aria-live="polite">
-    <span id="toastIcon">✓</span>
-    <span id="toastMessage">Done</span>
+<!-- Email sheet -->
+<div class="sheetMask" id="maskEmail"></div>
+<div class="sheet" id="sheetEmail">
+  <div class="sheetHandle"></div>
+  <h3>Email verification</h3>
+  <p id="emailSheetText">Verify your Gmail / email to secure your account.</p>
+  <div class="field"><label>Email</label><input id="emailInput" type="email" placeholder="you@gmail.com" autocomplete="email"></div>
+  <div class="sheetActions">
+    <button class="btn btn-ghost" type="button" data-close="sheetEmail">Cancel</button>
+    <button class="btn btn-primary" type="button" id="emailActionBtn">Send verification</button>
+  </div>
 </div>
 
-<!-- Loader -->
-<div id="settingsLoader" class="loader-overlay">
-    <div class="spinner"></div>
+<!-- Phone sheet -->
+<div class="sheetMask" id="maskPhone"></div>
+<div class="sheet" id="sheetPhone">
+  <div class="sheetHandle"></div>
+  <h3>Phone verification</h3>
+  <p>Add a mobile number. We’ll send an OTP (Firebase Phone Auth when enabled).</p>
+  <div class="field" id="phoneStep1">
+    <label>Phone number</label>
+    <input id="phoneInput" type="tel" placeholder="+91 98765 43210" autocomplete="tel">
+  </div>
+  <div class="field hidden" id="phoneStep2">
+    <label>OTP code</label>
+    <div class="otpRow"><input id="otpInput" type="text" inputmode="numeric" maxlength="6" placeholder="6-digit code"></div>
+  </div>
+  <div id="recaptcha-container"></div>
+  <div class="sheetActions">
+    <button class="btn btn-ghost" type="button" data-close="sheetPhone">Cancel</button>
+    <button class="btn btn-primary" type="button" id="phoneActionBtn">Send OTP</button>
+  </div>
 </div>
 
-<!-- Firebase -->
+<!-- Password sheet -->
+<div class="sheetMask" id="maskPassword"></div>
+<div class="sheet" id="sheetPassword">
+  <div class="sheetHandle"></div>
+  <h3>Change password</h3>
+  <p>For email/password accounts. Social logins manage password with the provider.</p>
+  <div class="field"><label>New password</label><input id="newPass" type="password" autocomplete="new-password" placeholder="Min 6 characters"></div>
+  <div class="field"><label>Confirm</label><input id="newPass2" type="password" autocomplete="new-password" placeholder="Repeat password"></div>
+  <div class="sheetActions">
+    <button class="btn btn-ghost" type="button" data-close="sheetPassword">Cancel</button>
+    <button class="btn btn-primary" type="button" id="passActionBtn">Update</button>
+  </div>
+</div>
+
+<!-- Message privacy sheet -->
+<div class="sheetMask" id="maskMsg"></div>
+<div class="sheet" id="sheetMsg">
+  <div class="sheetHandle"></div>
+  <h3>Who can message you</h3>
+  <p>Control message requests.</p>
+  <button class="row" type="button" data-msg="everyone" style="border:1px solid var(--border);border-radius:12px;margin-bottom:8px"><span class="rowBody"><span class="rowTitle">Everyone</span></span></button>
+  <button class="row" type="button" data-msg="followers" style="border:1px solid var(--border);border-radius:12px;margin-bottom:8px"><span class="rowBody"><span class="rowTitle">Followers only</span></span></button>
+  <button class="row" type="button" data-msg="nobody" style="border:1px solid var(--border);border-radius:12px"><span class="rowBody"><span class="rowTitle">No one</span></span></button>
+  <div class="sheetActions" style="margin-top:12px">
+    <button class="btn btn-ghost" type="button" data-close="sheetMsg" style="flex:1">Close</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
 <script src="firebase.js"></script>
-  <script src="badges.js"></script>
-<script src="settings.js"></script>
+<script>
+(function(){
+  "use strict";
 
+  var user=null, profile={}, db=null;
+  var THEME_KEY="viewora_theme";
+
+  function $(id){ return document.getElementById(id); }
+  function toast(m){
+    var t=$("toast"); t.textContent=m; t.classList.add("show");
+    setTimeout(function(){ t.classList.remove("show"); }, 2600);
+  }
+  function openSheet(id){
+    var sheet=$(id); var mask=$("mask"+id.replace("sheet",""));
+    if(mask) mask.classList.add("open");
+    sheet.classList.add("open");
+  }
+  function closeSheet(id){
+    var sheet=$(id); var mask=$("mask"+id.replace("sheet",""));
+    if(mask) mask.classList.remove("open");
+    sheet.classList.remove("open");
+  }
+
+  /* Theme */
+  function applyTheme(mode){
+    var dark = mode !== "light";
+    document.documentElement.setAttribute("data-theme", dark ? "dark" : "light");
+    try{ localStorage.setItem(THEME_KEY, dark ? "dark" : "light"); }catch(_){}
+    var sw=$("swTheme"), icon=$("themeIcon"), desc=$("themeDesc");
+    if(sw) sw.classList.toggle("on", dark);
+    if(icon) icon.className = dark ? "fa-solid fa-moon" : "fa-solid fa-sun";
+    if(desc) desc.textContent = dark ? "On" : "Off (Light mode)";
+    var meta=document.querySelector('meta[name="theme-color"]');
+    if(meta) meta.setAttribute("content", dark ? "#050507" : "#f4f4f5");
+  }
+  try{
+    applyTheme(localStorage.getItem(THEME_KEY) || "dark");
+  }catch(_){ applyTheme("dark"); }
+
+  $("btnTheme").addEventListener("click", function(){
+    var cur=document.documentElement.getAttribute("data-theme");
+    applyTheme(cur==="dark" ? "light" : "dark");
+    toast(cur==="dark" ? "Light mode" : "Dark mode");
+  });
+
+  $("backBtn").addEventListener("click", function(){
+    if(history.length>1) history.back(); else location.href="profile.html";
+  });
+
+  document.querySelectorAll("[data-href]").forEach(function(btn){
+    btn.addEventListener("click", function(){ location.href=btn.getAttribute("data-href"); });
+  });
+  document.querySelectorAll("[data-close]").forEach(function(btn){
+    btn.addEventListener("click", function(){ closeSheet(btn.getAttribute("data-close")); });
+  });
+  ["maskEmail","maskPhone","maskPassword","maskMsg"].forEach(function(id){
+    var el=$(id); if(el) el.addEventListener("click", function(){
+      closeSheet(id.replace("mask","sheet"));
+    });
+  });
+
+  /* toggles helpers */
+  function toggleSwitch(sw, key){
+    var on=!sw.classList.contains("on");
+    sw.classList.toggle("on", on);
+    if(user && db && key){
+      var o={}; o["settings/"+key]=on;
+      db.ref("users/"+user.uid).update(o).catch(function(){});
+    }
+    return on;
+  }
+
+  $("btnNotifLikes").addEventListener("click", function(){ toggleSwitch($("swLikes"),"notifLikes"); });
+  $("btnNotifMsg").addEventListener("click", function(){ toggleSwitch($("swMsg"),"notifMessages"); });
+  $("btnNotifFollow").addEventListener("click", function(){ toggleSwitch($("swFollow"),"notifFollowers"); });
+
+  $("btnPrivateAccount").addEventListener("click", function(){
+    var on=toggleSwitch($("swPrivate"),"privateAccount");
+    if(user&&db) db.ref("users/"+user.uid+"/privateAccount").set(on).catch(function(){});
+    toast(on ? "Private account on" : "Public account");
+  });
+
+  $("btnMsgPrivacy").addEventListener("click", function(){ openSheet("sheetMsg"); });
+  document.querySelectorAll("[data-msg]").forEach(function(btn){
+    btn.addEventListener("click", function(){
+      var v=btn.getAttribute("data-msg");
+      $("msgPrivacyDesc").textContent = v==="everyone"?"Everyone":v==="followers"?"Followers only":"No one";
+      if(user&&db) db.ref("users/"+user.uid+"/messagePrivacy").set(v).catch(function(){});
+      closeSheet("sheetMsg");
+      toast("Message privacy updated");
+    });
+  });
+
+  /* Email */
+  $("btnEmailVerify").addEventListener("click", function(){
+    $("emailInput").value = (user && user.email) || "";
+    if(user && user.emailVerified){
+      $("emailSheetText").textContent="Your email is verified.";
+      $("emailActionBtn").textContent="Resend link";
+    } else {
+      $("emailSheetText").textContent="We'll send a verification link to your Gmail / email.";
+      $("emailActionBtn").textContent="Send verification";
+    }
+    openSheet("sheetEmail");
+  });
+  $("emailActionBtn").addEventListener("click", async function(){
+    if(!user){ toast("Login required"); return; }
+    var email=($("emailInput").value||"").trim();
+    $("emailActionBtn").disabled=true;
+    try{
+      if(email && email !== user.email){
+        await user.updateEmail(email);
+        if(db) await db.ref("users/"+user.uid+"/email").set(email);
+      }
+      await user.sendEmailVerification();
+      toast("Verification email sent — check inbox");
+      closeSheet("sheetEmail");
+      refreshVerifyUI();
+    }catch(e){
+      console.error(e);
+      toast(e.message || "Could not send verification");
+    }
+    $("emailActionBtn").disabled=false;
+  });
+
+  /* Phone */
+  var phoneConfirm=null;
+  $("btnPhoneVerify").addEventListener("click", function(){
+    $("phoneStep1").classList.remove("hidden");
+    $("phoneStep2").classList.add("hidden");
+    $("phoneActionBtn").textContent="Send OTP";
+    $("phoneInput").value = (user && user.phoneNumber) || (profile.phoneNumber||"");
+    openSheet("sheetPhone");
+  });
+  $("phoneActionBtn").addEventListener("click", async function(){
+    if(!user){ toast("Login required"); return; }
+    var btn=$("phoneActionBtn");
+    if(btn.textContent.indexOf("Verify")>=0){
+      var code=($("otpInput").value||"").trim();
+      if(!code||!phoneConfirm){ toast("Enter OTP"); return; }
+      btn.disabled=true;
+      try{
+        await phoneConfirm.confirm(code);
+        var phone=($("phoneInput").value||"").trim();
+        if(db) await db.ref("users/"+user.uid).update({ phoneNumber: phone, phoneVerified: true });
+        toast("Phone verified");
+        closeSheet("sheetPhone");
+        refreshVerifyUI();
+      }catch(e){
+        toast(e.message||"Invalid OTP");
+      }
+      btn.disabled=false;
+      return;
+    }
+    var phone=($("phoneInput").value||"").trim();
+    if(!phone){ toast("Enter phone with country code"); return; }
+    btn.disabled=true;
+    try{
+      if(!window.RecaptchaVerifier){
+        // fallback: save phone without OTP if Phone Auth not configured
+        if(db) await db.ref("users/"+user.uid).update({ phoneNumber: phone, phoneVerified: false });
+        toast("Phone saved (enable Firebase Phone Auth for OTP)");
+        closeSheet("sheetPhone");
+        refreshVerifyUI();
+        btn.disabled=false;
+        return;
+      }
+      var provider = new firebase.auth.RecaptchaVerifier("recaptcha-container", { size: "invisible" });
+      phoneConfirm = await firebase.auth().signInWithPhoneNumber(phone, provider);
+      $("phoneStep2").classList.remove("hidden");
+      btn.textContent="Verify OTP";
+      toast("OTP sent");
+    }catch(e){
+      console.error(e);
+      // save number as pending verify
+      try{
+        if(db) await db.ref("users/"+user.uid).update({ phoneNumber: phone, phoneVerified: false });
+        toast("Phone saved — OTP requires Phone Auth setup");
+        closeSheet("sheetPhone");
+        refreshVerifyUI();
+      }catch(_){ toast(e.message||"Phone verify failed"); }
+    }
+    btn.disabled=false;
+  });
+
+  /* Password */
+  $("btnPassword").addEventListener("click", function(){ openSheet("sheetPassword"); });
+  $("passActionBtn").addEventListener("click", async function(){
+    if(!user){ toast("Login required"); return; }
+    var a=$("newPass").value, b=$("newPass2").value;
+    if(!a || a.length<6){ toast("Min 6 characters"); return; }
+    if(a!==b){ toast("Passwords do not match"); return; }
+    $("passActionBtn").disabled=true;
+    try{
+      await user.updatePassword(a);
+      toast("Password updated");
+      closeSheet("sheetPassword");
+      $("newPass").value=""; $("newPass2").value="";
+    }catch(e){
+      toast(e.code==="auth/requires-recent-login" ? "Log out & login again, then retry" : (e.message||"Failed"));
+    }
+    $("passActionBtn").disabled=false;
+  });
+
+  $("btnLogout").addEventListener("click", async function(){
+    if(!confirm("Log out of Viewora?")) return;
+    try{ await firebase.auth().signOut(); }catch(_){}
+    location.href="index.html";
+  });
+
+  function refreshVerifyUI(){
+    if(!user) return;
+    var email=user.email||profile.email||"";
+    $("emailDesc").textContent = email || "Add email";
+    var eb=$("emailBadge");
+    if(user.emailVerified){ eb.textContent="Verified"; eb.className="badge"; }
+    else if(email){ eb.textContent="Verify"; eb.className="badge warn"; }
+    else { eb.textContent="Add"; eb.className="badge off"; }
+
+    var phone=user.phoneNumber||profile.phoneNumber||"";
+    $("phoneDesc").textContent = phone || "Add phone for verification";
+    var pb=$("phoneBadge");
+    if(user.phoneNumber || profile.phoneVerified){ pb.textContent="Verified"; pb.className="badge"; }
+    else if(phone){ pb.textContent="Pending"; pb.className="badge warn"; }
+    else { pb.textContent="Add"; pb.className="badge off"; }
+  }
+
+  function fillProfile(){
+    var name=profile.displayName||profile.name||user.displayName||"User";
+    var un=profile.username||profile.userName||"";
+    $("setName").textContent=name;
+    $("setMeta").textContent=un?("@"+un):(user.email||"");
+    var photo=profile.photoURL||profile.profilePic||profile.avatar||user.photoURL||"assets/default-avatar.png";
+    $("setAvatar").src=photo;
+    $("setAvatar").onerror=function(){ this.src="assets/default-avatar.png"; };
+
+    if(profile.privateAccount) $("swPrivate").classList.add("on");
+    var mp=profile.messagePrivacy||"everyone";
+    $("msgPrivacyDesc").textContent=mp==="followers"?"Followers only":mp==="nobody"?"No one":"Everyone";
+    var s=profile.settings||{};
+    if(s.notifLikes===false) $("swLikes").classList.remove("on");
+    if(s.notifMessages===false) $("swMsg").classList.remove("on");
+    if(s.notifFollowers===false) $("swFollow").classList.remove("on");
+
+    var sub=profile.subscription||{};
+    var plan=(sub.plan||profile.plan||"free");
+    if(sub.active || profile.subscriptionActive) $("subDesc").textContent=String(plan).charAt(0).toUpperCase()+String(plan).slice(1)+" plan";
+    else $("subDesc").textContent="Free plan";
+  }
+
+  function boot(){
+    try{ db=firebase.database(); }catch(e){ toast("Firebase missing"); return; }
+    firebase.auth().onAuthStateChanged(async function(u){
+      if(!u){ location.href="index.html"; return; }
+      user=u;
+      try{
+        var snap=await db.ref("users/"+u.uid).once("value");
+        profile=snap.val()||{};
+      }catch(_){ profile={}; }
+      fillProfile();
+      refreshVerifyUI();
+    });
+  }
+  if(typeof firebase!=="undefined") boot();
+  else toast("Firebase not loaded");
+})();
+</script>
 </body>
 </html>

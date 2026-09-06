@@ -64,6 +64,9 @@
 
     let isOwnProfile = false;
     let isFollowing = false;
+    let isPrivateProfile = false;
+    let hasPendingRequest = false;
+    let canViewContent = true;
 
     let currentTab = "posts";
 
@@ -674,6 +677,10 @@
         profileData =
             user;
 
+        isPrivateProfile = !!(
+            user.privateAccount === true ||
+            user.isPrivate === true
+        );
 
         /* NAME */
 
@@ -1002,45 +1009,87 @@
             !profileUID ||
             isOwnProfile
         ) {
-
             isFollowing = false;
-
+            hasPendingRequest = false;
+            updateContentAccess();
             updateFollowButton();
-
             return;
-
         }
 
         try {
-
             const snapshot =
-                await followingRef(
-                    currentUser.uid
-                )
-                .child(profileUID)
-                .once("value");
+                await followingRef(currentUser.uid)
+                    .child(profileUID)
+                    .once("value");
 
-            const value =
-                snapshot.val();
-
+            const value = snapshot.val();
             isFollowing =
                 value === true ||
                 value === 1 ||
                 value === "true";
 
+            // Pending follow request (private accounts)
+            hasPendingRequest = false;
+            if (!isFollowing) {
+                try {
+                    const reqSnap = await db
+                        .ref(
+                            "followRequests/" +
+                            profileUID +
+                            "/" +
+                            currentUser.uid
+                        )
+                        .once("value");
+                    const rv = reqSnap.val();
+                    hasPendingRequest =
+                        rv === true ||
+                        rv === 1 ||
+                        (rv && typeof rv === "object" && (rv.status === "pending" || !rv.status));
+                } catch (_) {}
+            }
+
         } catch (error) {
-
-            console.warn(
-                "Follow state failed:",
-                error
-            );
-
+            console.warn("Follow state failed:", error);
             isFollowing = false;
-
+            hasPendingRequest = false;
         }
 
+        updateContentAccess();
         updateFollowButton();
+    }
 
+    function updateContentAccess() {
+        isPrivateProfile = !!(
+            profileData?.privateAccount === true ||
+            profileData?.isPrivate === true ||
+            profileUser?.privateAccount === true
+        );
+
+        canViewContent =
+            isOwnProfile ||
+            !isPrivateProfile ||
+            isFollowing === true;
+
+        // Hide tab grids if locked
+        document.querySelectorAll(
+            "#postsList, #shortsList, #videosList, #savedList, #liveList"
+        ).forEach((el) => {
+            if (!el) return;
+            if (!canViewContent) {
+                el.innerHTML =
+                    '<div class="contentEmpty profilePrivateLock">' +
+                    '<i class="fa-solid fa-lock"></i>' +
+                    "<strong>This account is private</strong>" +
+                    "<span>Follow this account to see their posts, shorts and videos.</span>" +
+                    "</div>";
+            }
+        });
+
+        // Hide story section content for private strangers
+        const storiesWrap = $("storiesWrapper");
+        if (storiesWrap && !canViewContent && !isOwnProfile) {
+            // keep structure but show lock message in highlights gone
+        }
     }
 
 
@@ -1082,31 +1131,29 @@
 
         if (isFollowing) {
 
-            button.classList.remove(
-                "primaryBtn"
-            );
-
-            button.classList.add(
-                "secondaryBtn"
-            );
-
+            button.classList.remove("primaryBtn");
+            button.classList.add("secondaryBtn");
             button.innerHTML =
                 '<i class="fa-solid fa-user-check"></i>' +
                 '<span>Following</span>';
 
+        } else if (hasPendingRequest) {
+
+            button.classList.remove("primaryBtn");
+            button.classList.add("secondaryBtn");
+            button.innerHTML =
+                '<i class="fa-solid fa-clock"></i>' +
+                '<span>Requested</span>';
+
         } else {
 
-            button.classList.remove(
-                "secondaryBtn"
-            );
-
-            button.classList.add(
-                "primaryBtn"
-            );
-
+            button.classList.remove("secondaryBtn");
+            button.classList.add("primaryBtn");
             button.innerHTML =
                 '<i class="fa-solid fa-user-plus"></i>' +
-                '<span>Follow</span>';
+                '<span>' +
+                (isPrivateProfile ? "Request" : "Follow") +
+                '</span>';
 
         }
 
@@ -1177,119 +1224,122 @@
              */
 
             const updates = {};
-
+            const privateTarget = !!(
+                profileData?.privateAccount === true ||
+                profileData?.isPrivate === true ||
+                isPrivateProfile
+            );
 
             if (nextState) {
+                // Cancel pending request if clicking Requested again → unfollow request
+                if (hasPendingRequest) {
+                    updates[
+                        "followRequests/" + targetUID + "/" + myUID
+                    ] = null;
+                    await db.ref().update(updates);
+                    isFollowing = false;
+                    hasPendingRequest = false;
+                    updateContentAccess();
+                    updateFollowButton();
+                    showToast("Request cancelled");
+                    await refreshRealFollowCounts();
+                    return;
+                }
 
+                if (privateTarget) {
+                    // Send follow REQUEST only
+                    updates[
+                        "followRequests/" + targetUID + "/" + myUID
+                    ] = {
+                        fromUID: myUID,
+                        fromName:
+                            currentUser.displayName ||
+                            currentUser.name ||
+                            "User",
+                        fromPhoto:
+                            currentUser.photoURL ||
+                            DEFAULT_AVATAR,
+                        status: "pending",
+                        createdAt: Date.now()
+                    };
+                    await db.ref().update(updates);
+
+                    // Notify target
+                    try {
+                        const n = notificationsRef(targetUID).push();
+                        await n.set({
+                            id: n.key,
+                            type: "follow_request",
+                            fromUID: myUID,
+                            fromName:
+                                currentUser.displayName || "User",
+                            message: "requested to follow you",
+                            read: false,
+                            createdAt: SERVER_TIME
+                        });
+                    } catch (_) {}
+
+                    hasPendingRequest = true;
+                    isFollowing = false;
+                    updateContentAccess();
+                    updateFollowButton();
+                    showToast("Request sent");
+                    return;
+                }
+
+                // Public: direct follow
                 updates[
-                    "following/" +
-                    myUID +
-                    "/" +
-                    targetUID
+                    "following/" + myUID + "/" + targetUID
                 ] = true;
-
                 updates[
-                    "followers/" +
-                    targetUID +
-                    "/" +
-                    myUID
+                    "followers/" + targetUID + "/" + myUID
                 ] = true;
 
             } else {
-
+                // Unfollow
                 updates[
-                    "following/" +
-                    myUID +
-                    "/" +
-                    targetUID
+                    "following/" + myUID + "/" + targetUID
                 ] = null;
-
                 updates[
-                    "followers/" +
-                    targetUID +
-                    "/" +
-                    myUID
+                    "followers/" + targetUID + "/" + myUID
                 ] = null;
-
+                updates[
+                    "followRequests/" + targetUID + "/" + myUID
+                ] = null;
             }
 
+            await db.ref().update(updates);
 
-            /*
-             * One atomic Firebase update.
-             */
-
-            await db
-                .ref()
-                .update(updates);
-
-
-            /*
-             * Update UI immediately.
-             */
-
-            isFollowing =
-                nextState;
-
+            isFollowing = nextState;
+            hasPendingRequest = false;
 
             if (profileData) {
-
-                const currentFollowers =
-                    safeNumber(
-                        profileData.followers
-                    );
-
-                profileData.followers =
-                    Math.max(
-                        0,
-                        currentFollowers +
-                        (
-                            nextState
-                                ? 1
-                                : -1
-                        )
-                    );
-
+                const currentFollowers = safeNumber(profileData.followers);
+                profileData.followers = Math.max(
+                    0,
+                    currentFollowers + (nextState ? 1 : -1)
+                );
             }
-
 
             setText(
                 "followersCount",
-                formatNumber(
-                    profileData?.followers || 0
-                )
+                formatNumber(profileData?.followers || 0)
             );
 
-
+            updateContentAccess();
             updateFollowButton();
-
-
-            /*
-             * Get the exact real count from Firebase.
-             */
-
             await refreshRealFollowCounts();
 
-
-            /*
-             * Notification only on new follow.
-             */
-
             if (nextState) {
-
-                await createFollowNotification(
-                    targetUID
-                );
-
-                showToast(
-                    "Following"
-                );
-
+                await createFollowNotification(targetUID);
+                showToast("Following");
             } else {
+                showToast("Unfollowed");
+            }
 
-                showToast(
-                    "Unfollowed"
-                );
-
+            // Reload content access
+            if (canViewContent) {
+                await refreshCurrentTab();
             }
 
         } catch (error) {
@@ -1788,6 +1838,11 @@
     ===================================================== */
 
     async function loadPosts() {
+        if (!canViewContent && !isOwnProfile) {
+            updateContentAccess();
+            return;
+        }
+
 
         const container =
             $("postsList");
@@ -2009,6 +2064,11 @@
     ===================================================== */
 
     async function loadShorts() {
+        if (!canViewContent && !isOwnProfile) {
+            updateContentAccess();
+            return;
+        }
+
 
         const container =
             $("shortsList");
@@ -2179,6 +2239,11 @@
     ===================================================== */
 
     async function loadVideos() {
+        if (!canViewContent && !isOwnProfile) {
+            updateContentAccess();
+            return;
+        }
+
 
         const container =
             $("videosList");
@@ -2430,6 +2495,11 @@
     ===================================================== */
 
     async function loadSaved() {
+        if (!canViewContent && !isOwnProfile) {
+            updateContentAccess();
+            return;
+        }
+
 
         const container =
             $("savedList");
@@ -3291,23 +3361,50 @@
                 );
 
 
-            // Highlights = stories whose 24 hours are over
-            const highlightStories =
+            // Expired candidates (user may pin as highlight — optional)
+            const expiredStories =
                 allStories.filter(
                     story => {
-
-                        const expiry =
-                            safeNumber(
-                                story.expiresAt
-                            );
-
-                        return (
-                            expiry &&
-                            expiry <= now
-                        );
-
+                        const expiry = safeNumber(story.expiresAt);
+                        return expiry && expiry <= now;
                     }
                 );
+
+            // ONLY stories the user explicitly pinned as highlights
+            let highlightStories = [];
+            try {
+                const hlSnap = await db
+                    .ref("users/" + profileUID + "/highlights")
+                    .once("value");
+                const hlMap = hlSnap.exists() ? (hlSnap.val() || {}) : {};
+                const pinnedIds = Object.keys(hlMap).filter((id) => {
+                    const v = hlMap[id];
+                    return v === true || v === 1 || (v && typeof v === "object");
+                });
+                if (pinnedIds.length) {
+                    const byId = {};
+                    allStories.forEach((s) => { byId[s.id] = s; });
+                    // Also fetch missing story nodes if needed
+                    for (const id of pinnedIds) {
+                        if (byId[id]) {
+                            highlightStories.push(byId[id]);
+                        } else {
+                            try {
+                                const ss = await db.ref("stories/" + id).once("value");
+                                if (ss.exists()) {
+                                    highlightStories.push({ id, ...(ss.val() || {}) });
+                                }
+                            } catch (_) {}
+                        }
+                    }
+                }
+            } catch (e) {
+                console.warn("Highlights load failed:", e);
+            }
+
+            // Keep for owner manage UI
+            window.__vieworaExpiredStories = expiredStories;
+            window.__vieworaPinnedHighlightIds = highlightStories.map((s) => s.id);
 
 
             const newItem =
@@ -3421,10 +3518,17 @@
             }
 
 
-            // Render Highlights (expired stories – 24h complete)
-            renderHighlights(
-                highlightStories
-            );
+            // Highlights removed per product request
+            const hlSection = $("highlightsSection");
+            if (hlSection) hlSection.style.display = "none";
+            const hlWrap = $("highlightsWrapper") || $("highlightsList") || $("profileHighlights");
+            if (hlWrap) {
+                hlWrap.innerHTML = "";
+                if (hlWrap.parentElement && hlWrap.parentElement.id === "highlightsSection") {
+                    hlWrap.parentElement.style.display = "none";
+                }
+            }
+
 
         } catch (error) {
 
@@ -3455,18 +3559,17 @@
 
         let url =
             "stories.html?uid=" +
-            encodeURIComponent(
-                profileUID
-            );
+            encodeURIComponent(profileUID) +
+            "&solo=1&from=profile";
 
         if (story?.id) {
-
             url +=
                 "&story=" +
-                encodeURIComponent(
-                    story.id
-                );
-
+                encodeURIComponent(story.id);
+            // Expired / highlight open
+            if (story.expiresAt && Number(story.expiresAt) <= Date.now()) {
+                url += "&highlight=1";
+            }
         }
 
         window.location.href = url;
@@ -3487,9 +3590,8 @@
         // Open stories.html for this profile
         window.location.href =
             "stories.html?uid=" +
-            encodeURIComponent(
-                profileUID
-            );
+            encodeURIComponent(profileUID) +
+            "&solo=1&from=profile";
 
     }
 
@@ -3653,22 +3755,53 @@
                 item.addEventListener(
                     "click",
                     () => {
-
-                        openStoryViewer(
-                            story
-                        );
-
+                        openStoryViewer(story);
                     }
                 );
 
+                // Owner: long-press to remove from highlights
+                if (isOwnProfile) {
+                    let holdTimer = null;
+                    item.addEventListener("touchstart", () => {
+                        holdTimer = setTimeout(() => {
+                            if (window.confirm("Remove this highlight?")) {
+                                unpinHighlight(story.id);
+                            }
+                        }, 650);
+                    }, { passive: true });
+                    item.addEventListener("touchend", () => clearTimeout(holdTimer));
+                    item.addEventListener("touchmove", () => clearTimeout(holdTimer));
+                    item.addEventListener("contextmenu", (e) => {
+                        e.preventDefault();
+                        if (window.confirm("Remove this highlight?")) {
+                            unpinHighlight(story.id);
+                        }
+                    });
+                }
 
-                container.appendChild(
-                    item
-                );
-
+                container.appendChild(item);
             }
         );
 
+        // Owner helper: manage highlights button
+        if (isOwnProfile) {
+            let manageBtn = document.getElementById("manageHighlightsBtn");
+            if (!manageBtn) {
+                const section =
+                    $("highlightsSection") ||
+                    container.parentElement;
+                if (section) {
+                    manageBtn = document.createElement("button");
+                    manageBtn.id = "manageHighlightsBtn";
+                    manageBtn.type = "button";
+                    manageBtn.textContent = "Manage highlights";
+                    manageBtn.style.cssText =
+                        "margin-top:10px;width:100%;min-height:40px;border:1px solid rgba(255,255,255,.12);border-radius:12px;background:rgba(255,255,255,.06);color:#fff;font-size:12px;font-weight:700;cursor:pointer";
+                    manageBtn.addEventListener("click", manageHighlights);
+                    section.appendChild(manageBtn);
+                }
+            }
+        }
     }
 
 
@@ -3916,6 +4049,19 @@
     ===================================================== */
 
     async function initProfile() {
+
+        // Theme from settings (dark / light)
+        try {
+            const theme = localStorage.getItem("viewora_theme") || "dark";
+            document.documentElement.setAttribute(
+                "data-theme",
+                theme === "light" ? "light" : "dark"
+            );
+            document.body.setAttribute(
+                "data-theme",
+                theme === "light" ? "light" : "dark"
+            );
+        } catch (_) {}
 
         // Loading removed – hide page loader immediately
         hidePageLoader();
@@ -4174,10 +4320,108 @@
     }
 
 
+    
+    /* =====================================================
+       HIGHLIGHTS — user chooses which expired stories to pin
+    ===================================================== */
+
+    async function pinHighlight(storyId) {
+        if (!isOwnProfile || !currentUser?.uid || !storyId) return;
+        try {
+            await db.ref("users/" + currentUser.uid + "/highlights/" + storyId).set({
+                storyId,
+                pinnedAt: Date.now()
+            });
+            showToast("Added to highlights");
+            await loadStories();
+        } catch (e) {
+            console.error(e);
+            showToast("Could not add highlight");
+        }
+    }
+
+    async function unpinHighlight(storyId) {
+        if (!isOwnProfile || !currentUser?.uid || !storyId) return;
+        try {
+            await db.ref("users/" + currentUser.uid + "/highlights/" + storyId).remove();
+            showToast("Removed from highlights");
+            await loadStories();
+        } catch (e) {
+            console.error(e);
+            showToast("Could not remove");
+        }
+    }
+
+    function manageHighlights() {
+        if (!isOwnProfile) return;
+        const expired = window.__vieworaExpiredStories || [];
+        const pinned = new Set(window.__vieworaPinnedHighlightIds || []);
+        if (!expired.length) {
+            showToast("No expired stories yet (24h)");
+            return;
+        }
+        // Simple chooser
+        const lines = expired.slice(0, 15).map((s, i) => {
+            const t = s.title || s.caption || ("Story " + (i + 1));
+            const mark = pinned.has(s.id) ? "✓" : " ";
+            return (i + 1) + ". [" + mark + "] " + t;
+        });
+        const pick = window.prompt(
+            "Highlights — expired stories\n" +
+            "Enter number to pin/unpin (toggle)\n\n" +
+            lines.join("\n")
+        );
+        const n = Number(pick);
+        if (!n || n < 1 || n > expired.length) return;
+        const story = expired[n - 1];
+        if (!story) return;
+        if (pinned.has(story.id)) {
+            unpinHighlight(story.id);
+        } else {
+            pinHighlight(story.id);
+        }
+    }
+
+
+    async function acceptFollowRequest(fromUID) {
+        if (!isOwnProfile || !currentUser?.uid || !fromUID) return;
+        const me = currentUser.uid;
+        const updates = {};
+        updates["followRequests/" + me + "/" + fromUID] = null;
+        updates["followers/" + me + "/" + fromUID] = true;
+        updates["following/" + fromUID + "/" + me] = true;
+        await db.ref().update(updates);
+        try {
+            const n = notificationsRef(fromUID).push();
+            await n.set({
+                id: n.key,
+                type: "follow_accepted",
+                fromUID: me,
+                message: "accepted your follow request",
+                read: false,
+                createdAt: SERVER_TIME
+            });
+        } catch (_) {}
+        showToast("Request accepted");
+        await refreshRealFollowCounts();
+    }
+
+    async function rejectFollowRequest(fromUID) {
+        if (!isOwnProfile || !currentUser?.uid || !fromUID) return;
+        await db.ref("followRequests/" + currentUser.uid + "/" + fromUID).remove();
+        showToast("Request declined");
+    }
+
     window.VieworaProfile = {
 
         report:
             reportProfileUser,
+
+        acceptFollowRequest:
+            acceptFollowRequest,
+
+        rejectFollowRequest:
+            rejectFollowRequest,
 
 
         reload:
@@ -4208,7 +4452,16 @@
             openStoryViewer,
 
         refreshCounts:
-            refreshRealFollowCounts
+            refreshRealFollowCounts,
+
+        pinHighlight:
+            pinHighlight,
+
+        unpinHighlight:
+            unpinHighlight,
+
+        manageHighlights:
+            manageHighlights
 
     };
 

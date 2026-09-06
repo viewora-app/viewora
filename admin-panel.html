@@ -207,6 +207,27 @@
         </button>
 
 
+        <button
+            class="navItem"
+            data-section="deletions"
+        >
+
+            <i class="fa-solid fa-user-slash"></i>
+
+            <span>Deletions</span>
+
+            <b
+                id="deletionNavCount"
+                class="dangerCount"
+            >
+                0
+            </b>
+
+        </button>
+
+
+
+
         <div class="navLabel">
             PLATFORM
         </div>
@@ -1670,6 +1691,48 @@
 <!-- =====================================================
      SETTINGS
 ===================================================== -->
+
+
+<!-- =====================================================
+     ACCOUNT DELETION REQUESTS
+===================================================== -->
+<section
+    id="deletionsSection"
+    class="adminSection"
+>
+
+    <div class="sectionHeader">
+
+        <div>
+
+            <h2>Account deletions</h2>
+
+            <p>Review permanent delete requests from users</p>
+
+        </div>
+
+        <div class="tableSearch">
+            <select id="deletionFilter" class="filterSelect">
+                <option value="pending">Pending</option>
+                <option value="approved">Approved</option>
+                <option value="rejected">Rejected</option>
+                <option value="all">All</option>
+            </select>
+        </div>
+
+    </div>
+
+    <div class="panelCard">
+        <div id="deletionsContainer" class="reportList">
+            <div class="emptyState">
+                <i class="fa-solid fa-user-slash"></i>
+                <span>No deletion requests</span>
+            </div>
+        </div>
+    </div>
+
+</section>
+
 
 <section
     id="settingsSection"

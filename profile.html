@@ -2459,6 +2459,7 @@
 </head>
 
 
+<script>try{var t=localStorage.getItem("viewora_theme")||"dark";document.documentElement.setAttribute("data-theme",t==="light"?"light":"dark");}catch(e){}</script>
 <body>
 
 
@@ -2956,7 +2957,7 @@
             >
 
 
-                <!-- New Story (opens stories-upload.html) -->
+                <!-- New Story (opens story-upload.html) -->
 
                 <div
                     id="newStoryItem"
@@ -2991,7 +2992,7 @@
              HIGHLIGHTS (Expired stories – 24h complete)
         ================================================== -->
 
-        <section class="storySection" id="highlightsSection">
+        <section class="storySection" id="highlightsSection" style="display:none">
 
             <div class="sectionHeader">
 
@@ -3003,7 +3004,7 @@
 
 
             <div
-                id="highlightsWrapper"
+                id="highlightsWrapper" style="display:none"
                 class="storiesWrapper"
             >
 
@@ -3559,7 +3560,7 @@
 
                 /* =================================================
                    STORY UPLOAD BUTTONS
-                   → Open stories-upload.html (no file picker)
+                   → Open story-upload.html (no file picker)
                 ================================================= */
 
                 function openStoryUploadPage(event) {
@@ -3570,7 +3571,7 @@
                     }
 
                     window.location.href =
-                        "stories-upload.html";
+                        "story-upload.html";
 
                 }
 
@@ -3625,7 +3626,7 @@
                             } else {
 
                                 vieworaProfileToast(
-                                    "Please use stories-upload.html to add a story."
+                                    "Please use story-upload.html to add a story."
                                 );
 
                             }
@@ -3822,9 +3823,8 @@
                     if (uid) {
                         link.href =
                             "stories.html?uid=" +
-                            encodeURIComponent(
-                                uid
-                            );
+                            encodeURIComponent(uid) +
+                            "&solo=1&from=profile";
                     }
 
                 })();
@@ -4136,9 +4136,8 @@
 
                             window.location.href =
                                 "stories.html?uid=" +
-                                encodeURIComponent(
-                                    uid
-                                );
+                                encodeURIComponent(uid) +
+                                "&solo=1&from=profile";
 
                         }
                     );
