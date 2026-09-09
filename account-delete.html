@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#050507">
+<title>Viewora • Delete Account</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+<style>
+:root {
+  --bg:#050507; --card:#121216; --border:rgba(255,255,255,.1);
+  --text:#fff; --muted:rgba(255,255,255,.55); --danger:#ef4444; --accent:#3b82f6;
+  --safe-bottom:env(safe-area-inset-bottom);
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{
+  min-height:100vh;background:var(--bg);color:var(--text);
+  font-family:Inter,system-ui,sans-serif;
+  padding:16px 16px calc(24px + var(--safe-bottom));
+}
+.wrap{max-width:480px;margin:0 auto}
+.top{
+  display:flex;align-items:center;gap:12px;margin-bottom:22px;
+}
+.back{
+  width:40px;height:40px;border-radius:12px;border:1px solid var(--border);
+  background:rgba(255,255,255,.04);color:#fff;display:flex;align-items:center;justify-content:center;
+}
+h1{font-size:20px;font-weight:800}
+.sub{font-size:13px;color:var(--muted);margin-top:4px;line-height:1.5}
+.card{
+  background:var(--card);border:1px solid var(--border);border-radius:18px;
+  padding:18px;margin-bottom:14px;
+}
+.warn{
+  display:flex;gap:12px;align-items:flex-start;
+  background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.25);
+  border-radius:16px;padding:14px;margin-bottom:16px;
+}
+.warn i{color:var(--danger);margin-top:2px}
+.warn strong{display:block;font-size:14px;margin-bottom:4px}
+.warn p{font-size:12px;color:var(--muted);line-height:1.5}
+.label{font-size:12px;font-weight:700;color:var(--muted);margin-bottom:10px;text-transform:uppercase;letter-spacing:.04em}
+.reasons{display:flex;flex-direction:column;gap:8px}
+.reason{
+  display:flex;align-items:center;gap:12px;padding:12px 14px;
+  border-radius:14px;border:1px solid var(--border);background:rgba(255,255,255,.03);
+  cursor:pointer;text-align:left;width:100%;color:inherit;
+}
+.reason.active{border-color:rgba(239,68,68,.5);background:rgba(239,68,68,.08)}
+.reason input{accent-color:var(--danger)}
+.reason span{font-size:13px;font-weight:600}
+textarea{
+  width:100%;min-height:100px;margin-top:12px;padding:12px 14px;
+  border-radius:14px;border:1px solid var(--border);background:rgba(0,0,0,.35);
+  color:#fff;font:inherit;resize:vertical;outline:none;
+}
+textarea:focus{border-color:rgba(255,255,255,.25)}
+.confirmBox{
+  margin-top:12px;padding:12px;border-radius:14px;border:1px dashed rgba(239,68,68,.4);
+  background:rgba(239,68,68,.05);
+}
+.confirmBox label{font-size:12px;color:var(--muted);display:flex;gap:10px;align-items:flex-start}
+.confirmBox input{margin-top:2px;accent-color:var(--danger)}
+.btn{
+  width:100%;height:48px;border:0;border-radius:14px;font-weight:700;font-size:14px;
+  cursor:pointer;margin-top:12px;
+}
+.btn-danger{background:var(--danger);color:#fff}
+.btn-danger:disabled{opacity:.45;cursor:not-allowed}
+.btn-ghost{
+  background:rgba(255,255,255,.06);color:#fff;border:1px solid var(--border);
+}
+.status{
+  text-align:center;padding:28px 16px;
+}
+.status i{font-size:36px;margin-bottom:12px}
+.status h2{font-size:18px;margin-bottom:8px}
+.status p{font-size:13px;color:var(--muted);line-height:1.6}
+.hidden{display:none !important}
+.userLine{font-size:12px;color:var(--muted);margin-bottom:14px}
+.userLine b{color:#fff}
+.toast{
+  position:fixed;left:50%;bottom:calc(24px + var(--safe-bottom));
+  transform:translateX(-50%) translateY(20px);opacity:0;
+  background:#1a1a1f;border:1px solid var(--border);color:#fff;
+  padding:10px 16px;border-radius:12px;font-size:13px;font-weight:600;
+  transition:.25s ease;z-index:50;pointer-events:none;
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <button class="back" type="button" id="backBtn" aria-label="Back">
+      <i class="fa-solid fa-arrow-left"></i>
+    </button>
+    <div>
+      <h1>Delete account</h1>
+      <div class="sub">Permanent request • reviewed by admin</div>
+    </div>
+  </div>
+
+  <div id="authGate" class="card status">
+    <i class="fa-solid fa-spinner fa-spin" style="color:var(--muted)"></i>
+    <h2>Checking account…</h2>
+    <p>Please wait.</p>
+  </div>
+
+  <div id="formView" class="hidden">
+    <div class="warn">
+      <i class="fa-solid fa-triangle-exclamation"></i>
+      <div>
+        <strong>This cannot be undone after approval</strong>
+        <p>Your profile, posts, shorts, stories, messages and followers will be permanently removed once an admin approves your request.</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="userLine">Signed in as <b id="userLabel">—</b></div>
+      <div class="label">Why are you leaving?</div>
+      <div class="reasons" id="reasons">
+        <label class="reason"><input type="radio" name="reason" value="privacy"><span>Privacy concerns</span></label>
+        <label class="reason"><input type="radio" name="reason" value="too_many_notifications"><span>Too many notifications</span></label>
+        <label class="reason"><input type="radio" name="reason" value="not_useful"><span>Not useful / switching apps</span></label>
+        <label class="reason"><input type="radio" name="reason" value="safety"><span>Safety or harassment</span></label>
+        <label class="reason"><input type="radio" name="reason" value="duplicate"><span>Duplicate / second account</span></label>
+        <label class="reason"><input type="radio" name="reason" value="other"><span>Other</span></label>
+      </div>
+      <textarea id="details" placeholder="Tell us more (optional, required if Other)…" maxlength="500"></textarea>
+      <div class="confirmBox">
+        <label>
+          <input type="checkbox" id="confirmCheck">
+          <span>I understand my account will be permanently deleted after admin approval. I may lose all content and data.</span>
+        </label>
+      </div>
+      <button class="btn btn-danger" id="submitBtn" type="button" disabled>Send delete request</button>
+      <button class="btn btn-ghost" id="cancelBtn" type="button">Cancel</button>
+    </div>
+  </div>
+
+  <div id="pendingView" class="card status hidden">
+    <i class="fa-solid fa-hourglass-half" style="color:#f59e0b"></i>
+    <h2>Request pending</h2>
+    <p id="pendingText">Your deletion request is waiting for admin review. You can still use the app until it is approved.</p>
+    <button class="btn btn-ghost" id="pendingBack" type="button">Back to profile</button>
+  </div>
+
+  <div id="doneView" class="card status hidden">
+    <i class="fa-solid fa-circle-check" style="color:#22c55e"></i>
+    <h2>Request submitted</h2>
+    <p>Admin will review your reason. After approval your account is permanently deleted.</p>
+    <button class="btn btn-ghost" id="doneBack" type="button">Back to profile</button>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+<script src="firebase.js"></script>
+  <script src="call-listener.js"></script>
+<script src="message-listener.js"></script>
+<script>
+(function () {
+  "use strict";
+
+  var authGate = document.getElementById("authGate");
+  var formView = document.getElementById("formView");
+  var pendingView = document.getElementById("pendingView");
+  var doneView = document.getElementById("doneView");
+  var userLabel = document.getElementById("userLabel");
+  var submitBtn = document.getElementById("submitBtn");
+  var confirmCheck = document.getElementById("confirmCheck");
+  var details = document.getElementById("details");
+  var toastEl = document.getElementById("toast");
+
+  var db = null;
+  var user = null;
+  var profile = null;
+  var existingRequestId = null;
+
+  function toast(msg) {
+    toastEl.textContent = msg;
+    toastEl.classList.add("show");
+    setTimeout(function () { toastEl.classList.remove("show"); }, 2600);
+  }
+
+  function goBack() {
+    if (history.length > 1) history.back();
+    else location.href = "profile.html";
+  }
+
+  document.getElementById("backBtn").onclick = goBack;
+  document.getElementById("cancelBtn").onclick = goBack;
+  document.getElementById("pendingBack").onclick = goBack;
+  document.getElementById("doneBack").onclick = goBack;
+
+  document.querySelectorAll("#reasons .reason").forEach(function (el) {
+    el.addEventListener("click", function () {
+      document.querySelectorAll("#reasons .reason").forEach(function (r) {
+        r.classList.remove("active");
+      });
+      el.classList.add("active");
+      el.querySelector("input").checked = true;
+      updateSubmit();
+    });
+  });
+
+  confirmCheck.addEventListener("change", updateSubmit);
+  details.addEventListener("input", updateSubmit);
+
+  function selectedReason() {
+    var el = document.querySelector('input[name="reason"]:checked');
+    return el ? el.value : "";
+  }
+
+  function updateSubmit() {
+    var reason = selectedReason();
+    var ok = !!reason && confirmCheck.checked;
+    if (reason === "other" && !details.value.trim()) ok = false;
+    submitBtn.disabled = !ok;
+  }
+
+  function show(view) {
+    authGate.classList.add("hidden");
+    formView.classList.add("hidden");
+    pendingView.classList.add("hidden");
+    doneView.classList.add("hidden");
+    view.classList.remove("hidden");
+  }
+
+  async function loadProfile(uid) {
+    var snap = await db.ref("users/" + uid).once("value");
+    profile = snap.val() || {};
+    var name =
+      profile.displayName ||
+      profile.name ||
+      profile.username ||
+      user.email ||
+      uid;
+    userLabel.textContent = name;
+  }
+
+  async function checkExisting(uid) {
+    var snap = await db
+      .ref("deletionRequests")
+      .orderByChild("uid")
+      .equalTo(uid)
+      .once("value");
+    var val = snap.val() || {};
+    var pending = null;
+    Object.keys(val).forEach(function (id) {
+      var r = val[id];
+      if (r && (r.status === "pending" || !r.status)) {
+        pending = { id: id, data: r };
+      }
+    });
+    return pending;
+  }
+
+  async function submitRequest() {
+    if (!user || !db) return;
+    var reason = selectedReason();
+    var text = (details.value || "").trim();
+    if (!reason || !confirmCheck.checked) return;
+    if (reason === "other" && !text) {
+      toast("Please add a reason");
+      return;
+    }
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Sending…";
+
+    try {
+      var ref = db.ref("deletionRequests").push();
+      var payload = {
+        uid: user.uid,
+        email: user.email || "",
+        username:
+          profile.username ||
+          profile.userName ||
+          profile.handle ||
+          "",
+        displayName:
+          profile.displayName ||
+          profile.name ||
+          profile.fullName ||
+          "",
+        photoURL:
+          profile.photoURL ||
+          profile.profilePic ||
+          profile.avatar ||
+          "",
+        reason: reason,
+        details: text,
+        status: "pending",
+        createdAt: Date.now(),
+        updatedAt: Date.now()
+      };
+      await ref.set(payload);
+      await db.ref("users/" + user.uid).update({
+        deletionRequested: true,
+        deletionRequestId: ref.key,
+        deletionRequestedAt: Date.now()
+      });
+      existingRequestId = ref.key;
+      show(doneView);
+      toast("Request sent to admin");
+    } catch (err) {
+      console.error(err);
+      toast("Failed to send request");
+      submitBtn.disabled = false;
+      submitBtn.textContent = "Send delete request";
+      updateSubmit();
+    }
+  }
+
+  submitBtn.addEventListener("click", submitRequest);
+
+  function boot() {
+    try {
+      db = firebase.database();
+    } catch (e) {
+      authGate.innerHTML =
+        '<h2>Unavailable</h2><p>Firebase not connected.</p>';
+      return;
+    }
+
+    firebase.auth().onAuthStateChanged(async function (u) {
+      if (!u) {
+        location.href = "index.html";
+        return;
+      }
+      user = u;
+      try {
+        await loadProfile(u.uid);
+        var existing = await checkExisting(u.uid);
+        if (existing) {
+          existingRequestId = existing.id;
+          var reason = existing.data.reason || "—";
+          document.getElementById("pendingText").textContent =
+            "Reason: " +
+            reason +
+            ". Admin has not approved yet. You can keep using the app until then.";
+          show(pendingView);
+        } else {
+          show(formView);
+        }
+      } catch (e) {
+        console.error(e);
+        authGate.innerHTML =
+          "<h2>Error</h2><p>Could not load account.</p>";
+      }
+    });
+  }
+
+  if (typeof firebase !== "undefined") boot();
+  else {
+    authGate.innerHTML =
+      "<h2>Unavailable</h2><p>Firebase scripts missing.</p>";
+  }
+})();
+</script>
+</body>
+</html>

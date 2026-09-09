@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script>
+    (function(){try{var t=localStorage.getItem("viewora_theme")||"dark";document.documentElement.setAttribute("data-theme",t);}catch(e){document.documentElement.setAttribute("data-theme","dark");}})();
+  </script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#050507">
+  <title>Live • Viewora</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <link rel="stylesheet" href="live.css">
+  <link rel="stylesheet" href="theme.css">
+</head>
+<body>
+
+<!-- SETUP (host only) -->
+<div id="liveSetup" class="live-setup hidden">
+  <button type="button" class="live-icon-btn" id="setupBack" style="align-self:flex-start">
+    <i class="fa-solid fa-arrow-left"></i>
+  </button>
+  <h1>Go Live</h1>
+  <p>Start a live session. Your story ring turns red for everyone following you.</p>
+  <input id="liveTitleInput" type="text" maxlength="80" placeholder="Live title (optional)">
+  <div class="setup-preview-wrap">
+    <video id="setupPreview" autoplay muted playsinline></video>
+  </div>
+  <button type="button" class="live-go" id="startLiveBtn">
+    <i class="fa-solid fa-video"></i> Start Live
+  </button>
+</div>
+
+<!-- ROOM -->
+<div id="liveRoom" class="live-page hidden">
+  <video id="liveVideo" autoplay playsinline></video>
+  <video id="livePreview" class="hidden" autoplay muted playsinline></video>
+
+  <div class="live-overlay">
+    <div class="live-top">
+      <div class="live-user">
+        <img id="hostAvatar" class="live-avatar" src="assets/default-avatar.png" alt="">
+        <div class="live-user-meta">
+          <strong id="hostName">Host</strong>
+          <span id="liveTitleLabel">Live</span>
+        </div>
+      </div>
+      <div class="live-top-actions">
+        <span class="live-badge"><i class="fa-solid fa-circle"></i> LIVE</span>
+        <span class="live-viewers"><i class="fa-solid fa-eye"></i> <span id="viewerCount">0</span></span>
+        <button type="button" class="live-icon-btn" id="closeLiveBtn" aria-label="Close">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+    </div>
+
+    <div class="live-center">
+      <div id="liveWaiting" class="live-placeholder hidden">
+        <h2>Connecting…</h2>
+        <p>Waiting for host stream</p>
+      </div>
+    </div>
+
+    <div class="live-bottom">
+      <div id="liveComments" class="live-comments"></div>
+      <div class="live-compose">
+        <input id="liveCommentInput" type="text" maxlength="200" placeholder="Say something…">
+        <button type="button" class="live-send" id="sendCommentBtn"><i class="fa-solid fa-paper-plane"></i></button>
+        <button type="button" class="live-end hidden" id="endLiveBtn">End</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script src="firebase.js"></script>
+<script src="theme.js"></script>
+<script src="live.js"></script>
+</body>
+</html>

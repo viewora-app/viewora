@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#050507">
+<meta name="description" content="Viewora Privacy Policy — how we collect, use, and protect your information.">
+<title>Privacy Policy • Viewora</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+<style>
+:root {
+  --bg: #050507;
+  --surface: #0d0d10;
+  --card: #121216;
+  --border: rgba(255,255,255,.08);
+  --text: #f4f4f5;
+  --muted: rgba(255,255,255,.58);
+  --muted-2: rgba(255,255,255,.38);
+  --accent: #3b82f6;
+  --link: #60a5fa;
+  --safe-top: env(safe-area-inset-top);
+  --safe-bottom: env(safe-area-inset-bottom);
+}
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html { scroll-behavior: smooth; }
+body {
+  min-height: 100vh;
+  background:
+    radial-gradient(ellipse 80% 40% at 50% -10%, rgba(59,130,246,.12), transparent 50%),
+    var(--bg);
+  color: var(--text);
+  font-family: "Inter", system-ui, -apple-system, sans-serif;
+  line-height: 1.65;
+  padding-top: var(--safe-top);
+  padding-bottom: calc(32px + var(--safe-bottom));
+}
+a { color: var(--link); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+.topbar {
+  position: sticky; top: 0; z-index: 50;
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 16px;
+  background: rgba(5,5,7,.88);
+  backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+}
+.back {
+  width: 40px; height: 40px; border-radius: 12px;
+  border: 1px solid var(--border); background: rgba(255,255,255,.04);
+  color: #fff; display: flex; align-items: center; justify-content: center;
+  cursor: pointer; flex: 0 0 40px;
+}
+.brand {
+  display: flex; align-items: center; gap: 10px; min-width: 0;
+}
+.brand-logo {
+  width: 32px; height: 32px; border-radius: 10px;
+  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 800; font-size: 14px; color: #fff;
+}
+.brand h1 { font-size: 15px; font-weight: 700; white-space: nowrap; }
+.brand span { display: block; font-size: 11px; color: var(--muted); font-weight: 500; }
+
+.wrap {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 28px 18px 40px;
+}
+
+.hero {
+  margin-bottom: 28px;
+}
+.hero .badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 10px; border-radius: 999px;
+  background: rgba(59,130,246,.12); border: 1px solid rgba(59,130,246,.25);
+  color: #93c5fd; font-size: 11px; font-weight: 600; margin-bottom: 14px;
+}
+.hero h2 {
+  font-size: 28px; font-weight: 800; letter-spacing: -.4px;
+  line-height: 1.2; margin-bottom: 10px;
+}
+.hero p {
+  font-size: 14px; color: var(--muted); max-width: 540px;
+}
+.meta {
+  display: flex; flex-wrap: wrap; gap: 10px 18px;
+  margin-top: 16px; font-size: 12px; color: var(--muted-2);
+}
+.meta strong { color: var(--muted); font-weight: 600; }
+
+.toc {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 16px 18px;
+  margin-bottom: 28px;
+}
+.toc h3 {
+  font-size: 12px; text-transform: uppercase; letter-spacing: .06em;
+  color: var(--muted-2); margin-bottom: 12px; font-weight: 700;
+}
+.toc ol {
+  list-style: none; counter-reset: toc;
+  display: grid; gap: 6px;
+}
+.toc li { counter-increment: toc; }
+.toc a {
+  display: flex; gap: 10px; align-items: baseline;
+  color: var(--text); font-size: 13px; font-weight: 500;
+  padding: 6px 8px; border-radius: 10px;
+  text-decoration: none;
+}
+.toc a:hover { background: rgba(255,255,255,.04); text-decoration: none; }
+.toc a::before {
+  content: counter(toc, decimal-leading-zero);
+  font-size: 11px; color: var(--muted-2); font-weight: 700;
+  min-width: 22px;
+}
+
+.section {
+  margin-bottom: 28px;
+  scroll-margin-top: 72px;
+}
+.section h3 {
+  font-size: 17px; font-weight: 750; margin-bottom: 10px;
+  letter-spacing: -.2px;
+  display: flex; align-items: center; gap: 10px;
+}
+.section h3 .num {
+  width: 26px; height: 26px; border-radius: 8px;
+  background: rgba(255,255,255,.06); border: 1px solid var(--border);
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700; color: var(--muted); flex: 0 0 26px;
+}
+.section p, .section li {
+  font-size: 14px; color: var(--muted); margin-bottom: 10px;
+}
+.section ul, .section ol {
+  padding-left: 18px; margin-bottom: 10px;
+}
+.section li { margin-bottom: 6px; }
+.section strong { color: var(--text); font-weight: 600; }
+
+.callout {
+  background: rgba(59,130,246,.08);
+  border: 1px solid rgba(59,130,246,.2);
+  border-radius: 14px;
+  padding: 14px 16px;
+  margin: 14px 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+.callout strong { color: #93c5fd; }
+
+.warn {
+  background: rgba(245,158,11,.08);
+  border: 1px solid rgba(245,158,11,.22);
+  border-radius: 14px;
+  padding: 14px 16px;
+  margin: 14px 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.footer-card {
+  margin-top: 36px;
+  padding: 20px;
+  border-radius: 18px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  text-align: center;
+}
+.footer-card h4 { font-size: 15px; margin-bottom: 6px; }
+.footer-card p { font-size: 13px; color: var(--muted); margin-bottom: 14px; }
+.footer-card .links {
+  display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;
+}
+.footer-card a.btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 10px 14px; border-radius: 12px;
+  background: rgba(255,255,255,.06); border: 1px solid var(--border);
+  color: var(--text); font-size: 12px; font-weight: 600;
+  text-decoration: none;
+}
+.footer-card a.btn:hover { background: rgba(255,255,255,.1); text-decoration: none; }
+
+.legal-note {
+  margin-top: 24px;
+  font-size: 11px;
+  color: var(--muted-2);
+  text-align: center;
+  line-height: 1.5;
+}
+
+@media (min-width: 700px) {
+  .hero h2 { font-size: 34px; }
+  .toc ol { grid-template-columns: 1fr 1fr; }
+}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <button class="back" type="button" id="backBtn" aria-label="Back">
+    <i class="fa-solid fa-arrow-left"></i>
+  </button>
+  <div class="brand">
+    <div class="brand-logo">V</div>
+    <div>
+      <h1>Viewora</h1>
+      <span>Privacy Policy</span>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <div class="hero">
+    <div class="badge"><i class="fa-solid fa-shield-halved"></i> Your privacy matters</div>
+    <h2>Privacy Policy</h2>
+    <p>
+      This Privacy Policy explains how Viewora collects, uses, stores, and shares
+      information when you use our apps, websites, and related services
+      (together, the “Services”).
+    </p>
+    <div class="meta">
+      <span><strong>Effective:</strong> September 5, 2026</span>
+      <span><strong>Last updated:</strong> September 5, 2026</span>
+      <span><strong>Product:</strong> Viewora</span>
+    </div>
+  </div>
+
+  <nav class="toc" aria-label="Table of contents">
+    <h3>On this page</h3>
+    <ol>
+      <li><a href="#intro">Introduction</a></li>
+      <li><a href="#collect">Information we collect</a></li>
+      <li><a href="#use">How we use information</a></li>
+      <li><a href="#share">How we share information</a></li>
+      <li><a href="#content">Your content &amp; public info</a></li>
+      <li><a href="#messages">Messages &amp; calls</a></li>
+      <li><a href="#payments">Payments &amp; subscriptions</a></li>
+      <li><a href="#security">Security</a></li>
+      <li><a href="#retention">Data retention</a></li>
+      <li><a href="#rights">Your rights &amp; choices</a></li>
+      <li><a href="#children">Children’s privacy</a></li>
+      <li><a href="#intl">International users</a></li>
+      <li><a href="#changes">Changes to this policy</a></li>
+      <li><a href="#contact">Contact us</a></li>
+    </ol>
+  </nav>
+
+  <section class="section" id="intro">
+    <h3><span class="num">01</span> Introduction</h3>
+    <p>
+      Viewora is a social platform for short videos, long videos, posts, stories,
+      messaging, and live experiences. By using Viewora, you agree to this Privacy Policy
+      and our Terms of Service.
+    </p>
+    <div class="callout">
+      <strong>In short:</strong> We collect information needed to run the product
+      (account, content, device, usage), use it to provide and improve Viewora,
+      and share it only as described here — not by selling your personal data.
+    </div>
+  </section>
+
+  <section class="section" id="collect">
+    <h3><span class="num">02</span> Information we collect</h3>
+    <p>We collect information in these categories:</p>
+    <p><strong>Account &amp; profile</strong></p>
+    <ul>
+      <li>Name, username, email, phone (if provided), password or auth provider data</li>
+      <li>Profile photo, bio, links, verification status, subscription tier</li>
+      <li>Followers / following relationships</li>
+    </ul>
+    <p><strong>Content you create</strong></p>
+    <ul>
+      <li>Posts, photos, videos, shorts, stories, highlights, captions, hashtags</li>
+      <li>Comments, likes, reactions, saves, shares</li>
+      <li>Music, stickers, effects, and other creative tools you apply</li>
+    </ul>
+    <p><strong>Messages &amp; communications</strong></p>
+    <ul>
+      <li>Direct messages, voice notes, media you send in chat</li>
+      <li>Call metadata (time, duration, participants) for voice/video calls</li>
+    </ul>
+    <p><strong>Usage &amp; device</strong></p>
+    <ul>
+      <li>App interactions, watch history signals, search queries, notifications opened</li>
+      <li>Device type, OS, browser, IP address, language, crash logs, performance data</li>
+      <li>Approximate location derived from IP (not precise GPS unless you enable it)</li>
+    </ul>
+    <p><strong>Payments</strong></p>
+    <ul>
+      <li>Subscription plan, purchase history, limited payment status from providers such as Razorpay</li>
+      <li>We do <strong>not</strong> store full card numbers on Viewora servers</li>
+    </ul>
+  </section>
+
+  <section class="section" id="use">
+    <h3><span class="num">03</span> How we use information</h3>
+    <ul>
+      <li>Provide, personalize, and improve the Services (feed ranking, recommendations, search)</li>
+      <li>Enable messaging, calls, stories, uploads, and social features</li>
+      <li>Process subscriptions, monetization eligibility, and creator tools</li>
+      <li>Show badges (blue / white / red ticks) and verification status</li>
+      <li>Send service notifications (likes, comments, messages, security alerts)</li>
+      <li>Detect spam, abuse, fraud, and enforce our policies</li>
+      <li>Comply with law and respond to lawful requests</li>
+      <li>Analyze product performance in aggregated or de-identified form</li>
+    </ul>
+  </section>
+
+  <section class="section" id="share">
+    <h3><span class="num">04</span> How we share information</h3>
+    <p>We may share information with:</p>
+    <ul>
+      <li><strong>Other users</strong> — when you post publicly, comment, follow, or message someone</li>
+      <li><strong>Service providers</strong> — cloud hosting (e.g. Firebase), media storage/CDN, analytics, payment processors, under contracts that protect data</li>
+      <li><strong>Legal &amp; safety</strong> — when required by law, or to protect Viewora, users, or the public from harm</li>
+      <li><strong>Business transfers</strong> — if we merge, acquire, or sell assets, data may transfer under continued protection</li>
+    </ul>
+    <div class="warn">
+      <strong>We do not sell your personal information</strong> for money. We also do not share your private messages for advertising.
+    </div>
+  </section>
+
+  <section class="section" id="content">
+    <h3><span class="num">05</span> Your content &amp; public information</h3>
+    <p>
+      Content you set to <strong>public</strong> can be seen by anyone using Viewora
+      (and may be reshared or downloaded by others). Profile information such as
+      username, photo, bio, and follower counts is typically visible to other users.
+    </p>
+    <p>
+      You can control visibility for some posts and videos (public / private where available).
+      Stories may disappear after 24 hours unless saved as highlights.
+    </p>
+  </section>
+
+  <section class="section" id="messages">
+    <h3><span class="num">06</span> Messages &amp; calls</h3>
+    <p>
+      Direct messages and call features are intended for private communication between participants.
+      Viewora may access message content only in limited cases such as:
+    </p>
+    <ul>
+      <li>Technical delivery and storage of the service</li>
+      <li>Safety investigations when content is reported</li>
+      <li>Legal obligations</li>
+    </ul>
+    <p>
+      End-to-end encryption may not apply to all message types. Do not share passwords or
+      sensitive financial secrets in chat.
+    </p>
+  </section>
+
+  <section class="section" id="payments">
+    <h3><span class="num">07</span> Payments &amp; subscriptions</h3>
+    <p>
+      Paid plans (Plus, Pro, Elite, etc.) are processed by third-party payment providers
+      (for example, Razorpay). Those providers process card/UPI details under their own privacy policies.
+      Viewora receives confirmation of payment status, plan type, and billing cycle needed to unlock features and badges.
+    </p>
+  </section>
+
+  <section class="section" id="security">
+    <h3><span class="num">08</span> Security</h3>
+    <p>
+      We use industry-standard measures such as encrypted connections (HTTPS), access controls,
+      and authenticated APIs to protect data. No system is 100% secure. Please use a strong password,
+      enable device security, and report suspicious activity.
+    </p>
+  </section>
+
+  <section class="section" id="retention">
+    <h3><span class="num">09</span> Data retention</h3>
+    <p>
+      We keep information as long as your account is active and as needed to provide the Services.
+      If you request account deletion, we process the request (including admin review where required).
+      After approval, we delete or de-identify personal data within a reasonable period, except where
+      we must retain records for legal, security, or fraud-prevention reasons.
+    </p>
+    <p>
+      Backups may take additional time to fully purge. Public content you shared may remain with
+      other users who saved or reshared it.
+    </p>
+  </section>
+
+  <section class="section" id="rights">
+    <h3><span class="num">10</span> Your rights &amp; choices</h3>
+    <p>Depending on your region, you may have rights to:</p>
+    <ul>
+      <li>Access or download a copy of your data</li>
+      <li>Correct inaccurate profile information</li>
+      <li>Delete your account (see <a href="account-delete.html">Delete account</a>)</li>
+      <li>Object to or restrict certain processing</li>
+      <li>Manage notification preferences in-app</li>
+      <li>Control who can message or see certain content (where available)</li>
+    </ul>
+    <p>
+      To exercise rights, use in-app settings or contact us using the details below.
+      We may need to verify your identity before fulfilling a request.
+    </p>
+  </section>
+
+  <section class="section" id="children">
+    <h3><span class="num">11</span> Children’s privacy</h3>
+    <p>
+      Viewora is not directed to children under 13 (or the minimum age required in your country).
+      We do not knowingly collect personal information from children under that age.
+      If you believe a child has created an account, contact us and we will take appropriate steps.
+    </p>
+  </section>
+
+  <section class="section" id="intl">
+    <h3><span class="num">12</span> International users</h3>
+    <p>
+      Viewora may process and store information on servers located in different countries
+      (including via Firebase / Google Cloud and other providers). By using the Services,
+      you understand your information may be transferred to countries with different data-protection laws.
+      We take steps designed to protect data in line with this Policy.
+    </p>
+  </section>
+
+  <section class="section" id="changes">
+    <h3><span class="num">13</span> Changes to this policy</h3>
+    <p>
+      We may update this Privacy Policy from time to time. We will change the “Last updated” date
+      and, for material changes, provide additional notice (in-app or by email where appropriate).
+      Continued use of Viewora after changes means you accept the updated Policy.
+    </p>
+  </section>
+
+  <section class="section" id="contact">
+    <h3><span class="num">14</span> Contact us</h3>
+    <p>
+      Questions about privacy, data requests, or this Policy:
+    </p>
+    <ul>
+      <li>In-app: Profile → Settings → Help / Privacy</li>
+      <li>Email: <a href="mailto:privacy@viewora.app">privacy@viewora.app</a></li>
+      <li>Support: <a href="mailto:support@viewora.app">support@viewora.app</a></li>
+    </ul>
+    <p>
+      Replace these contact emails with your real business addresses before public launch.
+    </p>
+  </section>
+
+  <div class="footer-card">
+    <h4>Related</h4>
+    <p>Manage your account or leave Viewora anytime.</p>
+    <div class="links">
+      <a class="btn" href="account-delete.html"><i class="fa-solid fa-user-slash"></i> Delete account</a>
+      <a class="btn" href="profile.html"><i class="fa-solid fa-user"></i> Profile</a>
+      <a class="btn" href="index.html"><i class="fa-solid fa-house"></i> Home</a>
+    </div>
+  </div>
+
+  <p class="legal-note">
+    © 2026 Viewora. This page is a product privacy policy template tailored for Viewora’s features.
+    Have legal counsel review before publishing in production.
+  </p>
+
+</main>
+
+  <script src="call-listener.js"></script>
+<script src="message-listener.js"></script>
+
+<script>
+  document.getElementById("backBtn").addEventListener("click", function () {
+    if (history.length > 1) history.back();
+    else location.href = "index.html";
+  });
+</script>
+</body>
+</html>

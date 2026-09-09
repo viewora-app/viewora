@@ -465,6 +465,10 @@ function switchSection(section) {
             "Reports",
             "Review reported content and moderation."
         ],
+        deletions: [
+            "Account deletions",
+            "Review permanent delete requests."
+        ],
 
         live: [
             "Live",
@@ -499,11 +503,6 @@ function switchSection(section) {
         settings: [
             "Settings",
             "Configure your Viewora administration."
-        ],
-
-        deletions: [
-            "Account deletions",
-            "Review permanent delete requests from users."
         ]
     };
 
@@ -538,6 +537,9 @@ function switchSection(section) {
     if (section === "reports") {
         loadReports();
     }
+    if (section === "deletions") {
+        loadDeletions();
+    }
 
     if (section === "live") {
         loadLive();
@@ -561,10 +563,6 @@ function switchSection(section) {
 
     if (section === "monetization") {
         loadMonetizationAdmin();
-    }
-
-    if (section === "deletions") {
-        loadDeletions();
     }
 
     if (window.innerWidth <= 850) {
@@ -686,13 +684,6 @@ async function loadDashboard() {
         );
 
         updateNotificationCount();
-
-        // Prefetch deletion requests for nav badge
-        try {
-            const delSnap = await db.ref("deletionRequests").once("value");
-            cachedDeletions = delSnap.val() || {};
-            updateDeletionNavCount();
-        } catch (_) {}
 
     } catch (error) {
 
@@ -1998,18 +1989,6 @@ function renderReports() {
     container.innerHTML =
         entries.map(([id, report]) => {
 
-            const typeRaw = String(report?.type || report?.contentType || "content").toLowerCase();
-            const typeLabels = {
-                user: "User",
-                post: "Post",
-                video: "Video",
-                short: "Short",
-                shorts: "Short",
-                story: "Story",
-                content: "Content"
-            };
-            const typeLabel = typeLabels[typeRaw] || typeRaw;
-
             const reasonKey = String(report?.reason || "other").toLowerCase();
             const reasonLabels = {
                 spam: "Spam or misleading",
@@ -2070,7 +2049,6 @@ function renderReports() {
 
                     <div class="reportAdminInfo">
 
-                        <span class="contentTypeBadge">${escapeHTML(typeLabel)}</span>
                         <span class="reportReason">
                             ${reason}
                         </span>
@@ -3396,21 +3374,6 @@ function startRealtimeListeners() {
                 }
             }
         );
-
-    try {
-        db.ref("deletionRequests").on(
-            "value",
-            (snapshot) => {
-                cachedDeletions = snapshot.val() || {};
-                updateDeletionNavCount();
-                if (currentSection === "deletions") {
-                    renderDeletions();
-                }
-            }
-        );
-    } catch (e) {
-        console.warn("deletionRequests listener failed:", e);
-    }
 }
 
 function stopRealtimeListeners() {
@@ -4045,356 +4008,6 @@ window.addEventListener(
 ========================================================= */
 
 
-
-
-/* =========================================================
-   ACCOUNT DELETION REQUESTS
-========================================================= */
-
-let cachedDeletions = {};
-
-async function loadDeletions() {
-    const container = $("deletionsContainer");
-    if (!container) return;
-
-    container.innerHTML = `
-        <div class="emptyState">
-            <i class="fa-solid fa-spinner fa-spin"></i>
-            <span>Loading deletion requests...</span>
-        </div>
-    `;
-
-    try {
-        const snap = await db.ref("deletionRequests").once("value");
-        cachedDeletions = snap.val() || {};
-        renderDeletions();
-        updateDeletionNavCount();
-    } catch (error) {
-        console.error(error);
-        container.innerHTML = `
-            <div class="emptyState">
-                <i class="fa-solid fa-circle-xmark"></i>
-                <span>Failed to load deletion requests.</span>
-            </div>
-        `;
-        showToast("Failed to load deletions.", "error");
-    }
-}
-
-function updateDeletionNavCount() {
-    const pending = Object.values(cachedDeletions || {}).filter(
-        (r) => !r || r.status === "pending" || !r.status
-    ).length;
-    setText("deletionNavCount", formatNumber(pending));
-}
-
-function renderDeletions() {
-    const container = $("deletionsContainer");
-    if (!container) return;
-
-    const filter = $("deletionFilter")?.value || "pending";
-
-    let entries = Object.entries(cachedDeletions || {});
-    entries.sort(([, a], [, b]) => getTimestamp(b) - getTimestamp(a));
-
-    entries = entries.filter(([, req]) => {
-        const status = (req?.status || "pending").toLowerCase();
-        if (filter === "all") return true;
-        return status === filter;
-    });
-
-    if (!entries.length) {
-        container.innerHTML = `
-            <div class="emptyState">
-                <i class="fa-solid fa-user-slash"></i>
-                <span>No deletion requests</span>
-            </div>
-        `;
-        return;
-    }
-
-    const reasonLabels = {
-        privacy: "Privacy concerns",
-        too_many_notifications: "Too many notifications",
-        not_useful: "Not useful / switching apps",
-        safety: "Safety or harassment",
-        duplicate: "Duplicate / second account",
-        other: "Other"
-    };
-
-    container.innerHTML = entries
-        .map(([id, req]) => {
-            const name = escapeHTML(
-                req?.displayName || req?.username || "User"
-            );
-            const email = escapeHTML(req?.email || "—");
-            const reasonKey = String(req?.reason || "other").toLowerCase();
-            const reason =
-                reasonLabels[reasonKey] ||
-                escapeHTML(req?.reason || "Other");
-            const details = escapeHTML(req?.details || "");
-            const status = (req?.status || "pending").toLowerCase();
-            const uid = escapeAttribute(req?.uid || "");
-            const photo = escapeAttribute(
-                req?.photoURL || "assets/default-avatar.png"
-            );
-
-            return `
-                <div class="reportAdminCard deletionRequestCard" data-deletion-id="${escapeAttribute(id)}">
-                    <div class="reportAdminIcon">
-                        <i class="fa-solid fa-user-slash"></i>
-                    </div>
-                    <div class="reportAdminInfo" style="flex:1;min-width:160px">
-                        <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
-                            <img src="${photo}" alt=""
-                                style="width:36px;height:36px;border-radius:50%;object-fit:cover;border:2px solid rgba(239,68,68,.25)"
-                                onerror="this.src='assets/default-avatar.png'">
-                            <div>
-                                <strong style="display:block;font-size:13px;color:#fff">${name}</strong>
-                                <small style="color:#94a3b8">${email}</small>
-                            </div>
-                        </div>
-                        <span class="reportReason">${reason}</span>
-                        ${details ? `<span class="reportMeta">${details}</span>` : ""}
-                        <small style="display:block;margin-top:6px;color:#64748b">
-                            ${formatDate(req?.createdAt)} · UID: ${escapeHTML(String(req?.uid || "").slice(0, 12))}…
-                        </small>
-                    </div>
-                    <span class="reportStatus ${status === "approved" ? "resolved" : status === "rejected" ? "pending" : "pending"}">
-                        ${status}
-                    </span>
-                    ${
-                        status === "pending"
-                            ? `
-                        <button type="button" class="resolveReportBtn" data-approve-deletion="${escapeAttribute(id)}" data-uid="${uid}">
-                            <i class="fa-solid fa-check"></i> Approve
-                        </button>
-                        <button type="button" class="verificationRejectBtn" data-reject-deletion="${escapeAttribute(id)}" data-uid="${uid}">
-                            Reject
-                        </button>
-                    `
-                            : ""
-                    }
-                </div>
-            `;
-        })
-        .join("");
-
-    qsa("[data-approve-deletion]", container).forEach((btn) => {
-        btn.addEventListener("click", () => {
-            openConfirmModal(
-                "Approve account deletion?",
-                "This will permanently delete the user account and mark the request approved. This cannot be undone.",
-                async () => {
-                    await approveDeletion(
-                        btn.dataset.approveDeletion,
-                        btn.dataset.uid
-                    );
-                }
-            );
-        });
-    });
-
-    qsa("[data-reject-deletion]", container).forEach((btn) => {
-        btn.addEventListener("click", () => {
-            openConfirmModal(
-                "Reject deletion request?",
-                "The user will keep their account.",
-                async () => {
-                    await rejectDeletion(
-                        btn.dataset.rejectDeletion,
-                        btn.dataset.uid
-                    );
-                }
-            );
-        });
-    });
-}
-
-async function permanentlyDeleteUserData(uid) {
-    if (!uid) return { ok: false, error: "No uid" };
-
-    const updates = {};
-    const errors = [];
-
-    // 1) Wipe root user profile
-    updates["users/" + uid] = null;
-
-    // 2) Social graphs
-    updates["followers/" + uid] = null;
-    updates["following/" + uid] = null;
-    updates["followRequests/" + uid] = null;
-    updates["blocks/" + uid] = null;
-    updates["blockedBy/" + uid] = null;
-
-    // 3) Notifications / activity
-    updates["notifications/" + uid] = null;
-    updates["activity/" + uid] = null;
-
-    // 4) Messaging
-    updates["userChats/" + uid] = null;
-    updates["userMessages/" + uid] = null;
-    updates["presence/" + uid] = null;
-    updates["typing/" + uid] = null;
-    updates["callStatus/" + uid] = null;
-    updates["incomingCalls/" + uid] = null;
-
-    // 5) Monetization / subscription / devices
-    updates["monetization/" + uid] = null;
-    updates["subscriptions/" + uid] = null;
-    updates["devices/" + uid] = null;
-    updates["userSettings/" + uid] = null;
-    updates["private/" + uid] = null;
-
-    try {
-        await db.ref().update(updates);
-    } catch (e) {
-        console.error("bulk wipe error", e);
-        errors.push("profile:" + (e.message || e));
-        // fallback: force remove user node
-        try {
-            await db.ref("users/" + uid).remove();
-        } catch (e2) {
-            errors.push("users.remove:" + (e2.message || e2));
-        }
-    }
-
-    // 6) Content owned by user (posts / videos / shorts / stories)
-    const contentRoots = ["posts", "videos", "shorts", "stories"];
-    for (const root of contentRoots) {
-        try {
-            const snap = await db.ref(root).once("value");
-            const all = snap.val() || {};
-            const batch = {};
-            let n = 0;
-            Object.keys(all).forEach((id) => {
-                const item = all[id] || {};
-                const owner =
-                    item.uid ||
-                    item.userId ||
-                    item.ownerId ||
-                    item.authorId ||
-                    item.createdBy ||
-                    "";
-                if (String(owner) === String(uid)) {
-                    batch[root + "/" + id] = null;
-                    n += 1;
-                }
-            });
-            if (n) {
-                await db.ref().update(batch);
-            }
-        } catch (e) {
-            console.warn("content wipe " + root, e);
-            errors.push(root + ":" + (e.message || e));
-        }
-    }
-
-    // 7) Remove this user from other users' following/followers lists
-    try {
-        const usersSnap = await db.ref("following").once("value");
-        const followingTree = usersSnap.val() || {};
-        const batch2 = {};
-        Object.keys(followingTree).forEach((otherUid) => {
-            if (followingTree[otherUid] && followingTree[otherUid][uid]) {
-                batch2["following/" + otherUid + "/" + uid] = null;
-            }
-        });
-        const followersSnap = await db.ref("followers").once("value");
-        const followersTree = followersSnap.val() || {};
-        Object.keys(followersTree).forEach((otherUid) => {
-            if (followersTree[otherUid] && followersTree[otherUid][uid]) {
-                batch2["followers/" + otherUid + "/" + uid] = null;
-            }
-        });
-        if (Object.keys(batch2).length) {
-            await db.ref().update(batch2);
-        }
-    } catch (e) {
-        console.warn("graph cleanup", e);
-        errors.push("graph:" + (e.message || e));
-    }
-
-    // 8) Tombstone so login can block residual auth sessions
-    try {
-        await db.ref("deletedUsers/" + uid).set({
-            deletedAt: firebase.database.ServerValue.TIMESTAMP,
-            deletedBy: currentAdmin ? currentAdmin.uid : null,
-            permanent: true
-        });
-    } catch (e) {
-        console.warn("tombstone", e);
-    }
-
-    return { ok: errors.length === 0, errors };
-}
-
-async function approveDeletion(requestId, uid) {
-    if (!requestId) return;
-    try {
-        showToast("Deleting account…");
-
-        if (uid) {
-            const result = await permanentlyDeleteUserData(uid);
-            if (!result.ok) {
-                console.warn("Partial delete:", result.errors);
-            }
-        }
-
-        await db.ref("deletionRequests/" + requestId).update({
-            status: "approved",
-            permanent: true,
-            resolvedAt: firebase.database.ServerValue.TIMESTAMP,
-            resolvedBy: currentAdmin ? currentAdmin.uid : null,
-            deletedUid: uid || null
-        });
-
-        // Drop from local cache
-        if (uid && cachedUsers) {
-            delete cachedUsers[uid];
-        }
-
-        showToast("Account permanently deleted.");
-        await loadDeletions();
-        await loadUsers();
-        await loadDashboard();
-    } catch (e) {
-        console.error(e);
-        showToast(
-            e.message || "Could not permanently delete account.",
-            "error"
-        );
-    }
-}
-
-async function rejectDeletion(requestId, uid) {
-    if (!requestId) return;
-    try {
-        await db.ref("deletionRequests/" + requestId).update({
-            status: "rejected",
-            resolvedAt: firebase.database.ServerValue.TIMESTAMP,
-            resolvedBy: currentAdmin ? currentAdmin.uid : null
-        });
-        if (uid) {
-            await db.ref("users/" + uid).update({
-                deletionRequested: false,
-                deletionStatus: "rejected"
-            });
-        }
-        showToast("Deletion request rejected.");
-        await loadDeletions();
-    } catch (e) {
-        console.error(e);
-        showToast("Could not reject request.", "error");
-    }
-}
-
-const deletionFilter = $("deletionFilter");
-if (deletionFilter) {
-    deletionFilter.addEventListener("change", renderDeletions);
-}
-
-
 /* =========================================================
    MUSIC STORE (ADMIN)
 ========================================================= */
@@ -4976,6 +4589,227 @@ if (refreshMonetizationBtn) {
 }
 
 
+
+
+/* =====================================================
+   ACCOUNT DELETION REQUESTS
+===================================================== */
+
+let cachedDeletions = {};
+
+async function loadDeletions() {
+    const container = $("deletionsContainer");
+    if (!container) return;
+
+    try {
+        if (!db) return;
+        const snap = await db.ref("deletionRequests").once("value");
+        cachedDeletions = snap.val() || {};
+        renderDeletions();
+        updateDeletionNavCount();
+    } catch (err) {
+        console.error("loadDeletions", err);
+        container.innerHTML = `
+            <div class="largeEmptyState">
+                <i class="fa-solid fa-user-slash"></i>
+                <h3>Could not load</h3>
+                <p>Check Firebase permissions for deletionRequests.</p>
+            </div>`;
+    }
+}
+
+function updateDeletionNavCount() {
+    const el = $("deletionNavCount");
+    if (!el) return;
+    let n = 0;
+    Object.values(cachedDeletions || {}).forEach((r) => {
+        if ((r?.status || "pending") === "pending") n++;
+    });
+    el.textContent = String(n);
+}
+
+function renderDeletions() {
+    const container = $("deletionsContainer");
+    if (!container) return;
+
+    const filter = $("deletionFilter")?.value || "pending";
+    let entries = Object.entries(cachedDeletions || {});
+
+    entries.sort(([, a], [, b]) => (Number(b?.createdAt) || 0) - (Number(a?.createdAt) || 0));
+
+    entries = entries.filter(([, r]) => {
+        const status = r?.status || "pending";
+        if (filter === "all") return true;
+        return status === filter;
+    });
+
+    if (!entries.length) {
+        container.innerHTML = `
+            <div class="largeEmptyState">
+                <i class="fa-solid fa-user-slash"></i>
+                <h3>No deletion requests</h3>
+                <p>No requests match this filter.</p>
+            </div>`;
+        return;
+    }
+
+    const reasonLabels = {
+        privacy: "Privacy concerns",
+        too_many_notifications: "Too many notifications",
+        not_useful: "Not useful / switching apps",
+        safety: "Safety or harassment",
+        duplicate: "Duplicate account",
+        other: "Other"
+    };
+
+    container.innerHTML = entries.map(([id, r]) => {
+        const name = escapeHTML(r.displayName || r.username || r.email || r.uid || "User");
+        const uname = escapeHTML(r.username ? "@" + r.username : (r.email || r.uid || ""));
+        const reason = reasonLabels[r.reason] || escapeHTML(r.reason || "—");
+        const details = escapeHTML(r.details || "");
+        const status = r.status || "pending";
+        const when = r.createdAt ? new Date(Number(r.createdAt)).toLocaleString() : "—";
+        const photo = r.photoURL || "";
+
+        const actions = status === "pending" ? `
+            <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+                <button class="actionBtn danger" data-del-approve="${id}">Approve & delete</button>
+                <button class="actionBtn" data-del-reject="${id}">Reject</button>
+                <button class="actionBtn" data-del-profile="${escapeHTML(r.uid || "")}">View profile</button>
+            </div>` : `
+            <div style="margin-top:10px;font-size:12px;color:rgba(255,255,255,.5);">
+                Status: <b>${escapeHTML(status)}</b>
+                ${r.resolvedAt ? " · " + new Date(Number(r.resolvedAt)).toLocaleString() : ""}
+            </div>`;
+
+        return `
+        <div class="reportCard" style="padding:14px;border:1px solid rgba(255,255,255,.08);border-radius:14px;margin-bottom:10px;background:rgba(255,255,255,.03);">
+            <div style="display:flex;gap:12px;align-items:center;">
+                <div style="width:44px;height:44px;border-radius:50%;overflow:hidden;background:#222;flex:0 0 44px;">
+                    ${photo ? `<img src="${escapeHTML(photo)}" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none'">` : `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;"><i class="fa-solid fa-user"></i></div>`}
+                </div>
+                <div style="min-width:0;flex:1;">
+                    <div style="font-weight:700;font-size:14px;">${name}</div>
+                    <div style="font-size:12px;color:rgba(255,255,255,.55);">${uname}</div>
+                </div>
+                <span style="font-size:11px;padding:4px 8px;border-radius:8px;background:${status==='pending'?'rgba(245,158,11,.15)':status==='approved'?'rgba(34,197,94,.15)':'rgba(255,255,255,.08)'};">${escapeHTML(status)}</span>
+            </div>
+            <div style="margin-top:12px;font-size:13px;">
+                <b>Reason:</b> ${reason}
+            </div>
+            ${details ? `<div style="margin-top:6px;font-size:12px;color:rgba(255,255,255,.6);">${details}</div>` : ""}
+            <div style="margin-top:8px;font-size:11px;color:rgba(255,255,255,.4);">Requested: ${when}</div>
+            ${actions}
+        </div>`;
+    }).join("");
+
+    container.querySelectorAll("[data-del-approve]").forEach((btn) => {
+        btn.addEventListener("click", () => approveDeletion(btn.getAttribute("data-del-approve")));
+    });
+    container.querySelectorAll("[data-del-reject]").forEach((btn) => {
+        btn.addEventListener("click", () => rejectDeletion(btn.getAttribute("data-del-reject")));
+    });
+    container.querySelectorAll("[data-del-profile]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+            const uid = btn.getAttribute("data-del-profile");
+            if (uid) window.open("profile.html?uid=" + encodeURIComponent(uid), "_blank");
+        });
+    });
+}
+
+async function approveDeletion(requestId) {
+    if (!requestId || !db) return;
+    if (!confirm("Permanently delete this user account and mark request approved?")) return;
+
+    const req = cachedDeletions[requestId];
+    if (!req || !req.uid) {
+        alert("Invalid request");
+        return;
+    }
+
+    try {
+        const uid = req.uid;
+        const updates = {};
+        updates["deletionRequests/" + requestId + "/status"] = "approved";
+        updates["deletionRequests/" + requestId + "/resolvedAt"] = Date.now();
+        updates["deletionRequests/" + requestId + "/resolvedBy"] =
+            (typeof currentAdmin !== "undefined" && currentAdmin?.uid) || "admin";
+
+        // Soft-delete user record (keeps audit) + wipe sensitive fields
+        updates["users/" + uid + "/deleted"] = true;
+        updates["users/" + uid + "/deletionApprovedAt"] = Date.now();
+        updates["users/" + uid + "/displayName"] = "Deleted User";
+        updates["users/" + uid + "/name"] = "Deleted User";
+        updates["users/" + uid + "/username"] = "deleted_" + String(uid).slice(0, 6);
+        updates["users/" + uid + "/bio"] = null;
+        updates["users/" + uid + "/photoURL"] = null;
+        updates["users/" + uid + "/profilePic"] = null;
+        updates["users/" + uid + "/email"] = null;
+        updates["users/" + uid + "/deletionRequested"] = false;
+
+        await db.ref().update(updates);
+
+        // Best-effort: remove auth is server-side only; client soft-deletes content mirrors
+        try {
+            const paths = ["posts", "videos", "shorts", "stories"];
+            for (const path of paths) {
+                const snap = await db.ref(path).orderByChild("uid").equalTo(uid).once("value");
+                const val = snap.val() || {};
+                const batch = {};
+                Object.keys(val).forEach((id) => {
+                    batch[path + "/" + id + "/deleted"] = true;
+                    batch[path + "/" + id + "/archived"] = true;
+                });
+                if (Object.keys(batch).length) await db.ref().update(batch);
+            }
+        } catch (e) {
+            console.warn("content soft-delete partial", e);
+        }
+
+        if (typeof showToast === "function") showToast("Account deleted");
+        await loadDeletions();
+    } catch (err) {
+        console.error(err);
+        alert("Failed to approve deletion: " + (err.message || err));
+    }
+}
+
+async function rejectDeletion(requestId) {
+    if (!requestId || !db) return;
+    if (!confirm("Reject this deletion request?")) return;
+    try {
+        const req = cachedDeletions[requestId] || {};
+        const updates = {};
+        updates["deletionRequests/" + requestId + "/status"] = "rejected";
+        updates["deletionRequests/" + requestId + "/resolvedAt"] = Date.now();
+        if (req.uid) {
+            updates["users/" + req.uid + "/deletionRequested"] = false;
+            updates["users/" + req.uid + "/deletionRequestId"] = null;
+        }
+        await db.ref().update(updates);
+        if (typeof showToast === "function") showToast("Request rejected");
+        await loadDeletions();
+    } catch (err) {
+        console.error(err);
+        alert("Failed to reject");
+    }
+}
+
+// filter change
+document.addEventListener("DOMContentLoaded", () => {
+    const f = document.getElementById("deletionFilter");
+    if (f) f.addEventListener("change", renderDeletions);
+});
+// also bind if already loaded
+(function bindDeletionFilter() {
+    const f = document.getElementById("deletionFilter");
+    if (f && !f.__bound) {
+        f.__bound = true;
+        f.addEventListener("change", renderDeletions);
+    }
+})();
+
+
 window.VieworaAdmin = {
 
     switchSection,
@@ -4999,8 +4833,6 @@ window.VieworaAdmin = {
     loadStickersAdmin,
 
     loadMonetizationAdmin,
-
-    loadDeletions,
 
     showToast,
 

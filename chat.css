@@ -3476,3 +3476,34 @@ audio {
         max-width: 120px;
     }
 }
+
+
+/* Block banner */
+.blockBanner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin: 0 12px 8px;
+    padding: 12px 14px;
+    border-radius: 14px;
+    background: rgba(255, 77, 103, 0.12);
+    border: 1px solid rgba(255, 77, 103, 0.25);
+    color: #ff8a9a;
+    font-size: 13px;
+    font-weight: 600;
+}
+.blockBanner button {
+    padding: 8px 14px;
+    border-radius: 10px;
+    background: rgba(255,255,255,0.1);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+    border: 1px solid rgba(255,255,255,0.12);
+}
+.iconButton.disabled,
+.callButton.disabled {
+    opacity: 0.35;
+    pointer-events: none;
+}

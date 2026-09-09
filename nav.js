@@ -221,10 +221,36 @@
         } catch (_) {}
     }
 
+    
+    function ensureGlobalListeners() {
+        // Load message-listener + call-listener once if page forgot to include them
+        function loadScript(src) {
+            if (document.querySelector('script[src="' + src + '"]')) return;
+            var s = document.createElement("script");
+            s.src = src;
+            s.async = true;
+            document.head.appendChild(s);
+        }
+        try {
+            if (!window.__VIEWORA_MESSAGE_LISTENER__) loadScript("message-listener.js");
+            if (!window.__VIEWORA_GLOBAL_CALL_LISTENER__) loadScript("call-listener.js");
+            if (!window.__VIEWORA_LIVE_RING__) loadScript("live-ring.js");
+            // Live ring CSS once
+            if (!document.querySelector('link[href="live.css"]') && !document.getElementById("vieworaLiveRingCss")) {
+                var l = document.createElement("link");
+                l.rel = "stylesheet";
+                l.href = "live.css";
+                l.id = "vieworaLiveRingCss";
+                document.head.appendChild(l);
+            }
+        } catch (_) {}
+    }
+
     function init() {
         const nav = buildNav();
         bindNav(nav);
         wireActivityBadge();
+        ensureGlobalListeners();
 
         // Kill any page-local nav that appears later
         const mo = new MutationObserver(() => {

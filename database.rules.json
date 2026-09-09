@@ -1,0 +1,297 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+
+    "users": {
+      "$uid": {
+        ".read": "auth != null",
+        ".write": "auth != null && (auth.uid === $uid || root.child('admins').child(auth.uid).val() === true)",
+        "followers": { ".write": "auth != null" },
+        "following": { ".write": "auth != null" },
+        "highlights": {
+          ".write": "auth != null && auth.uid === $uid"
+        },
+        "stories": {
+          ".write": "auth != null && auth.uid === $uid"
+        }
+      }
+    },
+
+    "admins": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": false
+      }
+    },
+
+    "followers": {
+      "$uid": {
+        ".read": "auth != null",
+        "$followerId": {
+          ".write": "auth != null && (auth.uid === $followerId || auth.uid === $uid || root.child('admins').child(auth.uid).val() === true)"
+        }
+      }
+    },
+
+    "following": {
+      "$uid": {
+        ".read": "auth != null",
+        "$targetId": {
+          ".write": "auth != null && auth.uid === $uid"
+        }
+      }
+    },
+
+    "followRequests": {
+      "$uid": {
+        ".read": "auth != null && (auth.uid === $uid || root.child('admins').child(auth.uid).val() === true)",
+        "$fromUid": {
+          ".write": "auth != null && (auth.uid === $fromUid || auth.uid === $uid)"
+        }
+      }
+    },
+
+    "blocks": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        "$blockedId": {
+          ".write": "auth != null && auth.uid === $uid"
+        }
+      }
+    },
+
+    "posts": {
+      ".read": "auth != null",
+      "$postId": {
+        ".write": "auth != null && (!data.exists() || data.child('uid').val() === auth.uid || data.child('userId').val() === auth.uid || root.child('admins').child(auth.uid).val() === true)",
+        "likesCount": { ".write": "auth != null" },
+        "commentsCount": { ".write": "auth != null" },
+        "views": { ".write": "auth != null" },
+        "likedBy": {
+          "$likerId": { ".write": "auth != null && auth.uid === $likerId" }
+        }
+      }
+    },
+
+    "videos": {
+      ".read": "auth != null",
+      "$videoId": {
+        ".write": "auth != null && (!data.exists() || data.child('uid').val() === auth.uid || data.child('userId').val() === auth.uid || root.child('admins').child(auth.uid).val() === true)",
+        "likesCount": { ".write": "auth != null" },
+        "commentsCount": { ".write": "auth != null" },
+        "views": { ".write": "auth != null" },
+        "likedBy": {
+          "$likerId": { ".write": "auth != null && auth.uid === $likerId" }
+        }
+      }
+    },
+
+    "shorts": {
+      ".read": "auth != null",
+      "$shortId": {
+        ".write": "auth != null && (!data.exists() || data.child('uid').val() === auth.uid || data.child('userId').val() === auth.uid || root.child('admins').child(auth.uid).val() === true)",
+        "likesCount": { ".write": "auth != null" },
+        "commentsCount": { ".write": "auth != null" },
+        "views": { ".write": "auth != null" },
+        "likedBy": {
+          "$likerId": { ".write": "auth != null && auth.uid === $likerId" }
+        },
+        "comments": {
+          "$commentId": {
+            ".write": "auth != null && (!data.exists() || data.child('uid').val() === auth.uid)"
+          }
+        }
+      }
+    },
+
+    "stories": {
+      ".read": "auth != null",
+      "$storyId": {
+        ".write": "auth != null && (!data.exists() || data.child('uid').val() === auth.uid || data.child('userId').val() === auth.uid || root.child('admins').child(auth.uid).val() === true)",
+        "viewers": {
+          "$viewerId": { ".write": "auth != null && auth.uid === $viewerId" }
+        },
+        "reactions": {
+          "$reactorId": { ".write": "auth != null && auth.uid === $reactorId" }
+        },
+        "replies": {
+          "$replyId": {
+            ".write": "auth != null && (!data.exists() || data.child('uid').val() === auth.uid)"
+          }
+        },
+        "mentions": {
+          "$mentionUid": { ".write": "auth != null" }
+        }
+      }
+    },
+
+    "comments": {
+      "$contentId": {
+        ".read": "auth != null",
+        "$commentId": {
+          ".write": "auth != null && (!data.exists() || data.child('uid').val() === auth.uid || root.child('admins').child(auth.uid).val() === true)"
+        }
+      }
+    },
+
+    "postLikes": {
+      "$postId": {
+        "$uid": {
+          ".read": "auth != null",
+          ".write": "auth != null && auth.uid === $uid"
+        }
+      }
+    },
+
+    "shortLikes": {
+      "$shortId": {
+        "$uid": {
+          ".read": "auth != null",
+          ".write": "auth != null && auth.uid === $uid"
+        }
+      }
+    },
+
+    "videoLikes": {
+      "$videoId": {
+        "$uid": {
+          ".read": "auth != null",
+          ".write": "auth != null && auth.uid === $uid"
+        }
+      }
+    },
+
+    "notifications": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        "$nid": {
+          ".write": "auth != null"
+        }
+      }
+    },
+
+    "activity": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        "$aid": {
+          ".write": "auth != null"
+        }
+      }
+    },
+
+    "userChats": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        "$chatId": {
+          ".write": "auth != null && (auth.uid === $uid || root.child('chats').child($chatId).child('members').child(auth.uid).val() === true || root.child('chats').child($chatId).child('participants').child(auth.uid).exists())"
+        }
+      }
+    },
+
+    "chats": {
+      "$chatId": {
+        ".read": "auth != null",
+        ".write": "auth != null",
+        "messages": {
+          "$mid": {
+            ".write": "auth != null && (!data.exists() || data.child('senderId').val() === auth.uid || data.child('uid').val() === auth.uid)"
+          }
+        }
+      }
+    },
+
+    "messages": {
+      "$chatId": {
+        ".read": "auth != null",
+        "$mid": {
+          ".write": "auth != null && (!data.exists() || data.child('senderId').val() === auth.uid || data.child('uid').val() === auth.uid)"
+        }
+      }
+    },
+
+    "calls": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null"
+      }
+    },
+
+    "incomingCalls": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null"
+      }
+    },
+
+    "presence": {
+      "$uid": {
+        ".read": "auth != null",
+        ".write": "auth != null && auth.uid === $uid"
+      }
+    },
+
+    "devices": {
+      "$uid": {
+        ".read": "auth != null && (auth.uid === $uid || root.child('admins').child(auth.uid).val() === true)",
+        ".write": "auth != null && auth.uid === $uid"
+      }
+    },
+
+    "subscription": {
+      "$uid": {
+        ".read": "auth != null && (auth.uid === $uid || root.child('admins').child(auth.uid).val() === true)",
+        ".write": "auth != null && (auth.uid === $uid || root.child('admins').child(auth.uid).val() === true)"
+      }
+    },
+
+    "monetization": {
+      "$uid": {
+        ".read": "auth != null && (auth.uid === $uid || root.child('admins').child(auth.uid).val() === true)",
+        ".write": "auth != null && (auth.uid === $uid || root.child('admins').child(auth.uid).val() === true)"
+      }
+    },
+
+    "reports": {
+      ".read": "auth != null && root.child('admins').child(auth.uid).val() === true",
+      "$rid": {
+        ".write": "auth != null && (!data.exists() || root.child('admins').child(auth.uid).val() === true)"
+      }
+    },
+
+    "deletionRequests": {
+      ".read": "auth != null && root.child('admins').child(auth.uid).val() === true",
+      "$rid": {
+        ".write": "auth != null && (!data.exists() || data.child('uid').val() === auth.uid || root.child('admins').child(auth.uid).val() === true)"
+      }
+    },
+
+    "deletedUsers": {
+      ".read": "auth != null && root.child('admins').child(auth.uid).val() === true",
+      "$uid": {
+        ".write": "auth != null && root.child('admins').child(auth.uid).val() === true"
+      }
+    },
+
+    "musicLibrary": {
+      ".read": "auth != null",
+      "$id": {
+        ".write": "auth != null && root.child('admins').child(auth.uid).val() === true"
+      }
+    },
+
+    "stickerPacks": {
+      ".read": "auth != null",
+      "$id": {
+        ".write": "auth != null && root.child('admins').child(auth.uid).val() === true"
+      }
+    },
+
+    "rateLimits": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && auth.uid === $uid"
+      }
+    }
+  }
+}

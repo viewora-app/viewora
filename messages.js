@@ -1060,6 +1060,26 @@ function messagesCreateCard(chat) {
 
             }
 
+            // Clear unread so home badge updates
+            try {
+                const me =
+                    (typeof getCurrentUID === "function" && getCurrentUID()) ||
+                    (window.auth && auth.currentUser && auth.currentUser.uid) ||
+                    (firebase.auth && firebase.auth().currentUser && firebase.auth().currentUser.uid) ||
+                    "";
+                const cid = chat.id || chat.chatId || "";
+                if (me && cid && typeof clearChatUnread === "function") {
+                    clearChatUnread(me, cid);
+                } else if (me && cid && typeof db !== "undefined") {
+                    db.ref("userChats/" + me + "/" + cid).update({
+                        unread: 0,
+                        unreadCount: 0,
+                        unreadMessages: 0,
+                        read: true,
+                        seen: true
+                    });
+                }
+            } catch (_) {}
             location.href =
                 "chat.html?uid=" +
                 encodeURIComponent(

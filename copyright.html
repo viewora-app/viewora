@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#050507">
-<title>Blocked users • Viewora</title>
+<title>Copyright • Viewora</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
@@ -110,38 +110,54 @@ label{font-size:12px;font-weight:600;color:var(--muted);display:block;margin-top
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 </style>
 
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
-<script src="firebase.js"></script>
-<style>.hidden{display:none!important}</style>
-
 </head>
 <body>
 <header class="topbar">
   <button class="back" type="button" id="backBtn" aria-label="Back"><i class="fa-solid fa-arrow-left"></i></button>
   <div class="brand">
     <div class="brand-logo">V</div>
-    <div><h1>Viewora</h1><span>Privacy</span></div>
+    <div><h1>Viewora</h1><span>Intellectual property</span></div>
   </div>
 </header>
 <main class="wrap">
   <div class="hero">
-    <div class="badge"><i class="fa-solid fa-ban"></i> Blocking</div>
-    <h2>Blocked users</h2>
+    <div class="badge"><i class="fa-solid fa-copyright"></i> IP</div>
+    <h2>Copyright</h2>
   </div>
   
-<p style="font-size:14px;color:var(--muted);margin-bottom:14px">People you block can’t follow you, message you, or easily interact with your content (where enforced by the app).</p>
-<div id="blockedAuth" class="card empty">Checking account…</div>
-<div id="blockedList" class="hidden"></div>
-<div id="blockedEmpty" class="card empty hidden">
-  <i class="fa-solid fa-ban" style="font-size:28px;opacity:.5;display:block;margin-bottom:10px"></i>
-  You haven’t blocked anyone yet.
+<div class="section">
+  <h3>Our policy</h3>
+  <p>Viewora respects intellectual property. We respond to valid notices of alleged copyright infringement and may remove content or disable accounts in appropriate cases.</p>
 </div>
+<div class="section">
+  <h3>If your copyright was infringed</h3>
+  <p>Send a notice including:</p>
+  <ul>
+    <li>Your contact information</li>
+    <li>Description of the copyrighted work</li>
+    <li>URL or location of the infringing material on Viewora</li>
+    <li>A statement that you have a good-faith belief the use is not authorized</li>
+    <li>A statement under penalty of perjury that the information is accurate and you are the owner or authorized agent</li>
+    <li>Your physical or electronic signature</li>
+  </ul>
+  <p>Email: <a href="mailto:copyright@viewora.app">copyright@viewora.app</a> or use <a href="contact.html">Contact</a>.</p>
+</div>
+<div class="section">
+  <h3>Counter-notice</h3>
+  <p>If your content was removed and you believe it was a mistake, you may submit a counter-notice with your contact details, identification of the removed material, and a statement that you have a good-faith belief the removal was an error.</p>
+</div>
+<div class="section">
+  <h3>Repeat infringement</h3>
+  <p>Accounts that repeatedly infringe may be suspended or terminated.</p>
+</div>
+<div class="warn">This page is informational and not legal advice.</div>
 
   <p class="legal-note">© 2026 Viewora. Have legal counsel review policy pages before public launch.</p>
 </main>
 <div class="toast" id="toast"></div>
+
+  <script src="call-listener.js"></script>
+<script src="message-listener.js"></script>
 <script>
 document.getElementById("backBtn").addEventListener("click",function(){
   if(history.length>1) history.back(); else location.href="index.html";
@@ -152,70 +168,6 @@ function toast(m){
   t.textContent=m; t.classList.add("show");
   setTimeout(function(){t.classList.remove("show")},2600);
 }
-
-(function(){
-  var authEl=document.getElementById("blockedAuth");
-  var listEl=document.getElementById("blockedList");
-  var emptyEl=document.getElementById("blockedEmpty");
-  function esc(s){return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
-  async function load(uid, db){
-    authEl.classList.add("hidden");
-    var snap=await db.ref("users/"+uid+"/blocked").once("value");
-    var blocked=snap.val()||{};
-    // also support top-level blocked/{uid}/{other}
-    try{
-      var snap2=await db.ref("blocked/"+uid).once("value");
-      var v2=snap2.val()||{};
-      Object.keys(v2).forEach(function(k){ if(blocked[k]==null) blocked[k]=v2[k]; });
-    }catch(_){}
-    var ids=Object.keys(blocked).filter(function(id){
-      var v=blocked[id]; return v===true || (v&&v.blocked!==false);
-    });
-    if(!ids.length){ emptyEl.classList.remove("hidden"); return; }
-    listEl.classList.remove("hidden");
-    listEl.innerHTML="";
-    for(var i=0;i<ids.length;i++){
-      var other=ids[i];
-      var u={};
-      try{ var us=await db.ref("users/"+other).once("value"); u=us.val()||{}; }catch(_){}
-      var name=u.displayName||u.name||u.username||"User";
-      var un=u.username||u.userName||"";
-      var photo=u.photoURL||u.profilePic||u.avatar||"";
-      var row=document.createElement("div");
-      row.className="list-item";
-      row.innerHTML=
-        (photo?'<img src="'+esc(photo)+'" alt="" onerror="this.style.display=\\'none\\'">':'<div class="avatar-ph"></div>')+
-        '<div class="info"><div class="name">'+esc(name)+'</div><div class="sub">'+(un?"@"+esc(un):esc(other.slice(0,8)))+'</div></div>'+
-        '<button class="btn" type="button" data-unblock="'+esc(other)+'">Unblock</button>';
-      listEl.appendChild(row);
-    }
-    listEl.querySelectorAll("[data-unblock]").forEach(function(btn){
-      btn.addEventListener("click", async function(){
-        var id=btn.getAttribute("data-unblock");
-        if(!id) return;
-        btn.disabled=true;
-        try{
-          var updates={};
-          updates["users/"+uid+"/blocked/"+id]=null;
-          updates["blocked/"+uid+"/"+id]=null;
-          await db.ref().update(updates);
-          toast("Unblocked");
-          btn.closest(".list-item").remove();
-          if(!listEl.querySelector(".list-item")){ listEl.classList.add("hidden"); emptyEl.classList.remove("hidden"); }
-        }catch(e){ toast("Failed"); btn.disabled=false; }
-      });
-    });
-  }
-  function boot(){
-    if(typeof firebase==="undefined"){ authEl.textContent="Firebase unavailable"; return; }
-    var db=firebase.database();
-    firebase.auth().onAuthStateChanged(function(user){
-      if(!user){ location.href="index.html"; return; }
-      load(user.uid, db).catch(function(e){ console.error(e); authEl.textContent="Could not load blocked list"; });
-    });
-  }
-  boot();
-})();
 
 </script>
 </body>

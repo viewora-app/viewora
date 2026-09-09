@@ -1419,9 +1419,27 @@
             user.avatar ||
             "assets/default-avatar.png";
 
-        const verified =
-            user.verified === true ||
-            user.isVerified === true;
+        let verified = false;
+        let badgeHtml = "";
+        if (window.VieworaBadges && typeof VieworaBadges.resolve === "function") {
+            const b = VieworaBadges.resolve(user);
+            verified = b.level !== "none";
+            badgeHtml = b.html || "";
+        } else {
+            verified =
+                user.verified === true ||
+                user.isVerified === true ||
+                user.blueTick === true ||
+                user.redTick === true;
+            if (user.redTick || user.vip) {
+                badgeHtml = '<i class="fa-solid fa-certificate vieworaTick redTick" title="VIP"></i>';
+            } else if (verified) {
+                badgeHtml = '<i class="fa-solid fa-circle-check vieworaTick blueTick verifiedTick"></i>';
+            } else if (user.whiteTick) {
+                verified = true;
+                badgeHtml = '<i class="fa-solid fa-circle-check vieworaTick whiteTick"></i>';
+            }
+        }
 
         const avatar =
             article.querySelector(
@@ -1480,8 +1498,11 @@
         }
 
         if (verifiedEl) {
-            verifiedEl.hidden =
-                !verified;
+            verifiedEl.hidden = !verified;
+            if (verified && badgeHtml) {
+                verifiedEl.innerHTML = badgeHtml;
+                verifiedEl.removeAttribute("hidden");
+            }
         }
 
     }

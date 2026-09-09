@@ -511,7 +511,11 @@
 
         toastTimer: null,
 
-        lastMsgCount: 0
+        lastMsgCount: 0,
+
+        blockedByMe: false,
+
+        blockedMe: false
 
     };
 
@@ -2598,13 +2602,26 @@
                     "/" +
                     state.chatId
                 )
-                .update({ unread: 0 });
+                .update({
+                    unread: 0,
+                    unreadCount: 0,
+                    unreadMessages: 0,
+                    unread_count: 0,
+                    read: true,
+                    seen: true,
+                    isRead: true
+                });
         } catch (e) {
             console.warn("Clear unread failed:", e);
         }
     }
 
     async function sendText() {
+        if (state.blockedByMe || state.blockedMe) {
+            showToast("You cannot message this user.", "error");
+            return;
+        }
+
 
         if (!state.currentUser) {
             return;
@@ -4916,6 +4933,11 @@
             deleteChat
         );
 
+        document.getElementById("menuBlockBtn")?.addEventListener(
+            "click",
+            () => toggleBlockUser()
+        );
+
 
         attachBtn?.addEventListener(
             "click",
@@ -5337,31 +5359,16 @@
         voiceCallBtn?.addEventListener(
             "click",
             () => {
-
-                if (
-                    typeof window.VieworaStartVoiceCall ===
-                    "function"
-                ) {
-
-                    window.VieworaStartVoiceCall(
-                        targetUid
-                    );
-
-                } else if (
-                    typeof window.startVoiceCall ===
-                    "function"
-                ) {
-
-                    window.startVoiceCall(
-                        targetUid
-                    );
-
+                if (state.blockedByMe || state.blockedMe) {
+                    showToast("Cannot call blocked user.", "error");
+                    return;
+                }
+                if (typeof window.VieworaStartVoiceCall === "function") {
+                    window.VieworaStartVoiceCall(targetUid);
+                } else if (typeof window.startVoiceCall === "function") {
+                    window.startVoiceCall(targetUid);
                 } else {
-
-                    showToast(
-                        "Voice call module is not ready.",
-                        "warning"
-                    );
+                    showToast("Voice call module is not ready.", "warning");
                 }
             }
         );
@@ -5370,31 +5377,16 @@
         videoCallBtn?.addEventListener(
             "click",
             () => {
-
-                if (
-                    typeof window.VieworaStartVideoCall ===
-                    "function"
-                ) {
-
-                    window.VieworaStartVideoCall(
-                        targetUid
-                    );
-
-                } else if (
-                    typeof window.startVideoCall ===
-                    "function"
-                ) {
-
-                    window.startVideoCall(
-                        targetUid
-                    );
-
+                if (state.blockedByMe || state.blockedMe) {
+                    showToast("Cannot call blocked user.", "error");
+                    return;
+                }
+                if (typeof window.VieworaStartVideoCall === "function") {
+                    window.VieworaStartVideoCall(targetUid);
+                } else if (typeof window.startVideoCall === "function") {
+                    window.startVideoCall(targetUid);
                 } else {
-
-                    showToast(
-                        "Video call module is not ready.",
-                        "warning"
-                    );
+                    showToast("Video call module is not ready.", "warning");
                 }
             }
         );
@@ -5464,6 +5456,126 @@
     /* ======================================================
        LOAD MUTE STATE
     ====================================================== */
+
+    
+    async function loadBlockState() {
+        if (!state.currentUser || !targetUid) return;
+        try {
+            const me = state.currentUser.uid;
+            const [a, b] = await Promise.all([
+                db.ref("blocks/" + me + "/" + targetUid).once("value"),
+                db.ref("blocks/" + targetUid + "/" + me).once("value")
+            ]);
+            state.blockedByMe = a.exists() && a.val() !== null && a.val() !== false;
+            state.blockedMe = b.exists() && b.val() !== null && b.val() !== false;
+            applyBlockUI();
+        } catch (e) {
+            console.warn("block state", e);
+        }
+    }
+
+    function applyBlockUI() {
+        const blocked = state.blockedByMe || state.blockedMe;
+        const composer = document.querySelector(".composer");
+        const bannerId = "blockBanner";
+        let banner = document.getElementById(bannerId);
+
+        if (blocked) {
+            if (!banner && chatContainer) {
+                banner = document.createElement("div");
+                banner.id = bannerId;
+                banner.className = "blockBanner";
+                banner.innerHTML =
+                    state.blockedByMe
+                        ? '<span>You blocked this user.</span><button type="button" id="unblockChatBtn">Unblock</button>'
+                        : '<span>You cannot message this user.</span>';
+                const parent = document.querySelector(".app") || document.body;
+                const composerEl = document.querySelector(".composer");
+                if (composerEl && composerEl.parentNode) {
+                    composerEl.parentNode.insertBefore(banner, composerEl);
+                } else {
+                    parent.appendChild(banner);
+                }
+                document.getElementById("unblockChatBtn")?.addEventListener("click", () => {
+                    toggleBlockUser(false);
+                });
+            }
+            if (composer) {
+                composer.style.opacity = "0.45";
+                composer.style.pointerEvents = "none";
+            }
+            voiceCallBtn && (voiceCallBtn.disabled = true);
+            videoCallBtn && (videoCallBtn.disabled = true);
+            voiceCallBtn?.classList.add("disabled");
+            videoCallBtn?.classList.add("disabled");
+        } else {
+            banner?.remove();
+            if (composer) {
+                composer.style.opacity = "";
+                composer.style.pointerEvents = "";
+            }
+            voiceCallBtn && (voiceCallBtn.disabled = false);
+            videoCallBtn && (videoCallBtn.disabled = false);
+            voiceCallBtn?.classList.remove("disabled");
+            videoCallBtn?.classList.remove("disabled");
+        }
+
+        // Menu label
+        const blockMenu = document.getElementById("menuBlockBtn");
+        if (blockMenu) {
+            const span = blockMenu.querySelector("span");
+            if (span) span.textContent = state.blockedByMe ? "Unblock user" : "Block user";
+            const icon = blockMenu.querySelector("i");
+            if (icon) icon.className = state.blockedByMe ? "fa-solid fa-user-check" : "fa-solid fa-ban";
+        }
+    }
+
+    async function toggleBlockUser(forceBlock) {
+        if (!state.currentUser || !targetUid) return;
+        const me = state.currentUser.uid;
+        const shouldBlock =
+            typeof forceBlock === "boolean" ? forceBlock : !state.blockedByMe;
+
+        if (shouldBlock) {
+            const ok = window.confirm(
+                "Block " + (state.otherUser.name || "this user") + "? They won't be able to message or call you."
+            );
+            if (!ok) return;
+        }
+
+        try {
+            if (shouldBlock) {
+                await db.ref("blocks/" + me + "/" + targetUid).set({
+                    blockedAt: serverTimestamp(),
+                    userId: targetUid,
+                    name: state.otherUser.name || "User"
+                });
+                // mark inbox
+                try {
+                    await db.ref(
+                        "userChats/" + me + "/" + state.chatId
+                    ).update({ blocked: true });
+                } catch (_) {}
+                state.blockedByMe = true;
+                showToast("User blocked", "success");
+            } else {
+                await db.ref("blocks/" + me + "/" + targetUid).remove();
+                try {
+                    await db.ref(
+                        "userChats/" + me + "/" + state.chatId
+                    ).update({ blocked: false });
+                } catch (_) {}
+                state.blockedByMe = false;
+                showToast("User unblocked", "success");
+            }
+            applyBlockUI();
+            closeMenus();
+        } catch (e) {
+            console.error(e);
+            showToast("Could not update block", "error");
+        }
+    }
+
 
     async function loadMuteState() {
 
@@ -5593,6 +5705,8 @@
             await ensureChat();
 
             await loadMuteState();
+
+            await loadBlockState();
 
             setOwnPresence();
 

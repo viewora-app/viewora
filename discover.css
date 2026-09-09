@@ -1,0 +1,1313 @@
+/* =========================================================
+   VIEWORA — DISCOVER / PEOPLE
+   Premium Professional UI
+   Mobile First • Responsive • Clean
+========================================================= */
+
+:root {
+    --bg: #070912;
+    --bg-soft: #0b0e1b;
+    --card: #101423;
+    --card-2: #12172a;
+
+    --border: rgba(255,255,255,.08);
+    --border-light: rgba(255,255,255,.13);
+
+    --text: #ffffff;
+    --muted: #9298aa;
+    --muted-2: #6f7588;
+
+    --primary: #7564ff;
+    --primary-2: #8b5cf6;
+    --cyan: #19bfff;
+
+    --success: #24e59a;
+    --danger: #ff5c7a;
+
+    --radius-lg: 22px;
+    --radius-md: 16px;
+    --radius-sm: 12px;
+
+    --shadow:
+        0 12px 35px rgba(0,0,0,.35);
+
+    --bottom-nav-height: 78px;
+}
+
+/* =========================================================
+   RESET
+========================================================= */
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    -webkit-tap-highlight-color: transparent;
+}
+
+html {
+    background: var(--bg);
+    scroll-behavior: smooth;
+}
+
+body {
+    min-height: 100vh;
+    background:
+        radial-gradient(
+            circle at 50% 0%,
+            rgba(99,72,255,.18),
+            transparent 38%
+        ),
+        linear-gradient(
+            180deg,
+            #090b18 0%,
+            #070912 100%
+        );
+
+    color: var(--text);
+
+    font-family:
+        Inter,
+        system-ui,
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        sans-serif;
+
+    overflow-x: hidden;
+}
+
+/* =========================================================
+   APP CONTAINER
+========================================================= */
+
+#app,
+.app,
+.discover-page,
+.page {
+    width: 100%;
+    max-width: 760px;
+    min-height: 100vh;
+    margin: 0 auto;
+
+    padding-bottom:
+        calc(var(--bottom-nav-height) + 28px);
+}
+
+/* =========================================================
+   DISCOVER HEADER
+========================================================= */
+
+.discover-header,
+.page-header,
+.discover-topbar {
+
+    position: sticky;
+    top: 0;
+    z-index: 100;
+
+    height: 72px;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    padding: 0 14px;
+
+    background:
+        linear-gradient(
+            180deg,
+            rgba(9,11,25,.97),
+            rgba(9,11,25,.90)
+        );
+
+    border-bottom: 1px solid var(--border);
+
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+}
+
+/* Header center */
+
+.discover-title,
+.page-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    min-width: 0;
+}
+
+.discover-title-icon,
+.header-icon {
+
+    width: 48px;
+    height: 48px;
+
+    flex: 0 0 48px;
+
+    display: grid;
+    place-items: center;
+
+    border-radius: 15px;
+
+    background:
+        linear-gradient(
+            135deg,
+            #7767ff,
+            #5a49ed
+        );
+
+    box-shadow:
+        0 8px 25px rgba(103,82,255,.35);
+
+    color: white;
+
+    font-size: 24px;
+}
+
+.discover-title h1,
+.page-title h1 {
+
+    font-size: 23px;
+    line-height: 1.1;
+    font-weight: 800;
+
+    letter-spacing: -.4px;
+}
+
+.discover-title span,
+.page-title span {
+
+    display: block;
+
+    margin-top: 3px;
+
+    color: var(--muted);
+
+    font-size: 13px;
+    font-weight: 500;
+}
+
+/* Header buttons */
+
+.header-btn,
+.back-btn,
+.refresh-btn {
+
+    width: 46px;
+    height: 46px;
+
+    flex: 0 0 46px;
+
+    display: grid;
+    place-items: center;
+
+    border: 1px solid var(--border-light);
+
+    border-radius: 15px;
+
+    background:
+        rgba(255,255,255,.045);
+
+    color: white;
+
+    font-size: 23px;
+
+    cursor: pointer;
+
+    transition:
+        transform .2s ease,
+        background .2s ease;
+}
+
+.header-btn:active,
+.back-btn:active,
+.refresh-btn:active {
+    transform: scale(.92);
+}
+
+.header-btn:hover,
+.back-btn:hover,
+.refresh-btn:hover {
+    background: rgba(255,255,255,.09);
+}
+
+/* =========================================================
+   STATS
+========================================================= */
+
+.discover-stats,
+.stats-grid {
+
+    display: grid;
+
+    grid-template-columns:
+        repeat(3, minmax(0,1fr));
+
+    gap: 10px;
+
+    padding: 16px 14px 8px;
+}
+
+.stat-card {
+
+    min-width: 0;
+
+    min-height: 82px;
+
+    display: flex;
+    align-items: center;
+
+    gap: 10px;
+
+    padding: 13px;
+
+    border: 1px solid var(--border);
+
+    border-radius: 18px;
+
+    background:
+        linear-gradient(
+            145deg,
+            rgba(20,24,44,.96),
+            rgba(12,15,28,.96)
+        );
+
+    box-shadow:
+        0 10px 25px rgba(0,0,0,.18);
+}
+
+.stat-icon {
+
+    width: 40px;
+    height: 40px;
+
+    flex: 0 0 40px;
+
+    display: grid;
+    place-items: center;
+
+    border-radius: 13px;
+
+    background:
+        rgba(116,97,255,.14);
+
+    color: #a99cff;
+
+    font-size: 20px;
+}
+
+.stat-card strong {
+
+    display: block;
+
+    font-size: 17px;
+    line-height: 1.1;
+
+    font-weight: 800;
+}
+
+.stat-card span {
+
+    display: block;
+
+    margin-top: 3px;
+
+    color: var(--muted);
+
+    font-size: 11px;
+    font-weight: 500;
+}
+
+/* =========================================================
+   SECTION
+========================================================= */
+
+.discover-section {
+    padding: 24px 14px 0;
+}
+
+.section-heading {
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 12px;
+
+    margin-bottom: 15px;
+}
+
+.section-heading-left {
+
+    display: flex;
+    align-items: center;
+
+    gap: 12px;
+
+    min-width: 0;
+}
+
+.section-icon {
+
+    width: 42px;
+    height: 42px;
+
+    flex: 0 0 42px;
+
+    display: grid;
+    place-items: center;
+
+    border-radius: 13px;
+
+    background:
+        linear-gradient(
+            135deg,
+            rgba(120,100,255,.22),
+            rgba(85,68,210,.12)
+        );
+
+    color: #b5aaff;
+
+    font-size: 20px;
+
+    border: 1px solid rgba(128,110,255,.12);
+}
+
+.section-heading h2 {
+
+    font-size: 22px;
+    line-height: 1.1;
+
+    font-weight: 800;
+
+    letter-spacing: -.4px;
+}
+
+.section-heading p {
+
+    margin-top: 3px;
+
+    color: var(--muted);
+
+    font-size: 13px;
+}
+
+.see-all {
+
+    color: #a99cff;
+
+    font-size: 13px;
+
+    font-weight: 700;
+
+    white-space: nowrap;
+
+    text-decoration: none;
+}
+
+/* =========================================================
+   SUGGESTED USERS GRID
+========================================================= */
+
+.suggested-users,
+.suggestions-grid,
+.users-grid {
+
+    display: grid;
+
+    grid-template-columns:
+        repeat(2, minmax(0,1fr));
+
+    gap: 12px;
+}
+
+/* =========================================================
+   USER CARD
+========================================================= */
+
+.user-card,
+.suggested-user-card {
+
+    position: relative;
+
+    min-width: 0;
+
+    overflow: hidden;
+
+    border-radius: var(--radius-lg);
+
+    border: 1px solid var(--border);
+
+    background:
+        linear-gradient(
+            155deg,
+            rgba(18,23,40,.98),
+            rgba(10,13,25,.98)
+        );
+
+    box-shadow:
+        var(--shadow);
+
+    transition:
+        transform .2s ease,
+        border-color .2s ease;
+}
+
+.user-card:active,
+.suggested-user-card:active {
+    transform: scale(.985);
+}
+
+.user-card:hover,
+.suggested-user-card:hover {
+    border-color:
+        rgba(122,105,255,.30);
+}
+
+/* =========================================================
+   USER IMAGE
+========================================================= */
+
+.user-card-image,
+.user-avatar-wrap,
+.suggested-avatar {
+
+    position: relative;
+
+    width: 100%;
+
+    aspect-ratio: 1 / 1;
+
+    overflow: hidden;
+
+    background:
+        linear-gradient(
+            135deg,
+            #171b2e,
+            #0c1020
+        );
+}
+
+.user-card-image img,
+.user-avatar-wrap img,
+.suggested-avatar img {
+
+    width: 100%;
+    height: 100%;
+
+    display: block;
+
+    object-fit: cover;
+
+    object-position: center;
+}
+
+/* No image */
+
+.user-card-image img[src=""],
+.user-avatar-wrap img[src=""],
+.suggested-avatar img[src=""] {
+    display: none;
+}
+
+/* =========================================================
+   DISMISS / CROSS BUTTON
+========================================================= */
+
+.dismiss-user,
+.remove-user,
+.user-dismiss,
+.suggestion-close {
+
+    position: absolute;
+
+    top: 10px;
+    right: 10px;
+
+    z-index: 5;
+
+    width: 32px;
+    height: 32px;
+
+    display: grid;
+    place-items: center;
+
+    border: 1px solid rgba(255,255,255,.18);
+
+    border-radius: 50%;
+
+    background:
+        rgba(5,7,15,.72);
+
+    color: white;
+
+    font-size: 17px;
+    line-height: 1;
+
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+
+    cursor: pointer;
+
+    transition:
+        transform .2s ease,
+        background .2s ease;
+}
+
+.dismiss-user:active,
+.remove-user:active,
+.user-dismiss:active,
+.suggestion-close:active {
+
+    transform: scale(.88);
+
+    background:
+        rgba(255,80,110,.25);
+}
+
+/* =========================================================
+   USER CONTENT
+========================================================= */
+
+.user-card-content,
+.user-info,
+.suggested-user-info {
+
+    min-width: 0;
+
+    padding: 13px 13px 14px;
+}
+
+.user-name,
+.user-card h3,
+.suggested-user-info h3 {
+
+    display: block;
+
+    overflow: hidden;
+
+    color: white;
+
+    font-size: 16px;
+    line-height: 1.2;
+
+    font-weight: 750;
+
+    white-space: nowrap;
+
+    text-overflow: ellipsis;
+}
+
+.username,
+.user-handle,
+.suggested-user-info .username {
+
+    display: block;
+
+    margin-top: 4px;
+
+    overflow: hidden;
+
+    color: var(--muted);
+
+    font-size: 12px;
+    line-height: 1.2;
+
+    white-space: nowrap;
+
+    text-overflow: ellipsis;
+}
+
+.user-bio {
+
+    display: -webkit-box;
+
+    margin-top: 8px;
+
+    overflow: hidden;
+
+    color: #aeb3c3;
+
+    font-size: 12px;
+    line-height: 1.45;
+
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+
+/* =========================================================
+   FOLLOW BUTTON
+========================================================= */
+
+.follow-btn,
+.follow-button {
+
+    width: 100%;
+
+    min-height: 40px;
+
+    margin-top: 12px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 0 15px;
+
+    border: 0;
+
+    border-radius: 12px;
+
+    background:
+        linear-gradient(
+            135deg,
+            var(--primary),
+            var(--primary-2)
+        );
+
+    color: white;
+
+    font-family: inherit;
+
+    font-size: 13px;
+
+    font-weight: 750;
+
+    cursor: pointer;
+
+    box-shadow:
+        0 8px 20px rgba(107,84,255,.22);
+
+    transition:
+        transform .2s ease,
+        filter .2s ease;
+}
+
+.follow-btn:hover,
+.follow-button:hover {
+    filter: brightness(1.08);
+}
+
+.follow-btn:active,
+.follow-button:active {
+    transform: scale(.96);
+}
+
+/* Following state */
+
+.follow-btn.following,
+.follow-button.following,
+.follow-btn.is-following {
+
+    background:
+        rgba(255,255,255,.07);
+
+    border: 1px solid var(--border-light);
+
+    color: #d7d9e3;
+
+    box-shadow: none;
+}
+
+/* =========================================================
+   ONLINE DOT
+========================================================= */
+
+.online-dot {
+
+    position: absolute;
+
+    right: 10px;
+    bottom: 10px;
+
+    width: 12px;
+    height: 12px;
+
+    border-radius: 50%;
+
+    background: var(--success);
+
+    border: 3px solid #101423;
+
+    box-shadow:
+        0 0 12px rgba(36,229,154,.55);
+}
+
+/* =========================================================
+   ALL USERS
+========================================================= */
+
+.all-users-section {
+    padding-top: 28px;
+}
+
+.user-filters {
+
+    display: flex;
+
+    gap: 8px;
+
+    margin-bottom: 14px;
+
+    overflow-x: auto;
+
+    scrollbar-width: none;
+}
+
+.user-filters::-webkit-scrollbar {
+    display: none;
+}
+
+.filter-btn {
+
+    min-height: 40px;
+
+    flex: 0 0 auto;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    gap: 7px;
+
+    padding: 0 16px;
+
+    border: 1px solid var(--border);
+
+    border-radius: 999px;
+
+    background:
+        rgba(255,255,255,.045);
+
+    color: #a9afc0;
+
+    font-family: inherit;
+
+    font-size: 13px;
+    font-weight: 700;
+
+    cursor: pointer;
+
+    transition: .2s ease;
+}
+
+.filter-btn.active {
+
+    border-color:
+        rgba(122,105,255,.45);
+
+    background:
+        linear-gradient(
+            135deg,
+            rgba(116,99,255,.28),
+            rgba(85,72,210,.18)
+        );
+
+    color: white;
+
+    box-shadow:
+        0 6px 18px rgba(89,73,255,.16);
+}
+
+/* =========================================================
+   ALL USERS CARD
+========================================================= */
+
+.all-users-list {
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 10px;
+}
+
+.all-user-card,
+.user-list-card {
+
+    position: relative;
+
+    min-height: 92px;
+
+    display: flex;
+    align-items: center;
+
+    gap: 13px;
+
+    padding: 12px;
+
+    border: 1px solid var(--border);
+
+    border-radius: 18px;
+
+    background:
+        linear-gradient(
+            145deg,
+            rgba(18,23,40,.97),
+            rgba(10,13,25,.97)
+        );
+
+    box-shadow:
+        0 8px 25px rgba(0,0,0,.18);
+}
+
+/* Avatar */
+
+.all-user-card .avatar,
+.user-list-card .avatar {
+
+    position: relative;
+
+    width: 68px;
+    height: 68px;
+
+    flex: 0 0 68px;
+
+    overflow: hidden;
+
+    border-radius: 17px;
+
+    background:
+        #171b2c;
+}
+
+.all-user-card .avatar img,
+.user-list-card .avatar img {
+
+    width: 100%;
+    height: 100%;
+
+    object-fit: cover;
+
+    display: block;
+}
+
+/* User details */
+
+.all-user-card .user-details,
+.user-list-card .user-details {
+
+    min-width: 0;
+
+    flex: 1;
+}
+
+.all-user-card .user-details h3,
+.user-list-card .user-details h3 {
+
+    overflow: hidden;
+
+    font-size: 16px;
+
+    font-weight: 750;
+
+    white-space: nowrap;
+
+    text-overflow: ellipsis;
+}
+
+.all-user-card .user-details p,
+.user-list-card .user-details p {
+
+    margin-top: 4px;
+
+    overflow: hidden;
+
+    color: var(--muted);
+
+    font-size: 12px;
+
+    white-space: nowrap;
+
+    text-overflow: ellipsis;
+}
+
+/* List follow */
+
+.all-user-card .follow-btn,
+.user-list-card .follow-btn {
+
+    width: auto;
+
+    min-width: 88px;
+
+    height: 38px;
+
+    min-height: 38px;
+
+    margin: 0;
+
+    padding: 0 15px;
+
+    border-radius: 11px;
+
+    flex: 0 0 auto;
+}
+
+/* List dismiss */
+
+.all-user-card .dismiss-user,
+.user-list-card .dismiss-user {
+
+    top: 7px;
+    right: 7px;
+
+    width: 27px;
+    height: 27px;
+
+    font-size: 14px;
+}
+
+/* =========================================================
+   FLOATING BUTTONS
+========================================================= */
+
+.floating-actions {
+
+    position: fixed;
+
+    right: 16px;
+
+    bottom:
+        calc(var(--bottom-nav-height) + 18px);
+
+    z-index: 90;
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 10px;
+}
+
+.floating-btn {
+
+    width: 56px;
+    height: 56px;
+
+    display: grid;
+    place-items: center;
+
+    border: 1px solid rgba(255,255,255,.12);
+
+    border-radius: 18px;
+
+    background:
+        linear-gradient(
+            145deg,
+            #7866ff,
+            #5c4bf0
+        );
+
+    color: white;
+
+    font-size: 24px;
+
+    box-shadow:
+        0 12px 28px rgba(0,0,0,.35),
+        0 7px 20px rgba(93,75,239,.25);
+
+    cursor: pointer;
+
+    transition: transform .2s ease;
+}
+
+.floating-btn.secondary {
+
+    background:
+        rgba(19,23,39,.95);
+
+    border-color: var(--border-light);
+}
+
+.floating-btn:active {
+    transform: scale(.91);
+}
+
+/* =========================================================
+   BOTTOM NAV SAFE AREA
+========================================================= */
+
+.bottom-nav,
+.navbar,
+.mobile-nav {
+
+    position: fixed;
+
+    left: 0;
+    right: 0;
+    bottom: 0;
+
+    z-index: 200;
+
+    height: var(--bottom-nav-height);
+
+    background:
+        rgba(13,15,25,.94);
+
+    border-top:
+        1px solid rgba(255,255,255,.09);
+
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+}
+
+/* =========================================================
+   EMPTY STATE
+========================================================= */
+
+.empty-state {
+
+    padding: 45px 20px;
+
+    text-align: center;
+
+    color: var(--muted);
+}
+
+.empty-state-icon {
+
+    width: 64px;
+    height: 64px;
+
+    margin: 0 auto 14px;
+
+    display: grid;
+    place-items: center;
+
+    border-radius: 20px;
+
+    background:
+        rgba(116,99,255,.12);
+
+    color: #9e91ff;
+
+    font-size: 28px;
+}
+
+.empty-state h3 {
+
+    color: white;
+
+    font-size: 17px;
+    font-weight: 750;
+}
+
+.empty-state p {
+
+    margin-top: 6px;
+
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+/* =========================================================
+   LOADING
+========================================================= */
+
+.user-skeleton {
+
+    min-height: 250px;
+
+    border-radius: var(--radius-lg);
+
+    background:
+        linear-gradient(
+            110deg,
+            #111525 20%,
+            #191e32 35%,
+            #111525 50%
+        );
+
+    background-size: 200% 100%;
+
+    animation:
+        skeleton 1.4s infinite linear;
+}
+
+@keyframes skeleton {
+
+    0% {
+        background-position: 200% 0;
+    }
+
+    100% {
+        background-position: -200% 0;
+    }
+}
+
+/* =========================================================
+   DESKTOP
+========================================================= */
+
+@media (min-width: 700px) {
+
+    #app,
+    .app,
+    .discover-page,
+    .page {
+        max-width: 900px;
+    }
+
+    .suggested-users,
+    .suggestions-grid,
+    .users-grid {
+
+        grid-template-columns:
+            repeat(3, minmax(0,1fr));
+    }
+
+    .discover-section {
+        padding-left: 20px;
+        padding-right: 20px;
+    }
+
+    .discover-stats,
+    .stats-grid {
+        padding-left: 20px;
+        padding-right: 20px;
+    }
+
+    .user-card-image,
+    .user-avatar-wrap,
+    .suggested-avatar {
+        aspect-ratio: 1 / 1;
+    }
+}
+
+/* =========================================================
+   SMALL PHONES
+========================================================= */
+
+@media (max-width: 380px) {
+
+    .discover-title h1,
+    .page-title h1 {
+        font-size: 20px;
+    }
+
+    .discover-title-icon,
+    .header-icon {
+        width: 44px;
+        height: 44px;
+        flex-basis: 44px;
+    }
+
+    .suggested-users,
+    .suggestions-grid,
+    .users-grid {
+        gap: 9px;
+    }
+
+    .user-card-content,
+    .user-info,
+    .suggested-user-info {
+        padding: 11px;
+    }
+
+    .user-name,
+    .user-card h3,
+    .suggested-user-info h3 {
+        font-size: 14px;
+    }
+
+    .follow-btn,
+    .follow-button {
+        min-height: 38px;
+        font-size: 12px;
+    }
+
+    .stat-card {
+        padding: 10px;
+    }
+
+    .stat-icon {
+        width: 34px;
+        height: 34px;
+        flex-basis: 34px;
+    }
+
+    .stat-card strong {
+        font-size: 15px;
+    }
+
+    .stat-card span {
+        font-size: 10px;
+    }
+
+    .all-user-card,
+    .user-list-card {
+        gap: 10px;
+        padding: 10px;
+    }
+
+    .all-user-card .avatar,
+    .user-list-card .avatar {
+        width: 58px;
+        height: 58px;
+        flex-basis: 58px;
+    }
+
+    .all-user-card .follow-btn,
+    .user-list-card .follow-btn {
+        min-width: 76px;
+        padding: 0 11px;
+    }
+}
+
+/* =========================================================
+   ACCESSIBILITY
+========================================================= */
+
+button,
+a {
+    touch-action: manipulation;
+}
+
+button:focus-visible,
+a:focus-visible {
+    outline: 2px solid #8b7dff;
+    outline-offset: 3px;
+}
+
+/* =========================================================
+   PREVENT BROKEN / RAW HTML LOOK
+========================================================= */
+
+.user-card button,
+.suggested-user-card button,
+.all-user-card button,
+.user-list-card button {
+    font-family: inherit;
+    appearance: none;
+    -webkit-appearance: none;
+}
+
+.user-card img,
+.suggested-user-card img,
+.all-user-card img,
+.user-list-card img {
+    max-width: 100%;
+}
+
+/* =========================================================
+   PREMIUM HOVER
+========================================================= */
+
+@media (hover: hover) {
+
+    .user-card:hover {
+        transform: translateY(-2px);
+
+        box-shadow:
+            0 18px 40px rgba(0,0,0,.35);
+    }
+
+    .all-user-card:hover,
+    .user-list-card:hover {
+        border-color:
+            rgba(120,102,255,.25);
+    }
+}

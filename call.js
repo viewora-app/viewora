@@ -65,20 +65,29 @@
        WEBRTC CONFIG
     ====================================================== */
 
+    /* STUN + free public TURN (works across mobile data / NAT).
+       For production scale, replace TURN with your Metered/Twilio credentials. */
     const RTC_CONFIG = {
-
         iceServers: [
-
             {
                 urls: [
                     "stun:stun.l.google.com:19302",
                     "stun:stun1.l.google.com:19302",
-                    "stun:stun2.l.google.com:19302"
+                    "stun:stun2.l.google.com:19302",
+                    "stun:stun.cloudflare.com:3478"
                 ]
+            },
+            {
+                urls: [
+                    "turn:openrelay.metered.ca:80",
+                    "turn:openrelay.metered.ca:443",
+                    "turn:openrelay.metered.ca:443?transport=tcp"
+                ],
+                username: "openrelayproject",
+                credential: "openrelayproject"
             }
-
-        ]
-
+        ],
+        iceCandidatePoolSize: 10
     };
 
 
@@ -144,6 +153,18 @@
     let callSeconds = 0;
 
     let incomingRecordRemoved = false;
+
+    let speakerOn = false;
+
+    let ringTimeoutId = null;
+
+    let wakeLock = null;
+
+    let iceRestartAttempts = 0;
+
+    const RING_TIMEOUT_MS = 45000;
+
+    const MAX_ICE_RESTARTS = 2;
 
 
     /* ======================================================
@@ -951,68 +972,40 @@
                 }
 
 
-                if (
-                    state ===
-                    "connected"
-                ) {
-
-                    setConnecting(
-                        false
-                    );
-
-                    setStatus(
-                        "Connected"
-                    );
-
+                if (state === "connected") {
+                    iceRestartAttempts = 0;
+                    clearRingTimeout();
+                    accepted = true;
+                    setConnecting(false);
+                    setStatus("Connected");
                     startTimer();
-
+                    if (remoteVideo) remoteVideo.play().catch(() => {});
+                    if (remoteAudio) remoteAudio.play().catch(() => {});
                 }
 
-
-                if (
-                    state ===
-                    "disconnected"
-                ) {
-
-                    setConnecting(
-                        true,
-                        "Reconnecting..."
-                    );
-
-                    setStatus(
-                        "Reconnecting..."
-                    );
-
+                if (state === "disconnected") {
+                    setConnecting(true, "Reconnecting...");
+                    setStatus("Reconnecting...");
+                    setTimeout(() => {
+                        tryRestartIce("disconnected");
+                    }, 2500);
                 }
 
-
-                if (
-                    state ===
-                    "failed"
-                ) {
-
-                    setConnecting(
-                        false
-                    );
-
-                    setStatus(
-                        "Connection failed"
-                    );
-
-                    toast(
-                        "Call connection failed."
-                    );
-
+                if (state === "failed") {
+                    setConnecting(true, "Reconnecting...");
+                    setStatus("Reconnecting...");
+                    tryRestartIce("failed").then(ok => {
+                        if (!ok) {
+                            setConnecting(false);
+                            setStatus("Connection failed");
+                            toast("Call connection failed. Check network.");
+                            endCall();
+                        }
+                    });
                 }
 
-
-                if (
-                    state ===
-                    "closed"
-                ) {
-
+                if (state === "closed") {
                     cleanupMedia();
-
                 }
 
             };
@@ -1661,6 +1654,19 @@
 
         }
 
+        // Block check
+        try {
+            const [a, b] = await Promise.all([
+                db.ref("blocks/" + currentUser.uid + "/" + receiverId).once("value"),
+                db.ref("blocks/" + receiverId + "/" + currentUser.uid).once("value")
+            ]);
+            if ((a.exists() && a.val()) || (b.exists() && b.val())) {
+                toast("Cannot call this user.");
+                showEnded("Call unavailable.");
+                return;
+            }
+        } catch (_) {}
+
 
         remoteUserId =
             receiverId;
@@ -1690,6 +1696,9 @@
             true,
             "Calling..."
         );
+
+        startRingTimeout();
+        requestWakeLock();
 
 
         /*
@@ -1917,6 +1926,9 @@
             accepted =
                 true;
 
+            clearRingTimeout();
+            requestWakeLock();
+
 
             if (incomingScreen) {
 
@@ -2108,6 +2120,9 @@
         callEnded =
             true;
 
+        clearRingTimeout();
+        releaseWakeLock();
+
 
         try {
 
@@ -2183,6 +2198,121 @@
 
     
     /* ======================================================
+       ICE RESTART (network drop recovery)
+    ====================================================== */
+
+    async function tryRestartIce(reason) {
+        if (callEnded || !peerConnection) return false;
+        if (iceRestartAttempts >= MAX_ICE_RESTARTS) return false;
+
+        const state = peerConnection.iceConnectionState;
+        if (state === "connected" || state === "completed") return true;
+
+        iceRestartAttempts++;
+        log("ICE restart attempt", iceRestartAttempts, reason);
+
+        try {
+            if (role === "caller" && typeof peerConnection.restartIce === "function") {
+                peerConnection.restartIce();
+                const offer = await peerConnection.createOffer({ iceRestart: true });
+                await peerConnection.setLocalDescription(offer);
+                await updateCall({
+                    offer: {
+                        type: offer.type,
+                        sdp: offer.sdp
+                    },
+                    iceRestartAt: firebase.database.ServerValue.TIMESTAMP
+                });
+                return true;
+            }
+            // Receiver side: wait for new offer from caller
+            return iceRestartAttempts < MAX_ICE_RESTARTS;
+        } catch (err) {
+            logError("ICE restart failed:", err);
+            return false;
+        }
+    }
+
+
+    /* ======================================================
+       SPEAKER (earpiece ↔ loudspeaker)
+    ====================================================== */
+
+    async function toggleSpeaker() {
+        speakerOn = !speakerOn;
+
+        const btn = $("speakerBtn");
+        if (btn) {
+            btn.classList.toggle("active", speakerOn);
+            const icon = btn.querySelector("i");
+            if (icon) {
+                icon.className = speakerOn
+                    ? "fa-solid fa-volume-high"
+                    : "fa-solid fa-volume-low";
+            }
+        }
+
+        try {
+            const el = callType === "video" ? remoteVideo : remoteAudio;
+            if (el && typeof el.setSinkId === "function") {
+                // "" = default (earpiece on many mobiles), "default" = system default
+                await el.setSinkId(speakerOn ? "default" : "");
+            }
+        } catch (err) {
+            log("setSinkId not supported:", err && err.message);
+        }
+
+        toast(speakerOn ? "Speaker on" : "Speaker off");
+    }
+
+
+    /* ======================================================
+       RING TIMEOUT (no answer → auto end)
+    ====================================================== */
+
+    function startRingTimeout() {
+        clearRingTimeout();
+        ringTimeoutId = setTimeout(() => {
+            if (callEnded || accepted) return;
+            toast("No answer");
+            endCall();
+        }, RING_TIMEOUT_MS);
+    }
+
+    function clearRingTimeout() {
+        if (ringTimeoutId) {
+            clearTimeout(ringTimeoutId);
+            ringTimeoutId = null;
+        }
+    }
+
+
+    /* ======================================================
+       WAKE LOCK (screen stays on during call)
+    ====================================================== */
+
+    async function requestWakeLock() {
+        try {
+            if (navigator.wakeLock && navigator.wakeLock.request) {
+                wakeLock = await navigator.wakeLock.request("screen");
+                wakeLock.addEventListener("release", () => {
+                    wakeLock = null;
+                });
+            }
+        } catch (_) {}
+    }
+
+    async function releaseWakeLock() {
+        try {
+            if (wakeLock) {
+                await wakeLock.release();
+                wakeLock = null;
+            }
+        } catch (_) {}
+    }
+
+
+    /* ======================================================
        SWITCH CAMERA (front / back) — no pause glitch
     ====================================================== */
 
@@ -2194,7 +2324,7 @@
             return;
         }
 
-        if (!localStream || !peerConnection) {
+        if (!localStream) {
             toast("Camera not ready.");
             return;
         }
@@ -2209,53 +2339,83 @@
         const facing = usingFrontCamera ? "user" : "environment";
 
         try {
+            // Request new camera WITHOUT touching audio (prevents pause glitch)
             const newStream = await navigator.mediaDevices.getUserMedia({
                 audio: false,
                 video: {
-                    facingMode: { ideal: facing },
+                    facingMode: { exact: facing },
                     width: { ideal: 1280 },
-                    height: { ideal: 720 }
+                    height: { ideal: 720 },
+                    frameRate: { ideal: 30 }
                 }
             });
 
             const newTrack = newStream.getVideoTracks()[0];
             if (!newTrack) throw new Error("No new video track");
 
-            // Replace on peer connection WITHOUT stopping negotiation
-            const sender = peerConnection
-                .getSenders()
-                .find(s => s.track && s.track.kind === "video");
-
-            if (sender) {
-                await sender.replaceTrack(newTrack);
+            // Replace sender track first (WebRTC stays alive)
+            if (peerConnection) {
+                const sender = peerConnection
+                    .getSenders()
+                    .find(s => s.track && s.track.kind === "video");
+                if (sender) {
+                    await sender.replaceTrack(newTrack);
+                }
             }
 
-            // Update local preview — keep stream continuous
-            oldTrack.stop();
-            localStream.removeTrack(oldTrack);
+            // Swap local tracks without stopping whole stream
+            try {
+                localStream.removeTrack(oldTrack);
+            } catch (_) {}
             localStream.addTrack(newTrack);
+            try { oldTrack.stop(); } catch (_) {}
 
             window.localStream = localStream;
 
             if (localVideo) {
-                // Re-assign only if needed; avoid black flash
-                if (localVideo.srcObject !== localStream) {
-                    localVideo.srcObject = localStream;
-                }
+                localVideo.srcObject = localStream;
                 localVideo.playsInline = true;
                 localVideo.muted = true;
+                localVideo.setAttribute("playsinline", "");
+                // Keep playing — never pause remote
                 await localVideo.play().catch(() => {});
             }
 
-            // Stop extra tracks from temp stream (audio none)
+            // Ensure remote video still playing
+            if (typeof remoteVideo !== "undefined" && remoteVideo) {
+                remoteVideo.play().catch(() => {});
+            }
+
             newStream.getTracks().forEach(t => {
-                if (t.id !== newTrack.id) t.stop();
+                if (t.id !== newTrack.id) {
+                    try { t.stop(); } catch (_) {}
+                }
             });
 
             toast(usingFrontCamera ? "Front camera" : "Back camera");
         } catch (error) {
+            // Fallback: ideal instead of exact (some devices reject exact)
+            try {
+                const fallback = await navigator.mediaDevices.getUserMedia({
+                    audio: false,
+                    video: { facingMode: { ideal: facing } }
+                });
+                const nt = fallback.getVideoTracks()[0];
+                if (nt && peerConnection) {
+                    const sender = peerConnection.getSenders().find(s => s.track && s.track.kind === "video");
+                    if (sender) await sender.replaceTrack(nt);
+                    try { localStream.removeTrack(oldTrack); oldTrack.stop(); } catch (_) {}
+                    localStream.addTrack(nt);
+                    if (localVideo) {
+                        localVideo.srcObject = localStream;
+                        await localVideo.play().catch(() => {});
+                    }
+                    toast(usingFrontCamera ? "Front camera" : "Back camera");
+                    return;
+                }
+            } catch (_) {}
             logError("Camera switch:", error);
-            usingFrontCamera = !usingFrontCamera; // revert flag
+            usingFrontCamera = !usingFrontCamera;
             toast("Unable to switch camera.");
         }
     }
@@ -2557,7 +2717,8 @@
     function cleanup() {
 
         stopTimer();
-
+        clearRingTimeout();
+        releaseWakeLock();
         cleanupMedia();
 
     }
@@ -2676,6 +2837,13 @@
         );
 
 
+    $("speakerBtn")
+        ?.addEventListener(
+            "click",
+            toggleSpeaker
+        );
+
+
     $("minimizeCallBtn")
         ?.addEventListener(
             "click",
@@ -2685,6 +2853,13 @@
 
             }
         );
+
+    // Re-acquire wake lock if tab becomes visible again mid-call
+    document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "visible" && !callEnded && accepted) {
+            requestWakeLock();
+        }
+    });
 
 
     /* ======================================================

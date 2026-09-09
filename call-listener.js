@@ -984,18 +984,46 @@
 
         stopRingtone();
 
-        // Prefer user-provided MP3 ringtone if present
+        // 1) Custom ringtone path from settings (localStorage)
+        //    User can set: localStorage.setItem('viewora_call_ringtone', 'assets/my-ring.mp3')
+        try {
+            const customSrc = localStorage.getItem("viewora_call_ringtone");
+            if (customSrc) {
+                const custom = new Audio(customSrc);
+                custom.loop = true;
+                custom.preload = "auto";
+                window.__vieworaCustomRing = custom;
+                const p = custom.play();
+                if (p && p.catch) {
+                    p.catch(() => startBuiltinRingtone());
+                }
+                return;
+            }
+        } catch (_) {}
+
+        startBuiltinRingtone();
+    }
+
+    function startBuiltinRingtone() {
+        // Prefer page <audio id="incomingCallRingtone"> MP3 if present
         try {
             const audioEl = document.getElementById("incomingCallRingtone");
             if (audioEl) {
+                // Allow override via localStorage without element change
+                try {
+                    const customSrc = localStorage.getItem("viewora_call_ringtone");
+                    if (customSrc) {
+                        const src = audioEl.querySelector("source");
+                        if (src) src.src = customSrc;
+                        else audioEl.src = customSrc;
+                        audioEl.load();
+                    }
+                } catch (_) {}
                 audioEl.loop = true;
                 audioEl.currentTime = 0;
                 const p = audioEl.play();
                 if (p && p.catch) {
-                    p.catch(() => {
-                        // fallback to WebAudio if autoplay blocked until gesture
-                        startWebAudioRingtone();
-                    });
+                    p.catch(() => startWebAudioRingtone());
                 }
                 return;
             }
@@ -1200,6 +1228,14 @@
             if (audioEl) {
                 audioEl.pause();
                 audioEl.currentTime = 0;
+            }
+        } catch (_) {}
+
+        try {
+            if (window.__vieworaCustomRing) {
+                window.__vieworaCustomRing.pause();
+                window.__vieworaCustomRing.currentTime = 0;
+                window.__vieworaCustomRing = null;
             }
         } catch (_) {}
 

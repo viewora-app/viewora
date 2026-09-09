@@ -1417,10 +1417,6 @@ body.has-bottom-nav .toast {
 }
 
 
-/* =========================================================
-   FOLLOW REQUEST — Accept / Decline
-   ========================================================= */
-
 .followRequestActions {
     display: flex;
     flex-direction: column;
@@ -1440,26 +1436,15 @@ body.has-bottom-nav .toast {
     font-size: 12px;
     font-weight: 800;
     cursor: pointer;
-    transition: .2s ease;
 }
 
 .notificationAcceptBtn {
     background: linear-gradient(135deg, #3f6cff, #694cff);
     color: #fff;
-    box-shadow: 0 6px 16px rgba(68, 82, 255, .22);
 }
 
 .notificationDeclineBtn {
     background: rgba(255,255,255,.07);
     color: #bbb;
     border: 1px solid rgba(255,255,255,.08);
-}
-
-.notificationAcceptBtn:active,
-.notificationDeclineBtn:active {
-    transform: scale(.94);
-}
-
-.notificationType.verified {
-    background: #3e8cff;
 }

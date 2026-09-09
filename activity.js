@@ -467,6 +467,10 @@
             return null;
         }
 
+        const typeHint = safeString(
+            data.type || data.notificationType || data.action || ""
+        ).toLowerCase();
+        // follow_request / follow often use fromUID
         const senderUID =
             data.senderUID ||
             data.senderUid ||
@@ -562,21 +566,29 @@
                 notification?.type
             ).toLowerCase();
 
-        return type.includes("follow");
+        // Public follow only — not requests
+        if (isFollowRequest(notification)) return false;
+        if (type.includes("follow_request")) return false;
+
+        return (
+            type === "follow" ||
+            type === "followed" ||
+            type === "new_follower" ||
+            type === "follow_back" ||
+            (type.includes("follow") && !type.includes("request"))
+        );
 
     }
 
     function isFollowRequest(notification) {
-        const type = safeString(notification?.type).toLowerCase();
-        const msg = safeString(
-            notification?.message || notification?.text || ""
-        ).toLowerCase();
+        /* ONLY private-account requests — never public follows */
+        const type = safeString(notification?.type).toLowerCase().replace(/\s+/g, "_");
         return (
             type === "follow_request" ||
-            type.includes("follow_request") ||
             type === "followrequest" ||
-            (type.includes("follow") &&
-                (msg.includes("request") || type.includes("request")))
+            type === "request_follow" ||
+            type === "follow_request_pending" ||
+            (type.includes("follow_request") && !type.includes("accepted"))
         );
     }
 
@@ -584,8 +596,7 @@
         const type = safeString(notification?.type).toLowerCase();
         return (
             type === "follow_accepted" ||
-            type.includes("follow_accepted") ||
-            type.includes("accepted")
+            type.includes("follow_accepted")
         );
     }
 
@@ -685,6 +696,22 @@
         }
 
         if (
+            safeString(notification.type).includes("login") ||
+            safeString(notification.type).includes("device") ||
+            safeString(notification.type).includes("security")
+        ) {
+            const device =
+                notification.deviceName ||
+                notification.device ||
+                notification.phoneName ||
+                "another device";
+            return {
+                name: "Security",
+                message: custom || ("New login on " + device)
+            };
+        }
+
+        if (
             safeString(
                 notification.type
             ).includes("mention")
@@ -739,25 +766,6 @@
                     "Your account status was updated."
             };
 
-        }
-
-        if (
-            safeString(notification.type).includes("login") ||
-            safeString(notification.type).includes("device") ||
-            safeString(notification.type).includes("security")
-        ) {
-            const device =
-                notification.deviceName ||
-                notification.device ||
-                notification.phoneName ||
-                notification.browser ||
-                "another device";
-            return {
-                name: "Security",
-                message:
-                    custom ||
-                    ("New login on " + device)
-            };
         }
 
         return {
@@ -1245,50 +1253,6 @@
        NOTIFICATION LISTENER
        ============================================================ */
 
-    
-    function dedupeFollowNotifications(list) {
-        const seenFollow = new Set();
-        const seenRequest = new Set();
-        const out = [];
-
-        for (const n of list) {
-            if (!n) continue;
-
-            const sid = safeString(n.senderUID);
-            const type = safeString(n.type).toLowerCase();
-
-            // Device login alerts always keep
-            if (
-                type.includes("login") ||
-                type.includes("device") ||
-                type.includes("security")
-            ) {
-                out.push(n);
-                continue;
-            }
-
-            if (isFollowRequest(n)) {
-                if (sid && seenRequest.has(sid)) continue;
-                if (sid) seenRequest.add(sid);
-                out.push(n);
-                continue;
-            }
-
-            if (isFollow(n) && !isFollowAccepted(n)) {
-                // Skip plain "started following" if we already show a request from same user
-                if (sid && seenRequest.has(sid)) continue;
-                if (sid && seenFollow.has(sid)) continue;
-                if (sid) seenFollow.add(sid);
-                out.push(n);
-                continue;
-            }
-
-            out.push(n);
-        }
-
-        return out;
-    }
-
     function startListener() {
 
         if (!currentUser) {
@@ -1322,31 +1286,58 @@
         databaseListener =
             snapshot => {
 
-                const value =
-                    snapshot.exists()
-                        ? snapshot.val() || {}
-                        : {};
+                try {
+                    const value =
+                        snapshot.exists()
+                            ? snapshot.val() || {}
+                            : {};
 
-                allNotifications =
-                    Object.entries(value)
-                        .map(
-                            ([id, data]) =>
-                                normalizeNotification(
-                                    id,
-                                    data
-                                )
-                        )
-                        .filter(Boolean)
-                        .sort(
-                            (a, b) =>
-                                b.createdAt -
-                                a.createdAt
+                    allNotifications =
+                        Object.entries(value)
+                            .map(
+                                ([id, data]) =>
+                                    normalizeNotification(
+                                        id,
+                                        data
+                                    )
+                            )
+                            .filter(Boolean)
+                            .filter((n) => {
+                                // Never show my own actions
+                                if (
+                                    currentUser &&
+                                    n.senderUID &&
+                                    String(n.senderUID) === String(currentUser.uid)
+                                ) {
+                                    return false;
+                                }
+                                return true;
+                            })
+                            .sort(
+                                (a, b) =>
+                                    b.createdAt -
+                                    a.createdAt
+                            );
+
+                    allNotifications =
+                        dedupeFollowNotifications(allNotifications);
+
+                    render().catch((e) => {
+                        console.error("render failed", e);
+                        hideLoading();
+                        showEmpty(
+                            "Something went wrong",
+                            "Could not show notifications."
                         );
-
-                // One follow / follow_request per sender (keep newest)
-                allNotifications = dedupeFollowNotifications(allNotifications);
-
-                render();
+                    });
+                } catch (e) {
+                    console.error(e);
+                    hideLoading();
+                    showEmpty(
+                        "Unable to load notifications",
+                        "Please try again."
+                    );
+                }
 
             };
 
@@ -1360,6 +1351,7 @@
                     error
                 );
 
+                hideLoading();
                 showEmpty(
                     "Unable to load notifications",
                     "Please try again."
@@ -1368,6 +1360,40 @@
             }
         );
 
+    }
+
+    function dedupeFollowNotifications(list) {
+        /* One follow-related item per senderUID (request > accepted > follow) */
+        const seenFollowKey = new Set();
+        const out = [];
+
+        for (const n of list) {
+            if (!n) continue;
+            const sid = safeString(n.senderUID);
+            const type = safeString(n.type).toLowerCase();
+
+            if (
+                type.includes("login") ||
+                type.includes("device") ||
+                type.includes("security")
+            ) {
+                out.push(n);
+                continue;
+            }
+
+            const isReq = isFollowRequest(n);
+            const isFol = isFollow(n) || isFollowAccepted(n);
+
+            if (isReq || isFol) {
+                if (sid && seenFollowKey.has(sid)) continue;
+                if (sid) seenFollowKey.add(sid);
+                out.push(n);
+                continue;
+            }
+
+            out.push(n);
+        }
+        return out;
     }
 
 
@@ -1563,8 +1589,13 @@
 
         let actionHTML = "";
 
+        /*
+         * Instagram-style:
+         * - follow_request (private) → Accept / Decline
+         * - follow (public) → Follow back / Following
+         * - other → open arrow
+         */
         if (isFollowRequest(notification)) {
-            // Private account: Accept / Decline first
             actionHTML = `
                 <div class="followRequestActions" data-request-from="${escapeHTML(notification.senderUID)}" data-notif-id="${escapeHTML(notification.id)}">
                     <button type="button" class="notificationAcceptBtn" data-accept-request="${escapeHTML(notification.senderUID)}">
@@ -1575,7 +1606,7 @@
                     </button>
                 </div>
             `;
-        } else if (isFollow(notification)) {
+        } else if (isFollow(notification) || isFollowAccepted(notification)) {
             actionHTML = `
                 <button
                     type="button"
@@ -1724,7 +1755,6 @@
 
         }
 
-        // Accept follow request
         const acceptBtn = item.querySelector("[data-accept-request]");
         if (acceptBtn) {
             acceptBtn.addEventListener("click", async (event) => {
@@ -1943,31 +1973,29 @@
        FOLLOW BACK
        ============================================================ */
 
-    
     async function acceptFollowRequest(fromUID, notifId, itemEl) {
         if (!currentUser || !fromUID || busy) return;
         if (fromUID === currentUser.uid) return;
-
         busy = true;
         try {
             const me = currentUser.uid;
-
-            // Add as follower
+            /*
+             * Instagram: requester (fromUID) now follows private owner (me).
+             * After this, requester can see me's posts / shorts / videos / stories.
+             */
             const updates = {};
             updates["followers/" + me + "/" + fromUID] = true;
             updates["following/" + fromUID + "/" + me] = true;
-            updates["followRequests/" + me + "/" + fromUID] = null;
             updates["users/" + me + "/followers/" + fromUID] = true;
             updates["users/" + fromUID + "/following/" + me] = true;
-
+            updates["followRequests/" + me + "/" + fromUID] = null;
+            // clear any reverse request noise
+            updates["followRequests/" + fromUID + "/" + me] = null;
             await db.ref().update(updates);
-
             try {
                 await incrementSafeCount("users/" + me + "/followersCount", 1);
                 await incrementSafeCount("users/" + fromUID + "/followingCount", 1);
             } catch (_) {}
-
-            // Notify requester
             try {
                 const nref = db.ref("notifications/" + fromUID).push();
                 await nref.set({
@@ -1979,8 +2007,6 @@
                     read: false
                 });
             } catch (_) {}
-
-            // Mark / remove request notification
             if (notifId) {
                 try {
                     await db.ref("notifications/" + me + "/" + notifId).update({
@@ -1991,7 +2017,6 @@
                     });
                 } catch (_) {}
             }
-
             if (itemEl) {
                 const actions = itemEl.querySelector(".followRequestActions");
                 if (actions) {
@@ -2009,7 +2034,6 @@
                     }
                 }
             }
-
             showToast("Request accepted");
         } catch (e) {
             console.error(e);
@@ -2028,7 +2052,41 @@
             if (notifId) {
                 await db.ref("notifications/" + me + "/" + notifId).remove();
             }
+            // Remove ALL request notifs from this sender (cleanup activity)
+            try {
+                const snap = await db.ref("notifications/" + me).once("value");
+                if (snap.exists()) {
+                    const updates = {};
+                    snap.forEach((child) => {
+                        const d = child.val() || {};
+                        const sid =
+                            d.senderUID || d.fromUID || d.fromUid || d.senderId || "";
+                        const t = String(d.type || "").toLowerCase();
+                        if (
+                            String(sid) === String(fromUID) &&
+                            (t.includes("follow_request") || t === "followrequest")
+                        ) {
+                            updates[child.key] = null;
+                        }
+                    });
+                    if (Object.keys(updates).length) {
+                        await db.ref("notifications/" + me).update(updates);
+                    }
+                }
+            } catch (_) {}
             if (itemEl) itemEl.remove();
+            // Also strip from local list
+            allNotifications = allNotifications.filter((n) => {
+                if (!n) return false;
+                if (n.id === notifId) return false;
+                if (
+                    String(n.senderUID) === String(fromUID) &&
+                    isFollowRequest(n)
+                ) {
+                    return false;
+                }
+                return true;
+            });
             showToast("Request declined");
         } catch (e) {
             console.error(e);
@@ -2038,62 +2096,39 @@
         }
     }
 
-    async function followBack(
-        targetUID,
-        button
-    ) {
-
-        if (
-            !currentUser ||
-            !targetUID ||
-            targetUID === currentUser.uid ||
-            busy
-        ) {
+    async function followBack(targetUID, button) {
+        if (!currentUser || !targetUID || targetUID === currentUser.uid || busy) {
             return;
         }
 
         busy = true;
-
         if (button) {
-
             button.disabled = true;
-            button.classList.add(
-                "loading"
-            );
-
+            button.classList.add("loading");
         }
 
         try {
-
-            const myUID =
-                currentUser.uid;
-
-            const alreadyFollowing =
-                await isFollowing(
-                    targetUID
-                );
+            const myUID = currentUser.uid;
+            const alreadyFollowing = await isFollowing(targetUID);
 
             if (alreadyFollowing) {
-
+                await Promise.all([
+                    db.ref("following/" + myUID + "/" + targetUID).remove(),
+                    db.ref("followers/" + targetUID + "/" + myUID).remove(),
+                    db.ref("users/" + myUID + "/following/" + targetUID).remove(),
+                    db.ref("users/" + targetUID + "/followers/" + myUID).remove()
+                ]);
+                try {
+                    await incrementSafeCount("users/" + myUID + "/followingCount", -1);
+                    await incrementSafeCount("users/" + targetUID + "/followersCount", -1);
+                } catch (_) {}
                 if (button) {
-
-                    button.textContent =
-                        "Following";
-
-                    button.classList.add(
-                        "following"
-                    );
-
+                    button.textContent = "Follow back";
+                    button.classList.remove("following", "loading");
                 }
-
+                showToast("Unfollowed");
                 return;
-
             }
-
-
-            /* ====================================================
-               FOLLOWING
-               ==================================================== */
 
             await Promise.all([
                 db.ref("following/" + myUID + "/" + targetUID).set(true),
@@ -2102,123 +2137,48 @@
                 db.ref("users/" + targetUID + "/followers/" + myUID).set(true)
             ]);
 
-
-            /* ====================================================
-               FOLLOWING COUNT
-               ==================================================== */
-
-            await incrementSafeCount(
-                "users/" +
-                myUID +
-                "/followingCount",
-                1
-            );
-
-
-            /* ====================================================
-               FOLLOWERS COUNT
-               ==================================================== */
-
-            await incrementSafeCount(
-                "users/" +
-                targetUID +
-                "/followersCount",
-                1
-            );
-
+            try {
+                await incrementSafeCount("users/" + myUID + "/followingCount", 1);
+                await incrementSafeCount("users/" + targetUID + "/followersCount", 1);
+            } catch (_) {}
 
             if (button) {
-
-                button.textContent =
-                    "Following";
-
-                button.classList.remove(
-                    "loading"
-                );
-
-                button.classList.add(
-                    "following"
-                );
-
+                button.textContent = "Following";
+                button.classList.remove("loading");
+                button.classList.add("following");
             }
+            showToast("Following");
 
-            showToast(
-                "Following"
-            );
-
-
-            /* ====================================================
-               OPTIONAL FOLLOW-BACK NOTIFICATION
-               ==================================================== */
-
+            // Only notify the other user — never myself
             try {
-
-                const notificationRef =
-                    db
-                        .ref(
-                            "notifications/" +
-                            targetUID
-                        )
-                        .push();
-
-                await notificationRef.set({
-
-                    type: "follow",
-
-                    senderUID: myUID,
-
-                    recipientUID:
-                        targetUID,
-
-                    message:
-                        "started following you.",
-
-                    createdAt:
-                        firebase.database
-                            .ServerValue
-                            .TIMESTAMP,
-
-                    read: false
-
-                });
-
+                if (targetUID !== myUID) {
+                    const notificationRef = db.ref("notifications/" + targetUID).push();
+                    await notificationRef.set({
+                        type: "follow",
+                        senderUID: myUID,
+                        recipientUID: targetUID,
+                        message: "started following you.",
+                        createdAt: firebase.database.ServerValue.TIMESTAMP,
+                        read: false
+                    });
+                }
             } catch (_) {}
 
         } catch (error) {
-
-            console.error(
-                "Follow back failed:",
-                error
-            );
-
-            showToast(
-                "Unable to follow. Try again."
-            );
-
+            console.error("Follow back failed:", error);
+            showToast("Unable to update follow. Try again.");
             if (button) {
-
-                button.classList.remove(
-                    "following"
-                );
-
-                button.textContent =
-                    "Follow back";
-
+                const still = await isFollowing(targetUID).catch(() => false);
+                button.classList.toggle("following", !!still);
+                button.textContent = still ? "Following" : "Follow back";
             }
-
         } finally {
-
             busy = false;
-
             if (button) {
                 button.disabled = false;
-                button.classList.remove(
-                    "loading"
-                );
+                button.classList.remove("loading");
             }
-
         }
-
     }
 
 
@@ -3009,6 +2969,11 @@
             }
 
             startListener();
+
+            // Safety: never stick on skeleton forever
+            setTimeout(() => {
+                hideLoading();
+            }, 8000);
 
             // Visit activity → clear badge / mark all read after short delay
             setTimeout(() => {

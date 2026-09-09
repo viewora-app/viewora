@@ -4,61 +4,84 @@
 ============================================================
  VIEWORA BADGES — Single source of truth
  Hierarchy (highest first):
-   1. RED  (VIP)   — Elite subscription (active)
-   2. BLUE (Verified) — Admin creator/influencer OR any paid plan
-   3. WHITE (Monetized) — Monetization complete + strong stats
-      (only if no red/blue)
+   1. RED  — Elite / most expensive active subscription (VIP)
+   2. BLUE — Creator / influencer (admin) OR any active paid subscription
+   3. WHITE — Monetized + 1L+ followers (or strong views)
+              ONLY if no red and no blue
+   4. NONE — normal user
 
- Usage:
-   VieworaBadges.resolve(userData) → { level, html, className, title }
-   VieworaBadges.isVerified(userData)
-   VieworaBadges.applyToUserNode(uid, subscriptionPayload)  // after payment
+ Rules:
+   • Subscription active + Elite  → RED
+   • Subscription active (Plus/Pro) OR admin creator → BLUE
+   • Creator with 1L followers + subscription → BLUE (not white)
+   • After subscription ends, still 1L followers + monetized → WHITE
+   • Nothing → no tick
 ============================================================
 */
 
 (function (global) {
 
     const FOLLOWERS_WHITE_MIN = 100000; // 1 lakh
-    const VIEWS_WHITE_MIN = 300000;    // 3 lakh lifetime views (soft)
+    const VIEWS_WHITE_MIN = 300000;    // 3 lakh soft
 
     function num(v) {
         const n = Number(v);
         return Number.isFinite(n) ? n : 0;
     }
 
-    function subActive(sub) {
-        if (!sub || typeof sub !== "object") return false;
+    function subObj(user) {
+        if (!user || typeof user !== "object") return {};
+        if (user.subscription && typeof user.subscription === "object") {
+            return user.subscription;
+        }
+        return {};
+    }
+
+    function subActive(user) {
+        const sub = subObj(user);
         if (sub.active === true || sub.status === "active") {
             const exp = num(sub.expiresAt);
             if (exp > 0 && exp < Date.now()) return false;
             return true;
         }
+        if (user.subscriptionActive === true || user.subscriptionStatus === "active") {
+            const exp = num(user.subscriptionExpiresAt || sub.expiresAt);
+            if (exp > 0 && exp < Date.now()) return false;
+            return true;
+        }
+        if (user.premium === true || user.isPremium === true) {
+            const exp = num(sub.expiresAt || user.subscriptionExpiresAt);
+            if (exp > 0 && exp < Date.now()) return false;
+            // premium flag without expiry → treat active carefully
+            if (sub.plan || user.plan) return true;
+        }
         return false;
     }
 
     function planOf(user) {
-        const sub = user?.subscription || user?.sub || {};
-        if (subActive(sub)) {
+        const sub = subObj(user);
+        if (subActive(user)) {
             return String(sub.plan || user.plan || "").toLowerCase();
         }
-        return String(user?.plan || "").toLowerCase();
+        return "";
     }
 
+    /** Admin / creator blue from panel (not auto from followers) */
     function hasAdminBlue(user) {
         if (!user || typeof user !== "object") return false;
         if (
+            user.blueTick === true ||
             user.verified === true ||
             user.isVerified === true ||
-            user.blueTick === true ||
             user.verification === true
         ) {
-            // But red overrides display; still counts as blue-capable
             return true;
         }
         const status = String(
             user.verificationStatus ||
             user.badge ||
             user.role ||
+            user.accountType ||
             ""
         ).toLowerCase();
         return (
@@ -69,46 +92,44 @@
         );
     }
 
+    /** RED: Elite VIP only */
     function hasRed(user) {
         if (!user || typeof user !== "object") return false;
-        if (user.redTick === true || user.vip === true || user.elite === true) {
-            // still require active elite if subscription-driven
-            const plan = planOf(user);
-            if (plan === "elite") return true;
-            if (user.redTick === true && subActive(user.subscription)) return true;
-            // admin-forced red
-            if (user.redTickForce === true) return true;
-            return user.redTick === true && !user.subscription;
-        }
-        return planOf(user) === "elite" && subActive(user.subscription || { active: true, status: "active", expiresAt: user.subscription?.expiresAt || Date.now() + 1 });
-    }
+        if (user.redTickForce === true) return true;
 
-    function hasBlue(user) {
-        if (hasRed(user)) return false; // hierarchy: red wins, blue not shown together
-        if (hasAdminBlue(user)) return true;
         const plan = planOf(user);
-        if ((plan === "plus" || plan === "pro" || plan === "elite") && subActive(user.subscription || user)) {
-            return true;
-        }
-        // any paid flag
-        if (user.premium === true || user.isPremium === true) {
-            if (subActive(user.subscription || { active: true, status: "active" })) return true;
+        if (plan === "elite" && subActive(user)) return true;
+
+        // Forced redTick only if subscription still active elite OR explicit force
+        if (user.redTick === true || user.vip === true || user.elite === true) {
+            if (user.redTickForce === true) return true;
+            if (plan === "elite" && subActive(user)) return true;
+            // stale redTick without active elite → ignore for display
+            if (!subActive(user) && plan !== "elite") return false;
+            // redTick true with active any sub was wrongly granting red — only elite
+            return plan === "elite";
         }
         return false;
     }
 
+    /** BLUE: creator/admin OR any active paid plan (plus/pro/elite) */
+    function hasBlue(user) {
+        if (!user || typeof user !== "object") return false;
+        if (hasRed(user)) return false;
+
+        if (hasAdminBlue(user)) return true;
+
+        if (!subActive(user)) return false;
+        const plan = planOf(user);
+        if (plan === "plus" || plan === "pro" || plan === "elite") return true;
+        if (user.premium === true || user.isPremium === true) return true;
+        return false;
+    }
+
+    /** WHITE: monetized + 1L followers (or views), never if blue/red */
     function hasWhite(user) {
-        if (!user) return false;
+        if (!user || typeof user !== "object") return false;
         if (hasRed(user) || hasBlue(user) || hasAdminBlue(user)) return false;
-
-        const monetized =
-            user.monetization === true ||
-            user.monetized === true ||
-            user.monetizationStatus === "approved" ||
-            user.monetizationStatus === "active" ||
-            user.whiteTick === true;
-
-        if (!monetized) return false;
 
         const followers =
             num(user.followers) ||
@@ -120,53 +141,48 @@
             num(user.views) ||
             num(user.lifetimeViews);
 
-        // 1L followers OR (monetized + 3L views)
-        if (followers >= FOLLOWERS_WHITE_MIN) return true;
-        if (views >= VIEWS_WHITE_MIN) return true;
+        const monetized =
+            user.monetization === true ||
+            user.monetized === true ||
+            user.monetizationStatus === "approved" ||
+            user.monetizationStatus === "active" ||
+            user.whiteTick === true ||
+            user.whiteTickForce === true;
 
-        // explicit white from admin after review
         if (user.whiteTickForce === true) return true;
+
+        // Need monetization path + scale
+        if (followers >= FOLLOWERS_WHITE_MIN) {
+            // 1L+ followers: white only if monetized OR explicit whiteTick
+            if (monetized || user.whiteTick === true) return true;
+            // pure 1L without monetization flag — still allow white as "established"
+            return true;
+        }
+
+        if (monetized && views >= VIEWS_WHITE_MIN) return true;
 
         return false;
     }
 
-    /**
-     * Resolve badge for a user object (from users/{uid} or enriched card).
-     */
     function resolve(user) {
         if (!user || typeof user !== "object") {
             return { level: "none", html: "", className: "", title: "", color: "" };
         }
 
-        // Red VIP
-        if (
-            user.redTick === true ||
-            user.vip === true ||
-            (String(user.plan || user.subscription?.plan || "").toLowerCase() === "elite" &&
-                subActive(user.subscription || { active: user.subscriptionActive, status: user.subscriptionStatus || (user.premium ? "active" : "") }))
-        ) {
-            // tighten: elite plan active OR forced red
-            const eliteActive =
-                user.redTickForce === true ||
-                user.redTick === true ||
-                (String(user.subscription?.plan || user.plan || "").toLowerCase() === "elite" &&
-                    subActive(user.subscription || { active: true, status: "active", expiresAt: user.subscription?.expiresAt || (Date.now() + 86400000) }));
-
-            if (eliteActive || user.redTick === true) {
-                return {
-                    level: "red",
-                    html: '<i class="fa-solid fa-certificate vieworaTick redTick" title="VIP Elite" aria-label="VIP"></i>',
-                    className: "redTick",
-                    title: "VIP Elite",
-                    color: "#ff3b5c"
-                };
-            }
+        if (hasRed(user)) {
+            return {
+                level: "red",
+                html: '<i class="fa-solid fa-certificate vieworaTick redTick" title="VIP Elite" aria-label="VIP"></i>',
+                className: "redTick",
+                title: "VIP Elite",
+                color: "#ff3b5c"
+            };
         }
 
-        if (hasBlue(user) || hasAdminBlue(user)) {
+        if (hasBlue(user)) {
             return {
                 level: "blue",
-                html: '<i class="fa-solid fa-circle-check vieworaTick blueTick" title="Verified" aria-label="Verified"></i>',
+                html: '<i class="fa-solid fa-circle-check vieworaTick blueTick verifiedTick" title="Verified" aria-label="Verified"></i>',
                 className: "blueTick verifiedTick",
                 title: "Verified",
                 color: "#1d9bf0"
@@ -191,9 +207,6 @@
         return r.level === "red" || r.level === "blue" || r.level === "white";
     }
 
-    /**
-     * After successful Razorpay payment — write badge flags on users/{uid}
-     */
     async function applySubscriptionBadges(uid, payload) {
         if (!uid || !payload) return;
         if (typeof firebase === "undefined" || !firebase.database) return;
@@ -217,35 +230,31 @@
             updatedAt: Date.now()
         };
 
-        // Reset ticks then set by plan
-        updates.redTick = false;
-        updates.vip = false;
-        updates.elite = false;
-
-        if (active && plan === "elite") {
-            // RED VIP — only Elite (most expensive)
+        if (!active) {
+            updates.redTick = false;
+            updates.vip = false;
+            updates.elite = false;
+            // Keep admin blueTick / verified if admin granted
+            // Do NOT clear blueTick if verificationStatus is creator
+            // White may reappear via hasWhite based on followers
+        } else if (plan === "elite") {
             updates.redTick = true;
             updates.vip = true;
             updates.elite = true;
             updates.verified = true;
             updates.isVerified = true;
-            updates.blueTick = true; // internal verified, UI shows red
-            updates.badge = "vip";
-            updates.verificationStatus = "vip";
-        } else if (active && (plan === "plus" || plan === "pro")) {
-            // BLUE for paid Plus / Pro
+            updates.blueTick = true;
+            updates.verificationStatus = "verified";
+        } else {
+            // plus / pro → blue
+            updates.redTick = false;
+            updates.vip = false;
+            updates.elite = false;
             updates.verified = true;
             updates.isVerified = true;
             updates.blueTick = true;
-            updates.badge = "verified";
             updates.verificationStatus = "verified";
-            // no red
-            updates.redTick = false;
-            updates.vip = false;
         }
-
-        // White never auto from subscription
-        // (admin monetization flow sets whiteTick)
 
         try {
             await firebase.database().ref("users/" + uid).update(updates);
@@ -254,7 +263,6 @@
         }
     }
 
-    // CSS once
     function injectBadgeCSS() {
         if (document.getElementById("vieworaBadgeCSS")) return;
         const s = document.createElement("style");
@@ -308,8 +316,6 @@
     };
 
     global.VieworaBadges = API;
-
-    // Back-compat helpers used across pages
     global.vieworaIsVerified = function (data) {
         return isVerified(data);
     };

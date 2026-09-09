@@ -132,10 +132,16 @@
 
     const isVerifiedUser = (data) => {
         if (!data || typeof data !== "object") return false;
+        if (window.VieworaBadges && typeof VieworaBadges.isVerified === "function") {
+            return VieworaBadges.isVerified(data);
+        }
         return (
+            data.redTick === true ||
+            data.vip === true ||
             data.verified === true ||
             data.isVerified === true ||
             data.blueTick === true ||
+            data.whiteTick === true ||
             data.badge === "verified" ||
             data.verification === true ||
             data.verificationStatus === "verified"
@@ -143,8 +149,22 @@
     };
 
     const verifiedBadgeHTML = (data) => {
+        if (!data || typeof data !== "object") return "";
+        if (window.VieworaBadges && typeof VieworaBadges.resolve === "function") {
+            return VieworaBadges.resolve(data).html || "";
+        }
         if (!isVerifiedUser(data)) return "";
-        return `<i class="fa-solid fa-circle-check verifiedTick" title="Verified" aria-label="Verified"></i>`;
+        // Prefer blue over white when flags mixed
+        if (data.redTick || data.vip) {
+            return `<i class="fa-solid fa-certificate vieworaTick redTick" title="VIP Elite"></i>`;
+        }
+        if (data.verified || data.isVerified || data.blueTick) {
+            return `<i class="fa-solid fa-circle-check vieworaTick blueTick verifiedTick" title="Verified"></i>`;
+        }
+        if (data.whiteTick) {
+            return `<i class="fa-solid fa-circle-check vieworaTick whiteTick" title="Monetized"></i>`;
+        }
+        return `<i class="fa-solid fa-circle-check vieworaTick blueTick verifiedTick" title="Verified"></i>`;
     };
 
     /* Cache users node for avatar / verified / name */
@@ -370,6 +390,13 @@
 
         article.dataset.postId =
             id;
+        const cat = String(
+            data.category || data.topic || data.genre || data.tag || ""
+        ).toLowerCase();
+        if (cat) article.dataset.category = cat;
+        const tags = data.tags || data.hashtags || "";
+        if (tags) article.dataset.tags = Array.isArray(tags) ? tags.join(",") : String(tags);
+
 
 
         article.innerHTML = `
@@ -554,6 +581,26 @@
             return timeB - timeA;
         });
 
+        // Private account posts: only own + following
+        if (getCurrentUID()) {
+            if (!followingSet.size) {
+                await loadFollowingSet(getCurrentUID());
+            }
+            const visible = [];
+            for (const post of posts) {
+                const owner =
+                    post.data.uid ||
+                    post.data.userId ||
+                    post.data.ownerId ||
+                    "";
+                if (await canViewUserContent(owner)) {
+                    visible.push(post);
+                }
+            }
+            posts.length = 0;
+            posts.push(...visible);
+        }
+
         hideSkeleton(feedSkeleton);
 
         if (!posts.length) {
@@ -614,7 +661,17 @@
                     post.data.name = user.name || user.fullName || "";
                 }
 
-                // Verified flag from users node
+                // Copy full badge / subscription flags from users node
+                [
+                    "verified","isVerified","blueTick","redTick","vip","elite",
+                    "whiteTick","monetized","monetization","monetizationStatus",
+                    "verificationStatus","badge","role","premium","isPremium","plan",
+                    "subscription","subscriptionActive","followers","followersCount"
+                ].forEach((k) => {
+                    if (user[k] !== undefined && user[k] !== null) {
+                        post.data[k] = user[k];
+                    }
+                });
                 if (isVerifiedUser(user)) {
                     post.data.verified = true;
                 }
@@ -632,6 +689,8 @@
         feedContainer.appendChild(fragment);
 
         bindPostEvents();
+        // Show red heart if already liked + correct count
+        hydratePostLikes();
     }
 
 
@@ -962,11 +1021,51 @@
                         user.name || user.fullName || "";
                 }
 
+                [
+                    "verified","isVerified","blueTick","redTick","vip","elite",
+                    "whiteTick","monetized","monetization","monetizationStatus",
+                    "verificationStatus","badge","role","premium","isPremium","plan",
+                    "subscription","subscriptionActive","followers","followersCount"
+                ].forEach((k) => {
+                    if (user[k] !== undefined && user[k] !== null) {
+                        video.data[k] = user[k];
+                    }
+                });
                 if (isVerifiedUser(user)) {
                     video.data.verified = true;
                 }
             })
-        ).then(() => {
+        ).then(async () => {
+            if (getCurrentUID()) {
+                if (!followingSet.size) {
+                    await loadFollowingSet(getCurrentUID());
+                }
+                const visible = [];
+                for (const video of videos) {
+                    const owner =
+                        video.data.uid ||
+                        video.data.userId ||
+                        video.data.ownerId ||
+                        video.data.creatorId ||
+                        "";
+                    if (await canViewUserContent(owner)) {
+                        visible.push(video);
+                    }
+                }
+                videos.length = 0;
+                videos.push(...visible);
+            }
+
+            if (!videos.length) {
+                showEmpty(
+                    longVideoContainer,
+                    "fa-solid fa-video",
+                    "No long videos yet",
+                    "Long videos will appear here."
+                );
+                return;
+            }
+
             const fragment = document.createDocumentFragment();
 
             videos.forEach((video) => {
@@ -1380,56 +1479,277 @@
         }
     }
 
+    /* Resolve numeric like count safely (never use object as number) */
+    function resolveLikeCount(pdata, fallback) {
+        if (!pdata || typeof pdata !== "object") {
+            return Math.max(0, Number(fallback) || 0);
+        }
+        const a = pdata.likesCount;
+        const b = pdata.likeCount;
+        const c = pdata.likes;
+        if (typeof a === "number" && Number.isFinite(a)) return Math.max(0, a);
+        if (typeof b === "number" && Number.isFinite(b)) return Math.max(0, b);
+        if (typeof c === "number" && Number.isFinite(c)) return Math.max(0, c);
+        if (c && typeof c === "object") return Object.keys(c).length;
+        if (a && typeof a === "object") return Object.keys(a).length;
+        return Math.max(0, Number(fallback) || 0);
+    }
+
+    function setPostLikedUI(button, liked, count) {
+        if (!button) return;
+        const icon = button.querySelector("i");
+        const label = button.querySelector("span");
+        button.classList.toggle("liked", !!liked);
+        if (icon) {
+            icon.className = liked
+                ? "fa-solid fa-heart"
+                : "fa-regular fa-heart";
+        }
+        if (label && count !== undefined && count !== null) {
+            label.textContent = formatCount(count);
+        }
+    }
+
+    /* Load liked + accurate count for visible post cards */
+    async function hydratePostLikes() {
+        if (!feedContainer) return;
+        const uid = getMyUID();
+        const cards = feedContainer.querySelectorAll(".vieworaPostCard[data-post-id]");
+        if (!cards.length) return;
+
+        await Promise.all(
+            Array.from(cards).map(async (card) => {
+                const postId = card.dataset.postId;
+                if (!postId) return;
+                const button = card.querySelector('[data-action="like"]');
+                if (!button) return;
+
+                try {
+                    // Prefer postLikes, fallback to likes (posts.js path)
+                    let liked = false;
+                    if (uid) {
+                        const [a, b] = await Promise.all([
+                            db.ref("postLikes/" + postId + "/" + uid).once("value"),
+                            db.ref("likes/" + postId + "/" + uid).once("value")
+                        ]);
+                        liked =
+                            a.exists() ||
+                            b.val() === true ||
+                            b.val() === 1 ||
+                            (b.exists() && b.val() !== false && b.val() !== null);
+                    }
+
+                    // Count from like nodes (source of truth)
+                    let count = 0;
+                    try {
+                        const [c1, c2] = await Promise.all([
+                            db.ref("postLikes/" + postId).once("value"),
+                            db.ref("likes/" + postId).once("value")
+                        ]);
+                        const keys = new Set();
+                        if (c1.exists()) {
+                            Object.keys(c1.val() || {}).forEach((k) => keys.add(k));
+                        }
+                        if (c2.exists()) {
+                            const v = c2.val() || {};
+                            Object.keys(v).forEach((k) => {
+                                const item = v[k];
+                                if (
+                                    item === true ||
+                                    item === 1 ||
+                                    (item && typeof item === "object")
+                                ) {
+                                    keys.add(k);
+                                }
+                            });
+                        }
+                        count = keys.size;
+                    } catch (_) {
+                        const label = button.querySelector("span");
+                        const parsed = Number(
+                            (label && label.textContent.replace(/[^\d.KM]/gi, "")) || 0
+                        );
+                        count = Number.isFinite(parsed) ? parsed : 0;
+                    }
+
+                    setPostLikedUI(button, liked, count);
+                    // Keep posts node count in sync (non-blocking)
+                    if (count >= 0) {
+                        db.ref("posts/" + postId)
+                            .update({ likes: count, likesCount: count })
+                            .catch(() => {});
+                    }
+                } catch (err) {
+                    console.warn("hydrate like failed:", postId, err);
+                }
+            })
+        );
+    }
+
+    /* Like locks + spam for posts */
+    const postLikeInFlight = new Set();
+    const postLikeSpam = {};
+    const POST_LIKE_SPAM_LIMIT = 6;
+    const POST_LIKE_SPAM_WINDOW = 12000;
+
+    function trackPostLikeSpam(postId) {
+        const now = Date.now();
+        const arr = (postLikeSpam[postId] || []).filter(
+            (t) => now - t < POST_LIKE_SPAM_WINDOW
+        );
+        arr.push(now);
+        postLikeSpam[postId] = arr;
+        return arr.length;
+    }
+
+    function showPostLikeSpamWarning() {
+        const msg =
+            "Please do not spam likes. Rapid like / unlike is against Viewora Community Guidelines. Repeated abuse may lead to account suspension.";
+        try {
+            window.alert(msg);
+        } catch (_) {
+            showToast(msg);
+        }
+    }
+
+    function setPostLikedUI(button, liked, count) {
+        if (!button) return;
+        const icon = button.querySelector("i");
+        const label = button.querySelector("span");
+        button.classList.toggle("liked", !!liked);
+        if (icon) {
+            icon.className = liked
+                ? "fa-solid fa-heart"
+                : "fa-regular fa-heart";
+        }
+        if (label && count !== undefined && count !== null) {
+            label.textContent = formatCount(count);
+        }
+    }
+
     async function togglePostLike(card, postId, button) {
         const uid = getMyUID();
         if (!uid) {
             showToast("Login required to like");
             return;
         }
+        if (!postId) return;
 
-        const likeRef = db.ref("postLikes/" + postId + "/" + uid);
-        const postRef = db.ref("posts/" + postId);
-        const icon = button.querySelector("i");
-        const label = button.querySelector("span");
+        const lockKey = postId + ":" + uid;
+        if (typeof postLikeInFlight !== "undefined" && postLikeInFlight.has(lockKey)) {
+            return;
+        }
+        if (button && button.dataset.liking === "1") return;
+
+        // Spam guard
+        try {
+            if (typeof trackPostLikeSpam === "function") {
+                const taps = trackPostLikeSpam(postId);
+                if (taps >= (POST_LIKE_SPAM_LIMIT || 6)) {
+                    if (typeof showPostLikeSpamWarning === "function") {
+                        showPostLikeSpamWarning();
+                    } else {
+                        alert(
+                            "Please do not spam likes. Rapid like / unlike is against Viewora Community Guidelines. Repeated abuse may lead to account suspension."
+                        );
+                    }
+                    return;
+                }
+            }
+        } catch (_) {}
+
+        if (typeof postLikeInFlight !== "undefined") postLikeInFlight.add(lockKey);
+        if (button) {
+            button.dataset.liking = "1";
+            button.disabled = true;
+            button.style.pointerEvents = "none";
+        }
+
+        const likeRefA = db.ref("postLikes/" + postId + "/" + uid);
+        const likeRefB = db.ref("likes/" + postId + "/" + uid);
 
         try {
-            const snap = await likeRef.once("value");
-            let count = Number(
-                (label && label.textContent.replace(/[^\d.]/g, "")) || 0
-            );
-            // Prefer live field if present
-            const postSnap = await postRef.once("value");
-            const pdata = postSnap.val() || {};
-            count = Number(
-                pdata.likesCount ||
-                pdata.likes ||
-                count ||
-                0
-            );
+            let wasLiked = false;
+            // Membership from either path
+            const [a0, b0] = await Promise.all([
+                likeRefA.once("value"),
+                likeRefB.once("value")
+            ]);
+            wasLiked =
+                a0.exists() ||
+                b0.val() === true ||
+                b0.val() === 1 ||
+                (b0.exists() && b0.val() !== false && b0.val() !== null);
 
-            if (snap.exists()) {
-                await likeRef.remove();
-                count = Math.max(0, count - 1);
-                if (icon) icon.className = "fa-regular fa-heart";
-                button.classList.remove("liked");
-            } else {
-                await likeRef.set(true);
-                count = count + 1;
-                if (icon) icon.className = "fa-solid fa-heart";
-                button.classList.add("liked");
-            }
-
-            await postRef.update({
-                likes: count,
-                likesCount: count
+            // Atomic toggle on primary
+            await likeRefA.transaction((cur) => {
+                if (cur === null) return true;
+                return null;
             });
 
-            if (label) label.textContent = formatCount(count);
+            const after = await likeRefA.once("value");
+            const isLiked = after.exists();
+
+            // Mirror secondary
+            try {
+                if (isLiked) await likeRefB.set(true);
+                else await likeRefB.remove();
+            } catch (_) {}
+
+            // Count = unique keys in postLikes (source of truth)
+            let finalCount = 0;
+            try {
+                const tree = await db.ref("postLikes/" + postId).once("value");
+                if (tree.exists()) {
+                    finalCount = Object.keys(tree.val() || {}).length;
+                }
+            } catch (_) {}
+
+            if (!finalCount) {
+                try {
+                    const tree2 = await db.ref("likes/" + postId).once("value");
+                    if (tree2.exists()) {
+                        const v = tree2.val() || {};
+                        finalCount = Object.keys(v).filter((k) => {
+                            const item = v[k];
+                            return (
+                                item === true ||
+                                item === 1 ||
+                                (item && typeof item === "object")
+                            );
+                        }).length;
+                    }
+                } catch (_) {}
+            }
+
+            // Persist aggregate (numbers only — never object)
+            try {
+                await db.ref("posts/" + postId).update({
+                    likes: finalCount,
+                    likesCount: finalCount,
+                    likeCount: finalCount
+                });
+            } catch (_) {}
+
+            setPostLikedUI(button, isLiked, finalCount);
+            if (card) {
+                card.dataset.likeCount = String(finalCount);
+            }
         } catch (err) {
             console.error("Like failed:", err);
             showToast("Like failed");
+        } finally {
+            if (typeof postLikeInFlight !== "undefined") {
+                postLikeInFlight.delete(lockKey);
+            }
+            if (button) {
+                button.dataset.liking = "0";
+                button.disabled = false;
+                button.style.pointerEvents = "";
+            }
         }
     }
+
 
     async function togglePostSave(card, postId, button) {
         const uid = getMyUID();
@@ -1562,10 +1882,18 @@
             '<div style="padding:20px;text-align:center;color:#8b8b9a;font-size:12px;">Loading...</div>';
 
         try {
-            const snap = await db.ref("comments/" + postId).once("value");
-            const val = snap.val();
+            const [snapA, snapB] = await Promise.all([
+                db.ref("comments/" + postId).once("value"),
+                db.ref("posts/" + postId + "/comments").once("value")
+            ]);
+            const merged = {};
+            const a = snapA.val() || {};
+            const b = snapB.val() || {};
+            Object.keys(a).forEach((k) => { merged[k] = a[k]; });
+            Object.keys(b).forEach((k) => { if (!merged[k]) merged[k] = b[k]; });
+            const val = merged;
 
-            if (!val) {
+            if (!Object.keys(val).length) {
                 list.innerHTML =
                     '<div style="padding:24px;text-align:center;color:#8b8b9a;font-size:13px;">No comments yet. Be the first.</div>';
                 return;
@@ -1575,8 +1903,8 @@
                 .map(([id, data]) => ({ id, ...(data || {}) }))
                 .sort(
                     (a, b) =>
-                        Number(a.createdAt || 0) -
-                        Number(b.createdAt || 0)
+                        Number(a.createdAt || a.timestamp || 0) -
+                        Number(b.createdAt || b.timestamp || 0)
                 );
 
             // Enrich comment authors for verified + avatar
@@ -1670,28 +1998,56 @@
                 }
             } catch (e) {}
 
-            await db.ref("comments/" + postId).push({
+            const payload = {
                 uid,
+                userId: uid,
                 text,
                 name,
                 profilePhoto: photo,
                 createdAt:
                     (typeof firebase !== "undefined" &&
-                        firebase.database?.ServerValue?.TIMESTAMP) ||
-                    Date.now()
-            });
+                        firebase.database &&
+                        firebase.database.ServerValue &&
+                        firebase.database.ServerValue.TIMESTAMP) ||
+                    Date.now(),
+                timestamp: Date.now()
+            };
 
-            // bump comment count
+            const pushRef = db.ref("comments/" + postId).push();
+            await pushRef.set(payload);
             try {
-                const pref = db.ref("posts/" + postId);
-                const ps = await pref.once("value");
-                const p = ps.val() || {};
+                await db
+                    .ref("posts/" + postId + "/comments/" + pushRef.key)
+                    .set(payload);
+            } catch (e) {}
+
+            // bump comment count (transaction-safe)
+            try {
+                const countRef = db.ref("posts/" + postId + "/commentsCount");
+                const tx = await countRef.transaction((cur) => {
+                    const n =
+                        typeof cur === "number" && Number.isFinite(cur)
+                            ? cur
+                            : 0;
+                    return n + 1;
+                });
                 const n =
-                    Number(p.commentsCount || p.comments || 0) + 1;
-                await pref.update({
+                    tx.committed && tx.snapshot
+                        ? Number(tx.snapshot.val()) || 0
+                        : 0;
+                await db.ref("posts/" + postId).update({
                     comments: n,
                     commentsCount: n
                 });
+
+                // Update card UI
+                const card = feedContainer?.querySelector(
+                    `.vieworaPostCard[data-post-id="${CSS.escape(postId)}"]`
+                );
+                const label = card?.querySelector(
+                    '[data-action="comment"] span'
+                );
+                if (label && n) label.textContent = formatCount(n);
             } catch (e) {}
 
             if (input) input.value = "";
@@ -1720,7 +2076,6 @@
                     const card = button.closest(".longVideoCard");
                     if (!card) return;
                     const id = card.dataset.videoId || "";
-                    // uid may be missing on card – try data
                     const uid =
                         card.dataset.uid ||
                         card.getAttribute("data-uid") ||
@@ -1736,51 +2091,47 @@
 
 
         longVideoContainer
-            .querySelectorAll(
-                ".videoThumbnailWrap"
-            )
+            .querySelectorAll(".videoThumbnailWrap")
             .forEach((thumbnail) => {
+                thumbnail.addEventListener("click", () => {
+                    const card = thumbnail.closest(".longVideoCard");
+                    if (!card) return;
+                    const id = card.dataset.videoId;
+                    window.location.href =
+                        "video.html?id=" + encodeURIComponent(id);
+                });
+            });
 
-                thumbnail.addEventListener(
-                    "click",
-                    () => {
+        // Avatar / username row → open profile
+        longVideoContainer
+            .querySelectorAll(".longVideoCard")
+            .forEach((card) => {
+                const uid =
+                    card.dataset.uid ||
+                    card.getAttribute("data-uid") ||
+                    "";
+                if (!uid) return;
 
-                        const card =
-                            thumbnail.closest(
-                                ".longVideoCard"
-                            );
+                const openProfile = (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    window.location.href =
+                        "profile.html?uid=" + encodeURIComponent(uid);
+                };
 
-                        if (!card) return;
-
-                        const id =
-                            card.dataset.videoId;
-
-                        const videoViewer =
-                            $("videoViewer");
-
-                        const viewerVideo =
-                            $("viewerVideo");
-
-
-                        if (
-                            !videoViewer ||
-                            !viewerVideo
-                        ) {
-                            return;
-                        }
-
-
-                        /*
-                         * Open full video page (YouTube-style).
-                         * Falls back to inline viewer if page missing.
-                         */
-                        window.location.href =
-                            "video.html?id=" +
-                            encodeURIComponent(id);
-
+                const av = card.querySelector(".videoAvatar");
+                if (av) {
+                    av.style.cursor = "pointer";
+                    av.addEventListener("click", openProfile);
+                }
+                const sub = card.querySelector(".videoSubMeta");
+                if (sub) {
+                    const nameSpan = sub.querySelector("span");
+                    if (nameSpan) {
+                        nameSpan.style.cursor = "pointer";
+                        nameSpan.addEventListener("click", openProfile);
                     }
-                );
-
+                }
             });
 
     }
@@ -1959,24 +2310,31 @@
                     const itemCategory =
                         String(
                             card.dataset.category ||
+                            card.getAttribute("data-category") ||
                             ""
-                        )
-                        .toLowerCase();
-
+                        ).toLowerCase();
+                    const tags = String(
+                        card.dataset.tags ||
+                        card.getAttribute("data-tags") ||
+                        ""
+                    ).toLowerCase();
+                    const caption = String(
+                        card.querySelector(".postCaption, .caption, .videoTitle, h3")?.textContent ||
+                        ""
+                    ).toLowerCase();
+                    const hay = itemCategory + " " + tags + " " + caption;
 
                     if (
-                        itemCategory &&
-                        itemCategory !== category
+                        itemCategory === category ||
+                        tags.split(/[,\s]+/).includes(category) ||
+                        hay.includes(category)
                     ) {
-
-                        card.style.display =
-                            "none";
-
+                        card.style.display = "";
+                    } else if (!itemCategory && !tags) {
+                        // no category data → hide on specific filters (except all)
+                        card.style.display = "none";
                     } else {
-
-                        card.style.display =
-                            "";
-
+                        card.style.display = "none";
                     }
 
                 });
@@ -1993,6 +2351,42 @@
 
     let currentUserUID = null;
     let followingSet = new Set();
+    const privateUserCache = {};
+
+    async function isPrivateAccount(uid) {
+        if (!uid) return false;
+        if (privateUserCache[uid] !== undefined) return privateUserCache[uid];
+        try {
+            const snap = await db.ref("users/" + uid).once("value");
+            if (!snap.exists()) {
+                privateUserCache[uid] = false;
+                return false;
+            }
+            const u = snap.val() || {};
+            const priv = !!(
+                u.privateAccount === true ||
+                u.isPrivate === true ||
+                String(u.privacy || "").toLowerCase() === "private" ||
+                String(u.accountType || "").toLowerCase() === "private"
+            );
+            privateUserCache[uid] = priv;
+            return priv;
+        } catch (_) {
+            privateUserCache[uid] = false;
+            return false;
+        }
+    }
+
+    async function canViewUserContent(ownerUid) {
+        if (!ownerUid) return true;
+        const me = getCurrentUID();
+        if (me && String(me) === String(ownerUid)) return true;
+        if (followingSet.has(String(ownerUid))) return true;
+        // Not following → only if public
+        const priv = await isPrivateAccount(ownerUid);
+        return !priv;
+    }
+
 
     function getCurrentUID() {
         try {
@@ -2015,24 +2409,30 @@
         followingSet = new Set();
         if (!uid) return;
 
-        try {
-            const snap = await db.ref("following/" + uid).once("value");
-            if (!snap.exists()) return;
+        const paths = [
+            "following/" + uid,
+            "users/" + uid + "/following"
+        ];
 
-            const val = snap.val() || {};
-            Object.keys(val).forEach((targetId) => {
-                const item = val[targetId];
-                if (
-                    item === true ||
-                    item === 1 ||
-                    item === "true" ||
-                    (item && typeof item === "object")
-                ) {
-                    followingSet.add(targetId);
-                }
-            });
-        } catch (err) {
-            console.warn("Following load failed:", err);
+        for (const path of paths) {
+            try {
+                const snap = await db.ref(path).once("value");
+                if (!snap.exists()) continue;
+                const val = snap.val() || {};
+                Object.keys(val).forEach((targetId) => {
+                    const item = val[targetId];
+                    if (
+                        item === true ||
+                        item === 1 ||
+                        item === "true" ||
+                        (item && typeof item === "object")
+                    ) {
+                        followingSet.add(String(targetId));
+                    }
+                });
+            } catch (err) {
+                console.warn("Following load failed:", path, err);
+            }
         }
     }
 
@@ -2107,9 +2507,33 @@
 
         currentUserUID = getCurrentUID();
 
-        // Load following list first, then stories
+        // Wait for auth if needed so following (friends) list is ready
+        const ensureAuth = () =>
+            new Promise((resolve) => {
+                if (currentUserUID) {
+                    resolve(currentUserUID);
+                    return;
+                }
+                if (typeof firebase === "undefined" || !firebase.auth) {
+                    resolve(null);
+                    return;
+                }
+                const unsub = firebase.auth().onAuthStateChanged((user) => {
+                    try { unsub(); } catch (_) {}
+                    currentUserUID = user ? user.uid : null;
+                    resolve(currentUserUID);
+                });
+                setTimeout(() => {
+                    try { unsub(); } catch (_) {}
+                    currentUserUID = getCurrentUID();
+                    resolve(currentUserUID);
+                }, 5000);
+            });
+
+        // Load following list first, then stories of friends only
         Promise.resolve()
             .then(async () => {
+                currentUserUID = await ensureAuth();
                 if (currentUserUID) {
                     await loadFollowingSet(currentUserUID);
                 }
@@ -2151,19 +2575,19 @@
                                 return;
                             }
 
-                            // Only own + followed users
+                            // Home: ONLY own + people you follow (never random users)
                             const isOwn =
                                 currentUserUID &&
-                                uid === currentUserUID;
+                                String(uid) === String(currentUserUID);
                             const isFollowed =
-                                followingSet.has(uid);
+                                followingSet.has(String(uid));
 
+                            if (!currentUserUID) {
+                                // Not logged in → no stories on home
+                                return;
+                            }
                             if (!isOwn && !isFollowed) {
-                                // If not logged in, still show all active (optional)
-                                // For stricter feed: skip non-followed
-                                if (currentUserUID) {
-                                    return;
-                                }
+                                return;
                             }
 
                             if (!byUser[uid]) {
@@ -2257,8 +2681,19 @@
                             return b.latestAt - a.latestAt;
                         });
 
-                        // Max 25 user rings
-                        groups.slice(0, 25).forEach((group) => {
+                        // Max 25 user rings — own goes to "Your Story" button, others beside it
+                        groups
+                            .filter((g) => {
+                                if (
+                                    currentUserUID &&
+                                    String(g.uid) === String(currentUserUID)
+                                ) {
+                                    return false; // own ring = left "Your Story"
+                                }
+                                return true;
+                            })
+                            .slice(0, 25)
+                            .forEach((group) => {
                             // Sort this user's stories newest first
                             group.stories.sort(
                                 (a, b) => b.createdAt - a.createdAt
@@ -2321,30 +2756,165 @@
                             `;
 
                             button.addEventListener("click", () => {
-                                // Mark as seen before opening
                                 markStoryUserSeen(group.uid);
-
-                                const params =
-                                    new URLSearchParams();
-
-                                // Open ALL stories of this user
-                                if (group.uid) {
-                                    params.set("uid", group.uid);
-                                }
+                                const params = new URLSearchParams();
+                                if (group.uid) params.set("uid", group.uid);
+                                // Home = chain all following stories (no solo)
+                                params.set("from", "home");
                                 if (firstStoryId) {
-                                    params.set(
-                                        "storyId",
-                                        firstStoryId
-                                    );
+                                    params.set("story", firstStoryId);
+                                    params.set("storyId", firstStoryId);
                                 }
-
                                 window.location.href =
-                                    "stories.html?" +
-                                    params.toString();
+                                    "stories.html?" + params.toString();
+                            });
+
+                            // Long press / name → open profile
+                            let lpTimer = null;
+                            button.addEventListener("touchstart", (e) => {
+                                lpTimer = setTimeout(() => {
+                                    if (group.uid) {
+                                        window.location.href =
+                                            "profile.html?uid=" +
+                                            encodeURIComponent(group.uid);
+                                    }
+                                }, 550);
+                            }, { passive: true });
+                            button.addEventListener("touchend", () => clearTimeout(lpTimer));
+                            button.addEventListener("touchmove", () => clearTimeout(lpTimer));
+                            button.addEventListener("contextmenu", (e) => {
+                                e.preventDefault();
+                                if (group.uid) {
+                                    window.location.href =
+                                        "profile.html?uid=" +
+                                        encodeURIComponent(group.uid);
+                                }
                             });
 
                             container.appendChild(button);
                         });
+
+                        // "Your Story" ring — profile pic + view own / plus = upload
+                        (async function wireYourStoryRing() {
+                            const addBtn = document.getElementById("addStoryBtn");
+                            if (!addBtn) return;
+
+                            const av = document.getElementById("myStoryAvatar");
+                            const plus = addBtn.querySelector(".yourStoryPlus");
+                            const myUid = currentUserUID || getCurrentUID();
+
+                            // --- Own active stories (from groups OR direct query) ---
+                            let ownStories = [];
+                            const ownGroup = (groups || []).find(
+                                (g) => myUid && String(g.uid) === String(myUid)
+                            );
+                            if (ownGroup && ownGroup.stories && ownGroup.stories.length) {
+                                ownStories = ownGroup.stories.slice();
+                            } else if (myUid) {
+                                try {
+                                    const snap = await db.ref("stories").once("value");
+                                    snap.forEach((child) => {
+                                        const d = child.val() || {};
+                                        const uid =
+                                            d.uid || d.userId || d.ownerId || d.creatorId || "";
+                                        if (String(uid) !== String(myUid)) return;
+                                        let createdAt = Number(
+                                            d.createdAt || d.timestamp || d.time || 0
+                                        );
+                                        if (createdAt > 0 && createdAt < 1e12) createdAt *= 1000;
+                                        if (!isStoryActive(d, createdAt)) return;
+                                        ownStories.push({ id: child.key, data: d, createdAt });
+                                    });
+                                    ownStories.sort((a, b) => b.createdAt - a.createdAt);
+                                } catch (e) {
+                                    console.warn("own stories query", e);
+                                }
+                            }
+
+                            const hasOwnStory = ownStories.length > 0;
+
+                            // --- Avatar: users/ → auth → story data ---
+                            if (av) {
+                                let photo = "";
+                                try {
+                                    if (myUid) {
+                                        const us = await db.ref("users/" + myUid).once("value");
+                                        if (us.exists()) {
+                                            const u = us.val() || {};
+                                            photo =
+                                                u.profilePhoto ||
+                                                u.photoURL ||
+                                                u.avatar ||
+                                                u.profilePicture ||
+                                                u.profile_image ||
+                                                u.dp ||
+                                                "";
+                                        }
+                                    }
+                                } catch (_) {}
+                                if (!photo) {
+                                    try {
+                                        const cu =
+                                            (typeof firebase !== "undefined" &&
+                                                firebase.auth &&
+                                                firebase.auth().currentUser) ||
+                                            null;
+                                        if (cu && cu.photoURL) photo = cu.photoURL;
+                                    } catch (_) {}
+                                }
+                                if (!photo && ownGroup && ownGroup.avatar) {
+                                    photo = ownGroup.avatar;
+                                }
+                                if (photo && !String(photo).includes("default-avatar")) {
+                                    av.src = photo;
+                                }
+                                av.onerror = function () {
+                                    this.onerror = null;
+                                    this.src = "assets/default-avatar.png";
+                                };
+                                av.alt = "Your Story";
+                            }
+
+                            // Ring state
+                            addBtn.classList.toggle("hasActiveStory", hasOwnStory);
+                            addBtn.classList.toggle("storyUnseen", hasOwnStory);
+                            if (!hasOwnStory) addBtn.classList.remove("storySeen");
+
+                            addBtn.removeAttribute("onclick");
+
+                            // Ring click → view own story (if any), else upload
+                            addBtn.onclick = function (e) {
+                                if (e.target && e.target.closest && e.target.closest(".yourStoryPlus")) {
+                                    return;
+                                }
+                                e.preventDefault();
+                                e.stopPropagation();
+                                if (hasOwnStory && myUid) {
+                                    markStoryUserSeen(myUid);
+                                    const first = ownStories[0];
+                                    const params = new URLSearchParams();
+                                    params.set("uid", myUid);
+                                    // Home: start at own, then continue to friends
+                                    params.set("from", "home");
+                                    if (first && first.id) {
+                                        params.set("story", first.id);
+                                        params.set("storyId", first.id);
+                                    }
+                                    window.location.href = "stories.html?" + params.toString();
+                                } else {
+                                    window.location.href = "story-upload.html";
+                                }
+                            };
+
+                            // Plus → always upload
+                            if (plus) {
+                                plus.onclick = function (e) {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    window.location.href = "story-upload.html";
+                                };
+                            }
+                        })();
                     },
                     (error) => {
                         console.error(
@@ -2543,29 +3113,27 @@
             // Sum unread from userChats/{uid}/* 
             // supports: unread, unreadCount, unreadMessages
             const ref = db.ref("userChats/" + myUid);
-
+            if (wireMessageBadge._ref) {
+                try { wireMessageBadge._ref.off(); } catch (_) {}
+            }
+            wireMessageBadge._ref = ref;
             ref.on("value", (snap) => {
                 let total = 0;
                 if (snap.exists()) {
                     snap.forEach((child) => {
                         const v = child.val() || {};
-                        let n =
-                            Number(v.unreadCount) ||
-                            Number(v.unread) ||
-                            Number(v.unreadMessages) ||
-                            Number(v.unread_count) ||
-                            0;
-                        // last message from other, not marked read
-                        if (
-                            n <= 0 &&
-                            v.lastMessage &&
-                            (v.lastSenderId || v.senderId || v.from) &&
-                            String(v.lastSenderId || v.senderId || v.from) !== String(myUid) &&
-                            v.read !== true &&
-                            v.seen !== true &&
-                            v.isRead !== true
-                        ) {
-                            n = 1;
+                        // ONLY explicit unread counters (after read, messages.js sets unread: 0)
+                        let n = Number(
+                            v.unread != null ? v.unread :
+                            v.unreadCount != null ? v.unreadCount :
+                            v.unreadMessages != null ? v.unreadMessages :
+                            v.unread_count != null ? v.unread_count :
+                            0
+                        );
+                        if (!Number.isFinite(n) || n < 0) n = 0;
+                        // Do NOT invent unread from lastMessage — that keeps badge stuck
+                        if (v.read === true || v.seen === true || v.isRead === true) {
+                            n = 0;
                         }
                         if (n > 0) total += n;
                     });
@@ -2603,6 +3171,42 @@
         }
     }
 
+    function loadMyStoryAvatarEarly() {
+        const av = document.getElementById("myStoryAvatar");
+        if (!av) return;
+        const apply = (photo) => {
+            if (!photo) return;
+            av.src = photo;
+            av.onerror = function () {
+                this.onerror = null;
+                this.src = "assets/default-avatar.png";
+            };
+        };
+        try {
+            const cu =
+                (typeof firebase !== "undefined" &&
+                    firebase.auth &&
+                    firebase.auth().currentUser) ||
+                null;
+            if (cu && cu.photoURL) apply(cu.photoURL);
+            const uid = (cu && cu.uid) || getCurrentUID();
+            if (!uid || !db) return;
+            db.ref("users/" + uid).once("value").then((snap) => {
+                if (!snap.exists()) return;
+                const u = snap.val() || {};
+                const photo =
+                    u.profilePhoto ||
+                    u.photoURL ||
+                    u.avatar ||
+                    u.profilePicture ||
+                    u.profile_image ||
+                    u.dp ||
+                    "";
+                if (photo) apply(photo);
+            }).catch(() => {});
+        } catch (_) {}
+    }
+
     function initialize() {
 
         console.log(
@@ -2612,6 +3216,7 @@
         injectHomeStyles();
         wireSearchOpen();
         wireMessageBadge();
+        loadMyStoryAvatarEarly();
 
         loadPosts();
 
