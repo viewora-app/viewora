@@ -44,20 +44,44 @@
 
     window.__VIEWORA_CALL_V3__ = true;
 
+    // Early navigation API (works even before WebRTC init)
+    window.VieworaCall = window.VieworaCall || {};
+    window.VieworaCall.startCall = function (uid, type) {
+        if (!uid) {
+            alert("User ID missing");
+            return;
+        }
+        var t = type === "video" ? "video" : "audio";
+        window.location.assign(
+            "call.html?role=caller&type=" + encodeURIComponent(t) +
+            "&receiverId=" + encodeURIComponent(uid) +
+            "&uid=" + encodeURIComponent(uid)
+        );
+    };
+    window.VieworaStartVoiceCall = function (uid) {
+        window.VieworaCall.startCall(uid, "audio");
+    };
+    window.VieworaStartVideoCall = function (uid) {
+        window.VieworaCall.startCall(uid, "video");
+    };
+    window.startVoiceCall = window.VieworaStartVoiceCall;
+    window.startVideoCall = window.VieworaStartVideoCall;
+
+
 
     /* ======================================================
        FIREBASE CHECK
     ====================================================== */
 
-    if (
-        typeof firebase === "undefined" ||
-        !window.auth ||
-        !window.db
-    ) {
-        console.error(
-            "❌ Viewora Call: Firebase is not ready."
+    const __firebaseReady =
+        typeof firebase !== "undefined" &&
+        window.auth &&
+        window.db;
+
+    if (!__firebaseReady) {
+        console.warn(
+            "⚠️ Viewora Call: Firebase not ready yet — API-only mode."
         );
-        return;
     }
 
 
@@ -2909,7 +2933,7 @@
        PUBLIC API
     ====================================================== */
 
-    window.VieworaCall = {
+    window.VieworaCall = Object.assign(window.VieworaCall || {}, {
 
         startCall: async (
             uid,
@@ -2985,7 +3009,7 @@
         getRemoteUserId:
             () => remoteUserId
 
-    };
+    });
 
 
     /* ======================================================

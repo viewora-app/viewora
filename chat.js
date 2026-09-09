@@ -550,7 +550,13 @@
         );
 
     const targetUid =
-        params.get(CHAT_PARAM);
+        params.get(CHAT_PARAM) ||
+        params.get("userId") ||
+        params.get("user") ||
+        params.get("peer") ||
+        params.get("id") ||
+        params.get("to") ||
+        "";
 
 
     /* ======================================================
@@ -562,20 +568,25 @@
         hideLoading();
 
         showToast(
-            "Chat user not found.",
+            "Chat user not found. Open a chat from Messages.",
             "error"
         );
 
+        console.warn("[VIEWORA CHAT] missing uid in URL", location.href);
+
         setTimeout(() => {
-
-            if (
-                document.referrer &&
-                document.referrer !== window.location.href
-            ) {
-                window.history.back();
+            try {
+                if (document.referrer && document.referrer.indexOf("messages") !== -1) {
+                    window.location.href = "messages.html";
+                } else if (document.referrer && document.referrer !== window.location.href) {
+                    window.history.back();
+                } else {
+                    window.location.href = "messages.html";
+                }
+            } catch (_) {
+                window.location.href = "messages.html";
             }
-
-        }, 1000);
+        }, 1200);
 
         return;
     }
@@ -5374,38 +5385,64 @@
                 showToast("Cannot call blocked user.", "error");
                 return;
             }
-            const uid = targetUid || state.otherUser.uid || "";
+            const uid = String(
+                targetUid ||
+                state.otherUser.uid ||
+                state.otherUser.userId ||
+                ""
+            ).trim();
             if (!uid) {
-                showToast("User ID missing. Open chat again.", "error");
+                showToast("User ID missing. Open chat from Messages again.", "error");
                 return;
             }
             const t = type === "video" ? "video" : "audio";
-            // Prefer API if call.js loaded
-            if (typeof window.VieworaCall?.startCall === "function") {
-                window.VieworaCall.startCall(uid, t);
-                return;
-            }
-            if (t === "video" && typeof window.VieworaStartVideoCall === "function") {
-                window.VieworaStartVideoCall(uid);
-                return;
-            }
-            if (t === "audio" && typeof window.VieworaStartVoiceCall === "function") {
-                window.VieworaStartVoiceCall(uid);
-                return;
-            }
-            // Direct fallback — always works
-            const name = encodeURIComponent(state.otherUser.name || "");
+            const name = encodeURIComponent(state.otherUser.name || "User");
             const photo = encodeURIComponent(state.otherUser.photo || "");
-            location.href =
-                "call.html?role=caller&type=" + t +
+            // ALWAYS direct navigate — do not depend on call.js on this page
+            const url =
+                "call.html?role=caller" +
+                "&type=" + encodeURIComponent(t) +
                 "&receiverId=" + encodeURIComponent(uid) +
                 "&uid=" + encodeURIComponent(uid) +
                 "&name=" + name +
                 "&photo=" + photo;
+            console.log("[VIEWORA CALL] opening", url);
+            window.location.assign(url);
         }
 
-        voiceCallBtn?.addEventListener("click", () => openCall("audio"));
-        videoCallBtn?.addEventListener("click", () => openCall("video"));
+        function bindCallButtons() {
+            const vBtn = document.getElementById("voiceCallBtn");
+            const vidBtn = document.getElementById("videoCallBtn");
+            if (vBtn && !vBtn.__vieworaCallBound) {
+                vBtn.__vieworaCallBound = true;
+                vBtn.addEventListener("click", function (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    openCall("audio");
+                });
+            }
+            if (vidBtn && !vidBtn.__vieworaCallBound) {
+                vidBtn.__vieworaCallBound = true;
+                vidBtn.addEventListener("click", function (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    openCall("video");
+                });
+            }
+        }
+        bindCallButtons();
+        // Extra: event delegation in case buttons re-render
+        document.addEventListener("click", function (e) {
+            const v = e.target.closest("#voiceCallBtn, .voiceCallBtn, [data-call=audio]");
+            const vid = e.target.closest("#videoCallBtn, .videoCallBtn, [data-call=video]");
+            if (v) {
+                e.preventDefault();
+                openCall("audio");
+            } else if (vid) {
+                e.preventDefault();
+                openCall("video");
+            }
+        }, true);
 
         document.addEventListener(
             "click",

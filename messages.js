@@ -1049,15 +1049,26 @@ function messagesCreateCard(chat) {
 
             }
 
-            if (!chat.userId) {
-
+            // Resolve peer uid (userId or other half of chatId)
+            let peerUid = chat.userId || chat.uid || chat.peerId || "";
+            if (!peerUid) {
+                const cid = String(chat.chatId || chat.id || "");
+                const me =
+                    (window.auth && auth.currentUser && auth.currentUser.uid) ||
+                    (firebase.auth && firebase.auth().currentUser && firebase.auth().currentUser.uid) ||
+                    messagesUID ||
+                    "";
+                if (cid.indexOf("_") !== -1 && me) {
+                    const parts = cid.split("_");
+                    peerUid = parts[0] === me ? parts[1] : parts[0];
+                }
+            }
+            if (!peerUid) {
                 messagesToast(
                     "User information missing",
                     "error"
                 );
-
                 return;
-
             }
 
             // Clear unread so home badge updates
@@ -1082,9 +1093,7 @@ function messagesCreateCard(chat) {
             } catch (_) {}
             location.href =
                 "chat.html?uid=" +
-                encodeURIComponent(
-                    chat.userId
-                );
+                encodeURIComponent(peerUid);
 
         }
     );
