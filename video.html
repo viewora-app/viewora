@@ -39,7 +39,8 @@
     >
 
     <link rel="stylesheet" href="video.css">
-
+<link rel="stylesheet" href="theme.css">
+  
 </head>
 
 <body>
@@ -119,10 +120,45 @@
                     class="mainVideo"
                     playsinline
                     webkit-playsinline
-                    controls
                     controlslist="nodownload"
                     preload="auto"
                 ></video>
+
+                <!-- Custom premium controls -->
+                <div id="customControls" class="customControls">
+                    <button type="button" id="ccPlay" class="ccBtn ccPlay" aria-label="Play">
+                        <i class="fa-solid fa-play"></i>
+                    </button>
+                    <div class="ccSeekRow">
+                        <button type="button" id="ccBack" class="ccBtn ccSmall" aria-label="Back 10s">
+                            <i class="fa-solid fa-rotate-left"></i>
+                            <span>10</span>
+                        </button>
+                        <div class="ccProgressWrap">
+                            <input id="ccSeek" class="ccSeek" type="range" min="0" max="1000" value="0" step="1">
+                            <div class="ccTime">
+                                <span id="ccCurrent">0:00</span>
+                                <span>/</span>
+                                <span id="ccTotal">0:00</span>
+                            </div>
+                        </div>
+                        <button type="button" id="ccFwd" class="ccBtn ccSmall" aria-label="Forward 10s">
+                            <i class="fa-solid fa-rotate-right"></i>
+                            <span>10</span>
+                        </button>
+                    </div>
+                    <div class="ccRight">
+                        <button type="button" id="ccMute" class="ccBtn" aria-label="Mute">
+                            <i class="fa-solid fa-volume-high"></i>
+                        </button>
+                        <button type="button" id="ccFs" class="ccBtn" aria-label="Fullscreen">
+                            <i class="fa-solid fa-expand"></i>
+                        </button>
+                    </div>
+                </div>
+                <button type="button" id="ccBigPlay" class="ccBigPlay" aria-label="Play">
+                    <i class="fa-solid fa-play"></i>
+                </button>
 
                 <!-- In-player top controls (fullscreen + settings) -->
                 <div class="playerChrome" id="playerChrome">
@@ -211,6 +247,12 @@
                 <span class="dot">•</span>
 
                 <span id="videoDate">
+                    —
+                </span>
+
+                <span class="dot">•</span>
+
+                <span id="videoDuration">
                     —
                 </span>
 
@@ -445,107 +487,12 @@
         </section>
 
 
-        <!-- =================================================
-             RECOMMENDED VIDEOS
-        ================================================== -->
-
-        <section class="recommendSection">
-
-            <div class="sectionHeading">
-
-                <div>
-
-                    <span>
-                        KEEP WATCHING
-                    </span>
-
-                    <h2>
-                        Recommended videos
-                    </h2>
-
-                </div>
-
-
-                <button
-                    id="refreshRecommendations"
-                    class="refreshButton"
-                    type="button"
-                >
-
-                    <i class="fa-solid fa-rotate"></i>
-
-                </button>
-
-            </div>
-
-
-            <div
-                id="recommendedVideos"
-                class="videoRecommendationGrid"
-            ></div>
-
-
-            <div
-                id="videoRecommendationsEmpty"
-                class="emptyRecommendation hidden"
-            >
-
-                <i class="fa-regular fa-circle-play"></i>
-
-                <span>
-                    More videos are coming soon.
-                </span>
-
-            </div>
-
-        </section>
-
 
         <!-- =================================================
-             SHORTS
+             COMMENTS (below description)
         ================================================== -->
 
-        <section class="shortsSection">
-
-            <div class="sectionHeading">
-
-                <div>
-
-                    <span>
-                        SHORTS
-                    </span>
-
-                    <h2>
-                        Quick videos for you
-                    </h2>
-
-                </div>
-
-
-                <button
-                    id="openShortsBtn"
-                    class="textButton"
-                    type="button"
-                >
-                    See all
-                </button>
-
-            </div>
-
-
-            <div
-                id="recommendedShorts"
-                class="shortsRail"
-            ></div>
-
-        </section>
-
-
-        <!-- =================================================
-             COMMENTS
-        ================================================== -->
-
-        <section
+<section
             id="commentsSection"
             class="commentsSection"
         >
@@ -630,7 +577,99 @@
 
         </section>
 
-    </main>
+        <!-- =================================================
+             SHORTS
+        ================================================== -->
+
+<section class="shortsSection">
+
+            <div class="sectionHeading">
+
+                <div>
+
+                    <span>
+                        SHORTS
+                    </span>
+
+                    <h2>
+                        Quick videos for you
+                    </h2>
+
+                </div>
+
+
+                <button
+                    id="openShortsBtn"
+                    class="textButton"
+                    type="button"
+                >
+                    See all
+                </button>
+
+            </div>
+
+
+            <div
+                id="recommendedShorts"
+                class="shortsRail"
+            ></div>
+
+        </section>
+
+        <!-- =================================================
+             RECOMMENDED VIDEOS
+        ================================================== -->
+
+<section class="recommendSection">
+
+            <div class="sectionHeading">
+
+                <div>
+
+                    <span>
+                        KEEP WATCHING
+                    </span>
+
+                    <h2>
+                        Recommended videos
+                    </h2>
+
+                </div>
+
+
+                <button
+                    id="refreshRecommendations"
+                    class="refreshButton"
+                    type="button"
+                >
+
+                    <i class="fa-solid fa-rotate"></i>
+
+                </button>
+
+            </div>
+
+
+            <div
+                id="recommendedVideos"
+                class="videoRecommendationGrid"
+            ></div>
+
+
+            <div
+                id="videoRecommendationsEmpty"
+                class="emptyRecommendation hidden"
+            >
+
+                <i class="fa-regular fa-circle-play"></i>
+
+                <span>
+                    More videos are coming soon.
+                </span>
+
+            </div>
+
+        </section>
 
 
     <!-- =====================================================
@@ -1205,6 +1244,8 @@
 
 
 <script src="firebase.js"></script>
+  <script src="call-listener.js"></script>
+<script src="message-listener.js"></script>
   <script src="badges.js"></script>
 
 
@@ -1213,6 +1254,8 @@
 ========================================================= -->
 
 <script src="video.js"></script>
+  <script src="theme.js"></script>
 
+  
 </body>
 </html>

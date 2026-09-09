@@ -3311,10 +3311,10 @@
         );
 
         setTimeout(() => {
-
-            window.location.href =
-                "live.html";
-
+            // Open host live room with title from setup
+            var q = "start=1";
+            if (title) q += "&title=" + encodeURIComponent(title);
+            window.location.href = "live.html?" + q;
         }, 450);
     }
 

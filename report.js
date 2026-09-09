@@ -3,26 +3,25 @@
 /*
 ============================================================
  VIEWORA — REPORT SYSTEM
- report.js
+ Premium Safety & Moderation Report Handler
 
- Supports:
- • User reports
- • Post reports
- • Video reports
- • Short reports
- • Story reports
- • Firebase Realtime Database
- • Duplicate report protection
- • Reason selection
- • Optional details
+ Firebase:
+ • Existing Firebase initialization
+ • Authentication
+ • Realtime Database
+ • /reports/{reportId}
+
+ IMPORTANT:
+ firebase.js should initialize Firebase BEFORE this file.
+ This file does NOT initialize Firebase again.
 ============================================================
 */
 
 (() => {
 
-    /* ======================================================
+    /* =====================================================
        PREVENT DOUBLE INITIALIZATION
-    ====================================================== */
+    ===================================================== */
 
     if (window.__VIEWORA_REPORT_INITIALIZED__) {
         console.warn("Viewora report.js already initialized.");
@@ -32,797 +31,532 @@
     window.__VIEWORA_REPORT_INITIALIZED__ = true;
 
 
-    /* ======================================================
+    /* =====================================================
        DOM
-    ====================================================== */
+    ===================================================== */
+
+    const form = document.getElementById("reportForm");
+
+    if (!form) {
+        console.warn("Viewora Report: form not found.");
+        return;
+    }
 
     const backBtn =
         document.getElementById("backBtn");
 
-    const reasonCards =
-        document.querySelectorAll(".reasonCard");
+    const targetCards =
+        document.querySelectorAll(".target-card");
 
-    const reportDetails =
-        document.getElementById("reportDetails");
+    const targetIdInput =
+        document.getElementById("targetId");
 
-    const characterCount =
-        document.getElementById("characterCount");
+    const targetUrlInput =
+        document.getElementById("targetUrl");
 
-    const submitReportBtn =
-        document.getElementById("submitReportBtn");
+    const descriptionInput =
+        document.getElementById("description");
 
-    const targetTitle =
-        document.getElementById("targetTitle");
+    const charCount =
+        document.getElementById("charCount");
 
-    const targetSubtitle =
-        document.getElementById("targetSubtitle");
+    const submitBtn =
+        document.getElementById("submitBtn");
 
-    const targetIcon =
-        document.getElementById("targetIcon");
+    const formError =
+        document.getElementById("formError");
 
-    const successOverlay =
-        document.getElementById("successOverlay");
+    const successModal =
+        document.getElementById("successModal");
 
-    const successDoneBtn =
-        document.getElementById("successDoneBtn");
+    const reportIdText =
+        document.getElementById("reportIdText");
 
-    const loadingOverlay =
-        document.getElementById("loadingOverlay");
-
-    const toast =
-        document.getElementById("toast");
-
-    const toastIcon =
-        document.getElementById("toastIcon");
-
-    const toastText =
-        document.getElementById("toastText");
+    const doneBtn =
+        document.getElementById("doneBtn");
 
 
-    /* ======================================================
+    /* =====================================================
        STATE
-    ====================================================== */
+    ===================================================== */
 
-    let selectedReason = "";
+    let selectedTarget = "post";
 
-    let isSubmitting = false;
-
-    let toastTimer = null;
+    let submitting = false;
 
 
-    /* ======================================================
-       URL PARAMETERS
-       
-       Examples:
-       
-       report.html?type=post&id=POST_ID&uid=USER_ID
-       
-       report.html?type=video&id=VIDEO_ID&uid=USER_ID
-       
-       report.html?type=short&id=SHORT_ID&uid=USER_ID
-       
-       report.html?type=story&id=STORY_ID&uid=USER_ID
-       
-       report.html?type=user&uid=USER_ID
-    ====================================================== */
-
-    const params =
-        new URLSearchParams(window.location.search);
-
-    const reportType =
-        normalizeType(
-            params.get("type") || "content"
-        );
-
-    const contentId =
-        cleanValue(
-            params.get("id")
-        );
-
-    const reportedUserId =
-        cleanValue(
-            params.get("uid") ||
-            params.get("userId") ||
-            ""
-        );
-
-
-    /* ======================================================
+    /* =====================================================
        HELPERS
-    ====================================================== */
+    ===================================================== */
 
-    function cleanValue(value) {
+    function showError(message) {
 
-        if (!value) {
-            return "";
-        }
+        if (!formError) return;
 
-        return String(value).trim().slice(0, 200);
+        formError.textContent = message;
+        formError.classList.add("show");
+
+        formError.scrollIntoView({
+            behavior: "smooth",
+            block: "center"
+        });
     }
 
 
-    function normalizeType(type) {
+    function clearError() {
 
-        const value =
-            String(type || "")
-                .trim()
-                .toLowerCase();
+        if (!formError) return;
 
-        const allowed = [
-            "user",
-            "post",
-            "video",
-            "short",
-            "story",
-            "content"
-        ];
-
-        return allowed.includes(value)
-            ? value
-            : "content";
+        formError.textContent = "";
+        formError.classList.remove("show");
     }
 
 
-    function escapeHtml(value) {
+    function setLoading(state) {
 
-        return String(value || "")
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/"/g, "&quot;")
-            .replace(/'/g, "&#039;");
+        submitting = state;
+
+        if (!submitBtn) return;
+
+        submitBtn.disabled = state;
+        submitBtn.classList.toggle("loading", state);
     }
 
 
     function getFirebaseAuth() {
 
-        if (
-            typeof firebase === "undefined" ||
-            !firebase.auth
-        ) {
-            return null;
-        }
+        /*
+         * Supports common Firebase Compat setup:
+         *
+         * firebase.auth()
+         */
 
         try {
-            return firebase.auth();
+
+            if (
+                window.firebase &&
+                typeof window.firebase.auth === "function"
+            ) {
+                return window.firebase.auth();
+            }
+
         } catch (error) {
-            console.error(
+            console.warn(
                 "Viewora Report: Firebase Auth unavailable.",
                 error
             );
-
-            return null;
         }
+
+        return null;
     }
 
 
     function getFirebaseDatabase() {
 
-        if (
-            typeof firebase === "undefined" ||
-            !firebase.database
-        ) {
-            return null;
-        }
+        /*
+         * Supports common Firebase Compat setup:
+         *
+         * firebase.database()
+         *
+         * Also supports a globally exposed:
+         *
+         * window.db
+         */
 
         try {
-            return firebase.database();
+
+            if (
+                window.firebase &&
+                typeof window.firebase.database === "function"
+            ) {
+                return window.firebase.database();
+            }
+
+            if (window.db) {
+                return window.db;
+            }
+
         } catch (error) {
-            console.error(
+
+            console.warn(
                 "Viewora Report: Firebase Database unavailable.",
                 error
             );
 
+        }
+
+        return null;
+    }
+
+
+    function getCurrentUser() {
+
+        const auth = getFirebaseAuth();
+
+        if (!auth) {
             return null;
         }
+
+        return auth.currentUser || null;
     }
 
 
-    /* ======================================================
-       TARGET UI
-    ====================================================== */
+    function createReportId() {
 
-    function setupTarget() {
+        const timestamp =
+            Date.now().toString(36).toUpperCase();
 
-        const config = {
+        const random =
+            Math.random()
+                .toString(36)
+                .substring(2, 8)
+                .toUpperCase();
 
-            user: {
-                title: "Account",
-                subtitle: "You are reporting this Viewora account.",
-                icon: "fa-solid fa-circle-user"
-            },
+        return `RPT-${timestamp}-${random}`;
+    }
 
-            post: {
-                title: "Post",
-                subtitle: "You are reporting this Viewora post.",
-                icon: "fa-solid fa-image"
-            },
 
-            video: {
-                title: "Video",
-                subtitle: "You are reporting this Viewora video.",
-                icon: "fa-solid fa-video"
-            },
+    function sanitizeText(value, maxLength) {
 
-            short: {
-                title: "Short",
-                subtitle: "You are reporting this Viewora Short.",
-                icon: "fa-solid fa-clapperboard"
-            },
-
-            story: {
-                title: "Story",
-                subtitle: "You are reporting this Viewora Story.",
-                icon: "fa-solid fa-circle-play"
-            },
-
-            content: {
-                title: "Viewora content",
-                subtitle: "You are reporting this Viewora content.",
-                icon: "fa-solid fa-flag"
-            }
-
-        };
-
-        const current =
-            config[reportType] || config.content;
-
-        if (targetTitle) {
-            targetTitle.textContent =
-                current.title;
+        if (typeof value !== "string") {
+            return "";
         }
 
-        if (targetSubtitle) {
-            targetSubtitle.textContent =
-                current.subtitle;
+        return value
+            .trim()
+            .replace(/\s+/g, " ")
+            .slice(0, maxLength);
+    }
+
+
+    function isValidUrl(value) {
+
+        if (!value) {
+            return true;
         }
 
-        if (targetIcon) {
-            targetIcon.className =
-                current.icon;
+        try {
+
+            const url = new URL(value);
+
+            return (
+                url.protocol === "http:" ||
+                url.protocol === "https:"
+            );
+
+        } catch {
+            return false;
         }
     }
 
 
-    /* ======================================================
-       REASON SELECTION
-    ====================================================== */
+    /* =====================================================
+       TARGET SELECTOR
+    ===================================================== */
 
-    reasonCards.forEach(card => {
+    targetCards.forEach(card => {
 
         card.addEventListener("click", () => {
 
-            reasonCards.forEach(item => {
-                item.classList.remove("selected");
-                item.setAttribute("aria-checked", "false");
+            targetCards.forEach(item => {
+                item.classList.remove("active");
             });
 
-            card.classList.add("selected");
-            card.setAttribute("aria-checked", "true");
+            card.classList.add("active");
 
-            selectedReason =
-                cleanValue(
-                    card.dataset.reason
-                );
+            selectedTarget =
+                card.dataset.target || "other";
 
-            updateSubmitState();
+            clearError();
 
         });
 
     });
 
 
-    /* ======================================================
-       CHARACTER COUNT
-    ====================================================== */
+    /* =====================================================
+       CHARACTER COUNTER
+    ===================================================== */
 
-    if (reportDetails) {
+    if (descriptionInput && charCount) {
 
-        reportDetails.addEventListener(
+        const updateCounter = () => {
+
+            charCount.textContent =
+                descriptionInput.value.length;
+
+        };
+
+        descriptionInput.addEventListener(
             "input",
-            () => {
-
-                const length =
-                    reportDetails.value.length;
-
-                if (characterCount) {
-                    characterCount.textContent =
-                        String(length);
-                }
-
-            }
+            updateCounter
         );
 
-    }
-
-
-    /* ======================================================
-       SUBMIT STATE
-    ====================================================== */
-
-    function updateSubmitState() {
-
-        if (!submitReportBtn) {
-            return;
-        }
-
-        submitReportBtn.disabled =
-            !selectedReason ||
-            isSubmitting;
+        updateCounter();
 
     }
 
 
-    /* ======================================================
-       TOAST
-    ====================================================== */
+    /* =====================================================
+       BACK BUTTON
+    ===================================================== */
 
-    function showToast(
-        message,
-        type = "success"
-    ) {
+    if (backBtn) {
 
-        if (!toast) {
-            return;
-        }
+        backBtn.addEventListener("click", () => {
 
-        clearTimeout(toastTimer);
+            if (
+                window.history.length > 1
+            ) {
 
-        toastText.textContent =
-            message;
+                window.history.back();
 
-        toast.className =
-            "toast show " + type;
+                return;
+            }
 
-        if (type === "error") {
+            window.location.href =
+                "settings.html";
 
-            toastIcon.className =
-                "fa-solid fa-circle-exclamation";
-
-        } else {
-
-            toastIcon.className =
-                "fa-solid fa-circle-check";
-
-        }
-
-        toastTimer =
-            setTimeout(() => {
-
-                toast.classList.remove("show");
-
-            }, 3500);
+        });
 
     }
 
 
-    /* ======================================================
-       LOADING
-    ====================================================== */
+    /* =====================================================
+       VALIDATION
+    ===================================================== */
 
-    function setLoading(loading) {
+    function validateForm() {
 
-        isSubmitting = loading;
+        clearError();
 
-        if (loadingOverlay) {
-
-            loadingOverlay.classList.toggle(
-                "hidden",
-                !loading
+        const reason =
+            form.querySelector(
+                'input[name="reason"]:checked'
             );
 
-        }
-
-        updateSubmitState();
-
-    }
-
-
-    /* ======================================================
-       VALIDATE
-    ====================================================== */
-
-    function validateReport(user) {
-
-        if (!user) {
-
-            showToast(
-                "Please sign in before submitting a report.",
-                "error"
+        const description =
+            sanitizeText(
+                descriptionInput?.value || "",
+                1000
             );
 
-            return false;
-        }
-
-
-        if (!selectedReason) {
-
-            showToast(
-                "Please select a reason for your report.",
-                "error"
+        const targetId =
+            sanitizeText(
+                targetIdInput?.value || "",
+                120
             );
 
-            return false;
+        const targetUrl =
+            sanitizeText(
+                targetUrlInput?.value || "",
+                500
+            );
+
+
+        if (!reason) {
+
+            showError(
+                "Please select a reason for your report."
+            );
+
+            return null;
         }
 
+
+        if (description.length < 10) {
+
+            showError(
+                "Please provide a little more detail. Your description should be at least 10 characters."
+            );
+
+            descriptionInput?.focus();
+
+            return null;
+        }
+
+
+        if (!isValidUrl(targetUrl)) {
+
+            showError(
+                "Please enter a valid HTTP or HTTPS content URL."
+            );
+
+            targetUrlInput?.focus();
+
+            return null;
+        }
+
+
+        /*
+         * A report should identify something whenever possible.
+         * For profile reports, an ID is especially useful.
+         */
 
         if (
-            reportType !== "user" &&
-            !contentId
+            !targetId &&
+            !targetUrl
         ) {
 
-            showToast(
-                "This report link is missing the content ID.",
-                "error"
+            showError(
+                "Please provide a content or user ID, or paste the content URL so we can identify what you are reporting."
             );
 
-            return false;
+            targetIdInput?.focus();
+
+            return null;
         }
 
-
-        if (
-            reportType === "user" &&
-            !reportedUserId
-        ) {
-
-            showToast(
-                "This report link is missing the account ID.",
-                "error"
-            );
-
-            return false;
-        }
-
-
-        if (
-            reportType !== "user" &&
-            reportedUserId &&
-            reportedUserId.length > 200
-        ) {
-
-            showToast(
-                "Invalid account information.",
-                "error"
-            );
-
-            return false;
-        }
-
-
-        return true;
-    }
-
-
-    /* ======================================================
-       BUILD REPORT
-    ====================================================== */
-
-    function buildReport(user) {
-
-        const now =
-            firebase.database.ServerValue.TIMESTAMP;
-
-        const details =
-            reportDetails
-                ? reportDetails.value.trim().slice(0, 1000)
-                : "";
 
         return {
 
-            reporterId:
-                user.uid,
+            targetType:
+                selectedTarget,
 
-            reporterEmail:
-                user.email || null,
+            targetId,
 
-            type:
-                reportType,
-
-            contentId:
-                contentId || null,
-
-            reportedUserId:
-                reportedUserId || null,
+            targetUrl,
 
             reason:
-                selectedReason,
+                reason.value,
 
-            details:
-                details || null,
-
-            status:
-                "pending",
-
-            createdAt:
-                now,
-
-            updatedAt:
-                now
+            description
 
         };
 
     }
 
 
-    /* ======================================================
-       DUPLICATE KEY
-    ====================================================== */
+    /* =====================================================
+       SUBMIT TO FIREBASE
+    ===================================================== */
 
-    function createDuplicateKey(user) {
-
-        const target =
-            reportType === "user"
-                ? `user_${reportedUserId}`
-                : `${reportType}_${contentId}`;
-
-        return (
-            `${user.uid}_${target}`
-        )
-        .replace(/[.#$[\]/]/g, "_")
-        .slice(0, 500);
-    }
-
-
-    /* ======================================================
-       SUBMIT REPORT
-    ====================================================== */
-
-    async function submitReport() {
-
-        if (isSubmitting) {
-            return;
-        }
-
-        const auth =
-            getFirebaseAuth();
+    async function submitReport(data) {
 
         const database =
             getFirebaseDatabase();
 
-        if (!auth || !database) {
+        if (!database) {
 
-            showToast(
-                "Viewora services are currently unavailable.",
-                "error"
+            throw new Error(
+                "Firebase database is not available."
             );
-
-            return;
         }
 
+
+        const reportId =
+            createReportId();
+
+
+        /*
+         * Authenticated user information.
+         *
+         * We store only the minimum account identifiers
+         * needed for moderation.
+         */
 
         const user =
-            auth.currentUser;
+            getCurrentUser();
 
 
-        if (!validateReport(user)) {
-            return;
+        const report = {
+
+            reportId,
+
+            status: "pending",
+
+            targetType:
+                data.targetType,
+
+            targetId:
+                data.targetId || null,
+
+            targetUrl:
+                data.targetUrl || null,
+
+            reason:
+                data.reason,
+
+            description:
+                data.description,
+
+            reporterUid:
+                user?.uid || null,
+
+            reporterEmail:
+                user?.email || null,
+
+            createdAt:
+                Date.now(),
+
+            updatedAt:
+                Date.now(),
+
+            source:
+                "viewora-web",
+
+            version:
+                "1.0"
+
+        };
+
+
+        /*
+         * Firebase Realtime Database:
+         *
+         * /reports/{reportId}
+         */
+
+        await database
+            .ref(`reports/${reportId}`)
+            .set(report);
+
+
+        return reportId;
+    }
+
+
+    /* =====================================================
+       SUCCESS MODAL
+    ===================================================== */
+
+    function showSuccess(reportId) {
+
+        if (!successModal) return;
+
+        if (reportIdText) {
+            reportIdText.textContent =
+                reportId || "—";
         }
 
-
-        setLoading(true);
-
-
-        try {
-
-            const duplicateKey =
-                createDuplicateKey(user);
-
-            const duplicateRef =
-                database
-                    .ref("reporterReports")
-                    .child(duplicateKey);
-
-
-            /*
-            ==================================================
-             DUPLICATE CHECK
-            ==================================================
-            */
-
-            const duplicateSnapshot =
-                await duplicateRef.once("value");
-
-
-            if (duplicateSnapshot.exists()) {
-
-                setLoading(false);
-
-                showToast(
-                    "You have already reported this.",
-                    "error"
-                );
-
-                return;
-            }
-
-
-            /*
-            ==================================================
-             CREATE REPORT ID
-            ==================================================
-            */
-
-            const reportRef =
-                database
-                    .ref("reports")
-                    .push();
-
-
-            const reportId =
-                reportRef.key;
-
-
-            if (!reportId) {
-
-                throw new Error(
-                    "Unable to create report ID."
-                );
-
-            }
-
-
-            /*
-            ==================================================
-             REPORT DATA
-            ==================================================
-            */
-
-            const report =
-                buildReport(user);
-
-            report.reportId =
-                reportId;
-
-
-            /*
-            ==================================================
-             MULTI LOCATION WRITE
-            ==================================================
-            */
-
-            const updates = {};
-
-
-            updates[
-                `/reports/${reportId}`
-            ] = report;
-
-
-            /*
-            Reporter-specific index.
-            Used to prevent repeated reports and
-            show user's own report history later.
-            */
-
-            updates[
-                `/reporterReports/${duplicateKey}`
-            ] = {
-
-                reportId:
-                    reportId,
-
-                type:
-                    reportType,
-
-                contentId:
-                    contentId || null,
-
-                reportedUserId:
-                    reportedUserId || null,
-
-                reason:
-                    selectedReason,
-
-                createdAt:
-                    firebase.database.ServerValue.TIMESTAMP
-
-            };
-
-
-            await database
-                .ref()
-                .update(updates);
-
-
-            /*
-            ==================================================
-             SUCCESS
-            ==================================================
-            */
-
-            setLoading(false);
-
-            if (successOverlay) {
-                successOverlay.classList.remove("hidden");
-            }
-
-
-        } catch (error) {
-
-            console.error(
-                "Viewora Report Submit Error:",
-                error
-            );
-
-            setLoading(false);
-
-
-            let message =
-                "Unable to submit your report. Please try again.";
-
-
-            if (
-                error &&
-                error.code ===
-                "PERMISSION_DENIED"
-            ) {
-
-                message =
-                    "You don't have permission to submit this report.";
-
-            } else if (
-                error &&
-                error.code ===
-                "NETWORK_ERROR"
-            ) {
-
-                message =
-                    "Network error. Please check your connection.";
-
-            }
-
-
-            showToast(
-                message,
-                "error"
-            );
-
-        }
-
-    }
-
-
-    /* ======================================================
-       SUBMIT BUTTON
-    ====================================================== */
-
-    if (submitReportBtn) {
-
-        submitReportBtn.addEventListener(
-            "click",
-            submitReport
+        successModal.classList.add("show");
+
+        successModal.setAttribute(
+            "aria-hidden",
+            "false"
         );
 
+        document.body.style.overflow = "hidden";
+
     }
 
 
-    /* ======================================================
-       SUCCESS DONE
-    ====================================================== */
+    function closeSuccess() {
 
-    if (successDoneBtn) {
+        if (!successModal) return;
 
-        successDoneBtn.addEventListener(
-            "click",
-            () => {
+        successModal.classList.remove("show");
 
-                if (successOverlay) {
-                    successOverlay.classList.add("hidden");
-                }
-
-                goBack();
-
-            }
+        successModal.setAttribute(
+            "aria-hidden",
+            "true"
         );
 
-    }
+        document.body.style.overflow = "";
 
-
-    /* ======================================================
-       BACK
-    ====================================================== */
-
-    function goBack() {
+        /*
+         * Return to the previous page after completion.
+         */
 
         if (
             window.history.length > 1
@@ -830,86 +564,185 @@
 
             window.history.back();
 
-            return;
-        }
+        } else {
 
-        window.location.href =
-            "index.html";
+            window.location.href =
+                "settings.html";
+
+        }
 
     }
 
 
-    if (backBtn) {
+    if (doneBtn) {
 
-        backBtn.addEventListener(
+        doneBtn.addEventListener(
             "click",
-            goBack
+            closeSuccess
         );
 
     }
 
 
-    /* ======================================================
-       AUTH CHECK
-    ====================================================== */
+    if (successModal) {
 
-    function initAuth() {
+        successModal.addEventListener(
+            "click",
+            event => {
 
-        const auth =
-            getFirebaseAuth();
-
-        if (!auth) {
-            return;
-        }
-
-
-        auth.onAuthStateChanged(user => {
-
-            if (!user) {
-
-                if (submitReportBtn) {
-                    submitReportBtn.disabled = true;
+                if (
+                    event.target === successModal
+                ) {
+                    closeSuccess();
                 }
 
-                return;
             }
-
-            updateSubmitState();
-
-        });
+        );
 
     }
 
 
-    /* ======================================================
-       PREVENT ACCIDENTAL FORM LEAVE
-    ====================================================== */
+    /* =====================================================
+       ESCAPE MODAL
+    ===================================================== */
 
-    window.addEventListener(
-        "beforeunload",
+    document.addEventListener(
+        "keydown",
         event => {
 
             if (
-                reportDetails &&
-                reportDetails.value.trim() &&
-                !successOverlay.classList.contains("hidden")
+                event.key === "Escape" &&
+                successModal?.classList.contains("show")
             ) {
-                return;
+
+                closeSuccess();
+
             }
 
         }
     );
 
 
-    /* ======================================================
-       START
-    ====================================================== */
+    /* =====================================================
+       FORM SUBMIT
+    ===================================================== */
 
-    setupTarget();
+    form.addEventListener(
+        "submit",
+        async event => {
 
-    updateSubmitState();
+            event.preventDefault();
 
-    initAuth();
+            if (submitting) {
+                return;
+            }
 
+
+            const data =
+                validateForm();
+
+            if (!data) {
+                return;
+            }
+
+
+            setLoading(true);
+
+
+            try {
+
+                /*
+                 * Give the UI a tiny moment to enter
+                 * loading state smoothly.
+                 */
+
+                await new Promise(
+                    resolve =>
+                        requestAnimationFrame(resolve)
+                );
+
+
+                const reportId =
+                    await submitReport(data);
+
+
+                /*
+                 * Reset form after successful
+                 * Firebase submission.
+                 */
+
+                form.reset();
+
+
+                targetCards.forEach(card => {
+                    card.classList.remove("active");
+                });
+
+
+                const defaultTarget =
+                    document.querySelector(
+                        '.target-card[data-target="post"]'
+                    );
+
+                if (defaultTarget) {
+                    defaultTarget.classList.add("active");
+                }
+
+                selectedTarget = "post";
+
+
+                if (charCount) {
+                    charCount.textContent = "0";
+                }
+
+
+                showSuccess(reportId);
+
+
+            } catch (error) {
+
+                console.error(
+                    "Viewora Report Submission Error:",
+                    error
+                );
+
+
+                /*
+                 * Do not expose internal Firebase
+                 * errors to the user.
+                 */
+
+                showError(
+                    "We couldn't submit your report right now. Please check your connection and try again."
+                );
+
+
+            } finally {
+
+                setLoading(false);
+
+            }
+
+        }
+    );
+
+
+    /* =====================================================
+       INITIAL STATE
+    ===================================================== */
+
+    const defaultTarget =
+        document.querySelector(
+            '.target-card[data-target="post"]'
+        );
+
+    if (defaultTarget) {
+        defaultTarget.classList.add("active");
+    }
+
+
+    console.log(
+        "Viewora Report System initialized."
+    );
 
 })();

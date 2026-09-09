@@ -26,6 +26,11 @@
        STATE
     ======================================================== */
 
+    let videoLikeInFlight = false;
+    const videoLikeSpam = [];
+    const VIDEO_LIKE_SPAM_LIMIT = 6;
+    const VIDEO_LIKE_SPAM_WINDOW = 12000;
+
     const state = {
         videoId: null,
         video: null,
@@ -739,74 +744,161 @@
     function setupPlayer() {
 
         const player = $("mainVideo");
-
         if (!player) return;
 
         hide($("playerLoading"));
         hidePageLoader();
 
-        /*
-         * Mobile / iOS friendly defaults
-         */
         player.setAttribute("playsinline", "");
         player.setAttribute("webkit-playsinline", "");
         player.playsInline = true;
-        player.controls = true;
+        player.controls = false; /* custom controls */
         player.preload = "auto";
 
         const video = state.video || {};
-
         const poster = getThumbnail(video);
+        if (poster) player.poster = poster;
 
-        if (poster) {
-            player.poster = poster;
+        const shell = $("playerShell");
+        const bigPlay = $("ccBigPlay");
+        const playBtn = $("ccPlay");
+        const backBtn = $("ccBack");
+        const fwdBtn = $("ccFwd");
+        const muteBtn = $("ccMute");
+        const fsBtn = $("ccFs");
+        const seek = $("ccSeek");
+        const ccCurrent = $("ccCurrent");
+        const ccTotal = $("ccTotal");
+
+        function fmt(t) {
+            return formatDuration(t);
         }
 
+        function syncTime() {
+            const cur = player.currentTime || 0;
+            const dur = player.duration || 0;
+            if (ccCurrent) ccCurrent.textContent = fmt(cur);
+            if (ccTotal) ccTotal.textContent = Number.isFinite(dur) ? fmt(dur) : "0:00";
+            if (seek && Number.isFinite(dur) && dur > 0) {
+                seek.value = String(Math.round((cur / dur) * 1000));
+            }
+            const pageDur = $("videoDuration");
+            if (pageDur && Number.isFinite(dur) && dur > 0) {
+                pageDur.textContent = fmt(dur);
+            }
+        }
+
+        function setPlayingUI(playing) {
+            shell?.classList.toggle("isPlaying", !!playing);
+            if (playBtn) {
+                playBtn.innerHTML = playing
+                    ? '<i class="fa-solid fa-pause"></i>'
+                    : '<i class="fa-solid fa-play"></i>';
+            }
+            if (bigPlay) {
+                bigPlay.classList.toggle("hidden", !!playing);
+            }
+        }
+
+        function togglePlay() {
+            if (player.paused) {
+                player.play().catch(() => {});
+            } else {
+                player.pause();
+            }
+        }
+
+        playBtn?.addEventListener("click", (e) => {
+            e.stopPropagation();
+            togglePlay();
+        });
+        bigPlay?.addEventListener("click", (e) => {
+            e.stopPropagation();
+            togglePlay();
+        });
+        backBtn?.addEventListener("click", (e) => {
+            e.stopPropagation();
+            player.currentTime = Math.max(0, (player.currentTime || 0) - 10);
+            syncTime();
+        });
+        fwdBtn?.addEventListener("click", (e) => {
+            e.stopPropagation();
+            const dur = player.duration || 0;
+            player.currentTime = Math.min(dur, (player.currentTime || 0) + 10);
+            syncTime();
+        });
+        muteBtn?.addEventListener("click", (e) => {
+            e.stopPropagation();
+            player.muted = !player.muted;
+            muteBtn.innerHTML = player.muted
+                ? '<i class="fa-solid fa-volume-xmark"></i>'
+                : '<i class="fa-solid fa-volume-high"></i>';
+        });
+        fsBtn?.addEventListener("click", (e) => {
+            e.stopPropagation();
+            togglePlayerFullscreen();
+        });
+        seek?.addEventListener("input", () => {
+            const dur = player.duration || 0;
+            if (!dur) return;
+            player.currentTime = (Number(seek.value) / 1000) * dur;
+            syncTime();
+        });
+
+        // tap video to toggle controls / play
+        let hideTimer = null;
+        function flashControls() {
+            shell?.classList.add("showControls");
+            clearTimeout(hideTimer);
+            hideTimer = setTimeout(() => {
+                if (!player.paused) shell?.classList.remove("showControls");
+            }, 2800);
+        }
+        player.addEventListener("click", () => {
+            if (player.paused) togglePlay();
+            else flashControls();
+        });
+
         player.addEventListener("loadedmetadata", () => {
-
             hide($("playerLoading"));
-
+            syncTime();
+            if (video.duration) {
+                /* keep */
+            } else if (Number.isFinite(player.duration)) {
+                setText("videoDuration", fmt(player.duration));
+            }
         });
-
-        player.addEventListener("canplay", () => {
-            hide($("playerLoading"));
-        });
-
-        player.addEventListener("waiting", () => {
-            /* keep UI clean – no loading overlay */
-            hide($("playerLoading"));
-        });
-
+        player.addEventListener("timeupdate", syncTime);
+        player.addEventListener("canplay", () => hide($("playerLoading")));
+        player.addEventListener("waiting", () => hide($("playerLoading")));
         player.addEventListener("playing", () => {
             hide($("playerLoading"));
+            setPlayingUI(true);
+            flashControls();
         });
-
+        player.addEventListener("pause", () => setPlayingUI(false));
         player.addEventListener("error", () => {
-
-            showPlayerError(
-                "The video file could not be played."
-            );
+            showPlayerError("The video file could not be played.");
         });
-
         player.addEventListener("ended", () => {
-
+            setPlayingUI(false);
             loadRecommendations();
         });
 
-        /*
-         * Double-tap / click center → play/pause is native.
-         * Expose fullscreen helper for menu.
-         */
+        // DB duration if present
+        if (video.duration) {
+            setText("videoDuration", fmt(video.duration));
+        }
+
         window.__vieworaToggleFullscreen = function () {
             if (typeof togglePlayerFullscreen === "function") {
                 togglePlayerFullscreen();
                 return;
             }
-            const shell = $("playerShell") || player;
             try {
                 if (document.fullscreenElement) {
                     document.exitFullscreen?.();
-                } else if (shell.requestFullscreen) {
+                } else if (shell?.requestFullscreen) {
                     shell.requestFullscreen();
                 } else if (player.webkitEnterFullscreen) {
                     player.webkitEnterFullscreen();
@@ -815,7 +907,6 @@
                 console.warn("Fullscreen failed:", e);
             }
         };
-
     }
 
 
@@ -1175,84 +1266,99 @@
         const user = getCurrentUser();
 
         if (!user) {
-
             toast(
                 "Sign in required",
                 "Sign in to like this video.",
                 "info"
             );
-
             return;
+        }
 
+        if (videoLikeInFlight) return;
+
+        // Spam guard
+        const now = Date.now();
+        while (videoLikeSpam.length && now - videoLikeSpam[0] > VIDEO_LIKE_SPAM_WINDOW) {
+            videoLikeSpam.shift();
+        }
+        videoLikeSpam.push(now);
+        if (videoLikeSpam.length >= VIDEO_LIKE_SPAM_LIMIT) {
+            try {
+                window.alert(
+                    "Please do not spam likes. Rapid like / unlike is against Viewora Community Guidelines. Repeated abuse may lead to account suspension."
+                );
+            } catch (_) {}
+            return;
         }
 
         const db = getFirebaseDatabase();
-
-        if (!db) return;
+        if (!db || !state.videoId) return;
 
         const uid = user.uid;
+        const likeRef = db.ref(
+            `${DB_ROOT}/${state.videoId}/likedBy/${uid}`
+        );
+        const dislikeRef = db.ref(
+            `${DB_ROOT}/${state.videoId}/dislikedBy/${uid}`
+        );
 
-        const likeRef =
-            db.ref(
-                `${DB_ROOT}/${state.videoId}/likedBy/${uid}`
-            );
-
-        const dislikeRef =
-            db.ref(
-                `${DB_ROOT}/${state.videoId}/dislikedBy/${uid}`
-            );
+        videoLikeInFlight = true;
+        const btn = $("likeBtn");
+        if (btn) btn.style.pointerEvents = "none";
 
         try {
+            let wasLiked = state.liked;
+            const before = await likeRef.once("value");
+            wasLiked = before.exists() || state.liked;
 
-            let likeCount =
-                safeNumber(
-                    state.video?.likeCount ??
-                    state.video?.likes
-                );
+            await likeRef.transaction((cur) => {
+                if (cur === null) return true;
+                return null;
+            });
 
-            let dislikeCount =
-                safeNumber(
-                    state.video?.dislikeCount ??
-                    state.video?.dislikes
-                );
+            const after = await likeRef.once("value");
+            const isLiked = after.exists();
+            state.liked = isLiked;
 
-            if (state.liked) {
-
-                await likeRef.remove();
-
-                state.liked = false;
-
-                likeCount = Math.max(0, likeCount - 1);
-
-            } else {
-
-                await likeRef.set(true);
-
-                state.liked = true;
-
-                likeCount = likeCount + 1;
-
-                if (state.disliked) {
-
-                    await dislikeRef.remove();
-
-                    state.disliked = false;
-
-                    dislikeCount =
-                        Math.max(0, dislikeCount - 1);
-
-                }
-
+            // Remove dislike if liking
+            if (isLiked && state.disliked) {
+                await dislikeRef.remove();
+                state.disliked = false;
             }
+
+            // Count from likedBy tree
+            let likeCount = 0;
+            try {
+                const tree = await db
+                    .ref(`${DB_ROOT}/${state.videoId}/likedBy`)
+                    .once("value");
+                if (tree.exists()) {
+                    likeCount = Object.keys(tree.val() || {}).length;
+                }
+            } catch (_) {
+                likeCount = safeNumber(state.video?.likeCount);
+                if (isLiked && !wasLiked) likeCount += 1;
+                if (!isLiked && wasLiked) likeCount = Math.max(0, likeCount - 1);
+            }
+
+            let dislikeCount = safeNumber(
+                state.video?.dislikeCount ?? state.video?.dislikes
+            );
+            try {
+                const dtree = await db
+                    .ref(`${DB_ROOT}/${state.videoId}/dislikedBy`)
+                    .once("value");
+                if (dtree.exists()) {
+                    dislikeCount = Object.keys(dtree.val() || {}).length;
+                }
+            } catch (_) {}
 
             state.video.likeCount = likeCount;
             state.video.likes = likeCount;
             state.video.dislikeCount = dislikeCount;
             state.video.dislikes = dislikeCount;
 
-            await db.ref(
-                `${DB_ROOT}/${state.videoId}`
-            ).update({
+            await db.ref(`${DB_ROOT}/${state.videoId}`).update({
                 likeCount: likeCount,
                 likes: likeCount,
                 dislikeCount: dislikeCount,
@@ -1260,21 +1366,15 @@
             });
 
             updateLikeCount();
-
             renderActionStates();
 
         } catch (error) {
-
             console.error("Like failed:", error);
-
-            toast(
-                "Like failed",
-                "Please try again.",
-                "error"
-            );
-
+            toast("Like failed", "Please try again.", "error");
+        } finally {
+            videoLikeInFlight = false;
+            if (btn) btn.style.pointerEvents = "";
         }
-
     }
 
     /* ========================================================

@@ -66,6 +66,7 @@
     let isFollowing = false;
     let isPrivateProfile = false;
     let hasPendingRequest = false;
+    let hasIncomingRequest = false;
     let canViewContent = true;
 
     let currentTab = "posts";
@@ -1072,7 +1073,7 @@
                 value === 1 ||
                 value === "true";
 
-            // Pending follow request (private accounts)
+            // Outgoing: I requested to follow THEM (private)
             hasPendingRequest = false;
             if (!isFollowing) {
                 try {
@@ -1092,14 +1093,34 @@
                 } catch (_) {}
             }
 
+            // Incoming: THEY requested to follow ME
+            hasIncomingRequest = false;
+            try {
+                const inSnap = await db
+                    .ref(
+                        "followRequests/" +
+                        currentUser.uid +
+                        "/" +
+                        profileUID
+                    )
+                    .once("value");
+                const iv = inSnap.val();
+                hasIncomingRequest =
+                    iv === true ||
+                    iv === 1 ||
+                    (iv && typeof iv === "object" && (iv.status === "pending" || !iv.status));
+            } catch (_) {}
+
         } catch (error) {
             console.warn("Follow state failed:", error);
             isFollowing = false;
             hasPendingRequest = false;
+            hasIncomingRequest = false;
         }
 
         updateContentAccess();
         updateFollowButton();
+        updateIncomingRequestUI();
     }
 
     function updateContentAccess() {
@@ -1175,6 +1196,14 @@
 
         }
 
+        // Incoming request from this profile → hide single follow btn (use dual Accept/Decline)
+        if (hasIncomingRequest && !isOwnProfile) {
+            hide(button);
+            return;
+        }
+
+        show(button);
+
         if (isFollowing) {
 
             button.classList.remove("primaryBtn");
@@ -1203,6 +1232,118 @@
 
         }
 
+    }
+
+    function updateIncomingRequestUI() {
+        let row = document.getElementById("incomingRequestRow");
+        const followBtn = $("followBtn");
+        const profileButtons = document.querySelector(".profileButtons");
+
+        if (!hasIncomingRequest || isOwnProfile) {
+            if (row) row.remove();
+            return;
+        }
+
+        if (!row && profileButtons) {
+            row = document.createElement("div");
+            row.id = "incomingRequestRow";
+            row.className = "incomingRequestRow";
+            row.innerHTML =
+                '<button type="button" class="primaryBtn incomingAcceptBtn" id="incomingAcceptBtn">' +
+                '<i class="fa-solid fa-check"></i><span>Accept</span></button>' +
+                '<button type="button" class="secondaryBtn incomingDeclineBtn" id="incomingDeclineBtn">' +
+                '<i class="fa-solid fa-xmark"></i><span>Decline</span></button>';
+            // Insert before follow row or at start of buttons
+            if (followBtn && followBtn.parentElement === profileButtons) {
+                profileButtons.insertBefore(row, followBtn);
+            } else {
+                profileButtons.insertBefore(row, profileButtons.firstChild);
+            }
+            row.querySelector("#incomingAcceptBtn")?.addEventListener("click", async () => {
+                await acceptIncomingFromProfile();
+            });
+            row.querySelector("#incomingDeclineBtn")?.addEventListener("click", async () => {
+                await declineIncomingFromProfile();
+            });
+        }
+
+        if (row) {
+            row.style.display = "grid";
+            hide(followBtn);
+        }
+    }
+
+    async function acceptIncomingFromProfile() {
+        if (!currentUser?.uid || !profileUID || busyFollow) return;
+        busyFollow = true;
+        try {
+            const me = currentUser.uid;
+            const fromUID = profileUID;
+            // requester (fromUID) follows me → they can see my private content
+            const updates = {};
+            updates["followers/" + me + "/" + fromUID] = true;
+            updates["following/" + fromUID + "/" + me] = true;
+            updates["users/" + me + "/followers/" + fromUID] = true;
+            updates["users/" + fromUID + "/following/" + me] = true;
+            updates["followRequests/" + me + "/" + fromUID] = null;
+            updates["followRequests/" + fromUID + "/" + me] = null;
+            await db.ref().update(updates);
+
+            try {
+                const n = db.ref("notifications/" + fromUID).push();
+                await n.set({
+                    type: "follow_accepted",
+                    senderUID: me,
+                    message: "accepted your follow request",
+                    createdAt: firebase.database.ServerValue.TIMESTAMP,
+                    read: false
+                });
+            } catch (_) {}
+
+            hasIncomingRequest = false;
+            // Now they follow me — offer follow back
+            const row = document.getElementById("incomingRequestRow");
+            if (row) row.remove();
+
+            // Show Follow / Follow back button again
+            isFollowing = false; // I may not follow them yet
+            updateFollowButton();
+            const followBtn = $("followBtn");
+            if (followBtn) {
+                show(followBtn);
+                followBtn.classList.remove("secondaryBtn");
+                followBtn.classList.add("primaryBtn");
+                followBtn.innerHTML =
+                    '<i class="fa-solid fa-user-plus"></i><span>Follow back</span>';
+            }
+            await refreshRealFollowCounts();
+            showToast("Request accepted");
+        } catch (e) {
+            console.error(e);
+            showToast("Could not accept");
+        } finally {
+            busyFollow = false;
+        }
+    }
+
+    async function declineIncomingFromProfile() {
+        if (!currentUser?.uid || !profileUID || busyFollow) return;
+        busyFollow = true;
+        try {
+            await db.ref(
+                "followRequests/" + currentUser.uid + "/" + profileUID
+            ).remove();
+            hasIncomingRequest = false;
+            const row = document.getElementById("incomingRequestRow");
+            if (row) row.remove();
+            updateFollowButton();
+            showToast("Request declined");
+        } catch (e) {
+            console.error(e);
+            showToast("Could not decline");
+        } finally {
+            busyFollow = false;
+        }
     }
 
 
@@ -1316,6 +1457,7 @@
                         await n.set({
                             id: n.key,
                             type: "follow_request",
+                            senderUID: myUID,
                             fromUID: myUID,
                             fromName:
                                 currentUser.displayName || "User",
@@ -1464,6 +1606,9 @@
 
                 type:
                     "follow",
+
+                senderUID:
+                    currentUser.uid,
 
                 fromUID:
                     currentUser.uid,
@@ -3360,15 +3505,37 @@
 
         try {
 
-            const snapshot =
-                await storiesRef()
+            // Load stories for THIS profile only (uid / userId / ownerId)
+            let data = {};
+            try {
+                const snapUid = await storiesRef()
                     .orderByChild("uid")
                     .equalTo(profileUID)
                     .once("value");
+                if (snapUid.exists()) {
+                    Object.assign(data, snapUid.val() || {});
+                }
+            } catch (_) {}
 
-
-            const data =
-                snapshot.val() || {};
+            // Fallback: scan recent stories and filter by owner fields
+            // (covers userId / ownerId / creatorId without index)
+            try {
+                const snapAll = await storiesRef().limitToLast(200).once("value");
+                if (snapAll.exists()) {
+                    snapAll.forEach((child) => {
+                        const v = child.val() || {};
+                        const owner =
+                            v.uid ||
+                            v.userId ||
+                            v.ownerId ||
+                            v.creatorId ||
+                            "";
+                        if (String(owner) === String(profileUID)) {
+                            data[child.key] = v;
+                        }
+                    });
+                }
+            } catch (_) {}
 
 
             const now =
@@ -3383,6 +3550,15 @@
                             ...(value || {})
                         })
                     )
+                    .filter((s) => {
+                        const owner =
+                            s.uid ||
+                            s.userId ||
+                            s.ownerId ||
+                            s.creatorId ||
+                            "";
+                        return String(owner) === String(profileUID);
+                    })
                     .sort(
                         (a, b) =>
                             safeNumber(
@@ -3569,6 +3745,9 @@
 
             }
 
+            // Avatar ring: only THIS profile's stories
+            updateStoryRingUI(activeStories.length > 0);
+
 
             // Highlights removed per product request
             const hlSection = $("highlightsSection");
@@ -3601,8 +3780,8 @@
     function openStoryViewer(story) {
 
         /*
-         * Open your stories.html page for proper story viewing.
-         * Passes uid + optional story id.
+         * ONLY this profile user's stories (solo).
+         * Never open other users from profile ring.
          */
 
         if (!profileUID) {
@@ -3617,8 +3796,9 @@
         if (story?.id) {
             url +=
                 "&story=" +
+                encodeURIComponent(story.id) +
+                "&storyId=" +
                 encodeURIComponent(story.id);
-            // Expired / highlight open
             if (story.expiresAt && Number(story.expiresAt) <= Date.now()) {
                 url += "&highlight=1";
             }
@@ -3630,7 +3810,7 @@
 
 
     /* =====================================================
-       OPEN PROFILE STORIES
+       OPEN PROFILE STORIES — only this profileUID
     ===================================================== */
 
     function openProfileStories() {
@@ -3639,12 +3819,42 @@
             return;
         }
 
-        // Open stories.html for this profile
+        // Solo = only this user's stories, no swipe to others
         window.location.href =
             "stories.html?uid=" +
             encodeURIComponent(profileUID) +
             "&solo=1&from=profile";
 
+    }
+
+    function updateStoryRingUI(hasActive) {
+        const ring = document.getElementById("storyRing");
+        if (!ring) return;
+        ring.classList.toggle("hasActiveStory", !!hasActive);
+        ring.setAttribute(
+            "data-has-story",
+            hasActive ? "1" : "0"
+        );
+        // Click ring (not +) → this profile's stories only
+        if (!ring.getAttribute("data-wired-story")) {
+            ring.setAttribute("data-wired-story", "1");
+            ring.addEventListener("click", function (event) {
+                if (event.target.closest("#storyPlusBtn")) return;
+                event.preventDefault();
+                event.stopPropagation();
+                const has =
+                    ring.getAttribute("data-has-story") === "1";
+                if (has) {
+                    openProfileStories();
+                } else if (isOwnProfile) {
+                    window.location.href = "story-upload.html";
+                }
+                // Other profile with no story: do nothing (or still try open)
+                else {
+                    openProfileStories();
+                }
+            });
+        }
     }
 
 
@@ -4472,6 +4682,12 @@
         acceptFollowRequest:
             acceptFollowRequest,
 
+        acceptIncomingFromProfile:
+            acceptIncomingFromProfile,
+
+        declineIncomingFromProfile:
+            declineIncomingFromProfile,
+
         rejectFollowRequest:
             rejectFollowRequest,
 
@@ -4493,6 +4709,8 @@
 
         loadStories:
             loadStories,
+        openProfileStories:
+            openProfileStories,
 
         toggleFollow:
             toggleFollow,

@@ -68,9 +68,25 @@
 
   function isVerifiedUser(d) {
     if (!d || typeof d !== "object") return false;
-    if (d.verified === true || d.isVerified === true || d.blueTick === true) return true;
+    if (window.VieworaBadges && typeof VieworaBadges.isVerified === "function") {
+      return VieworaBadges.isVerified(d);
+    }
+    if (
+      d.verified === true ||
+      d.isVerified === true ||
+      d.blueTick === true ||
+      d.redTick === true ||
+      d.vip === true ||
+      d.whiteTick === true
+    ) return true;
     const s = String(d.verificationStatus || d.badge || "").toLowerCase();
-    return s === "verified" || s === "creator" || s === "influencer";
+    return (
+      s === "verified" ||
+      s === "creator" ||
+      s === "influencer" ||
+      s === "vip" ||
+      s === "monetized"
+    );
   }
 
   function musicInfo(data) {
@@ -118,7 +134,12 @@
     if (id === "original" && !audioUrl) return null;
     if (!audioUrl && !title && !id) return null;
     if (!title) title = "Music";
-    return { audioUrl, title, artist, id };
+    let startAt = 0;
+    if (m && typeof m === "object") {
+      startAt = Number(m.startAt || m.offset || m.startTime || 0) || 0;
+    }
+    if (!startAt) startAt = Number(data.musicStartAt || data.audioStartAt || 0) || 0;
+    return { audioUrl, title, artist, id, startAt };
   }
 
   function stopMusic() {
@@ -210,6 +231,19 @@
       return;
     }
 
+    // Seek offset (seconds) — set when uploading story
+    let startAt = 0;
+    try {
+      const m = data && data.music;
+      if (m && typeof m === "object") {
+        startAt = Number(m.startAt || m.offset || m.startTime || 0) || 0;
+      }
+      if (!startAt) {
+        startAt = Number(data.musicStartAt || data.audioStartAt || 0) || 0;
+      }
+    } catch (_) {}
+    if (startAt < 0) startAt = 0;
+
     try {
       const el = ensureAudioEl();
       el.loop = true;
@@ -218,7 +252,14 @@
       el.src = url;
       state.musicAudio = el;
 
-      const attempt = () => {
+      const seekAndPlay = () => {
+        try {
+          if (startAt > 0 && isFinite(el.duration) && el.duration > startAt) {
+            el.currentTime = startAt;
+          } else if (startAt > 0) {
+            el.currentTime = startAt;
+          }
+        } catch (_) {}
         const p = el.play();
         if (p && p.catch) {
           p.catch((err) => {
@@ -227,13 +268,17 @@
         }
       };
 
-      el.oncanplay = attempt;
-      attempt();
+      el.onloadedmetadata = () => {
+        try {
+          if (startAt > 0) el.currentTime = Math.min(startAt, (el.duration || startAt) - 0.1);
+        } catch (_) {}
+      };
+      el.oncanplay = seekAndPlay;
+      seekAndPlay();
 
-      // Extra retries (mobile browsers)
-      setTimeout(attempt, 200);
-      setTimeout(attempt, 600);
-      setTimeout(attempt, 1200);
+      setTimeout(seekAndPlay, 200);
+      setTimeout(seekAndPlay, 600);
+      setTimeout(seekAndPlay, 1200);
     } catch (e) {
       console.warn("Music play failed", e);
     }
@@ -324,18 +369,43 @@
 
     $("storiesAvatar").src = g.avatar || "assets/default-avatar.png";
 
-    // Name + blue tick
+    // Name + tick (blue / red / white) — always enrich from users/
     const nameEl = $("storiesName");
-    const baseName = g.username || "User";
+    let baseName =
+      g.username ||
+      nameOf(item.data) ||
+      "User";
+    let userNode = null;
     let verified = isVerifiedUser(item.data);
 
-    // Enrich from users node
     try {
-      const u = await fetchUser(g.uid);
-      if (u) {
-        if (isVerifiedUser(u)) verified = true;
-        if ((!g.avatar || g.avatar.includes("default")) && (u.profilePhoto || u.photoURL)) {
-          $("storiesAvatar").src = u.profilePhoto || u.photoURL;
+      userNode = await fetchUser(g.uid);
+      if (userNode) {
+        const realName =
+          userNode.username ||
+          userNode.userName ||
+          userNode.displayName ||
+          userNode.name ||
+          userNode.fullName ||
+          "";
+        // Replace generic placeholders
+        const generic = /^(user|viewora user|viewora)$/i;
+        if (realName && (generic.test(String(baseName).trim()) || !baseName || baseName === "User")) {
+          baseName = realName;
+        } else if (realName) {
+          baseName = realName;
+        }
+        g.username = baseName;
+        if (isVerifiedUser(userNode)) verified = true;
+        const photo =
+          userNode.profilePhoto ||
+          userNode.photoURL ||
+          userNode.avatar ||
+          userNode.profilePicture ||
+          "";
+        if (photo) {
+          $("storiesAvatar").src = photo;
+          g.avatar = photo;
         }
       }
     } catch (_) {}
@@ -343,12 +413,27 @@
     if (nameEl) {
       nameEl.innerHTML = "";
       nameEl.appendChild(document.createTextNode(baseName));
-      if (verified) {
-        const tick = document.createElement("i");
-        tick.className = "fa-solid fa-circle-check storiesBlueTick";
-        tick.title = "Verified";
-        tick.style.cssText = "color:#1d9bf0;margin-left:5px;font-size:12px;vertical-align:middle";
-        nameEl.appendChild(tick);
+
+      // Prefer VieworaBadges hierarchy (red > blue > white)
+      let tickHtml = "";
+      const badgeSource = userNode || item.data || {};
+      if (window.VieworaBadges && typeof VieworaBadges.resolve === "function") {
+        const b = VieworaBadges.resolve(badgeSource);
+        if (b && b.html) tickHtml = b.html;
+      }
+      if (!tickHtml && verified) {
+        if (badgeSource.redTick || badgeSource.vip) {
+          tickHtml = '<i class="fa-solid fa-certificate vieworaTick redTick storiesBlueTick" title="VIP Elite" style="color:#ff3b5c;margin-left:5px;font-size:12px;vertical-align:middle"></i>';
+        } else if (badgeSource.whiteTick && !badgeSource.blueTick && !badgeSource.verified) {
+          tickHtml = '<i class="fa-solid fa-circle-check vieworaTick whiteTick storiesBlueTick" title="Monetized" style="color:#f0f4fa;margin-left:5px;font-size:12px;vertical-align:middle"></i>';
+        } else {
+          tickHtml = '<i class="fa-solid fa-circle-check vieworaTick blueTick storiesBlueTick" title="Verified" style="color:#1d9bf0;margin-left:5px;font-size:12px;vertical-align:middle"></i>';
+        }
+      }
+      if (tickHtml) {
+        const wrap = document.createElement("span");
+        wrap.innerHTML = tickHtml;
+        while (wrap.firstChild) nameEl.appendChild(wrap.firstChild);
       }
     }
 
@@ -410,13 +495,73 @@
     } catch (_) {}
   }
 
+
+  function renderReactions(data) {
+    let bar = document.getElementById("storyReactionsBar");
+    if (!bar) {
+      const stage = $("stage");
+      if (!stage) return;
+      bar = document.createElement("div");
+      bar.id = "storyReactionsBar";
+      bar.className = "storyReactionsBar";
+      stage.appendChild(bar);
+    }
+    const reactions = (data && data.reactions) || {};
+    const entries = Object.entries(reactions).filter(([, v]) => v && (v.reaction || v.emoji));
+    if (!entries.length) {
+      bar.innerHTML = "";
+      bar.classList.add("hidden");
+      return;
+    }
+    bar.classList.remove("hidden");
+    // Show up to 12: Name + emoji
+    const chips = entries.slice(0, 12).map(([uid, v]) => {
+      const emoji = escapeHTML(v.reaction || v.emoji || "❤️");
+      const name = escapeHTML(
+        v.username || v.userName || v.displayName || v.name || ("User")
+      );
+      return `<span class="storyReactionChip" data-uid="${escapeHTML(uid)}"><b>${name}</b>${emoji}</span>`;
+    });
+    const more = entries.length > 12 ? `<span class="storyReactionMore">+${entries.length - 12}</span>` : "";
+    bar.innerHTML = chips.join("") + more;
+
+    // Enrich names from users/
+    entries.slice(0, 12).forEach(async ([uid, v]) => {
+      if (v.username || v.userName || v.displayName || v.name) return;
+      try {
+        const u = await fetchUser(uid);
+        if (!u) return;
+        const n = u.username || u.displayName || u.name || "User";
+        const chip = bar.querySelector(`[data-uid="${CSS.escape(uid)}"] b`);
+        if (chip) chip.textContent = n;
+      } catch (_) {}
+    });
+  }
+
   function showItem() {
     const g = currentGroup();
     if (!g || !g.items.length) {
-      window.location.href = "index.html";
+      const uid = new URLSearchParams(location.search).get("uid") || "";
+      window.location.href = uid
+        ? "profile.html?uid=" + encodeURIComponent(uid)
+        : "index.html";
       return;
     }
     if (state.itemIndex >= g.items.length) {
+      if (state.soloMode) {
+        // Finished solo: home → index, profile → profile
+        const params = new URLSearchParams(location.search);
+        const from = (params.get("from") || "").toLowerCase();
+        const uid = g.uid || params.get("uid") || "";
+        if (from === "home" || from === "index") {
+          window.location.href = "index.html";
+        } else if (uid) {
+          window.location.href = "profile.html?uid=" + encodeURIComponent(uid);
+        } else {
+          window.location.href = "index.html";
+        }
+        return;
+      }
       state.groupIndex += 1;
       state.itemIndex = 0;
       if (state.groupIndex >= state.groups.length) {
@@ -427,6 +572,10 @@
       return;
     }
     if (state.itemIndex < 0) {
+      if (state.soloMode) {
+        state.itemIndex = 0;
+        return;
+      }
       state.groupIndex -= 1;
       if (state.groupIndex < 0) {
         state.groupIndex = 0;
@@ -449,6 +598,18 @@
     }
 
     updateChrome();
+    renderReactions(data);
+    // Live-refresh reactions from Firebase
+    (async () => {
+      try {
+        const snap = await firebase.database().ref("stories/" + item.id + "/reactions").once("value");
+        if (snap.exists()) {
+          data.reactions = snap.val() || {};
+          item.data.reactions = data.reactions;
+          renderReactions(data);
+        }
+      } catch (_) {}
+    })();
     buildProgress(g.items.length, state.itemIndex);
     setFill(0);
     markView(item.id, g.uid);
@@ -508,9 +669,18 @@
     const params = new URLSearchParams(location.search);
     const focusUid = params.get("uid") || "";
     const focusId = params.get("id") || params.get("storyId") || params.get("story") || "";
+    // Profile / highlight deep-link: ONLY that user's stories (no swipe to others)
+    // Solo = only this user's stories (profile ring). Home = all following chain.
+    const soloMode =
+      params.get("solo") === "1" ||
+      params.get("solo") === "true" ||
+      params.get("from") === "profile";
+    const includeExpired =
+      params.get("highlight") === "1" ||
+      params.get("expired") === "1";
 
     let following = new Set();
-    if (state.user) {
+    if (state.user && !soloMode) {
       try {
         let snap = await db.ref(`following/${state.user.uid}`).once("value");
         if (!snap.exists()) {
@@ -525,15 +695,30 @@
 
     snap.forEach((child) => {
       const data = child.val() || {};
-      if (isExpired(data, now)) return;
       const uid = ownerId(data);
       if (!uid) return;
 
-      const isOwn = state.user && uid === state.user.uid;
-      const isFollowing = following.has(uid);
-      // allow open if focus matches even without follow (deep link)
-      const isFocus = focusUid === uid || focusId === child.key;
-      if (!isOwn && !isFollowing && !isFocus) return;
+      // Solo from profile: only this uid
+      if (soloMode && focusUid && uid !== focusUid) return;
+
+      const expired = isExpired(data, now);
+      if (expired && !includeExpired) {
+        // In solo mode without highlight flag, skip expired
+        if (!(soloMode && focusId && focusId === child.key)) return;
+      }
+      // When opening a specific highlight story id, allow even if expired
+      if (expired && focusId && focusId === child.key) {
+        /* allow */
+      } else if (expired && !includeExpired) {
+        return;
+      }
+
+      if (!soloMode) {
+        const isOwn = state.user && uid === state.user.uid;
+        const isFollowing = following.has(uid);
+        const isFocus = focusUid === uid || focusId === child.key;
+        if (!isOwn && !isFollowing && !isFocus) return;
+      }
 
       if (!byUser[uid]) {
         byUser[uid] = {
@@ -561,11 +746,46 @@
       );
     });
 
+    // Enrich group names/avatars/ticks from users/
+    await Promise.all(
+      Object.values(byUser).map(async (g) => {
+        try {
+          const u = await fetchUser(g.uid);
+          if (!u) return;
+          const n =
+            u.username ||
+            u.userName ||
+            u.displayName ||
+            u.name ||
+            u.fullName ||
+            "";
+          if (n) g.username = n;
+          const photo =
+            u.profilePhoto ||
+            u.photoURL ||
+            u.avatar ||
+            "";
+          if (photo) g.avatar = photo;
+          g.userNode = u;
+        } catch (_) {}
+      })
+    );
+
     state.groups = Object.values(byUser).sort((a, b) => b.latest - a.latest);
+
+    // Hard lock: if solo + focusUid, never keep other users
+    if (soloMode && focusUid) {
+      state.groups = state.groups.filter((g) => g.uid === focusUid);
+    }
 
     if (!state.groups.length) {
       showToast("No stories");
-      setTimeout(() => (location.href = "index.html"), 800);
+      setTimeout(() => {
+        if (window.history.length > 1) history.back();
+        else location.href = focusUid
+          ? "profile.html?uid=" + encodeURIComponent(focusUid)
+          : "index.html";
+      }, 800);
       return;
     }
 
@@ -584,6 +804,8 @@
 
     state.groupIndex = gi;
     state.itemIndex = ii;
+    // Prevent advancing to other users in solo mode
+    state.soloMode = soloMode && !!focusUid;
     showItem();
   }
 
@@ -625,11 +847,23 @@
     const g = currentGroup();
     if (!item || !g) return;
     try {
+      let uname = state.user.displayName || "";
+      try {
+        const us = await fetchUser(state.user.uid);
+        if (us) uname = us.username || us.displayName || us.name || uname;
+      } catch (_) {}
       await firebase.database().ref(`stories/${item.id}/reactions/${state.user.uid}`).set({
         uid: state.user.uid,
+        username: uname || "User",
         reaction: emoji,
         createdAt: firebase.database.ServerValue.TIMESTAMP
       });
+      // Refresh bar on current item
+      try {
+        const snap = await firebase.database().ref(`stories/${item.id}/reactions`).once("value");
+        if (item.data) item.data.reactions = snap.val() || {};
+        renderReactions(item.data);
+      } catch (_) {}
       if (typeof notifyStoryReaction === "function") {
         notifyStoryReaction(item.id, g.uid, state.user.uid, emoji);
       }

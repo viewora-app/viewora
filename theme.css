@@ -1,0 +1,202 @@
+/*! Viewora theme — light mode overrides (dark is default) */
+html[data-theme="light"] {
+  color-scheme: light;
+}
+
+/* Core surfaces */
+html[data-theme="light"] body,
+html[data-theme="light"] .app,
+html[data-theme="light"] .viewora-app,
+html[data-theme="light"] .videoApp {
+  background: #f4f4f7 !important;
+  color: #0f0f14 !important;
+}
+
+html[data-theme="light"] body {
+  background:
+    radial-gradient(circle at 20% -10%, rgba(124, 92, 255, 0.08), transparent 32%),
+    #f4f4f7 !important;
+}
+
+/* Headers / sticky bars */
+html[data-theme="light"] .topHeader,
+html[data-theme="light"] .topbar,
+html[data-theme="light"] .videoHeader,
+html[data-theme="light"] .chatHeader,
+html[data-theme="light"] .messagesHeader,
+html[data-theme="light"] header {
+  background: rgba(255, 255, 255, 0.92) !important;
+  border-bottom-color: rgba(0, 0, 0, 0.08) !important;
+  color: #0f0f14 !important;
+  backdrop-filter: blur(20px);
+}
+
+html[data-theme="light"] .headerIcon,
+html[data-theme="light"] .topbar-btn {
+  background: rgba(0, 0, 0, 0.05) !important;
+  border-color: rgba(0, 0, 0, 0.08) !important;
+  color: #1a1a22 !important;
+}
+
+/* Cards / surfaces */
+html[data-theme="light"] .postCard,
+html[data-theme="light"] .vieworaPostCard,
+html[data-theme="light"] .longVideoCard,
+html[data-theme="light"] .notificationItem,
+html[data-theme="light"] .videoCard,
+html[data-theme="light"] .profileCard,
+html[data-theme="light"] .bottom-sheet .sheet-panel,
+html[data-theme="light"] .actionSheet,
+html[data-theme="light"] .bottomSheet,
+html[data-theme="light"] .homeMenuSheet,
+html[data-theme="light"] .descriptionBox,
+html[data-theme="light"] .commentInputWrap {
+  background: #ffffff !important;
+  border-color: rgba(0, 0, 0, 0.08) !important;
+  color: #0f0f14 !important;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.06) !important;
+}
+
+html[data-theme="light"] .notificationItem.unread {
+  background: linear-gradient(145deg, rgba(65, 87, 255, 0.08), #fff) !important;
+}
+
+/* Text */
+html[data-theme="light"] h1,
+html[data-theme="light"] h2,
+html[data-theme="light"] h3,
+html[data-theme="light"] strong,
+html[data-theme="light"] .brandText strong,
+html[data-theme="light"] .videoTitleRow h1,
+html[data-theme="light"] .sectionHeading h2,
+html[data-theme="light"] .topbar-center h1 {
+  color: #0f0f14 !important;
+}
+
+html[data-theme="light"] p,
+html[data-theme="light"] span,
+html[data-theme="light"] .sectionEyebrow,
+html[data-theme="light"] .videoStatsLine,
+html[data-theme="light"] .notificationText,
+html[data-theme="light"] .storyName,
+html[data-theme="light"] .muted {
+  color: #5a5a68 !important;
+}
+
+html[data-theme="light"] .notificationText strong {
+  color: #0f0f14 !important;
+}
+
+/* Chips / tabs */
+html[data-theme="light"] .categoryChip,
+html[data-theme="light"] .feedTab,
+html[data-theme="light"] .notification-tab {
+  background: rgba(0, 0, 0, 0.05) !important;
+  border-color: rgba(0, 0, 0, 0.08) !important;
+  color: #4a4a58 !important;
+}
+
+html[data-theme="light"] .categoryChip.active,
+html[data-theme="light"] .feedTab.active,
+html[data-theme="light"] .notification-tab.active {
+  background: linear-gradient(135deg, #7c5cff, #4f46e5) !important;
+  color: #fff !important;
+  border-color: transparent !important;
+}
+
+/* Inputs */
+html[data-theme="light"] input,
+html[data-theme="light"] textarea,
+html[data-theme="light"] .searchBox {
+  background: #fff !important;
+  border-color: rgba(0, 0, 0, 0.1) !important;
+  color: #0f0f14 !important;
+}
+
+html[data-theme="light"] input::placeholder,
+html[data-theme="light"] textarea::placeholder {
+  color: #9a9aa8 !important;
+}
+
+/* Bottom nav (nav.css) */
+html[data-theme="light"] .bottomNav,
+html[data-theme="light"] .viewora-nav,
+html[data-theme="light"] nav.bottom-nav {
+  background: rgba(255, 255, 255, 0.95) !important;
+  border-top-color: rgba(0, 0, 0, 0.08) !important;
+}
+
+html[data-theme="light"] .navItem,
+html[data-theme="light"] .nav-item {
+  color: #6b6b78 !important;
+}
+
+html[data-theme="light"] .navItem.active,
+html[data-theme="light"] .nav-item.active {
+  color: #5b4cff !important;
+}
+
+/* Buttons secondary */
+html[data-theme="light"] .followButton.following,
+html[data-theme="light"] .notificationFollowBtn.following,
+html[data-theme="light"] .secondaryBtn {
+  background: rgba(0, 0, 0, 0.06) !important;
+  color: #333 !important;
+  border: 1px solid rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Player / media stay dark-ish */
+html[data-theme="light"] .playerShell,
+html[data-theme="light"] .mainVideo {
+  background: #000 !important;
+}
+
+/* Empty states */
+html[data-theme="light"] .emptyState,
+html[data-theme="light"] .notification-empty,
+html[data-theme="light"] .commentsEmpty {
+  color: #6b6b78 !important;
+}
+
+/* Toast */
+html[data-theme="light"] .toast {
+  background: #fff !important;
+  border-color: rgba(0, 0, 0, 0.1) !important;
+  color: #0f0f14 !important;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12) !important;
+}
+
+/* Skeletons */
+html[data-theme="light"] .shimmer,
+html[data-theme="light"] .skeleton-avatar,
+html[data-theme="light"] .skeleton-line,
+html[data-theme="light"] .skeleton-media,
+html[data-theme="light"] .skeletonMedia {
+  background: linear-gradient(90deg, #e8e8ee 25%, #f5f5f8 50%, #e8e8ee 75%) !important;
+  background-size: 200% 100% !important;
+}
+
+/* Floating theme toggle (optional, bottom-right above nav) */
+.vieworaThemeFab {
+  position: fixed;
+  right: 14px;
+  bottom: calc(88px + env(safe-area-inset-bottom, 0px));
+  z-index: 950;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  background: rgba(20, 20, 30, 0.85);
+  color: #fff;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+html[data-theme="light"] .vieworaThemeFab {
+  background: #fff;
+  color: #1a1a22;
+  border-color: rgba(0, 0, 0, 0.1);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+}

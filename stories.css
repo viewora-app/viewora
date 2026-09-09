@@ -323,3 +323,64 @@ button { cursor: pointer; }
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+
+/* Live reactions on story */
+.storyReactionsBar {
+  position: absolute;
+  z-index: 16;
+  left: 10px;
+  right: 10px;
+  bottom: calc(108px + env(safe-area-inset-bottom, 0px));
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  max-height: 72px;
+  overflow: hidden;
+  pointer-events: none;
+}
+.storyReactionsBar.hidden { display: none !important; }
+.storyReactionChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: rgba(0,0,0,.55);
+  border: 1px solid rgba(255,255,255,.14);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.storyReactionChip b {
+  font-weight: 700;
+  max-width: 90px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.storyReactionMore {
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: rgba(255,255,255,.12);
+  font-size: 11px;
+  font-weight: 700;
+  color: #ddd;
+}
+
+
+.storiesBlueTick,
+.vieworaTick.blueTick { color: #1d9bf0 !important; margin-left: 5px; font-size: 12px; vertical-align: middle; }
+.vieworaTick.redTick { color: #ff3b5c !important; margin-left: 5px; font-size: 13px; vertical-align: middle; }
+.vieworaTick.whiteTick { color: #f0f4fa !important; margin-left: 5px; font-size: 12px; vertical-align: middle; }
+#storiesName {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  flex-wrap: wrap;
+}

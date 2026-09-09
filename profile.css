@@ -1611,3 +1611,57 @@ html[data-theme="light"] #pageLoader {
 #manageHighlightsBtn {
     display: none !important;
 }
+
+
+/* Incoming follow request on profile */
+.incomingRequestRow {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 4px;
+}
+
+.incomingRequestRow .incomingAcceptBtn {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    border: 0;
+    border-radius: 14px;
+    color: #fff;
+    background: linear-gradient(135deg, #7067ff, #00bfe9);
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.incomingRequestRow .incomingDeclineBtn {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    border: 1px solid rgba(255,255,255,.12);
+    border-radius: 14px;
+    color: #fff;
+    background: rgba(255,255,255,.06);
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+
+#storyRing.hasActiveStory {
+    background: linear-gradient(135deg, #7c5cff, #ec4899, #f59e0b);
+    padding: 3px;
+    border-radius: 50%;
+}
+#storyRing.hasActiveStory #profilePic {
+    border: 3px solid #0a0b10;
+    border-radius: 50%;
+}
+#storyRing {
+    cursor: pointer;
+}

@@ -62,6 +62,12 @@
         preferUnmuted = localStorage.getItem("viewora_shorts_unmuted") === "1";
     } catch (_) {}
 
+    /* Like locks + spam detection */
+    const likeInFlight = new Set();
+    const likeSpamLog = {}; // shortId -> timestamps[]
+    const LIKE_SPAM_LIMIT = 6;
+    const LIKE_SPAM_WINDOW_MS = 12000;
+
 
     /* =====================================================
        HELPERS
@@ -573,7 +579,49 @@
 
         bindCardEvents(card, short, isVideo);
 
+        // Restore liked / saved state for current user
+        if (currentUser) {
+            restoreLikeState(card, id).catch(() => {});
+            restoreSaveState(card, id).catch(() => {});
+        }
+
         return card;
+    }
+
+    async function restoreLikeState(card, shortId) {
+        if (!currentUser || !shortId) return;
+        try {
+            const paths = [
+                "shortLikes/" + shortId + "/" + currentUser.uid,
+                "shorts/" + shortId + "/likedBy/" + currentUser.uid,
+                "likes/" + shortId + "/" + currentUser.uid
+            ];
+            for (const p of paths) {
+                const snap = await db.ref(p).once("value");
+                if (snap.exists()) {
+                    const likeBtn = card.querySelector(".likeBtn");
+                    const icon = likeBtn?.querySelector("i");
+                    likeBtn?.classList.add("liked");
+                    if (icon) icon.className = "fa-solid fa-heart";
+                    return;
+                }
+            }
+        } catch (_) {}
+    }
+
+    async function restoreSaveState(card, shortId) {
+        if (!currentUser || !shortId) return;
+        try {
+            const snap = await db
+                .ref("savedShorts/" + currentUser.uid + "/" + shortId)
+                .once("value");
+            if (snap.exists()) {
+                const btn = card.querySelector(".saveBtn");
+                const icon = btn?.querySelector("i");
+                btn?.classList.add("saved");
+                if (icon) icon.className = "fa-solid fa-bookmark";
+            }
+        } catch (_) {}
     }
 
 
@@ -951,43 +999,183 @@
         syncVolumeIcon(card, video);
     }
 
+    function trackLikeSpam(shortId) {
+        const now = Date.now();
+        const arr = (likeSpamLog[shortId] || []).filter(
+            (t) => now - t < LIKE_SPAM_WINDOW_MS
+        );
+        arr.push(now);
+        likeSpamLog[shortId] = arr;
+        return arr.length;
+    }
+
+    function showLikeSpamWarning() {
+        const msg =
+            "Please do not spam likes. Rapid like / unlike is against Viewora Community Guidelines. Repeated abuse may lead to account suspension.";
+        try {
+            window.alert(msg);
+        } catch (_) {
+            showToast(msg);
+        }
+    }
+
     async function doLike(card, short, fromDoubleTap) {
         if (!currentUser) {
             showToast("Login required to like");
             return;
         }
 
-        const id = String(short.id || short.shortId || short.key);
-        const ref = db.ref("shortLikes/" + id + "/" + currentUser.uid);
+        const id = String(short.id || short.shortId || short.key || "");
+        if (!id) return;
+
+        // Prevent concurrent toggles (race → count jumps 3,4,5…)
+        const lockKey = id + ":" + currentUser.uid;
+        if (likeInFlight.has(lockKey)) {
+            return;
+        }
+
+        // Spam detection
+        const taps = trackLikeSpam(id);
+        if (taps >= LIKE_SPAM_LIMIT) {
+            showLikeSpamWarning();
+            // still allow one settle but block this spam burst
+            return;
+        }
+
         const likeBtn = card.querySelector(".likeBtn");
         const icon = likeBtn?.querySelector("i");
         const label = likeBtn?.querySelector("span");
 
-        try {
-            const snap = await ref.once("value");
-            let count = safeNumber(card.__likes ?? short.likes);
+        likeInFlight.add(lockKey);
+        if (likeBtn) likeBtn.style.pointerEvents = "none";
 
-            if (snap.exists()) {
-                if (fromDoubleTap) return; // already liked
-                await ref.remove();
-                count = Math.max(0, count - 1);
-                likeBtn?.classList.remove("liked");
-                if (icon) icon.className = "fa-regular fa-heart";
-            } else {
-                await ref.set(true);
-                count += 1;
-                likeBtn?.classList.add("liked");
-                if (icon) icon.className = "fa-solid fa-heart";
+        const primaryRef = db.ref(
+            "shortLikes/" + id + "/" + currentUser.uid
+        );
+
+        try {
+            // Atomic membership toggle
+            let wasLiked = false;
+            await primaryRef.transaction((cur) => {
+                if (cur === null) {
+                    wasLiked = false;
+                    return {
+                        uid: currentUser.uid,
+                        at: Date.now()
+                    };
+                }
+                wasLiked = true;
+                if (fromDoubleTap) {
+                    // keep liked
+                    return cur;
+                }
+                return null; // unlike
+            });
+
+            // After transaction, read definitive state
+            const afterSnap = await primaryRef.once("value");
+            const isLiked = afterSnap.exists();
+
+            // Double-tap on already-liked: no count change
+            if (fromDoubleTap && wasLiked && isLiked) {
+                showHeart();
+                return;
             }
 
-            card.__likes = count;
-            short.likes = count;
-            if (label) label.textContent = formatCount(count);
+            // Atomic count update based on final state vs previous
+            // delta: +1 if newly liked, -1 if unliked, 0 otherwise
+            let delta = 0;
+            if (isLiked && !wasLiked) delta = 1;
+            if (!isLiked && wasLiked) delta = -1;
 
-            await db.ref("shorts/" + id).update({ likes: count });
+            let finalCount = safeNumber(
+                card.__likes ?? short.likes ?? short.likeCount
+            );
+
+            if (delta !== 0) {
+                const countRef = db.ref("shorts/" + id + "/likes");
+                const tx = await countRef.transaction((cur) => {
+                    const n = safeNumber(cur);
+                    return Math.max(0, n + delta);
+                });
+                if (tx.committed && tx.snapshot) {
+                    finalCount = safeNumber(tx.snapshot.val());
+                } else {
+                    finalCount = Math.max(0, finalCount + delta);
+                }
+
+                // keep likeCount in sync
+                try {
+                    await db.ref("shorts/" + id + "/likeCount").set(finalCount);
+                } catch (_) {}
+            }
+
+            // Mirrors (non-critical)
+            try {
+                if (isLiked) {
+                    const payload = {
+                        uid: currentUser.uid,
+                        at: Date.now()
+                    };
+                    await Promise.all([
+                        db
+                            .ref("shorts/" + id + "/likedBy/" + currentUser.uid)
+                            .set(payload)
+                            .catch(() => {}),
+                        db
+                            .ref("likes/" + id + "/" + currentUser.uid)
+                            .set(payload)
+                            .catch(() => {})
+                    ]);
+                } else {
+                    await Promise.all([
+                        db
+                            .ref("shorts/" + id + "/likedBy/" + currentUser.uid)
+                            .remove()
+                            .catch(() => {}),
+                        db
+                            .ref("likes/" + id + "/" + currentUser.uid)
+                            .remove()
+                            .catch(() => {})
+                    ]);
+                }
+            } catch (_) {}
+
+            // UI
+            card.__likes = finalCount;
+            short.likes = finalCount;
+            short.likeCount = finalCount;
+            if (label) label.textContent = formatCount(finalCount);
+
+            if (isLiked) {
+                likeBtn?.classList.add("liked");
+                if (icon) icon.className = "fa-solid fa-heart";
+                if (fromDoubleTap) showHeart();
+            } else {
+                likeBtn?.classList.remove("liked");
+                if (icon) icon.className = "fa-regular fa-heart";
+            }
+
+            // Notify only on first like in this toggle
+            const ownerId = getCreatorId(short);
+            if (delta === 1 && ownerId && ownerId !== currentUser.uid) {
+                try {
+                    await db.ref("notifications/" + ownerId).push({
+                        type: "like",
+                        contentType: "short",
+                        contentId: id,
+                        senderUID: currentUser.uid,
+                        createdAt: firebase.database.ServerValue.TIMESTAMP,
+                        read: false
+                    });
+                } catch (_) {}
+            }
         } catch (err) {
             console.error("Like failed:", err);
             showToast("Like failed");
+        } finally {
+            likeInFlight.delete(lockKey);
+            if (likeBtn) likeBtn.style.pointerEvents = "";
         }
     }
 
@@ -1093,7 +1281,7 @@
     }
 
     async function loadComments(id) {
-        if (!commentsContainer) return;
+        if (!commentsContainer || !id) return;
 
         commentsContainer.innerHTML = `
             <div class="commentsLoading">
@@ -1103,10 +1291,31 @@
         `;
 
         try {
-            const snap = await db.ref("comments/" + id).once("value");
-            const val = snap.val();
+            // Support both legacy paths
+            const [snapA, snapB] = await Promise.all([
+                db.ref("comments/" + id).once("value"),
+                db.ref("shorts/" + id + "/comments").once("value")
+            ]);
 
-            if (!val) {
+            const merged = {};
+            const a = snapA.val() || {};
+            const b = snapB.val() || {};
+            Object.keys(a).forEach((k) => {
+                merged[k] = a[k];
+            });
+            Object.keys(b).forEach((k) => {
+                if (!merged[k]) merged[k] = b[k];
+            });
+
+            const list = Object.entries(merged)
+                .map(([key, data]) => ({ id: key, ...(data || {}) }))
+                .sort(
+                    (a, b) =>
+                        safeNumber(a.createdAt || a.timestamp) -
+                        safeNumber(b.createdAt || b.timestamp)
+                );
+
+            if (!list.length) {
                 commentsContainer.innerHTML = `
                     <div class="noComments">
                         <i class="fa-regular fa-comment"></i>
@@ -1120,13 +1329,6 @@
                 return;
             }
 
-            const list = Object.entries(val)
-                .map(([key, data]) => ({ id: key, ...(data || {}) }))
-                .sort(
-                    (a, b) =>
-                        safeNumber(a.createdAt) - safeNumber(b.createdAt)
-                );
-
             if (commentCountText) {
                 commentCountText.textContent =
                     list.length +
@@ -1139,16 +1341,19 @@
                 const user = await getUser(c.uid || c.userId);
                 const name = safeText(
                     c.name ||
-                    c.username ||
-                    user?.name ||
-                    user?.username,
+                        c.username ||
+                        user?.name ||
+                        user?.username,
                     "User"
                 );
                 const avatar =
                     c.profilePhoto ||
+                    c.photoURL ||
                     user?.profilePhoto ||
                     user?.photoURL ||
                     "assets/default-avatar.png";
+                const text = safeText(c.text || c.comment || c.message, "");
+                const when = timeAgo(c.createdAt || c.timestamp);
 
                 const row = document.createElement("div");
                 row.className = "commentItem";
@@ -1156,12 +1361,15 @@
                     <img src="${escapeHTML(avatar)}" alt="" onerror="this.src='assets/default-avatar.png'">
                     <div>
                         <strong>${escapeHTML(name)}</strong>
-                        <p>${escapeHTML(c.text || c.comment || "")}</p>
-                        <small></small>
+                        <p>${escapeHTML(text)}</p>
+                        <small>${escapeHTML(when)}</small>
                     </div>
                 `;
                 commentsContainer.appendChild(row);
             }
+
+            // scroll to bottom
+            commentsContainer.scrollTop = commentsContainer.scrollHeight;
         } catch (err) {
             console.error("Comments failed:", err);
             commentsContainer.innerHTML = `
@@ -1183,8 +1391,11 @@
         if (!text) return;
 
         const id = String(
-            activeShort.id || activeShort.shortId || activeShort.key
+            activeShort.id || activeShort.shortId || activeShort.key || ""
         );
+        if (!id) return;
+
+        if (sendComment) sendComment.disabled = true;
 
         try {
             const me = await getUser(currentUser.uid);
@@ -1193,32 +1404,86 @@
                 currentUser.displayName ||
                 me?.username ||
                 "Viewora User";
+            const username = me?.username || "";
+            const profilePhoto =
+                me?.profilePhoto ||
+                currentUser.photoURL ||
+                "assets/default-avatar.png";
 
-            await db.ref("comments/" + id).push({
+            const payload = {
                 uid: currentUser.uid,
+                userId: currentUser.uid,
                 text,
                 name,
-                username: me?.username || "",
-                profilePhoto:
-                    me?.profilePhoto ||
-                    currentUser.photoURL ||
-                    "assets/default-avatar.png",
-                createdAt: firebase.database.ServerValue.TIMESTAMP
-            });
+                username,
+                profilePhoto,
+                createdAt: firebase.database.ServerValue.TIMESTAMP,
+                timestamp: Date.now()
+            };
+
+            // Write to BOTH paths for compatibility with comments.js + admin
+            const pushRef = db.ref("comments/" + id).push();
+            await pushRef.set(payload);
+            try {
+                await db.ref("shorts/" + id + "/comments/" + pushRef.key).set(payload);
+            } catch (_) {}
+
+            // Bump comment count on short
+            try {
+                const shortRef = db.ref("shorts/" + id);
+                const snap = await shortRef.once("value");
+                const cur = snap.val() || {};
+                const next =
+                    safeNumber(cur.comments || cur.commentCount) + 1;
+                await shortRef.update({
+                    comments: next,
+                    commentCount: next
+                });
+                activeShort.comments = next;
+                activeShort.commentCount = next;
+
+                // Update visible count on card
+                const card = container?.querySelector(
+                    `[data-short-id="${CSS.escape(id)}"]`
+                );
+                const commentLabel = card?.querySelector(
+                    '[data-action="comment"] span'
+                );
+                if (commentLabel) {
+                    commentLabel.textContent = formatCount(next);
+                }
+            } catch (_) {}
+
+            // Notify owner
+            const ownerId = getCreatorId(activeShort);
+            if (ownerId && ownerId !== currentUser.uid) {
+                try {
+                    await db.ref("notifications/" + ownerId).push({
+                        type: "comment",
+                        contentType: "short",
+                        contentId: id,
+                        text: text.slice(0, 120),
+                        senderUID: currentUser.uid,
+                        createdAt: firebase.database.ServerValue.TIMESTAMP,
+                        read: false
+                    });
+                } catch (_) {}
+            }
 
             if (commentText) commentText.value = "";
             showToast("Comment added");
             await loadComments(id);
         } catch (err) {
             console.error("Comment failed:", err);
-            showToast("Comment failed");
+            showToast(
+                err?.code === "PERMISSION_DENIED"
+                    ? "Permission denied for comments"
+                    : "Comment failed"
+            );
+        } finally {
+            if (sendComment) sendComment.disabled = false;
         }
     }
-
-
-    /* =====================================================
-       SHARE
-    ===================================================== */
 
     function openShare(short) {
         activeShort = short;

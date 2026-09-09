@@ -75,6 +75,7 @@
         mediaType: null, // image | video
         filterId: "none",
         music: MUSIC_TRACKS[0],
+        musicStartAt: 0,
         textColor: "#ffffff",
         textStyle: "classic",
         uploading: false
@@ -568,6 +569,7 @@
             btn.addEventListener("click", () => {
                 stopMusicPreview();
                 state.music = track;
+                state.musicStartAt = 0;
                 updateMusicBadge();
 
                 if (track.audioUrl) {
@@ -575,6 +577,27 @@
                         musicPreviewAudio = new Audio(track.audioUrl);
                         musicPreviewAudio.volume = 0.7;
                         musicPreviewAudio.play().catch(() => {});
+                        // Ask start time (seconds) — optional scrub
+                        musicPreviewAudio.addEventListener("loadedmetadata", () => {
+                            const dur = Math.floor(musicPreviewAudio.duration || 0);
+                            if (dur > 3) {
+                                const ans = window.prompt(
+                                    "Music start (seconds 0–" + dur + ")\nLeave empty = from start",
+                                    String(state.musicStartAt || 0)
+                                );
+                                if (ans !== null && ans !== "") {
+                                    let sec = Number(ans);
+                                    if (!Number.isFinite(sec) || sec < 0) sec = 0;
+                                    if (sec > dur - 1) sec = Math.max(0, dur - 1);
+                                    state.musicStartAt = sec;
+                                    try {
+                                        musicPreviewAudio.currentTime = sec;
+                                        musicPreviewAudio.play().catch(() => {});
+                                    } catch (_) {}
+                                    updateMusicBadge();
+                                }
+                            }
+                        }, { once: true });
                     } catch (_) {}
                 }
 
@@ -612,7 +635,13 @@
             return;
         }
         musicBadge.classList.remove("hidden");
-        if (musicBadgeText) musicBadgeText.textContent = state.music.name;
+        if (musicBadgeText) {
+            const start = Number(state.musicStartAt || 0) || 0;
+            const label = state.music.name || state.music.title || "Music";
+            musicBadgeText.textContent = start > 0
+                ? (label + " · @" + Math.floor(start) + "s")
+                : label;
+        }
     }
 
 
@@ -843,8 +872,10 @@
                     title: state.music.name || state.music.title,
                     artist: state.music.artist || "",
                     audioUrl: state.music.audioUrl || "",
-                    coverUrl: state.music.coverUrl || ""
+                    coverUrl: state.music.coverUrl || "",
+                    startAt: Number(state.musicStartAt || 0) || 0
                 },
+                musicStartAt: Number(state.musicStartAt || 0) || 0,
                 audioName: (!state.music || state.music.id === "original")
                     ? "Original audio"
                     : (state.music.name || state.music.title || "Music"),
