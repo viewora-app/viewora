@@ -78,7 +78,12 @@
   /* ---------- sound ---------- */
   function getSoundSrc() {
     try {
-      return localStorage.getItem(SOUND_KEY) || DEFAULT_SOUND;
+      let src = localStorage.getItem(SOUND_KEY) || DEFAULT_SOUND;
+      // Never play call ringtone for messages
+      if (!src || src.indexOf("call-ringtone") !== -1 || src.indexOf("call_ringtone") !== -1) {
+        src = DEFAULT_SOUND;
+      }
+      return src;
     } catch (_) {
       return DEFAULT_SOUND;
     }

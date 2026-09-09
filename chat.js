@@ -521,9 +521,15 @@
 
     function playMessageTone() {
         try {
-            if (!window.__vieworaMsgTone) {
-                window.__vieworaMsgTone = new Audio("assets/message-tone.mp3");
+            let src = "assets/message-tone.mp3";
+            try {
+                const s = localStorage.getItem("viewora_message_sound");
+                if (s && s.indexOf("call-ringtone") === -1) src = s;
+            } catch (_) {}
+            if (!window.__vieworaMsgTone || window.__vieworaMsgToneSrc !== src) {
+                window.__vieworaMsgTone = new Audio(src);
                 window.__vieworaMsgTone.volume = 0.85;
+                window.__vieworaMsgToneSrc = src;
             }
             const a = window.__vieworaMsgTone;
             a.currentTime = 0;
@@ -5356,41 +5362,50 @@
         );
 
 
-        voiceCallBtn?.addEventListener(
-            "click",
-            () => {
-                if (state.blockedByMe || state.blockedMe) {
-                    showToast("Cannot call blocked user.", "error");
-                    return;
-                }
-                if (typeof window.VieworaStartVoiceCall === "function") {
-                    window.VieworaStartVoiceCall(targetUid);
-                } else if (typeof window.startVoiceCall === "function") {
-                    window.startVoiceCall(targetUid);
-                } else {
-                    showToast("Voice call module is not ready.", "warning");
-                }
+        /* voiceCallBtn bound below */
+
+
+        /* videoCallBtn bound below */
+
+
+
+        function openCall(type) {
+            if (state.blockedByMe || state.blockedMe) {
+                showToast("Cannot call blocked user.", "error");
+                return;
             }
-        );
-
-
-        videoCallBtn?.addEventListener(
-            "click",
-            () => {
-                if (state.blockedByMe || state.blockedMe) {
-                    showToast("Cannot call blocked user.", "error");
-                    return;
-                }
-                if (typeof window.VieworaStartVideoCall === "function") {
-                    window.VieworaStartVideoCall(targetUid);
-                } else if (typeof window.startVideoCall === "function") {
-                    window.startVideoCall(targetUid);
-                } else {
-                    showToast("Video call module is not ready.", "warning");
-                }
+            const uid = targetUid || state.otherUser.uid || "";
+            if (!uid) {
+                showToast("User ID missing. Open chat again.", "error");
+                return;
             }
-        );
+            const t = type === "video" ? "video" : "audio";
+            // Prefer API if call.js loaded
+            if (typeof window.VieworaCall?.startCall === "function") {
+                window.VieworaCall.startCall(uid, t);
+                return;
+            }
+            if (t === "video" && typeof window.VieworaStartVideoCall === "function") {
+                window.VieworaStartVideoCall(uid);
+                return;
+            }
+            if (t === "audio" && typeof window.VieworaStartVoiceCall === "function") {
+                window.VieworaStartVoiceCall(uid);
+                return;
+            }
+            // Direct fallback — always works
+            const name = encodeURIComponent(state.otherUser.name || "");
+            const photo = encodeURIComponent(state.otherUser.photo || "");
+            location.href =
+                "call.html?role=caller&type=" + t +
+                "&receiverId=" + encodeURIComponent(uid) +
+                "&uid=" + encodeURIComponent(uid) +
+                "&name=" + name +
+                "&photo=" + photo;
+        }
 
+        voiceCallBtn?.addEventListener("click", () => openCall("audio"));
+        videoCallBtn?.addEventListener("click", () => openCall("video"));
 
         document.addEventListener(
             "click",

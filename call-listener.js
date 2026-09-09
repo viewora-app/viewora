@@ -987,7 +987,11 @@
         // 1) Custom ringtone path from settings (localStorage)
         //    User can set: localStorage.setItem('viewora_call_ringtone', 'assets/my-ring.mp3')
         try {
-            const customSrc = localStorage.getItem("viewora_call_ringtone");
+            let customSrc = localStorage.getItem("viewora_call_ringtone") || "assets/call-ringtone.mp3";
+            // Never use message tone as call ring
+            if (customSrc.indexOf("message") !== -1) {
+                customSrc = "assets/call-ringtone.mp3";
+            }
             if (customSrc) {
                 const custom = new Audio(customSrc);
                 custom.loop = true;

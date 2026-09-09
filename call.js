@@ -105,7 +105,10 @@
         params.get("callId");
 
     let receiverId =
-        params.get("receiverId");
+        params.get("receiverId") ||
+        params.get("uid") ||
+        params.get("to") ||
+        params.get("user");
 
     let role =
         params.get("role") === "receiver"
@@ -3028,47 +3031,33 @@
     async function init() {
 
         try {
+            // When call.js is included on chat/messages — only register API, do not start call UI
+            const page = (location.pathname.split("/").pop() || "").toLowerCase();
+            const onCallPage = page.indexOf("call") !== -1;
+
+            if (!onCallPage) {
+                log("☎️ Viewora Call API ready (embedded).");
+                return;
+            }
 
             await waitForAuth();
 
-
-            if (
-                role ===
-                "receiver"
-            ) {
-
+            if (role === "receiver") {
                 await prepareIncomingCall();
-
                 return;
-
             }
-
 
             if (receiverId) {
-
                 await startOutgoingCall();
-
                 return;
-
             }
 
-
-            log(
-                "☎️ Viewora Call engine ready."
-            );
+            toast("Receiver ID is missing. Open chat and try call again.");
+            log("☎️ Viewora Call engine ready — no receiverId.");
 
         } catch (error) {
-
-            logError(
-                "Call initialization:",
-                error
-            );
-
-
-            showEnded(
-                "Unable to initialize call."
-            );
-
+            logError("Call initialization:", error);
+            showEnded("Unable to initialize call.");
         }
 
     }
