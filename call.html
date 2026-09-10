@@ -1,1379 +1,1021 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <script>(function(){try{var t=localStorage.getItem("viewora_theme")||"dark";document.documentElement.setAttribute("data-theme",t);}catch(e){document.documentElement.setAttribute("data-theme","dark");}})();</script>
     <meta charset="UTF-8">
 
     <meta
         name="viewport"
-        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+        content="width=device-width, initial-scale=1.0, viewport-fit=cover"
     >
 
     <meta
         name="theme-color"
-        content="#08090d"
+        content="#0b0b10"
     >
 
-    <meta
-        name="description"
-        content="Viewora premium private chat"
-    >
-
-    <title>Chat • Viewora</title>
-
-    <!-- =====================================================
-         FONTS
-    ====================================================== -->
-
-    <link
-        rel="preconnect"
-        href="https://fonts.googleapis.com"
-    >
-
-    <link
-        rel="preconnect"
-        href="https://fonts.gstatic.com"
-        crossorigin
-    >
-
-    <link
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
-        rel="stylesheet"
-    >
+    <title>Viewora Call</title>
 
     <!-- =====================================================
          FONT AWESOME
     ====================================================== -->
-
     <link
         rel="stylesheet"
-        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
     >
 
     <!-- =====================================================
-         CHAT CSS
+         CALL CSS
     ====================================================== -->
-
     <link
         rel="stylesheet"
-        href="chat.css"
+        href="call.css"
     >
+    <link rel="stylesheet" href="theme.css">
 </head>
 
 <body>
 
-<!-- =========================================================
-     BACKGROUND
+<!-- ========================================================
+     CALL ROOT
 ========================================================= -->
 
-<div class="aurora" aria-hidden="true">
-
-    <div class="auroraBlob blob1"></div>
-    <div class="auroraBlob blob2"></div>
-    <div class="auroraBlob blob3"></div>
-
-</div>
-
-
-
-
-<!-- =========================================================
-     APP
-========================================================= -->
-
-<main
-    id="app"
-    class="app"
+<div
+    id="callPage"
+    class="call-page"
 >
 
+    <!-- ====================================================
+         REMOTE CALL AREA
+    ===================================================== -->
 
-    <!-- =====================================================
-         CHAT HEADER
-    ====================================================== -->
-
-    <header class="chatHeader">
-
-        <div class="headerLeft">
-
-            <button
-                id="backBtn"
-                class="iconButton"
-                type="button"
-                aria-label="Back"
-            >
-                <i class="fa-solid fa-arrow-left"></i>
-            </button>
-
-
-            <button
-                id="profileBtn"
-                class="chatIdentity"
-                type="button"
-            >
-
-                <div class="headerAvatar">
-
-                    <img
-                        id="chatPhoto"
-                        src="assets/default-avatar.png"
-                        alt="Profile"
-                    >
-
-                    <span
-                        id="onlineDot"
-                        class="onlineDot hidden"
-                    ></span>
-
-                </div>
-
-
-                <div class="headerUserInfo">
-
-                    <div class="headerNameRow">
-
-                        <h1 id="chatName">
-                            Viewora User
-                        </h1>
-
-                        <span
-    id="verifiedBadge"
-    class="verifiedBadge hidden"
-    aria-label="Verified account"
-    title="Verified account"
->
-    <i class="fa-solid fa-check"></i>
-                        </span>
-
-                    </div>
-
-                    <span
-                        id="chatStatus"
-                        class="chatStatus"
-                    >
-                        Connecting...
-                    </span>
-
-                </div>
-
-            </button>
-
-        </div>
-
-
-        <div class="headerActions">
-
-            <!-- Search -->
-
-            <button
-                id="searchBtn"
-                class="iconButton"
-                type="button"
-                aria-label="Search messages"
-            >
-                <i class="fa-solid fa-magnifying-glass"></i>
-            </button>
-
-
-            <!-- Voice Call -->
-
-            <button
-                id="voiceCallBtn"
-                class="iconButton callButton"
-                type="button"
-                aria-label="Voice call"
-            >
-                <i class="fa-solid fa-phone"></i>
-            </button>
-
-
-            <!-- Video Call -->
-
-            <button
-                id="videoCallBtn"
-                class="iconButton callButton"
-                type="button"
-                aria-label="Video call"
-            >
-                <i class="fa-solid fa-video"></i>
-            </button>
-
-
-            <!-- More -->
-
-            <button
-                id="menuBtn"
-                class="iconButton"
-                type="button"
-                aria-label="More options"
-            >
-                <i class="fa-solid fa-ellipsis-vertical"></i>
-            </button>
-
-        </div>
-
-    </header>
-
-
-    <!-- =====================================================
-         SEARCH BAR
-    ====================================================== -->
-
-    <div
-        id="searchBar"
-        class="chatSearchBar hidden"
+    <main
+        id="callApp"
+        class="call-app"
     >
 
-        <div class="searchInputWrap">
+        <!-- Remote video -->
 
-            <i class="fa-solid fa-magnifying-glass"></i>
-
-            <input
-                id="searchInput"
-                type="search"
-                placeholder="Search messages..."
-                autocomplete="off"
-            >
-
-            <button
-                id="closeSearch"
-                type="button"
-                aria-label="Close search"
-            >
-                <i class="fa-solid fa-xmark"></i>
-            </button>
-
-        </div>
-
-    </div>
+        <video
+            id="remoteVideo"
+            class="remote-video"
+            autoplay
+            playsinline
+            webkit-playsinline
+        ></video>
 
 
-    <!-- =====================================================
-         CHAT MENU
-    ====================================================== -->
+        <!-- Remote audio for voice calls -->
 
-    <div
-        id="chatMenu"
-        class="chatMenu hidden"
-    >
-
-        <button
-            id="menuMuteBtn"
-            class="menuItem"
-            type="button"
-        >
-            <i class="fa-solid fa-bell-slash"></i>
-            <span>Mute notifications</span>
-        </button>
+        <audio
+            id="remoteAudio"
+            autoplay
+        ></audio>
 
 
-        <button
-            id="menuSearchBtn"
-            class="menuItem"
-            type="button"
-        >
-            <i class="fa-solid fa-magnifying-glass"></i>
-            <span>Search</span>
-        </button>
-
-
-        <button
-            id="menuBlockBtn"
-            class="menuItem danger"
-            type="button"
-        >
-            <i class="fa-solid fa-ban"></i>
-            <span>Block user</span>
-        </button>
-
-        <button
-            id="menuDeleteChatBtn"
-            class="menuItem danger"
-            type="button"
-        >
-            <i class="fa-solid fa-trash"></i>
-            <span>Delete chat</span>
-        </button>
-
-    </div>
-
-
-    <!-- =====================================================
-         CHAT BODY
-    ====================================================== -->
-
-    <section
-        id="chatContainer"
-        class="chatContainer"
-    >
+        <!-- Remote placeholder -->
 
         <div
-            id="messagesList"
-            class="messagesList"
-        >
-            <!-- Firebase messages render here -->
-        </div>
-
-
-        <!-- =================================================
-             TYPING INDICATOR
-        ================================================== -->
-
-        <div
-            id="typingIndicator"
-            class="typingIndicator hidden"
+            id="remotePlaceholder"
+            class="remote-placeholder"
         >
 
-            <div class="typingAvatar">
+            <div class="remote-placeholder-glow"></div>
+
+            <div class="remote-avatar-wrap">
 
                 <img
-                    id="typingPhoto"
+                    id="remoteAvatar"
                     src="assets/default-avatar.png"
-                    alt=""
+                    alt="User"
                 >
 
-            </div>
-
-            <div class="typingBubble">
-
-                <span></span>
-                <span></span>
-                <span></span>
+                <span
+                    id="remoteOnlineDot"
+                    class="online-dot"
+                ></span>
 
             </div>
 
-            <span
-                id="typingText"
-                class="typingText"
-            >
-                typing...
-            </span>
+            <h2 id="remoteName">
+                Viewora User
+            </h2>
+
+            <p id="remoteUsername"></p>
 
         </div>
 
 
         <!-- =================================================
-             SCROLL BOTTOM
+             TOP BAR
         ================================================== -->
 
-        <button
-            id="scrollBottomBtn"
-            class="scrollBottomBtn hidden"
-            type="button"
-            aria-label="Scroll to latest"
-        >
-            <i class="fa-solid fa-chevron-down"></i>
-        </button>
-
-    </section>
-
-
-    <!-- =====================================================
-         REACTION BAR
-    ====================================================== -->
-
-    <div
-        id="reactionBar"
-        class="reactionBar hidden"
-    >
-
-        <button type="button">❤️</button>
-        <button type="button">😂</button>
-        <button type="button">😍</button>
-        <button type="button">😮</button>
-        <button type="button">😢</button>
-        <button type="button">👍</button>
-
-    </div>
-
-
-    <!-- =====================================================
-         REPLY PREVIEW
-    ====================================================== -->
-
-    <div
-        id="replyPreview"
-        class="replyPreviewBar hidden"
-    >
-
-        <div class="replyAccent"></div>
-
-        <div class="replyPreviewContent">
-
-            <strong id="replyUser">
-                Reply
-            </strong>
-
-            <span id="replyText">
-                Message
-            </span>
-
-        </div>
-
-        <button
-            id="closeReplyPreview"
-            type="button"
-            aria-label="Cancel reply"
-        >
-            <i class="fa-solid fa-xmark"></i>
-        </button>
-
-    </div>
-
-
-    <!-- =====================================================
-         MESSAGE INPUT
-    ====================================================== -->
-
-    <footer class="composer">
-
-        <div class="composerInner">
-
-
-            <!-- Attach -->
+        <header class="call-topbar">
 
             <button
-                id="attachBtn"
-                class="composerButton"
+                id="minimizeCallBtn"
+                class="icon-btn"
                 type="button"
-                aria-label="Attach"
+                aria-label="Minimize call"
             >
-                <i class="fa-solid fa-plus"></i>
+                <i class="fa-solid fa-chevron-down"></i>
             </button>
 
 
-            <!-- Text Area -->
+            <div class="call-top-info">
 
-            <div class="messageInputShell">
+                <strong id="topCallName">
+                    Viewora Call
+                </strong>
 
-                <textarea
-                    id="messageInput"
-                    rows="1"
-                    maxlength="5000"
-                    placeholder="Message..."
-                    autocomplete="off"
-                    spellcheck="true"
-                ></textarea>
-
-
-                <button
-                    id="emojiBtn"
-                    class="insideInputButton"
-                    type="button"
-                    aria-label="Emoji"
+                <span
+                    id="callStatus"
+                    class="call-status"
                 >
-                    <i class="fa-regular fa-face-smile"></i>
-                </button>
+                    Connecting...
+                </span>
 
             </div>
+
+
+            <button
+                id="speakerBtn"
+                class="icon-btn"
+                type="button"
+                aria-label="Speaker"
+            >
+                <i class="fa-solid fa-volume-high"></i>
+            </button>
+
+        </header>
+
+
+        <!-- =================================================
+             CALL DURATION
+        ================================================== -->
+
+        <div
+            id="callDuration"
+            class="call-duration"
+        >
+            00:00
+        </div>
+
+
+        <!-- =================================================
+             LOCAL VIDEO
+        ================================================== -->
+
+        <div
+            id="localVideoWrap"
+            class="local-video-wrap hidden"
+        >
+
+            <video
+                id="localVideo"
+                class="local-video"
+                autoplay
+                muted
+                playsinline
+                webkit-playsinline
+            ></video>
+
+
+            <div class="local-video-label">
+                <i class="fa-solid fa-video"></i>
+                You
+            </div>
+
+        </div>
+
+
+        <!-- =================================================
+             CONNECTING OVERLAY
+        ================================================== -->
+
+        <div
+            id="connectingOverlay"
+            class="connecting-overlay"
+        >
+
+            <div class="connecting-card">
+
+                <div class="connecting-spinner">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+
+                <strong id="connectingText">
+                    Connecting...
+                </strong>
+
+                <small>
+                    Securing your call
+                </small>
+
+            </div>
+
+        </div>
+
+
+        <!-- =================================================
+             CALL CONTROLS
+        ================================================== -->
+
+        <div class="call-controls">
+
+            <!-- Microphone -->
+
+            <button
+                id="muteBtn"
+                class="call-control"
+                type="button"
+                aria-label="Mute microphone"
+            >
+
+                <span class="control-icon">
+                    <i
+                        id="muteIcon"
+                        class="fa-solid fa-microphone"
+                    ></i>
+                </span>
+
+                <small>
+                    Mute
+                </small>
+
+            </button>
 
 
             <!-- Camera -->
 
             <button
                 id="cameraBtn"
-                class="composerButton"
+                class="call-control video-only-control"
                 type="button"
                 aria-label="Camera"
             >
-                <i class="fa-solid fa-camera"></i>
-            </button>
 
-
-            <!-- Voice -->
-
-            <button
-                id="voiceBtn"
-                class="composerButton voiceComposerButton"
-                type="button"
-                aria-label="Voice message"
-            >
-                <i class="fa-solid fa-microphone"></i>
-            </button>
-
-
-            <!-- Send -->
-
-            <button
-                id="sendBtn"
-                class="sendButton"
-                type="button"
-                aria-label="Send message"
-            >
-                <i class="fa-solid fa-paper-plane"></i>
-            </button>
-
-        </div>
-
-    </footer>
-
-
-</main>
-
-
-<!-- =========================================================
-     EMOJI PANEL
-========================================================= -->
-
-<section
-    id="emojiPanel"
-    class="emojiPanel hidden"
->
-
-    <div class="emojiPanelHeader">
-
-        <strong>
-            Emojis
-        </strong>
-
-        <button
-            type="button"
-            onclick="
-                document
-                    .getElementById('emojiPanel')
-                    .classList.add('hidden')
-            "
-        >
-            <i class="fa-solid fa-xmark"></i>
-        </button>
-
-    </div>
-
-
-    <div class="emojiGrid">
-
-        <span>😀</span>
-        <span>😃</span>
-        <span>😄</span>
-        <span>😁</span>
-        <span>😆</span>
-        <span>😅</span>
-        <span>😂</span>
-        <span>🤣</span>
-
-        <span>😊</span>
-        <span>😇</span>
-        <span>🙂</span>
-        <span>🙃</span>
-        <span>😉</span>
-        <span>😌</span>
-        <span>😍</span>
-        <span>🥰</span>
-
-        <span>😘</span>
-        <span>😎</span>
-        <span>🤩</span>
-        <span>🥳</span>
-        <span>😏</span>
-        <span>😢</span>
-        <span>😭</span>
-        <span>😡</span>
-
-        <span>👍</span>
-        <span>👎</span>
-        <span>👏</span>
-        <span>🙏</span>
-        <span>❤️</span>
-        <span>🔥</span>
-        <span>✨</span>
-        <span>💯</span>
-
-    </div>
-
-</section>
-
-
-<!-- =========================================================
-     ATTACHMENT SHEET
-========================================================= -->
-
-<section
-    id="attachmentSheet"
-    class="attachmentSheet hidden"
->
-
-    <div class="attachmentOverlay"></div>
-
-
-    <div class="attachmentCard">
-
-        <div class="sheetHandle"></div>
-
-        <div class="sheetHeader">
-
-            <strong>
-                Share with this chat
-            </strong>
-
-            <button
-                id="closeAttachmentBtn"
-                type="button"
-            >
-                <i class="fa-solid fa-xmark"></i>
-            </button>
-
-        </div>
-
-
-        <div class="attachmentGrid">
-
-            <button
-                id="galleryBtn"
-                class="attachmentOption"
-                type="button"
-            >
-
-                <span class="attachmentIcon gallery">
-                    <i class="fa-solid fa-image"></i>
+                <span class="control-icon">
+                    <i
+                        id="cameraIcon"
+                        class="fa-solid fa-video"
+                    ></i>
                 </span>
 
-                <strong>
-                    Gallery
-                </strong>
-
-            </button>
-
-
-            <button
-                id="cameraAttachmentBtn"
-                class="attachmentOption"
-                type="button"
-            >
-
-                <span class="attachmentIcon camera">
-                    <i class="fa-solid fa-camera"></i>
-                </span>
-
-                <strong>
+                <small>
                     Camera
-                </strong>
+                </small>
 
             </button>
 
 
+            <!-- Flip camera -->
+
             <button
-                id="videoBtn"
-                class="attachmentOption"
+                id="flipCameraBtn"
+                class="call-control video-only-control"
                 type="button"
+                aria-label="Flip camera"
             >
 
-                <span class="attachmentIcon video">
-                    <i class="fa-solid fa-video"></i>
+                <span class="control-icon">
+                    <i class="fa-solid fa-camera-rotate"></i>
                 </span>
 
-                <strong>
-                    Video
-                </strong>
+                <small>
+                    Flip
+                </small>
 
             </button>
 
 
+            <!-- Speaker -->
+
             <button
-                id="audioBtn"
-                class="attachmentOption"
+                id="callSpeakerBtn"
+                class="call-control"
                 type="button"
+                aria-label="Speaker"
             >
 
-                <span class="attachmentIcon audio">
-                    <i class="fa-solid fa-music"></i>
+                <span class="control-icon">
+                    <i
+                        id="callSpeakerIcon"
+                        class="fa-solid fa-volume-high"
+                    ></i>
                 </span>
 
-                <strong>
-                    Audio
-                </strong>
+                <small>
+                    Speaker
+                </small>
 
             </button>
 
 
+            <!-- End call -->
+
             <button
-                id="documentBtn"
-                class="attachmentOption"
+                id="endCallBtn"
+                class="call-control end-call-control"
                 type="button"
+                aria-label="End call"
             >
 
-                <span class="attachmentIcon document">
-                    <i class="fa-solid fa-file"></i>
+                <span class="control-icon">
+                    <i class="fa-solid fa-phone-slash"></i>
                 </span>
 
-                <strong>
-                    Document
-                </strong>
+                <small>
+                    End
+                </small>
 
             </button>
 
         </div>
 
-    </div>
-
-</section>
+    </main>
 
 
-<!-- =========================================================
-     HIDDEN FILE PICKERS
-========================================================= -->
+    <!-- ====================================================
+         INCOMING CALL
+    ===================================================== -->
 
-<input
-    id="imagePicker"
-    type="file"
-    accept="image/*"
-    hidden
->
-
-<input
-    id="videoPicker"
-    type="file"
-    accept="video/*"
-    hidden
->
-
-<input
-    id="audioPicker"
-    type="file"
-    accept="audio/*"
-    hidden
->
-
-<input
-    id="documentPicker"
-    type="file"
-    accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip,.rar"
-    hidden
->
-
-<input
-    id="cameraPicker"
-    type="file"
-    accept="image/*"
-    capture="environment"
-    hidden
->
-
-
-<!-- =========================================================
-     MEDIA PREVIEW MODAL
-========================================================= -->
-
-<section
-    id="mediaPreviewModal"
-    class="modal hidden"
->
-
-    <div class="modalBackdrop"></div>
-
-
-    <div class="mediaPreviewCard">
-
-        <div class="modalHeader">
-
-            <strong>
-                Preview
-            </strong>
-
-            <button
-                id="closePreviewBtn"
-                type="button"
-            >
-                <i class="fa-solid fa-xmark"></i>
-            </button>
-
-        </div>
-
-
-        <div class="mediaPreviewBody">
-
-            <img
-                id="previewImage"
-                class="mediaPreviewElement hidden"
-                alt="Preview"
-            >
-
-
-            <video
-                id="previewVideo"
-                class="mediaPreviewElement hidden"
-                controls
-                playsinline
-            ></video>
-
-
-            <div
-                id="previewAudioBox"
-                class="previewFileCard hidden"
-            >
-
-                <div class="previewFileIcon">
-                    <i class="fa-solid fa-music"></i>
-                </div>
-
-                <div>
-
-                    <strong id="previewAudioName">
-                        Audio
-                    </strong>
-
-                    <audio
-                        id="previewAudio"
-                        controls
-                    ></audio>
-
-                </div>
-
-            </div>
-
-
-            <div
-                id="previewFileBox"
-                class="previewFileCard hidden"
-            >
-
-                <div class="previewFileIcon">
-                    <i class="fa-solid fa-file"></i>
-                </div>
-
-                <div>
-
-                    <strong id="previewFileName">
-                        File
-                    </strong>
-
-                    <span id="previewFileSize">
-                        0 KB
-                    </span>
-
-                </div>
-
-            </div>
-
-        </div>
-
-
-        <div class="mediaCaptionWrap">
-
-            <textarea
-                id="mediaCaption"
-                rows="2"
-                maxlength="1000"
-                placeholder="Add a caption..."
-            ></textarea>
-
-        </div>
-
-
-        <div class="modalActions">
-
-            <button
-                id="cancelMediaBtn"
-                class="secondaryButton"
-                type="button"
-            >
-                Cancel
-            </button>
-
-            <button
-                id="sendMediaBtn"
-                class="primaryButton"
-                type="button"
-            >
-                <i class="fa-solid fa-paper-plane"></i>
-                Send
-            </button>
-
-        </div>
-
-    </div>
-
-</section>
-
-
-<!-- =========================================================
-     IMAGE VIEWER
-========================================================= -->
-
-<section
-    id="imageViewer"
-    class="viewer hidden"
->
-
-    <button
-        id="closeViewerBtn"
-        class="viewerClose"
-        type="button"
-    >
-        <i class="fa-solid fa-xmark"></i>
-    </button>
-
-    <img
-        id="viewerImage"
-        src=""
-        alt="Image"
+    <section
+        id="incomingCallScreen"
+        class="incoming-call-screen hidden"
     >
 
-</section>
+        <div class="incoming-background"></div>
 
 
-<!-- =========================================================
-     VIDEO VIEWER
-========================================================= -->
+        <div class="incoming-content">
 
-<section
-    id="videoViewer"
-    class="viewer hidden"
->
+            <!-- Caller avatar -->
 
-    <button
-        id="closeVideoViewerBtn"
-        class="viewerClose"
-        type="button"
-    >
-        <i class="fa-solid fa-xmark"></i>
-    </button>
+            <div class="incoming-avatar-wrap">
 
-    <video
-        id="viewerVideo"
-        controls
-        autoplay
-        playsinline
-    ></video>
-
-</section>
-
-
-<!-- =========================================================
-     PROFILE MODAL
-========================================================= -->
-
-<section
-    id="profileModal"
-    class="modal hidden"
->
-
-    <div class="modalBackdrop"></div>
-
-
-    <div class="profileCard">
-
-        <button
-            id="closeProfileBtn"
-            class="modalClose"
-            type="button"
-        >
-            <i class="fa-solid fa-xmark"></i>
-        </button>
-
-
-        <div class="profileHero">
-
-            <div class="profileAvatar">
+                <div class="incoming-avatar-ring"></div>
 
                 <img
-                    id="profileImage"
+                    id="incomingAvatar"
                     src="assets/default-avatar.png"
-                    alt="Profile"
+                    alt="Caller"
+                    class="incoming-avatar"
                 >
 
             </div>
 
-            <h2 id="profileName">
-                Viewora User
-            </h2>
 
-            <p id="profileUsername">
+            <!-- Caller information -->
+
+            <p class="incoming-label">
+                Incoming
+            </p>
+
+            <h1 id="incomingName">
+                Viewora User
+            </h1>
+
+            <p id="incomingUsername">
                 @user
             </p>
 
-            <span
-                id="profileStatus"
-                class="profileStatus"
-            >
-                Offline
-            </span>
 
-        </div>
-
-    </div>
-
-</section>
-
-
-<!-- =========================================================
-     DELETE MESSAGE MODAL
-========================================================= -->
-
-<section
-    id="deleteModal"
-    class="modal hidden"
->
-
-    <div class="modalBackdrop"></div>
-
-
-    <div class="confirmCard">
-
-        <div class="confirmIcon dangerIcon">
-
-            <i class="fa-solid fa-trash"></i>
-
-        </div>
-
-        <h2>
-            Delete message?
-        </h2>
-
-        <p>
-            Choose how you want to remove this message.
-        </p>
-
-
-        <div class="confirmActions">
-
-            <button
-                id="deleteForMeBtn"
-                class="secondaryButton"
-                type="button"
-            >
-                Delete for me
-            </button>
-
-            <button
-                id="deleteForEveryoneBtn"
-                class="dangerButton"
-                type="button"
-            >
-                Delete for everyone
-            </button>
-
-            <button
-                id="cancelDeleteBtn"
-                class="textButton"
-                type="button"
-            >
-                Cancel
-            </button>
-
-        </div>
-
-    </div>
-
-</section>
-
-
-<!-- =========================================================
-     MESSAGE INFO MODAL
-========================================================= -->
-
-<section
-    id="messageInfoModal"
-    class="modal hidden"
->
-
-    <div class="modalBackdrop"></div>
-
-
-    <div class="infoCard">
-
-        <div class="modalHeader">
-
-            <strong>
-                Message info
-            </strong>
-
-            <button
-                id="closeInfoBtn"
-                type="button"
-            >
-                <i class="fa-solid fa-xmark"></i>
-            </button>
-
-        </div>
-
-
-        <div class="infoRows">
-
-            <div class="infoRow">
-
-                <span>
-                    <i class="fa-solid fa-paper-plane"></i>
-                    Sent
-                </span>
-
-                <strong id="sentTime">
-                    —
-                </strong>
-
-            </div>
-
-
-            <div class="infoRow">
-
-                <span>
-                    <i class="fa-solid fa-check"></i>
-                    Delivered
-                </span>
-
-                <strong id="deliveredTime">
-                    —
-                </strong>
-
-            </div>
-
-
-            <div class="infoRow">
-
-                <span>
-                    <i class="fa-solid fa-check-double"></i>
-                    Seen
-                </span>
-
-                <strong id="seenTime">
-                    —
-                </strong>
-
-            </div>
-
-        </div>
-
-    </div>
-
-</section>
-
-
-<!-- =========================================================
-     MESSAGE CONTEXT MENU
-========================================================= -->
-
-<div
-    id="messageMenu"
-    class="messageMenu hidden"
->
-
-    <button
-        id="replyMessageBtn"
-        class="menuItem"
-        type="button"
-    >
-        <i class="fa-solid fa-reply"></i>
-        <span>Reply</span>
-    </button>
-
-
-    <button
-        id="copyMessageBtn"
-        class="menuItem"
-        type="button"
-    >
-        <i class="fa-regular fa-copy"></i>
-        <span>Copy</span>
-    </button>
-
-
-    <button
-        id="reactMessageBtn"
-        class="menuItem"
-        type="button"
-    >
-        <i class="fa-regular fa-face-smile"></i>
-        <span>React</span>
-    </button>
-
-
-    <button
-        id="editMessageBtn"
-        class="menuItem"
-        type="button"
-    >
-        <i class="fa-solid fa-pen"></i>
-        <span>Edit</span>
-    </button>
-
-
-    <button
-        id="pinMessageBtn"
-        class="menuItem"
-        type="button"
-    >
-        <i class="fa-solid fa-thumbtack"></i>
-        <span>Pin</span>
-    </button>
-
-
-    <button
-        id="infoMessageBtn"
-        class="menuItem"
-        type="button"
-    >
-        <i class="fa-solid fa-circle-info"></i>
-        <span>Info</span>
-    </button>
-
-
-    <button
-        id="deleteMessageBtn"
-        class="menuItem danger"
-        type="button"
-    >
-        <i class="fa-solid fa-trash"></i>
-        <span>Delete</span>
-    </button>
-
-</div>
-
-
-<!-- =========================================================
-     VOICE RECORDING OVERLAY
-========================================================= -->
-
-<section
-    id="recordOverlay"
-    class="recordOverlay hidden"
->
-
-    <div class="recordCard">
-
-        <div class="recordPulse">
-
-            <i class="fa-solid fa-microphone"></i>
-
-        </div>
-
-        <strong>
-            Recording voice message
-        </strong>
-
-        <span id="recordTime">
-            00:00
-        </span>
-
-
-        <div class="recordActions">
-
-            <button
-                id="cancelRecordingBtn"
-                class="secondaryButton"
-                type="button"
-            >
-                Cancel
-            </button>
-
-            <button
-                id="stopRecordingBtn"
-                class="dangerButton"
-                type="button"
-            >
-                <i class="fa-solid fa-stop"></i>
-                Stop
-            </button>
-
-        </div>
-
-    </div>
-
-</section>
-
-
-<!-- =========================================================
-     UPLOAD OVERLAY
-========================================================= -->
-
-<section
-    id="uploadOverlay"
-    class="uploadOverlay hidden"
->
-
-    <div class="uploadCard">
-
-        <div class="uploadIcon">
-            <i class="fa-solid fa-cloud-arrow-up"></i>
-        </div>
-
-        <strong>
-            Uploading
-        </strong>
-
-        <span id="uploadFileName">
-            Preparing file...
-        </span>
-
-
-        <div class="progressTrack">
+            <!-- Call type -->
 
             <div
-                id="uploadProgressBar"
-                class="progressBar"
-                style="width:0%"
-            ></div>
+                id="incomingType"
+                class="incoming-type"
+            >
+                <i class="fa-solid fa-phone"></i>
+                Voice Call
+            </div>
+
+
+            <!-- Incoming buttons -->
+
+            <div class="incoming-actions">
+
+                <button
+                    id="rejectCallBtn"
+                    class="incoming-action reject-action"
+                    type="button"
+                >
+
+                    <span>
+                        <i class="fa-solid fa-phone-slash"></i>
+                    </span>
+
+                    <small>
+                        Decline
+                    </small>
+
+                </button>
+
+
+                <button
+                    id="acceptCallBtn"
+                    class="incoming-action accept-action"
+                    type="button"
+                >
+
+                    <span>
+                        <i class="fa-solid fa-phone"></i>
+                    </span>
+
+                    <small>
+                        Accept
+                    </small>
+
+                </button>
+
+            </div>
 
         </div>
 
+    </section>
 
-        <div class="uploadStats">
 
-            <span id="uploadPercent">
-                0%
-            </span>
+    <!-- ====================================================
+         CALL ENDED
+    ===================================================== -->
 
-            <span id="uploadSpeed">
-                —
-            </span>
+    <section
+        id="callEndedScreen"
+        class="call-ended-screen hidden"
+    >
+
+        <div class="ended-card">
+
+            <div class="ended-icon">
+                <i class="fa-solid fa-phone-slash"></i>
+            </div>
+
+
+            <h1>
+                Call Ended
+            </h1>
+
+
+            <p id="endedText">
+                The call has ended.
+            </p>
+
+
+            <button
+                id="backHomeBtn"
+                class="ended-button"
+                type="button"
+            >
+                <i class="fa-solid fa-arrow-left"></i>
+                Back
+            </button>
 
         </div>
 
-
-        <button
-            id="cancelUploadBtn"
-            class="secondaryButton"
-            type="button"
-        >
-            Cancel upload
-        </button>
-
-    </div>
-
-</section>
+    </section>
 
 
-<!-- =========================================================
-     TOAST
-========================================================= -->
-
-<div
-    id="toast"
-    class="toast hidden"
->
+    <!-- ====================================================
+         TOAST
+    ===================================================== -->
 
     <div
-        id="toastIcon"
-        class="toastIcon"
+        id="callToast"
+        class="call-toast hidden"
+        role="status"
+        aria-live="polite"
     >
-        <i class="fa-solid fa-circle-check"></i>
+
+        <i class="fa-solid fa-circle-info"></i>
+
+        <span id="callToastText">
+            Something went wrong.
+        </span>
+
     </div>
 
-    <span id="toastText">
-        Done
-    </span>
+
+    <!-- ====================================================
+         CALL ERROR
+    ===================================================== -->
+
+    <div
+        id="callErrorScreen"
+        class="call-error-screen hidden"
+    >
+
+        <div class="error-card">
+
+            <div class="error-icon">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+            </div>
+
+            <h2>
+                Call unavailable
+            </h2>
+
+            <p id="callErrorText">
+                Unable to connect the call.
+            </p>
+
+            <button
+                id="retryCallBtn"
+                class="ended-button"
+                type="button"
+            >
+                Try Again
+            </button>
+
+        </div>
+
+    </div>
 
 </div>
 
 
-<!-- =========================================================
-     FIREBASE
-     IMPORTANT:
-     firebase.js should initialize:
-     auth
-     db
+  <!-- =====================================================
+     VIEWORA INCOMING CALL RINGTONE
+====================================================== -->
+
+<audio
+    id="incomingCallRingtone"
+    preload="auto"
+    loop
+>
+    <source
+        src="assets/call-ringtone.mp3"
+        type="audio/mpeg"
+    >
+</audio>
+
+
+<!-- ========================================================
+     FIREBASE SDK
 ========================================================= -->
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 
 <script src="firebase.js"></script>
-  <script src="badges.js"></script>
-
-  <script src="call-listener.js"></script>
-
-<script src="media-upload.js"></script>
-
+<script src="theme.js"></script>
 <script src="call.js"></script>
+<!-- ========================================================
+     PREMIUM CALL UI CONTROLLER
+========================================================= -->
 
-<script src="chat.js"></script>
-  <script src="message-listener.js"></script>
-  
+<script>
+
+"use strict";
+
+(() => {
+
+    const $ = id =>
+        document.getElementById(id);
+
+
+    /* =====================================================
+       TOAST
+    ===================================================== */
+
+    window.showCallToast = function(message) {
+
+        const toast =
+            $("callToast");
+
+        const text =
+            $("callToastText");
+
+
+        if (!toast || !text) {
+            return;
+        }
+
+
+        text.textContent =
+            message;
+
+
+        toast.classList.remove(
+            "hidden"
+        );
+
+
+        clearTimeout(
+            window.__VIEWORA_TOAST_TIMER__
+        );
+
+
+        window.__VIEWORA_TOAST_TIMER__ =
+            setTimeout(() => {
+
+                toast.classList.add(
+                    "hidden"
+                );
+
+            }, 2800);
+
+    };
+
+
+    /* =====================================================
+       MUTE
+    ===================================================== */
+
+    const muteBtn =
+        $("muteBtn");
+
+    const muteIcon =
+        $("muteIcon");
+
+
+    let muted = false;
+
+
+    if (muteBtn) {
+
+        muteBtn.addEventListener(
+            "click",
+            () => {
+
+                const stream =
+                    window.localStream;
+
+
+                if (!stream) {
+
+                    showCallToast(
+                        "Microphone is not ready."
+                    );
+
+                    return;
+
+                }
+
+
+                const tracks =
+                    stream.getAudioTracks();
+
+
+                if (!tracks.length) {
+
+                    showCallToast(
+                        "No microphone found."
+                    );
+
+                    return;
+
+                }
+
+
+                muted =
+                    !muted;
+
+
+                tracks.forEach(
+                    track => {
+
+                        track.enabled =
+                            !muted;
+
+                    }
+                );
+
+
+                muteBtn.classList.toggle(
+                    "active",
+                    muted
+                );
+
+
+                if (muteIcon) {
+
+                    muteIcon.className =
+                        muted
+                            ? "fa-solid fa-microphone-slash"
+                            : "fa-solid fa-microphone";
+
+                }
+
+            }
+        );
+
+    }
+
+
+    /* =====================================================
+       CAMERA
+    ===================================================== */
+
+    const cameraBtn =
+        $("cameraBtn");
+
+    const cameraIcon =
+        $("cameraIcon");
+
+
+    let cameraOff = false;
+
+
+    if (cameraBtn) {
+
+        cameraBtn.addEventListener(
+            "click",
+            () => {
+
+                const stream =
+                    window.localStream;
+
+
+                if (!stream) {
+
+                    showCallToast(
+                        "Camera is not ready."
+                    );
+
+                    return;
+
+                }
+
+
+                const tracks =
+                    stream.getVideoTracks();
+
+
+                if (!tracks.length) {
+
+                    showCallToast(
+                        "Camera is unavailable."
+                    );
+
+                    return;
+
+                }
+
+
+                cameraOff =
+                    !cameraOff;
+
+
+                tracks.forEach(
+                    track => {
+
+                        track.enabled =
+                            !cameraOff;
+
+                    }
+                );
+
+
+                cameraBtn.classList.toggle(
+                    "active",
+                    cameraOff
+                );
+
+
+                if (cameraIcon) {
+
+                    cameraIcon.className =
+                        cameraOff
+                            ? "fa-solid fa-video-slash"
+                            : "fa-solid fa-video";
+
+                }
+
+            }
+        );
+
+    }
+
+
+    /* =====================================================
+       SPEAKER
+    ===================================================== */
+
+    const speakerButtons = [
+        $("speakerBtn"),
+        $("callSpeakerBtn")
+    ];
+
+
+    let speakerOn = true;
+
+
+    speakerButtons.forEach(
+        button => {
+
+            if (!button) {
+                return;
+            }
+
+
+            button.addEventListener(
+                "click",
+                () => {
+
+                    speakerOn =
+                        !speakerOn;
+
+
+                    const audio =
+                        $("remoteAudio");
+
+                    const video =
+                        $("remoteVideo");
+
+
+                    if (audio) {
+
+                        audio.muted =
+                            !speakerOn;
+
+                    }
+
+
+                    if (video) {
+
+                        video.muted =
+                            !speakerOn;
+
+                    }
+
+
+                    speakerButtons
+                        .forEach(
+                            btn => {
+
+                                btn.classList.toggle(
+                                    "active",
+                                    !speakerOn
+                                );
+
+                            }
+                        );
+
+                }
+            );
+
+        }
+    );
+
+
+    /* =====================================================
+       FLIP CAMERA
+    ===================================================== */
+
+    const flipButton = $("flipCameraBtn");
+
+    if (flipButton) {
+        flipButton.addEventListener("click", async () => {
+            if (window.VieworaCall && typeof window.VieworaCall.switchCamera === "function") {
+                await window.VieworaCall.switchCamera();
+            } else {
+                showCallToast("Camera switch not ready.");
+            }
+        });
+    }
+
+
+    /* =====================================================
+       BACK AFTER END
+    ===================================================== */
+
+    const backButton =
+        $("backHomeBtn");
+
+
+    if (backButton) {
+
+        backButton.addEventListener(
+            "click",
+            () => {
+
+                if (
+                    document.referrer &&
+                    document.referrer !==
+                    window.location.href
+                ) {
+
+                    window.history.back();
+
+                } else {
+
+                    window.location.href =
+                        "index.html";
+
+                }
+
+            }
+        );
+
+    }
+
+
+    /* =====================================================
+       RETRY
+    ===================================================== */
+
+    const retryButton =
+        $("retryCallBtn");
+
+
+    if (retryButton) {
+
+        retryButton.addEventListener(
+            "click",
+            () => {
+
+                $("callErrorScreen")
+                    ?.classList
+                    .add("hidden");
+
+                location.reload();
+
+            }
+        );
+
+    }
+
+
+    /* =====================================================
+       SYNC NAME
+    ===================================================== */
+
+    const observer =
+        new MutationObserver(
+            () => {
+
+                const name =
+                    $("remoteName")?.textContent;
+
+
+                const topName =
+                    $("topCallName");
+
+
+                if (
+                    name &&
+                    topName
+                ) {
+
+                    topName.textContent =
+                        name;
+
+                }
+
+            }
+        );
+
+
+    const remoteName =
+        $("remoteName");
+
+
+    if (remoteName) {
+
+        observer.observe(
+            remoteName,
+            {
+                childList: true,
+                characterData: true,
+                subtree: true
+            }
+        );
+
+    }
+
+
+    /* =====================================================
+       MOBILE BACK PROTECTION
+    ===================================================== */
+
+    window.addEventListener(
+        "popstate",
+        event => {
+
+            if (
+                window.VieworaCall &&
+                typeof window.VieworaCall.endCall ===
+                "function"
+            ) {
+
+                window.VieworaCall.endCall()
+                    .catch(
+                        () => {}
+                    );
+
+            }
+
+        }
+    );
+
+
+})();
+
+</script>
+
 </body>
 </html>

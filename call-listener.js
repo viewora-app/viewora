@@ -84,6 +84,32 @@
     let incomingRef = null;
 
     let activeCall = null;
+    let incomingSyncDone = false;
+    const MAX_RING_AGE_MS = 55 * 1000; // ignore stale ringing older than 55s
+
+    function isFreshRinging(data) {
+        if (!data || data.status !== "ringing") return false;
+        let created = data.createdAt || data.timestamp || data.time || 0;
+        // Firebase sometimes returns object before resolve — reject
+        if (created && typeof created === "object") return false;
+        created = Number(created);
+        if (!created || created < 100000) return false;
+        const age = Date.now() - created;
+        // future clock skew tolerance 5s
+        if (age < -5000) return false;
+        return age <= MAX_RING_AGE_MS;
+    }
+
+    function cleanupStaleCall(callId) {
+        if (!currentUser || !callId) return;
+        try {
+            db.ref("incomingCalls/" + currentUser.uid + "/" + callId).update({
+                status: "ended",
+                endedReason: "stale",
+                endedAt: firebase.database.ServerValue.TIMESTAMP
+            });
+        } catch (_) {}
+    }
 
     let popup = null;
 
@@ -1353,21 +1379,20 @@
                 );
 
 
+            const caller =
+                (data && data.callerId) ? data.callerId : "";
             const url =
                 "call.html" +
                 "?callId=" +
-                encodeURIComponent(
-                    callId
-                ) +
+                encodeURIComponent(callId) +
                 "&role=receiver" +
                 "&type=" +
-                encodeURIComponent(
-                    type
-                );
+                encodeURIComponent(type) +
+                (caller
+                    ? "&callerId=" + encodeURIComponent(caller)
+                    : "");
 
-
-            window.location.href =
-                url;
+            window.location.href = url;
 
 
         } catch (e) {
@@ -1572,46 +1597,34 @@
             "child_added",
             async snapshot => {
 
-                const callId =
-                    snapshot.key;
+                const callId = snapshot.key;
+                const data = snapshot.val();
+                if (!data) return;
 
-
-                const data =
-                    snapshot.val();
-
-
-                if (!data) {
-                    return;
-                }
-
-
-                if (
-                    data.status !==
-                    "ringing"
-                ) {
-                    return;
-                }
-
+                if (data.status !== "ringing") return;
 
                 if (
                     data.receiverId &&
-                    data.receiverId !==
-                    currentUser.uid
+                    data.receiverId !== currentUser.uid
                 ) {
                     return;
                 }
 
+                // Skip backlog on first connect — only brand-new rings after sync
+                if (!incomingSyncDone) {
+                    if (!isFreshRinging(data)) {
+                        cleanupStaleCall(callId);
+                    }
+                    return;
+                }
 
-                await showIncoming(
-                    callId,
-                    data
-                );
+                if (!isFreshRinging(data)) {
+                    cleanupStaleCall(callId);
+                    return;
+                }
 
-
-                watchActiveCall(
-                    callId
-                );
-
+                await showIncoming(callId, data);
+                watchActiveCall(callId);
             }
         );
 
@@ -1623,72 +1636,34 @@
          * while a call is already ringing.
          */
 
-        incomingRef.on(
-            "value",
-            async snapshot => {
+        // One-time scan: cleanup stale, show only fresh ring if any
+        incomingRef.once("value", async snapshot => {
+            const data = snapshot.val() || {};
+            const entries = Object.entries(data);
 
-                const data =
-                    snapshot.val();
-
-
-                if (!data) {
-                    return;
+            for (const [id, call] of entries) {
+                if (!call) continue;
+                if (call.status === "ringing" && !isFreshRinging(call)) {
+                    cleanupStaleCall(id);
                 }
-
-
-                const entries =
-                    Object.entries(
-                        data
-                    );
-
-
-                /*
-                 * Latest ringing call.
-                 */
-
-                const ringing =
-                    entries
-                        .filter(
-                            ([id, call]) =>
-                                call &&
-                                call.status ===
-                                "ringing"
-                        )
-                        .sort(
-                            (a, b) =>
-                                Number(
-                                    b[1].createdAt || 0
-                                ) -
-                                Number(
-                                    a[1].createdAt || 0
-                                )
-                        );
-
-
-                if (
-                    ringing.length &&
-                    !activeCall
-                ) {
-
-                    const [
-                        id,
-                        call
-                    ] =
-                        ringing[0];
-
-
-                    await showIncoming(
-                        id,
-                        call
-                    );
-
-                    watchActiveCall(
-                        id
-                    );
-                }
-
             }
-        );
+
+            const ringing = entries
+                .filter(([id, call]) => call && isFreshRinging(call))
+                .sort(
+                    (a, b) =>
+                        Number(b[1].createdAt || 0) -
+                        Number(a[1].createdAt || 0)
+                );
+
+            incomingSyncDone = true;
+
+            if (ringing.length && !activeCall) {
+                const [id, call] = ringing[0];
+                await showIncoming(id, call);
+                watchActiveCall(id);
+            }
+        });
 
 
         log(
@@ -1821,6 +1796,12 @@
     async function init() {
 
         try {
+            // Do not show global incoming popup on the call page itself
+            const page = (location.pathname.split("/").pop() || "").toLowerCase();
+            if (page.indexOf("call") !== -1) {
+                log("On call page — global popup disabled.");
+                return;
+            }
 
             await waitForUser();
 

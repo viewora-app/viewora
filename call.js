@@ -144,6 +144,9 @@
             ? "video"
             : "audio";
 
+    // Optional: from accept URL
+    const urlCallerId = params.get("callerId") || "";
+
 
     /* ======================================================
        STATE
@@ -715,15 +718,15 @@
                             "user",
 
                         width: {
-                            ideal: 1280
+                            ideal: 640
                         },
 
                         height: {
-                            ideal: 720
+                            ideal: 480
                         },
 
                         frameRate: {
-                            ideal: 30
+                            ideal: 24
                         }
 
                     }
@@ -756,7 +759,10 @@
             ) {
 
                 toast(
-                    "Camera/microphone permission denied."
+                    "Allow microphone/camera for this site, then try again."
+                );
+                showEnded(
+                    "Permission denied. Enable mic/camera in browser settings."
                 );
 
             } else if (
@@ -767,12 +773,14 @@
                 toast(
                     "Camera or microphone not found."
                 );
+                showEnded("No mic/camera found.");
 
             } else {
 
                 toast(
                     "Unable to access camera or microphone."
                 );
+                showEnded("Media error. Try again.");
 
             }
 
@@ -913,6 +921,17 @@
 
 
                 attachRemoteMedia();
+                // User already gestured (accept/call) — force play
+                try {
+                    if (remoteAudio) {
+                        remoteAudio.muted = false;
+                        remoteAudio.play().catch(() => {});
+                    }
+                    if (remoteVideo && callType === "video") {
+                        remoteVideo.muted = false;
+                        remoteVideo.play().catch(() => {});
+                    }
+                } catch (_) {}
 
             };
 
@@ -1855,11 +1874,11 @@
 
 
         callerId =
-            data.callerId;
+            data.callerId || urlCallerId;
 
 
         remoteUserId =
-            data.callerId;
+            data.callerId || urlCallerId;
 
 
         callType =
@@ -2876,7 +2895,14 @@
             "click",
             () => {
 
-                window.history.back();
+                {
+                    const backUid = receiverId || remoteUserId || params.get("uid") || "";
+                    if (backUid) {
+                        window.location.href = "chat.html?uid=" + encodeURIComponent(backUid);
+                    } else {
+                        window.history.back();
+                    }
+                }
 
             }
         );
@@ -2965,6 +2991,10 @@
                     selectedType
                 ) +
                 "&receiverId=" +
+                encodeURIComponent(
+                    uid
+                ) +
+                "&uid=" +
                 encodeURIComponent(
                     uid
                 );
