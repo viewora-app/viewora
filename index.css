@@ -46,10 +46,15 @@
 html {
     scroll-behavior: smooth;
     background: var(--bg);
+    height: auto;
+    min-height: 100%;
+    overflow-x: hidden;
+    overflow-y: auto;
 }
 
 body {
-    min-height: 100vh;
+    min-height: 100%;
+    height: auto;
     background:
         radial-gradient(
             circle at 20% -10%,
@@ -73,6 +78,10 @@ body {
         sans-serif;
 
     overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
+    position: relative;
 }
 
 button,
@@ -2410,7 +2419,8 @@ video {
 
 /* ---------- SWIPE CONTAINER ---------- */
 .homeFeed {
-    overflow: hidden;
+    overflow-x: hidden;
+    overflow-y: visible;
     position: relative;
 }
 
@@ -3142,4 +3152,42 @@ video {
 .longVideoCard .videoAvatar,
 .longVideoCard .videoSubMeta > span:first-child {
     cursor: pointer;
+}
+
+
+/* =========================================================
+   SCROLL UNLOCK (fix — page was not scrolling)
+========================================================= */
+html, body {
+    height: auto !important;
+    min-height: 100% !important;
+    max-height: none !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+}
+body {
+    touch-action: pan-y !important;
+    position: relative !important;
+}
+.app, #app {
+    height: auto !important;
+    min-height: 100vh !important;
+    max-height: none !important;
+    overflow: visible !important;
+}
+.homeFeed {
+    overflow-x: hidden !important;
+    overflow-y: visible !important;
+    max-height: none !important;
+}
+.swipeFeed, .swipePanel {
+    max-height: none !important;
+    height: auto !important;
+}
+/* Never trap the document behind fixed overlays unless open */
+.pageLoader.loaderHide,
+.pageLoader.hidden {
+    pointer-events: none !important;
+    display: none !important;
 }

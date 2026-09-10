@@ -386,6 +386,7 @@
 
 <!-- VIEWORA CORE -->
 <script src="firebase.js"></script>
+    <script scr="security.js"></script>
   <script src="badges.js"></script>
 <script src="index.js"></script>
 <script src="call-listener.js"></script>
@@ -406,16 +407,28 @@
     function startPage() {
         const loader = document.getElementById("pageLoader");
         const app = document.getElementById("app");
-        if (!loader || !app) return;
-
+        // Always unlock app even if pageLoader is missing
+        function reveal() {
+            if (app) {
+                app.classList.remove("hidden");
+                app.classList.add("pageReady");
+            }
+            document.documentElement.style.overflowY = "auto";
+            document.body.style.overflowY = "auto";
+            document.body.style.height = "auto";
+        }
+        if (!app) return;
+        if (!loader) {
+            reveal();
+            return;
+        }
         window.setTimeout(function () {
             loader.classList.add("loaderHide");
             window.setTimeout(function () {
-                loader.remove();
-                app.classList.remove("hidden");
-                app.classList.add("pageReady");
+                try { loader.remove(); } catch (_) {}
+                reveal();
             }, 450);
-        }, 750);
+        }, 400);
     }
 
     if (document.readyState === "loading") {

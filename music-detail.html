@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script>(function(){try{var t=localStorage.getItem("viewora_theme")||"dark";document.documentElement.setAttribute("data-theme",t);}catch(e){document.documentElement.setAttribute("data-theme","dark");}})();</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#0a0a0f">
+    <title>Song · Viewora</title>
+    <link rel="icon" href="assets/logo.png">
+    <link rel="apple-touch-icon" href="assets/logo.png">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+    <link rel="stylesheet" href="nav.css">
+    <link rel="stylesheet" href="theme.css">
+    <style>
+        :root {
+            --bg: #0a0a0f; --card: rgba(255,255,255,.05); --border: rgba(255,255,255,.08);
+            --text: #fff; --muted: #9ca3af; --accent: #7c5cff;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            min-height: 100vh; background: var(--bg); color: var(--text);
+            font-family: Inter, system-ui, sans-serif; padding-bottom: 100px;
+        }
+        .mdHeader {
+            position: sticky; top: 0; z-index: 20;
+            display: flex; align-items: center; gap: 12px;
+            padding: 14px 16px;
+            background: rgba(10,10,15,.92);
+            border-bottom: 1px solid var(--border);
+            backdrop-filter: blur(16px);
+        }
+        .mdHeader h1 { font-size: 16px; font-weight: 700; flex: 1; }
+        .mdBack {
+            width: 40px; height: 40px; border: 0; border-radius: 12px;
+            background: var(--card); color: #fff; display: grid; place-items: center;
+        }
+        .mdHero {
+            padding: 24px 16px 16px;
+            display: flex; flex-direction: column; align-items: center;
+            text-align: center; gap: 12px;
+        }
+        .mdCover {
+            width: 160px; height: 160px; border-radius: 20px;
+            object-fit: cover; background: #1a1a24;
+            box-shadow: 0 16px 40px rgba(0,0,0,.45);
+        }
+        .mdHero h2 { font-size: 20px; font-weight: 800; }
+        .mdHero p { color: var(--muted); font-size: 13px; }
+        .mdStats {
+            display: flex; gap: 18px; justify-content: center;
+            margin-top: 4px; font-size: 12px; color: var(--muted);
+        }
+        .mdStats strong { color: #fff; }
+        .mdActions {
+            display: flex; gap: 10px; width: 100%; max-width: 360px; margin-top: 8px;
+        }
+        .mdBtn {
+            flex: 1; height: 46px; border: 0; border-radius: 14px;
+            font-weight: 700; font-size: 13px; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+        }
+        .mdBtn.primary {
+            background: linear-gradient(135deg, #7c5cff, #4f8cff); color: #fff;
+        }
+        .mdBtn.ghost {
+            background: var(--card); color: #fff; border: 1px solid var(--border);
+        }
+        .mdSection {
+            padding: 8px 16px 20px;
+        }
+        .mdSection h3 {
+            font-size: 14px; font-weight: 700; margin-bottom: 12px;
+        }
+        .mdGrid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 4px;
+        }
+        .mdThumb {
+            position: relative;
+            aspect-ratio: 9/16;
+            border-radius: 10px;
+            overflow: hidden;
+            background: #15151c;
+            cursor: pointer;
+        }
+        .mdThumb img, .mdThumb video {
+            width: 100%; height: 100%; object-fit: cover;
+        }
+        .mdThumb .views {
+            position: absolute; left: 6px; bottom: 6px;
+            font-size: 10px; font-weight: 700;
+            text-shadow: 0 1px 3px #000;
+        }
+        .mdEmpty {
+            padding: 40px 16px; text-align: center; color: var(--muted); font-size: 13px;
+        }
+        .mdPlaying {
+            color: #22c55e;
+        }
+    </style>
+</head>
+<body>
+<header class="mdHeader">
+    <button type="button" class="mdBack" id="backBtn"><i class="fa-solid fa-arrow-left"></i></button>
+    <img src="assets/logo.png" alt="" width="26" height="26" style="border-radius:7px" onerror="this.style.display='none'">
+    <h1 id="pageTitle">Song</h1>
+</header>
+
+<section class="mdHero">
+    <img class="mdCover" id="cover" src="assets/logo.png" alt="">
+    <h2 id="title">—</h2>
+    <p id="artist">—</p>
+    <div class="mdStats">
+        <span><strong id="useCount">0</strong> videos</span>
+        <span><strong id="genreLabel">—</strong></span>
+    </div>
+    <div class="mdActions">
+        <button type="button" class="mdBtn ghost" id="playBtn">
+            <i class="fa-solid fa-play" id="playIcon"></i> Play
+        </button>
+        <button type="button" class="mdBtn primary" id="useBtn">
+            <i class="fa-solid fa-plus"></i> Use sound
+        </button>
+    </div>
+</section>
+
+<section class="mdSection">
+    <h3>Videos with this sound</h3>
+    <div class="mdGrid" id="grid">
+        <div class="mdEmpty" style="grid-column:1/-1">Loading…</div>
+    </div>
+</section>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script src="firebase.js"></script>
+<script src="theme.js"></script>
+<script src="nav.js" defer></script>
+<script>
+(function () {
+    const params = new URLSearchParams(location.search);
+    const musicId = params.get("id") || params.get("musicId") || "";
+    const musicName = params.get("name") || params.get("title") || "";
+    let track = null;
+    let audio = null;
+    let related = [];
+
+    function db() {
+        return window.db || (typeof firebase !== "undefined" ? firebase.database() : null);
+    }
+    function esc(s) {
+        return String(s || "")
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;");
+    }
+    function fmt(n) {
+        n = Number(n) || 0;
+        if (n >= 1e6) return (n / 1e6).toFixed(1).replace(/\.0$/, "") + "M";
+        if (n >= 1e3) return (n / 1e3).toFixed(1).replace(/\.0$/, "") + "K";
+        return String(n);
+    }
+
+    function stop() {
+        if (audio) {
+            try { audio.pause(); } catch (_) {}
+            audio = null;
+        }
+        const icon = document.getElementById("playIcon");
+        if (icon) icon.className = "fa-solid fa-play";
+        document.getElementById("playBtn").classList.remove("mdPlaying");
+    }
+
+    function play() {
+        if (!track) return;
+        const url = track.audioUrl || track.url || track.src || "";
+        if (!url) {
+            alert("No audio file");
+            return;
+        }
+        if (audio && !audio.paused) {
+            audio.pause();
+            document.getElementById("playIcon").className = "fa-solid fa-play";
+            return;
+        }
+        stop();
+        audio = new Audio(url);
+        audio.volume = 0.9;
+        const start = Number(track.startAt || track.musicStartAt || 0);
+        audio.addEventListener("loadedmetadata", () => {
+            try { audio.currentTime = start; } catch (_) {}
+        });
+        audio.play().catch(() => {});
+        document.getElementById("playIcon").className = "fa-solid fa-pause";
+        document.getElementById("playBtn").classList.add("mdPlaying");
+        audio.addEventListener("ended", stop);
+    }
+
+    async function loadTrack() {
+        const database = db();
+        if (!database) return null;
+        if (musicId) {
+            const snap = await database.ref("musicLibrary/" + musicId).once("value");
+            if (snap.exists()) return { id: musicId, ...(snap.val() || {}) };
+            // try scan
+            const all = await database.ref("musicLibrary").once("value");
+            let found = null;
+            all.forEach((c) => {
+                if (c.key === musicId) found = { id: c.key, ...(c.val() || {}) };
+            });
+            if (found) return found;
+        }
+        if (musicName) {
+            const all = await database.ref("musicLibrary").once("value");
+            let found = null;
+            const q = musicName.toLowerCase();
+            all.forEach((c) => {
+                const v = c.val() || {};
+                const t = String(v.title || v.name || "").toLowerCase();
+                if (!found && t && (t === q || t.includes(q) || q.includes(t))) {
+                    found = { id: c.key, ...v };
+                }
+            });
+            if (found) return found;
+            // synthetic track from name only
+            return {
+                id: "",
+                title: musicName,
+                name: musicName,
+                artist: params.get("artist") || "",
+                uses: 0
+            };
+        }
+        return null;
+    }
+
+    function matchesMusic(item, t) {
+        if (!item || !t) return false;
+        const mid = t.id || "";
+        const title = String(t.title || t.name || "").toLowerCase();
+        const fields = [
+            item.musicId,
+            item.soundId,
+            item.music && item.music.id,
+            item.music && item.music.title,
+            item.musicTitle,
+            item.musicName,
+            item.sound,
+            item.music,
+            item.audioTitle
+        ];
+        for (let i = 0; i < fields.length; i++) {
+            const f = fields[i];
+            if (f == null) continue;
+            if (typeof f === "object") {
+                if (mid && (f.id === mid || f.musicId === mid)) return true;
+                const ft = String(f.title || f.name || "").toLowerCase();
+                if (title && ft && (ft === title || ft.includes(title))) return true;
+            } else {
+                const s = String(f).toLowerCase();
+                if (mid && s === String(mid).toLowerCase()) return true;
+                if (title && (s === title || s.includes(title))) return true;
+            }
+        }
+        return false;
+    }
+
+    async function loadRelated() {
+        const database = db();
+        const grid = document.getElementById("grid");
+        if (!database || !track) {
+            grid.innerHTML = '<div class="mdEmpty" style="grid-column:1/-1">No videos yet</div>';
+            return;
+        }
+        related = [];
+        const roots = ["shorts", "videos", "posts"];
+        for (const root of roots) {
+            try {
+                const snap = await database.ref(root).limitToLast(200).once("value");
+                if (!snap.exists()) continue;
+                snap.forEach((c) => {
+                    const v = c.val() || {};
+                    if (matchesMusic(v, track)) {
+                        related.push({
+                            id: c.key,
+                            root: root,
+                            thumb:
+                                v.thumb ||
+                                v.thumbnail ||
+                                v.cover ||
+                                v.photoURL ||
+                                v.imageUrl ||
+                                "",
+                            video: v.videoUrl || v.url || v.src || "",
+                            views: v.views || v.viewCount || 0
+                        });
+                    }
+                });
+            } catch (_) {}
+        }
+        // update uses display
+        document.getElementById("useCount").textContent = fmt(
+            Math.max(Number(track.uses || 0), related.length)
+        );
+
+        if (!related.length) {
+            grid.innerHTML =
+                '<div class="mdEmpty" style="grid-column:1/-1">No shorts/posts with this sound yet. Be the first!</div>';
+            return;
+        }
+        related.sort((a, b) => (b.views || 0) - (a.views || 0));
+        grid.innerHTML = related
+            .slice(0, 60)
+            .map((r) => {
+                const href =
+                    r.root === "shorts"
+                        ? "shorts.html?id=" + encodeURIComponent(r.id)
+                        : r.root === "videos"
+                          ? "video.html?id=" + encodeURIComponent(r.id)
+                          : "post.html?id=" + encodeURIComponent(r.id);
+                const media = r.thumb
+                    ? '<img src="' + esc(r.thumb) + '" alt="" loading="lazy" onerror="this.style.opacity=.3">'
+                    : r.video
+                      ? '<video src="' + esc(r.video) + '" muted playsinline></video>'
+                      : '<div style="display:grid;place-items:center;height:100%;opacity:.4"><i class="fa-solid fa-music"></i></div>';
+                return (
+                    '<a class="mdThumb" href="' +
+                    href +
+                    '">' +
+                    media +
+                    '<span class="views"><i class="fa-solid fa-play"></i> ' +
+                    fmt(r.views) +
+                    "</span></a>"
+                );
+            })
+            .join("");
+    }
+
+    async function boot() {
+        document.getElementById("backBtn").onclick = () => {
+            stop();
+            if (history.length > 1) history.back();
+            else location.href = "music-store.html";
+        };
+        document.getElementById("playBtn").onclick = play;
+        document.getElementById("useBtn").onclick = () => {
+            if (!track) return;
+            try {
+                sessionStorage.setItem("vieworaSelectedMusic", JSON.stringify(track));
+            } catch (_) {}
+            stop();
+            const ret = params.get("return") || "upload.html";
+            location.href = ret;
+        };
+
+        track = await loadTrack();
+        if (!track) {
+            document.getElementById("title").textContent = "Song not found";
+            document.getElementById("grid").innerHTML =
+                '<div class="mdEmpty" style="grid-column:1/-1">Track missing</div>';
+            return;
+        }
+        document.getElementById("cover").src =
+            track.coverUrl || track.cover || "assets/logo.png";
+        document.getElementById("title").textContent = track.title || track.name || "Song";
+        document.getElementById("pageTitle").textContent = track.title || track.name || "Song";
+        document.getElementById("artist").textContent =
+            (track.artist || "Unknown artist") +
+            (track.genre ? " · " + track.genre : "");
+        document.getElementById("genreLabel").textContent = track.genre || "Music";
+        document.getElementById("useCount").textContent = fmt(track.uses || 0);
+
+        await loadRelated();
+        // auto play preview lightly
+        // play(); // user gesture better on mobile — skip auto
+    }
+
+    if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot);
+    else boot();
+})();
+</script>
+</body>
+</html>

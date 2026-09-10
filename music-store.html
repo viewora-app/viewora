@@ -1,11 +1,16 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <script>(function(){try{var t=localStorage.getItem("viewora_theme")||"dark";document.documentElement.setAttribute("data-theme",t);}catch(e){document.documentElement.setAttribute("data-theme","dark");}})();</script>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Viewora · Music</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#0a0a0f">
+    <title>Music · Viewora</title>
+    <link rel="icon" href="assets/logo.png">
+    <link rel="apple-touch-icon" href="assets/logo.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
     <link rel="stylesheet" href="nav.css">
+    <link rel="stylesheet" href="theme.css">
     <style>
         :root {
             --bg: #0a0a0f;
@@ -21,26 +26,25 @@
             background: var(--bg);
             color: var(--text);
             font-family: Inter, system-ui, sans-serif;
-            padding-bottom: 90px;
+            padding-bottom: 160px;
         }
         .msHeader {
             position: sticky; top: 0; z-index: 20;
             display: flex; align-items: center; gap: 12px;
             padding: 14px 16px;
-            background: rgba(10,10,15,0.9);
+            background: rgba(10,10,15,0.92);
             border-bottom: 1px solid var(--border);
             backdrop-filter: blur(16px);
         }
         .msHeader h1 { font-size: 18px; font-weight: 800; flex: 1; }
+        .msLogo { width: 28px; height: 28px; border-radius: 8px; object-fit: cover; }
         .msBack, .msIconBtn {
             width: 40px; height: 40px;
             border: 0; border-radius: 12px;
             background: var(--card); color: var(--text);
             display: grid; place-items: center; cursor: pointer;
         }
-        .msSearchWrap {
-            padding: 12px 16px;
-        }
+        .msSearchWrap { padding: 12px 16px; }
         .msSearch {
             display: flex; align-items: center; gap: 10px;
             height: 44px; padding: 0 14px;
@@ -55,7 +59,7 @@
         }
         .msTabs {
             display: flex; gap: 8px; padding: 0 16px 12px;
-            overflow-x: auto;
+            overflow-x: auto; -webkit-overflow-scrolling: touch;
         }
         .msTab {
             flex-shrink: 0;
@@ -80,17 +84,41 @@
             border-radius: 16px;
             cursor: pointer;
             transition: 0.2s;
+            position: relative;
         }
         .msTrack:hover { border-color: rgba(124,92,255,0.4); }
         .msTrack.selected {
             border-color: var(--accent);
             box-shadow: 0 0 0 2px rgba(124,92,255,0.25);
         }
+        .msTrack.playing {
+            border-color: #22c55e;
+            background: rgba(34, 197, 94, 0.06);
+        }
+        .msCoverWrap {
+            position: relative;
+            width: 52px; height: 52px;
+            flex: 0 0 52px;
+        }
         .msCover {
             width: 52px; height: 52px;
             border-radius: 12px;
             object-fit: cover;
             background: #1a1a24;
+        }
+        .msPlayOverlay {
+            position: absolute; inset: 0;
+            display: grid; place-items: center;
+            border-radius: 12px;
+            background: rgba(0,0,0,0.35);
+            color: #fff; font-size: 16px;
+            opacity: 0;
+            transition: opacity .15s;
+        }
+        .msTrack:hover .msPlayOverlay,
+        .msTrack.playing .msPlayOverlay { opacity: 1; }
+        .msTrack.playing .msPlayOverlay {
+            background: rgba(34, 197, 94, 0.45);
         }
         .msMeta { flex: 1; min-width: 0; }
         .msMeta strong {
@@ -109,31 +137,76 @@
             padding: 60px 20px; text-align: center; color: var(--muted);
         }
         .msEmpty i { font-size: 36px; margin-bottom: 12px; display: block; }
-        .msFooter {
+
+        /* Player + trim sheet */
+        .msPlayer {
             position: fixed; left: 0; right: 0; bottom: 74px;
-            padding: 12px 16px;
-            background: rgba(10,10,15,0.95);
+            z-index: 40;
+            padding: 14px 16px 12px;
+            background: rgba(12,12,18,0.96);
             border-top: 1px solid var(--border);
+            backdrop-filter: blur(20px);
             display: none;
         }
-        .msFooter.show { display: block; }
+        .msPlayer.show { display: block; }
+        .msPlayerTop {
+            display: flex; align-items: center; gap: 12px;
+            margin-bottom: 10px;
+        }
+        .msPlayerCover {
+            width: 48px; height: 48px; border-radius: 10px;
+            object-fit: cover; background: #1a1a24;
+        }
+        .msPlayerMeta { flex: 1; min-width: 0; }
+        .msPlayerMeta strong {
+            display: block; font-size: 13px;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .msPlayerMeta span {
+            font-size: 11px; color: var(--muted);
+        }
+        .msPlayerBtns { display: flex; gap: 8px; }
+        .msPBtn {
+            width: 40px; height: 40px;
+            border: 0; border-radius: 12px;
+            background: var(--card); color: #fff;
+            display: grid; place-items: center; cursor: pointer;
+        }
+        .msPBtn.primary {
+            background: linear-gradient(135deg, #7c5cff, #4f8cff);
+        }
+        .msTrimLabel {
+            display: flex; justify-content: space-between;
+            font-size: 11px; color: var(--muted);
+            margin-bottom: 6px;
+        }
+        .msTrim {
+            width: 100%;
+            accent-color: #7c5cff;
+        }
         .msUseBtn {
-            width: 100%; height: 48px;
+            width: 100%; height: 46px; margin-top: 12px;
             border: 0; border-radius: 14px;
             background: linear-gradient(135deg, #7c5cff, #4f8cff);
             color: #fff; font-weight: 700; font-size: 14px;
             cursor: pointer;
+        }
+        .msDetailLink {
+            display: block; text-align: center;
+            margin-top: 8px; font-size: 12px;
+            color: var(--accent); text-decoration: none;
         }
     </style>
 </head>
 <body>
 
 <header class="msHeader">
-    <button class="msBack" type="button" onclick="history.back()">
+    <button class="msBack" type="button" id="msBack" aria-label="Back">
         <i class="fa-solid fa-arrow-left"></i>
     </button>
+    <img class="msLogo" src="assets/logo.png" alt="Viewora" onerror="this.style.display='none'">
     <h1>Music</h1>
-    <button class="msIconBtn" type="button" title="Trending">
+    <button class="msIconBtn" type="button" title="Trending" id="msFire">
         <i class="fa-solid fa-fire"></i>
     </button>
 </header>
@@ -141,7 +214,7 @@
 <div class="msSearchWrap">
     <div class="msSearch">
         <i class="fa-solid fa-magnifying-glass" style="color:#9ca3af"></i>
-        <input id="musicSearch" type="search" placeholder="Search songs, artists...">
+        <input id="musicSearch" type="search" placeholder="Search songs, artists..." autocomplete="off">
     </div>
 </div>
 
@@ -161,56 +234,198 @@
     </div>
 </div>
 
-<div class="msFooter" id="musicFooter">
-    <button class="msUseBtn" id="useMusicBtn" type="button">
-        Use this sound
-    </button>
+<!-- Mini player + trim (Instagram style) -->
+<div class="msPlayer" id="musicPlayer">
+    <div class="msPlayerTop">
+        <img class="msPlayerCover" id="playerCover" src="assets/logo.png" alt="">
+        <div class="msPlayerMeta">
+            <strong id="playerTitle">—</strong>
+            <span id="playerArtist">—</span>
+        </div>
+        <div class="msPlayerBtns">
+            <button type="button" class="msPBtn" id="playerToggle" aria-label="Play">
+                <i class="fa-solid fa-play" id="playerToggleIcon"></i>
+            </button>
+            <button type="button" class="msPBtn" id="playerStop" aria-label="Stop">
+                <i class="fa-solid fa-stop"></i>
+            </button>
+        </div>
+    </div>
+    <div class="msTrimLabel">
+        <span>Start at</span>
+        <span id="trimValue">0:00</span>
+    </div>
+    <input type="range" class="msTrim" id="trimSlider" min="0" max="0" step="0.5" value="0">
+    <button type="button" class="msUseBtn" id="useMusicBtn">Use this sound</button>
+    <a class="msDetailLink" id="detailLink" href="#">View song details &amp; videos →</a>
 </div>
 
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <script src="firebase.js"></script>
+<script src="theme.js"></script>
 <script src="viewora-stores.js"></script>
 <script src="nav.js" defer></script>
 <script>
 (function () {
     const listEl = document.getElementById("musicList");
-    const footer = document.getElementById("musicFooter");
     const searchInput = document.getElementById("musicSearch");
+    const player = document.getElementById("musicPlayer");
+    const trimSlider = document.getElementById("trimSlider");
+    const trimValue = document.getElementById("trimValue");
+
     let tracks = [];
     let selected = null;
     let genre = "all";
+    let audio = null;
+    let startAt = 0;
 
+    function esc(s) {
+        if (window.VieworaStores && VieworaStores.escapeHTML) return VieworaStores.escapeHTML(s);
+        return String(s || "")
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;");
+    }
+    function fmtCount(n) {
+        if (window.VieworaStores && VieworaStores.formatCount) return VieworaStores.formatCount(n);
+        n = Number(n) || 0;
+        if (n >= 1e6) return (n / 1e6).toFixed(1) + "M";
+        if (n >= 1e3) return (n / 1e3).toFixed(1) + "K";
+        return String(n);
+    }
+    function fmtTime(sec) {
+        sec = Math.max(0, Math.floor(Number(sec) || 0));
+        const m = Math.floor(sec / 60);
+        const s = sec % 60;
+        return m + ":" + (s < 10 ? "0" : "") + s;
+    }
     function cover(t) {
-        return t.coverUrl || "assets/default-avatar.png";
+        return t.coverUrl || t.cover || "assets/logo.png";
+    }
+    function audioUrl(t) {
+        return t.audioUrl || t.url || t.src || "";
+    }
+
+    function stopAudio() {
+        if (audio) {
+            try { audio.pause(); } catch (_) {}
+            audio = null;
+        }
+        document.querySelectorAll(".msTrack.playing").forEach((el) => el.classList.remove("playing"));
+        const icon = document.getElementById("playerToggleIcon");
+        if (icon) icon.className = "fa-solid fa-play";
+    }
+
+    function playSelected(fromStart) {
+        if (!selected) return;
+        const url = audioUrl(selected);
+        if (!url) {
+            alert("No audio file for this track.");
+            return;
+        }
+        stopAudio();
+        audio = new Audio(url);
+        audio.volume = 0.85;
+        const seek = fromStart !== false ? startAt : 0;
+        const onMeta = () => {
+            const dur = Math.floor(audio.duration || 0);
+            trimSlider.max = Math.max(0, dur - 1);
+            if (startAt > dur) startAt = 0;
+            trimSlider.value = startAt;
+            trimValue.textContent = fmtTime(startAt);
+            try {
+                audio.currentTime = startAt;
+            } catch (_) {}
+            audio.play().catch(() => {});
+        };
+        if (audio.readyState >= 1) onMeta();
+        else audio.addEventListener("loadedmetadata", onMeta, { once: true });
+        audio.play().catch(() => {});
+        const icon = document.getElementById("playerToggleIcon");
+        if (icon) icon.className = "fa-solid fa-pause";
+        document.querySelectorAll(".msTrack").forEach((el) => {
+            el.classList.toggle("playing", el.dataset.id === selected.id);
+        });
+        audio.addEventListener("ended", () => {
+            const icon2 = document.getElementById("playerToggleIcon");
+            if (icon2) icon2.className = "fa-solid fa-play";
+        });
+    }
+
+    function openPlayer(track) {
+        selected = track;
+        startAt = 0;
+        player.classList.add("show");
+        document.getElementById("playerCover").src = cover(track);
+        document.getElementById("playerTitle").textContent = track.title || track.name || "Untitled";
+        document.getElementById("playerArtist").textContent =
+            (track.artist || "Unknown") + (track.genre ? " · " + track.genre : "");
+        document.getElementById("detailLink").href =
+            "music-detail.html?id=" + encodeURIComponent(track.id || "");
+        trimSlider.value = 0;
+        trimValue.textContent = "0:00";
+        render(filterTracks());
+        playSelected(true);
     }
 
     function render(items) {
         if (!items.length) {
-            listEl.innerHTML = `
-                <div class="msEmpty">
-                    <i class="fa-solid fa-music"></i>
-                    No tracks found. Admin can add music in panel.
-                </div>`;
+            listEl.innerHTML =
+                '<div class="msEmpty"><i class="fa-solid fa-music"></i>No tracks found. Admin can add music in panel.</div>';
             return;
         }
-        listEl.innerHTML = items.map((t) => `
-            <div class="msTrack ${selected && selected.id === t.id ? "selected" : ""}" data-id="${t.id}">
-                <img class="msCover" src="${cover(t)}" alt="" onerror="this.src='assets/default-avatar.png'">
-                <div class="msMeta">
-                    <strong>${VieworaStores.escapeHTML(t.title || "Untitled")}</strong>
-                    <span>${VieworaStores.escapeHTML(t.artist || "Unknown")} · ${VieworaStores.escapeHTML(t.genre || "")}</span>
-                </div>
-                <span class="msUse">${VieworaStores.formatCount(t.uses || 0)} uses</span>
-            </div>
-        `).join("");
+        listEl.innerHTML = items
+            .map((t) => {
+                const sel = selected && selected.id === t.id;
+                const playing = sel && audio && !audio.paused;
+                return (
+                    '<div class="msTrack' +
+                    (sel ? " selected" : "") +
+                    (playing ? " playing" : "") +
+                    '" data-id="' +
+                    esc(t.id) +
+                    '">' +
+                    '<div class="msCoverWrap">' +
+                    '<img class="msCover" src="' +
+                    esc(cover(t)) +
+                    '" alt="" onerror="this.src=\'assets/logo.png\'">' +
+                    '<span class="msPlayOverlay"><i class="fa-solid fa-' +
+                    (playing ? "pause" : "play") +
+                    '"></i></span>' +
+                    "</div>" +
+                    '<div class="msMeta">' +
+                    "<strong>" +
+                    esc(t.title || t.name || "Untitled") +
+                    "</strong>" +
+                    "<span>" +
+                    esc(t.artist || "Unknown") +
+                    " · " +
+                    esc(t.genre || "") +
+                    "</span>" +
+                    "</div>" +
+                    '<span class="msUse">' +
+                    fmtCount(t.uses || 0) +
+                    " uses</span>" +
+                    "</div>"
+                );
+            })
+            .join("");
 
         listEl.querySelectorAll(".msTrack").forEach((el) => {
             el.addEventListener("click", () => {
-                selected = tracks.find((x) => x.id === el.dataset.id) || null;
-                render(filterTracks());
-                footer.classList.toggle("show", !!selected);
+                const track = tracks.find((x) => x.id === el.dataset.id);
+                if (!track) return;
+                if (selected && selected.id === track.id && audio && !audio.paused) {
+                    audio.pause();
+                    const icon = document.getElementById("playerToggleIcon");
+                    if (icon) icon.className = "fa-solid fa-play";
+                    el.classList.remove("playing");
+                    return;
+                }
+                openPlayer(track);
             });
         });
     }
@@ -219,7 +434,8 @@
         let items = tracks.slice();
         const q = (searchInput.value || "").toLowerCase().trim();
         if (genre === "Trending") {
-            items = items.filter((t) => t.trending || (t.uses || 0) > 10);
+            items = items.filter((t) => t.trending || (t.uses || 0) > 5);
+            items.sort((a, b) => (b.uses || 0) - (a.uses || 0));
         } else if (genre !== "all") {
             items = items.filter(
                 (t) => (t.genre || "").toLowerCase() === genre.toLowerCase()
@@ -228,7 +444,7 @@
         if (q) {
             items = items.filter(
                 (t) =>
-                    (t.title || "").toLowerCase().includes(q) ||
+                    (t.title || t.name || "").toLowerCase().includes(q) ||
                     (t.artist || "").toLowerCase().includes(q)
             );
         }
@@ -237,41 +453,87 @@
 
     async function load() {
         try {
-            tracks = await VieworaStores.MusicStore.list(80);
+            if (window.VieworaStores && VieworaStores.MusicStore) {
+                tracks = await VieworaStores.MusicStore.list(100);
+            } else {
+                const db = window.db || firebase.database();
+                const snap = await db.ref("musicLibrary").once("value");
+                tracks = [];
+                if (snap.exists()) {
+                    snap.forEach((c) => {
+                        tracks.push({ id: c.key, ...(c.val() || {}) });
+                    });
+                }
+            }
             render(filterTracks());
         } catch (e) {
             console.error(e);
-            listEl.innerHTML = `
-                <div class="msEmpty">
-                    <i class="fa-solid fa-circle-exclamation"></i>
-                    Unable to load music library.
-                </div>`;
+            listEl.innerHTML =
+                '<div class="msEmpty"><i class="fa-solid fa-circle-exclamation"></i>Unable to load music library.</div>';
         }
     }
 
     searchInput.addEventListener("input", () => render(filterTracks()));
-
     document.querySelectorAll(".msTab").forEach((tab) => {
         tab.addEventListener("click", () => {
-            document.querySelectorAll(".msTab").forEach((t) => t.classList.remove("active"));
+            document.querySelectorAll(".msTab").forEach((x) => x.classList.remove("active"));
             tab.classList.add("active");
             genre = tab.dataset.genre;
             render(filterTracks());
         });
     });
+    document.getElementById("msFire").addEventListener("click", () => {
+        document.querySelectorAll(".msTab").forEach((x) => {
+            x.classList.toggle("active", x.dataset.genre === "Trending");
+        });
+        genre = "Trending";
+        render(filterTracks());
+    });
+    document.getElementById("msBack").addEventListener("click", () => {
+        stopAudio();
+        if (history.length > 1) history.back();
+        else location.href = "index.html";
+    });
+
+    document.getElementById("playerToggle").addEventListener("click", () => {
+        if (!selected) return;
+        if (audio && !audio.paused) {
+            audio.pause();
+            document.getElementById("playerToggleIcon").className = "fa-solid fa-play";
+        } else {
+            playSelected(true);
+        }
+    });
+    document.getElementById("playerStop").addEventListener("click", stopAudio);
+
+    trimSlider.addEventListener("input", () => {
+        startAt = Number(trimSlider.value) || 0;
+        trimValue.textContent = fmtTime(startAt);
+        if (audio) {
+            try {
+                audio.currentTime = startAt;
+                if (audio.paused) audio.play().catch(() => {});
+            } catch (_) {}
+        }
+    });
 
     document.getElementById("useMusicBtn").addEventListener("click", async () => {
         if (!selected) return;
-        await VieworaStores.MusicStore.incrementUse(selected.id);
         try {
-            sessionStorage.setItem(
-                "vieworaSelectedMusic",
-                JSON.stringify(selected)
-            );
+            if (window.VieworaStores && VieworaStores.MusicStore) {
+                await VieworaStores.MusicStore.incrementUse(selected.id);
+            }
         } catch (_) {}
+        const payload = Object.assign({}, selected, {
+            startAt: startAt,
+            musicStartAt: startAt
+        });
+        try {
+            sessionStorage.setItem("vieworaSelectedMusic", JSON.stringify(payload));
+        } catch (_) {}
+        stopAudio();
         const returnTo =
-            new URLSearchParams(location.search).get("return") ||
-            "upload.html";
+            new URLSearchParams(location.search).get("return") || "upload.html";
         location.href = returnTo;
     });
 

@@ -35,10 +35,24 @@ html {
     scroll-behavior: smooth;
 }
 
+html {
+    height: auto;
+    min-height: 100%;
+    overflow-x: hidden;
+    overflow-y: auto;
+}
+
 body {
     background: var(--profile-bg);
     color: var(--profile-text);
     overflow-x: hidden;
+    overflow-y: auto;
+    height: auto;
+    min-height: 100%;
+    max-height: none;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
+    position: relative;
 }
 
 button,
@@ -1664,4 +1678,31 @@ html[data-theme="light"] #pageLoader {
 }
 #storyRing {
     cursor: pointer;
+}
+
+
+/* =========================================================
+   SCROLL UNLOCK
+========================================================= */
+html, body {
+    height: auto !important;
+    min-height: 100% !important;
+    max-height: none !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+}
+body {
+    touch-action: pan-y !important;
+    position: relative !important;
+}
+#app {
+    height: auto !important;
+    min-height: 100vh !important;
+    max-height: none !important;
+    overflow: visible !important;
+}
+#pageLoader.hidden {
+    display: none !important;
+    pointer-events: none !important;
 }
