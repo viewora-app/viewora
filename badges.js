@@ -183,7 +183,7 @@
             return {
                 level: "blue",
                 html: '<i class="fa-solid fa-circle-check vieworaTick blueTick verifiedTick" title="Verified" aria-label="Verified"></i>',
-                className: "blueTick verifiedTick",
+                className: "blueTick",
                 title: "Verified",
                 color: "#1d9bf0"
             };

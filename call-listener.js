@@ -61,18 +61,13 @@
        FIREBASE CHECK
     ====================================================== */
 
-    if (
-        typeof firebase === "undefined" ||
-        !window.auth ||
-        !window.db
-    ) {
-
-        console.error(
-            "[VIEWORA CALL] Firebase/Auth/Database unavailable."
-        );
-
+    // Soft check — init() will wait for auth/db
+    if (typeof firebase === "undefined") {
+        console.error("[VIEWORA CALL] Firebase SDK missing.");
         return;
     }
+    var auth = window.auth || null;
+    var db = window.db || null;
 
 
     /* ======================================================
@@ -85,17 +80,16 @@
 
     let activeCall = null;
     let incomingSyncDone = false;
+    const processedCallIds = new Set();
     const MAX_RING_AGE_MS = 55 * 1000; // ignore stale ringing older than 55s
 
     function isFreshRinging(data) {
         if (!data || data.status !== "ringing") return false;
-        let created = data.createdAt || data.timestamp || data.time || 0;
-        // Firebase sometimes returns object before resolve — reject
+        let created = data.createdAtMs || data.createdAt || data.timestamp || data.time || 0;
         if (created && typeof created === "object") return false;
         created = Number(created);
         if (!created || created < 100000) return false;
         const age = Date.now() - created;
-        // future clock skew tolerance 5s
         if (age < -5000) return false;
         return age <= MAX_RING_AGE_MS;
     }
@@ -153,50 +147,44 @@
     ====================================================== */
 
     function waitForUser() {
-
-        if (auth.currentUser) {
-
-            currentUser =
-                auth.currentUser;
-
-            return Promise.resolve(
-                currentUser
-            );
+        auth = window.auth || auth;
+        db = window.db || db;
+        if (!auth && typeof firebase !== "undefined") {
+            try { auth = firebase.auth(); } catch (_) {}
+        }
+        if (!db && typeof firebase !== "undefined") {
+            try { db = firebase.database(); } catch (_) {}
+        }
+        if (!auth) {
+            return Promise.reject(new Error("Auth unavailable"));
         }
 
+        if (auth.currentUser) {
+            currentUser = auth.currentUser;
+            return Promise.resolve(currentUser);
+        }
 
-        return new Promise(
-            (resolve, reject) => {
+        return new Promise((resolve, reject) => {
+            let finished = false;
+            const timer = setTimeout(() => {
+                if (finished) return;
+                finished = true;
+                try { unsubscribe(); } catch (_) {}
+                reject(new Error("Auth timeout"));
+            }, 12000);
 
-                let finished = false;
+            const unsubscribe = auth.onAuthStateChanged((user) => {
+                if (finished) return;
+                finished = true;
+                clearTimeout(timer);
+                try { unsubscribe(); } catch (_) {}
 
-                const unsubscribe =
-                    auth.onAuthStateChanged(
-                        user => {
+                if (!user) {
+                    reject(new Error("User not authenticated."));
+                    return;
+                }
 
-                            if (finished) {
-                                return;
-                            }
-
-                            finished = true;
-
-                            unsubscribe();
-
-
-                            if (!user) {
-
-                                reject(
-                                    new Error(
-                                        "User not authenticated."
-                                    )
-                                );
-
-                                return;
-                            }
-
-
-                            currentUser =
-                                user;
+                currentUser = user;
 
                             resolve(user);
                         }
@@ -1623,6 +1611,9 @@
                     return;
                 }
 
+                if (processedCallIds.has(callId)) return;
+                processedCallIds.add(callId);
+
                 await showIncoming(callId, data);
                 watchActiveCall(callId);
             }
@@ -1660,8 +1651,11 @@
 
             if (ringing.length && !activeCall) {
                 const [id, call] = ringing[0];
-                await showIncoming(id, call);
-                watchActiveCall(id);
+                if (!processedCallIds.has(id)) {
+                    processedCallIds.add(id);
+                    await showIncoming(id, call);
+                    watchActiveCall(id);
+                }
             }
         });
 
@@ -1802,6 +1796,25 @@
                 log("On call page — global popup disabled.");
                 return;
             }
+
+            for (let i = 0; i < 8; i++) {
+                auth = window.auth || auth;
+                db = window.db || db;
+                if (!auth && typeof firebase !== "undefined") {
+                    try { auth = firebase.auth(); } catch (_) {}
+                }
+                if (!db && typeof firebase !== "undefined") {
+                    try { db = firebase.database(); } catch (_) {}
+                }
+                if (auth && db) break;
+                await new Promise((r) => setTimeout(r, 400));
+            }
+            if (!auth || !db) {
+                error("Firebase Auth/Database unavailable for call listener.");
+                return;
+            }
+            window.auth = auth;
+            window.db = db;
 
             await waitForUser();
 

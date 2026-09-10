@@ -1,59 +1,135 @@
 "use strict";
 /*
-  VIEWORA LIVE RINGS
-  Include on index.html + profile.html (after firebase):
-    <script src="live-ring.js"></script>
-    <link rel="stylesheet" href="live.css">  (or only ring CSS)
+  VIEWORA LIVE RINGS (global)
+  Include on every main page after firebase.js:
 
-  Marks story rings with class "live" when users/{uid}.isLive or live/{uid}.active
+    <link rel="stylesheet" href="live.css">
+    <script src="live-ring.js"></script>
+
+  Marks ANY profile avatar / story ring with red live ring when
+  users/{uid}.isLive or live/{uid}.active === true
 */
 (() => {
   if (window.__VIEWORA_LIVE_RING__) return;
   window.__VIEWORA_LIVE_RING__ = true;
 
-  if (typeof firebase === "undefined" || !window.db) {
-    console.warn("[LIVE RING] Firebase missing");
-    return;
+  const liveUsers = new Set();
+  let db = null;
+  let started = false;
+
+  function resolveDb() {
+    if (window.db) return window.db;
+    try {
+      return firebase.database();
+    } catch (_) {
+      return null;
+    }
   }
 
-  const liveUsers = new Set();
+  function getUidFromEl(el) {
+    if (!el || el.nodeType !== 1) return "";
+    return (
+      el.getAttribute("data-uid") ||
+      el.getAttribute("data-user-id") ||
+      el.getAttribute("data-userid") ||
+      el.getAttribute("data-owner") ||
+      el.dataset.uid ||
+      el.dataset.userId ||
+      ""
+    );
+  }
 
-  function applyRings() {
-    document.querySelectorAll("[data-uid], [data-user-id], .storyCard, .story-ring").forEach((el) => {
-      const uid =
-        el.getAttribute("data-uid") ||
-        el.getAttribute("data-user-id") ||
-        el.dataset.uid ||
-        "";
-      if (!uid) return;
-      if (liveUsers.has(uid)) {
-        el.classList.add("live");
-        const wrap = el.querySelector(".storyImageWrap, .ring, .avatar-wrap");
-        if (wrap) wrap.classList.add("live-ring");
-      } else {
-        el.classList.remove("live");
-        const wrap = el.querySelector(".storyImageWrap, .ring, .avatar-wrap");
-        if (wrap) wrap.classList.remove("live-ring");
-      }
+  /** Mark element + nearest avatar image wrapper */
+  function markLive(el, on) {
+    if (!el) return;
+    el.classList.toggle("live", on);
+    el.classList.toggle("is-live", on);
+
+    const wraps = el.querySelectorAll(
+      ".storyImageWrap, .ring, .avatar-wrap, .avatarWrap, .profilePicWrap, .userAvatar, .chatAvatar, .postAvatar, .story-avatar"
+    );
+    wraps.forEach((w) => {
+      w.classList.toggle("live-ring", on);
+      w.classList.toggle("live", on);
     });
 
-    // Profile own ring
-    const profileRing = document.getElementById("storyRing") || document.querySelector(".profileStoryRing");
+    // element itself is avatar
+    if (
+      el.matches(
+        "img.avatar, img.profilePic, img.chatPhoto, img.user-photo, .avatar, .profile-photo"
+      )
+    ) {
+      el.classList.toggle("live-ring", on);
+    }
+
+    // parent wrap of img
+    const img = el.matches("img") ? el : el.querySelector("img");
+    if (img && img.parentElement) {
+      img.parentElement.classList.toggle("live-ring", on);
+    }
+
+    // LIVE badge
+    let badge = el.querySelector(".liveBadge, .live-badge-mini");
+    if (on) {
+      if (!badge) {
+        badge = document.createElement("span");
+        badge.className = "liveBadge live-badge-mini";
+        badge.textContent = "LIVE";
+        (el.querySelector(".storyImageWrap, .avatar-wrap, .ring") || el).appendChild(badge);
+      }
+      badge.style.display = "";
+    } else if (badge) {
+      badge.style.display = "none";
+    }
+  }
+
+  function applyRings() {
+    // Story cards / rings
+    document
+      .querySelectorAll(
+        "[data-uid], [data-user-id], [data-userid], .storyCard, .story-ring, .storyItem, .userCard, .postAuthor, .chatRow, .messageAvatar, .profileHeader"
+      )
+      .forEach((el) => {
+        const uid = getUidFromEl(el);
+        if (!uid) return;
+        markLive(el, liveUsers.has(uid));
+      });
+
+    // Profile page own ring
+    const profileRing =
+      document.getElementById("storyRing") ||
+      document.querySelector(".profileStoryRing, #profileStoryRing");
     if (profileRing) {
       const puid =
-        profileRing.getAttribute("data-uid") ||
+        getUidFromEl(profileRing) ||
         new URLSearchParams(location.search).get("uid") ||
         (window.auth && auth.currentUser && auth.currentUser.uid) ||
         "";
-      if (puid && liveUsers.has(puid)) {
-        profileRing.classList.add("live");
-      } else {
-        profileRing.classList.remove("live");
-      }
+      markLive(profileRing, puid && liveUsers.has(puid));
+    }
+
+    // Chat header photo
+    const chatPhoto = document.getElementById("chatPhoto");
+    if (chatPhoto) {
+      const uid =
+        getUidFromEl(chatPhoto) ||
+        getUidFromEl(chatPhoto.closest("[data-uid]")) ||
+        new URLSearchParams(location.search).get("uid") ||
+        "";
+      if (uid) markLive(chatPhoto.parentElement || chatPhoto, liveUsers.has(uid));
     }
   }
 
   function listen() {
+    db = resolveDb();
+    if (!db) {
+      console.warn("[LIVE RING] Firebase db missing — retry");
+      setTimeout(listen, 800);
+      return;
+    }
+    if (started) return;
+    started = true;
+
     db.ref("live").on("value", (snap) => {
       liveUsers.clear();
       if (snap.exists()) {
@@ -65,26 +141,48 @@
       applyRings();
     });
 
-    // Re-apply when DOM story list changes
-    const mo = new MutationObserver(() => applyRings());
+    // Also listen isLive flags for robustness
+    db.ref("users").orderByChild("isLive").equalTo(true).on("value", (snap) => {
+      if (snap.exists()) {
+        snap.forEach((ch) => {
+          liveUsers.add(ch.key);
+        });
+      }
+      applyRings();
+    });
+
+    const mo = new MutationObserver(() => {
+      clearTimeout(window.__liveRingMO);
+      window.__liveRingMO = setTimeout(applyRings, 120);
+    });
     mo.observe(document.body, { childList: true, subtree: true });
   }
 
   // Click live ring → open live room
-  document.addEventListener("click", (e) => {
-    const card = e.target.closest(".storyCard.live, .story-ring.live, #storyRing.live, .profileStoryRing.live");
-    if (!card) return;
-    const uid =
-      card.getAttribute("data-uid") ||
-      card.getAttribute("data-user-id") ||
-      new URLSearchParams(location.search).get("uid") ||
-      "";
-    if (!uid) return;
-    // If live, prefer live page over story
-    e.preventDefault();
-    e.stopPropagation();
-    location.href = "live.html?uid=" + encodeURIComponent(uid);
-  }, true);
+  document.addEventListener(
+    "click",
+    (e) => {
+      const card = e.target.closest(
+        ".live, .is-live, .live-ring, .storyCard.live, .story-ring.live, #storyRing.live, .profileStoryRing.live"
+      );
+      if (!card) return;
+      if (!card.classList.contains("live") && !card.classList.contains("is-live") && !card.classList.contains("live-ring")) {
+        // parent might hold live class
+        if (!e.target.closest(".live, .is-live")) return;
+      }
+      const root = e.target.closest("[data-uid], [data-user-id], .storyCard, .story-ring, #storyRing, .profileStoryRing") || card;
+      const uid =
+        getUidFromEl(root) ||
+        new URLSearchParams(location.search).get("uid") ||
+        "";
+      if (!uid) return;
+      if (!liveUsers.has(uid)) return;
+      e.preventDefault();
+      e.stopPropagation();
+      location.href = "live.html?uid=" + encodeURIComponent(uid);
+    },
+    true
+  );
 
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", listen);
@@ -92,5 +190,9 @@
     listen();
   }
 
-  window.VieworaLiveRings = { refresh: applyRings, liveUsers };
+  window.VieworaLiveRings = {
+    refresh: applyRings,
+    liveUsers,
+    isLive: (uid) => liveUsers.has(uid)
+  };
 })();

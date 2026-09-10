@@ -2538,9 +2538,23 @@
                     await loadFollowingSet(currentUserUID);
                 }
 
-                db.ref("stories").on(
-                    "value",
-                    async (snapshot) => {
+                if (!window.__vieworaLiveStoriesBound) {
+                    window.__vieworaLiveStoriesBound = true;
+                    try {
+                        db.ref("live").on("value", () => {
+                            // Force stories value handler by touching a local flag via once + rebuild
+                            db.ref("stories").once("value").then((snap) => {
+                                // dispatch fake by re-assigning - the on("value") already will not re-fire
+                                // so manually trigger rebuild through shared function if set
+                                if (window.__vieworaStoriesHandler) {
+                                    window.__vieworaStoriesHandler(snap);
+                                }
+                            }).catch(() => {});
+                        });
+                    } catch (_) {}
+                }
+
+                const storiesHandler = async (snapshot) => {
 
                         container.innerHTML = "";
 
@@ -2630,6 +2644,49 @@
                             }
                         });
 
+                        // ---- LIVE: following users who are live appear as red rings first ----
+                        try {
+                            const liveSnap = await db.ref("live").once("value");
+                            if (liveSnap.exists()) {
+                                liveSnap.forEach((ch) => {
+                                    const lv = ch.val() || {};
+                                    const luid = ch.key;
+                                    if (!lv || lv.active !== true) return;
+                                    if (!currentUserUID) return;
+                                    const isOwnLive = String(luid) === String(currentUserUID);
+                                    const isFollowedLive = followingSet.has(String(luid));
+                                    if (!isOwnLive && !isFollowedLive) return;
+
+                                    if (!byUser[luid]) {
+                                        byUser[luid] = {
+                                            uid: luid,
+                                            stories: [],
+                                            latestAt: Date.now(),
+                                            avatar: lv.hostPhoto || "",
+                                            name: lv.hostName || "Live",
+                                            username: lv.hostName || "Live",
+                                            isLive: true,
+                                            liveTitle: lv.title || "Live"
+                                        };
+                                    } else {
+                                        byUser[luid].isLive = true;
+                                        byUser[luid].liveTitle = lv.title || "Live";
+                                        byUser[luid].latestAt = Math.max(
+                                            byUser[luid].latestAt || 0,
+                                            Date.now()
+                                        );
+                                        if (lv.hostPhoto) byUser[luid].avatar = lv.hostPhoto;
+                                        if (lv.hostName) {
+                                            byUser[luid].name = lv.hostName;
+                                            byUser[luid].username = lv.hostName;
+                                        }
+                                    }
+                                });
+                            }
+                        } catch (liveErr) {
+                            console.warn("live stories merge", liveErr);
+                        }
+
                         // Enrich from users node if name still generic
                         const userIds = Object.keys(byUser);
                         await Promise.all(
@@ -2676,6 +2733,8 @@
                         }).sort((a, b) => {
                             if (currentUserUID && a.uid === currentUserUID) return -1;
                             if (currentUserUID && b.uid === currentUserUID) return 1;
+                            // Live first
+                            if (!!a.isLive !== !!b.isLive) return a.isLive ? -1 : 1;
                             // Unseen before seen
                             if (a.seen !== b.seen) return a.seen ? 1 : -1;
                             return b.latestAt - a.latestAt;
@@ -2724,9 +2783,12 @@
                             button.type = "button";
 
                             // Unseen = colored ring, seen = white/gray ring
-                            const ringClass = group.seen
-                                ? "storyCard storySeen"
-                                : "storyCard storyUnseen";
+                            const isLive = !!group.isLive;
+                            const ringClass = isLive
+                                ? "storyCard storyLive live"
+                                : group.seen
+                                    ? "storyCard storySeen"
+                                    : "storyCard storyUnseen";
 
                             button.className =
                                 ringClass +
@@ -2739,9 +2801,10 @@
                             button.dataset.seen = group.seen
                                 ? "1"
                                 : "0";
+                            if (isLive) button.dataset.live = "1";
 
                             button.innerHTML = `
-                                <div class="storyImageWrap">
+                                <div class="storyImageWrap${isLive ? " live-ring" : ""}">
                                     <img
                                         src="${escapeHTML(avatar)}"
                                         alt="${label}"
@@ -2749,17 +2812,23 @@
                                         loading="lazy"
                                         onerror="this.src='assets/default-avatar.png'"
                                     >
+                                    ${isLive ? '<span class="liveBadge">LIVE</span>' : ""}
                                 </div>
                                 <span class="storyName">
-                                    ${label}
+                                    ${isLive ? "🔴 " : ""}${label}
                                 </span>
                             `;
 
                             button.addEventListener("click", () => {
+                                if (isLive) {
+                                    window.location.href =
+                                        "live.html?uid=" +
+                                        encodeURIComponent(group.uid);
+                                    return;
+                                }
                                 markStoryUserSeen(group.uid);
                                 const params = new URLSearchParams();
                                 if (group.uid) params.set("uid", group.uid);
-                                // Home = chain all following stories (no solo)
                                 params.set("from", "home");
                                 if (firstStoryId) {
                                     params.set("story", firstStoryId);
@@ -2915,7 +2984,12 @@
                                 };
                             }
                         })();
-                    },
+                };
+
+                window.__vieworaStoriesHandler = storiesHandler;
+                db.ref("stories").on(
+                    "value",
+                    storiesHandler,
                     (error) => {
                         console.error(
                             "Viewora Stories error:",

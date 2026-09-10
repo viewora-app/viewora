@@ -31,6 +31,8 @@
   let viewersRef = null;
   let localStream = null;
   let ended = false;
+  var auth = window.auth || null;
+  var db = window.db || null;
 
   function toast(msg) {
     try {
@@ -47,13 +49,38 @@
       .replace(/"/g, "&quot;");
   }
 
+  function resolveAuth() {
+    if (window.auth) return window.auth;
+    try { return firebase.auth(); } catch (_) { return null; }
+  }
+  function resolveDb() {
+    if (window.db) return window.db;
+    try { return firebase.database(); } catch (_) { return null; }
+  }
+
   async function waitAuth() {
-    if (auth.currentUser) {
-      me = auth.currentUser;
+    let a = resolveAuth();
+    let d = resolveDb();
+    for (let i = 0; i < 8 && (!a || !d); i++) {
+      await new Promise((r) => setTimeout(r, 400));
+      a = resolveAuth();
+      d = resolveDb();
+    }
+    if (!a || !d) throw new Error("Firebase not ready");
+    window.auth = a;
+    window.db = d;
+    // use globals expected by rest of file
+    // eslint-disable-next-line no-global-assign
+    auth = a;
+    // eslint-disable-next-line no-global-assign
+    db = d;
+
+    if (a.currentUser) {
+      me = a.currentUser;
       return me;
     }
     return new Promise((resolve, reject) => {
-      const unsub = auth.onAuthStateChanged((u) => {
+      const unsub = a.onAuthStateChanged((u) => {
         unsub();
         if (u) {
           me = u;
@@ -78,8 +105,9 @@
       audio: true,
       video: {
         facingMode: "user",
-        width: { ideal: 1280 },
-        height: { ideal: 720 }
+        width: { ideal: 720 },
+        height: { ideal: 1280 },
+        aspectRatio: { ideal: 9 / 16 }
       }
     });
     localStream = stream;
@@ -123,15 +151,101 @@
     if (!me) return;
     const uid = hostUid || me.uid;
     try {
+      // Read live meta before closing
+      const liveSnap = await db.ref("live/" + uid).once("value");
+      const live = liveSnap.val() || {};
+      const startedAt = Number(live.startedAt || 0);
+      const endedAt = Date.now();
+      const durationSec = startedAt ? Math.max(0, Math.round((endedAt - startedAt) / 1000)) : 0;
+      let peakViewers = Number(live.viewerCount || 0);
+      try {
+        const vSnap = await db.ref("live/" + uid + "/viewers").once("value");
+        if (vSnap.exists()) peakViewers = Math.max(peakViewers, vSnap.numChildren());
+      } catch (_) {}
+
+      const user = await loadUser(uid);
+      const hostName =
+        live.hostName ||
+        user.displayName ||
+        user.name ||
+        user.username ||
+        me.displayName ||
+        "Host";
+      const hostPhoto =
+        live.hostPhoto ||
+        user.photoURL ||
+        user.avatar ||
+        user.profilePhoto ||
+        user.profilePic ||
+        "";
+      const title = live.title || "Live";
+
+      // Save replay / live post so it appears in feed & profile
+      const postRef = db.ref("posts").push();
+      const postId = postRef.key;
+      const postPayload = {
+        id: postId,
+        uid: uid,
+        userId: uid,
+        type: "live",
+        isLiveReplay: true,
+        title: title,
+        caption: title + " · Live ended",
+        text: title + " · Live ended",
+        description: "Live stream · " + formatDuration(durationSec),
+        hostName: hostName,
+        hostPhoto: hostPhoto,
+        photoURL: hostPhoto,
+        avatar: hostPhoto,
+        name: hostName,
+        username: user.username || "",
+        duration: durationSec,
+        viewerCount: peakViewers,
+        views: peakViewers,
+        likesCount: 0,
+        commentsCount: 0,
+        createdAt: firebase.database.ServerValue.TIMESTAMP,
+        timestamp: endedAt,
+        liveStartedAt: startedAt || null,
+        liveEndedAt: endedAt,
+        status: "public"
+      };
+      await postRef.set(postPayload);
+
+      // Archive under liveReplays
+      await db.ref("liveReplays/" + postId).set({
+        ...postPayload,
+        liveId: uid
+      });
+
+      // Link on user
+      await db.ref("users/" + uid + "/lastLivePostId").set(postId);
+
       await db.ref("live/" + uid).update({
         active: false,
-        endedAt: firebase.database.ServerValue.TIMESTAMP
+        endedAt: firebase.database.ServerValue.TIMESTAMP,
+        savedPostId: postId,
+        peakViewers: peakViewers,
+        durationSec: durationSec
       });
       await db.ref("users/" + uid + "/isLive").set(false);
       await db.ref("live/" + uid + "/viewers").remove();
+      console.log("[LIVE] Saved as post", postId);
     } catch (e) {
-      console.warn(e);
+      console.warn("endLiveSession", e);
+      try {
+        await db.ref("users/" + (hostUid || me.uid) + "/isLive").set(false);
+        await db.ref("live/" + (hostUid || me.uid)).update({ active: false });
+      } catch (_) {}
     }
+  }
+
+  function formatDuration(sec) {
+    sec = Number(sec) || 0;
+    const m = Math.floor(sec / 60);
+    const s = sec % 60;
+    if (m <= 0) return s + "s";
+    return m + "m " + (s < 10 ? "0" : "") + s + "s";
   }
 
   /* ---------- UI ---------- */

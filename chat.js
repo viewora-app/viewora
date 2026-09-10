@@ -513,6 +513,8 @@
 
         lastMsgCount: 0,
 
+        isSendingMessage: false,
+
         blockedByMe: false,
 
         blockedMe: false
@@ -963,8 +965,22 @@
                 state.otherUser.verified =
                     Boolean(
                         user.verified ||
-                        user.isVerified
+                        user.isVerified ||
+                        user.blueTick ||
+                        user.redTick ||
+                        user.whiteTick
                     );
+                state.otherUser.blueTick = user.blueTick === true;
+                state.otherUser.redTick = user.redTick === true || user.vip === true || user.elite === true;
+                state.otherUser.whiteTick = user.whiteTick === true;
+                state.otherUser.vip = user.vip === true;
+                state.otherUser.elite = user.elite === true;
+                state.otherUser.monetizationEnabled = user.monetizationEnabled === true;
+                state.otherUser.subscriptionActive = user.subscriptionActive === true;
+                state.otherUser.plan = user.plan || "";
+                state.otherUser.followersCount = user.followersCount || user.followerCount || 0;
+                state.otherUser.totalViews = user.totalViews || 0;
+                state.otherUser.verificationStatus = user.verificationStatus || "";
 
                 state.otherUser.online =
                     Boolean(
@@ -1040,11 +1056,50 @@
         }
 
         if (verifiedBadge) {
+            // Prefer VieworaBadges (red > blue > white)
+            let badge = null;
+            try {
+                if (window.VieworaBadges && typeof window.VieworaBadges.resolve === "function") {
+                    badge = window.VieworaBadges.resolve(user);
+                }
+            } catch (_) {}
 
-            verifiedBadge.classList.toggle(
-                "hidden",
-                !user.verified
-            );
+            function setTickClasses() {
+                verifiedBadge.classList.remove(
+                    "hidden", "blueTick", "redTick", "whiteTick", "verifiedTick"
+                );
+            }
+
+            if (badge && badge.level && badge.level !== "none") {
+                setTickClasses();
+                // className may be "blueTick verifiedTick" — split for classList
+                const raw = String(badge.className || badge.level + "Tick");
+                raw.split(/\s+/).filter(Boolean).forEach(function (c) {
+                    verifiedBadge.classList.add(c);
+                });
+                verifiedBadge.innerHTML = badge.html || '<i class="fa-solid fa-circle-check"></i>';
+                verifiedBadge.title = badge.title || "";
+                verifiedBadge.setAttribute("aria-label", badge.title || "Verified");
+            } else if (user.redTick || user.vip || user.elite) {
+                setTickClasses();
+                verifiedBadge.classList.add("redTick");
+                verifiedBadge.innerHTML = '<i class="fa-solid fa-certificate"></i>';
+                verifiedBadge.title = "VIP Elite";
+            } else if (user.blueTick || user.verified || user.isVerified) {
+                setTickClasses();
+                verifiedBadge.classList.add("blueTick");
+                verifiedBadge.classList.add("verifiedTick");
+                verifiedBadge.innerHTML = '<i class="fa-solid fa-circle-check"></i>';
+                verifiedBadge.title = "Verified";
+            } else if (user.whiteTick) {
+                setTickClasses();
+                verifiedBadge.classList.add("whiteTick");
+                verifiedBadge.innerHTML = '<i class="fa-solid fa-circle-check"></i>';
+                verifiedBadge.title = "Monetized";
+            } else {
+                verifiedBadge.classList.add("hidden");
+                verifiedBadge.innerHTML = '<i class="fa-solid fa-circle-check"></i>';
+            }
         }
 
         updatePresenceUI();
@@ -2634,6 +2689,9 @@
     }
 
     async function sendText() {
+        if (state.isSendingMessage) {
+            return; // one message at a time
+        }
         if (state.blockedByMe || state.blockedMe) {
             showToast("You cannot message this user.", "error");
             return;
@@ -2719,6 +2777,14 @@
                 };
         }
 
+        state.isSendingMessage = true;
+        if (sendBtn) sendBtn.disabled = true;
+
+        // clear input immediately so double-tap can't resend same text
+        const pendingText = text;
+        if (messageInput) messageInput.value = "";
+        autoResizeInput();
+
         try {
 
             await messageRef.set(
@@ -2727,11 +2793,6 @@
 
             // Update both users' inbox list
             await syncInboxAfterSend(message);
-
-            messageInput.value =
-                "";
-
-            autoResizeInput();
 
             clearReply();
 
@@ -2745,6 +2806,11 @@
 
         } catch (error) {
 
+            // restore text on failure
+            if (messageInput && !messageInput.value) {
+                messageInput.value = pendingText;
+                autoResizeInput();
+            }
             console.error(
                 "Send message error:",
                 error
@@ -2754,6 +2820,9 @@
                 "Message could not be sent.",
                 "error"
             );
+        } finally {
+            state.isSendingMessage = false;
+            if (sendBtn) sendBtn.disabled = false;
         }
     }
 

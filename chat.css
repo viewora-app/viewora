@@ -3507,3 +3507,127 @@ audio {
     opacity: 0.35;
     pointer-events: none;
 }
+
+
+/* =========================================================
+   TICKS + REACTIONS POLISH (red / blue / white)
+========================================================= */
+
+.verifiedBadge,
+#verifiedBadge {
+    width: 18px !important;
+    height: 18px !important;
+    flex: 0 0 18px !important;
+    display: inline-grid !important;
+    place-items: center;
+    border-radius: 50%;
+    font-size: 11px !important;
+    line-height: 1;
+    background: transparent !important;
+    box-shadow: none !important;
+    color: #1d9bf0;
+}
+
+.verifiedBadge.hidden,
+#verifiedBadge.hidden {
+    display: none !important;
+}
+
+.verifiedBadge i,
+#verifiedBadge i {
+    font-size: 14px !important;
+    line-height: 1;
+}
+
+/* Blue tick */
+.verifiedBadge.blueTick,
+.verifiedBadge.verifiedTick,
+#verifiedBadge.blueTick,
+#verifiedBadge.verifiedTick,
+.verifiedBadge.blueTick i,
+.verifiedBadge.verifiedTick i {
+    color: #1d9bf0 !important;
+    background: transparent !important;
+    filter: drop-shadow(0 0 6px rgba(29, 155, 240, 0.45));
+}
+
+/* Red VIP tick */
+.verifiedBadge.redTick,
+#verifiedBadge.redTick,
+.verifiedBadge.redTick i,
+#verifiedBadge.redTick i {
+    color: #ff3b5c !important;
+    background: transparent !important;
+    filter: drop-shadow(0 0 8px rgba(255, 59, 92, 0.55));
+}
+
+/* White monetized tick */
+.verifiedBadge.whiteTick,
+#verifiedBadge.whiteTick,
+.verifiedBadge.whiteTick i {
+    color: #f0f4fa !important;
+    background: transparent !important;
+    filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.4));
+}
+
+.chatNameRow,
+.chatTitleWrap {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+}
+
+/* Reaction chips under bubbles */
+.reactionChip,
+.reactionPill {
+    display: inline-flex !important;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 9px !important;
+    border-radius: 999px !important;
+    background: rgba(22, 24, 34, 0.96) !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    font-size: 14px !important;
+    line-height: 1 !important;
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+    font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif !important;
+}
+
+.reactionChip span,
+.reactionPill span {
+    font-size: 11px !important;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.75) !important;
+    font-family: Inter, system-ui, sans-serif !important;
+}
+
+.reactionChip:active,
+.reactionPill:active {
+    transform: scale(0.94);
+}
+
+.messageReactions {
+    display: flex !important;
+    flex-wrap: wrap;
+    gap: 5px !important;
+    margin-top: 4px !important;
+    z-index: 4;
+}
+
+/* Floating reaction picker */
+.reactionBar:not(.hidden) {
+    display: flex !important;
+}
+
+.reactionBar.hidden {
+    display: none !important;
+}
+
+.reactionBar button {
+    font-size: 22px !important;
+    font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif !important;
+}

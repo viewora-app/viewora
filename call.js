@@ -73,15 +73,19 @@
        FIREBASE CHECK
     ====================================================== */
 
-    const __firebaseReady =
-        typeof firebase !== "undefined" &&
-        window.auth &&
-        window.db;
-
-    if (!__firebaseReady) {
-        console.warn(
-            "⚠️ Viewora Call: Firebase not ready yet — API-only mode."
-        );
+    function resolveAuth() {
+        if (window.auth) return window.auth;
+        try { return firebase.auth(); } catch (_) { return null; }
+    }
+    function resolveDb() {
+        if (window.db) return window.db;
+        try { return firebase.database(); } catch (_) { return null; }
+    }
+    // Bind globals used throughout this file
+    var auth = resolveAuth();
+    var db = resolveDb();
+    if (!auth || !db) {
+        console.warn("⚠️ Viewora Call: Firebase not ready yet — will retry on init.");
     }
 
 
@@ -191,6 +195,11 @@
     let wakeLock = null;
 
     let iceRestartAttempts = 0;
+
+    let iceListening = false;
+    let answerListening = false;
+    let offerListening = false;
+    let stateListening = false;
 
     const RING_TIMEOUT_MS = 45000;
 
@@ -370,57 +379,47 @@
     ====================================================== */
 
     async function waitForAuth() {
+        // Ensure firebase bindings (firebase.js may load slightly later)
+        auth = resolveAuth() || auth;
+        db = resolveDb() || db;
+        if (!auth || !db) {
+            await new Promise((r) => setTimeout(r, 400));
+            auth = resolveAuth() || auth;
+            db = resolveDb() || db;
+        }
+        if (!auth || !db) {
+            throw new Error("Firebase Auth/Database not available.");
+        }
+        window.auth = auth;
+        window.db = db;
 
         if (auth.currentUser) {
-
-            currentUser =
-                auth.currentUser;
-
+            currentUser = auth.currentUser;
             return currentUser;
         }
 
+        return new Promise((resolve, reject) => {
+            let finished = false;
+            const timer = setTimeout(() => {
+                if (finished) return;
+                finished = true;
+                try { unsubscribe(); } catch (_) {}
+                reject(new Error("Auth timeout — please login again."));
+            }, 12000);
 
-        return new Promise(
-            (resolve, reject) => {
-
-                let finished = false;
-
-                const unsubscribe =
-                    auth.onAuthStateChanged(
-                        user => {
-
-                            if (finished) {
-                                return;
-                            }
-
-                            finished = true;
-
-                            unsubscribe();
-
-
-                            if (!user) {
-
-                                reject(
-                                    new Error(
-                                        "User is not authenticated."
-                                    )
-                                );
-
-                                return;
-                            }
-
-
-                            currentUser =
-                                user;
-
-                            resolve(user);
-
-                        }
-                    );
-
-            }
-        );
-
+            const unsubscribe = auth.onAuthStateChanged((user) => {
+                if (finished) return;
+                finished = true;
+                clearTimeout(timer);
+                try { unsubscribe(); } catch (_) {}
+                if (!user) {
+                    reject(new Error("User is not authenticated."));
+                    return;
+                }
+                currentUser = user;
+                resolve(user);
+            });
+        });
     }
 
 
@@ -616,6 +615,7 @@
         type: callType,
         status: "ringing",
         createdAt: firebase.database.ServerValue.TIMESTAMP,
+        createdAtMs: Date.now(),
         updatedAt: firebase.database.ServerValue.TIMESTAMP
     };
 
@@ -1025,8 +1025,15 @@
                     setConnecting(false);
                     setStatus("Connected");
                     startTimer();
+                    removeIncomingCall().catch(() => {});
+                    try {
+                        updateCall({ status: "active", connectedAt: firebase.database.ServerValue.TIMESTAMP });
+                    } catch (_) {}
                     if (remoteVideo) remoteVideo.play().catch(() => {});
-                    if (remoteAudio) remoteAudio.play().catch(() => {});
+                    if (remoteAudio) {
+                        remoteAudio.muted = false;
+                        remoteAudio.play().catch(() => {});
+                    }
                 }
 
                 if (state === "disconnected") {
@@ -1349,6 +1356,8 @@
     ====================================================== */
 
     function listenForAnswer() {
+        if (answerListening || !callRef) return;
+        answerListening = true;
 
         callRef
             .child("answer")
@@ -1440,6 +1449,8 @@
     ====================================================== */
 
     function listenForOffer() {
+        if (offerListening || !callRef) return;
+        offerListening = true;
 
         callRef
             .child("offer")
@@ -1487,10 +1498,11 @@
 
     function listenForICE() {
 
-        if (!remoteUserId) {
+        if (!remoteUserId || !callRef) {
             return;
         }
-
+        if (iceListening) return;
+        iceListening = true;
 
         callRef
             .child(
@@ -1602,6 +1614,8 @@
     ====================================================== */
 
     function listenCallState() {
+        if (stateListening || !callRef) return;
+        stateListening = true;
 
         callRef.on(
             "value",
@@ -2048,17 +2062,17 @@
 
 
             if (offer) {
-
-                await handleOffer(
-                    offer
-                );
-
+                await handleOffer(offer);
+            } else {
+                // Offer may arrive late — listener already active from prepareIncoming
+                log("Waiting for offer…");
             }
 
+            // Ensure we listen to caller's ICE with correct remoteUserId
+            iceListening = false;
+            listenForICE();
 
-            log(
-                "✅ Call accepted."
-            );
+            log("✅ Call accepted.");
 
         } catch (error) {
 
@@ -3085,12 +3099,23 @@
     async function init() {
 
         try {
-            // When call.js is included on chat/messages — only register API, do not start call UI
             const page = (location.pathname.split("/").pop() || "").toLowerCase();
             const onCallPage = page.indexOf("call") !== -1;
 
             if (!onCallPage) {
                 log("☎️ Viewora Call API ready (embedded).");
+                return;
+            }
+
+            // Retry firebase bind up to 3s
+            for (let i = 0; i < 6; i++) {
+                auth = resolveAuth() || auth;
+                db = resolveDb() || db;
+                if (auth && db) break;
+                await new Promise((r) => setTimeout(r, 500));
+            }
+            if (!auth || !db) {
+                showEnded("Firebase not ready. Refresh and try again.");
                 return;
             }
 
@@ -3107,11 +3132,15 @@
             }
 
             toast("Receiver ID is missing. Open chat and try call again.");
-            log("☎️ Viewora Call engine ready — no receiverId.");
+            setTimeout(() => {
+                try { history.back(); } catch (_) {}
+            }, 1800);
 
         } catch (error) {
             logError("Call initialization:", error);
-            showEnded("Unable to initialize call.");
+            const msg = (error && error.message) ? error.message : "Unable to initialize call.";
+            showEnded(msg);
+            toast(msg);
         }
 
     }
