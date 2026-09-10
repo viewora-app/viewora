@@ -4310,6 +4310,26 @@
        INITIALIZE
     ===================================================== */
 
+    function unlockPageScroll() {
+        try {
+            document.documentElement.style.setProperty("overflow-y", "auto", "important");
+            document.documentElement.style.setProperty("height", "auto", "important");
+            document.body.style.setProperty("overflow-y", "auto", "important");
+            document.body.style.setProperty("height", "auto", "important");
+            document.body.style.setProperty("touch-action", "pan-y", "important");
+            const app = document.getElementById("app");
+            if (app) {
+                app.classList.remove("hidden");
+                app.style.setProperty("overflow", "visible", "important");
+                app.style.setProperty("height", "auto", "important");
+            }
+            document.querySelectorAll("#pageLoader, .pageLoader").forEach((el) => {
+                el.classList.add("hidden");
+                el.style.display = "none";
+            });
+        } catch (_) {}
+    }
+
     async function initProfile() {
 
         // Theme from settings (dark / light)
@@ -4324,6 +4344,9 @@
                 theme === "light" ? "light" : "dark"
             );
         } catch (_) {}
+
+        unlockPageScroll();
+        setTimeout(unlockPageScroll, 400);
 
         // Loading removed – hide page loader immediately
         hidePageLoader();

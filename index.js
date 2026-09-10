@@ -2566,12 +2566,13 @@
 
                         snapshot.forEach((child) => {
                             const data = child.val() || {};
-                            const uid =
+                            const uid = String(
                                 data.uid ||
                                 data.userId ||
                                 data.ownerId ||
                                 data.creatorId ||
-                                "";
+                                ""
+                            ).trim();
 
                             if (!uid) return;
 
@@ -2727,7 +2728,21 @@
                         );
 
                         // Sort: own first, then UNSEEN, then seen last
-                        const groups = Object.values(byUser).map((g) => {
+                        // Dedupe: same uid OR same username+name (avoid double rings)
+                        let groups = Object.values(byUser);
+                        const seenKeys = new Set();
+                        groups = groups.filter((g) => {
+                            const idKey = String(g.uid || "").toLowerCase();
+                            if (idKey && seenKeys.has("id:" + idKey)) return false;
+                            if (idKey) seenKeys.add("id:" + idKey);
+                            const nameKey = String(g.username || g.name || "").toLowerCase().trim();
+                            if (nameKey && nameKey !== "user" && nameKey !== "viewora user") {
+                                if (seenKeys.has("name:" + nameKey)) return false;
+                                seenKeys.add("name:" + nameKey);
+                            }
+                            return true;
+                        });
+                        groups = groups.map((g) => {
                             g.seen = isStoryUserSeen(g.uid, g.latestAt);
                             return g;
                         }).sort((a, b) => {
@@ -2987,7 +3002,13 @@
                 };
 
                 window.__vieworaStoriesHandler = storiesHandler;
-                db.ref("stories").on(
+                try {
+                    if (window.__vieworaStoriesRef) {
+                        window.__vieworaStoriesRef.off("value");
+                    }
+                } catch (_) {}
+                window.__vieworaStoriesRef = db.ref("stories");
+                window.__vieworaStoriesRef.on(
                     "value",
                     storiesHandler,
                     (error) => {
@@ -3281,11 +3302,43 @@
         } catch (_) {}
     }
 
+    function unlockPageScroll() {
+        try {
+            const html = document.documentElement;
+            const body = document.body;
+            html.style.setProperty("overflow-y", "auto", "important");
+            html.style.setProperty("height", "auto", "important");
+            html.style.setProperty("max-height", "none", "important");
+            body.style.setProperty("overflow-y", "auto", "important");
+            body.style.setProperty("height", "auto", "important");
+            body.style.setProperty("max-height", "none", "important");
+            body.style.setProperty("position", "relative", "important");
+            body.style.setProperty("touch-action", "pan-y", "important");
+            const app = document.getElementById("app");
+            if (app) {
+                app.classList.remove("hidden");
+                app.style.setProperty("overflow", "visible", "important");
+                app.style.setProperty("height", "auto", "important");
+                app.style.setProperty("max-height", "none", "important");
+            }
+            // Kill stuck full-screen loaders
+            document.querySelectorAll("#pageLoader, .pageLoader").forEach((el) => {
+                el.classList.add("hidden", "loaderHide");
+                el.style.display = "none";
+                el.style.pointerEvents = "none";
+            });
+        } catch (_) {}
+    }
+
     function initialize() {
 
         console.log(
             "Viewora Index initialized."
         );
+
+        unlockPageScroll();
+        setTimeout(unlockPageScroll, 300);
+        setTimeout(unlockPageScroll, 1200);
 
         injectHomeStyles();
         wireSearchOpen();

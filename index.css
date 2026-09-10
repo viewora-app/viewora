@@ -3191,3 +3191,62 @@ body {
     pointer-events: none !important;
     display: none !important;
 }
+
+
+/* =========================================================
+   SCROLL + POST PAINT FIX (mobile Chrome glitch)
+========================================================= */
+html, body {
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    height: auto !important;
+    max-height: none !important;
+    min-height: 100% !important;
+    overscroll-behavior-y: auto !important;
+}
+.app, #app {
+    overflow: visible !important;
+    height: auto !important;
+    max-height: none !important;
+    min-height: 100vh !important;
+}
+.homeFeed {
+    overflow-x: hidden !important;
+    overflow-y: visible !important;
+}
+.swipeFeed {
+    will-change: auto !important;
+    transform: translateZ(0);
+}
+.swipeFeed.posts-view {
+    transform: translateX(-50%) translateZ(0);
+}
+/* Stop transparent flash while scrolling posts */
+.vieworaPostCard,
+.longVideoCard,
+.postCard {
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+    isolation: isolate;
+    background-clip: padding-box;
+}
+.vieworaPostCard .postMediaWrap,
+.vieworaPostCard .postMedia {
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+    opacity: 1 !important;
+}
+.vieworaPostCard .postMedia {
+    background: #0d0d12;
+}
+/* Sticky bars should not trap scroll */
+.categorySection,
+.feedSwitcher,
+.topHeader {
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+}
