@@ -43,19 +43,34 @@
 
     const safeURL = (value) => {
         if (!value) return "";
+        const raw = String(value).trim();
+        if (!raw || raw === "null" || raw === "undefined") return "";
+
+        // Relative asset / local path
+        if (
+            raw.startsWith("assets/") ||
+            raw.startsWith("./") ||
+            raw.startsWith("/") ||
+            raw.startsWith("data:") ||
+            raw.startsWith("blob:")
+        ) {
+            return raw;
+        }
 
         try {
-            const url = new URL(value, window.location.href);
-
+            // Protocol-relative //res.cloudinary.com/...
+            const fixed = raw.startsWith("//") ? ("https:" + raw) : raw;
+            const url = new URL(fixed, window.location.href);
             if (
                 url.protocol === "https:" ||
                 url.protocol === "http:"
             ) {
                 return url.href;
             }
-
             return "";
         } catch {
+            // Last resort: if looks like image host path, keep it
+            if (/\.(png|jpe?g|webp|gif|svg)(\?|$)/i.test(raw)) return raw;
             return "";
         }
     };
@@ -111,6 +126,17 @@
     };
 
 
+    const formatDuration = (sec) => {
+        sec = Math.max(0, Math.floor(Number(sec) || 0));
+        if (!sec) return "";
+        const h = Math.floor(sec / 3600);
+        const m = Math.floor((sec % 3600) / 60);
+        const s = sec % 60;
+        if (h > 0) return h + ":" + String(m).padStart(2, "0") + ":" + String(s).padStart(2, "0");
+        return m + ":" + String(s).padStart(2, "0");
+    };
+
+
     const getAvatar = (data) => {
         if (!data || typeof data !== "object") {
             return "assets/default-avatar.png";
@@ -129,6 +155,23 @@
 
         return safeURL(url) || "assets/default-avatar.png";
     };
+
+    function cacheMyAvatar(photo, uid) {
+        try {
+            if (photo && !String(photo).includes("default-avatar")) {
+                localStorage.setItem("viewora_my_avatar", photo);
+            }
+            if (uid) localStorage.setItem("viewora_my_uid", uid);
+        } catch (_) {}
+    }
+
+    function readCachedAvatar() {
+        try {
+            return localStorage.getItem("viewora_my_avatar") || "";
+        } catch (_) {
+            return "";
+        }
+    }
 
     const isVerifiedUser = (data) => {
         if (!data || typeof data !== "object") return false;
@@ -379,6 +422,28 @@
                 data.time
             );
 
+        const hideLikes =
+            data.hideLikes === true ||
+            data.hideLikeCount === true ||
+            data.likesHidden === true;
+        const hideComments =
+            data.allowComments === false ||
+            data.hideComments === true ||
+            data.commentsHidden === true ||
+            data.disableComments === true;
+        const likesLabel = hideLikes ? "" : likes;
+        const commentsLabel = hideComments ? "" : comments;
+
+        const musicObj = data.music || null;
+        const musicUrl =
+            (musicObj && (musicObj.audioUrl || musicObj.url || musicObj.previewUrl)) ||
+            data.musicUrl ||
+            data.audioUrl ||
+            "";
+        const musicTitle =
+            (musicObj && (musicObj.title || musicObj.name)) ||
+            data.musicTitle ||
+            "";
 
         const article =
             document.createElement("article");
@@ -390,6 +455,12 @@
 
         article.dataset.postId =
             id;
+        if (musicUrl) {
+            article.dataset.musicUrl = musicUrl;
+            article.dataset.musicTitle = musicTitle || "";
+        }
+        if (hideLikes) article.dataset.hideLikes = "1";
+        if (hideComments) article.dataset.hideComments = "1";
         const cat = String(
             data.category || data.topic || data.genre || data.tag || ""
         ).toLowerCase();
@@ -477,6 +548,22 @@
                     : ""
             }
 
+            ${
+                musicUrl
+                    ? `
+                        <div class="postMusicBar" data-music-url="${escapeHTML(musicUrl)}" data-music-title="${escapeHTML(musicTitle || "Original audio")}">
+                            <div class="postMusicLeft">
+                                <i class="fa-solid fa-music postMusicNote"></i>
+                                <span class="postMusicTitle">${escapeHTML(musicTitle || "Original audio")}</span>
+                            </div>
+                            <button type="button" class="postMusicMute" aria-label="Sound">
+                                <i class="fa-solid fa-volume-high"></i>
+                            </button>
+                        </div>
+                      `
+                    : ""
+            }
+
 
             <div class="postActions">
 
@@ -487,8 +574,8 @@
                 >
                     <i class="fa-regular fa-heart"></i>
 
-                    <span>
-                        ${likes}
+                    <span class="likeCountSpan" ${hideLikes ? 'style="display:none"' : ""}>
+                        ${likesLabel}
                     </span>
                 </button>
 
@@ -497,11 +584,12 @@
                     type="button"
                     class="postAction"
                     data-action="comment"
+                    ${hideComments ? 'style="opacity:.45"' : ""}
                 >
                     <i class="fa-regular fa-comment"></i>
 
-                    <span>
-                        ${comments}
+                    <span class="commentCountSpan" ${hideComments ? 'style="display:none"' : ""}>
+                        ${commentsLabel}
                     </span>
                 </button>
 
@@ -562,6 +650,9 @@
              */
             const type = String(data.type || "post").toLowerCase();
 
+            if (data.deleted === true) {
+                return;
+            }
             if (
                 type === "post" ||
                 type === "image" ||
@@ -626,39 +717,35 @@
                 const user = await fetchUserNode(uid);
                 if (!user) return;
 
-                // Fill missing profile photo
-                if (
-                    !post.data.userPhoto &&
-                    !post.data.profilePhoto &&
-                    !post.data.photoURL &&
-                    !post.data.avatar
-                ) {
-                    post.data.profilePhoto =
-                        user.profilePhoto ||
-                        user.photoURL ||
-                        user.avatar ||
-                        "";
-                    post.data.photoURL = post.data.profilePhoto;
-                    post.data.userPhoto = post.data.profilePhoto;
+                // ALWAYS prefer users/ for photo + name
+                const photo =
+                    user.profilePhoto ||
+                    user.photoURL ||
+                    user.photoUrl ||
+                    user.avatar ||
+                    user.profilePic ||
+                    user.profilePicture ||
+                    user.dp ||
+                    "";
+                if (photo) {
+                    post.data.profilePhoto = photo;
+                    post.data.photoURL = photo;
+                    post.data.userPhoto = photo;
+                    post.data.avatar = photo;
                 }
 
-                // Fill missing name
-                if (
-                    !post.data.username &&
-                    !post.data.displayName &&
-                    !post.data.name
-                ) {
-                    post.data.username =
-                        user.username ||
-                        user.displayName ||
-                        user.name ||
-                        "";
+                const uname =
+                    user.username ||
+                    user.displayName ||
+                    user.name ||
+                    user.fullName ||
+                    "";
+                if (uname) {
+                    post.data.username = user.username || uname;
                     post.data.displayName =
-                        user.displayName ||
-                        user.name ||
-                        user.username ||
-                        "";
-                    post.data.name = user.name || user.fullName || "";
+                        user.displayName || user.name || uname;
+                    post.data.name =
+                        user.name || user.fullName || uname;
                 }
 
                 // Copy full badge / subscription flags from users node
@@ -689,6 +776,8 @@
         feedContainer.appendChild(fragment);
 
         bindPostEvents();
+        wirePostMusicClicks();
+        try { wirePostPinchZoom(); } catch (_) {}
         // Show red heart if already liked + correct count
         hydratePostLikes();
     }
@@ -758,11 +847,11 @@
 
         const username =
             escapeHTML(
-                data.username ||
                 data.displayName ||
                 data.name ||
                 data.fullName ||
                 data.userName ||
+                data.username ||
                 "Viewora User"
             );
 
@@ -798,6 +887,19 @@
             data.creatorId ||
             "";
 
+        const vUrlForCard = video || getVideoURL(data);
+        if (vUrlForCard) card.dataset.videoUrl = vUrlForCard;
+
+        const durSec = Number(
+            data.duration || data.durationSec || data.length || data.videoDuration || 0
+        ) || 0;
+        const hasMusic = !!(
+            data.music || data.musicId || data.audioUrl || data.hasMusic ||
+            (data.category && String(data.category).toLowerCase().includes("music"))
+        );
+        let durLabel = durSec > 0 ? formatDuration(durSec) : "";
+        if (hasMusic && durLabel) durLabel += " 🎵";
+        else if (hasMusic) durLabel = "🎵";
 
         card.innerHTML = `
 
@@ -829,6 +931,8 @@
                     <i class="fa-solid fa-play"></i>
 
                 </span>
+
+                <span class="videoDurationBadge">${durLabel || ""}</span>
 
             </div>
 
@@ -918,6 +1022,9 @@
                 ).toLowerCase();
 
 
+            if (data.deleted === true || data.uploadStatus === "uploading") {
+                return;
+            }
             if (
                 type === "video" ||
                 type === "long_video" ||
@@ -927,12 +1034,22 @@
                     data.videoURL
                 )
             ) {
-
+                // Fix filename-as-title
+                if (data.title && /\.(mp4|mov|webm|mkv)$/i.test(String(data.title))) {
+                    try {
+                        data.title = new Date(
+                            data.createdAt || Date.now()
+                        ).toLocaleDateString("en-IN", {
+                            day: "numeric", month: "long", year: "numeric"
+                        });
+                    } catch (_) {
+                        data.title = "Video";
+                    }
+                }
                 videos.push({
                     id: child.key,
                     data
                 });
-
             }
 
         });
@@ -988,37 +1105,36 @@
                 const user = await fetchUserNode(uid);
                 if (!user) return;
 
-                if (
-                    !video.data.userPhoto &&
-                    !video.data.profilePhoto &&
-                    !video.data.photoURL &&
-                    !video.data.avatar
-                ) {
-                    video.data.profilePhoto =
-                        user.profilePhoto ||
-                        user.photoURL ||
-                        "";
-                    video.data.photoURL = video.data.profilePhoto;
-                    video.data.userPhoto = video.data.profilePhoto;
+                // ALWAYS prefer users/ node (video doc can have stale/wrong name/photo)
+                const photo =
+                    user.profilePhoto ||
+                    user.photoURL ||
+                    user.photoUrl ||
+                    user.avatar ||
+                    user.profilePic ||
+                    user.profilePicture ||
+                    user.dp ||
+                    "";
+                if (photo) {
+                    video.data.profilePhoto = photo;
+                    video.data.photoURL = photo;
+                    video.data.userPhoto = photo;
+                    video.data.avatar = photo;
                 }
 
-                if (
-                    !video.data.username &&
-                    !video.data.displayName &&
-                    !video.data.name
-                ) {
-                    video.data.username =
-                        user.username ||
-                        user.displayName ||
-                        user.name ||
-                        "";
+                const uname =
+                    user.username ||
+                    user.displayName ||
+                    user.name ||
+                    user.fullName ||
+                    "";
+                if (uname) {
+                    video.data.username = user.username || uname;
                     video.data.displayName =
-                        user.displayName ||
-                        user.name ||
-                        user.username ||
-                        "";
+                        user.displayName || user.name || uname;
                     video.data.name =
-                        user.name || user.fullName || "";
+                        user.name || user.fullName || uname;
+                    video.data.userName = video.data.displayName;
                 }
 
                 [
@@ -1075,6 +1191,35 @@
             });
 
             longVideoContainer.appendChild(fragment);
+            // Auto-fill duration badge when missing
+            longVideoContainer.querySelectorAll(".longVideoCard").forEach((card) => {
+                const badge = card.querySelector(".videoDurationBadge");
+                if (badge && (badge.textContent || "").trim()) return;
+                const vUrl = card.dataset.videoUrl;
+                const vidId = card.dataset.videoId || "";
+                if (!vUrl) return;
+                try {
+                    const v = document.createElement("video");
+                    v.preload = "metadata";
+                    v.muted = true;
+                    v.src = vUrl;
+                    v.onloadedmetadata = () => {
+                        const d = v.duration;
+                        if (d && isFinite(d) && d > 0) {
+                            const label = formatDuration(d);
+                            if (badge) {
+                                badge.textContent = label;
+                                badge.style.display = "";
+                            }
+                            try {
+                                db.ref("videos/" + vidId).update({ duration: Math.round(d) }).catch(() => {});
+                            } catch (_) {}
+                        }
+                        try { v.removeAttribute("src"); v.load(); } catch (_) {}
+                    };
+                } catch (_) {}
+            });
+
             bindVideoEvents();
         });
 
@@ -1383,21 +1528,270 @@
        POST EVENTS
     ====================================================== */
 
+
+    
+    let __postMusicAudio = null;
+    let __postMusicMuted = false;
+    let __postMusicActiveBar = null;
+
+    function stopPostMusic() {
+        try {
+            if (__postMusicAudio) {
+                __postMusicAudio.pause();
+                __postMusicAudio.src = "";
+                __postMusicAudio = null;
+            }
+        } catch (_) {}
+        document.querySelectorAll(".postMusicBar.isPlaying").forEach((el) => {
+            el.classList.remove("isPlaying");
+        });
+        __postMusicActiveBar = null;
+    }
+
+    function playPostMusic(url, bar) {
+        if (!url) return;
+        // same track already playing for this bar
+        if (
+            __postMusicActiveBar === bar &&
+            __postMusicAudio &&
+            !__postMusicAudio.paused
+        ) {
+            return;
+        }
+        stopPostMusic();
+        try {
+            const a = new Audio(url);
+            a.loop = true;
+            a.muted = !!__postMusicMuted;
+            a.volume = __postMusicMuted ? 0 : 0.9;
+            __postMusicAudio = a;
+            __postMusicActiveBar = bar || null;
+            const p = a.play();
+            if (p && p.catch) p.catch(() => {});
+            if (bar) bar.classList.add("isPlaying");
+            syncPostMuteIcons();
+        } catch (_) {}
+    }
+
+    function syncPostMuteIcons() {
+        document.querySelectorAll(".postMusicMute i").forEach((icon) => {
+            icon.className = __postMusicMuted
+                ? "fa-solid fa-volume-xmark"
+                : "fa-solid fa-volume-high";
+        });
+    }
+
+    function togglePostMusicMute() {
+        __postMusicMuted = !__postMusicMuted;
+        if (__postMusicAudio) {
+            __postMusicAudio.muted = __postMusicMuted;
+            __postMusicAudio.volume = __postMusicMuted ? 0 : 0.9;
+        }
+        try {
+            localStorage.setItem("viewora_post_music_muted", __postMusicMuted ? "1" : "0");
+        } catch (_) {}
+        syncPostMuteIcons();
+    }
+
+    function wirePostMusicClicks() {
+        try {
+            __postMusicMuted = localStorage.getItem("viewora_post_music_muted") === "1";
+        } catch (_) {}
+        syncPostMuteIcons();
+
+        const root = document.getElementById("feedContainer") || document;
+        if (root.__postMusicWired) return;
+        root.__postMusicWired = true;
+
+        root.addEventListener("click", (e) => {
+            const muteBtn = e.target.closest && e.target.closest(".postMusicMute");
+            if (muteBtn) {
+                e.preventDefault();
+                e.stopPropagation();
+                togglePostMusicMute();
+                return;
+            }
+        }, true);
+
+        // Instagram-style: play music of the most-visible post
+        if (!window.IntersectionObserver) return;
+
+        const obs = new IntersectionObserver(
+            (entries) => {
+                // pick entry with highest intersection ratio among posts that have music
+                let best = null;
+                let bestRatio = 0.35;
+                entries.forEach((en) => {
+                    if (!en.isIntersecting) return;
+                    if (en.intersectionRatio >= bestRatio) {
+                        bestRatio = en.intersectionRatio;
+                        best = en.target;
+                    }
+                });
+                // also scan all observed if current batch empty
+                if (!best) return;
+
+                const bar = best.querySelector(".postMusicBar");
+                if (!bar) {
+                    stopPostMusic();
+                    return;
+                }
+                const url = bar.getAttribute("data-music-url") || "";
+                if (url) playPostMusic(url, bar);
+            },
+            {
+                root: null,
+                rootMargin: "-15% 0px -35% 0px",
+                threshold: [0.25, 0.4, 0.55, 0.7, 0.85]
+            }
+        );
+
+        function observePosts() {
+            document.querySelectorAll(".vieworaPostCard").forEach((card) => {
+                if (card.__musicObs) return;
+                if (!card.querySelector(".postMusicBar")) return;
+                card.__musicObs = true;
+                obs.observe(card);
+            });
+        }
+        observePosts();
+
+        const feed = document.getElementById("feedContainer");
+        if (feed && !feed.__musicObsMO) {
+            feed.__musicObsMO = true;
+            new MutationObserver(observePosts).observe(feed, {
+                childList: true,
+                subtree: true
+            });
+        }
+
+        // pause when tab hidden
+        document.addEventListener("visibilitychange", () => {
+            if (document.hidden) {
+                try { __postMusicAudio && __postMusicAudio.pause(); } catch (_) {}
+            } else if (__postMusicAudio && __postMusicActiveBar) {
+                __postMusicAudio.play().catch(() => {});
+            }
+        });
+    }
+
+
+/* ---- Pinch zoom on post images + image viewer ---- */
+    function enablePinchZoom(target) {
+        if (!target || target.__pinchBound) return;
+        target.__pinchBound = true;
+        let scale = 1;
+        let lastScale = 1;
+        let startDist = 0;
+        let tx = 0, ty = 0, startX = 0, startY = 0;
+        let panning = false;
+        let lastTap = 0;
+
+        function dist(t) {
+            const a = t[0], b = t[1];
+            return Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
+        }
+        function apply() {
+            target.style.transform =
+                "translate(" + tx + "px," + ty + "px) scale(" + scale + ")";
+            target.style.transformOrigin = "center center";
+        }
+        function reset() {
+            scale = 1; lastScale = 1; tx = 0; ty = 0;
+            target.style.transform = "";
+        }
+
+        target.addEventListener("touchstart", (e) => {
+            if (e.touches.length === 2) {
+                e.preventDefault();
+                startDist = dist(e.touches);
+                lastScale = scale;
+                panning = false;
+            } else if (e.touches.length === 1 && scale > 1.05) {
+                panning = true;
+                startX = e.touches[0].clientX - tx;
+                startY = e.touches[0].clientY - ty;
+            }
+        }, { passive: false });
+
+        target.addEventListener("touchmove", (e) => {
+            if (e.touches.length === 2 && startDist > 0) {
+                e.preventDefault();
+                const d = dist(e.touches);
+                scale = Math.min(4, Math.max(1, lastScale * (d / startDist)));
+                apply();
+            } else if (e.touches.length === 1 && panning) {
+                e.preventDefault();
+                tx = e.touches[0].clientX - startX;
+                ty = e.touches[0].clientY - startY;
+                apply();
+            }
+        }, { passive: false });
+
+        target.addEventListener("touchend", (e) => {
+            if (e.touches.length < 2) startDist = 0;
+            if (e.touches.length === 0) panning = false;
+            if (scale < 1.05) reset();
+        });
+
+        // double-tap zoom toggle
+        target.addEventListener("click", (e) => {
+            const now = Date.now();
+            if (now - lastTap < 280) {
+                e.preventDefault();
+                e.stopPropagation();
+                if (scale > 1.2) reset();
+                else { scale = 2.2; lastScale = 2.2; apply(); }
+            }
+            lastTap = now;
+        });
+    }
+
+    function wirePostPinchZoom() {
+        document.querySelectorAll(".postMedia, .post-image, #viewerImage").forEach((el) => {
+            enablePinchZoom(el);
+        });
+        // Observe new posts
+        const feed = document.getElementById("feedContainer");
+        if (feed && !feed.__pinchObs) {
+            feed.__pinchObs = true;
+            const mo = new MutationObserver(() => {
+                feed.querySelectorAll(".postMedia").forEach((el) => enablePinchZoom(el));
+            });
+            mo.observe(feed, { childList: true, subtree: true });
+        }
+    }
+
+
+    
     function bindPostEvents() {
 
         if (!feedContainer) return;
 
-        // Image lightbox
+        // Image lightbox — centered full screen (above bottom nav)
         feedContainer
             .querySelectorAll("[data-view-image]")
             .forEach((image) => {
-                image.addEventListener("click", () => {
+                if (image.dataset.lightboxBound === "1") return;
+                image.dataset.lightboxBound = "1";
+                image.addEventListener("click", (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
                     const url = image.dataset.viewImage;
                     const viewer = $("imageViewer");
                     const viewerImage = $("viewerImage");
                     if (viewer && viewerImage && url) {
                         viewerImage.src = url;
+                        viewerImage.onload = function () {
+                            viewerImage.style.opacity = "1";
+                        };
+                        viewerImage.style.opacity = "0.99";
                         viewer.classList.remove("hidden");
+                        viewer.style.display = "flex";
+                        document.body.classList.add("viewer-open");
+                        document.documentElement.classList.add("viewer-open");
+                        // keep scroll position
+                        viewer.dataset.scrollY = String(window.scrollY || 0);
                     }
                 });
             });
@@ -2157,20 +2551,24 @@
         closeViewer.addEventListener(
             "click",
             () => {
-
-                imageViewer.classList.add(
-                    "hidden"
-                );
-
-                const image =
-                    $("viewerImage");
-
-                if (image) {
-                    image.src = "";
+                imageViewer.classList.add("hidden");
+                imageViewer.style.display = "";
+                document.body.classList.remove("viewer-open");
+                document.documentElement.classList.remove("viewer-open");
+                const image = $("viewerImage");
+                if (image) image.src = "";
+                const y = Number(imageViewer.dataset.scrollY || 0);
+                if (y) {
+                    try { window.scrollTo(0, y); } catch (_) {}
                 }
-
             }
         );
+        // Tap backdrop to close
+        imageViewer.addEventListener("click", (e) => {
+            if (e.target === imageViewer) {
+                closeViewer.click();
+            }
+        });
 
     }
 
@@ -2428,6 +2826,7 @@
                         (item && typeof item === "object")
                     ) {
                         followingSet.add(String(targetId));
+                        followingSet.add(String(targetId).toLowerCase());
                     }
                 });
             } catch (err) {
@@ -2555,26 +2954,31 @@
                 }
 
                 const storiesHandler = async (snapshot) => {
+                        // Race-guard: live + stories listeners can fire together
+                        window.__vieworaStoriesGen = (window.__vieworaStoriesGen || 0) + 1;
+                        const gen = window.__vieworaStoriesGen;
 
                         container.innerHTML = "";
 
                         /*
-                         * Group by user:
-                         * { uid: { stories: [], latest, avatar, name } }
+                         * Group by user (ONE circle per uid, max 50 stories)
                          */
+                        const MAX_STORIES_PER_USER = 50;
                         const byUser = {};
 
                         snapshot.forEach((child) => {
                             const data = child.val() || {};
-                            const uid = String(
+                            const rawUid = String(
                                 data.uid ||
                                 data.userId ||
                                 data.ownerId ||
                                 data.creatorId ||
                                 ""
                             ).trim();
+                            if (!rawUid) return;
 
-                            if (!uid) return;
+                            // ALWAYS lowercase key so same user never splits
+                            const uidKey = rawUid.toLowerCase();
 
                             let createdAt = Number(
                                 data.createdAt ||
@@ -2590,206 +2994,239 @@
                                 return;
                             }
 
-                            // Home: ONLY own + people you follow (never random users)
                             const isOwn =
                                 currentUserUID &&
-                                String(uid) === String(currentUserUID);
+                                uidKey === String(currentUserUID).toLowerCase();
                             const isFollowed =
-                                followingSet.has(String(uid));
+                                followingSet.has(rawUid) ||
+                                followingSet.has(uidKey) ||
+                                [...followingSet].some(
+                                    (f) => String(f).toLowerCase() === uidKey
+                                );
 
-                            if (!currentUserUID) {
-                                // Not logged in → no stories on home
-                                return;
-                            }
-                            if (!isOwn && !isFollowed) {
-                                return;
-                            }
+                            if (!currentUserUID) return;
+                            if (!isOwn && !isFollowed) return;
 
-                            if (!byUser[uid]) {
-                                byUser[uid] = {
-                                    uid,
+                            if (!byUser[uidKey]) {
+                                byUser[uidKey] = {
+                                    uid: rawUid,
                                     stories: [],
                                     latestAt: 0,
                                     avatar: "",
                                     name: "",
-                                    username: ""
+                                    username: "",
+                                    isLive: false
                                 };
                             }
 
-                            byUser[uid].stories.push({
+                            const g = byUser[uidKey];
+                            g.stories.push({
                                 id: child.key,
                                 data,
                                 createdAt
                             });
+                            if (createdAt > g.latestAt) g.latestAt = createdAt;
 
-                            if (createdAt > byUser[uid].latestAt) {
-                                byUser[uid].latestAt = createdAt;
+                            const av =
+                                data.userPhoto ||
+                                data.profilePhoto ||
+                                data.photoURL ||
+                                data.avatar ||
+                                data.profilePic ||
+                                "";
+                            if (av && (!g.avatar || g.avatar.indexOf("default") !== -1)) {
+                                g.avatar = av;
                             }
-
-                            // Prefer latest story's profile info
-                            if (
-                                !byUser[uid].avatar ||
-                                createdAt >= byUser[uid].latestAt
-                            ) {
-                                byUser[uid].avatar = getAvatar(data);
-                                byUser[uid].name =
-                                    data.name ||
-                                    data.fullName ||
-                                    data.displayName ||
-                                    data.username ||
-                                    "User";
-                                byUser[uid].username =
-                                    data.username ||
-                                    data.displayName ||
-                                    "User";
+                            const un =
+                                data.username ||
+                                data.displayName ||
+                                data.name ||
+                                data.fullName ||
+                                "";
+                            if (un && !g.username) {
+                                g.username = un;
+                                g.name = un;
                             }
                         });
 
-                        // ---- LIVE: following users who are live appear as red rings first ----
-                        try {
-                            const liveSnap = await db.ref("live").once("value");
-                            if (liveSnap.exists()) {
-                                liveSnap.forEach((ch) => {
-                                    const lv = ch.val() || {};
-                                    const luid = ch.key;
-                                    if (!lv || lv.active !== true) return;
-                                    if (!currentUserUID) return;
-                                    const isOwnLive = String(luid) === String(currentUserUID);
-                                    const isFollowedLive = followingSet.has(String(luid));
-                                    if (!isOwnLive && !isFollowedLive) return;
-
-                                    if (!byUser[luid]) {
-                                        byUser[luid] = {
-                                            uid: luid,
-                                            stories: [],
-                                            latestAt: Date.now(),
-                                            avatar: lv.hostPhoto || "",
-                                            name: lv.hostName || "Live",
-                                            username: lv.hostName || "Live",
-                                            isLive: true,
-                                            liveTitle: lv.title || "Live"
-                                        };
-                                    } else {
-                                        byUser[luid].isLive = true;
-                                        byUser[luid].liveTitle = lv.title || "Live";
-                                        byUser[luid].latestAt = Math.max(
-                                            byUser[luid].latestAt || 0,
-                                            Date.now()
-                                        );
-                                        if (lv.hostPhoto) byUser[luid].avatar = lv.hostPhoto;
-                                        if (lv.hostName) {
-                                            byUser[luid].name = lv.hostName;
-                                            byUser[luid].username = lv.hostName;
-                                        }
-                                    }
-                                });
-                            }
-                        } catch (liveErr) {
-                            console.warn("live stories merge", liveErr);
-                        }
-
-                        // Enrich from users node if name still generic
-                        const userIds = Object.keys(byUser);
+                        // Enrich from users/ (canonical name + photo)
+                        const uidKeys = Object.keys(byUser);
                         await Promise.all(
-                            userIds.map(async (uid) => {
-                                const group = byUser[uid];
-                                if (
-                                    group.name &&
-                                    group.name !== "User" &&
-                                    group.name !== "Viewora User"
-                                ) {
-                                    return;
-                                }
+                            uidKeys.map(async (key) => {
+                                const g = byUser[key];
                                 try {
-                                    const us = await db
-                                        .ref("users/" + uid)
-                                        .once("value");
-                                    if (!us.exists()) return;
-                                    const u = us.val() || {};
-                                    group.name =
-                                        u.name ||
-                                        u.fullName ||
+                                    let u = await fetchUserNode(g.uid);
+                                    if (!u) u = await fetchUserNode(key);
+                                    if (!u) return;
+                                    g.username =
+                                        u.username ||
                                         u.displayName ||
-                                        u.username ||
-                                        group.name;
-                                    group.username =
-                                        u.username ||
-                                        group.username;
-                                    if (!group.avatar || group.avatar.includes("default-avatar")) {
-                                        group.avatar =
-                                            u.profilePhoto ||
-                                            u.photoURL ||
-                                            group.avatar;
-                                    }
-                                } catch (e) {
-                                    /* ignore */
-                                }
+                                        u.name ||
+                                        g.username ||
+                                        "User";
+                                    g.name = u.displayName || u.name || g.username;
+                                    const photo =
+                                        u.profilePhoto ||
+                                        u.photoURL ||
+                                        u.photoUrl ||
+                                        u.avatar ||
+                                        u.profilePic ||
+                                        u.profilePicture ||
+                                        u.profile_image ||
+                                        u.dp ||
+                                        "";
+                                    if (photo) g.avatar = photo;
+                                    [
+                                        "verified","isVerified","blueTick","redTick",
+                                        "vip","whiteTick","badge"
+                                    ].forEach((k) => {
+                                        if (u[k] != null) g[k] = u[k];
+                                    });
+                                } catch (_) {}
                             })
                         );
 
-                        // Sort: own first, then UNSEEN, then seen last
-                        // Dedupe: same uid OR same username+name (avoid double rings)
-                        let groups = Object.values(byUser);
-                        const seenKeys = new Set();
-                        groups = groups.filter((g) => {
-                            const idKey = String(g.uid || "").toLowerCase();
-                            if (idKey && seenKeys.has("id:" + idKey)) return false;
-                            if (idKey) seenKeys.add("id:" + idKey);
-                            const nameKey = String(g.username || g.name || "").toLowerCase().trim();
-                            if (nameKey && nameKey !== "user" && nameKey !== "viewora user") {
-                                if (seenKeys.has("name:" + nameKey)) return false;
-                                seenKeys.add("name:" + nameKey);
+                        // Live status on same ring
+                        try {
+                            const liveSnap = await db.ref("live").once("value");
+                            if (liveSnap.exists()) {
+                                liveSnap.forEach((c) => {
+                                    const v = c.val() || {};
+                                    const liveUid = String(
+                                        v.uid || c.key || ""
+                                    ).toLowerCase();
+                                    if (
+                                        byUser[liveUid] &&
+                                        (v.active === true || v.isLive === true || v.status === "live")
+                                    ) {
+                                        byUser[liveUid].isLive = true;
+                                    }
+                                });
                             }
-                            return true;
-                        });
-                        groups = groups.map((g) => {
+                        } catch (_) {}
+                        try {
+                            for (const key of Object.keys(byUser)) {
+                                const us = await db.ref("users/" + byUser[key].uid + "/isLive").once("value");
+                                if (us.val() === true) byUser[key].isLive = true;
+                            }
+                        } catch (_) {}
+
+                        // Stale run? another handler started while we awaited
+                        if (gen !== window.__vieworaStoriesGen) return;
+
+                        // Final groups: ONE entry per uidKey, then merge twins
+                        // (same display name OR same real profile photo after users/ enrich)
+                        let groups = Object.values(byUser).map((g) => {
+                            g.stories = (g.stories || [])
+                                .sort((a, b) => b.createdAt - a.createdAt)
+                                .slice(0, MAX_STORIES_PER_USER);
+                            const seenS = new Set();
+                            g.stories = g.stories.filter((s) => {
+                                if (seenS.has(s.id)) return false;
+                                seenS.add(s.id);
+                                return true;
+                            });
                             g.seen = isStoryUserSeen(g.uid, g.latestAt);
                             return g;
-                        }).sort((a, b) => {
-                            if (currentUserUID && a.uid === currentUserUID) return -1;
-                            if (currentUserUID && b.uid === currentUserUID) return 1;
-                            // Live first
+                        });
+
+                        // Merge duplicate rings: identical username OR identical non-default avatar
+                        (function mergeTwinRings() {
+                            const norm = (s) =>
+                                String(s || "")
+                                    .toLowerCase()
+                                    .trim()
+                                    .replace(/\s+/g, "")
+                                    .replace(/[.…]+$/g, "");
+                            const avKey = (a) => {
+                                const u = String(a || "").split("?")[0].toLowerCase();
+                                if (!u || u.indexOf("default-avatar") !== -1) return "";
+                                if (u.indexOf("logo") !== -1) return "";
+                                return u;
+                            };
+                            const kept = [];
+                            const byN = {};
+                            const byA = {};
+                            for (const g of groups) {
+                                const nk = norm(g.username || g.name);
+                                const ak = avKey(g.avatar);
+                                let prev = null;
+                                if (nk && nk.length >= 3 && nk !== "user") prev = byN[nk];
+                                if (!prev && ak) prev = byA[ak];
+                                if (prev) {
+                                    prev.stories = (prev.stories || []).concat(g.stories || []);
+                                    const seenS = new Set();
+                                    prev.stories = prev.stories
+                                        .filter((s) => {
+                                            if (seenS.has(s.id)) return false;
+                                            seenS.add(s.id);
+                                            return true;
+                                        })
+                                        .sort((a, b) => b.createdAt - a.createdAt)
+                                        .slice(0, MAX_STORIES_PER_USER);
+                                    prev.latestAt = Math.max(prev.latestAt || 0, g.latestAt || 0);
+                                    if (g.isLive) prev.isLive = true;
+                                    if (ak && !avKey(prev.avatar)) prev.avatar = g.avatar;
+                                    continue;
+                                }
+                                if (nk && nk.length >= 3) byN[nk] = g;
+                                if (ak) byA[ak] = g;
+                                kept.push(g);
+                            }
+                            groups = kept;
+                        })();
+
+                        // Sort: own first, live, unseen, latest
+                        groups.sort((a, b) => {
+                            if (currentUserUID) {
+                                const aOwn = String(a.uid).toLowerCase() === String(currentUserUID).toLowerCase();
+                                const bOwn = String(b.uid).toLowerCase() === String(currentUserUID).toLowerCase();
+                                if (aOwn !== bOwn) return aOwn ? -1 : 1;
+                            }
                             if (!!a.isLive !== !!b.isLive) return a.isLive ? -1 : 1;
-                            // Unseen before seen
                             if (a.seen !== b.seen) return a.seen ? 1 : -1;
                             return b.latestAt - a.latestAt;
                         });
 
-                        // Max 25 user rings — own goes to "Your Story" button, others beside it
+                        // Final stale check before DOM write
+                        if (gen !== window.__vieworaStoriesGen) return;
+
+                        // Clear again (race-safe) + strip stray rings outside firebaseStories
+                        container.innerHTML = "";
+                        try {
+                            const parent = document.getElementById("storiesContainer");
+                            if (parent) {
+                                parent.querySelectorAll(".storyCard:not(#addStoryBtn):not(.yourStory)").forEach((el) => {
+                                    if (!container.contains(el)) el.remove();
+                                });
+                            }
+                        } catch (_) {}
+
+                        // Render — skip own (Your Story button handles it)
+                        // HARD guard: never paint same uid twice
+                        const painted = new Set();
                         groups
                             .filter((g) => {
-                                if (
-                                    currentUserUID &&
-                                    String(g.uid) === String(currentUserUID)
-                                ) {
-                                    return false; // own ring = left "Your Story"
-                                }
-                                return true;
+                                if (!currentUserUID) return true;
+                                return String(g.uid).toLowerCase() !== String(currentUserUID).toLowerCase();
                             })
                             .slice(0, 25)
                             .forEach((group) => {
-                            // Sort this user's stories newest first
-                            group.stories.sort(
-                                (a, b) => b.createdAt - a.createdAt
+                            const paintKey = String(group.uid).toLowerCase();
+                            if (painted.has(paintKey)) return;
+                            painted.add(paintKey);
+
+                            const label = escapeHTML(
+                                group.username ||
+                                group.name ||
+                                "User"
                             );
 
-                            const isOwn =
-                                currentUserUID &&
-                                group.uid === currentUserUID;
-
-                            const label = isOwn
-                                ? "Your Story"
-                                : escapeHTML(
-                                      group.username ||
-                                      group.name ||
-                                      "User"
-                                  );
-
                             const avatar =
+                                safeURL(group.avatar) ||
                                 group.avatar ||
                                 "assets/default-avatar.png";
 
-                            // First (newest) story id for deep link
                             const firstStoryId =
                                 group.stories[0]?.id || "";
 
@@ -2797,7 +3234,6 @@
                                 document.createElement("button");
                             button.type = "button";
 
-                            // Unseen = colored ring, seen = white/gray ring
                             const isLive = !!group.isLive;
                             const ringClass = isLive
                                 ? "storyCard storyLive live"
@@ -2805,17 +3241,11 @@
                                     ? "storyCard storySeen"
                                     : "storyCard storyUnseen";
 
-                            button.className =
-                                ringClass +
-                                (isOwn ? " ownStory" : "");
+                            button.className = ringClass;
                             button.dataset.uid = group.uid;
                             button.dataset.storyId = firstStoryId;
-                            button.dataset.count = String(
-                                group.stories.length
-                            );
-                            button.dataset.seen = group.seen
-                                ? "1"
-                                : "0";
+                            button.dataset.count = String(group.stories.length);
+                            button.dataset.seen = group.seen ? "1" : "0";
                             if (isLive) button.dataset.live = "1";
 
                             button.innerHTML = `
@@ -2853,9 +3283,8 @@
                                     "stories.html?" + params.toString();
                             });
 
-                            // Long press / name → open profile
                             let lpTimer = null;
-                            button.addEventListener("touchstart", (e) => {
+                            button.addEventListener("touchstart", () => {
                                 lpTimer = setTimeout(() => {
                                     if (group.uid) {
                                         window.location.href =
@@ -2950,7 +3379,11 @@
                                     photo = ownGroup.avatar;
                                 }
                                 if (photo && !String(photo).includes("default-avatar")) {
-                                    av.src = photo;
+                                    av.src = safeURL(photo) || photo;
+                                    cacheMyAvatar(av.src, myUid);
+                                } else {
+                                    const cached = readCachedAvatar();
+                                    if (cached) av.src = cached;
                                 }
                                 av.onerror = function () {
                                     this.onerror = null;
@@ -3033,6 +3466,64 @@
         const style = document.createElement("style");
         style.id = "vieworaHomeExtraCSS";
         style.textContent = `
+            /* Video duration on home cards */
+            .longVideoCard .videoThumbnailWrap { position: relative; }
+            .videoDurationBadge {
+                position: absolute;
+                right: 10px;
+                bottom: 10px;
+                z-index: 3;
+                padding: 4px 8px;
+                border-radius: 8px;
+                background: rgba(0,0,0,.78);
+                color: #fff;
+                font-size: 11px;
+                font-weight: 700;
+                font-variant-numeric: tabular-nums;
+                pointer-events: none;
+            }
+            .videoDurationBadge:empty { display: none !important; }
+
+            
+            .postMusicBar {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 10px;
+                margin: 0;
+                padding: 10px 14px 4px;
+                background: transparent;
+                border: 0;
+                width: 100%;
+                box-sizing: border-box;
+            }
+            .postMusicLeft {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                min-width: 0;
+                flex: 1;
+            }
+            .postMusicNote { color: #a78bfa; font-size: 13px; flex-shrink: 0; }
+            .postMusicTitle {
+                min-width: 0; overflow: hidden; text-overflow: ellipsis;
+                white-space: nowrap; color: #c9c9d3; font-size: 12px; font-weight: 600;
+            }
+            .postMusicBar.isPlaying .postMusicTitle { color: #fff; }
+            .postMusicBar.isPlaying .postMusicNote {
+                animation: musicPulse 1s ease-in-out infinite;
+            }
+            @keyframes musicPulse {
+                0%, 100% { opacity: 1; } 50% { opacity: .65; }
+            }
+            .postMusicMute {
+                width: 40px; height: 40px; flex: 0 0 40px;
+                display: grid; place-items: center; margin-left: auto;
+                border: 0; border-radius: 50%;
+                background: rgba(255,255,255,.1); color: #fff; cursor: pointer;
+            }
+            .postMusicMute:active { transform: scale(.92); }
+
             /* Unseen story = bright gradient ring */
             .storyCard.storyUnseen .storyImageWrap,
             .storyCard.storyUnseen {
@@ -3150,11 +3641,18 @@
         }
 
         if (searchIcon) {
+            // Capture phase so inline search never flashes open
             searchIcon.addEventListener("click", (e) => {
                 e.preventDefault();
+                e.stopImmediatePropagation();
                 e.stopPropagation();
+                const sec = document.getElementById("searchSection");
+                if (sec) {
+                    sec.classList.remove("open");
+                    sec.style.display = "none";
+                }
                 window.location.href = "search-page.html";
-            });
+            }, true);
         }
 
         // Also: if search section toggle exists, still allow expand but Enter goes to page
@@ -3226,8 +3724,10 @@
                             0
                         );
                         if (!Number.isFinite(n) || n < 0) n = 0;
-                        // Do NOT invent unread from lastMessage — that keeps badge stuck
-                        if (v.read === true || v.seen === true || v.isRead === true) {
+                        // Only trust explicit unread counter.
+                        // If unread > 0, count it even if old read flags linger.
+                        // If unread is 0/missing AND marked read, stay 0.
+                        if (n <= 0 && (v.read === true || v.seen === true || v.isRead === true)) {
                             n = 0;
                         }
                         if (n > 0) total += n;
@@ -3271,12 +3771,18 @@
         if (!av) return;
         const apply = (photo) => {
             if (!photo) return;
-            av.src = photo;
+            const safe = safeURL(photo) || photo;
+            if (!safe) return;
+            av.src = safe;
             av.onerror = function () {
                 this.onerror = null;
                 this.src = "assets/default-avatar.png";
             };
+            cacheMyAvatar(safe);
         };
+        // Instant paint from cache (survives logout→login race)
+        const cached = readCachedAvatar();
+        if (cached) apply(cached);
         try {
             const cu =
                 (typeof firebase !== "undefined" &&
@@ -3297,8 +3803,28 @@
                     u.profile_image ||
                     u.dp ||
                     "";
-                if (photo) apply(photo);
+                if (photo) {
+                    apply(photo);
+                    cacheMyAvatar(photo, uid);
+                }
             }).catch(() => {});
+            // Re-apply when auth restores after login
+            if (typeof firebase !== "undefined" && firebase.auth) {
+                firebase.auth().onAuthStateChanged((user) => {
+                    if (!user) return;
+                    if (user.photoURL) apply(user.photoURL);
+                    db.ref("users/" + user.uid).once("value").then((snap) => {
+                        if (!snap.exists()) return;
+                        const u = snap.val() || {};
+                        const photo =
+                            u.profilePhoto || u.photoURL || u.avatar || "";
+                        if (photo) {
+                            apply(photo);
+                            cacheMyAvatar(photo, user.uid);
+                        }
+                    }).catch(() => {});
+                });
+            }
         } catch (_) {}
     }
 

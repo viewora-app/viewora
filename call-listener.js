@@ -1010,6 +1010,7 @@
                 const custom = new Audio(customSrc);
                 custom.loop = true;
                 custom.preload = "auto";
+                custom.volume = 1;
                 window.__vieworaCustomRing = custom;
                 const p = custom.play();
                 if (p && p.catch) {
@@ -1598,12 +1599,17 @@
                     return;
                 }
 
-                // Skip backlog on first connect — only brand-new rings after sync
+                // Skip backlog on first connect — allow only brand-new rings (created < 8s ago)
                 if (!incomingSyncDone) {
                     if (!isFreshRinging(data)) {
                         cleanupStaleCall(callId);
+                        return;
                     }
-                    return;
+                    const created = Number(data.createdAtMs || data.createdAt || 0);
+                    if (!created || Date.now() - created > 8000) {
+                        return; // historical
+                    }
+                    // fall through — brand new ring during connect
                 }
 
                 if (!isFreshRinging(data)) {

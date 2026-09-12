@@ -7480,6 +7480,69 @@
             true
         );
 
+        /* YouTube-style background publish for NEW videos */
+        if (
+            publishing &&
+            window.VieworaUploadQueue &&
+            typeof VieworaUploadQueue.enqueueAndLeave === "function"
+        ) {
+            try {
+                const file = await new Promise((resolve) => {
+                    try {
+                        const req = indexedDB.open("VIEWORA_MEDIA_DB", 1);
+                        req.onsuccess = () => {
+                            try {
+                                const db = req.result;
+                                if (!db.objectStoreNames.contains("uploads")) {
+                                    resolve(null);
+                                    return;
+                                }
+                                const tx = db.transaction("uploads", "readonly");
+                                const g = tx.objectStore("uploads").get("currentVideo");
+                                g.onsuccess = () => {
+                                    const row = g.result;
+                                    resolve(row && (row.file || row.blob || row) || null);
+                                };
+                                g.onerror = () => resolve(null);
+                            } catch (_) {
+                                resolve(null);
+                            }
+                        };
+                        req.onerror = () => resolve(null);
+                    } catch (_) {
+                        resolve(null);
+                    }
+                });
+                const blob =
+                    file instanceof Blob
+                        ? file
+                        : file && file.blob instanceof Blob
+                          ? file.blob
+                          : null;
+                if (blob) {
+                    const user = (window.auth && auth.currentUser) || null;
+                    await VieworaUploadQueue.enqueueAndLeave({
+                        type: "video",
+                        file: blob,
+                        returnUrl: "index.html",
+                        meta: {
+                            title: formData.title || formData.name || "Untitled video",
+                            description: formData.description || formData.caption || "",
+                            caption: formData.caption || "",
+                            category: formData.category || "",
+                            tags: formData.tags || [],
+                            username: (user && user.displayName) || "User",
+                            userPhoto: (user && user.photoURL) || "",
+                            thumbnailUrl: formData.thumbnailUrl || ""
+                        }
+                    });
+                    return;
+                }
+            } catch (err) {
+                console.warn("BG video queue failed, fallback", err);
+            }
+        }
+
 
         showProcessing(
 

@@ -779,21 +779,38 @@
             $("profilePic");
 
         if (profilePic) {
-
-            profilePic.src =
+            const photo =
                 user.profilePhoto ||
-                DEFAULT_AVATAR;
+                user.photoURL ||
+                user.photoUrl ||
+                user.avatar ||
+                user.profilePic ||
+                user.profilePicture ||
+                user.profile_image ||
+                user.dp ||
+                user.image ||
+                "";
 
-            profilePic.onerror =
-                () => {
+            profilePic.src = photo || DEFAULT_AVATAR;
 
-                    profilePic.onerror = null;
-
-                    profilePic.src =
-                        DEFAULT_AVATAR;
-
-                };
-
+            profilePic.onerror = () => {
+                profilePic.onerror = null;
+                // try alternate fields once
+                const alt =
+                    user.photoURL ||
+                    user.avatar ||
+                    user.profilePhoto ||
+                    "";
+                if (alt && alt !== profilePic.src) {
+                    profilePic.src = alt;
+                    profilePic.onerror = () => {
+                        profilePic.onerror = null;
+                        profilePic.src = DEFAULT_AVATAR;
+                    };
+                } else {
+                    profilePic.src = DEFAULT_AVATAR;
+                }
+            };
         }
 
 
@@ -3149,19 +3166,28 @@
 
         try {
 
-            await contentReference(
-                id,
-                type
-            ).update({
-
-                deleted:
-                    true,
-
-                deletedAt:
-                    SERVER_TIME
-
-            });
-
+            const ref = contentReference(id, type);
+            // Soft + hard remove so feed/profile clear
+            try {
+                await ref.update({
+                    deleted: true,
+                    deletedAt: Date.now()
+                });
+            } catch (_) {}
+            try {
+                await ref.remove();
+            } catch (_) {}
+            // Mirror cleanup
+            try {
+                if (type === "video" || type === "videos") {
+                    await db.ref("posts/" + id).remove();
+                    await db.ref("videos/" + id).remove();
+                } else if (type === "short" || type === "shorts") {
+                    await db.ref("shorts/" + id).remove();
+                } else if (type === "post" || type === "posts") {
+                    await db.ref("posts/" + id).remove();
+                }
+            } catch (_) {}
 
             showToast(
                 "Content deleted"

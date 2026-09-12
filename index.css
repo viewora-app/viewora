@@ -1556,22 +1556,18 @@ video {
 .mediaViewer {
     position: fixed;
     inset: 0;
-
-    z-index: 10000;
+    z-index: 1000001 !important; /* above bottom nav */
 
     display: flex;
     align-items: center;
     justify-content: center;
 
-    padding: 20px;
+    padding: 0;
+    margin: 0;
 
-    background:
-        rgba(0,0,0,.94);
+    background: rgba(0,0,0,.96);
 
-    backdrop-filter: blur(15px);
-
-    animation:
-        viewerIn .25s ease;
+    animation: viewerIn .2s ease;
 }
 
 @keyframes viewerIn {
@@ -1586,15 +1582,33 @@ video {
 
 .mediaViewer img,
 .mediaViewer video {
-    max-width: min(100%, 1000px);
-    max-height: 90vh;
-
+    display: block;
+    width: auto;
+    height: auto;
+    max-width: 100vw;
+    max-height: 100vh;
+    max-height: 100dvh;
     object-fit: contain;
+    margin: auto;
+    border-radius: 0;
+    box-shadow: none;
+    background: #000;
+}
 
-    border-radius: 14px;
+body.viewer-open,
+html.viewer-open {
+    overflow: hidden !important;
+    touch-action: none !important;
+}
 
-    box-shadow:
-        0 30px 80px rgba(0,0,0,.6);
+.mediaViewer.hidden {
+    display: none !important;
+}
+
+.mediaViewer .viewerClose {
+    z-index: 1000002 !important;
+    top: max(12px, env(safe-area-inset-top));
+    right: 12px;
 }
 
 .viewerClose {
@@ -3250,3 +3264,32 @@ html, body {
     -webkit-transform: translateZ(0);
     transform: translateZ(0);
 }
+
+
+/* Home: no inline search flash — use search-page.html */
+#searchSection {
+    display: none !important;
+    max-height: 0 !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
+
+
+/* Duration badge on long video thumbnails */
+.longVideoCard .videoThumbnailWrap { position: relative; }
+.videoDurationBadge {
+    position: absolute;
+    right: 10px;
+    bottom: 10px;
+    z-index: 3;
+    padding: 4px 8px;
+    border-radius: 8px;
+    background: rgba(0,0,0,.78);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    pointer-events: none;
+    letter-spacing: 0.2px;
+}
+.videoDurationBadge:empty { display: none !important; }

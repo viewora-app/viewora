@@ -1108,6 +1108,27 @@
                 post.views
             );
 
+        const hideLikes =
+            post.hideLikes === true ||
+            post.hideLikeCount === true ||
+            post.likesHidden === true;
+        const hideComments =
+            post.allowComments === false ||
+            post.hideComments === true ||
+            post.commentsHidden === true ||
+            post.disableComments === true;
+
+        const musicObj = post.music || null;
+        const musicUrl =
+            (musicObj && (musicObj.audioUrl || musicObj.url || musicObj.previewUrl)) ||
+            post.musicUrl ||
+            post.audioUrl ||
+            "";
+        const musicTitle =
+            (musicObj && (musicObj.title || musicObj.name)) ||
+            post.musicTitle ||
+            "Original audio";
+
         article.innerHTML = `
 
             <div class="post-header">
@@ -1266,9 +1287,23 @@
 
             <div class="post-details">
 
-                <div class="like-count">
-                    ${formatNumber(likes)} likes
+                <div class="like-count" ${hideLikes ? 'hidden style="display:none"' : ""}>
+                    ${hideLikes ? "" : formatNumber(likes) + " likes"}
                 </div>
+
+                ${
+                    musicUrl
+                    ? `<div class="post-music-bar" data-music-url="${escapeHTML(musicUrl)}">
+                            <div class="post-music-left">
+                                <i class="fa-solid fa-music"></i>
+                                <span class="post-music-title">${escapeHTML(musicTitle)}</span>
+                            </div>
+                            <button type="button" class="post-music-mute" aria-label="Sound">
+                                <i class="fa-solid fa-volume-high"></i>
+                            </button>
+                       </div>`
+                    : ""
+                }
 
 
                 <div class="caption">
@@ -1292,10 +1327,10 @@
                 </div>
 
 
-                <div class="comment-preview">
+                <div class="comment-preview" ${hideComments ? 'hidden style="display:none"' : ""}>
 
                     ${
-                        comments > 0
+                        !hideComments && comments > 0
                         ? `View all ${formatNumber(comments)} comments`
                         : "Add a comment..."
                     }
@@ -3199,4 +3234,146 @@ menuCancel?.addEventListener(
 
     loadPosts();
 
+
+    (function wirePostMusicAndZoom() {
+        let audio = null;
+        let muted = false;
+        try { muted = localStorage.getItem("viewora_post_music_muted") === "1"; } catch (_) {}
+        let activeBar = null;
+
+        function stopMusic() {
+            try { if (audio) { audio.pause(); audio.src = ""; audio = null; } } catch (_) {}
+            document.querySelectorAll(".post-music-bar.isPlaying").forEach((b) => b.classList.remove("isPlaying"));
+            activeBar = null;
+        }
+        function playMusic(url, bar) {
+            if (!url) return;
+            if (activeBar === bar && audio && !audio.paused) return;
+            stopMusic();
+            try {
+                audio = new Audio(url);
+                audio.loop = true;
+                audio.muted = muted;
+                audio.volume = muted ? 0 : 0.9;
+                audio.play().catch(function () {});
+                activeBar = bar || null;
+                if (bar) bar.classList.add("isPlaying");
+                syncMute();
+            } catch (_) {}
+        }
+        function syncMute() {
+            document.querySelectorAll(".post-music-mute i").forEach((icon) => {
+                icon.className = muted ? "fa-solid fa-volume-xmark" : "fa-solid fa-volume-high";
+            });
+        }
+        syncMute();
+
+        document.addEventListener("click", function (e) {
+            const muteBtn = e.target.closest && e.target.closest(".post-music-mute");
+            if (!muteBtn) return;
+            e.preventDefault();
+            e.stopPropagation();
+            muted = !muted;
+            try { localStorage.setItem("viewora_post_music_muted", muted ? "1" : "0"); } catch (_) {}
+            if (audio) { audio.muted = muted; audio.volume = muted ? 0 : 0.9; }
+            syncMute();
+        }, true);
+
+        if (window.IntersectionObserver) {
+            const obs = new IntersectionObserver(function (entries) {
+                let best = null, bestRatio = 0.35;
+                entries.forEach(function (en) {
+                    if (en.isIntersecting && en.intersectionRatio >= bestRatio) {
+                        bestRatio = en.intersectionRatio;
+                        best = en.target;
+                    }
+                });
+                if (!best) return;
+                const bar = best.querySelector(".post-music-bar");
+                if (!bar) { stopMusic(); return; }
+                const url = bar.getAttribute("data-music-url") || "";
+                if (url) playMusic(url, bar);
+            }, { root: null, rootMargin: "-15% 0px -35% 0px", threshold: [0.25, 0.4, 0.55, 0.7, 0.85] });
+
+            function observePosts() {
+                document.querySelectorAll("article.post, .post").forEach(function (card) {
+                    if (card.__musicObs) return;
+                    if (!card.querySelector(".post-music-bar")) return;
+                    card.__musicObs = true;
+                    obs.observe(card);
+                });
+            }
+            observePosts();
+            const feed = document.getElementById("postFeed") || document.body;
+            try {
+                new MutationObserver(observePosts).observe(feed, { childList: true, subtree: true });
+            } catch (_) {}
+        }
+
+        document.addEventListener("visibilitychange", function () {
+            if (document.hidden) { try { audio && audio.pause(); } catch (_) {} }
+            else if (audio) { audio.play().catch(function () {}); }
+        });
+
+        /* Pinch zoom */
+        function enablePinchZoom(target) {
+            if (!target || target.__pinchBound) return;
+            target.__pinchBound = true;
+            var scale = 1, lastScale = 1, startDist = 0, tx = 0, ty = 0, startX = 0, startY = 0, panning = false, lastTap = 0;
+            function dist(t) { return Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY); }
+            function apply() { target.style.transform = "translate(" + tx + "px," + ty + "px) scale(" + scale + ")"; target.style.transformOrigin = "center center"; }
+            function reset() { scale = 1; lastScale = 1; tx = 0; ty = 0; target.style.transform = ""; }
+            target.addEventListener("touchstart", function (e) {
+                if (e.touches.length === 2) { e.preventDefault(); startDist = dist(e.touches); lastScale = scale; panning = false; }
+                else if (e.touches.length === 1 && scale > 1.05) { panning = true; startX = e.touches[0].clientX - tx; startY = e.touches[0].clientY - ty; }
+            }, { passive: false });
+            target.addEventListener("touchmove", function (e) {
+                if (e.touches.length === 2 && startDist > 0) { e.preventDefault(); scale = Math.min(4, Math.max(1, lastScale * (dist(e.touches) / startDist))); apply(); }
+                else if (e.touches.length === 1 && panning) { e.preventDefault(); tx = e.touches[0].clientX - startX; ty = e.touches[0].clientY - startY; apply(); }
+            }, { passive: false });
+            target.addEventListener("touchend", function (e) {
+                if (e.touches.length < 2) startDist = 0;
+                if (e.touches.length === 0) panning = false;
+                if (scale < 1.05) reset();
+            });
+            target.addEventListener("click", function (e) {
+                var now = Date.now();
+                if (now - lastTap < 280) { e.preventDefault(); e.stopPropagation(); if (scale > 1.2) reset(); else { scale = 2.2; lastScale = 2.2; apply(); } }
+                lastTap = now;
+            });
+        }
+        function bindAllImages() {
+            document.querySelectorAll(".post-image, .post-media img").forEach(enablePinchZoom);
+        }
+        bindAllImages();
+        try {
+            new MutationObserver(bindAllImages).observe(document.getElementById("postFeed") || document.body, { childList: true, subtree: true });
+        } catch (_) {}
+
+        if (!document.getElementById("vieworaPostMusicZoomCSS")) {
+            var s = document.createElement("style");
+            s.id = "vieworaPostMusicZoomCSS";
+            s.textContent = `
+              .post-music-bar {
+                display: flex; align-items: center; justify-content: space-between;
+                gap: 10px; margin: 0; padding: 10px 14px 4px; background: transparent;
+              }
+              .post-music-left { display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1; }
+              .post-music-left i { color: #a78bfa; font-size: 13px; }
+              .post-music-title {
+                min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+                color: #c9c9d3; font-size: 12px; font-weight: 600;
+              }
+              .post-music-bar.isPlaying .post-music-title { color: #fff; }
+              .post-music-mute {
+                width: 40px; height: 40px; flex: 0 0 40px; margin-left: auto;
+                display: grid; place-items: center; border: 0; border-radius: 50%;
+                background: rgba(255,255,255,.1); color: #fff; cursor: pointer;
+              }
+              .post-image, .post-media img { touch-action: none; user-select: none; }
+              .post-media { overflow: hidden; }
+            `;
+            document.head.appendChild(s);
+        }
+    })();
 })();

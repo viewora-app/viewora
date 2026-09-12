@@ -861,175 +861,157 @@
        MUSIC
     ====================================================== */
 
+    let postMusicTracks = [];
+    let postMusicPreview = null;
+
     function setupMusic() {
 
         $("musicBtn")?.addEventListener(
             "click",
-            () => {
-
-                openSheet(
-                    "musicSheet"
-                );
-
+            async () => {
+                openSheet("musicSheet");
+                const list = $("musicList");
+                if (list) {
+                    list.innerHTML = `
+                        <div class="emptyState">
+                            <i class="fa-solid fa-spinner fa-spin"></i>
+                            <strong>Loading music…</strong>
+                        </div>`;
+                }
+                await loadPostMusicTracks();
                 renderMusic();
-
             }
         );
-
 
         $("musicSearch")?.addEventListener(
             "input",
-            renderMusic
+            () => renderMusic()
         );
-
     }
 
+    async function loadPostMusicTracks() {
+        const database = (() => {
+            try { return getDatabase(); } catch (_) { return null; }
+        })();
 
-    function renderMusic() {
+        const rows = [
+            {
+                id: "original",
+                title: "Original audio",
+                artist: "Your post",
+                audioUrl: "",
+                icon: "fa-music"
+            }
+        ];
 
-        const list =
-            $("musicList");
-
-
-        if (!list) {
+        if (!database) {
+            postMusicTracks = rows;
             return;
         }
 
-
-        const search =
-            (
-                $("musicSearch")?.value ||
-                ""
-            )
-            .trim()
-            .toLowerCase();
-
-
-        const music = [
-
-            {
-                id: "viewora-original",
-                title: "Viewora Original",
-                artist: "Viewora",
-                icon: "fa-music"
-            },
-
-            {
-                id: "trending-sound",
-                title: "Trending Sound",
-                artist: "Viewora Sounds",
-                icon: "fa-fire"
-            },
-
-            {
-                id: "creator-energy",
-                title: "Creator Energy",
-                artist: "Viewora Music",
-                icon: "fa-bolt"
-            },
-
-            {
-                id: "dreamy-moments",
-                title: "Dreamy Moments",
-                artist: "Viewora Sounds",
-                icon: "fa-star"
+        try {
+            const snap = await database.ref("musicLibrary").once("value");
+            if (snap.exists()) {
+                snap.forEach((c) => {
+                    const v = c.val() || {};
+                    if (v.active === false) return;
+                    rows.push({
+                        id: c.key,
+                        title: v.title || v.name || "Untitled",
+                        artist: v.artist || v.singer || "Unknown",
+                        audioUrl: v.audioUrl || v.url || v.src || "",
+                        coverUrl: v.coverUrl || v.cover || "",
+                        uses: Number(v.uses || 0),
+                        icon: "fa-music"
+                    });
+                });
             }
+        } catch (e) {
+            console.warn("post music load", e);
+        }
 
-        ];
+        postMusicTracks = rows;
+    }
 
+    function stopPostMusicPreview() {
+        if (postMusicPreview) {
+            try { postMusicPreview.pause(); } catch (_) {}
+            postMusicPreview = null;
+        }
+    }
 
-        const filtered =
-            music.filter(
-                item =>
-                    `${item.title} ${item.artist}`
-                        .toLowerCase()
-                        .includes(search)
-            );
+    function renderMusic() {
 
+        const list = $("musicList");
+        if (!list) return;
+
+        const search = ($("musicSearch")?.value || "").trim().toLowerCase();
+
+        const filtered = postMusicTracks.filter((item) =>
+            `${item.title} ${item.artist}`.toLowerCase().includes(search)
+        );
 
         list.innerHTML = "";
 
-
         if (!filtered.length) {
-
             list.innerHTML = `
                 <div class="emptyState">
                     <i class="fa-solid fa-music"></i>
                     <strong>No music found</strong>
-                    <span>Try another search.</span>
-                </div>
-            `;
-
+                    <span>Add tracks in Admin → Music, or try another search.</span>
+                </div>`;
             return;
-
         }
 
+        filtered.forEach((item) => {
+            const button = document.createElement("button");
+            button.type = "button";
+            button.className = "musicItem";
 
-        filtered.forEach(
-            item => {
+            const art = item.coverUrl
+                ? `<img src="${escapeHTML(item.coverUrl)}" alt="" onerror="this.parentElement.innerHTML='<i class=\'fa-solid fa-music\'></i>'">`
+                : `<i class="fa-solid ${item.icon || "fa-music"}"></i>`;
 
-                const button =
-                    document.createElement(
-                        "button"
-                    );
+            button.innerHTML = `
+                <span class="musicArtwork">${art}</span>
+                <span class="musicMeta">
+                    <strong>${escapeHTML(item.title)}</strong>
+                    <span>${escapeHTML(item.artist)}${item.uses ? " · " + item.uses + " uses" : ""}</span>
+                </span>
+                <span class="musicPlay"><i class="fa-solid fa-play"></i></span>
+            `;
 
+            button.addEventListener("click", () => {
+                state.music = {
+                    id: item.id,
+                    title: item.title,
+                    name: item.title,
+                    artist: item.artist,
+                    audioUrl: item.audioUrl || "",
+                    coverUrl: item.coverUrl || ""
+                };
 
-                button.type =
-                    "button";
+                // update quick tool label if present
+                try {
+                    const small = $("musicBtn")?.querySelector(".toolText small");
+                    if (small) small.textContent = item.title;
+                } catch (_) {}
 
+                stopPostMusicPreview();
+                if (item.audioUrl) {
+                    try {
+                        postMusicPreview = new Audio(item.audioUrl);
+                        postMusicPreview.volume = 0.7;
+                        postMusicPreview.play().catch(() => {});
+                    } catch (_) {}
+                }
 
-                button.className =
-                    "musicItem";
+                showToast("Music added", item.title + " selected");
+                closeSheet("musicSheet");
+            });
 
-
-                button.innerHTML = `
-                    <span class="musicItemIcon">
-                        <i class="fa-solid ${item.icon}"></i>
-                    </span>
-
-                    <span>
-                        <strong>
-                            ${escapeHTML(item.title)}
-                        </strong>
-
-                        <small>
-                            ${escapeHTML(item.artist)}
-                        </small>
-                    </span>
-
-                    <i class="fa-solid fa-plus"></i>
-                `;
-
-
-                button.addEventListener(
-                    "click",
-                    () => {
-
-                        state.music =
-                            item;
-
-
-                        showToast(
-                            "Music added",
-                            `${item.title} selected`
-                        );
-
-
-                        closeSheet(
-                            "musicSheet"
-                        );
-
-                    }
-                );
-
-
-                list.appendChild(
-                    button
-                );
-
-            }
-        );
-
+            list.appendChild(button);
+        });
     }
 
 
@@ -1910,6 +1892,35 @@ function getCloudinaryConfig() {
         setPublishState(
             true
         );
+
+
+        /* Background queue (YouTube-style) */
+        if (window.VieworaUploadQueue && state.media) {
+            try {
+                const user = getAuthUser();
+                let caption = "";
+                try {
+                    caption = (document.getElementById("captionInput") || document.getElementById("postCaption") || {}).value || state.caption || "";
+                } catch (_) {}
+                await VieworaUploadQueue.enqueueAndLeave({
+                    type: "post",
+                    file: state.media,
+                    returnUrl: "index.html",
+                    meta: {
+                        caption: caption,
+                        description: caption,
+                        username: user && (user.displayName || user.email) || "User",
+                        userPhoto: user && user.photoURL || "",
+                        music: state.music || null,
+                        category: state.category || "",
+                        tags: state.tags || []
+                    }
+                });
+                return;
+            } catch (err) {
+                console.warn("BG post queue failed, fallback", err);
+            }
+        }
 
 
         showProcessing(

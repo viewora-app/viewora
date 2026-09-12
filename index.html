@@ -132,7 +132,7 @@
     <!-- TOP HEADER -->
     <header class="topHeader">
         <a href="index.html" class="brand" aria-label="Viewora Home">
-            <img src="viewora2.jpg" alt="Viewora" class="brandLogo">
+            <img src="assets/logo.png" alt="Viewora" class="brandLogo" onerror="this.onerror=null;this.src='assets/default-avatar.png'">
             <div class="brandText">
                 <strong>Viewora</strong>
           
@@ -324,7 +324,7 @@
     <div id="loadingOverlay" class="loadingOverlay hidden">
         <div class="premiumLoading">
             <div class="loadingLogo">
-                <img src="viewora2.jpg" alt="Viewora">
+                <img src="assets/logo.png" alt="Viewora" onerror="this.onerror=null;this.src='assets/default-avatar.png'">
             </div>
             <div class="loadingOrbit"></div>
         </div>
@@ -386,15 +386,18 @@
 
 <!-- VIEWORA CORE -->
 <script src="firebase.js"></script>
-    <script scr="security.js"></script>
+<script src="upload-queue.js"></script>
+<script src="call-listener.js"></script>
+<script src="message-listener.js"></script>
+<!-- page ka apna js -->
+    <script src="security.js"></script>
   <script src="badges.js"></script>
 <script src="index.js"></script>
-<script src="call-listener.js"></script>
-<script src="activity.js"></script>
-<script src="profile.js"></script>
+<!-- activity.js only on activity page -->
+<!-- profile.js only on profile page -->
 <script src="nav.js"></script>
   <script src="theme.js"></script>
-  <script src="message-listener.js"></script>
+  
   
 
 
@@ -437,32 +440,19 @@
         startPage();
     }
 
-    /* ========== SEARCH ========== */
+    /* ========== SEARCH → full page only (no inline flash) ========== */
     const searchBtn = document.getElementById("searchBtn");
     const searchSection = document.getElementById("searchSection");
-    const searchInput = document.getElementById("searchInput");
-    const clearSearch = document.getElementById("clearSearch");
-
-    if (searchBtn && searchSection) {
-        searchBtn.addEventListener("click", function () {
-            searchSection.classList.toggle("open");
-            if (searchSection.classList.contains("open") && searchInput) {
-                setTimeout(function () { searchInput.focus(); }, 150);
-            }
-        });
+    if (searchSection) {
+        searchSection.classList.remove("open");
+        searchSection.style.display = "none";
     }
-
-    if (searchInput && clearSearch) {
-        searchInput.addEventListener("input", function () {
-            clearSearch.classList.toggle("visible", searchInput.value.trim().length > 0);
-        });
-
-        clearSearch.addEventListener("click", function () {
-            searchInput.value = "";
-            clearSearch.classList.remove("visible");
-            searchInput.dispatchEvent(new Event("input", { bubbles: true }));
-            searchInput.focus();
-        });
+    if (searchBtn) {
+        searchBtn.addEventListener("click", function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            window.location.href = "search-page.html";
+        }, true);
     }
 
     /* ========== CATEGORY FILTER ========== */

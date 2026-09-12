@@ -7,8 +7,21 @@
       "$uid": {
         ".read": "auth != null",
         ".write": "auth != null && (auth.uid === $uid || root.child('admins').child(auth.uid).val() === true)",
-        "followers": { ".write": "auth != null" },
-        "following": { ".write": "auth != null" },
+        "monetizationEnabled": {
+          ".write": "auth != null && root.child('admins').child(auth.uid).val() === true"
+        },
+        "blueTick": {
+          ".write": "auth != null && root.child('admins').child(auth.uid).val() === true"
+        },
+        "redTick": {
+          ".write": "auth != null && root.child('admins').child(auth.uid).val() === true"
+        },
+        "whiteTick": {
+          ".write": "auth != null && root.child('admins').child(auth.uid).val() === true"
+        },
+        "verified": {
+          ".write": "auth != null && root.child('admins').child(auth.uid).val() === true"
+        },
         "highlights": {
           ".write": "auth != null && auth.uid === $uid"
         },
@@ -20,7 +33,7 @@
 
     "admins": {
       "$uid": {
-        ".read": "auth != null && auth.uid === $uid",
+        ".read": "auth != null && (auth.uid === $uid || root.child('admins').child(auth.uid).val() === true)",
         ".write": false
       }
     },
@@ -119,9 +132,6 @@
           "$replyId": {
             ".write": "auth != null && (!data.exists() || data.child('uid').val() === auth.uid)"
           }
-        },
-        "mentions": {
-          "$mentionUid": { ".write": "auth != null" }
         }
       }
     },
@@ -184,7 +194,24 @@
       "$uid": {
         ".read": "auth != null && auth.uid === $uid",
         "$chatId": {
-          ".write": "auth != null && (auth.uid === $uid || root.child('chats').child($chatId).child('members').child(auth.uid).val() === true || root.child('chats').child($chatId).child('participants').child(auth.uid).exists())"
+          ".write": "auth != null"
+        }
+      }
+    },
+
+    "vieworaChats": {
+      "$chatId": {
+        ".read": "auth != null",
+        ".write": "auth != null",
+        "messages": {
+          "$mid": {
+            ".write": "auth != null && (!data.exists() || data.child('senderId').val() === auth.uid || data.child('uid').val() === auth.uid)"
+          }
+        },
+        "typing": {
+          "$uid": {
+            ".write": "auth != null && auth.uid === $uid"
+          }
         }
       }
     },
@@ -211,16 +238,40 @@
     },
 
     "calls": {
-      "$uid": {
-        ".read": "auth != null && auth.uid === $uid",
-        ".write": "auth != null"
+      "$callId": {
+        ".read": "auth != null",
+        ".write": "auth != null",
+        "candidates": {
+          "$uid": {
+            ".write": "auth != null && auth.uid === $uid"
+          }
+        }
       }
     },
 
     "incomingCalls": {
       "$uid": {
         ".read": "auth != null && auth.uid === $uid",
-        ".write": "auth != null"
+        "$callId": {
+          ".write": "auth != null"
+        }
+      }
+    },
+
+    "live": {
+      ".read": "auth != null",
+      "$uid": {
+        ".write": "auth != null && auth.uid === $uid",
+        "viewers": {
+          "$viewerId": {
+            ".write": "auth != null && auth.uid === $viewerId"
+          }
+        },
+        "comments": {
+          "$cid": {
+            ".write": "auth != null && (!data.exists() || data.child('uid').val() === auth.uid)"
+          }
+        }
       }
     },
 
@@ -245,10 +296,47 @@
       }
     },
 
+    "earnings": {
+      "$uid": {
+        ".read": "auth != null && (auth.uid === $uid || root.child('admins').child(auth.uid).val() === true)",
+        ".write": "auth != null && (auth.uid === $uid || root.child('admins').child(auth.uid).val() === true)"
+      }
+    },
+
+    "payoutMethods": {
+      "$uid": {
+        ".read": "auth != null && (auth.uid === $uid || root.child('admins').child(auth.uid).val() === true)",
+        ".write": "auth != null && auth.uid === $uid"
+      }
+    },
+
+    "withdrawals": {
+      ".read": "auth != null && root.child('admins').child(auth.uid).val() === true",
+      "$wid": {
+        ".read": "auth != null && (data.child('uid').val() === auth.uid || root.child('admins').child(auth.uid).val() === true)",
+        ".write": "auth != null && ((!data.exists() && newData.child('uid').val() === auth.uid) || (data.exists() && data.child('uid').val() === auth.uid && newData.child('status').val() === 'pending') || root.child('admins').child(auth.uid).val() === true)"
+      }
+    },
+
     "monetization": {
       "$uid": {
         ".read": "auth != null && (auth.uid === $uid || root.child('admins').child(auth.uid).val() === true)",
         ".write": "auth != null && (auth.uid === $uid || root.child('admins').child(auth.uid).val() === true)"
+      }
+    },
+
+    "admin": {
+      ".read": "auth != null && root.child('admins').child(auth.uid).val() === true",
+      ".write": "auth != null && root.child('admins').child(auth.uid).val() === true",
+      "withdrawalQueue": {
+        "$id": {
+          ".write": "auth != null"
+        }
+      },
+      "monetizationRequests": {
+        "$id": {
+          ".write": "auth != null && (!data.exists() || root.child('admins').child(auth.uid).val() === true || data.child('uid').val() === auth.uid)"
+        }
       }
     },
 

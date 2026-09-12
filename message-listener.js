@@ -24,11 +24,6 @@
   if (window.__VIEWORA_MESSAGE_LISTENER__) return;
   window.__VIEWORA_MESSAGE_LISTENER__ = true;
 
-  if (typeof firebase === "undefined" || !window.auth || !window.db) {
-    console.warn("[VIEWORA MSG] Firebase not ready.");
-    return;
-  }
-
   const SOUND_KEY = "viewora_message_sound";
   const DEFAULT_SOUND = "assets/message-tone.mp3";
 
@@ -39,6 +34,17 @@
   let bannerEl = null;
   let hideTimer = null;
   let audioEl = null;
+  let auth = window.auth || null;
+  let db = window.db || null;
+
+  function resolveAuth() {
+    if (window.auth) return window.auth;
+    try { return firebase.auth(); } catch (_) { return null; }
+  }
+  function resolveDb() {
+    if (window.db) return window.db;
+    try { return firebase.database(); } catch (_) { return null; }
+  }
 
   function log() {
     try {
@@ -301,6 +307,21 @@
   }
 
   async function start() {
+    // Wait for firebase.js to expose auth/db
+    for (let i = 0; i < 20; i++) {
+      auth = resolveAuth();
+      db = resolveDb();
+      if (auth && db) break;
+      await new Promise((r) => setTimeout(r, 250));
+    }
+    if (!auth || !db) {
+      console.warn("[VIEWORA MSG] Firebase not ready — retry in 2s");
+      setTimeout(start, 2000);
+      return;
+    }
+    window.auth = auth;
+    window.db = db;
+
     try {
       currentUser = auth.currentUser;
       if (!currentUser) {

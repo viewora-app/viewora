@@ -760,22 +760,183 @@
 
 
     /* ======================================================
-       MUSIC
+       MUSIC — Firebase musicLibrary
     ====================================================== */
 
-    function openMusicSheet() {
+    let musicTracks = [];
+    let musicCategory = "trending";
+    let musicPreviewAudio = null;
+
+    function getDb() {
+        if (window.db) return window.db;
+        try { return firebase.database(); } catch (_) { return null; }
+    }
+
+    function stopMusicPreview() {
+        if (musicPreviewAudio) {
+            try { musicPreviewAudio.pause(); } catch (_) {}
+            musicPreviewAudio = null;
+        }
+    }
+
+    async function loadMusicTracks() {
+        const db = getDb();
+        const list = [];
+        // Always keep original
+        list.push({
+            id: "original",
+            title: "Original audio",
+            name: "Original audio",
+            artist: "Your video",
+            audioUrl: "",
+            category: "trending"
+        });
+        if (!db) {
+            musicTracks = list;
+            return musicTracks;
+        }
+        try {
+            const snap = await db.ref("musicLibrary").once("value");
+            if (snap.exists()) {
+                snap.forEach((c) => {
+                    const v = c.val() || {};
+                    if (v.active === false) return;
+                    list.push({
+                        id: c.key,
+                        title: v.title || v.name || "Untitled",
+                        name: v.title || v.name || "Untitled",
+                        artist: v.artist || v.singer || "Unknown",
+                        audioUrl: v.audioUrl || v.url || v.src || "",
+                        coverUrl: v.coverUrl || v.cover || "",
+                        uses: Number(v.uses || 0),
+                        genre: v.genre || "",
+                        category: String(v.genre || v.category || "trending").toLowerCase(),
+                        trending: !!v.trending
+                    });
+                });
+            }
+        } catch (e) {
+            console.warn("musicLibrary load", e);
+        }
+        musicTracks = list;
+        return musicTracks;
+    }
+
+    function renderEditorMusicList(query) {
+        if (!editorMusicList) return;
+        const q = String(query || "").toLowerCase().trim();
+        let items = musicTracks.slice();
+
+        if (musicCategory === "popular") {
+            items = items.filter((t) => t.id === "original" || t.category.includes("pop") || (t.uses || 0) > 3);
+        } else if (musicCategory === "new") {
+            items = items.filter((t) => t.id === "original" || t.category.includes("new"));
+        }
+        // trending / all = full list
+
+        if (q) {
+            items = items.filter(
+                (t) =>
+                    String(t.title || t.name || "").toLowerCase().includes(q) ||
+                    String(t.artist || "").toLowerCase().includes(q)
+            );
+        }
+
+        if (!items.length) {
+            editorMusicList.innerHTML =
+                '<div class="musicEmpty" style="padding:30px;text-align:center;opacity:.6">No sounds found</div>';
+            return;
+        }
+
+        editorMusicList.innerHTML = items
+            .map((t) => {
+                const selected = state.music && state.music.id === t.id;
+                const cover = t.coverUrl
+                    ? '<img src="' +
+                      escapeAttr(t.coverUrl) +
+                      '" alt="" style="width:100%;height:100%;object-fit:cover" onerror="this.remove()">'
+                    : '<i class="fa-solid fa-music"></i>';
+                return (
+                    '<button type="button" class="musicChoice' +
+                    (selected ? " selected" : "") +
+                    '" data-music-id="' +
+                    escapeAttr(t.id) +
+                    '" data-music-name="' +
+                    escapeAttr(t.title || t.name) +
+                    '" data-music-artist="' +
+                    escapeAttr(t.artist || "") +
+                    '" data-music-url="' +
+                    escapeAttr(t.audioUrl || "") +
+                    '">' +
+                    '<span class="musicChoiceIcon">' +
+                    cover +
+                    "</span>" +
+                    "<span><strong>" +
+                    escapeHtml(t.title || t.name) +
+                    "</strong><small>" +
+                    escapeHtml(t.artist || "") +
+                    (t.uses ? " · " + t.uses + " uses" : "") +
+                    "</small></span>" +
+                    '<i class="fa-solid fa-chevron-right"></i></button>'
+                );
+            })
+            .join("");
+
+        editorMusicList.querySelectorAll(".musicChoice").forEach((btn) => {
+            btn.addEventListener("click", () => {
+                const url = btn.dataset.musicUrl || "";
+                selectMusic(
+                    btn.dataset.musicId,
+                    btn.dataset.musicName,
+                    btn.dataset.musicArtist,
+                    url
+                );
+                // preview
+                stopMusicPreview();
+                if (url) {
+                    try {
+                        musicPreviewAudio = new Audio(url);
+                        musicPreviewAudio.volume = 0.7;
+                        musicPreviewAudio.play().catch(() => {});
+                    } catch (_) {}
+                }
+            });
+        });
+    }
+
+    function escapeHtml(s) {
+        return String(s || "")
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;");
+    }
+    function escapeAttr(s) {
+        return escapeHtml(s).replace(/'/g, "&#39;");
+    }
+
+    async function openMusicSheet() {
         musicSheet?.classList.remove("hidden");
+        if (editorMusicList) {
+            editorMusicList.innerHTML =
+                '<div style="padding:24px;text-align:center;opacity:.6">Loading music…</div>';
+        }
+        await loadMusicTracks();
+        renderEditorMusicList(editorMusicSearch?.value || "");
     }
 
     function closeMusicSheet() {
+        stopMusicPreview();
         musicSheet?.classList.add("hidden");
     }
 
-    function selectMusic(id, name, artist) {
+    function selectMusic(id, name, artist, audioUrl) {
         state.music = {
             id: id || "original",
             name: name || "Original audio",
-            artist: artist || "Your video"
+            title: name || "Original audio",
+            artist: artist || "Your video",
+            audioUrl: audioUrl || ""
         };
 
         if (editMusicName) editMusicName.textContent = state.music.name;
@@ -788,10 +949,13 @@
     }
 
     function removeMusic() {
+        stopMusicPreview();
         state.music = {
             id: "original",
             name: "Original audio",
-            artist: "Your video"
+            title: "Original audio",
+            artist: "Your video",
+            audioUrl: ""
         };
 
         if (editMusicName) editMusicName.textContent = state.music.name;
@@ -1079,32 +1243,17 @@
 
         musicSheet?.querySelector(".overlayBackdrop")?.addEventListener("click", closeMusicSheet);
 
-        $$(".musicChoice").forEach((btn) => {
-            btn.addEventListener("click", () => {
-                selectMusic(
-                    btn.dataset.musicId,
-                    btn.dataset.musicName,
-                    btn.dataset.musicArtist
-                );
-            });
-        });
-
         editorMusicSearch?.addEventListener("input", () => {
-            const q = (editorMusicSearch.value || "").toLowerCase().trim();
-            $$(".musicChoice").forEach((btn) => {
-                const name = (btn.dataset.musicName || "").toLowerCase();
-                const artist = (btn.dataset.musicArtist || "").toLowerCase();
-                const match = !q || name.includes(q) || artist.includes(q);
-                btn.style.display = match ? "" : "none";
-            });
+            renderEditorMusicList(editorMusicSearch.value || "");
         });
 
-        /* Categories (visual only) */
         $$(".musicCategory").forEach((btn) => {
             btn.addEventListener("click", () => {
+                musicCategory = btn.dataset.category || "trending";
                 $$(".musicCategory").forEach((c) =>
                     c.classList.toggle("active", c === btn)
                 );
+                renderEditorMusicList(editorMusicSearch?.value || "");
             });
         });
 
