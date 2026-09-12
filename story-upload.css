@@ -2022,3 +2022,48 @@ textarea:focus-visible {
     border-color: rgba(255,255,255,.35);
     background: rgba(255,255,255,.12);
 }
+
+
+/* Music start / cut (YouTube style) */
+.musicTrimBox {
+    padding: 12px 14px 16px;
+    border-top: 1px solid rgba(255,255,255,0.08);
+}
+.musicTrimBox.hidden { display: none !important; }
+.musicTrimHead {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    font-size: 13px;
+}
+.musicTrimHead span { color: rgba(255,255,255,0.55); font-size: 12px; }
+#musicTrimSlider {
+    width: 100%;
+    accent-color: #7c5cff;
+}
+.musicTrimActions {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+}
+.musicTrimActions .sheetBtn {
+    flex: 1;
+    height: 42px;
+    border: 0;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 13px;
+    cursor: pointer;
+}
+.musicTrimActions .sheetBtn.ghost {
+    background: rgba(255,255,255,0.08);
+    color: #fff;
+}
+.musicTrimActions .sheetBtn.primary {
+    background: linear-gradient(135deg, #7c5cff, #4f8cff);
+    color: #fff;
+}
+.musicItem.playing {
+    border-color: rgba(34,197,94,0.5);
+}

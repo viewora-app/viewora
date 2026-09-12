@@ -1980,3 +1980,28 @@ body.has-bottom-nav .shortProgress {
 body.has-bottom-nav .toast {
     bottom: calc(72px + env(safe-area-inset-bottom, 0px) + 16px);
 }
+
+
+/* Music row — opens song detail */
+button.shortMusic,
+.shortMusic {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    max-width: 100%;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+    text-align: left;
+}
+button.shortMusic span {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+button.shortMusic:active {
+    opacity: 0.75;
+}

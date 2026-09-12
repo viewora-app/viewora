@@ -5,6 +5,7 @@
 
   const STORY_TTL = 24 * 60 * 60 * 1000;
   const IMAGE_MS = 5000;
+  const IMAGE_MUSIC_MS = 15000; // photo + music = 15s minimum
   const $ = (id) => document.getElementById(id);
 
   const state = {
@@ -252,14 +253,17 @@
       el.src = url;
       state.musicAudio = el;
 
+      let seekDone = false;
       const seekAndPlay = () => {
         try {
-          if (startAt > 0 && isFinite(el.duration) && el.duration > startAt) {
-            el.currentTime = startAt;
-          } else if (startAt > 0) {
-            el.currentTime = startAt;
+          if (!seekDone && startAt > 0 && isFinite(el.duration) && el.duration > 0.5) {
+            const maxStart = Math.max(0, el.duration - 1.5);
+            el.currentTime = Math.min(startAt, maxStart);
+            seekDone = true;
           }
         } catch (_) {}
+        el.muted = false;
+        el.volume = 1;
         const p = el.play();
         if (p && p.catch) {
           p.catch((err) => {
@@ -270,15 +274,27 @@
 
       el.onloadedmetadata = () => {
         try {
-          if (startAt > 0) el.currentTime = Math.min(startAt, (el.duration || startAt) - 0.1);
+          if (startAt > 0 && isFinite(el.duration) && el.duration > 0.5) {
+            const maxStart = Math.max(0, el.duration - 1.5);
+            el.currentTime = Math.min(startAt, maxStart);
+            seekDone = true;
+          }
         } catch (_) {}
+        seekAndPlay();
       };
       el.oncanplay = seekAndPlay;
+      // If startAt was invalid / near end, restart from 0
+      el.onended = () => {
+        try {
+          el.currentTime = (startAt > 0 && isFinite(el.duration) && startAt < el.duration - 1)
+            ? startAt
+            : 0;
+          el.play().catch(() => {});
+        } catch (_) {}
+      };
       seekAndPlay();
-
-      setTimeout(seekAndPlay, 200);
-      setTimeout(seekAndPlay, 600);
-      setTimeout(seekAndPlay, 1200);
+      setTimeout(seekAndPlay, 250);
+      setTimeout(seekAndPlay, 700);
     } catch (e) {
       console.warn("Music play failed", e);
     }
@@ -345,7 +361,18 @@
       }
       const ratio = (Date.now() - state.startedAt) / (state.duration || IMAGE_MS);
       setFill(ratio);
-      if (ratio < 1) state.raf = requestAnimationFrame(step);
+      if (ratio >= 1) {
+        clearTimeout(state.timer);
+        state.timer = null;
+        if (state.raf) cancelAnimationFrame(state.raf);
+        state.raf = null;
+        if (state._advancing) return;
+        state._advancing = true;
+        state.itemIndex += 1;
+        showItem();
+        return;
+      }
+      state.raf = requestAnimationFrame(step);
     };
     state.raf = requestAnimationFrame(step);
   }
@@ -367,7 +394,39 @@
     const item = currentItem();
     if (!g || !item) return;
 
-    $("storiesAvatar").src = g.avatar || "assets/default-avatar.png";
+    const av = $("storiesAvatar");
+    if (av) {
+      av.src = g.avatar || "assets/default-avatar.png";
+      av.onerror = function () {
+        this.onerror = null;
+        this.src = "assets/default-avatar.png";
+      };
+    }
+
+    // LIVE badge under username when this user is live
+    try {
+      let liveTag = $("storiesLiveTag");
+      if (!liveTag) {
+        const host = $("storiesUser") || $("storiesName")?.parentElement;
+        if (host) {
+          liveTag = document.createElement("span");
+          liveTag.id = "storiesLiveTag";
+          liveTag.className = "storiesLiveTag";
+          host.appendChild(liveTag);
+        }
+      }
+      if (liveTag) {
+        if (g.isLive) {
+          liveTag.textContent = "LIVE";
+          liveTag.classList.remove("hidden");
+          liveTag.style.display = "";
+        } else {
+          liveTag.textContent = "";
+          liveTag.classList.add("hidden");
+          liveTag.style.display = "none";
+        }
+      }
+    } catch (_) {}
 
     // Name + tick (blue / red / white) — always enrich from users/
     const nameEl = $("storiesName");
@@ -539,6 +598,7 @@
   }
 
   function showItem() {
+    state._advancing = false;
     const g = currentGroup();
     if (!g || !g.items.length) {
       const uid = new URLSearchParams(location.search).get("uid") || "";
@@ -621,45 +681,72 @@
     const isVideo = type === "video" || /\.(mp4|webm|mov)(\?|$)/i.test(url);
     const img = $("storyImg");
     const vid = $("storyVid");
-    const goNext = () => { state.itemIndex += 1; showItem(); };
+    const goNext = () => {
+      clearTimeout(state.timer);
+      state.timer = null;
+      state.itemIndex += 1;
+      showItem();
+    };
     const hasMusic = !!(musicInfo(data)?.audioUrl);
+    // Photo + music = 15s minimum; photo alone = 5s
+    const imageDuration = hasMusic ? IMAGE_MUSIC_MS : IMAGE_MS;
+
+    // Soft loading: keep stage dark until media is ready (avoids blank user flash)
+    const stage = $("storyStage") || $("storiesStage") || img?.parentElement;
+    if (stage) stage.classList.add("storyLoading");
 
     if (isVideo && vid) {
       img?.classList.add("hidden");
       vid.classList.remove("hidden");
       vid.src = url;
-      // mute video if story music exists so song is clear
       vid.muted = hasMusic;
       vid.onended = goNext;
       vid.onloadedmetadata = () => {
         const d = vid.duration && isFinite(vid.duration) ? vid.duration * 1000 : 15000;
-        state.duration = Math.min(d, 30000);
+        // With music, at least 15s if video shorter; cap 30s without forcing short clips long
+        let ms = Math.min(Math.max(d, hasMusic ? IMAGE_MUSIC_MS : 1000), 30000);
+        if (!hasMusic) ms = Math.min(d, 30000);
+        state.duration = ms;
         state.startedAt = Date.now();
+        if (stage) stage.classList.remove("storyLoading");
         tick();
       };
       vid.play().catch(() => {
         vid.muted = true;
         vid.play().catch(goNext);
       });
-      state.duration = 15000;
+      state.duration = hasMusic ? IMAGE_MUSIC_MS : 15000;
       state.startedAt = Date.now();
       tick();
     } else if (img) {
       vid?.classList.add("hidden");
       try { vid.pause(); vid.removeAttribute("src"); vid.load(); } catch (_) {}
       img.classList.remove("hidden");
-      img.onerror = goNext;
+      img.onerror = () => {
+        if (stage) stage.classList.remove("storyLoading");
+        goNext();
+      };
       img.onload = () => {
-        state.duration = IMAGE_MS;
+        if (stage) stage.classList.remove("storyLoading");
+        state.duration = imageDuration;
         state.startedAt = Date.now();
         tick();
       };
+      // If already cached, onload may not fire — force
       img.src = url;
-      state.duration = IMAGE_MS;
-      state.startedAt = Date.now();
-      tick();
+      if (img.complete && img.naturalWidth) {
+        if (stage) stage.classList.remove("storyLoading");
+        state.duration = imageDuration;
+        state.startedAt = Date.now();
+        tick();
+      } else {
+        state.duration = imageDuration;
+        state.startedAt = Date.now();
+        tick();
+      }
+      // Fallback timer (tick also advances — belt & suspenders)
       clearTimeout(state.timer);
-      state.timer = setTimeout(goNext, IMAGE_MS);
+      state.timer = setTimeout(goNext, imageDuration + 80);
     }
   }
 
@@ -771,7 +858,42 @@
       })
     );
 
-    state.groups = Object.values(byUser).sort((a, b) => b.latest - a.latest);
+    // Mark live users (followed live goes to front with red LIVE)
+    try {
+      const liveSnap = await db.ref("live").once("value");
+      if (liveSnap.exists()) {
+        liveSnap.forEach((c) => {
+          const v = c.val() || {};
+          const lid = String(v.uid || c.key || "");
+          if (!lid || !byUser[lid]) return;
+          if (v.active === true || v.isLive === true || v.status === "live") {
+            byUser[lid].isLive = true;
+          }
+        });
+      }
+    } catch (_) {}
+    try {
+      await Promise.all(
+        Object.keys(byUser).map(async (uid) => {
+          try {
+            const s = await db.ref("users/" + uid + "/isLive").once("value");
+            if (s.val() === true) byUser[uid].isLive = true;
+          } catch (_) {}
+        })
+      );
+    } catch (_) {}
+
+    state.groups = Object.values(byUser).sort((a, b) => {
+      // Live first (followed live at front)
+      if (!!a.isLive !== !!b.isLive) return a.isLive ? -1 : 1;
+      // Own stories early if present
+      if (state.user) {
+        const aOwn = a.uid === state.user.uid;
+        const bOwn = b.uid === state.user.uid;
+        if (aOwn !== bOwn) return aOwn ? -1 : 1;
+      }
+      return b.latest - a.latest;
+    });
 
     // Hard lock: if solo + focusUid, never keep other users
     if (soloMode && focusUid) {
@@ -1101,7 +1223,37 @@
     });
   }
 
+
+  function injectStoriesCSS() {
+    if (document.getElementById("vieworaStoriesExtraCSS")) return;
+    const s = document.createElement("style");
+    s.id = "vieworaStoriesExtraCSS";
+    s.textContent = `
+      .storiesLiveTag {
+        display: inline-block;
+        margin-left: 6px;
+        padding: 2px 7px;
+        border-radius: 6px;
+        background: #ff2d55;
+        color: #fff;
+        font-size: 10px;
+        font-weight: 800;
+        letter-spacing: .06em;
+        vertical-align: middle;
+      }
+      .storyLoading {
+        background: #000 !important;
+      }
+      .storyLoading #storyImg:not([src]),
+      .storyLoading #storyVid:not([src]) {
+        opacity: 0;
+      }
+    `;
+    document.head.appendChild(s);
+  }
+
   function init() {
+    injectStoriesCSS();
     if (!ready()) {
       showToast("Firebase not ready");
       return;

@@ -271,8 +271,7 @@
         );
     }
 
-    function getMusicLabel(short, username) {
-        // Prevent [object Object]
+    function getMusicMeta(short, username) {
         const raw =
             short.music ||
             short.sound ||
@@ -280,12 +279,31 @@
             short.song ||
             short.musicTitle ||
             null;
+        let id = short.musicId || short.soundId || "";
+        let title = "";
+        let artist = "";
+        if (raw && typeof raw === "object") {
+            id = id || raw.id || raw.musicId || "";
+            title = safeText(raw.title || raw.name || raw.musicTitle || "", "");
+            artist = safeText(raw.artist || raw.singer || "", "");
+        } else {
+            title = safeText(raw, "");
+        }
+        if (!title) title = safeText(short.musicTitle || short.musicName || "", "");
+        if (!title) {
+            const uname = safeText(username, "user").replace(/^@/, "");
+            title = "Original sound • " + uname;
+        }
+        return {
+            id: id,
+            title: title,
+            artist: artist,
+            label: artist ? title + " · " + artist : title
+        };
+    }
 
-        const music = safeText(raw, "");
-        if (music) return music;
-
-        const uname = safeText(username, "user").replace(/^@/, "");
-        return "Original sound • " + uname;
+    function getMusicLabel(short, username) {
+        return getMusicMeta(short, username).label;
     }
 
     /** Check if current user already follows target */
@@ -427,7 +445,8 @@
         const shares = safeNumber(short.shares || short.shareCount);
         const views = safeNumber(short.views || short.viewCount);
 
-        const musicLabel = getMusicLabel(short, username);
+        const musicMeta = getMusicMeta(short, username);
+        const musicLabel = musicMeta.label;
         const isSelf =
             currentUser && creatorId && creatorId === currentUser.uid;
 
@@ -529,10 +548,13 @@
                     }
                 </div>
 
-                <div class="shortMusic">
+                <button type="button" class="shortMusic" data-action="music"
+                    data-music-id="${escapeHTML(musicMeta.id || "")}"
+                    data-music-title="${escapeHTML(musicMeta.title || "")}"
+                    data-music-artist="${escapeHTML(musicMeta.artist || "")}">
                     <i class="fa-solid fa-music"></i>
                     <span>${escapeHTML(musicLabel)}</span>
-                </div>
+                </button>
             </div>
 
             <div class="shortActions">
@@ -730,6 +752,23 @@
                 // Toggle YouTube-style views / likes / time
                 toggleCaptionMeta(card);
                 break;
+            case "music": {
+                const uname =
+                    short.username ||
+                    short.userName ||
+                    short.name ||
+                    "user";
+                const meta = getMusicMeta(short, uname);
+                const id = (btn && btn.dataset.musicId) || meta.id || "";
+                const title = (btn && btn.dataset.musicTitle) || meta.title || "";
+                const artist = (btn && btn.dataset.musicArtist) || meta.artist || "";
+                const q = new URLSearchParams();
+                if (id) q.set("id", id);
+                if (title) q.set("name", title);
+                if (artist) q.set("artist", artist);
+                location.href = "music-detail.html?" + q.toString();
+                break;
+            }
         }
     }
 

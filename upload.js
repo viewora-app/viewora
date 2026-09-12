@@ -2652,13 +2652,16 @@
 
     musicBtn?.addEventListener(
         "click",
-        () => {
+        async () => {
 
             $("musicSheet")?.classList.remove(
                 "hidden"
             );
 
-            renderMusicLibrary();
+            await loadMusicLibraryFromFirebase();
+            renderMusicLibrary(
+                ($("musicSearchInput") && $("musicSearchInput").value) || ""
+            );
         }
     );
 
@@ -2688,48 +2691,114 @@
        MUSIC LIBRARY
     ===================================================== */
 
-    const MUSIC_LIBRARY = [
-
+    // Live library: Firebase musicLibrary + local fallbacks
+    let MUSIC_LIBRARY = [
         {
             id: "original-audio",
-            title: "Original Audio",
-            artist: "Viewora Camera",
-            category: "trending"
-        },
-
-        {
-            id: "viewora-beat",
-            title: "Viewora Beat",
-            artist: "Viewora Sounds",
-            category: "popular"
-        },
-
-        {
-            id: "viewora-chill",
-            title: "Viewora Chill",
-            artist: "Viewora Sounds",
-            category: "new"
-        },
-
-        {
-            id: "viewora-energy",
-            title: "Viewora Energy",
-            artist: "Viewora Sounds",
-            category: "popular"
-        },
-
-        {
-            id: "viewora-cinematic",
-            title: "Viewora Cinematic",
-            artist: "Viewora Sounds",
-            category: "new"
+            title: "Original audio",
+            artist: "Your video",
+            category: "trending",
+            audioUrl: ""
         }
-
     ];
 
-
+    let musicLibraryLoaded = false;
     let currentMusicCategory = "trending";
 
+    async function loadMusicLibraryFromFirebase() {
+        try {
+            const database =
+                window.db ||
+                (typeof firebase !== "undefined" && firebase.database
+                    ? firebase.database()
+                    : null);
+            if (!database) return;
+
+            let rows = [];
+            // Full library scan (don't depend only on active flag)
+            const snap = await database.ref("musicLibrary").once("value");
+            if (snap.exists()) {
+                snap.forEach((c) => {
+                    const v = c.val() || {};
+                    if (v.active === false) return;
+                    rows.push({
+                        id: c.key,
+                        title: v.title || v.name || "Untitled",
+                        artist: v.artist || v.singer || "Unknown",
+                        category: String(v.genre || v.category || "trending").toLowerCase(),
+                        audioUrl: v.audioUrl || v.url || v.src || "",
+                        coverUrl: v.coverUrl || v.cover || "",
+                        uses: Number(v.uses || 0),
+                        genre: v.genre || "",
+                        trending: !!v.trending
+                    });
+                });
+            }
+            // Merge VieworaStores if available (extra fields)
+            try {
+                if (window.VieworaStores && VieworaStores.MusicStore) {
+                    const extra = await VieworaStores.MusicStore.list(120);
+                    const ids = new Set(rows.map((r) => r.id));
+                    (extra || []).forEach((v) => {
+                        if (ids.has(v.id)) return;
+                        rows.push(v);
+                    });
+                }
+            } catch (_) {}
+
+            const mapped = (rows || []).map((v) => {
+                const cat = String(v.genre || v.category || "trending").toLowerCase();
+                let category = "trending";
+                if (cat.includes("pop") || cat.includes("popular")) category = "popular";
+                else if (cat.includes("new") || cat.includes("fresh")) category = "new";
+                else if (v.trending || (v.uses || 0) > 5) category = "trending";
+                else category = "trending";
+                return {
+                    id: v.id || ("m_" + Math.random().toString(36).slice(2, 8)),
+                    title: v.title || v.name || "Untitled",
+                    artist: v.artist || "Unknown",
+                    category: category,
+                    genre: v.genre || "",
+                    audioUrl: v.audioUrl || v.url || "",
+                    coverUrl: v.coverUrl || v.cover || "",
+                    uses: Number(v.uses || 0)
+                };
+            });
+
+            // Keep original first, then Firebase tracks (dedupe by id)
+            const seen = new Set(["original-audio"]);
+            const merged = [
+                {
+                    id: "original-audio",
+                    title: "Original audio",
+                    artist: "Your video",
+                    category: "trending",
+                    audioUrl: ""
+                }
+            ];
+            mapped.forEach((m) => {
+                if (seen.has(m.id)) return;
+                seen.add(m.id);
+                // show in all main tabs by also tagging trending for discovery
+                if (!m.category) m.category = "trending";
+                merged.push(m);
+            });
+            MUSIC_LIBRARY = merged;
+            musicLibraryLoaded = true;
+            console.log("[VIEWORA] Music library loaded:", MUSIC_LIBRARY.length);
+        } catch (e) {
+            console.warn("Music library load failed:", e);
+        }
+    }
+
+    // Load ASAP
+    loadMusicLibraryFromFirebase().then(() => {
+        try {
+            renderMusicLibrary(
+                ($("musicSearchInput") && $("musicSearchInput").value) || ""
+            );
+        } catch (_) {}
+    });
 
     function renderMusicLibrary(
         searchValue = ""
@@ -2739,6 +2808,13 @@
             $("musicList");
 
         if (!list) return;
+
+        // Ensure load started
+        if (!musicLibraryLoaded) {
+            loadMusicLibraryFromFirebase().then(() =>
+                renderMusicLibrary(searchValue)
+            );
+        }
 
         const query =
             String(searchValue)
@@ -2751,15 +2827,21 @@
                 const matchesCategory =
                     currentMusicCategory === "saved"
                         ? isMusicSaved(item.id)
-                        : item.category ===
-                            currentMusicCategory;
+                        : currentMusicCategory === "trending"
+                          // Trending = all tracks (YouTube-style browse)
+                          ? true
+                          : currentMusicCategory === "popular"
+                            ? item.category === "popular" || (item.uses || 0) > 3
+                            : currentMusicCategory === "new"
+                              ? item.category === "new"
+                              : item.category === currentMusicCategory;
 
                 const matchesSearch =
                     !query ||
-                    item.title
+                    String(item.title || "")
                         .toLowerCase()
                         .includes(query) ||
-                    item.artist
+                    String(item.artist || "")
                         .toLowerCase()
                         .includes(query);
 

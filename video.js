@@ -663,13 +663,16 @@
             getCreatorUsername(user, video);
 
         const avatar =
+            user?.profilePhoto ||
             user?.photoURL ||
             user?.photoUrl ||
             user?.avatar ||
             user?.profilePic ||
             user?.profileImage ||
+            user?.profilePicture ||
+            user?.dp ||
             video?.creatorAvatar ||
-            "assets/logo.png";
+            "assets/default-avatar.png";
 
         setText("creatorName", name);
 
@@ -1699,18 +1702,27 @@ function updateLikeCount() {
         show($("followBtn"));
 
         try {
-
-            const snap =
-                await db.ref(
-                    `${USERS_ROOT}/${user.uid}/following/${creatorId}`
-                ).once("value");
-
-            state.following =
-                snap.exists() &&
-                snap.val() === true;
-
+            // Check all paths used across Viewora (profile / activity / index)
+            let isFollowing = false;
+            const paths = [
+                `${USERS_ROOT}/${user.uid}/following/${creatorId}`,
+                `following/${user.uid}/${creatorId}`,
+                `${USERS_ROOT}/${creatorId}/followers/${user.uid}`,
+                `followers/${creatorId}/${user.uid}`
+            ];
+            for (const p of paths) {
+                try {
+                    const snap = await db.ref(p).once("value");
+                    if (!snap.exists()) continue;
+                    const v = snap.val();
+                    if (v === true || v === 1 || (v && typeof v === "object")) {
+                        isFollowing = true;
+                        break;
+                    }
+                } catch (_) {}
+            }
+            state.following = isFollowing;
         } catch (error) {
-
             state.following = false;
         }
 
@@ -1741,6 +1753,16 @@ function updateLikeCount() {
             "following",
             state.following
         );
+        // visual style when already following
+        if (state.following) {
+            btn.style.background = "rgba(255,255,255,.12)";
+            btn.style.color = "#fff";
+            btn.style.border = "1px solid rgba(255,255,255,.18)";
+        } else {
+            btn.style.background = "";
+            btn.style.color = "";
+            btn.style.border = "";
+        }
     }
 
     async function toggleFollow() {
@@ -1782,12 +1804,11 @@ function updateLikeCount() {
         try {
 
             if (state.following) {
-
                 await followingRef.remove();
                 await followerRef.remove();
-
+                try { await db.ref(`following/${user.uid}/${creatorId}`).remove(); } catch (_) {}
+                try { await db.ref(`followers/${creatorId}/${user.uid}`).remove(); } catch (_) {}
                 state.following = false;
-
                 toast(
                     "Unfollowed",
                     `You unfollowed @${getCreatorUsername(
@@ -1795,14 +1816,15 @@ function updateLikeCount() {
                         state.video
                     )}.`
                 );
-
             } else {
-
                 await followingRef.set(true);
                 await followerRef.set(true);
-
+                try { await db.ref(`following/${user.uid}/${creatorId}`).set(true); } catch (_) {}
+                try { await db.ref(`followers/${creatorId}/${user.uid}`).set({
+                    uid: user.uid,
+                    followedAt: firebase.database.ServerValue.TIMESTAMP
+                }); } catch (_) {}
                 state.following = true;
-
                 toast(
                     "Following",
                     `You are now following @${getCreatorUsername(

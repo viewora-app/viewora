@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <script>(function(){try{var t=localStorage.getItem("viewora_theme")||"dark";document.documentElement.setAttribute("data-theme",t);}catch(e){document.documentElement.setAttribute("data-theme","dark");}})();</script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="theme-color" content="#000000">
@@ -16,6 +17,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
     <script src="page-loader.js"></script>
     <link rel="stylesheet" href="story-upload.css">
+    <link rel="stylesheet" href="theme.css">
 </head>
 <body>
 
@@ -212,6 +214,21 @@
             <div class="musicList" id="musicList">
                 <!-- filled by JS -->
             </div>
+            <div id="musicTrimBox" class="musicTrimBox hidden">
+                <div class="musicTrimHead">
+                    <strong id="musicTrimTitle">Set start</strong>
+                    <span id="musicTrimTime">0:00</span>
+                </div>
+                <input type="range" id="musicTrimSlider" min="0" max="0" step="0.5" value="0">
+                <div class="musicTrimActions">
+                    <button type="button" class="sheetBtn ghost" id="musicTrimPreview">
+                        <i class="fa-solid fa-play"></i> Preview
+                    </button>
+                    <button type="button" class="sheetBtn primary" id="musicTrimDone">
+                        Done
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -247,8 +264,12 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
 <script src="firebase.js"></script>
-  <script src="call-listener.js"></script>
+<script src="upload-queue.js"></script>
+<script src="call-listener.js"></script>
 <script src="message-listener.js"></script>
+<!-- page ka apna js -->
+  
+<script src="theme.js"></script>
 <script src="viewora-stores.js"></script>
 <script src="story-upload.js"></script>
 </body>

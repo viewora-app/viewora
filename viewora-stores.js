@@ -74,17 +74,29 @@
 
         async list(limit = 40) {
             if (!db) return [];
-            const snap = await db
-                .ref("musicLibrary")
-                .orderByChild("active")
-                .equalTo(true)
-                .limitToLast(limit)
-                .once("value");
-
-            const list = [];
-            snap.forEach((c) => {
-                list.push({ id: c.key, ...c.val() });
-            });
+            let list = [];
+            try {
+                // Prefer active tracks if indexed
+                const snap = await db
+                    .ref("musicLibrary")
+                    .orderByChild("active")
+                    .equalTo(true)
+                    .limitToLast(limit)
+                    .once("value");
+                snap.forEach((c) => {
+                    list.push({ id: c.key, ...c.val() });
+                });
+            } catch (_) {}
+            // Fallback: all tracks (admin may not set active:true)
+            if (!list.length) {
+                const snap = await db.ref("musicLibrary").limitToLast(limit).once("value");
+                snap.forEach((c) => {
+                    const v = c.val() || {};
+                    // skip explicitly disabled
+                    if (v.active === false) return;
+                    list.push({ id: c.key, ...v });
+                });
+            }
             return list.reverse();
         },
 

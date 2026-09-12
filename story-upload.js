@@ -1,5 +1,30 @@
 "use strict";
 
+    async function countMyActiveStories(uid) {
+        if (!uid || typeof firebase === "undefined") return 0;
+        try {
+            const db = firebase.database();
+            const snap = await db.ref("stories").once("value");
+            const now = Date.now();
+            let n = 0;
+            snap.forEach((c) => {
+                const d = c.val() || {};
+                const owner = String(d.uid || d.userId || d.ownerId || d.creatorId || "");
+                if (owner !== String(uid)) return;
+                let t = Number(d.createdAt || d.timestamp || d.time || 0);
+                if (t > 0 && t < 1e12) t *= 1000;
+                const exp = Number(d.expiresAt || 0);
+                if (exp && exp < now) return;
+                if (!exp && t && now - t > 24 * 60 * 60 * 1000) return;
+                n++;
+            });
+            return n;
+        } catch (_) {
+            return 0;
+        }
+    }
+
+
 /*
 ============================================================
  VIEWORA — STORY UPLOAD
@@ -571,38 +596,8 @@
                 state.music = track;
                 state.musicStartAt = 0;
                 updateMusicBadge();
-
-                if (track.audioUrl) {
-                    try {
-                        musicPreviewAudio = new Audio(track.audioUrl);
-                        musicPreviewAudio.volume = 0.7;
-                        musicPreviewAudio.play().catch(() => {});
-                        // Ask start time (seconds) — optional scrub
-                        musicPreviewAudio.addEventListener("loadedmetadata", () => {
-                            const dur = Math.floor(musicPreviewAudio.duration || 0);
-                            if (dur > 3) {
-                                const ans = window.prompt(
-                                    "Music start (seconds 0–" + dur + ")\nLeave empty = from start",
-                                    String(state.musicStartAt || 0)
-                                );
-                                if (ans !== null && ans !== "") {
-                                    let sec = Number(ans);
-                                    if (!Number.isFinite(sec) || sec < 0) sec = 0;
-                                    if (sec > dur - 1) sec = Math.max(0, dur - 1);
-                                    state.musicStartAt = sec;
-                                    try {
-                                        musicPreviewAudio.currentTime = sec;
-                                        musicPreviewAudio.play().catch(() => {});
-                                    } catch (_) {}
-                                    updateMusicBadge();
-                                }
-                            }
-                        }, { once: true });
-                    } catch (_) {}
-                }
-
                 renderMusic();
-                closeSheet("musicPanel");
+                openMusicTrim(track);
             });
 
             list.appendChild(btn);
@@ -627,6 +622,87 @@
         list.appendChild(store);
     }
 
+
+
+    function fmtMusicTime(sec) {
+        sec = Math.max(0, Math.floor(Number(sec) || 0));
+        const m = Math.floor(sec / 60);
+        const s = sec % 60;
+        return m + ":" + (s < 10 ? "0" : "") + s;
+    }
+
+    function openMusicTrim(track) {
+        const box = $("musicTrimBox");
+        const slider = $("musicTrimSlider");
+        const timeEl = $("musicTrimTime");
+        const titleEl = $("musicTrimTitle");
+        if (!box || !slider) {
+            // fallback: no trim UI
+            closeSheet("musicPanel");
+            return;
+        }
+        box.classList.remove("hidden");
+        if (titleEl) titleEl.textContent = (track && (track.name || track.title)) || "Set start";
+        const url = track && (track.audioUrl || track.url);
+        if (!url) {
+            state.musicStartAt = 0;
+            if (timeEl) timeEl.textContent = "0:00";
+            return;
+        }
+        stopMusicPreview();
+        try {
+            musicPreviewAudio = new Audio(url);
+            musicPreviewAudio.volume = 0.75;
+            musicPreviewAudio.addEventListener("loadedmetadata", () => {
+                const dur = Math.max(0, Math.floor(musicPreviewAudio.duration || 0));
+                slider.min = 0;
+                slider.max = Math.max(0, dur - 1);
+                slider.value = state.musicStartAt || 0;
+                if (timeEl) timeEl.textContent = fmtMusicTime(slider.value);
+                try {
+                    musicPreviewAudio.currentTime = Number(slider.value) || 0;
+                } catch (_) {}
+                musicPreviewAudio.play().catch(() => {});
+            }, { once: true });
+            musicPreviewAudio.play().catch(() => {});
+        } catch (e) {
+            console.warn(e);
+        }
+    }
+
+    function wireMusicTrim() {
+        const slider = $("musicTrimSlider");
+        const timeEl = $("musicTrimTime");
+        const box = $("musicTrimBox");
+        $("musicTrimPreview")?.addEventListener("click", () => {
+            if (!musicPreviewAudio) {
+                if (state.music) openMusicTrim(state.music);
+                return;
+            }
+            try {
+                musicPreviewAudio.currentTime = Number(state.musicStartAt || 0);
+                musicPreviewAudio.play().catch(() => {});
+            } catch (_) {}
+        });
+        $("musicTrimDone")?.addEventListener("click", () => {
+            stopMusicPreview();
+            if (box) box.classList.add("hidden");
+            updateMusicBadge();
+            closeSheet("musicPanel");
+        });
+        slider?.addEventListener("input", () => {
+            const sec = Number(slider.value) || 0;
+            state.musicStartAt = sec;
+            if (timeEl) timeEl.textContent = fmtMusicTime(sec);
+            if (musicPreviewAudio) {
+                try {
+                    musicPreviewAudio.currentTime = sec;
+                    if (musicPreviewAudio.paused) musicPreviewAudio.play().catch(() => {});
+                } catch (_) {}
+            }
+            updateMusicBadge();
+        });
+    }
 
     function updateMusicBadge() {
         if (!musicBadge) return;
@@ -798,6 +874,18 @@
 
 
     async function shareStory() {
+        const MAX_STORIES_PER_USER = 50;
+        try {
+            const me = (firebase.auth && firebase.auth().currentUser) || null;
+            if (me) {
+                const cnt = await countMyActiveStories(me.uid);
+                if (cnt >= MAX_STORIES_PER_USER) {
+                    alert("Story limit reached. You can have maximum 50 active stories. Delete an old one or wait 24h.");
+                    return;
+                }
+            }
+        } catch (_) {}
+
         if (state.uploading) return;
         if (!requireLogin()) return;
         if (!state.file) {
@@ -813,6 +901,48 @@
         try {
             sessionStorage.setItem("viewora_story_uploading", "1");
         } catch (_) {}
+
+        /* YouTube-style: queue + leave immediately */
+        if (window.VieworaUploadQueue && typeof VieworaUploadQueue.enqueueAndLeave === "function") {
+            try {
+                const overlays = collectOverlays();
+                const p = state.profile || {};
+                const u = state.user || {};
+                const username =
+                    p.username || p.userName || p.displayName || u.displayName || "Viewora User";
+                const avatar =
+                    p.avatar || p.photoURL || p.profilePhoto || p.profileImage || u.photoURL ||
+                    "assets/default-avatar.png";
+                await VieworaUploadQueue.enqueueAndLeave({
+                    type: "story",
+                    file: state.file,
+                    returnUrl: "index.html",
+                    meta: {
+                        caption: state.caption || "",
+                        title: "Story",
+                        username,
+                        avatar,
+                        music: state.music
+                            ? {
+                                id: state.music.id,
+                                name: state.music.name || state.music.title,
+                                title: state.music.title || state.music.name,
+                                artist: state.music.artist || "",
+                                audioUrl: state.music.audioUrl || state.music.url || "",
+                                coverUrl: state.music.coverUrl || "",
+                                startAt: Number(state.musicStartAt || 0) || 0
+                              }
+                            : null,
+                        musicStartAt: Number(state.musicStartAt || 0) || 0,
+                        texts: overlays.texts || [],
+                        stickers: overlays.stickers || []
+                    }
+                });
+                return;
+            } catch (err) {
+                console.warn("BG story queue failed, fallback", err);
+            }
+        }
 
         showUploadOverlay(true);
 
@@ -1040,6 +1170,7 @@
                 const track = JSON.parse(musicRaw);
                 if (track) {
                     state.music = normalizeTrack(track);
+                    state.musicStartAt = Number(track.startAt || track.musicStartAt || 0) || 0;
                     updateMusicBadge();
                 }
                 sessionStorage.removeItem("vieworaSelectedMusic");
@@ -1087,6 +1218,7 @@
             ]);
             renderStickers();
             renderMusic();
+            wireMusicTrim();
             applySelectedFromStore();
         })();
     }
