@@ -876,6 +876,17 @@
             user.createdAt
         );
 
+        // About card only on OTHER users' profiles (own → Settings)
+        if (!isOwnProfile) {
+            paintAbout(user);
+        } else {
+            const aboutBox = $("profileAbout");
+            if (aboutBox) {
+                aboutBox.hidden = true;
+                aboutBox.innerHTML = "";
+            }
+        }
+
 
         /* LOCATION */
 
@@ -912,6 +923,82 @@
     /* =====================================================
        JOIN DATE
     ===================================================== */
+
+    
+    function paintAbout(user) {
+        const box = $("profileAbout");
+        if (!box || !user) return;
+        // Never show About card on own profile
+        if (isOwnProfile) {
+            box.hidden = true;
+            box.innerHTML = "";
+            return;
+        }
+
+        const created = user.createdAt || user.joinedAt || user.created || "";
+        let joinedText = "—";
+        try {
+            const n = Number(created);
+            const d = n ? new Date(n < 1e12 ? n * 1000 : n) : new Date(created);
+            if (!isNaN(d.getTime())) {
+                joinedText = d.toLocaleDateString(undefined, {
+                    year: "numeric",
+                    month: "short",
+                    day: "numeric"
+                });
+            }
+        } catch (_) {}
+
+        const changes = safeNumber(
+            user.usernameChangeCount ||
+                user.nameChangeCount ||
+                user.usernameChanges ||
+                0
+        );
+        const place =
+            user.country ||
+            user.location ||
+            user.city ||
+            user.region ||
+            user.belong ||
+            "";
+
+        const rows = [
+            {
+                icon: "fa-calendar-days",
+                label: "Joined",
+                value: joinedText
+            },
+            {
+                icon: "fa-signature",
+                label: "Username changes",
+                value: String(changes)
+            },
+            {
+                icon: "fa-location-dot",
+                label: "From",
+                value: place || "Not set"
+            }
+        ];
+
+        box.innerHTML =
+            '<div class="aboutHeader"><strong>About</strong></div>' +
+            rows
+                .map(
+                    (r) =>
+                        '<div class="aboutRow">' +
+                        '<i class="fa-solid ' +
+                        r.icon +
+                        '"></i>' +
+                        '<div><small>' +
+                        escapeHTML(r.label) +
+                        "</small><span>" +
+                        escapeHTML(r.value) +
+                        "</span></div></div>"
+                )
+                .join("");
+        box.hidden = false;
+    }
 
     function renderJoinDate(value) {
 
@@ -993,10 +1080,20 @@
         const settingsBtn =
             $("settingsBtn");
 
+        const moreBtn =
+            $("profileMoreBtn");
+
+        // body class drives CSS ownerOnly / visitorOnly
+        try {
+            document.body.classList.toggle("is-owner", !!isOwnProfile);
+            document.body.classList.toggle("is-visitor", !isOwnProfile);
+        } catch (_) {}
+
         if (isOwnProfile) {
 
             hide(followBtn);
             hide(messageBtn);
+            hide(moreBtn);
 
             show(editBtn);
             show(settingsBtn);
@@ -1004,6 +1101,7 @@
         } else {
 
             show(followBtn);
+            show(moreBtn);
             hide(editBtn);
             hide(settingsBtn);
 
@@ -1696,6 +1794,227 @@
        PROFILE BUTTONS
     ===================================================== */
 
+    
+    /* =====================================================
+       ABOUT ACCOUNT SHEET (3-dot)
+    ===================================================== */
+
+    function formatAboutDate(value) {
+        try {
+            const n = Number(value);
+            const d = n
+                ? new Date(n < 1e12 ? n * 1000 : n)
+                : new Date(value);
+            if (isNaN(d.getTime())) return "—";
+            return d.toLocaleDateString(undefined, {
+                year: "numeric",
+                month: "short",
+                day: "numeric"
+            });
+        } catch (_) {
+            return "—";
+        }
+    }
+
+    
+    /* =====================================================
+       VISITOR 3-DOT MENU
+    ===================================================== */
+
+    function openVisitorMenu() {
+        if (isOwnProfile) return;
+        const sheet = $("visitorMoreSheet");
+        if (!sheet) {
+            openAboutSheet();
+            return;
+        }
+        sheet.classList.remove("hidden");
+        sheet.setAttribute("aria-hidden", "false");
+        document.body.classList.add("modalOpen");
+    }
+
+    function closeVisitorMenu() {
+        const sheet = $("visitorMoreSheet");
+        if (!sheet) return;
+        sheet.classList.add("hidden");
+        sheet.setAttribute("aria-hidden", "true");
+        document.body.classList.remove("modalOpen");
+    }
+
+    async function blockProfileUser() {
+        if (!currentUser?.uid || !profileUID || isOwnProfile) return;
+        const ok = window.confirm(
+            "Block this user? They will not be able to message or follow you."
+        );
+        if (!ok) return;
+        try {
+            const me = currentUser.uid;
+            const updates = {};
+            updates["blocked/" + me + "/" + profileUID] = {
+                uid: profileUID,
+                at: Date.now()
+            };
+            updates["blockedBy/" + profileUID + "/" + me] = true;
+            // Unfollow both ways if present
+            updates["following/" + me + "/" + profileUID] = null;
+            updates["followers/" + me + "/" + profileUID] = null;
+            updates["following/" + profileUID + "/" + me] = null;
+            updates["followers/" + profileUID + "/" + me] = null;
+            await db.ref().update(updates);
+            showToast("User blocked");
+            closeVisitorMenu();
+            setTimeout(() => {
+                window.location.href = "index.html";
+            }, 500);
+        } catch (e) {
+            console.error(e);
+            showToast("Could not block user");
+        }
+    }
+
+
+    function openAboutSheet() {
+        const sheet = $("aboutSheet");
+        if (!sheet || !profileUser) return;
+
+        const from =
+            profileUser.country ||
+            profileUser.from ||
+            profileUser.signupCountry ||
+            profileUser.location ||
+            profileUser.city ||
+            profileUser.region ||
+            "Not set";
+
+        const joined = formatAboutDate(
+            profileUser.createdAt ||
+                profileUser.joinedAt ||
+                profileUser.created
+        );
+
+        const changes = safeNumber(
+            profileUser.usernameChangeCount ||
+                profileUser.nameChangeCount ||
+                profileUser.usernameChanges ||
+                (profileUser.usernameHistory
+                    ? Object.keys(profileUser.usernameHistory).length
+                    : 0)
+        );
+
+        setText("aboutFrom", from);
+        setText("aboutJoined", joined);
+        setText(
+            "aboutUsernameChanges",
+            String(changes) + (changes === 1 ? " time" : " times")
+        );
+
+        const reportRow = $("aboutReportRow");
+        if (reportRow) {
+            reportRow.hidden = !!isOwnProfile;
+        }
+
+        sheet.classList.remove("hidden");
+        sheet.setAttribute("aria-hidden", "false");
+        document.body.classList.add("modalOpen");
+    }
+
+    function closeAboutSheet() {
+        const sheet = $("aboutSheet");
+        if (!sheet) return;
+        sheet.classList.add("hidden");
+        sheet.setAttribute("aria-hidden", "true");
+        document.body.classList.remove("modalOpen");
+    }
+
+    function openUsernameHistory() {
+        const sheet = $("usernameHistorySheet");
+        const list = $("usernameHistoryList");
+        if (!sheet || !list || !profileUser) return;
+
+        const hist =
+            profileUser.usernameHistory ||
+            profileUser.nameHistory ||
+            {};
+
+        let entries = [];
+        if (Array.isArray(hist)) {
+            entries = hist.slice();
+        } else if (hist && typeof hist === "object") {
+            entries = Object.keys(hist)
+                .map((k) => {
+                    const v = hist[k];
+                    if (v && typeof v === "object") {
+                        return {
+                            from: v.from || v.old || v.previous || "",
+                            to: v.to || v.new || v.username || "",
+                            at: v.at || v.changedAt || v.time || k
+                        };
+                    }
+                    return { from: "", to: String(v), at: k };
+                })
+                .sort(
+                    (a, b) =>
+                        safeNumber(a.at) - safeNumber(b.at)
+                );
+        }
+
+        // Always show current as latest
+        const current =
+            profileUser.username ||
+            profileUser.userName ||
+            profileUser.handle ||
+            "";
+        if (current && !entries.length) {
+            entries.push({
+                from: "",
+                to: current,
+                at: profileUser.createdAt || "",
+                note: "Current"
+            });
+        }
+
+        if (!entries.length) {
+            list.innerHTML =
+                '<p class="aboutEmpty">No username changes recorded yet.</p>';
+        } else {
+            list.innerHTML = entries
+                .map((e, i) => {
+                    const label =
+                        e.from && e.to
+                            ? escapeHTML(e.from) +
+                              " → " +
+                              escapeHTML(e.to)
+                            : escapeHTML(e.to || e.from || "—");
+                    const when = formatAboutDate(e.at);
+                    return (
+                        '<div class="historyItem">' +
+                        "<strong>" +
+                        label +
+                        "</strong>" +
+                        "<small>" +
+                        (e.note
+                            ? escapeHTML(e.note) + " · "
+                            : "") +
+                        when +
+                        (i === 0 && !e.from ? " · first" : "") +
+                        "</small></div>"
+                    );
+                })
+                .join("");
+        }
+
+        sheet.classList.remove("hidden");
+        sheet.setAttribute("aria-hidden", "false");
+    }
+
+    function closeUsernameHistory() {
+        const sheet = $("usernameHistorySheet");
+        if (!sheet) return;
+        sheet.classList.add("hidden");
+        sheet.setAttribute("aria-hidden", "true");
+    }
+
+
     function setupProfileButtons() {
 
         $("followBtn")
@@ -1733,6 +2052,105 @@
 
                 }
             );
+
+        $("profileMoreBtn")
+            ?.addEventListener(
+                "click",
+                openVisitorMenu
+            );
+
+        document
+            .querySelectorAll("[data-close-visitor]")
+            .forEach((el) =>
+                el.addEventListener("click", closeVisitorMenu)
+            );
+
+        $("visitorAboutBtn")
+            ?.addEventListener("click", () => {
+                closeVisitorMenu();
+                openAboutSheet();
+            });
+
+        $("visitorShareBtnMenu")
+            ?.addEventListener("click", () => {
+                closeVisitorMenu();
+                shareProfile();
+            });
+
+        $("visitorReportBtn")
+            ?.addEventListener("click", () => {
+                closeVisitorMenu();
+                reportProfileUser();
+            });
+
+        $("visitorBlockBtn")
+            ?.addEventListener("click", () => {
+                blockProfileUser();
+            });
+
+        $("visitorFriendBtn")
+            ?.addEventListener("click", async () => {
+                closeVisitorMenu();
+                try {
+                    const btn = $("followBtn");
+                    if (btn) btn.click();
+                    else showToast("Use Follow on profile");
+                } catch (_) {
+                    showToast("Use Follow on profile");
+                }
+            });
+
+        $("visitorCopyLinkBtn")
+            ?.addEventListener("click", async () => {
+                closeVisitorMenu();
+                try {
+                    const url =
+                        window.location.origin +
+                        window.location.pathname +
+                        "?uid=" +
+                        encodeURIComponent(profileUID || "");
+                    if (navigator.clipboard && navigator.clipboard.writeText) {
+                        await navigator.clipboard.writeText(url);
+                        showToast("Profile link copied");
+                    } else {
+                        window.prompt("Copy link", url);
+                    }
+                } catch (_) {
+                    showToast("Could not copy link");
+                }
+            });
+
+        document
+            .querySelectorAll("[data-close-about]")
+            .forEach((el) =>
+                el.addEventListener("click", closeAboutSheet)
+            );
+
+        document
+            .querySelectorAll("[data-close-history]")
+            .forEach((el) =>
+                el.addEventListener("click", closeUsernameHistory)
+            );
+
+        $("aboutUsernameBtn")
+            ?.addEventListener("click", openUsernameHistory);
+
+        $("historyBackBtn")
+            ?.addEventListener("click", closeUsernameHistory);
+
+        $("aboutReportBtn")
+            ?.addEventListener("click", () => {
+                closeAboutSheet();
+                reportProfileUser();
+            });
+
+        // Highlights manager
+        $("manageHighlightsBtn")
+            ?.addEventListener("click", () => {
+                if (!isOwnProfile) return;
+                window.location.href = "story-highlight.html";
+            });
+
 
 
         $("editProfileBtn")
@@ -2044,6 +2462,10 @@
             await loadSaved();
         }
 
+        if (tab === "live") {
+            await loadLive();
+        }
+
     }
 
 
@@ -2252,21 +2674,6 @@
 
                 </div>
 
-                ${
-                    isOwnProfile
-                        ? `
-                            <button
-                                class="contentMoreBtn"
-                                data-action="manage"
-                                type="button"
-                                aria-label="Manage post"
-                            >
-                                <i class="fa-solid fa-ellipsis"></i>
-                            </button>
-                        `
-                        : ""
-                }
-
             </article>
         `;
 
@@ -2386,15 +2793,34 @@
 
     function renderShortCard(item) {
 
-        const media =
-            getMediaURL(item);
+        const media = getMediaURL(item);
+        const poster = getThumbURL(item);
+        const views = safeNumber(item.views || item.viewCount);
 
-        const poster =
-            item.thumbnail ||
-            item.poster ||
-            item.cover ||
-            "";
-
+        // Prefer static thumbnail image (reliable on mobile); fallback video frame
+        let mediaHtml = "";
+        if (poster) {
+            mediaHtml =
+                '<img class="shortThumbImg" src="' +
+                escapeHTML(poster) +
+                '" alt="" loading="lazy" onerror="this.style.display=\'none\';this.nextElementSibling&&(this.nextElementSibling.style.display=\'block\')">';
+            if (media) {
+                mediaHtml +=
+                    '<video class="shortThumbVid" src="' +
+                    escapeHTML(media) +
+                    (media.indexOf("#") === -1 ? "#t=0.5" : "") +
+                    '" muted playsinline preload="metadata" style="display:none"></video>';
+            }
+        } else if (media) {
+            mediaHtml =
+                '<video class="shortThumbVid" src="' +
+                escapeHTML(media) +
+                (media.indexOf("#") === -1 ? "#t=0.5" : "") +
+                '" muted playsinline preload="metadata"></video>';
+        } else {
+            mediaHtml =
+                '<div class="shortThumbFallback"><i class="fa-solid fa-clapperboard"></i></div>';
+        }
 
         return `
             <article
@@ -2402,46 +2828,24 @@
                 data-id="${escapeHTML(item.id)}"
                 data-type="short"
             >
-
-                <video
-                    src="${escapeHTML(media)}"
-                    ${
-                        poster
-                            ? `poster="${escapeHTML(poster)}"`
-                            : ""
-                    }
-                    muted
-                    playsinline
-                    preload="metadata"
-                ></video>
-
+                ${mediaHtml}
                 <div class="shortBadge">
                     <i class="fa-solid fa-play"></i>
                 </div>
-
                 <div class="contentOverlay">
-
                     <span>
                         <i class="fa-solid fa-eye"></i>
-                        ${formatNumber(item.views)}
+                        ${formatNumber(views)}
                     </span>
-
                 </div>
-
-                ${
-                    isOwnProfile
-                        ? `
-                            <button
-                                class="contentMoreBtn"
-                                data-action="manage"
-                                type="button"
-                            >
-                                <i class="fa-solid fa-ellipsis"></i>
-                            </button>
-                        `
-                        : ""
-                }
-
+                <button
+                    class="contentMoreBtn"
+                    data-action="manage"
+                    type="button"
+                    aria-label="More options"
+                >
+                    <i class="fa-solid fa-ellipsis"></i>
+                </button>
             </article>
         `;
 
@@ -2627,10 +3031,7 @@
             getMediaURL(item);
 
         const thumbnail =
-            item.thumbnail ||
-            item.poster ||
-            item.cover ||
-            "";
+            getThumbURL(item);
 
 
         return `
@@ -2665,19 +3066,14 @@
                         <i class="fa-solid fa-play"></i>
                     </div>
 
-                    ${
-                        isOwnProfile
-                            ? `
-                                <button
-                                    class="contentMoreBtn"
-                                    data-action="manage"
-                                    type="button"
-                                >
-                                    <i class="fa-solid fa-ellipsis"></i>
-                                </button>
-                            `
-                            : ""
-                    }
+                    <button
+                    class="contentMoreBtn"
+                    data-action="manage"
+                    type="button"
+                    aria-label="More options"
+                >
+                    <i class="fa-solid fa-ellipsis"></i>
+                </button>
 
                 </div>
 
@@ -2707,6 +3103,105 @@
     /* =====================================================
        LOAD SAVED
     ===================================================== */
+
+    
+    /* =====================================================
+       LOAD LIVE (long-form / stream replays only — not story live)
+    ===================================================== */
+
+    async function loadLive() {
+        if (!canViewContent && !isOwnProfile) {
+            updateContentAccess();
+            return;
+        }
+
+        const container = $("liveList");
+        if (!container || !profileUID) return;
+
+        renderLoading(container, "Loading live...");
+
+        try {
+            let items = [];
+            const roots = ["lives", "live", "liveStreams", "liveVideos"];
+
+            for (const root of roots) {
+                try {
+                    const snap = await db
+                        .ref(root)
+                        .orderByChild("uid")
+                        .equalTo(profileUID)
+                        .once("value");
+                    const data = snap.val() || {};
+                    Object.entries(data).forEach(([id, value]) => {
+                        const v = value || {};
+                        // Skip story-style lives
+                        const mode = String(
+                            v.mode || v.type || v.liveType || v.source || ""
+                        ).toLowerCase();
+                        if (
+                            mode === "story" ||
+                            mode === "stories" ||
+                            v.isStory === true ||
+                            v.storyLive === true
+                        ) {
+                            return;
+                        }
+                        items.push({ id, ...v, __root: root });
+                    });
+                } catch (_) {}
+            }
+
+            // Also long videos marked as live replay
+            try {
+                const vs = await db
+                    .ref("videos")
+                    .orderByChild("uid")
+                    .equalTo(profileUID)
+                    .once("value");
+                const data = vs.val() || {};
+                Object.entries(data).forEach(([id, value]) => {
+                    const v = value || {};
+                    if (
+                        v.isLive === true ||
+                        v.wasLive === true ||
+                        String(v.type || "").toLowerCase() === "live"
+                    ) {
+                        items.push({ id, ...v, __root: "videos" });
+                    }
+                });
+            } catch (_) {}
+
+            // de-dupe
+            const seen = {};
+            items = items.filter((it) => {
+                if (!it.id || seen[it.id]) return false;
+                if (it.deleted || it.archived) return false;
+                seen[it.id] = true;
+                return true;
+            });
+
+            items.sort(
+                (a, b) =>
+                    safeNumber(b.createdAt || b.endedAt || b.startedAt) -
+                    safeNumber(a.createdAt || a.endedAt || a.startedAt)
+            );
+
+            if (!items.length) {
+                renderEmpty(
+                    container,
+                    "No live videos",
+                    "Long live streams and replays appear here. Story live stays in Stories."
+                );
+                return;
+            }
+
+            container.innerHTML = items.map(renderVideoCard).join("");
+            bindContentActions(container);
+        } catch (error) {
+            console.error("Live loading error:", error);
+            renderEmpty(container, "Unable to load live", "Please try again.");
+        }
+    }
 
     async function loadSaved() {
         if (!canViewContent && !isOwnProfile) {
@@ -2877,18 +3372,36 @@
         }
 
         return (
+            item.videoUrl ||
+            item.videoURL ||
             item.mediaUrl ||
             item.mediaURL ||
             item.url ||
-            item.videoUrl ||
-            item.videoURL ||
-            item.imageUrl ||
-            item.imageURL ||
             item.fileUrl ||
             item.cloudinaryUrl ||
+            item.secure_url ||
+            item.downloadURL ||
+            item.imageUrl ||
+            item.imageURL ||
             ""
         );
 
+    }
+
+    function getThumbURL(item) {
+        if (!item) return "";
+        return (
+            item.thumbnail ||
+            item.thumbnailUrl ||
+            item.thumbnailURL ||
+            item.thumb ||
+            item.thumbUrl ||
+            item.poster ||
+            item.cover ||
+            item.coverUrl ||
+            item.preview ||
+            ""
+        );
     }
 
 
@@ -2961,10 +3474,8 @@
                                 return;
                             }
 
-                            openManageMenu(
-                                card.dataset.id,
-                                card.dataset.type
-                            );
+                            openManageMenu(card.dataset.id, card.dataset.type
+                            , e && (e.currentTarget || e.target));
 
                         }
                     );
@@ -3019,45 +3530,193 @@
        MANAGE CONTENT
     ===================================================== */
 
-    function openManageMenu(id, type) {
+    function openManageMenu(id, type, anchorEl) {
+        const t = String(type || "").toLowerCase();
+        if (t === "post" || t === "posts") return;
+        openContentActionSheet(id, type, anchorEl);
+    }
 
-        if (!isOwnProfile) {
-            return;
+    function closeContentActionSheet() {
+        const sheet = $("contentActionSheet");
+        if (!sheet) return;
+        sheet.classList.add("hidden");
+        sheet.classList.remove("anchored");
+        sheet.setAttribute("aria-hidden", "true");
+        document.body.classList.remove("modalOpen");
+        const panel = sheet.querySelector(".aboutSheetPanel");
+        if (panel) {
+            panel.style.left = "";
+            panel.style.top = "";
+            panel.style.bottom = "";
+            panel.style.right = "";
+        }
+    }
+
+    function contentShareUrl(id, type) {
+        const origin = window.location.origin || "";
+        if (type === "short" || type === "shorts") {
+            return origin + "/shorts.html?id=" + encodeURIComponent(id);
+        }
+        if (type === "video" || type === "videos") {
+            return origin + "/video.html?id=" + encodeURIComponent(id);
+        }
+        return origin + "/post.html?id=" + encodeURIComponent(id);
+    }
+
+    function openContentActionSheet(id, type, anchorEl) {
+        let sheet = $("contentActionSheet");
+        if (!sheet) {
+            sheet = document.createElement("div");
+            sheet.id = "contentActionSheet";
+            sheet.className = "aboutSheet hidden";
+            sheet.setAttribute("aria-hidden", "true");
+            sheet.innerHTML =
+                '<div class="aboutSheetBackdrop" data-close-content-sheet></div>' +
+                '<div class="aboutSheetPanel">' +
+                '<div class="aboutSheetHandle"></div>' +
+                '<header class="aboutSheetHead"><strong>Options</strong>' +
+                '<button type="button" data-close-content-sheet aria-label="Close">' +
+                '<i class="fa-solid fa-xmark"></i></button></header>' +
+                '<div class="visitorMenuList" id="contentActionList"></div></div>';
+            document.body.appendChild(sheet);
+            sheet.querySelectorAll("[data-close-content-sheet]").forEach((el) => {
+                el.addEventListener("click", closeContentActionSheet);
+            });
         }
 
+        const list = sheet.querySelector("#contentActionList");
+        if (!list) return;
 
-        /*
-         * Use a native action menu fallback.
-         */
+        const isOwn = !!isOwnProfile;
+        const items = [
+            { id: "share", icon: "fa-share-nodes", label: "Share", danger: false },
+            { id: "copy", icon: "fa-link", label: "Copy link", danger: false }
+        ];
 
-        const action =
-            window.prompt(
-                "Manage content\n\n" +
-                "1 = Archive\n" +
-                "2 = Delete\n" +
-                "3 = Cancel"
-            );
-
-
-        if (action === "1") {
-
-            archiveContent(
-                id,
-                type
-            );
-
+        if (isOwn) {
+            items.push({ id: "edit", icon: "fa-pen", label: "Edit", danger: false });
+            items.push({ id: "archive", icon: "fa-box-archive", label: "Archive", danger: false });
+            items.push({ id: "delete", icon: "fa-trash", label: "Delete", danger: true });
+        } else {
+            items.push({ id: "report", icon: "fa-flag", label: "Report", danger: true });
+            items.push({ id: "hide", icon: "fa-eye-slash", label: "Not interested", danger: false });
         }
 
+        list.innerHTML = items
+            .map(
+                (it) =>
+                    '<button type="button" class="visitorMenuItem' +
+                    (it.danger ? " danger" : "") +
+                    '" data-content-action="' +
+                    it.id +
+                    '"><i class="fa-solid ' +
+                    it.icon +
+                    '"></i><span>' +
+                    it.label +
+                    "</span></button>"
+            )
+            .join("");
 
-        if (action === "2") {
+        list.querySelectorAll("[data-content-action]").forEach((btn) => {
+            btn.addEventListener("click", async () => {
+                const act = btn.getAttribute("data-content-action");
+                closeContentActionSheet();
+                const link = contentShareUrl(id, type);
 
-            deleteContent(
-                id,
-                type
-            );
+                if (act === "share") {
+                    try {
+                        if (navigator.share) {
+                            await navigator.share({ title: "Viewora", url: link });
+                        } else if (navigator.clipboard) {
+                            await navigator.clipboard.writeText(link);
+                            showToast("Link copied");
+                        } else {
+                            window.prompt("Copy link", link);
+                        }
+                    } catch (_) {}
+                    return;
+                }
+                if (act === "copy") {
+                    try {
+                        if (navigator.clipboard) {
+                            await navigator.clipboard.writeText(link);
+                            showToast("Link copied");
+                        } else window.prompt("Copy link", link);
+                    } catch (_) {
+                        showToast("Could not copy");
+                    }
+                    return;
+                }
+                if (act === "edit") {
+                    if (type === "short" || type === "shorts") {
+                        location.href = "short-edit.html?id=" + encodeURIComponent(id);
+                    } else if (type === "video" || type === "videos") {
+                        location.href = "edit-video.html?id=" + encodeURIComponent(id);
+                    } else {
+                        location.href = "edit-post.html?id=" + encodeURIComponent(id);
+                    }
+                    return;
+                }
+                if (act === "archive") {
+                    archiveContent(id, type);
+                    return;
+                }
+                if (act === "delete") {
+                    deleteContent(id, type);
+                    return;
+                }
+                if (act === "report") {
+                    const params = new URLSearchParams();
+                    params.set("type", type || "post");
+                    params.set("id", id);
+                    if (profileUID) params.set("uid", profileUID);
+                    location.href = "report.html?" + params.toString();
+                    return;
+                }
+                if (act === "hide") {
+                    showToast("We'll show fewer posts like this");
+                    try {
+                        const card = document.querySelector('[data-id="' + id + '"]');
+                        if (card) card.remove();
+                    } catch (_) {}
+                }
+            });
+        });
 
+
+        // Position near 3-dot if provided
+        const panel = sheet.querySelector(".aboutSheetPanel");
+        sheet.classList.add("anchored");
+        if (panel && anchorEl && anchorEl.getBoundingClientRect) {
+            const r = anchorEl.getBoundingClientRect();
+            const pw = 220;
+            const margin = 10;
+            let left = r.right - pw;
+            if (left < margin) left = margin;
+            if (left + pw > window.innerWidth - margin) {
+                left = window.innerWidth - pw - margin;
+            }
+            let top = r.bottom + 6;
+            const estH = 260;
+            if (top + estH > window.innerHeight - margin) {
+                top = Math.max(margin, r.top - estH - 6);
+            }
+            panel.style.left = left + "px";
+            panel.style.top = top + "px";
+            panel.style.bottom = "auto";
+            panel.style.right = "auto";
+            panel.style.margin = "0";
+        } else if (panel) {
+            sheet.classList.remove("anchored");
+            panel.style.left = "";
+            panel.style.top = "";
+            panel.style.bottom = "";
+            panel.style.right = "";
         }
 
+        sheet.classList.remove("hidden");
+        sheet.setAttribute("aria-hidden", "false");
+        document.body.classList.add("modalOpen");
     }
 
 
@@ -3166,28 +3825,39 @@
 
         try {
 
-            const ref = contentReference(id, type);
-            // Soft + hard remove so feed/profile clear
+            const paths = [
+                "posts/" + id,
+                "shorts/" + id,
+                "videos/" + id,
+                "live/" + id,
+                "lives/" + id,
+                "users/" + (currentUser?.uid || profileUID || "") + "/posts/" + id,
+                "users/" + (currentUser?.uid || profileUID || "") + "/shorts/" + id,
+                "users/" + (currentUser?.uid || profileUID || "") + "/videos/" + id,
+                "users/" + (currentUser?.uid || profileUID || "") + "/live/" + id
+            ];
+            // Soft-delete flag first
             try {
-                await ref.update({
-                    deleted: true,
-                    deletedAt: Date.now()
-                });
+                const ref = contentReference(id, type);
+                await ref.update({ deleted: true, deletedAt: Date.now() });
             } catch (_) {}
+            // Permanent remove from every known path
+            const updates = {};
+            paths.forEach((path) => {
+                if (path && !path.includes("//")) updates[path] = null;
+            });
             try {
-                await ref.remove();
-            } catch (_) {}
-            // Mirror cleanup
-            try {
-                if (type === "video" || type === "videos") {
-                    await db.ref("posts/" + id).remove();
-                    await db.ref("videos/" + id).remove();
-                } else if (type === "short" || type === "shorts") {
-                    await db.ref("shorts/" + id).remove();
-                } else if (type === "post" || type === "posts") {
-                    await db.ref("posts/" + id).remove();
+                await db.ref().update(updates);
+            } catch (e) {
+                console.warn("bulk delete partial", e);
+                for (const path of paths) {
+                    try { await db.ref(path).remove(); } catch (_) {}
                 }
-            } catch (_) {}
+            }
+            // Extra: comments / likes subtrees
+            try { await db.ref("comments/" + id).remove(); } catch (_) {}
+            try { await db.ref("likes/" + id).remove(); } catch (_) {}
+            try { await db.ref("shortLikes/" + id).remove(); } catch (_) {}
 
             showToast(
                 "Content deleted"
@@ -3259,40 +3929,29 @@
         $("storyPlusBtn")
             ?.addEventListener(
                 "click",
-                () => {
-
+                (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
                     if (!isOwnProfile) {
-
                         openProfileStories();
-
                         return;
-
                     }
-
-                    window.location.href =
-                        "story-upload.html";
-
+                    window.location.href = "story-upload.html";
                 }
             );
 
-
-        // New story item → open story-upload.html
+        // New story item → open story-upload.html (active stories only, NOT highlights)
         $("newStoryItem")
             ?.addEventListener(
                 "click",
-                () => {
-
+                (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
                     if (isOwnProfile) {
-
-                        window.location.href =
-                            "story-upload.html";
-
+                        window.location.href = "story-upload.html";
                     } else {
-
                         openProfileStories();
-
                     }
-
                 }
             );
 
@@ -3624,39 +4283,92 @@
                     }
                 );
 
-            // ONLY stories the user explicitly pinned as highlights
+            // Highlights = albums (collections) or legacy single pins
             let highlightStories = [];
             try {
                 const hlSnap = await db
                     .ref("users/" + profileUID + "/highlights")
                     .once("value");
                 const hlMap = hlSnap.exists() ? (hlSnap.val() || {}) : {};
-                const pinnedIds = Object.keys(hlMap).filter((id) => {
-                    const v = hlMap[id];
-                    return v === true || v === 1 || (v && typeof v === "object");
-                });
-                if (pinnedIds.length) {
-                    const byId = {};
-                    allStories.forEach((s) => { byId[s.id] = s; });
-                    // Also fetch missing story nodes if needed
-                    for (const id of pinnedIds) {
-                        if (byId[id]) {
-                            highlightStories.push(byId[id]);
-                        } else {
-                            try {
-                                const ss = await db.ref("stories/" + id).once("value");
-                                if (ss.exists()) {
-                                    highlightStories.push({ id, ...(ss.val() || {}) });
-                                }
-                            } catch (_) {}
+                window.__vieworaHighlightMeta = hlMap;
+                const byId = {};
+                allStories.forEach((s) => { byId[s.id] = s; });
+
+                for (const [key, meta] of Object.entries(hlMap)) {
+                    if (!meta || meta === false || meta === 0) continue;
+
+                    // Collection album: { title, coverUrl, storyIds: [] }
+                    if (meta && typeof meta === "object" && Array.isArray(meta.storyIds)) {
+                        const ids = meta.storyIds.filter(Boolean);
+                        if (!ids.length) continue;
+                        let cover =
+                            meta.coverUrl ||
+                            meta.cover ||
+                            "";
+                        if (!cover) {
+                            const first = byId[ids[0]];
+                            if (first) {
+                                cover =
+                                    first.thumbnail ||
+                                    first.thumbnailUrl ||
+                                    first.mediaUrl ||
+                                    first.url ||
+                                    "";
+                            } else {
+                                try {
+                                    const ss = await db.ref("stories/" + ids[0]).once("value");
+                                    if (ss.exists()) {
+                                        const v = ss.val() || {};
+                                        cover =
+                                            v.thumbnail ||
+                                            v.thumbnailUrl ||
+                                            v.mediaUrl ||
+                                            v.url ||
+                                            "";
+                                    }
+                                } catch (_) {}
+                            }
                         }
+                        highlightStories.push({
+                            id: key,
+                            __isHighlight: true,
+                            __isAlbum: true,
+                            storyIds: ids,
+                            highlightTitle: meta.title || "Highlight",
+                            highlightCover: cover,
+                            title: meta.title || "Highlight",
+                            mediaUrl: cover,
+                            thumbnail: cover
+                        });
+                        continue;
                     }
+
+                    // Legacy: key is storyId
+                    const storyId =
+                        (meta && typeof meta === "object" && (meta.storyId || meta.id)) ||
+                        key;
+                    let storyObj = byId[storyId] ? { ...byId[storyId] } : null;
+                    if (!storyObj) {
+                        try {
+                            const ss = await db.ref("stories/" + storyId).once("value");
+                            if (ss.exists()) storyObj = { id: storyId, ...(ss.val() || {}) };
+                        } catch (_) {}
+                    }
+                    if (!storyObj) continue;
+                    if (meta && typeof meta === "object") {
+                        if (meta.coverUrl || meta.cover) {
+                            storyObj.highlightCover = meta.coverUrl || meta.cover;
+                        }
+                        if (meta.title) storyObj.highlightTitle = meta.title;
+                    }
+                    storyObj.__isHighlight = true;
+                    storyObj.storyIds = [storyObj.id];
+                    highlightStories.push(storyObj);
                 }
             } catch (e) {
                 console.warn("Highlights load failed:", e);
             }
 
-            // Keep for owner manage UI
             window.__vieworaExpiredStories = expiredStories;
             window.__vieworaPinnedHighlightIds = highlightStories.map((s) => s.id);
 
@@ -3775,14 +4487,26 @@
             updateStoryRingUI(activeStories.length > 0);
 
 
-            // Highlights removed per product request
+            // Highlights: show pinned stories (any age)
             const hlSection = $("highlightsSection");
-            if (hlSection) hlSection.style.display = "none";
-            const hlWrap = $("highlightsWrapper") || $("highlightsList") || $("profileHighlights");
-            if (hlWrap) {
-                hlWrap.innerHTML = "";
-                if (hlWrap.parentElement && hlWrap.parentElement.id === "highlightsSection") {
-                    hlWrap.parentElement.style.display = "none";
+            const hlWrap =
+                $("highlightsWrapper") ||
+                $("highlightsList") ||
+                $("profileHighlights");
+            if (hlSection && hlWrap) {
+                hlWrap.style.display = "";
+                hlWrap.removeAttribute("hidden");
+                // Owner always sees Highlights; visitors see only if pinned exist
+                if (highlightStories.length || isOwnProfile) {
+                    hlSection.removeAttribute("hidden");
+                    hlSection.hidden = false;
+                    hlSection.style.setProperty("display", "block", "important");
+                    renderHighlights(highlightStories);
+                } else {
+                    hlSection.setAttribute("hidden", "");
+                    hlSection.hidden = true;
+                    hlSection.style.setProperty("display", "none", "important");
+                    hlWrap.innerHTML = "";
                 }
             }
 
@@ -3793,6 +4517,19 @@
                 "Stories loading failed:",
                 error
             );
+            // Owner should still manage highlights even if story load fails
+            try {
+                if (isOwnProfile) {
+                    const hlSection = $("highlightsSection");
+                    const hlWrap = $("highlightsWrapper");
+                    if (hlSection && hlWrap) {
+                        hlSection.removeAttribute("hidden");
+                        hlSection.hidden = false;
+                        hlSection.style.setProperty("display", "block", "important");
+                        renderHighlights([]);
+                    }
+                }
+            } catch (_) {}
 
         }
 
@@ -3803,31 +4540,47 @@
        STORY VIEWER
     ===================================================== */
 
-    function openStoryViewer(story) {
-
-        /*
-         * ONLY this profile user's stories (solo).
-         * Never open other users from profile ring.
-         */
+    function openStoryViewer(story, asHighlight) {
 
         if (!profileUID) {
             return;
         }
 
+        // Album / multi-story highlight
+        const ids =
+            (story && Array.isArray(story.storyIds) && story.storyIds.length)
+                ? story.storyIds
+                : (story && story.id ? [story.id] : []);
+
+        if (ids.length) {
+            try {
+                sessionStorage.setItem(
+                    "vieworaHighlightPlaylist",
+                    JSON.stringify({
+                        uid: profileUID,
+                        albumId: story.__isAlbum ? story.id : "",
+                        title: story.highlightTitle || story.title || "Highlight",
+                        storyIds: ids
+                    })
+                );
+            } catch (_) {}
+        }
+
+        const firstId = ids[0] || (story && story.id) || "";
         let url =
             "stories.html?uid=" +
             encodeURIComponent(profileUID) +
-            "&solo=1&from=profile";
+            "&solo=1&from=profile&highlight=1";
 
-        if (story?.id) {
+        if (firstId) {
             url +=
                 "&story=" +
-                encodeURIComponent(story.id) +
+                encodeURIComponent(firstId) +
                 "&storyId=" +
-                encodeURIComponent(story.id);
-            if (story.expiresAt && Number(story.expiresAt) <= Date.now()) {
-                url += "&highlight=1";
-            }
+                encodeURIComponent(firstId);
+        }
+        if (story && story.__isAlbum) {
+            url += "&album=" + encodeURIComponent(story.id);
         }
 
         window.location.href = url;
@@ -3928,170 +4681,84 @@
 
     function renderHighlights(stories) {
 
-        /*
-         * Supports common container IDs used in profile.html
-         */
-
         const container =
             $("highlightsWrapper") ||
             $("highlightsList") ||
             $("profileHighlights") ||
-            document.querySelector(
-                ".highlightsWrapper"
-            ) ||
-            document.querySelector(
-                ".highlights"
-            );
+            document.querySelector(".highlightsWrapper");
 
-
-        if (!container) {
-            return;
-        }
-
-
-        if (
-            !stories ||
-            !stories.length
-        ) {
-
-            container.innerHTML = "";
-
-            // Optional empty state
-            const empty =
-                document.createElement(
-                    "div"
-                );
-
-            empty.className =
-                "highlightEmpty";
-
-            empty.innerHTML = `
-                <p>No highlights yet</p>
-            `;
-
-            container.appendChild(
-                empty
-            );
-
-            return;
-
-        }
-
+        if (!container) return;
 
         container.innerHTML = "";
 
-
-        stories.forEach(
-            story => {
-
-                const item =
-                    document.createElement(
-                        "div"
-                    );
-
-
-                item.className =
-                    "highlightItem storyItem";
-
-
-                const media =
-                    story.mediaUrl ||
-                    story.url ||
-                    story.thumbnail ||
-                    "";
-
-
-                item.innerHTML = `
-
-                    <div class="storyCircle highlightCircle">
-
-                        ${
-                            story.type === "video"
-                                ? `
-                                    <video
-                                        src="${escapeHTML(media)}"
-                                        muted
-                                        playsinline
-                                        preload="metadata"
-                                    ></video>
-                                `
-                                : `
-                                    <img
-                                        src="${escapeHTML(
-                                            media ||
-                                            DEFAULT_AVATAR
-                                        )}"
-                                        alt="Highlight"
-                                    >
-                                `
-                        }
-
-                    </div>
-
-                    <p>
-                        ${
-                            escapeHTML(
-                                story.title ||
-                                "Highlight"
-                            )
-                        }
-                    </p>
-
-                `;
-
-
-                item.addEventListener(
-                    "click",
-                    () => {
-                        openStoryViewer(story);
-                    }
-                );
-
-                // Owner: long-press to remove from highlights
-                if (isOwnProfile) {
-                    let holdTimer = null;
-                    item.addEventListener("touchstart", () => {
-                        holdTimer = setTimeout(() => {
-                            if (window.confirm("Remove this highlight?")) {
-                                unpinHighlight(story.id);
-                            }
-                        }, 650);
-                    }, { passive: true });
-                    item.addEventListener("touchend", () => clearTimeout(holdTimer));
-                    item.addEventListener("touchmove", () => clearTimeout(holdTimer));
-                    item.addEventListener("contextmenu", (e) => {
-                        e.preventDefault();
-                        if (window.confirm("Remove this highlight?")) {
-                            unpinHighlight(story.id);
-                        }
-                    });
-                }
-
-                container.appendChild(item);
-            }
-        );
-
-        // Owner helper: manage highlights button
+        // Owner only: + opens highlight builder (NOT story-upload)
         if (isOwnProfile) {
-            let manageBtn = document.getElementById("manageHighlightsBtn");
-            if (!manageBtn) {
-                const section =
-                    $("highlightsSection") ||
-                    container.parentElement;
-                if (section) {
-                    manageBtn = document.createElement("button");
-                    manageBtn.id = "manageHighlightsBtn";
-                    manageBtn.type = "button";
-                    manageBtn.textContent = "Manage highlights";
-                    manageBtn.style.cssText =
-                        "margin-top:10px;width:100%;min-height:40px;border:1px solid rgba(255,255,255,.12);border-radius:12px;background:rgba(255,255,255,.06);color:#fff;font-size:12px;font-weight:700;cursor:pointer";
-                    manageBtn.addEventListener("click", manageHighlights);
-                    section.appendChild(manageBtn);
-                }
-            }
+            const add = document.createElement("div");
+            add.className = "highlightItem storyItem highlightAdd";
+            add.innerHTML =
+                '<div class="storyCircle highlightCircle addHighlight">' +
+                '<i class="fa-solid fa-plus"></i></div><p>New</p>';
+            add.addEventListener("click", function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                window.location.href = "story-highlight.html";
+            });
+            container.appendChild(add);
         }
-    }
 
+        if (!stories || !stories.length) {
+            return;
+        }
+
+        stories.forEach((story) => {
+            const item = document.createElement("div");
+            item.className = "highlightItem storyItem";
+            item.setAttribute("data-highlight-id", story.id || "");
+
+            const media =
+                story.highlightCover ||
+                story.thumbnail ||
+                story.thumbnailUrl ||
+                story.mediaUrl ||
+                story.url ||
+                "";
+
+            const title =
+                story.highlightTitle ||
+                story.title ||
+                story.caption ||
+                "Highlight";
+
+            item.innerHTML =
+                '<div class="storyCircle highlightCircle">' +
+                (media
+                    ? '<img src="' +
+                      escapeHTML(media) +
+                      '" alt="">'
+                    : '<i class="fa-solid fa-circle-play" style="opacity:.5"></i>') +
+                "</div><p>" +
+                escapeHTML(title) +
+                "</p>";
+
+            item.addEventListener("click", function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                story.__isHighlight = true;
+                openStoryViewer(story, true);
+            });
+
+            if (isOwnProfile) {
+                item.addEventListener("contextmenu", (e) => {
+                    e.preventDefault();
+                    if (window.confirm("Delete this highlight?")) {
+                        unpinHighlight(story.id);
+                    }
+                });
+            }
+
+            container.appendChild(item);
+        });
+    }
 
     /* =====================================================
        LOADING
@@ -4664,34 +5331,13 @@
     }
 
     function manageHighlights() {
-        if (!isOwnProfile) return;
-        const expired = window.__vieworaExpiredStories || [];
-        const pinned = new Set(window.__vieworaPinnedHighlightIds || []);
-        if (!expired.length) {
-            showToast("No expired stories yet (24h)");
+        if (!isOwnProfile) {
+            showToast("Only you can manage your highlights");
             return;
         }
-        // Simple chooser
-        const lines = expired.slice(0, 15).map((s, i) => {
-            const t = s.title || s.caption || ("Story " + (i + 1));
-            const mark = pinned.has(s.id) ? "✓" : " ";
-            return (i + 1) + ". [" + mark + "] " + t;
-        });
-        const pick = window.prompt(
-            "Highlights — expired stories\n" +
-            "Enter number to pin/unpin (toggle)\n\n" +
-            lines.join("\n")
-        );
-        const n = Number(pick);
-        if (!n || n < 1 || n > expired.length) return;
-        const story = expired[n - 1];
-        if (!story) return;
-        if (pinned.has(story.id)) {
-            unpinHighlight(story.id);
-        } else {
-            pinHighlight(story.id);
-        }
+        window.location.href = "story-highlight.html";
     }
+
 
 
     async function acceptFollowRequest(fromUID) {

@@ -62,6 +62,17 @@
         preferUnmuted = localStorage.getItem("viewora_shorts_unmuted") === "1";
     } catch (_) {}
 
+
+    // Ensure Realtime Database handle (firebase.js may set window.db)
+    try {
+        if (!window.db && typeof firebase !== "undefined") {
+            window.db = firebase.database();
+        }
+    } catch (_) {}
+    var db = window.db || (typeof firebase !== "undefined" ? firebase.database() : null);
+
+
+
     /* Like locks + spam detection */
     const likeInFlight = new Set();
     const likeSpamLog = {}; // shortId -> timestamps[]
@@ -271,34 +282,142 @@
         );
     }
 
-    function getMusicMeta(short, username) {
+        function getMusicMeta(short, username) {
         const raw =
             short.music ||
             short.sound ||
             short.audio ||
             short.song ||
-            short.musicTitle ||
             null;
-        let id = short.musicId || short.soundId || "";
+        let id = short.musicId || short.soundId || short.originalSoundId || "";
         let title = "";
         let artist = "";
+        let audioUrl = short.musicUrl || short.audioUrl || "";
+        let coverUrl = "";
+        let isOriginal = false;
+
         if (raw && typeof raw === "object") {
-            id = id || raw.id || raw.musicId || "";
+            id = id || raw.id || raw.musicId || raw.originalSoundId || "";
             title = safeText(raw.title || raw.name || raw.musicTitle || "", "");
-            artist = safeText(raw.artist || raw.singer || "", "");
-        } else {
+            artist = safeText(
+                raw.artist || raw.singer || raw.creatorName || raw.username || "",
+                ""
+            );
+            audioUrl =
+                audioUrl ||
+                raw.audioUrl ||
+                raw.url ||
+                raw.src ||
+                raw.previewUrl ||
+                "";
+            coverUrl =
+                raw.coverUrl ||
+                raw.cover ||
+                raw.thumbnail ||
+                raw.image ||
+                raw.artwork ||
+                "";
+            isOriginal = !!(
+                raw.isOriginal ||
+                raw.original ||
+                String(id).indexOf("orig_") === 0 ||
+                String(title).toLowerCase().indexOf("original") === 0
+            );
+        } else if (typeof raw === "string" && raw.trim()) {
             title = safeText(raw, "");
         }
+
         if (!title) title = safeText(short.musicTitle || short.musicName || "", "");
-        if (!title) {
-            const uname = safeText(username, "user").replace(/^@/, "");
-            title = "Original sound • " + uname;
+        if (!coverUrl) {
+            coverUrl = safeText(
+                short.musicCover ||
+                    short.musicCoverUrl ||
+                    short.coverUrl ||
+                    "",
+                ""
+            );
         }
+
+        const uname = safeText(
+            username ||
+                short.username ||
+                short.userName ||
+                short.name ||
+                "user",
+            "user"
+        ).replace(/^@/, "");
+
+        // Creator avatar for original audio chip
+        const avatarUrl = safeText(
+            short.userPhoto ||
+                short.photoURL ||
+                short.avatar ||
+                short.profilePic ||
+                short.profilePhoto ||
+                short.userAvatar ||
+                "",
+            ""
+        );
+
+        // Stable original-sound id so other shorts can reuse & group
+        if (!id) {
+            const sid = short.id || short.shortId || short.key || "";
+            const uid =
+                short.uid || short.userId || short.ownerId || short.creatorId || "";
+            if (sid) id = "orig_" + sid;
+            else if (uid)
+                id =
+                    "orig_" +
+                    uid +
+                    "_" +
+                    (title || "audio").replace(/\s+/g, "_").slice(0, 24);
+            isOriginal = true;
+        }
+
+        // Treat placeholder artist as original
+        const badArtist = /^(your video|unknown|unknown artist|n\/?a|null|undefined)$/i;
+        if (artist && badArtist.test(artist.trim())) {
+            artist = "";
+            isOriginal = true;
+        }
+
+        if (
+            !title ||
+            /^original(\s+audio)?$/i.test(title) ||
+            /^your video$/i.test(title)
+        ) {
+            title = "Original audio";
+            isOriginal = true;
+        }
+
+        // Original = always this Short's creator username (not "Your video")
+        if (isOriginal) {
+            artist = uname || artist || "user";
+            title = "Original audio";
+        }
+
+        const label = isOriginal
+            ? "Original audio · " + artist
+            : artist
+              ? title + " · " + artist
+              : title;
+
+        // Icon: original → profile pic; library music → cover/logo
+        const iconUrl = isOriginal
+            ? avatarUrl || coverUrl || "assets/logo.png"
+            : coverUrl || avatarUrl || "assets/logo.png";
+
         return {
             id: id,
             title: title,
             artist: artist,
-            label: artist ? title + " · " + artist : title
+            label: label,
+            audioUrl: audioUrl,
+            isOriginal: isOriginal,
+            sourceShortId: short.id || short.shortId || "",
+            coverUrl: coverUrl,
+            avatarUrl: avatarUrl,
+            iconUrl: iconUrl
         };
     }
 
@@ -381,6 +500,23 @@
         const creatorId = getCreatorId(short);
         const creator = await getUser(creatorId);
 
+        // Enrich avatar for original-audio chip
+        if (creator && typeof creator === "object") {
+            short.userPhoto =
+                short.userPhoto ||
+                short.photoURL ||
+                short.avatar ||
+                creator.photoURL ||
+                creator.avatar ||
+                creator.profilePic ||
+                creator.photo ||
+                "";
+            short.photoURL = short.userPhoto;
+            if (!short.username && creator.username) {
+                short.username = creator.username;
+            }
+        }
+
         // Prefer data stored on short, then users node, then auth
         let displayName = safeText(
             short.name ||
@@ -444,6 +580,20 @@
         const comments = safeNumber(short.comments || short.commentCount);
         const shares = safeNumber(short.shares || short.shareCount);
         const views = safeNumber(short.views || short.viewCount);
+
+        // Settings from short-edit / publish
+        const hideLikeCount =
+            short.hideLikeCount === true ||
+            short.showLikeCount === false ||
+            short.hideLikes === true;
+        const commentsOff =
+            short.commentsDisabled === true ||
+            short.allowComments === false ||
+            short.disableComments === true;
+        const hideCommentCount =
+            commentsOff ||
+            short.showCommentCount === false ||
+            short.hideComments === true;
 
         const musicMeta = getMusicMeta(short, username);
         const musicLabel = musicMeta.label;
@@ -551,21 +701,25 @@
                 <button type="button" class="shortMusic" data-action="music"
                     data-music-id="${escapeHTML(musicMeta.id || "")}"
                     data-music-title="${escapeHTML(musicMeta.title || "")}"
-                    data-music-artist="${escapeHTML(musicMeta.artist || "")}">
-                    <i class="fa-solid fa-music"></i>
+                    data-music-artist="${escapeHTML(musicMeta.artist || "")}"
+                    data-music-audio="${escapeHTML(musicMeta.audioUrl || "")}"
+                    data-original="${musicMeta.isOriginal ? "1" : "0"}">
+                    <img class="shortMusicIcon" src="${escapeHTML(musicMeta.iconUrl || "assets/logo.png")}" alt="" onerror="this.src='assets/logo.png'">
                     <span>${escapeHTML(musicLabel)}</span>
                 </button>
             </div>
 
             <div class="shortActions">
-                <button type="button" class="shortAction likeBtn" data-action="like">
+                <button type="button" class="shortAction likeBtn" data-action="like"
+                    data-hide-count="${hideLikeCount ? "1" : "0"}">
                     <i class="fa-regular fa-heart"></i>
-                    <span>${formatCount(likes)}</span>
+                    <span ${hideLikeCount ? 'style="display:none"' : ""}>${formatCount(likes)}</span>
                 </button>
 
-                <button type="button" class="shortAction" data-action="comment">
+                <button type="button" class="shortAction" data-action="comment"
+                    ${commentsOff ? 'data-comments-off="1" style="opacity:.45"' : ""}>
                     <i class="fa-regular fa-comment"></i>
-                    <span>${formatCount(comments)}</span>
+                    <span ${hideCommentCount ? 'style="display:none"' : ""}>${formatCount(comments)}</span>
                 </button>
 
                 <button type="button" class="shortAction" data-action="share">
@@ -578,9 +732,9 @@
                     <span>Save</span>
                 </button>
 
-                <div class="musicDisc" aria-hidden="true">
-                    <i class="fa-solid fa-music"></i>
-                </div>
+                <button type="button" class="musicDisc" data-action="music" aria-label="Sound">
+                    <img src="${escapeHTML(musicMeta.iconUrl || "assets/logo.png")}" alt="" onerror="this.src='assets/logo.png'">
+                </button>
             </div>
 
             <div class="shortProgress"><span></span></div>
@@ -728,6 +882,14 @@
                 await doLike(card, short, false);
                 break;
             case "comment":
+                if (
+                    short.commentsDisabled === true ||
+                    short.allowComments === false ||
+                    short.disableComments === true
+                ) {
+                    showToast("Comments are turned off");
+                    break;
+                }
                 openComments(short);
                 break;
             case "share":
@@ -766,6 +928,24 @@
                 if (id) q.set("id", id);
                 if (title) q.set("name", title);
                 if (artist) q.set("artist", artist);
+                if (meta.audioUrl) q.set("audio", meta.audioUrl);
+                if (meta.isOriginal) q.set("original", "1");
+                const sid = short.id || card.dataset.id || card.dataset.shortId || "";
+                if (sid) q.set("shortId", sid);
+                const uid =
+                    short.uid ||
+                    short.userId ||
+                    card.dataset.uid ||
+                    "";
+                if (uid) q.set("uid", uid);
+                // video url as fallback playable "original audio"
+                const vurl =
+                    short.videoUrl ||
+                    short.videoURL ||
+                    short.mediaUrl ||
+                    short.mediaURL ||
+                    "";
+                if (vurl && !meta.audioUrl) q.set("video", vurl);
                 location.href = "music-detail.html?" + q.toString();
                 break;
             }
@@ -817,6 +997,49 @@
         }
         if (viewerMenu) {
             viewerMenu.classList.toggle("hidden", !!isOwner);
+        }
+
+        // Toggle labels for owner settings
+        if (isOwner && short) {
+            const commentsOff =
+                short.commentsDisabled === true ||
+                short.allowComments === false ||
+                short.disableComments === true;
+            const likesHidden =
+                short.hideLikeCount === true ||
+                short.showLikeCount === false ||
+                short.hideLikes === true;
+
+            const dcBtn = $("disableCommentsBtn");
+            if (dcBtn) {
+                const strong = dcBtn.querySelector("strong");
+                const small = dcBtn.querySelector("small");
+                if (strong) {
+                    strong.textContent = commentsOff
+                        ? "Turn on comments"
+                        : "Turn off comments";
+                }
+                if (small) {
+                    small.textContent = commentsOff
+                        ? "Allow viewers to comment again"
+                        : "Stop new comments on this Short";
+                }
+            }
+            const hlBtn = $("hideLikeCountBtn");
+            if (hlBtn) {
+                const strong = hlBtn.querySelector("strong");
+                const small = hlBtn.querySelector("small");
+                if (strong) {
+                    strong.textContent = likesHidden
+                        ? "Show like count"
+                        : "Hide like count";
+                }
+                if (small) {
+                    small.textContent = likesHidden
+                        ? "Display the number of likes"
+                        : "Hide the number of likes from viewers";
+                }
+            }
         }
 
         menu.classList.remove("hidden");
@@ -998,10 +1221,14 @@
 
     function editActiveShort() {
         const id = getActiveShortId();
-        if (!id) return;
+        if (!id) {
+            showToast("Short not found");
+            return;
+        }
         closeMoreMenu();
+        // Always open short-edit (details + settings), not upload
         window.location.href =
-            "upload.html?edit=" + encodeURIComponent(id);
+            "short-edit.html?id=" + encodeURIComponent(id) + "&edit=1";
     }
 
     function syncVolumeIcon(card, video) {
@@ -1617,12 +1844,26 @@
                     (s) =>
                         s.deleted !== true &&
                         s.archived !== true &&
-                        s.hidden !== true
-                )
-                .sort(
-                    (a, b) =>
-                        safeNumber(b.createdAt) - safeNumber(a.createdAt)
+                        s.hidden !== true &&
+                        s.visibility !== "private"
                 );
+
+            // Instagram / YouTube style ranking:
+            // engagement + recency (not pure chronological dump)
+            function engagementScore(s) {
+                const likes = safeNumber(s.likes || s.likeCount);
+                const comments = safeNumber(s.comments || s.commentCount);
+                const views = safeNumber(s.views || s.viewCount);
+                const shares = safeNumber(s.shares || s.shareCount);
+                const created = safeNumber(s.createdAt || s.timestamp);
+                const ageH = created
+                    ? Math.max(0.5, (Date.now() - (created < 1e12 ? created * 1000 : created)) / 36e5)
+                    : 48;
+                // Wilson-ish boost: engagement decays with age
+                const eng = likes * 4 + comments * 6 + shares * 5 + views * 0.15;
+                return eng / Math.pow(ageH + 2, 1.15) + (created || 0) / 1e15;
+            }
+            shorts.sort((a, b) => engagementScore(b) - engagementScore(a));
 
             if (!shorts.length) {
                 showEmpty();
@@ -1699,8 +1940,11 @@
                                     }
                                 });
 
-                            // Respect user unmute preference across shorts
+                            // Keep sound ON across scroll once user unmuted (IG/YT style)
                             video.muted = !preferUnmuted;
+                            if (preferUnmuted) {
+                                try { video.volume = 1; } catch (_) {}
+                            }
                             const playPromise = video.play();
                             if (playPromise && typeof playPromise.catch === "function") {
                                 playPromise.catch(() => {
@@ -1797,12 +2041,34 @@
         $("disableCommentsBtn")?.addEventListener("click", async () => {
             const id = getActiveShortId();
             if (!id || !currentUser) return;
+            if (!db) {
+                showToast("Not connected");
+                return;
+            }
+            const currentlyOff =
+                menuShort &&
+                (menuShort.commentsDisabled === true ||
+                    menuShort.allowComments === false ||
+                    menuShort.disableComments === true);
+            const nextOff = !currentlyOff;
             try {
                 await db.ref("shorts/" + id).update({
-                    commentsDisabled: true
+                    commentsDisabled: nextOff,
+                    allowComments: !nextOff,
+                    disableComments: nextOff
                 });
-                showToast("Comments turned off");
+                if (menuShort) {
+                    menuShort.commentsDisabled = nextOff;
+                    menuShort.allowComments = !nextOff;
+                    menuShort.disableComments = nextOff;
+                }
+                // Live-update active card
+                if (menuCard) {
+                    menuCard.dataset.commentsOff = nextOff ? "1" : "0";
+                }
+                showToast(nextOff ? "Comments turned off" : "Comments turned on");
             } catch (e) {
+                console.error(e);
                 showToast("Failed");
             }
             closeMoreMenu();
@@ -1811,12 +2077,39 @@
         $("hideLikeCountBtn")?.addEventListener("click", async () => {
             const id = getActiveShortId();
             if (!id || !currentUser) return;
+            if (!db) {
+                showToast("Not connected");
+                return;
+            }
+            const currentlyHidden =
+                menuShort &&
+                (menuShort.hideLikeCount === true ||
+                    menuShort.showLikeCount === false ||
+                    menuShort.hideLikes === true);
+            const nextHidden = !currentlyHidden;
             try {
                 await db.ref("shorts/" + id).update({
-                    hideLikeCount: true
+                    hideLikeCount: nextHidden,
+                    showLikeCount: !nextHidden,
+                    hideLikes: nextHidden
                 });
-                showToast("Like count hidden");
+                if (menuShort) {
+                    menuShort.hideLikeCount = nextHidden;
+                    menuShort.showLikeCount = !nextHidden;
+                    menuShort.hideLikes = nextHidden;
+                }
+                if (menuCard) {
+                    const span = menuCard.querySelector(
+                        '[data-action="like"] span, .likeCount, .shortLikeCount'
+                    );
+                    if (span) {
+                        span.style.display = nextHidden ? "none" : "";
+                    }
+                    menuCard.dataset.hideCount = nextHidden ? "1" : "0";
+                }
+                showToast(nextHidden ? "Like count hidden" : "Like count visible");
             } catch (e) {
+                console.error(e);
                 showToast("Failed");
             }
             closeMoreMenu();

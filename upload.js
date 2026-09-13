@@ -3512,7 +3512,9 @@
 
         try {
 
-            const raw =
+            let raw = null;
+            try { raw = sessionStorage.getItem("vieworaSelectedMusic"); } catch (_) {}
+            if (!raw) raw =
                 sessionStorage.getItem(
                     "viewora_selected_music"
                 );
@@ -3568,11 +3570,52 @@
         updateUploadNotice();
 
         /*
-         * Default screen is Shorts because
-         * the supplied HTML marks Shorts active.
+         * URL: upload.html?type=shorts&useMusic=1
+         * From music-detail "Use this sound"
          */
+        let startMode = "shorts";
+        let autoPickFile = false;
+        try {
+            const params = new URLSearchParams(window.location.search || "");
+            const t = (
+                params.get("type") ||
+                params.get("mode") ||
+                params.get("tab") ||
+                ""
+            ).toLowerCase();
+            if (t === "short" || t === "shorts" || t === "reel") {
+                startMode = "shorts";
+            } else if (t === "post" || t === "photo") {
+                startMode = "post";
+            } else if (t === "long" || t === "video") {
+                startMode = "long";
+            } else if (t === "live") {
+                startMode = "live";
+            }
+            if (
+                params.get("useMusic") === "1" ||
+                params.get("music") === "1" ||
+                params.get("fromMusic") === "1"
+            ) {
+                startMode = "shorts";
+                autoPickFile = true;
+            }
+        } catch (_) {}
 
-        await setMode("shorts");
+        await setMode(startMode);
+
+        // Auto-open file picker so user can select video for this sound
+        if (autoPickFile && startMode === "shorts") {
+            setTimeout(() => {
+                try {
+                    const input = $("shortsMediaInput") || mediaInput;
+                    if (input) {
+                        input.value = "";
+                        input.click();
+                    }
+                } catch (_) {}
+            }, 450);
+        }
 
         console.log(
             "VIEWORA CREATE initialized successfully."

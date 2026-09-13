@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#050507">
+<title>Viewora · Highlights</title>
+<link rel="icon" href="assets/logo.png">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+<link rel="stylesheet" href="theme.css">
+<style>
+:root{--bg:#050507;--card:#121218;--line:rgba(255,255,255,.08);--text:#fff;--muted:#9ca3af;--accent:#7c5cff}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,sans-serif;padding-bottom:100px}
+.hdr{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:12px;padding:12px 16px;background:rgba(5,5,7,.92);backdrop-filter:blur(16px);border-bottom:1px solid var(--line)}
+.hdr button{width:40px;height:40px;border:0;border-radius:12px;background:rgba(255,255,255,.06);color:#fff}
+.hdr h1{font-size:16px;margin:0;flex:1}
+.hint{padding:12px 16px;font-size:12px;color:var(--muted);line-height:1.5}
+.tabs{display:flex;gap:8px;padding:0 16px 12px}
+.tabs button{flex:1;height:40px;border-radius:12px;border:1px solid var(--line);background:transparent;color:var(--muted);font-weight:700}
+.tabs button.active{background:rgba(124,92,255,.2);color:#fff;border-color:rgba(124,92,255,.45)}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;padding:0 12px 20px}
+.card{position:relative;aspect-ratio:9/16;border-radius:12px;overflow:hidden;background:#111;border:1px solid var(--line);cursor:pointer}
+.card.selected{outline:2px solid var(--accent);outline-offset:1px}
+.card img,.card video{width:100%;height:100%;object-fit:cover}
+.card .check{position:absolute;top:6px;right:6px;width:24px;height:24px;border-radius:50%;background:rgba(0,0,0,.55);border:2px solid rgba(255,255,255,.35);display:grid;place-items:center;font-size:11px;color:transparent}
+.card.selected .check{background:var(--accent);border-color:var(--accent);color:#fff}
+.card .badge{position:absolute;left:6px;top:6px;font-size:9px;font-weight:800;padding:3px 6px;border-radius:6px;background:rgba(0,0,0,.65)}
+.albumCard{display:flex;align-items:center;gap:12px;padding:12px;margin:0 12px 10px;border-radius:14px;background:var(--card);border:1px solid var(--line)}
+.albumCard img{width:56px;height:56px;border-radius:50%;object-fit:cover;background:#222}
+.albumCard .meta{flex:1;min-width:0}
+.albumCard .meta strong{display:block;font-size:14px}
+.albumCard .meta small{color:var(--muted);font-size:11px}
+.albumCard .acts{display:flex;gap:6px}
+.albumCard .acts button{width:36px;height:36px;border:0;border-radius:10px;background:rgba(255,255,255,.06);color:#fff}
+.albumCard .acts button.del{background:rgba(255,60,80,.2);color:#ff7a8a}
+.empty{padding:40px 20px;text-align:center;color:var(--muted);grid-column:1/-1}
+.bar{position:fixed;left:0;right:0;bottom:0;padding:12px 16px calc(12px + env(safe-area-inset-bottom));background:rgba(5,5,7,.95);border-top:1px solid var(--line);display:none;gap:10px;z-index:30}
+.bar.show{display:flex}
+.bar input{flex:1;height:44px;border-radius:12px;border:1px solid var(--line);background:#0e0e14;color:#fff;padding:0 12px}
+.bar button{height:44px;padding:0 16px;border:0;border-radius:12px;background:linear-gradient(135deg,#7c5cff,#4f8cff);color:#fff;font-weight:700;white-space:nowrap}
+</style>
+</head>
+<body>
+<header class="hdr">
+  <button type="button" id="backBtn" aria-label="Back"><i class="fa-solid fa-arrow-left"></i></button>
+  <h1>Highlights</h1>
+</header>
+<p class="hint">Select multiple stories, give a name, and create one highlight. Visitors will see that circle on your profile.</p>
+<div class="tabs">
+  <button type="button" class="active" data-tab="create" id="tabCreate">Create</button>
+  <button type="button" data-tab="mine" id="tabMine">My highlights</button>
+</div>
+<div id="grid" class="grid"></div>
+<div id="albumList" style="display:none"></div>
+<div class="bar" id="createBar">
+  <input type="text" id="hlTitle" placeholder="Highlight name" maxlength="40">
+  <button type="button" id="createBtn">Create</button>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script src="firebase.js"></script>
+<script src="theme.js"></script>
+<script>
+(function(){
+  const db = () => window.db || firebase.database();
+  let uid = "";
+  let tab = "create";
+  let stories = [];
+  let albums = {};
+  let selected = new Set();
+
+  document.getElementById("backBtn").onclick = () => {
+    if (history.length > 1) history.back();
+    else location.href = "profile.html";
+  };
+
+  document.querySelectorAll(".tabs button").forEach(btn => {
+    btn.onclick = () => {
+      document.querySelectorAll(".tabs button").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      tab = btn.dataset.tab;
+      selected.clear();
+      render();
+    };
+  });
+
+  function mediaOf(s){
+    return s.mediaUrl || s.videoUrl || s.imageUrl || s.url || s.thumbnail || s.thumbnailUrl || "";
+  }
+
+  async function load(){
+    const snap = await db().ref("stories").orderByChild("uid").equalTo(uid).once("value");
+    const data = snap.val() || {};
+    stories = Object.entries(data).map(([id,v]) => ({id, ...(v||{})}))
+      .filter(s => !s.deleted)
+      .sort((a,b) => Number(b.createdAt||0) - Number(a.createdAt||0));
+
+    // also scan if orderBy fails partially
+    try {
+      const all = await db().ref("stories").limitToLast(150).once("value");
+      const map = {};
+      stories.forEach(s => map[s.id]=s);
+      all.forEach(ch => {
+        const v = ch.val()||{};
+        const o = v.uid||v.userId||v.ownerId||"";
+        if (String(o)===String(uid) && !map[ch.key]) {
+          map[ch.key] = {id: ch.key, ...v};
+        }
+      });
+      stories = Object.values(map).filter(s=>!s.deleted)
+        .sort((a,b)=>Number(b.createdAt||0)-Number(a.createdAt||0));
+    } catch(_){}
+
+    const pinSnap = await db().ref("users/"+uid+"/highlights").once("value");
+    albums = pinSnap.val() || {};
+    render();
+  }
+
+  function isAlbum(v){
+    return v && typeof v === "object" && Array.isArray(v.storyIds);
+  }
+
+  function render(){
+    const grid = document.getElementById("grid");
+    const list = document.getElementById("albumList");
+    const bar = document.getElementById("createBar");
+
+    if (tab === "mine") {
+      grid.style.display = "none";
+      list.style.display = "block";
+      bar.classList.remove("show");
+      const entries = Object.entries(albums).filter(([k,v]) => v && v !== false);
+      if (!entries.length) {
+        list.innerHTML = '<div class="empty"><i class="fa-regular fa-bookmark"></i><br>No highlights yet. Create one from the Create tab.</div>';
+        return;
+      }
+      list.innerHTML = entries.map(([id, meta]) => {
+        const title = (isAlbum(meta) ? meta.title : (meta.title||"Highlight")) || "Highlight";
+        const ids = isAlbum(meta) ? meta.storyIds : [meta.storyId || id];
+        const cover = meta.coverUrl || meta.cover || "";
+        const coverHtml = cover
+          ? '<img src="'+String(cover).replace(/"/g,"&quot;")+'" alt="">'
+          : '<img src="assets/default-avatar.png" alt="">';
+        return '<div class="albumCard" data-id="'+id+'">'+coverHtml+
+          '<div class="meta"><strong>'+String(title).replace(/</g,"&lt;")+'</strong><small>'+ids.length+' stories</small></div>'+
+          '<div class="acts">'+
+          '<button type="button" data-view="'+id+'" title="View"><i class="fa-solid fa-play"></i></button>'+
+          '<button type="button" class="del" data-del="'+id+'" title="Delete"><i class="fa-solid fa-trash"></i></button>'+
+          '</div></div>';
+      }).join("");
+
+      list.querySelectorAll("[data-del]").forEach(btn => {
+        btn.onclick = async () => {
+          const id = btn.getAttribute("data-del");
+          if (!confirm("Delete this highlight?")) return;
+          await db().ref("users/"+uid+"/highlights/"+id).remove();
+          delete albums[id];
+          render();
+        };
+      });
+      list.querySelectorAll("[data-view]").forEach(btn => {
+        btn.onclick = () => {
+          const id = btn.getAttribute("data-view");
+          const meta = albums[id] || {};
+          const ids = isAlbum(meta) ? meta.storyIds : [meta.storyId || id];
+          try {
+            sessionStorage.setItem("vieworaHighlightPlaylist", JSON.stringify({
+              uid, albumId: id, title: meta.title || "Highlight", storyIds: ids
+            }));
+          } catch(_){}
+          const first = ids[0] || "";
+          location.href = "stories.html?uid="+encodeURIComponent(uid)+
+            "&solo=1&highlight=1&album="+encodeURIComponent(id)+
+            (first ? "&storyId="+encodeURIComponent(first) : "");
+        };
+      });
+      return;
+    }
+
+    // Create tab – multi select
+    list.style.display = "none";
+    grid.style.display = "grid";
+    bar.classList.toggle("show", selected.size > 0);
+
+    if (!stories.length) {
+      grid.innerHTML = '<div class="empty">No stories found. Post a story first, then add it here.</div>';
+      return;
+    }
+
+    grid.innerHTML = stories.map(s => {
+      const m = mediaOf(s);
+      const sel = selected.has(s.id);
+      const media = m
+        ? (/\.(mp4|webm|mov)(\?|$)/i.test(m)
+            ? '<video src="'+m.replace(/"/g,"&quot;")+'" muted playsinline preload="metadata"></video>'
+            : '<img src="'+m.replace(/"/g,"&quot;")+'" alt="" loading="lazy">')
+        : '<div style="display:grid;place-items:center;height:100%;opacity:.4"><i class="fa-solid fa-image"></i></div>';
+      return '<div class="card'+(sel?' selected':'')+'" data-id="'+s.id+'">'+media+
+        '<span class="check"><i class="fa-solid fa-check"></i></span></div>';
+    }).join("");
+
+    grid.querySelectorAll(".card").forEach(card => {
+      card.onclick = () => {
+        const id = card.getAttribute("data-id");
+        if (selected.has(id)) selected.delete(id);
+        else selected.add(id);
+        render();
+      };
+    });
+  }
+
+  document.getElementById("createBtn").onclick = async () => {
+    const title = (document.getElementById("hlTitle").value || "").trim() || "Highlight";
+    const ids = Array.from(selected);
+    if (!ids.length) return;
+
+    // Cover from first selected story media
+    let cover = "";
+    const first = stories.find(s => s.id === ids[0]);
+    if (first) cover = mediaOf(first);
+
+    const ref = db().ref("users/"+uid+"/highlights").push();
+    await ref.set({
+      title,
+      coverUrl: cover,
+      cover: cover,
+      storyIds: ids,
+      createdAt: Date.now()
+    });
+    albums[ref.key] = {
+      title, coverUrl: cover, cover, storyIds: ids, createdAt: Date.now()
+    };
+    selected.clear();
+    document.getElementById("hlTitle").value = "";
+    tab = "mine";
+    document.querySelectorAll(".tabs button").forEach(b => {
+      b.classList.toggle("active", b.dataset.tab === "mine");
+    });
+    render();
+    alert("Highlight created: " + title);
+  };
+
+  firebase.auth().onAuthStateChanged(u => {
+    if (!u) { location.href = "login.html"; return; }
+    uid = u.uid;
+    load().catch(err => {
+      console.error(err);
+      document.getElementById("grid").innerHTML =
+        '<div class="empty">Failed to load</div>';
+    });
+  });
+})();
+</script>
+</body>
+</html>

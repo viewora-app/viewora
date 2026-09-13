@@ -6073,6 +6073,25 @@
             state.isNew =
                 false;
 
+            // Existing short: video is locked (title/desc/settings only)
+            try {
+                const backBtn = $("backToEditorBtn");
+                if (backBtn) {
+                    backBtn.setAttribute("aria-label", "Back");
+                    const icon = backBtn.querySelector("i");
+                    // keep arrow
+                }
+                const intro = document.querySelector(".pageIntro h1");
+                if (intro) intro.textContent = "Edit your Short";
+                const introP = document.querySelector(".pageIntro p");
+                if (introP) {
+                    introP.textContent =
+                        "Update title, description and settings. Video cannot be replaced after publish.";
+                }
+                // Soft-lock: hide frame capture that implies re-edit of video source
+                // Thumbnail can still be changed
+            } catch (_) {}
+
 
             /*
              * VIDEO
@@ -6892,72 +6911,47 @@
             state.shortId ||
             getShortId();
 
+        const leaveIfDirty = () => {
+            if (!state.dirty) return true;
+            return window.confirm(
+                "You have unsaved changes. Leave without saving?"
+            );
+        };
 
         /*
-         * New Short
+         * New Short (still in create flow) → visual editor
          */
-        if (
-            !validId(id)
-        ) {
+        if (state.isNew || !validId(id)) {
+            if (!leaveIfDirty()) return;
+            window.location.href = "edit-shorts.html";
+            return;
+        }
 
-            if (
-                state.dirty
-            ) {
+        /*
+         * Existing / published Short:
+         * video cannot be changed — go back to Shorts, NOT edit-shorts
+         */
+        if (!leaveIfDirty()) return;
 
-                const leave =
-                    window.confirm(
-                        "You have unsaved changes. Leave the editor?"
-                    );
+        const target =
+            "shorts.html?id=" + encodeURIComponent(id);
 
-
-                if (!leave) {
+        if (history.length > 1) {
+            // Prefer previous page (feed) when possible
+            try {
+                const ref = document.referrer || "";
+                if (
+                    ref.indexOf("shorts.html") !== -1 ||
+                    ref.indexOf("profile") !== -1 ||
+                    ref.indexOf("index") !== -1
+                ) {
+                    history.back();
                     return;
                 }
-            }
-
-
-            window.location.href =
-                "edit-shorts.html";
-
-
-            return;
+            } catch (_) {}
         }
 
-
-        /*
-         * Existing Short
-         */
-        const target =
-            `edit-shorts.html?shortId=${encodeURIComponent(
-                id
-            )}`;
-
-
-        if (
-            !state.dirty
-        ) {
-
-            window.location.href =
-                target;
-
-
-            return;
-        }
-
-
-        const leave =
-            window.confirm(
-                "You have unsaved changes. Leave the editor?"
-            );
-
-
-        if (!leave) {
-            return;
-        }
-
-
-        window.location.href =
-            target;
+        window.location.href = target;
     }
 
 

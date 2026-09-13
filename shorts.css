@@ -2005,3 +2005,34 @@ button.shortMusic span {
 button.shortMusic:active {
     opacity: 0.75;
 }
+
+
+/* Music chip: profile pic (original) or store cover */
+.shortMusic {
+    display: inline-flex !important;
+    align-items: center;
+    gap: 8px;
+    max-width: min(78vw, 320px);
+}
+.shortMusicIcon {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+    border: 1px solid rgba(255,255,255,.25);
+    background: #222;
+}
+.shortMusic span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.musicDisc img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+    display: block;
+}
+.musicDisc i { display: none; }

@@ -5,9 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#050507">
 <title>Settings • Viewora</title>
+    <link rel="icon" href="assets/logo.png">
+    <link rel="apple-touch-icon" href="assets/logo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link rel="stylesheet" href="theme.css">
 <style>
 :root, html[data-theme="dark"] {
   --bg:#050507; --surface:#0d0d10; --card:#141418; --card2:#1a1a20;
@@ -191,6 +194,50 @@ button{font:inherit;border:0;background:none;color:inherit;cursor:pointer}
   </a>
 
   <!-- Account -->
+  
+  <!-- My account info (joined / username changes / from) -->
+  <section class="group" id="accountAboutCard">
+    <div class="groupTitle">About your account</div>
+    <div class="groupCard">
+      <div class="row" style="cursor:default">
+        <span class="rowIcon"><i class="fa-solid fa-calendar-days"></i></span>
+        <span class="rowBody">
+          <span class="rowTitle">Joined</span>
+          <span class="rowSub" id="settingsJoined">—</span>
+        </span>
+      </div>
+      <div class="row" style="cursor:default">
+        <span class="rowIcon"><i class="fa-solid fa-signature"></i></span>
+        <span class="rowBody">
+          <span class="rowTitle">Username changes</span>
+          <span class="rowSub" id="settingsUsernameChanges">0</span>
+        </span>
+      </div>
+      <div class="row" style="cursor:default">
+        <span class="rowIcon"><i class="fa-solid fa-location-dot"></i></span>
+        <span class="rowBody">
+          <span class="rowTitle">From</span>
+          <span class="rowSub" id="settingsFrom">Not set</span>
+        </span>
+      </div>
+      <a class="row" href="saved.html">
+        <span class="rowIcon"><i class="fa-solid fa-bookmark"></i></span>
+        <span class="rowBody"><span class="rowTitle">Saved</span></span>
+        <span class="rowRight"><i class="fa-solid fa-chevron-right chev"></i></span>
+      </a>
+      <a class="row" href="archive.html">
+        <span class="rowIcon"><i class="fa-solid fa-box-archive"></i></span>
+        <span class="rowBody"><span class="rowTitle">Archive</span></span>
+        <span class="rowRight"><i class="fa-solid fa-chevron-right chev"></i></span>
+      </a>
+      <a class="row" href="story-highlight.html">
+        <span class="rowIcon"><i class="fa-solid fa-circle-play"></i></span>
+        <span class="rowBody"><span class="rowTitle">Story highlights</span></span>
+        <span class="rowRight"><i class="fa-solid fa-chevron-right chev"></i></span>
+      </a>
+    </div>
+  </section>
+
   <section class="group">
     <div class="groupTitle">Account</div>
     <div class="groupCard">
@@ -440,11 +487,7 @@ button{font:inherit;border:0;background:none;color:inherit;cursor:pointer}
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
 <script src="firebase.js"></script>
-<script src="upload-queue.js"></script>
-<script src="call-listener.js"></script>
-<script src="message-listener.js"></script>
-    <script scr="security.js"></script>
-  
+<script src="theme.js"></script>
 <script>
 (function(){
   "use strict";
@@ -482,6 +525,7 @@ button{font:inherit;border:0;background:none;color:inherit;cursor:pointer}
   }
   try{
     applyTheme(localStorage.getItem(THEME_KEY) || "dark");
+  if(window.VieworaTheme){/* synced */}
   }catch(_){ applyTheme("dark"); }
 
   $("btnTheme").addEventListener("click", function(){
@@ -712,5 +756,38 @@ button{font:inherit;border:0;background:none;color:inherit;cursor:pointer}
   else toast("Firebase not loaded");
 })();
 </script>
+
+<script>
+(function(){
+  function db(){ return window.db || (typeof firebase!=="undefined"?firebase.database():null); }
+  function fmtDate(v){
+    try{
+      var n=Number(v);
+      var d=n?new Date(n<1e12?n*1000:n):new Date(v);
+      if(isNaN(d.getTime())) return "—";
+      return d.toLocaleDateString(undefined,{year:"numeric",month:"short",day:"numeric"});
+    }catch(e){return "—";}
+  }
+  function fill(u, data){
+    data = data || {};
+    var j=document.getElementById("settingsJoined");
+    var c=document.getElementById("settingsUsernameChanges");
+    var f=document.getElementById("settingsFrom");
+    if(j) j.textContent = fmtDate(data.createdAt||data.joinedAt||data.created);
+    if(c) c.textContent = String(data.usernameChangeCount||data.nameChangeCount||data.usernameChanges||0);
+    if(f) f.textContent = data.country||data.from||data.location||data.city||"Not set";
+  }
+  if(typeof firebase==="undefined") return;
+  firebase.auth().onAuthStateChanged(function(user){
+    if(!user) return;
+    var database=db();
+    if(!database) return;
+    database.ref("users/"+user.uid).once("value").then(function(snap){
+      fill(user, snap.val()||{});
+    }).catch(function(){});
+  });
+})();
+</script>
+
 </body>
 </html>

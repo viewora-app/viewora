@@ -895,6 +895,57 @@
       return b.latest - a.latest;
     });
 
+
+    // Highlight album playlist: only chosen stories
+    let playlistIds = null;
+    try {
+      const raw = sessionStorage.getItem("vieworaHighlightPlaylist");
+      if (raw) {
+        const pl = JSON.parse(raw);
+        if (pl && Array.isArray(pl.storyIds) && pl.storyIds.length) {
+          // Only apply if same uid (or no uid set)
+          if (!pl.uid || !focusUid || String(pl.uid) === String(focusUid)) {
+            playlistIds = new Set(pl.storyIds.map(String));
+          }
+        }
+      }
+    } catch (_) {}
+    const albumParam = params.get("album") || "";
+    if (!playlistIds && albumParam && focusUid) {
+      try {
+        const as = await db.ref("users/" + focusUid + "/highlights/" + albumParam).once("value");
+        const av = as.val();
+        if (av && Array.isArray(av.storyIds) && av.storyIds.length) {
+          playlistIds = new Set(av.storyIds.map(String));
+        } else if (av && (av.storyId || albumParam)) {
+          playlistIds = new Set([String(av.storyId || albumParam)]);
+        }
+      } catch (_) {}
+    }
+    if (playlistIds && playlistIds.size) {
+      Object.keys(byUser).forEach((uid) => {
+        byUser[uid].items = byUser[uid].items.filter((it) =>
+          playlistIds.has(String(it.id))
+        );
+        // preserve playlist order
+        const order = Array.from(playlistIds);
+        byUser[uid].items.sort((a, b) => {
+          const ia = order.indexOf(String(a.id));
+          const ib = order.indexOf(String(b.id));
+          return (ia < 0 ? 9999 : ia) - (ib < 0 ? 9999 : ib);
+        });
+        if (!byUser[uid].items.length) delete byUser[uid];
+      });
+    } else if (includeExpired && focusId) {
+      // Single highlight story deep-link: only that story, not all expired
+      Object.keys(byUser).forEach((uid) => {
+        byUser[uid].items = byUser[uid].items.filter(
+          (it) => String(it.id) === String(focusId)
+        );
+        if (!byUser[uid].items.length) delete byUser[uid];
+      });
+    }
+
     // Hard lock: if solo + focusUid, never keep other users
     if (soloMode && focusUid) {
       state.groups = state.groups.filter((g) => g.uid === focusUid);
