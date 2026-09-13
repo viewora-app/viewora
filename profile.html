@@ -2815,38 +2815,7 @@
                 </button>
 
 
-                <!-- Owner Archive -->
-
-                <a
-                    id="archiveBtn"
-                    class="secondaryBtn ownerOnly"
-                    href="archive.html"
-                >
-
-                    <i class="fa-solid fa-box-archive"></i>
-
-                    <span>
-                        Archive
-                    </span>
-
-                </a>
-
-
-                <!-- Owner Saved -->
-
-                <a
-                    id="savedProfileBtn"
-                    class="secondaryBtn ownerOnly"
-                    href="saved.html"
-                >
-
-                    <i class="fa-solid fa-bookmark"></i>
-
-                    <span>
-                        Saved
-                    </span>
-
-                </a>
+                <!-- Archive/Saved moved to Settings -->
 
 
                 <!-- Visitor Share -->
@@ -2874,7 +2843,7 @@
              PROFILE QUICK TOOLS
         ================================================== -->
 
-        <div class="profileTools">
+        <div class="profileTools" id="profileTools" hidden style="display:none!important">
 
 
             <a
@@ -2929,62 +2898,23 @@
         </div>
 
 
+        
+        <!-- ABOUT -->
+        <section class="profileAbout" id="profileAbout" hidden></section>
+
         <!-- =================================================
              STORIES (Active – within 24h)
         ================================================== -->
 
-        <section class="storySection">
-
-            <div class="sectionHeader">
-
-                <h3>
-                    Stories
-                </h3>
-
-                <a
-                    href="stories.html"
-                    id="storiesLink"
-                >
-                    View all
-                </a>
-
-            </div>
-
-
-            <div
-                id="storiesWrapper"
-                class="storiesWrapper"
-            >
-
-
-                <!-- New Story (opens story-upload.html) -->
-
-                <div
-                    id="newStoryItem"
-                    class="storyItem ownerOnly"
-                >
-
-                    <div
-                        class="storyCircle addStory"
-                    >
-
-                        <i
-                            class="fa-solid fa-plus"
-                        ></i>
-
-                    </div>
-
-                    <p>
-                        New
-                    </p>
-
+        <!-- Active stories list hidden on profile – only Highlights shown.
+             storiesWrapper kept for loadStories/ring logic. -->
+        <section class="storySection" id="storiesSection" hidden style="display:none!important">
+            <div id="storiesWrapper" class="storiesWrapper">
+                <div id="newStoryItem" class="storyItem ownerOnly">
+                    <div class="storyCircle addStory"><i class="fa-solid fa-plus"></i></div>
+                    <p>New</p>
                 </div>
-
-
-                <!-- Dynamic active stories inserted by profile.js -->
-
             </div>
-
         </section>
 
 
@@ -2992,23 +2922,19 @@
              HIGHLIGHTS (Expired stories – 24h complete)
         ================================================== -->
 
-        <section class="storySection" id="highlightsSection" style="display:none">
+        <section class="storySection" id="highlightsSection" data-highlight-page="story-highlight.html" hidden>
 
             <div class="sectionHeader">
-
-                <h3>
-                    Highlights
-                </h3>
-
+                <h3>Highlights</h3>
             </div>
 
 
             <div
-                id="highlightsWrapper" style="display:none"
+                id="highlightsWrapper"
                 class="storiesWrapper"
             >
 
-                <!-- Expired stories (after 24h) inserted by profile.js -->
+                <!-- Pinned highlights inserted by profile.js -->
 
             </div>
 
@@ -3390,6 +3316,102 @@
     </main>
 
 
+<!-- VISITOR MORE MENU -->
+<div id="visitorMoreSheet" class="aboutSheet hidden" aria-hidden="true">
+  <div class="aboutSheetBackdrop" data-close-visitor></div>
+  <div class="aboutSheetPanel">
+    <div class="aboutSheetHandle"></div>
+    <header class="aboutSheetHead">
+      <strong>Options</strong>
+      <button type="button" data-close-visitor aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
+    </header>
+    <div class="visitorMenuList">
+      <button type="button" id="visitorAboutBtn" class="visitorMenuItem">
+        <i class="fa-solid fa-circle-info"></i>
+        <span>About profile</span>
+      </button>
+      <button type="button" id="visitorFriendBtn" class="visitorMenuItem">
+        <i class="fa-solid fa-star"></i>
+        <span>Star friend</span>
+      </button>
+      <button type="button" id="visitorCopyLinkBtn" class="visitorMenuItem">
+        <i class="fa-solid fa-link"></i>
+        <span>Copy link</span>
+      </button>
+      <button type="button" id="visitorShareBtnMenu" class="visitorMenuItem">
+        <i class="fa-solid fa-share-nodes"></i>
+        <span>Share profile</span>
+      </button>
+      <button type="button" id="visitorReportBtn" class="visitorMenuItem danger">
+        <i class="fa-solid fa-flag"></i>
+        <span>Report</span>
+      </button>
+      <button type="button" id="visitorBlockBtn" class="visitorMenuItem danger">
+        <i class="fa-solid fa-ban"></i>
+        <span>Block</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ABOUT / MORE SHEET -->
+<div id="aboutSheet" class="aboutSheet hidden" aria-hidden="true">
+  <div class="aboutSheetBackdrop" data-close-about></div>
+  <div class="aboutSheetPanel">
+    <div class="aboutSheetHandle"></div>
+    <header class="aboutSheetHead">
+      <strong>About this account</strong>
+      <button type="button" data-close-about aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
+    </header>
+    <div class="aboutSheetBody">
+      <div class="aboutSheetRow">
+        <i class="fa-solid fa-location-dot"></i>
+        <div>
+          <small>From</small>
+          <span id="aboutFrom">—</span>
+        </div>
+      </div>
+      <div class="aboutSheetRow">
+        <i class="fa-solid fa-calendar-days"></i>
+        <div>
+          <small>Joined</small>
+          <span id="aboutJoined">—</span>
+        </div>
+      </div>
+      <button type="button" class="aboutSheetRow aboutClickable" id="aboutUsernameBtn">
+        <i class="fa-solid fa-signature"></i>
+        <div>
+          <small>Username changes</small>
+          <span id="aboutUsernameChanges">0</span>
+        </div>
+        <i class="fa-solid fa-chevron-right aboutChevron"></i>
+      </button>
+      <div class="aboutSheetRow" id="aboutReportRow" hidden>
+        <button type="button" id="aboutReportBtn" class="aboutReportBtn">
+          <i class="fa-solid fa-flag"></i> Report user
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="usernameHistorySheet" class="aboutSheet hidden" aria-hidden="true">
+  <div class="aboutSheetBackdrop" data-close-history></div>
+  <div class="aboutSheetPanel">
+    <div class="aboutSheetHandle"></div>
+    <header class="aboutSheetHead">
+      <button type="button" id="historyBackBtn" aria-label="Back"><i class="fa-solid fa-arrow-left"></i></button>
+      <strong>Username history</strong>
+      <button type="button" data-close-history aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
+    </header>
+    <div class="aboutSheetBody" id="usernameHistoryList">
+      <p class="aboutEmpty">No changes recorded</p>
+    </div>
+  </div>
+</div>
+
+
+
     <!-- =====================================================
          TOAST
     ====================================================== -->
@@ -3442,15 +3464,15 @@
          VIEWORA CORE
     ====================================================== -->
 
- <script src="firebase.js"></script>
+    <script src="firebase.js"></script>
 <script src="upload-queue.js"></script>
-<script src="call-listener.js"></script>
-<script src="message-listener.js"></script>
   <script scr="security.js"></script>
 <script src="badges.js"></script>
 
   
-
+<script src="call-listener.js"></script>
+<script src="message-listener.js"></script>
+    <script src="utils.js"></script>
 
     <script src="nav.js"></script>
 
@@ -3567,28 +3589,32 @@
                 ================================================= */
 
                 function openStoryUploadPage(event) {
-
                     if (event) {
                         event.preventDefault();
                         event.stopPropagation();
                     }
-
-                    window.location.href =
-                        "story-upload.html";
-
+                    // Only owner can upload; never from highlights
+                    if (event && event.target && event.target.closest) {
+                        if (event.target.closest("#highlightsSection") ||
+                            event.target.closest(".highlightItem") ||
+                            event.target.closest("#highlightsWrapper")) {
+                            return;
+                        }
+                    }
+                    window.location.href = "story-upload.html";
                 }
 
+                storyPlusBtn?.addEventListener("click", function (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    openStoryUploadPage(e);
+                });
 
-                storyPlusBtn?.addEventListener(
-                    "click",
-                    openStoryUploadPage
-                );
-
-
-                newStoryItem?.addEventListener(
-                    "click",
-                    openStoryUploadPage
-                );
+                newStoryItem?.addEventListener("click", function (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    openStoryUploadPage(e);
+                });
 
 
                 /* =================================================

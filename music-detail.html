@@ -98,6 +98,69 @@
         .mdPlaying {
             color: #22c55e;
         }
+
+        .mdCoverWrap {
+            position: relative;
+            width: 120px; height: 120px;
+            margin: 0 auto 14px;
+        }
+        .mdCoverWrap .mdCover {
+            width: 120px; height: 120px;
+            border-radius: 16px;
+            object-fit: cover;
+            display: block;
+            box-shadow: 0 12px 40px rgba(0,0,0,.45);
+        }
+        .mdCoverWrap .mdAvatar {
+            position: absolute;
+            right: -6px; bottom: -6px;
+            width: 42px; height: 42px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid #0b0b10;
+            background: #222;
+        }
+        .mdArtistRow {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin: 0 auto 10px;
+            padding: 6px 12px 6px 6px;
+            border-radius: 999px;
+            border: 1px solid rgba(255,255,255,.1);
+            background: rgba(255,255,255,.06);
+            color: #fff;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .mdArtistRow img {
+            width: 28px; height: 28px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+        .mdArtistPlain {
+            margin: 0 0 10px;
+            color: var(--muted);
+            font-size: 13px;
+        }
+        .mdHero h2 { margin: 0 0 8px; }
+
+
+        .mdThumb .mdBadge {
+            position: absolute; right: 6px; top: 6px;
+            font-size: 9px; font-weight: 800; letter-spacing: .03em;
+            text-transform: uppercase;
+            background: rgba(0,0,0,.72);
+            color: #fff;
+            padding: 3px 6px;
+            border-radius: 6px;
+            border: 1px solid rgba(255,255,255,.18);
+        }
+        .mdThumb .mdBadge.orig {
+            background: linear-gradient(135deg, #7c3aed, #2563eb);
+        }
+
     </style>
 </head>
 <body>
@@ -108,9 +171,17 @@
 </header>
 
 <section class="mdHero">
-    <img class="mdCover" id="cover" src="assets/logo.png" alt="">
+    <div class="mdCoverWrap">
+        <img class="mdCover" id="cover" src="assets/logo.png" alt="">
+        <img class="mdAvatar" id="avatar" src="assets/logo.png" alt="" hidden>
+    </div>
     <h2 id="title">—</h2>
-    <p id="artist">—</p>
+    <button type="button" class="mdArtistRow" id="artistBtn" hidden>
+        <img id="artistAvatar" src="assets/logo.png" alt="">
+        <span id="artist">—</span>
+        <i class="fa-solid fa-chevron-right" style="opacity:.5;font-size:11px"></i>
+    </button>
+    <p id="artistPlain" class="mdArtistPlain">—</p>
     <div class="mdStats">
         <span><strong id="useCount">0</strong> videos</span>
         <span><strong id="genreLabel">—</strong></span>
@@ -120,7 +191,7 @@
             <i class="fa-solid fa-play" id="playIcon"></i> Play
         </button>
         <button type="button" class="mdBtn primary" id="useBtn">
-            <i class="fa-solid fa-plus"></i> Use sound
+            <i class="fa-solid fa-plus"></i> Use this sound
         </button>
     </div>
 </section>
@@ -136,9 +207,6 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <script src="firebase.js"></script>
-<script src="upload-queue.js"></script>
-<script src="call-listener.js"></script>
-<script src="message-listener.js"></script>
 <script src="theme.js"></script>
 <script src="nav.js" defer></script>
 <script>
@@ -229,11 +297,37 @@
             });
             if (found) return found;
             // synthetic track from name only
+            const audioParam = params.get("audio") || params.get("video") || "";
+            const shortId = params.get("shortId") || "";
+            const isOrig = params.get("original") === "1" || String(musicId).indexOf("orig_") === 0;
             return {
-                id: "",
-                title: musicName,
-                name: musicName,
+                id: musicId || (shortId ? "orig_" + shortId : ""),
+                title: musicName || (isOrig ? "Original audio" : "Sound"),
+                name: musicName || (isOrig ? "Original audio" : "Sound"),
                 artist: params.get("artist") || "",
+                audioUrl: audioParam,
+                url: audioParam,
+                isOriginal: isOrig,
+                sourceShortId: shortId,
+                shortId: shortId,
+                uses: 0
+            };
+        }
+        // Original audio without library id
+        const audioParam = params.get("audio") || params.get("video") || "";
+        const shortId = params.get("shortId") || "";
+        if (musicName || shortId || audioParam) {
+            const isOrig = params.get("original") === "1" || !musicId;
+            return {
+                id: musicId || (shortId ? "orig_" + shortId : ""),
+                title: musicName || "Original audio",
+                name: musicName || "Original audio",
+                artist: params.get("artist") || "",
+                audioUrl: audioParam,
+                url: audioParam,
+                isOriginal: isOrig,
+                sourceShortId: shortId,
+                shortId: shortId,
                 uses: 0
             };
         }
@@ -242,36 +336,79 @@
 
     function matchesMusic(item, t) {
         if (!item || !t) return false;
-        const mid = t.id || "";
-        const title = String(t.title || t.name || "").toLowerCase();
-        const fields = [
+        const mid = String(t.id || t.musicId || "").toLowerCase();
+        const title = String(t.title || t.name || "").toLowerCase().trim();
+        const audio = String(t.audioUrl || t.url || t.src || "").toLowerCase();
+        const sourceShort = String(t.sourceShortId || t.shortId || "").toLowerCase();
+        const isOrig =
+            !!t.isOriginal ||
+            mid.indexOf("orig_") === 0 ||
+            title.indexOf("original") === 0;
+
+        // Direct id hits (musicId / originalSoundId)
+        const candidateIds = [
             item.musicId,
             item.soundId,
+            item.originalSoundId,
             item.music && item.music.id,
-            item.music && item.music.title,
-            item.musicTitle,
-            item.musicName,
-            item.sound,
-            item.music,
-            item.audioTitle
-        ];
-        for (let i = 0; i < fields.length; i++) {
-            const f = fields[i];
-            if (f == null) continue;
-            if (typeof f === "object") {
-                if (mid && (f.id === mid || f.musicId === mid)) return true;
-                const ft = String(f.title || f.name || "").toLowerCase();
-                if (title && ft && (ft === title || ft.includes(title))) return true;
-            } else {
-                const s = String(f).toLowerCase();
-                if (mid && s === String(mid).toLowerCase()) return true;
-                if (title && (s === title || s.includes(title))) return true;
+            item.music && item.music.musicId,
+            item.music && item.music.originalSoundId,
+            item.sound && item.sound.id
+        ]
+            .filter(Boolean)
+            .map((x) => String(x).toLowerCase());
+
+        if (mid && candidateIds.indexOf(mid) !== -1) return true;
+
+        // Same source original short (creator's own short + anyone who reused it)
+        if (sourceShort) {
+            if (String(item.id || "").toLowerCase() === sourceShort) return true;
+            if (
+                item.music &&
+                String(item.music.sourceShortId || "").toLowerCase() === sourceShort
+            )
+                return true;
+            if (String(item.sourceShortId || "").toLowerCase() === sourceShort)
+                return true;
+            // reused as orig_{sourceShort}
+            if (candidateIds.indexOf("orig_" + sourceShort) !== -1) return true;
+        }
+
+        // Same audio file URL
+        if (audio) {
+            const urls = [
+                item.musicUrl,
+                item.audioUrl,
+                item.music && item.music.audioUrl,
+                item.music && item.music.url,
+                item.music && item.music.src
+            ]
+                .filter(Boolean)
+                .map((x) => String(x).toLowerCase());
+            if (urls.indexOf(audio) !== -1) return true;
+        }
+
+        // Library tracks only: title match (NOT for original audio — too broad)
+        if (!isOrig && title && title !== "original audio") {
+            const fields = [
+                item.musicTitle,
+                item.musicName,
+                item.audioTitle,
+                item.music && item.music.title,
+                item.music && item.music.name
+            ];
+            for (let i = 0; i < fields.length; i++) {
+                const f = fields[i];
+                if (f == null) continue;
+                const s = String(f).toLowerCase().trim();
+                if (!s) continue;
+                if (s === title) return true;
             }
         }
         return false;
     }
 
-    async function loadRelated() {
+        async function loadRelated() {
         const database = db();
         const grid = document.getElementById("grid");
         if (!database || !track) {
@@ -279,44 +416,105 @@
             return;
         }
         related = [];
+        const seen = {};
+
+        function pushItem(id, root, v) {
+            if (!id || seen[root + ":" + id]) return;
+            seen[root + ":" + id] = true;
+            related.push({
+                id: id,
+                root: root,
+                thumb:
+                    v.thumbnail ||
+                    v.thumbnailUrl ||
+                    v.thumbnailURL ||
+                    v.cover ||
+                    v.poster ||
+                    "",
+                video:
+                    v.videoUrl ||
+                    v.videoURL ||
+                    v.mediaUrl ||
+                    v.mediaURL ||
+                    "",
+                views: Number(v.views || v.viewCount || 0) || 0,
+                title: v.title || v.caption || ""
+            });
+        }
+
+        const mid = String(track.id || track.musicId || "").trim();
+
+        // 1) Direct index: musicLibrary/{id}/usedBy/{shortId}
+        if (mid && mid.indexOf("orig_") !== 0 && mid !== "original") {
+            try {
+                const used = await database.ref("musicLibrary/" + mid + "/usedBy").once("value");
+                if (used.exists()) {
+                    const jobs = [];
+                    used.forEach((c) => {
+                        const sid = c.key;
+                        jobs.push(
+                            database.ref("shorts/" + sid).once("value").then((s) => {
+                                if (s.exists()) pushItem(sid, "shorts", s.val() || {});
+                            }).catch(() => {})
+                        );
+                    });
+                    await Promise.all(jobs);
+                }
+            } catch (_) {}
+        }
+
+        // 2) Scan shorts / videos / posts for same musicId or original sound
         const roots = ["shorts", "videos", "posts"];
         for (const root of roots) {
             try {
-                const snap = await database.ref(root).limitToLast(200).once("value");
+                const snap = await database.ref(root).limitToLast(400).once("value");
                 if (!snap.exists()) continue;
                 snap.forEach((c) => {
                     const v = c.val() || {};
                     if (matchesMusic(v, track)) {
-                        related.push({
-                            id: c.key,
-                            root: root,
-                            thumb:
-                                v.thumb ||
-                                v.thumbnail ||
-                                v.cover ||
-                                v.photoURL ||
-                                v.imageUrl ||
-                                "",
-                            video: v.videoUrl || v.url || v.src || "",
-                            views: v.views || v.viewCount || 0
-                        });
+                        pushItem(c.key, root, v);
                     }
                 });
             } catch (_) {}
         }
-        // update uses display
-        document.getElementById("useCount").textContent = fmt(
-            Math.max(Number(track.uses || 0), related.length)
-        );
+
+        // 3) Original audio: always include source short
+        const sourceShort = String(
+            track.sourceShortId ||
+                track.shortId ||
+                params.get("shortId") ||
+                ""
+        ).toLowerCase();
+        if (sourceShort && !seen["shorts:" + sourceShort]) {
+            try {
+                const s = await database.ref("shorts/" + sourceShort).once("value");
+                if (s.exists()) pushItem(sourceShort, "shorts", s.val() || {});
+            } catch (_) {}
+        }
+
+        const useEl = document.getElementById("useCount");
+        if (useEl) {
+            useEl.textContent = fmt(
+                Math.max(Number(track.uses || 0), related.length)
+            );
+        }
 
         if (!related.length) {
             grid.innerHTML =
-                '<div class="mdEmpty" style="grid-column:1/-1">No shorts/posts with this sound yet. Be the first!</div>';
+                '<div class="mdEmpty" style="grid-column:1/-1">No shorts with this sound yet. Be the first!</div>';
             return;
         }
-        related.sort((a, b) => (b.views || 0) - (a.views || 0));
+
+        // Source / original short always first, then by views
+        related.sort((a, b) => {
+            const aSrc = String(a.id || "").toLowerCase() === sourceShort;
+            const bSrc = String(b.id || "").toLowerCase() === sourceShort;
+            if (aSrc && !bSrc) return -1;
+            if (bSrc && !aSrc) return 1;
+            return (b.views || 0) - (a.views || 0);
+        });
         grid.innerHTML = related
-            .slice(0, 60)
+            .slice(0, 90)
             .map((r) => {
                 const href =
                     r.root === "shorts"
@@ -329,11 +527,18 @@
                     : r.video
                       ? '<video src="' + esc(r.video) + '" muted playsinline></video>'
                       : '<div style="display:grid;place-items:center;height:100%;opacity:.4"><i class="fa-solid fa-music"></i></div>';
+                const isSource =
+                    sourceShort &&
+                    String(r.id || "").toLowerCase() === sourceShort;
+                const badge = isSource
+                    ? '<span class="mdBadge orig">Original</span>'
+                    : "";
                 return (
                     '<a class="mdThumb" href="' +
                     href +
                     '">' +
                     media +
+                    badge +
                     '<span class="views"><i class="fa-solid fa-play"></i> ' +
                     fmt(r.views) +
                     "</span></a>"
@@ -351,12 +556,48 @@
         document.getElementById("playBtn").onclick = play;
         document.getElementById("useBtn").onclick = () => {
             if (!track) return;
+            const payload = {
+                id: track.id || track.musicId || "",
+                musicId: track.id || track.musicId || "",
+                title: track.isOriginal
+                    ? "Original audio"
+                    : (track.title || track.name || "Sound"),
+                name: track.isOriginal
+                    ? "Original audio"
+                    : (track.title || track.name || "Sound"),
+                artist: track.artist || "",
+                audioUrl: track.audioUrl || track.url || track.src || "",
+                url: track.audioUrl || track.url || track.src || "",
+                isOriginal: !!track.isOriginal,
+                sourceShortId:
+                    track.sourceShortId ||
+                    track.shortId ||
+                    params.get("shortId") ||
+                    "",
+                coverUrl: track.coverUrl || track.cover || "",
+                avatarUrl: track.avatarUrl || track.photoURL || "",
+                uid: track.uid || params.get("uid") || ""
+            };
+            const vurl = params.get("video") || track.videoUrl || "";
+            if (!payload.audioUrl && vurl) {
+                payload.audioUrl = vurl;
+                payload.url = vurl;
+                payload.fromVideo = true;
+            }
             try {
-                sessionStorage.setItem("vieworaSelectedMusic", JSON.stringify(track));
+                sessionStorage.setItem(
+                    "vieworaSelectedMusic",
+                    JSON.stringify(payload)
+                );
+                localStorage.setItem(
+                    "viewora_selected_music",
+                    JSON.stringify(payload)
+                );
             } catch (_) {}
             stop();
-            const ret = params.get("return") || "upload.html";
-            location.href = ret;
+            // Pick / record a NEW video first, then editor — not short-edit details page
+            location.href =
+                "upload.html?type=shorts&useMusic=1";
         };
 
         track = await loadTrack();
@@ -366,14 +607,130 @@
                 '<div class="mdEmpty" style="grid-column:1/-1">Track missing</div>';
             return;
         }
-        document.getElementById("cover").src =
-            track.coverUrl || track.cover || "assets/logo.png";
-        document.getElementById("title").textContent = track.title || track.name || "Song";
-        document.getElementById("pageTitle").textContent = track.title || track.name || "Song";
-        document.getElementById("artist").textContent =
-            (track.artist || "Unknown artist") +
-            (track.genre ? " · " + track.genre : "");
-        document.getElementById("genreLabel").textContent = track.genre || "Music";
+        // Resolve original creator name if missing
+        const isOrig =
+            track.isOriginal ||
+            String(track.id || "").indexOf("orig_") === 0 ||
+            String(track.title || "").toLowerCase().indexOf("original") === 0;
+        track.isOriginal = !!isOrig;
+
+        if (isOrig) {
+            const uid = params.get("uid") || track.uid || track.userId || "";
+            const sid = track.sourceShortId || track.shortId || params.get("shortId") || "";
+            try {
+                if (uid && db()) {
+                    const u = await db().ref("users/" + uid).once("value");
+                    if (u.exists()) {
+                        const uv = u.val() || {};
+                        const name =
+                            uv.username ||
+                            uv.userName ||
+                            uv.displayName ||
+                            uv.name ||
+                            "";
+                        if (name) track.artist = name.replace(/^@/, "");
+                        const pic =
+                            uv.photoURL ||
+                            uv.avatar ||
+                            uv.profilePic ||
+                            uv.photo ||
+                            "";
+                        if (pic) {
+                            track.avatarUrl = pic;
+                            track.photoURL = pic;
+                            // Keep cover as short thumb if present; else avatar
+                            if (!track.coverUrl) track.coverUrl = pic;
+                        }
+                        track.uid = uid;
+                    }
+                }
+                if ((!track.artist || track.artist === "Unknown artist") && sid && db()) {
+                    const s = await db().ref("shorts/" + sid).once("value");
+                    if (s.exists()) {
+                        const sv = s.val() || {};
+                        const name =
+                            sv.username ||
+                            sv.userName ||
+                            sv.name ||
+                            "";
+                        if (name) track.artist = String(name).replace(/^@/, "");
+                        if (!track.coverUrl) {
+                            track.coverUrl =
+                                sv.thumbnail ||
+                                sv.thumbnailUrl ||
+                                sv.cover ||
+                                "";
+                        }
+                    }
+                }
+            } catch (_) {}
+            if (!track.title || String(track.title).toLowerCase() === "song") {
+                track.title = "Original audio";
+                track.name = "Original audio";
+            }
+        }
+
+        const coverUrl = track.coverUrl || track.cover || "assets/logo.png";
+        const avatarUrl =
+            track.avatarUrl ||
+            track.photoURL ||
+            track.profilePic ||
+            coverUrl ||
+            "assets/logo.png";
+        document.getElementById("cover").src = coverUrl;
+
+        const avatarEl = document.getElementById("avatar");
+        const artistBtn = document.getElementById("artistBtn");
+        const artistPlain = document.getElementById("artistPlain");
+        const artistAvatar = document.getElementById("artistAvatar");
+        const artistSpan = document.getElementById("artist");
+
+        const uname = String(track.artist || "").replace(/^@/, "").trim();
+        const uid =
+            params.get("uid") ||
+            track.uid ||
+            track.userId ||
+            "";
+
+        if (isOrig) {
+            document.getElementById("title").textContent = "Original audio";
+            document.getElementById("pageTitle").textContent =
+                uname ? "Original audio · " + uname : "Original audio";
+            document.getElementById("genreLabel").textContent = "Original";
+            if (avatarEl) {
+                avatarEl.src = avatarUrl;
+                avatarEl.hidden = false;
+            }
+            if (artistBtn && uname) {
+                artistBtn.hidden = false;
+                if (artistPlain) artistPlain.hidden = true;
+                if (artistAvatar) artistAvatar.src = avatarUrl;
+                if (artistSpan) artistSpan.textContent = "@" + uname;
+                artistBtn.onclick = () => {
+                    if (uid) location.href = "profile.html?uid=" + encodeURIComponent(uid);
+                    else if (uname)
+                        location.href =
+                            "profile.html?user=" + encodeURIComponent(uname);
+                };
+            } else if (artistPlain) {
+                artistPlain.hidden = false;
+                artistPlain.textContent = "Original sound";
+            }
+        } else {
+            const displayTitle = track.title || track.name || "Song";
+            document.getElementById("title").textContent = displayTitle;
+            document.getElementById("pageTitle").textContent = displayTitle;
+            document.getElementById("genreLabel").textContent =
+                track.genre || "Music";
+            if (avatarEl) avatarEl.hidden = true;
+            if (artistBtn) artistBtn.hidden = true;
+            if (artistPlain) {
+                artistPlain.hidden = false;
+                artistPlain.textContent =
+                    (track.artist || "Unknown artist") +
+                    (track.genre ? " · " + track.genre : "");
+            }
+        }
         document.getElementById("useCount").textContent = fmt(track.uses || 0);
 
         await loadRelated();
