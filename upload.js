@@ -269,13 +269,18 @@
                 message || "Preparing your content...";
         }
 
-        processingOverlay?.classList.remove("hidden");
+        if (processingOverlay) {
+            processingOverlay.classList.remove("hidden");
+            processingOverlay.style.display = "flex";
+        }
     }
 
 
     function hideProcessing() {
-
-        processingOverlay?.classList.add("hidden");
+        if (processingOverlay) {
+            processingOverlay.classList.add("hidden");
+            processingOverlay.style.display = "none";
+        }
     }
 
 
@@ -283,7 +288,7 @@
        CAMERA
     ===================================================== */
 
-    async function startCamera() {
+        async function startCamera() {
 
         if (currentMode === "live") {
             stopCamera();
@@ -292,105 +297,107 @@
 
         if (!cameraPreview) return;
 
-        const token = ++cameraStartToken;
-
         if (cameraStarting) {
             return;
         }
 
         cameraStarting = true;
 
-        stopCamera();
+        // Stop previous tracks WITHOUT bumping token (token bump was killing new stream)
+        try {
+            if (currentStream) {
+                currentStream.getTracks().forEach(function (t) {
+                    try { t.stop(); } catch (_) {}
+                });
+            }
+            currentStream = null;
+            if (cameraPreview) cameraPreview.srcObject = null;
+        } catch (_) {}
+
+        const token = ++cameraStartToken;
 
         if (
             !navigator.mediaDevices ||
             !navigator.mediaDevices.getUserMedia
         ) {
-
             cameraStarting = false;
-
             showCameraError(
                 "Camera is not supported in this browser."
             );
-
             return;
         }
 
-        try {
-
-            const constraints = {
-
-                audio: true,
-
-                video: {
-
-                    facingMode: {
-                        ideal: currentFacingMode
-                    },
-
-                    width: {
-                        ideal: 1080
-                    },
-
-                    height: {
-                        ideal: 1920
-                    },
-
-                    frameRate: {
-                        ideal: 30,
-                        max: 60
+        async function getStream() {
+            // Try progressive constraints — high res often fails on mobile
+            const attempts = [
+                {
+                    audio: true,
+                    video: {
+                        facingMode: { ideal: currentFacingMode },
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 }
                     }
+                },
+                {
+                    audio: true,
+                    video: { facingMode: currentFacingMode }
+                },
+                {
+                    audio: false,
+                    video: { facingMode: { ideal: currentFacingMode } }
+                },
+                { audio: false, video: true }
+            ];
+            let lastErr = null;
+            for (let i = 0; i < attempts.length; i++) {
+                try {
+                    return await navigator.mediaDevices.getUserMedia(attempts[i]);
+                } catch (e) {
+                    lastErr = e;
+                    console.warn("camera attempt", i, e && e.name);
                 }
-            };
+            }
+            throw lastErr || new Error("Camera failed");
+        }
 
-            const stream =
-                await navigator.mediaDevices.getUserMedia(
-                    constraints
-                );
+        try {
+            const stream = await getStream();
 
             if (token !== cameraStartToken) {
-
-                stream
-                    .getTracks()
-                    .forEach(track => track.stop());
-
+                stream.getTracks().forEach(function (t) {
+                    try { t.stop(); } catch (_) {}
+                });
+                cameraStarting = false;
                 return;
             }
 
             currentStream = stream;
-
             cameraPreview.srcObject = currentStream;
-
             cameraPreview.muted = true;
             cameraPreview.playsInline = true;
+            cameraPreview.setAttribute("playsinline", "");
+            cameraPreview.setAttribute("webkit-playsinline", "");
             cameraPreview.autoplay = true;
 
-            await cameraPreview.play().catch(() => {});
+            try {
+                await cameraPreview.play();
+            } catch (playErr) {
+                console.warn("camera play", playErr);
+            }
 
             cameraFallback?.classList.add("hidden");
-
             updateFlashAvailability();
 
             const micToggle = $("microphoneToggle");
-
-            if (micToggle) {
-
-                currentStream
-                    .getAudioTracks()
-                    .forEach(track => {
-                        track.enabled =
-                            micToggle.checked;
-                    });
+            if (micToggle && currentStream) {
+                currentStream.getAudioTracks().forEach(function (track) {
+                    track.enabled = !!micToggle.checked;
+                });
             }
-
         } catch (error) {
-
-            console.error(
-                "VIEWORA CAMERA ERROR:",
-                error
-            );
-
+            console.error("VIEWORA CAMERA ERROR:", error);
             if (token !== cameraStartToken) {
+                cameraStarting = false;
                 return;
             }
 
@@ -694,7 +701,13 @@
         }
 
         if (mediaInput) {
-            mediaInput.accept =
+            if (currentMode === "post") {
+            mediaInput.multiple = true;
+            mediaInput.accept = "image/*";
+        } else {
+            mediaInput.multiple = false;
+        }
+        mediaInput.accept =
                 config.accept || "image/*,video/*";
         }
 
@@ -717,6 +730,7 @@
         });
 
         updateUploadNotice();
+        try { updateChooseMediaLabel(); } catch (_) {}
 
         if (mode === "live") {
 
@@ -831,6 +845,20 @@
     }
 
 
+    function updateChooseMediaLabel() {
+        const label = document.getElementById("chooseMediaBtn");
+        if (!label || label.tagName !== "LABEL") return;
+        if (currentMode === "post") {
+            label.setAttribute("for", "postMediaInput");
+        } else if (currentMode === "shorts") {
+            label.setAttribute("for", "shortsMediaInput");
+        } else if (currentMode === "long") {
+            label.setAttribute("for", "longVideoInput");
+        } else {
+            label.removeAttribute("for");
+        }
+    }
+
     function updateUploadNotice() {
 
         const config =
@@ -874,7 +902,7 @@
             if (currentMode === "post") {
 
                 noticeText.textContent =
-                    "Choose a photo from your gallery.";
+                    "Choose up to 10 photos from your gallery.";
 
             } else if (currentMode === "shorts") {
 
@@ -907,110 +935,264 @@
 
             chooseMediaHint.textContent =
                 currentMode === "post"
-                    ? "Select a photo from your gallery"
+                    ? "Select 1–10 photos from your gallery"
                     : "Select a video from your gallery";
         }
+        try { updateChooseMediaLabel(); } catch (_) {}
     }
 
 
-    function openFilePicker() {
 
-        if (currentMode === "live") {
+    /* =====================================================
+       POST PHOTOS — SINGLE PATH (no duplicate listeners)
+       Gallery / camera / single → one process → edit-post
+    ====================================================== */
 
-            showLivePanel();
+    let __postBusy = false;
 
+    function isPostImageFile(file) {
+        if (!file || !file.size) return false;
+        const t = (file.type || "").toLowerCase();
+        if (t.indexOf("video/") === 0) return false;
+        const n = (file.name || "").toLowerCase();
+        if (/\.(mp4|mov|webm|mkv|avi|3gp)$/.test(n)) return false;
+        // Accept image/* , empty type, octet-stream, heic, any photo-like file
+        return true;
+    }
+
+    /**
+     * Exactly one entry: 1–10 images → IDB + session → edit-post.html
+     */
+    async function processPostImages(fileList) {
+        if (__postBusy) {
+            console.log("[VIEWORA] post already processing");
             return;
         }
-
-        if (currentMode === "post") {
-
-            if (postMediaInput) {
-
-                postMediaInput.value = "";
-                postMediaInput.click();
-
-                return;
-            }
+        let files = [];
+        try {
+            const raw = Array.from(fileList || []);
+            files = raw.filter(isPostImageFile);
+            if (!files.length && raw.length) files = raw.slice(0, 10);
+        } catch (_) {
+            files = [];
+        }
+        if (!files.length) {
+            showToast("No photos", "Select 1–10 photos", "warning");
+            return;
+        }
+        if (files.length > 10) {
+            showToast("Max 10 photos", "Only first 10 will be used", "warning");
+            files = files.slice(0, 10);
         }
 
-        if (currentMode === "shorts") {
+        __postBusy = true;
+        console.log("[VIEWORA] processPostImages FAST", files.length);
 
-            if (shortsMediaInput) {
+        showToast(
+            files.length + " photo" + (files.length > 1 ? "s" : ""),
+            "Opening editor…"
+        );
+        showProcessing(
+            files.length > 1
+                ? "Preparing " + files.length + " photos..."
+                : "Preparing your photo..."
+        );
 
-                shortsMediaInput.value = "";
-                shortsMediaInput.click();
+        try {
+            try { closeFileSheet(); } catch (_) {}
+            try { closeAllOverlays(); } catch (_) {}
 
-                return;
+            // FAST: store Blob/File directly in IDB (no arrayBuffer copy)
+            let saved = 0;
+            try {
+                saved = await Promise.race([
+                    savePostImagesToIDB(files),
+                    new Promise(function (resolve) {
+                        setTimeout(function () { resolve(files.length); }, 4000);
+                    })
+                ]);
+            } catch (e) {
+                console.warn("IDB save", e);
+                saved = files.length;
             }
-        }
 
-        if (currentMode === "long") {
+            try {
+                sessionStorage.setItem("viewora_post_multi", String(saved || files.length));
+                sessionStorage.setItem("viewora_post_multi_ready", "1");
+                sessionStorage.setItem("viewora_edit_post_type", "image");
+                sessionStorage.setItem("vieworaUploadMode", "post");
+            } catch (_) {}
 
-            if (longVideoInput) {
-
-                longVideoInput.value = "";
-                longVideoInput.click();
-
-                return;
+            // Skip heavy compress — only tiny preview marker in session (optional)
+            // edit-post loads from IDB primarily
+            try {
+                if (files[0] && typeof saveImageForEditor === "function") {
+                    // Only if small; else skip so we navigate immediately
+                    if (files[0].size < 400000) {
+                        await Promise.race([
+                            saveImageForEditor(files[0]),
+                            new Promise(function (r) { setTimeout(r, 1200); })
+                        ]);
+                    } else {
+                        // store a flag only — IDB has full images
+                        try {
+                            sessionStorage.setItem("viewora_edit_post_type", "image");
+                        } catch (_) {}
+                    }
+                }
+            } catch (e) {
+                console.warn("dataURL skip", e);
             }
-        }
 
-        if (!mediaInput) {
-
+            hideProcessing();
+            const dest =
+                "edit-post.html?source=upload&multi=" +
+                (saved || files.length) +
+                "&t=" +
+                Date.now();
+            console.log("[VIEWORA] navigate", dest);
+            window.location.href = dest;
+            setTimeout(function () {
+                try {
+                    if (location.href.indexOf("edit-post") < 0) {
+                        location.href = dest;
+                    }
+                } catch (_) {}
+            }, 500);
+        } catch (err) {
+            console.error("[VIEWORA] processPostImages", err);
+            hideProcessing();
+            __postBusy = false;
             showToast(
-                "Upload unavailable",
-                "Media input was not found.",
+                "Could not open editor",
+                (err && err.message) || "Try again",
                 "error"
             );
+        }
+    }
 
+    // Wire permanent postMediaInput ONCE — Android keeps this input across gallery return
+    (function wirePostMediaInputOnce() {
+        const input = document.getElementById("postMediaInput");
+        if (!input || input.__vieworaWired) return;
+        input.__vieworaWired = true;
+        input.multiple = true;
+        input.setAttribute("multiple", "multiple");
+        input.accept = "image/*,.jpg,.jpeg,.png,.webp,.gif,.heic,.heif,.bmp";
+
+        const onFiles = function () {
+            const files = Array.from(input.files || []);
+            if (!files.length) return;
+            console.log("[VIEWORA] postMediaInput change:", files.length);
+            processPostImages(files);
+            // clear so same set can be re-selected later
+            setTimeout(function () {
+                try { input.value = ""; } catch (_) {}
+            }, 1500);
+        };
+
+        input.addEventListener("change", onFiles);
+        input.addEventListener("input", onFiles);
+
+        // Recovery when returning from Google Photos (change sometimes missed)
+        function recoverFiles() {
+            try {
+                if (__postBusy) return;
+                const files = Array.from(input.files || []);
+                if (files.length) {
+                    console.log("[VIEWORA] recover post files:", files.length);
+                    processPostImages(files);
+                }
+            } catch (_) {}
+        }
+        document.addEventListener("visibilitychange", function () {
+            if (document.visibilityState === "visible") {
+                setTimeout(recoverFiles, 250);
+                setTimeout(recoverFiles, 800);
+            }
+        });
+        window.addEventListener("focus", function () {
+            setTimeout(recoverFiles, 300);
+        });
+        window.addEventListener("pageshow", function () {
+            setTimeout(recoverFiles, 200);
+        });
+    })();
+
+    function openPostGallery() {
+        if (__postBusy) return;
+
+        const input = document.getElementById("postMediaInput");
+        if (!input) {
+            showToast("Upload unavailable", "Photo input missing", "error");
             return;
         }
 
+        // Make sure input is in DOM and not display:none (Android requirement)
+        try {
+            input.multiple = true;
+            input.setAttribute("multiple", "multiple");
+            input.accept = "image/*,.jpg,.jpeg,.png,.webp,.gif,.heic,.heif,.bmp";
+            input.classList.add("vieworaFileInput");
+            input.style.cssText =
+                "position:fixed;left:0;top:0;width:1px;height:1px;opacity:0.01;z-index:1;overflow:hidden;";
+            if (!document.body.contains(input)) {
+                document.body.appendChild(input);
+            }
+        } catch (_) {}
+
+        try { input.value = ""; } catch (_) {}
+
+        showToast("Gallery", "Select 1–10 photos, then Done");
+
+        try {
+            input.click();
+        } catch (err) {
+            console.error("[VIEWORA] Gallery picker error:", err);
+            showToast("Gallery error", "Unable to open photo gallery.", "error");
+        }
+    }
+
+    window.openPostGallery = openPostGallery;
+    window.vieworaOpenPostGallery = openPostGallery;
+
+    function openFilePicker() {
+        if (currentMode === "live") {
+            showLivePanel();
+            return;
+        }
+        if (currentMode === "post") {
+            openPostGallery();
+            return;
+        }
+        if (currentMode === "shorts") {
+            if (shortsMediaInput) {
+                try { shortsMediaInput.value = ""; } catch (_) {}
+                shortsMediaInput.click();
+                return;
+            }
+        }
+        if (currentMode === "long") {
+            if (longVideoInput) {
+                try { longVideoInput.value = ""; } catch (_) {}
+                longVideoInput.click();
+                return;
+            }
+        }
+        if (!mediaInput) {
+            showToast("Upload unavailable", "Media input was not found.", "error");
+            return;
+        }
+        mediaInput.multiple = false;
+        try { mediaInput.removeAttribute("multiple"); } catch (_) {}
         mediaInput.accept =
-            MODES[currentMode].accept;
-
-        mediaInput.value = "";
-
+            (MODES[currentMode] && MODES[currentMode].accept) || "video/*";
+        try { mediaInput.value = ""; } catch (_) {}
         mediaInput.click();
     }
 
 
-    /* =====================================================
-       INPUT HANDLERS
-    ===================================================== */
-
-    mediaInput?.addEventListener(
-        "change",
-        event => {
-
-            const file =
-                event.target.files?.[0];
-
-            if (file) {
-                handleSelectedFile(file);
-            }
-        }
-    );
-
-
-    postMediaInput?.addEventListener(
-        "change",
-        event => {
-
-            const file =
-                event.target.files?.[0];
-
-            if (!file) return;
-
-            handleSelectedFile(
-                file,
-                "post"
-            );
-        }
-    );
-
-
-    shortsMediaInput?.addEventListener(
+        shortsMediaInput?.addEventListener(
         "change",
         event => {
 
@@ -1119,6 +1301,208 @@
     /* =====================================================
        FILE SELECTED
     ===================================================== */
+
+    
+    /* =====================================================
+       MULTI POST IMAGES (max 10) — Android-safe
+    ===================================================== */
+
+    const POST_IMAGES_DB = "VIEWORA_POST_IMAGES_DB";
+    const POST_IMAGES_STORE = "images";
+
+    function openPostImagesDB() {
+        return new Promise((resolve, reject) => {
+            const req = indexedDB.open(POST_IMAGES_DB, 3);
+            req.onupgradeneeded = () => {
+                const db = req.result;
+                if (!db.objectStoreNames.contains(POST_IMAGES_STORE)) {
+                    db.createObjectStore(POST_IMAGES_STORE);
+                }
+            };
+            req.onsuccess = () => resolve(req.result);
+            req.onerror = () => reject(req.error || new Error("IDB open failed"));
+        });
+    }
+
+    function isLikelyImage(file) {
+        if (!file || !file.size) return false;
+        const t = (file.type || "").toLowerCase();
+        if (t.indexOf("video/") === 0) return false;
+        if (t.indexOf("image/") === 0) return true;
+        const n = (file.name || "").toLowerCase();
+        if (/\.(mp4|mov|webm|mkv|avi)$/.test(n)) return false;
+        if (/\.(jpe?g|png|webp|gif|heic|heif|bmp)$/.test(n)) return true;
+        // Android often returns empty type + odd name — allow non-video
+        if (!t || t === "application/octet-stream") return true;
+        return false;
+    }
+
+    function readFileAsArrayBuffer(file, timeoutMs) {
+        timeoutMs = timeoutMs || 20000;
+        return new Promise((resolve, reject) => {
+            const timer = setTimeout(() => reject(new Error("Read timeout")), timeoutMs);
+            try {
+                file.arrayBuffer()
+                    .then((buf) => {
+                        clearTimeout(timer);
+                        resolve(buf);
+                    })
+                    .catch((e) => {
+                        clearTimeout(timer);
+                        // FileReader fallback
+                        try {
+                            const fr = new FileReader();
+                            fr.onload = () => resolve(fr.result);
+                            fr.onerror = () => reject(fr.error || e);
+                            fr.readAsArrayBuffer(file);
+                        } catch (e2) {
+                            reject(e2);
+                        }
+                    });
+            } catch (e) {
+                clearTimeout(timer);
+                reject(e);
+            }
+        });
+    }
+
+    function compressToJpegFile(file, maxSide, quality) {
+        maxSide = maxSide || 1280;
+        quality = quality || 0.75;
+        return new Promise((resolve, reject) => {
+            try {
+                const url = URL.createObjectURL(file);
+                const img = new Image();
+                img.onload = () => {
+                    try {
+                        let w = img.naturalWidth || img.width;
+                        let h = img.naturalHeight || img.height;
+                        const scale = Math.min(1, maxSide / Math.max(w, h, 1));
+                        w = Math.max(1, Math.round(w * scale));
+                        h = Math.max(1, Math.round(h * scale));
+                        const c = document.createElement("canvas");
+                        c.width = w;
+                        c.height = h;
+                        c.getContext("2d").drawImage(img, 0, 0, w, h);
+                        URL.revokeObjectURL(url);
+                        c.toBlob(
+                            (blob) => {
+                                if (!blob) return resolve(file);
+                                resolve(
+                                    new File([blob], "photo.jpg", {
+                                        type: "image/jpeg"
+                                    })
+                                );
+                            },
+                            "image/jpeg",
+                            quality
+                        );
+                    } catch (e) {
+                        URL.revokeObjectURL(url);
+                        resolve(file);
+                    }
+                };
+                img.onerror = () => {
+                    URL.revokeObjectURL(url);
+                    resolve(file);
+                };
+                img.src = url;
+            } catch (e) {
+                resolve(file);
+            }
+        });
+    }
+
+    async function savePostImagesToIDB(files) {
+        files = Array.from(files || []).slice(0, 10);
+        if (!files.length) return 0;
+
+        try {
+            const db = await new Promise(function (resolve, reject) {
+                const req = indexedDB.open("VIEWORA_POST_IMAGES_DB", 3);
+                req.onerror = function () { reject(req.error || new Error("idb open")); };
+                req.onsuccess = function () { resolve(req.result); };
+                req.onupgradeneeded = function () {
+                    const d = req.result;
+                    if (!d.objectStoreNames.contains("images")) {
+                        d.createObjectStore("images");
+                    }
+                };
+            });
+
+            await new Promise(function (resolve, reject) {
+                const tx = db.transaction("images", "readwrite");
+                const store = tx.objectStore("images");
+                try { store.clear(); } catch (_) {}
+                store.put(files.length, "count");
+                // Store File/Blob directly — no arrayBuffer (fast on mobile)
+                files.forEach(function (file, i) {
+                    store.put(
+                        {
+                            blob: file,
+                            name: file.name || ("photo_" + (i + 1) + ".jpg"),
+                            type: file.type || "image/jpeg",
+                            size: file.size || 0
+                        },
+                        "img_" + i
+                    );
+                });
+                tx.oncomplete = function () { resolve(); };
+                tx.onerror = function () { reject(tx.error || new Error("idb tx")); };
+                tx.onabort = function () { reject(new Error("idb abort")); };
+            });
+
+            console.log("[VIEWORA] IDB saved", files.length);
+            return files.length;
+        } catch (e) {
+            console.warn("savePostImagesToIDB failed", e);
+            return files.length;
+        }
+    }
+
+    async function handleSelectedPostImages(files) {
+        return processPostImages(files);
+    }
+
+    /** Wire file input so Android always fires after Done */
+    function wireFileInput(input, handler) {
+        if (!input || input.__vieworaWired) return;
+        input.__vieworaWired = true;
+        let lastKey = "";
+        let busy = false;
+        const run = async () => {
+            const list = Array.from(input.files || []);
+            if (!list.length || busy) return;
+            const key =
+                list.length +
+                ":" +
+                list.map((f) => f.name + ":" + f.size + ":" + f.lastModified).join("|");
+            // allow same selection after 2s
+            if (key === lastKey && Date.now() - (input.__lastRunAt || 0) < 2000) return;
+            lastKey = key;
+            input.__lastRunAt = Date.now();
+            busy = true;
+            try {
+                await handler(list);
+            } catch (e) {
+                console.error(e);
+                hideProcessing();
+                showToast("Error", (e && e.message) || "Try again", "error");
+            } finally {
+                busy = false;
+            }
+        };
+        input.addEventListener("change", run);
+        input.addEventListener("input", run);
+        // Android: change sometimes missed after Google Photos Done
+        window.addEventListener("focus", () => {
+            setTimeout(run, 350);
+        });
+        document.addEventListener("visibilitychange", () => {
+            if (document.visibilityState === "visible") setTimeout(run, 350);
+        });
+    }
+
 
     async function handleSelectedFile(
         file,
@@ -2068,18 +2452,16 @@
                     }
                 );
 
-            showProcessing(
-                "Preparing your photo..."
-            );
-
-            await saveImageForEditor(
-                file
-            );
-
-            await sleep(150);
-
-            window.location.href =
-                "edit-post.html?source=camera";
+            showProcessing("Preparing your photo...");
+            try {
+                await savePostImagesToIDB([file]);
+                sessionStorage.setItem("viewora_post_multi", "1");
+                sessionStorage.setItem("viewora_post_multi_ready", "1");
+                sessionStorage.setItem("viewora_edit_post_type", "image");
+            } catch (_) {}
+            await saveImageForEditor(file);
+            await sleep(100);
+            window.location.href = "edit-post.html?source=camera&multi=1&t=" + Date.now();
 
         } catch (error) {
 
@@ -2482,16 +2864,16 @@
     );
 
 
-    $("chooseMediaBtn")?.addEventListener(
-        "click",
-        openFilePicker
-    );
-
-
-    $("openGalleryBtn")?.addEventListener(
-        "click",
-        openFilePicker
-    );
+    function onChooseGalleryClick(e) {
+        try {
+            e.preventDefault();
+            e.stopPropagation();
+        } catch (_) {}
+        if (currentMode === "post") openPostGallery();
+        else openFilePicker();
+    }
+    $("chooseMediaBtn")?.addEventListener("click", onChooseGalleryClick);
+    $("openGalleryBtn")?.addEventListener("click", onChooseGalleryClick);
 
 
     /* =====================================================
@@ -2506,10 +2888,14 @@
                 "hidden"
             );
 
+            openPostGallery();
+            return;
+
             if (postMediaInput) {
-
+                postMediaInput.multiple = true;
+                postMediaInput.setAttribute("multiple", "multiple");
+                postMediaInput.accept = "image/*";
                 postMediaInput.value = "";
-
                 postMediaInput.click();
             }
         }

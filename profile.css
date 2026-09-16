@@ -2015,3 +2015,15 @@ body {
 #postsList .contentMoreBtn {
   display: none !important;
 }
+
+#shortsList .contentMoreBtn,
+.shortCard .contentMoreBtn {
+  z-index: 30 !important;
+  pointer-events: auto !important;
+}
+#contentActionSheet:not(.hidden) {
+  display: flex !important;
+}
+#contentActionSheet.anchored:not(.hidden) {
+  display: flex !important;
+}

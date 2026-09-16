@@ -659,8 +659,9 @@
     <input
         type="file"
         id="postMediaInput"
-        accept="image/*"
-        hidden
+        accept="image/*,.jpg,.jpeg,.png,.webp,.gif,.heic,.heif,.bmp"
+        multiple
+        class="vieworaFileInput"
     >
 
 
@@ -690,8 +691,9 @@
     <input
         type="file"
         id="mediaInput"
-        accept="video/*"
-        hidden
+        accept="image/*,video/*"
+        multiple
+        class="vieworaFileInput"
     >
 
 
@@ -712,7 +714,7 @@
         id="cameraPhotoInput"
         accept="image/*"
         capture="environment"
-        hidden
+        class="vieworaFileInput"
     >
 
 
@@ -816,7 +818,7 @@
                     </strong>
 
                     <small id="chooseMediaHint">
-                        Select a video from your gallery
+                        Select 1–10 photos from your gallery
                     </small>
 
                 </span>
@@ -832,6 +834,7 @@
                 type="button"
                 id="openGalleryBtn"
                 class="uploadOption"
+                onclick="try{window.openPostGallery&&window.openPostGallery()}catch(e){}"
             >
 
                 <span class="uploadOptionIcon">
@@ -1888,6 +1891,7 @@
     <div
         id="processingOverlay"
         class="processingOverlay hidden"
+        style="display:none"
         aria-live="polite"
         aria-busy="true"
     >
@@ -1991,6 +1995,7 @@
 ========================================================= -->
 
 <script src="firebase.js"></script>
+<script src="upload-queue.js"></script>
 
 
 <!-- =========================================================
@@ -2007,6 +2012,20 @@
 <script src="upload.js"></script>
   <script src="message-listener.js"></script>
 
+
+
+<!-- Multi-photo selection bar (shows after Done) -->
+<div id="postSelectBar" class="postSelectBar hidden" aria-live="polite">
+  <div class="postSelectThumbs" id="postSelectThumbs"></div>
+  <div class="postSelectMeta">
+    <strong id="postSelectCount">0 photos</strong>
+    <small>Ready to edit</small>
+  </div>
+  <button type="button" id="postSelectContinue" class="postSelectContinue">
+    Continue
+    <i class="fa-solid fa-arrow-right"></i>
+  </button>
+</div>
 
 </body>
 </html>

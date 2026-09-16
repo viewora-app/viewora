@@ -2763,10 +2763,36 @@ select {
 
 /* =========================================================
    INPUT FILE SAFETY
+   NEVER use display:none — Android/WebView won't open gallery
 ========================================================= */
 
 input[type="file"] {
-    display: none !important;
+    position: fixed !important;
+    left: -10000px !important;
+    top: 0 !important;
+    width: 1px !important;
+    height: 1px !important;
+    opacity: 0 !important;
+    overflow: hidden !important;
+    z-index: -1 !important;
+    /* keep in accessibility tree so label[for] works */
+    display: block !important;
+    pointer-events: none !important;
+}
+
+/* When user activates via label, browser still opens picker */
+input[type="file"].vieworaFileInput {
+  position: fixed !important;
+  left: 0 !important;
+  top: 0 !important;
+  width: 1px !important;
+  height: 1px !important;
+  opacity: 0.01 !important;
+  overflow: hidden !important;
+  z-index: 1 !important;
+  border: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
 }
 
 
@@ -3009,3 +3035,87 @@ button,
         height: 43px;
     }
 }
+.vieworaFileInput{
+  position:fixed!important;
+  left:-100vw!important;
+  top:0!important;
+  width:1px!important;
+  height:1px!important;
+  opacity:0!important;
+  overflow:hidden!important;
+  z-index:-1!important;
+}
+
+/* gallery click fix */
+.processingOverlay.hidden {
+  display: none !important;
+  pointer-events: none !important;
+}
+#fileSheet:not(.hidden) {
+  pointer-events: auto !important;
+  z-index: 500 !important;
+}
+#fileSheet .uploadOption,
+#chooseMediaBtn,
+#openGalleryBtn {
+  pointer-events: auto !important;
+  cursor: pointer !important;
+  position: relative;
+  z-index: 2;
+}
+#fileSheet .overlayBackdrop {
+  z-index: 0;
+}
+#fileSheet .uploadSheet {
+  position: relative;
+  z-index: 1;
+  pointer-events: auto !important;
+}
+
+/* Multi select confirmation bar */
+.postSelectBar {
+  position: fixed;
+  left: 0; right: 0; bottom: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px calc(12px + env(safe-area-inset-bottom));
+  background: rgba(12,12,18,.97);
+  border-top: 1px solid rgba(255,255,255,.12);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+.postSelectBar.hidden { display: none !important; }
+.postSelectThumbs {
+  display: flex;
+  gap: 6px;
+  max-width: 42vw;
+  overflow-x: auto;
+}
+.postSelectThumbs img {
+  width: 40px; height: 40px;
+  border-radius: 8px;
+  object-fit: cover;
+  flex-shrink: 0;
+  border: 1px solid rgba(255,255,255,.15);
+}
+.postSelectMeta { flex: 1; min-width: 0; color: #fff; }
+.postSelectMeta strong { display: block; font-size: 14px; }
+.postSelectMeta small { opacity: .65; font-size: 11px; }
+.postSelectContinue {
+  flex-shrink: 0;
+  height: 42px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 12px;
+  background: linear-gradient(135deg,#7c5cff,#3b82f6);
+  color: #fff;
+  font-weight: 700;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+label.uploadOption { cursor: pointer; display: flex; }

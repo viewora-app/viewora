@@ -86,14 +86,8 @@
         </div>
 
 
-        <button
-            type="button"
-            id="nextBtn"
-            class="nextButton"
-        >
-            Next
-            <i class="fa-solid fa-arrow-right"></i>
-        </button>
+        <!-- Next removed: single-page editor, Share Post only -->
+        <button type="button" id="nextBtn" class="nextButton" hidden style="display:none!important" aria-hidden="true">Next</button>
 
     </header>
 
@@ -1181,6 +1175,8 @@
 <div
     id="processingOverlay"
     class="processingOverlay hidden"
+    style="display:none!important"
+    hidden
 >
 
     <div class="processingOrb">
@@ -1246,11 +1242,10 @@
 
 <script src="firebase.js"></script>
 <script src="upload-queue.js"></script>
-<script src="call-listener.js"></script>
-<script src="message-listener.js"></script>
-<!-- page ka apna js -->
     <script scr="security.js"></script>
-  
+  <script src="call-listener.js"></script>
+<script src="message-listener.js"></script>
+
 
 <!-- =====================================================
      EDIT POST JS
@@ -1258,6 +1253,33 @@
 
 <script src="edit-post.js"></script>
 
+
+
+<div class="sheet" id="musicTrimSheet" hidden>
+  <div class="sheetBackdrop" data-close="musicTrimSheet"></div>
+  <div class="sheetPanel">
+    <div class="sheetHandle"></div>
+    <header class="sheetHead">
+      <strong>Set music clip</strong>
+      <button type="button" data-close="musicTrimSheet"><i class="fa-solid fa-xmark"></i></button>
+    </header>
+    <p class="sheetHint" id="musicTrimTitle" style="opacity:.7;font-size:12px;margin:0 0 12px"></p>
+    <div style="padding:0 4px 8px">
+      <label style="font-size:11px;opacity:.6">Start (sec)</label>
+      <input type="range" id="musicStartRange" min="0" max="120" step="0.5" value="0" style="width:100%">
+      <div style="display:flex;justify-content:space-between;font-size:12px;margin-top:4px">
+        <span id="musicStartLabel">0.0s</span>
+        <span id="musicEndLabel">15.0s</span>
+      </div>
+      <label style="font-size:11px;opacity:.6;margin-top:10px;display:block">Clip length</label>
+      <input type="range" id="musicLenRange" min="5" max="60" step="1" value="15" style="width:100%">
+    </div>
+    <div style="display:flex;gap:8px;padding:8px 0 12px">
+      <button type="button" id="musicPreviewBtn" class="secondaryBtn" style="flex:1">Preview</button>
+      <button type="button" id="musicTrimConfirm" class="primaryBtn" style="flex:1">Use this clip</button>
+    </div>
+  </div>
+</div>
 
 </body>
 </html>

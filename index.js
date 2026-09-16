@@ -232,15 +232,34 @@
 
 
     const getMediaURL = (data) => {
-
+        if (!data) return "";
+        if (Array.isArray(data.mediaUrls) && data.mediaUrls.length) {
+            return safeURL(data.mediaUrls[0]);
+        }
+        if (Array.isArray(data.images) && data.images.length) {
+            return safeURL(data.images[0]);
+        }
         return safeURL(
-            data?.imageUrl ||
-            data?.mediaUrl ||
-            data?.image ||
-            data?.photoURL ||
-            data?.photo ||
+            data.imageUrl ||
+            data.mediaUrl ||
+            data.mediaURL ||
+            data.image ||
+            data.photoURL ||
+            data.photo ||
             ""
         );
+    };
+
+    const getPostMediaList = (data) => {
+        if (!data) return [];
+        if (Array.isArray(data.mediaUrls) && data.mediaUrls.length) {
+            return data.mediaUrls.map(safeURL).filter(Boolean);
+        }
+        if (Array.isArray(data.images) && data.images.length) {
+            return data.images.map(safeURL).filter(Boolean);
+        }
+        const one = getMediaURL(data);
+        return one ? [one] : [];
     };
 
 
@@ -369,6 +388,52 @@
        POST CARD
     ====================================================== */
 
+    
+    function bindPostCarousels(root) {
+        (root || document).querySelectorAll(".postMediaWrap.hasCarousel").forEach((wrap) => {
+            if (wrap.dataset.boundCarousel) return;
+            wrap.dataset.boundCarousel = "1";
+            const track = wrap.querySelector(".postCarouselTrack");
+            const imgs = wrap.querySelectorAll(".postMedia");
+            const dots = wrap.querySelectorAll(".carouselDot");
+            const countEl = wrap.querySelector(".carouselCount");
+            let i = 0;
+            const n = imgs.length;
+            function go(to) {
+                i = (to + n) % n;
+                if (track) track.style.transform = "translateX(-" + i * 100 + "%)";
+                dots.forEach((d, di) => d.classList.toggle("active", di === i));
+                if (countEl) countEl.textContent = i + 1 + "/" + n;
+            }
+            wrap.querySelector(".carouselPrev")?.addEventListener("click", (e) => {
+                e.stopPropagation();
+                go(i - 1);
+            });
+            wrap.querySelector(".carouselNext")?.addEventListener("click", (e) => {
+                e.stopPropagation();
+                go(i + 1);
+            });
+            // swipe
+            let sx = 0;
+            wrap.addEventListener(
+                "touchstart",
+                (e) => {
+                    sx = e.touches[0].clientX;
+                },
+                { passive: true }
+            );
+            wrap.addEventListener(
+                "touchend",
+                (e) => {
+                    const dx = e.changedTouches[0].clientX - sx;
+                    if (Math.abs(dx) > 40) go(i + (dx < 0 ? 1 : -1));
+                },
+                { passive: true }
+            );
+        });
+    }
+
+
     function createPostCard(id, data) {
 
         const avatar =
@@ -376,6 +441,7 @@
 
         const media =
             getMediaURL(data);
+        const mediaList = getPostMediaList(data);
 
         const username =
             escapeHTML(
@@ -518,18 +584,30 @@
 
 
             ${
-                media
+                mediaList.length
                     ? `
-                        <div class="postMediaWrap">
-
-                            <img
-                                src="${escapeHTML(media)}"
-                                alt="Viewora post"
-                                class="postMedia"
-                                loading="lazy"
-                                data-view-image="${escapeHTML(media)}"
-                            >
-
+                        <div class="postMediaWrap${mediaList.length > 1 ? " hasCarousel" : ""}" data-carousel-count="${mediaList.length}">
+                            <div class="postCarouselTrack">
+                                ${mediaList
+                                    .map(
+                                        (u, i) =>
+                                            `<img src="${escapeHTML(u)}" alt="Viewora post" class="postMedia" loading="${i === 0 ? "eager" : "lazy"}" data-view-image="${escapeHTML(u)}" data-carousel-i="${i}">`
+                                    )
+                                    .join("")}
+                            </div>
+                            ${
+                                mediaList.length > 1
+                                    ? `<button type="button" class="carouselPrev" aria-label="Previous"><i class="fa-solid fa-chevron-left"></i></button>
+                            <button type="button" class="carouselNext" aria-label="Next"><i class="fa-solid fa-chevron-right"></i></button>
+                            <div class="carouselDots">${mediaList
+                                .map(
+                                    (_, i) =>
+                                        `<span class="carouselDot${i === 0 ? " active" : ""}" data-dot="${i}"></span>`
+                                )
+                                .join("")}</div>
+                            <span class="carouselCount">1/${mediaList.length}</span>`
+                                    : ""
+                            }
                         </div>
                       `
                     : ""
@@ -666,11 +744,32 @@
             }
         });
 
-        posts.sort((a, b) => {
-            const timeA = Number(a.data.createdAt || a.data.timestamp || 0);
-            const timeB = Number(b.data.createdAt || b.data.timestamp || 0);
-            return timeB - timeA;
-        });
+        // Rank: engagement + recency (not pure line-by-line)
+        if (window.VieworaFeed && typeof window.VieworaFeed.rankPosts === "function") {
+            const ranked = window.VieworaFeed.rankPosts(
+                posts.map((p) => ({ id: p.id, ...(p.data || {}) }))
+            );
+            const byId = {};
+            posts.forEach((p) => { byId[p.id] = p; });
+            posts.length = 0;
+            ranked.forEach((r) => {
+                if (byId[r.id]) posts.push(byId[r.id]);
+            });
+        } else {
+            posts.sort((a, b) => {
+                const score = (p) => {
+                    const d = p.data || {};
+                    const likes = Number(d.likes || d.likeCount || 0);
+                    const comments = Number(d.comments || d.commentCount || 0);
+                    const views = Number(d.views || d.viewCount || 0);
+                    const created = Number(d.createdAt || d.timestamp || 0);
+                    const ms = created && created < 1e12 ? created * 1000 : created;
+                    const ageH = Math.max(0.5, (Date.now() - (ms || Date.now())) / 36e5);
+                    return (likes * 4 + comments * 6 + views * 0.12) / Math.pow(ageH + 2, 1.12);
+                };
+                return score(b) - score(a);
+            });
+        }
 
         // Private account posts: only own + following
         if (getCurrentUID()) {
@@ -774,6 +873,7 @@
         });
 
         feedContainer.appendChild(fragment);
+        bindPostCarousels(feedContainer);
 
         bindPostEvents();
         wirePostMusicClicks();
@@ -1056,23 +1156,17 @@
 
 
         videos.sort((a, b) => {
-
-            const timeA =
-                Number(
-                    a.data.createdAt ||
-                    a.data.timestamp ||
-                    0
-                );
-
-            const timeB =
-                Number(
-                    b.data.createdAt ||
-                    b.data.timestamp ||
-                    0
-                );
-
-            return timeB - timeA;
-
+            const score = (p) => {
+                const d = p.data || p || {};
+                const likes = Number(d.likes || d.likeCount || 0);
+                const comments = Number(d.comments || d.commentCount || 0);
+                const views = Number(d.views || d.viewCount || 0);
+                const created = Number(d.createdAt || d.timestamp || 0);
+                const ms = created && created < 1e12 ? created * 1000 : created;
+                const ageH = Math.max(0.5, (Date.now() - (ms || Date.now())) / 36e5);
+                return (likes * 4 + comments * 6 + views * 0.15) / Math.pow(ageH + 2, 1.12);
+            };
+            return score(b) - score(a);
         });
 
 

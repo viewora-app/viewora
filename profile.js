@@ -2795,7 +2795,15 @@
 
         const media = getMediaURL(item);
         const poster = getThumbURL(item);
-        const views = safeNumber(item.views || item.viewCount);
+        const views = safeNumber(
+            item.views ||
+            item.viewCount ||
+            item.plays ||
+            item.playCount ||
+            item.stats?.views ||
+            item.stats?.viewCount ||
+            0
+        );
 
         // Prefer static thumbnail image (reliable on mobile); fallback video frame
         let mediaHtml = "";
@@ -3371,6 +3379,13 @@
             return "";
         }
 
+        if (Array.isArray(item.mediaUrls) && item.mediaUrls[0]) {
+            return item.mediaUrls[0];
+        }
+        if (Array.isArray(item.images) && item.images[0]) {
+            return item.images[0];
+        }
+
         return (
             item.videoUrl ||
             item.videoURL ||
@@ -3474,8 +3489,11 @@
                                 return;
                             }
 
-                            openManageMenu(card.dataset.id, card.dataset.type
-                            , e && (e.currentTarget || e.target));
+                            openManageMenu(
+                                card.dataset.id,
+                                card.dataset.type || "short",
+                                event.currentTarget || button
+                            );
 
                         }
                     );
@@ -3497,14 +3515,17 @@
         }
 
 
-        if (type === "short") {
-
-            window.location.href =
-                "shorts.html?short=" +
-                encodeURIComponent(id);
-
+        if (type === "short" || type === "shorts") {
+            const q = new URLSearchParams();
+            q.set("id", id);
+            q.set("short", id);
+            if (profileUID) {
+                q.set("uid", profileUID);
+                q.set("solo", "1");
+                q.set("from", "profile");
+            }
+            window.location.href = "shorts.html?" + q.toString();
             return;
-
         }
 
 

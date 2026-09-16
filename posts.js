@@ -3281,24 +3281,32 @@ menuCancel?.addEventListener(
 
         if (window.IntersectionObserver) {
             const obs = new IntersectionObserver(function (entries) {
-                let best = null, bestRatio = 0.35;
+                let best = null, bestRatio = 0.25;
                 entries.forEach(function (en) {
                     if (en.isIntersecting && en.intersectionRatio >= bestRatio) {
                         bestRatio = en.intersectionRatio;
                         best = en.target;
                     }
                 });
-                if (!best) return;
-                const bar = best.querySelector(".post-music-bar");
-                if (!bar) { stopMusic(); return; }
+                if (!best) {
+                    // no visible post → stop
+                    try { stopMusic(); } catch (_) {}
+                    return;
+                }
+                const bar = best.querySelector(".post-music-bar, .postMusicBar");
+                if (!bar) {
+                    // visible post has NO music → stop
+                    try { stopMusic(); } catch (_) {}
+                    return;
+                }
                 const url = bar.getAttribute("data-music-url") || "";
                 if (url) playMusic(url, bar);
+                else try { stopMusic(); } catch (_) {}
             }, { root: null, rootMargin: "-15% 0px -35% 0px", threshold: [0.25, 0.4, 0.55, 0.7, 0.85] });
 
             function observePosts() {
-                document.querySelectorAll("article.post, .post").forEach(function (card) {
+                document.querySelectorAll("article.post, .post, article[data-post-id]").forEach(function (card) {
                     if (card.__musicObs) return;
-                    if (!card.querySelector(".post-music-bar")) return;
                     card.__musicObs = true;
                     obs.observe(card);
                 });

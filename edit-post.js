@@ -76,6 +76,8 @@
         textStyle: "clean",
 
         music: null,
+        mediaFiles: [],
+        mediaUrls: [],
 
         location: "",
 
@@ -133,6 +135,8 @@
         setupBack();
 
         setupPublish();
+
+        try { setupMusicTrim(); } catch (e) { console.warn("music trim setup", e); }
 
         setupFilter();
 
@@ -199,7 +203,121 @@
        LOAD MEDIA
     ====================================================== */
 
-    function loadMedia() {
+    
+    async function loadMultiFromIDB() {
+        try {
+            const multi =
+                sessionStorage.getItem("viewora_post_multi_ready") ||
+                sessionStorage.getItem("viewora_post_multi") ||
+                (new URLSearchParams(location.search).get("multi") ? "1" : "");
+            if (!multi) return false;
+            const dbp = indexedDB.open("VIEWORA_POST_IMAGES_DB", 3);
+            const db = await new Promise((resolve, reject) => {
+                dbp.onsuccess = () => resolve(dbp.result);
+                dbp.onerror = () => reject(dbp.error);
+                dbp.onupgradeneeded = () => {
+                    const d = dbp.result;
+                    if (!d.objectStoreNames.contains("images")) {
+                        d.createObjectStore("images");
+                    }
+                };
+            });
+            const count = await new Promise((resolve) => {
+                try {
+                    const tx = db.transaction("images", "readonly");
+                    const req = tx.objectStore("images").get("count");
+                    req.onsuccess = () => resolve(Number(req.result) || 0);
+                    req.onerror = () => resolve(0);
+                } catch (_) {
+                    resolve(0);
+                }
+            });
+            if (!count) return false;
+            const files = [];
+            for (let i = 0; i < count && i < 10; i++) {
+                const raw = await new Promise((resolve) => {
+                    try {
+                        const tx = db.transaction("images", "readonly");
+                        const req = tx.objectStore("images").get("img_" + i);
+                        req.onsuccess = () => resolve(req.result || null);
+                        req.onerror = () => resolve(null);
+                    } catch (_) {
+                        resolve(null);
+                    }
+                });
+                if (!raw) continue;
+                try {
+                    if (raw instanceof Blob) {
+                        files.push(raw);
+                    } else if (raw.buffer) {
+                        // ArrayBuffer pack from upload.js
+                        const buf = raw.buffer instanceof ArrayBuffer
+                            ? raw.buffer
+                            : raw.buffer;
+                        files.push(
+                            new File([buf], raw.name || ("photo_" + (i + 1) + ".jpg"), {
+                                type: raw.type || "image/jpeg"
+                            })
+                        );
+                    } else if (raw.blob instanceof Blob) {
+                        files.push(
+                            new File([raw.blob], raw.name || ("photo_" + (i + 1) + ".jpg"), {
+                                type: raw.type || raw.blob.type || "image/jpeg"
+                            })
+                        );
+                    }
+                } catch (e) {
+                    console.warn("img restore", i, e);
+                }
+            }
+            if (!files.length) return false;
+            state.mediaFiles = files;
+            state.media = files[0];
+            state.mediaType = "image";
+            state.mediaIndex = 0;
+            const preview =
+                document.getElementById("previewImage") ||
+                document.getElementById("postPreview");
+            if (preview) {
+                preview.src = URL.createObjectURL(files[0]);
+                preview.classList.add("loaded");
+            }
+            try {
+                document.getElementById("mediaLoader")?.classList.add("hidden");
+                document.getElementById("mediaLoading")?.classList.add("hidden");
+            } catch (_) {}
+            try { renderMediaStrip(); } catch (_) {}
+            console.log("[VIEWORA] multi photos loaded:", files.length);
+            try {
+                const pc = document.getElementById("photoCounter");
+                if (pc) {
+                    pc.classList.remove("hidden");
+                    pc.innerHTML = '<i class="fa-regular fa-images"></i><span>1 / ' + files.length + '</span>';
+                }
+            } catch (_) {}
+            return true;
+        } catch (e) {
+            console.warn("loadMultiFromIDB", e);
+            return false;
+        }
+    }
+
+
+    async function loadMedia() {
+        try {
+            if (await loadMultiFromIDB()) return;
+        } catch (_) {}
+        // One more delayed retry for slow IDB after navigation
+        try {
+            const multi =
+                new URLSearchParams(location.search).get("multi") ||
+                sessionStorage.getItem("viewora_post_multi_ready");
+            if (multi) {
+                await new Promise((r) => setTimeout(r, 350));
+                if (await loadMultiFromIDB()) return;
+            }
+        } catch (_) {}
+
 
         const loader =
             $("mediaLoading");
@@ -277,11 +395,22 @@
         }
 
 
-        state.media =
-            media;
-
-        state.mediaType =
-            type;
+        state.media = media;
+        state.mediaType = type;
+        // Multi-post support (max 10)
+        if (!Array.isArray(state.mediaFiles)) state.mediaFiles = [];
+        if (state.mediaFiles.length === 0 && media) {
+            // convert dataURL → Blob for queue
+            try {
+                if (typeof media === "string" && media.indexOf("data:") === 0) {
+                    state.mediaFiles = [dataURLtoBlob(media, "image/jpeg")];
+                    state.media = state.mediaFiles[0];
+                } else if (media instanceof Blob) {
+                    state.mediaFiles = [media];
+                }
+            } catch (_) {}
+        }
+        renderMediaStrip();
 
 
         if (loader) {
@@ -312,13 +441,15 @@
 
 
         preview.onerror = () => {
-
-            console.error(
-                "Media preview failed."
-            );
-
+            console.error("Media preview failed.");
+            // If multi files exist, try next — don't bounce to upload
+            if (state.mediaFiles && state.mediaFiles.length > 1) {
+                try {
+                    preview.src = URL.createObjectURL(state.mediaFiles[0]);
+                } catch (_) {}
+                return;
+            }
             showMediaError();
-
         };
 
 
@@ -448,17 +579,9 @@
         );
 
 
-        $("adjustBtn")?.addEventListener(
-            "click",
-            () => {
-
-                showToast(
-                    "Adjust",
-                    "Photo adjustment tools are coming soon."
-                );
-
-            }
-        );
+        // Crop/Adjust handled by setupCropAdjust()
+        try { setupCropAdjust(); } catch (_) {}
+        try { setupMediaSwipe(); } catch (_) {}
 
     }
 
@@ -982,36 +1105,459 @@
             `;
 
             button.addEventListener("click", () => {
-                state.music = {
+                // Open trim / clip picker — not instant select
+                openMusicTrim({
                     id: item.id,
                     title: item.title,
                     name: item.title,
                     artist: item.artist,
                     audioUrl: item.audioUrl || "",
                     coverUrl: item.coverUrl || ""
-                };
-
-                // update quick tool label if present
-                try {
-                    const small = $("musicBtn")?.querySelector(".toolText small");
-                    if (small) small.textContent = item.title;
-                } catch (_) {}
-
-                stopPostMusicPreview();
-                if (item.audioUrl) {
-                    try {
-                        postMusicPreview = new Audio(item.audioUrl);
-                        postMusicPreview.volume = 0.7;
-                        postMusicPreview.play().catch(() => {});
-                    } catch (_) {}
-                }
-
-                showToast("Music added", item.title + " selected");
-                closeSheet("musicSheet");
+                });
             });
 
             list.appendChild(button);
         });
+    }
+
+
+    
+    let pendingMusic = null;
+
+    function openMusicTrim(item) {
+        pendingMusic = item;
+        stopPostMusicPreview();
+        closeSheet("musicSheet");
+
+        const sheet = $("musicTrimSheet");
+        if (!sheet) {
+            // fallback direct select
+            applyMusicClip(item, 0, 15);
+            return;
+        }
+
+        $("musicTrimTitle") && ($("musicTrimTitle").textContent =
+            (item.title || "Track") + (item.artist ? " · " + item.artist : ""));
+
+        const startR = $("musicStartRange");
+        const lenR = $("musicLenRange");
+        if (startR) startR.value = "0";
+        if (lenR) lenR.value = "15";
+        updateMusicTrimLabels();
+
+        // Probe duration
+        if (item.audioUrl) {
+            try {
+                const a = new Audio();
+                a.preload = "metadata";
+                a.src = item.audioUrl;
+                a.addEventListener("loadedmetadata", () => {
+                    const d = Math.max(5, Math.floor(a.duration || 120));
+                    if (startR) {
+                        startR.max = String(Math.max(0, d - 5));
+                    }
+                    if (lenR) {
+                        lenR.max = String(Math.min(60, d));
+                    }
+                });
+            } catch (_) {}
+        }
+
+        sheet.hidden = false;
+        sheet.removeAttribute("hidden");
+        sheet.classList.add("open");
+        sheet.style.display = "flex";
+    }
+
+    function updateMusicTrimLabels() {
+        const start = Number($("musicStartRange")?.value || 0);
+        const len = Number($("musicLenRange")?.value || 15);
+        const end = start + len;
+        if ($("musicStartLabel")) $("musicStartLabel").textContent = start.toFixed(1) + "s";
+        if ($("musicEndLabel")) $("musicEndLabel").textContent = end.toFixed(1) + "s";
+    }
+
+    function applyMusicClip(item, startAt, duration) {
+        state.music = {
+            id: item.id,
+            title: item.title,
+            name: item.title,
+            artist: item.artist,
+            audioUrl: item.audioUrl || "",
+            coverUrl: item.coverUrl || "",
+            startAt: Number(startAt) || 0,
+            duration: Number(duration) || 15,
+            endAt: (Number(startAt) || 0) + (Number(duration) || 15)
+        };
+        try {
+            const small = $("musicBtn")?.querySelector(".toolText small");
+            if (small) small.textContent = item.title + " (" + Math.round(state.music.startAt) + "s)";
+        } catch (_) {}
+        showToast("Music clip set", item.title);
+        const sheet = $("musicTrimSheet");
+        if (sheet) {
+            sheet.hidden = true;
+            sheet.classList.remove("open");
+            sheet.style.display = "none";
+        }
+        stopPostMusicPreview();
+    }
+
+    function setupMusicTrim() {
+        $("musicStartRange")?.addEventListener("input", updateMusicTrimLabels);
+        $("musicLenRange")?.addEventListener("input", updateMusicTrimLabels);
+
+        $("musicPreviewBtn")?.addEventListener("click", () => {
+            if (!pendingMusic?.audioUrl) return;
+            stopPostMusicPreview();
+            const start = Number($("musicStartRange")?.value || 0);
+            const len = Number($("musicLenRange")?.value || 15);
+            try {
+                postMusicPreview = new Audio(pendingMusic.audioUrl);
+                postMusicPreview.currentTime = start;
+                postMusicPreview.volume = 0.8;
+                postMusicPreview.play().catch(() => {});
+                clearTimeout(window.__musicTrimStop);
+                window.__musicTrimStop = setTimeout(() => {
+                    stopPostMusicPreview();
+                }, len * 1000);
+            } catch (_) {}
+        });
+
+        $("musicTrimConfirm")?.addEventListener("click", () => {
+            if (!pendingMusic) return;
+            const start = Number($("musicStartRange")?.value || 0);
+            const len = Number($("musicLenRange")?.value || 15);
+            applyMusicClip(pendingMusic, start, len);
+        });
+
+        document.querySelectorAll('[data-close="musicTrimSheet"]').forEach((el) => {
+            el.addEventListener("click", () => {
+                const sheet = $("musicTrimSheet");
+                if (sheet) {
+                    sheet.hidden = true;
+                    sheet.style.display = "none";
+                }
+                stopPostMusicPreview();
+            });
+        });
+    }
+
+
+    
+    function dataURLtoBlob(dataURL, mime) {
+        try {
+            const parts = String(dataURL).split(",");
+            const meta = parts[0] || "";
+            const b64 = parts[1] || "";
+            const m = /data:([^;]+)/.exec(meta);
+            const type = (m && m[1]) || mime || "image/jpeg";
+            const bin = atob(b64);
+            const arr = new Uint8Array(bin.length);
+            for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+            return new Blob([arr], { type: type });
+        } catch (e) {
+            console.warn("dataURLtoBlob", e);
+            return null;
+        }
+    }
+
+    function renderMediaStrip() {
+        let strip = document.getElementById("postMediaStrip");
+        if (!strip) {
+            const host =
+                document.querySelector(".previewCard") ||
+                document.querySelector(".mediaStage") ||
+                document.getElementById("previewImage")?.parentElement;
+            if (!host) return;
+            strip = document.createElement("div");
+            strip.id = "postMediaStrip";
+            strip.className = "postMediaStrip";
+            host.appendChild(strip);
+        }
+        const files = state.mediaFiles || [];
+        let html = "";
+        files.forEach((f, i) => {
+            const url =
+                typeof f === "string"
+                    ? f
+                    : URL.createObjectURL(f);
+            html +=
+                '<button type="button" class="stripItem' +
+                (i === (state.mediaIndex || 0) ? " active" : "") +
+                '" data-strip-i="' +
+                i +
+                '"><img src="' +
+                url +
+                '" alt=""><span class="stripNum">' +
+                (i + 1) +
+                "</span></button>";
+        });
+        if (files.length < 10) {
+            html +=
+                '<button type="button" class="stripAdd" id="postAddMediaBtn" title="Add photo (max 10)"><i class="fa-solid fa-plus"></i><small>' +
+                files.length +
+                "/10</small></button>";
+        }
+        strip.innerHTML = html;
+        strip.querySelectorAll("[data-strip-i]").forEach((btn) => {
+            btn.addEventListener("click", () => {
+                const i = Number(btn.getAttribute("data-strip-i"));
+                state.mediaIndex = i;
+                const f = state.mediaFiles[i];
+                const preview = document.getElementById("previewImage");
+                if (preview && f) {
+                    preview.src =
+                        typeof f === "string" ? f : URL.createObjectURL(f);
+                }
+                renderMediaStrip();
+            });
+        });
+        const addBtn = document.getElementById("postAddMediaBtn");
+        if (addBtn) {
+            addBtn.onclick = () => {
+                let input = document.getElementById("multiPostInput");
+                if (!input) {
+                    input = document.createElement("input");
+                    input.type = "file";
+                    input.id = "multiPostInput";
+                    input.accept = "image/*";
+                    input.multiple = true;
+                    input.hidden = true;
+                    document.body.appendChild(input);
+                    input.addEventListener("change", onMultiPostPick);
+                }
+                input.value = "";
+                input.click();
+            };
+        }
+    }
+
+
+    function showMediaAt(index) {
+        const files = state.mediaFiles || [];
+        if (!files.length) return;
+        let i = Number(index) || 0;
+        if (i < 0) i = 0;
+        if (i >= files.length) i = files.length - 1;
+        state.mediaIndex = i;
+        state.media = files[i];
+        const preview = document.getElementById("previewImage");
+        if (preview && files[i]) {
+            const f = files[i];
+            preview.src = typeof f === "string" ? f : URL.createObjectURL(f);
+        }
+        const pc = document.getElementById("photoCounter");
+        if (pc) {
+            pc.classList.remove("hidden");
+            const span = pc.querySelector("span") || pc;
+            if (span.tagName === "SPAN" || span !== pc) {
+                span.textContent = (i + 1) + " / " + files.length;
+            } else {
+                pc.innerHTML = '<i class="fa-regular fa-images"></i><span>' + (i + 1) + " / " + files.length + "</span>";
+            }
+        }
+        try { renderMediaStrip(); } catch (_) {}
+    }
+
+    function setupMediaSwipe() {
+        const stage =
+            document.querySelector(".previewCard") ||
+            document.querySelector(".mediaStage") ||
+            document.getElementById("previewImage")?.parentElement;
+        if (!stage || stage.__swipeBound) return;
+        stage.__swipeBound = true;
+
+        let startX = 0, startY = 0, tracking = false;
+        stage.addEventListener("touchstart", function (e) {
+            if (!e.touches || e.touches.length !== 1) return;
+            if ((state.mediaFiles || []).length < 2) return;
+            startX = e.touches[0].clientX;
+            startY = e.touches[0].clientY;
+            tracking = true;
+        }, { passive: true });
+
+        stage.addEventListener("touchend", function (e) {
+            if (!tracking) return;
+            tracking = false;
+            const t = e.changedTouches && e.changedTouches[0];
+            if (!t) return;
+            const dx = t.clientX - startX;
+            const dy = t.clientY - startY;
+            if (Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(dy)) return;
+            const i = state.mediaIndex || 0;
+            if (dx < 0) showMediaAt(i + 1); // swipe left → next
+            else showMediaAt(i - 1); // swipe right → prev
+        }, { passive: true });
+
+        // also click arrows via keyboard optional
+        document.addEventListener("keydown", function (e) {
+            if ((state.mediaFiles || []).length < 2) return;
+            if (e.key === "ArrowLeft") showMediaAt((state.mediaIndex || 0) - 1);
+            if (e.key === "ArrowRight") showMediaAt((state.mediaIndex || 0) + 1);
+        });
+    }
+
+    function setupCropAdjust() {
+        const btn = document.getElementById("adjustBtn");
+        if (!btn || btn.__cropBound) return;
+        btn.__cropBound = true;
+
+        // Build crop sheet once
+        let sheet = document.getElementById("cropSheet");
+        if (!sheet) {
+            sheet = document.createElement("div");
+            sheet.id = "cropSheet";
+            sheet.className = "cropSheet hidden";
+            sheet.innerHTML =
+                '<div class="cropSheetInner">' +
+                '<div class="cropHead"><strong>Adjust &amp; Crop</strong>' +
+                '<button type="button" id="cropCloseBtn" class="cropClose"><i class="fa-solid fa-xmark"></i></button></div>' +
+                '<div class="cropStage"><img id="cropImage" alt=""></div>' +
+                '<div class="cropAspects">' +
+                '<button type="button" data-aspect="free" class="aspectBtn active">Free</button>' +
+                '<button type="button" data-aspect="1" class="aspectBtn">1:1</button>' +
+                '<button type="button" data-aspect="4/5" class="aspectBtn">4:5</button>' +
+                '<button type="button" data-aspect="16/9" class="aspectBtn">16:9</button>' +
+                '</div>' +
+                '<div class="cropActions">' +
+                '<button type="button" id="cropRotateBtn" class="cropAct"><i class="fa-solid fa-rotate"></i> Rotate</button>' +
+                '<button type="button" id="cropApplyBtn" class="cropAct primary">Apply</button>' +
+                '</div></div>';
+            document.body.appendChild(sheet);
+        }
+
+        let cropRotation = 0;
+        let cropAspect = "free";
+
+        function openCrop() {
+            const files = state.mediaFiles || [];
+            const i = state.mediaIndex || 0;
+            const f = files[i] || state.media;
+            if (!f) {
+                showToast("No photo", "Select a photo first");
+                return;
+            }
+            const img = document.getElementById("cropImage");
+            if (img) {
+                img.src = typeof f === "string" ? f : URL.createObjectURL(f);
+                img.style.transform = "rotate(0deg)";
+            }
+            cropRotation = 0;
+            cropAspect = "free";
+            sheet.querySelectorAll(".aspectBtn").forEach(function (b) {
+                b.classList.toggle("active", b.getAttribute("data-aspect") === "free");
+            });
+            sheet.classList.remove("hidden");
+        }
+
+        function closeCrop() {
+            sheet.classList.add("hidden");
+        }
+
+        btn.addEventListener("click", openCrop);
+        sheet.querySelector("#cropCloseBtn")?.addEventListener("click", closeCrop);
+
+        sheet.querySelectorAll(".aspectBtn").forEach(function (b) {
+            b.addEventListener("click", function () {
+                sheet.querySelectorAll(".aspectBtn").forEach(function (x) { x.classList.remove("active"); });
+                b.classList.add("active");
+                cropAspect = b.getAttribute("data-aspect") || "free";
+                const stage = sheet.querySelector(".cropStage");
+                if (stage) {
+                    stage.setAttribute("data-aspect", cropAspect);
+                }
+            });
+        });
+
+        sheet.querySelector("#cropRotateBtn")?.addEventListener("click", function () {
+            cropRotation = (cropRotation + 90) % 360;
+            const img = document.getElementById("cropImage");
+            if (img) img.style.transform = "rotate(" + cropRotation + "deg)";
+        });
+
+        sheet.querySelector("#cropApplyBtn")?.addEventListener("click", function () {
+            const img = document.getElementById("cropImage");
+            if (!img || !img.naturalWidth) {
+                closeCrop();
+                return;
+            }
+            try {
+                const canvas = document.createElement("canvas");
+                const w = img.naturalWidth;
+                const h = img.naturalHeight;
+                let cw = w, ch = h;
+                // aspect crop center
+                if (cropAspect === "1") {
+                    const s = Math.min(w, h);
+                    cw = s; ch = s;
+                } else if (cropAspect === "4/5") {
+                    if (w / h > 4 / 5) { ch = h; cw = Math.round(h * 4 / 5); }
+                    else { cw = w; ch = Math.round(w * 5 / 4); }
+                } else if (cropAspect === "16/9") {
+                    if (w / h > 16 / 9) { ch = h; cw = Math.round(h * 16 / 9); }
+                    else { cw = w; ch = Math.round(w * 9 / 16); }
+                }
+                const sx = Math.floor((w - cw) / 2);
+                const sy = Math.floor((h - ch) / 2);
+                canvas.width = cw;
+                canvas.height = ch;
+                const ctx = canvas.getContext("2d");
+                ctx.save();
+                if (cropRotation) {
+                    // simple rotate: redraw full then crop is complex — apply rotation on output
+                    canvas.width = (cropRotation % 180 === 0) ? cw : ch;
+                    canvas.height = (cropRotation % 180 === 0) ? ch : cw;
+                    ctx.translate(canvas.width / 2, canvas.height / 2);
+                    ctx.rotate((cropRotation * Math.PI) / 180);
+                    ctx.drawImage(img, sx, sy, cw, ch, -cw / 2, -ch / 2, cw, ch);
+                } else {
+                    ctx.drawImage(img, sx, sy, cw, ch, 0, 0, cw, ch);
+                }
+                ctx.restore();
+                canvas.toBlob(function (blob) {
+                    if (!blob) { closeCrop(); return; }
+                    const file = new File([blob], "crop-" + Date.now() + ".jpg", { type: "image/jpeg" });
+                    const i = state.mediaIndex || 0;
+                    if (!Array.isArray(state.mediaFiles)) state.mediaFiles = [];
+                    state.mediaFiles[i] = file;
+                    state.media = file;
+                    showMediaAt(i);
+                    closeCrop();
+                    showToast("Applied", "Photo adjusted");
+                }, "image/jpeg", 0.92);
+            } catch (err) {
+                console.error(err);
+                closeCrop();
+                showToast("Crop failed", "Try again");
+            }
+        });
+    }
+
+
+    function onMultiPostPick(e) {
+        const list = Array.from(e.target.files || []);
+        if (!list.length) return;
+        if (!Array.isArray(state.mediaFiles)) state.mediaFiles = [];
+        const room = 10 - state.mediaFiles.length;
+        const take = list.slice(0, room);
+        take.forEach((f) => {
+            if (f && f.type && f.type.indexOf("image") === 0) {
+                state.mediaFiles.push(f);
+            }
+        });
+        if (state.mediaFiles.length) {
+            state.media = state.mediaFiles[state.mediaFiles.length - 1];
+            state.mediaIndex = state.mediaFiles.length - 1;
+            const preview = document.getElementById("previewImage");
+            if (preview) {
+                preview.src = URL.createObjectURL(state.media);
+            }
+        }
+        renderMediaStrip();
+        if (list.length > room) {
+            showToast("Max 10", "Only 10 photos allowed per post");
+        }
     }
 
 
@@ -1826,552 +2372,123 @@ function getCloudinaryConfig() {
             return;
         }
 
-
-        /*
-         -----------------------------------------------
-         MEDIA CHECK
-         -----------------------------------------------
-        */
-
         if (!state.media) {
-
-            showToast(
-                "No media",
-                "Please select a photo first."
-            );
-
+            showToast("No media", "Please select a photo first.");
             return;
-
         }
 
-
-        /*
-         -----------------------------------------------
-         AUTH CHECK
-         -----------------------------------------------
-        */
-
-        const user =
-            getAuthUser();
-
-
+        const user = getAuthUser();
         if (!user) {
-
-            showToast(
-                "Login required",
-                "Please login before publishing."
-            );
-
-
-            setTimeout(
-                () => {
-
-                    window.location.href =
-                        "login.html";
-
-                },
-                1200
-            );
-
-
+            showToast("Login required", "Please login before publishing.");
+            setTimeout(function () {
+                window.location.href = "login.html";
+            }, 1000);
             return;
-
         }
 
+        state.publishing = true;
+        try {
+            setPublishState(true);
+        } catch (_) {}
 
-        /*
-         -----------------------------------------------
-         START
-         -----------------------------------------------
-        */
+        var caption = "";
+        try {
+            var el =
+                document.getElementById("captionInput") ||
+                document.getElementById("postCaption");
+            caption = (el && el.value) || state.caption || "";
+        } catch (_) {}
 
-        state.publishing =
-            true;
-
-
-        setPublishState(
-            true
-        );
-
-
-        /* Background queue (YouTube-style) */
-        if (window.VieworaUploadQueue && state.media) {
+        var files = (state.mediaFiles && state.mediaFiles.length)
+            ? state.mediaFiles.slice(0, 10)
+            : (state.media ? [state.media] : []);
+        files = files.filter(function (f) {
+            return f && typeof f !== "string" && (f instanceof Blob);
+        });
+        if (!files.length) {
+            // try convert dataURL media
+            if (typeof state.media === "string" && state.media.indexOf("data:") === 0) {
+                var b = dataURLtoBlob(state.media, "image/jpeg");
+                if (b) files = [b];
+            }
+        }
+        if (!files.length) {
+            showToast("Upload", "Please re-select the photo.");
+            state.publishing = false;
             try {
-                const user = getAuthUser();
-                let caption = "";
-                try {
-                    caption = (document.getElementById("captionInput") || document.getElementById("postCaption") || {}).value || state.caption || "";
-                } catch (_) {}
-                await VieworaUploadQueue.enqueueAndLeave({
+                setPublishState(false);
+            } catch (_) {}
+            return;
+        }
+        var file = files[0];
+
+        var meta = {
+            mediaCount: files.length,
+            caption: caption,
+            description: caption,
+            title: caption || "",
+            username: (user && (user.displayName || user.email)) || "User",
+            userPhoto: (user && user.photoURL) || "",
+            music: state.music || null,
+            musicStartAt: state.music ? Number(state.music.startAt || 0) : 0,
+            musicDuration: state.music ? Number(state.music.duration || 15) : 0,
+            category: state.category || "",
+            tags: state.tags || [],
+            location: state.location || "",
+            text: state.text || "",
+            textStyle: state.textStyle || "clean",
+            audience: state.audience || "Everyone",
+            allowComments: state.allowComments !== false,
+            hideLikes: state.hideLikes === true,
+            allowSaves: state.allowSaves !== false,
+            collaborator: state.collaborator || null,
+            hideLikeCount: state.hideLikes === true,
+            commentsDisabled: state.allowComments === false
+        };
+
+        // Background only — no full-screen Preparing / Uploading
+        try {
+            if (
+                window.VieworaUploadQueue &&
+                typeof window.VieworaUploadQueue.enqueueAndLeave === "function"
+            ) {
+                await window.VieworaUploadQueue.enqueueAndLeave({
                     type: "post",
-                    file: state.media,
+                    file: file,
+                    files: files,
                     returnUrl: "index.html",
-                    meta: {
-                        caption: caption,
-                        description: caption,
-                        username: user && (user.displayName || user.email) || "User",
-                        userPhoto: user && user.photoURL || "",
-                        music: state.music || null,
-                        category: state.category || "",
-                        tags: state.tags || []
-                    }
+                    meta: meta
                 });
                 return;
-            } catch (err) {
-                console.warn("BG post queue failed, fallback", err);
             }
+        } catch (err) {
+            console.warn("BG leave failed", err);
         }
-
-
-        showProcessing(
-            "Preparing your post"
-        );
-
 
         try {
-
-            const database =
-                getDatabase();
-
-
-            /*
-             --------------------------------------------
-             CREATE POST ID
-             --------------------------------------------
-            */
-
-            const postId =
-                createPostId();
-
-
-            /*
-             --------------------------------------------
-             UPLOAD IMAGE
-             --------------------------------------------
-            */
-
-            updateProcessing(
-                "Uploading your photo..."
-            );
-
-
-            const mediaURL =
-                await uploadMediaToCloudinary(
-                    state.media
-                );
-
-
-            state.mediaURL =
-                mediaURL;
-
-
-            /*
-             --------------------------------------------
-             USER PROFILE
-             --------------------------------------------
-            */
-
-            updateProcessing(
-                "Loading your profile..."
-            );
-
-
-            const profile =
-                await getUserProfile(
-                    user.uid
-                );
-
-
-            /*
-             --------------------------------------------
-             CAPTION
-             --------------------------------------------
-            */
-
-            const caption =
-                (
-                    $("captionInput")?.value ||
-                    state.caption ||
-                    ""
-                ).trim();
-
-
-            /*
-             --------------------------------------------
-             POST DATA
-             --------------------------------------------
-            */
-
-            const postData = {
-
-                /*
-                 ID
-                */
-
-                id:
-                    postId,
-
-
-                /*
-                 TYPE
-                */
-
-                type:
-                    "post",
-
-
-                postType:
-                    "photo",
-
-
-                /*
-                 MEDIA
-                */
-
-                media:
-                    mediaURL,
-
-                mediaUrl:
-                    mediaURL,
-
-                mediaURL:
-                    mediaURL,
-
-                mediaType:
-                    state.mediaType,
-
-
-                /*
-                 CONTENT
-                */
-
-                caption:
-                    caption,
-
-                text:
-                    state.text || "",
-
-                textStyle:
-                    state.textStyle || "clean",
-
-
-                /*
-                 MUSIC
-                */
-
-                music:
-                    state.music || null,
-
-
-                /*
-                 LOCATION
-                */
-
-                location:
-                    state.location || "",
-
-
-                /*
-                 COLLABORATOR
-                */
-
-                collaborator:
-                    state.collaborator || null,
-
-
-                /*
-                 TAGS
-                */
-
-                tags:
-                    Array.isArray(state.tags)
-                        ? state.tags
-                        : [],
-
-
-                /*
-                 AUDIENCE
-                */
-
-                audience:
-                    state.audience || "Everyone",
-
-
-                /*
-                 SETTINGS
-                */
-
-                allowComments:
-                    state.allowComments === true,
-
-                hideLikes:
-                    state.hideLikes === true,
-
-                allowSaves:
-                    state.allowSaves === true,
-
-
-                /*
-                 CREATOR IDS
-                */
-
-                uid:
-                    user.uid,
-
-                userId:
-                    user.uid,
-
-                ownerId:
-                    user.uid,
-
-                creatorId:
-                    user.uid,
-
-
-                /*
-                 CREATOR PROFILE
-                */
-
-                username:
-                    profile.username,
-
-                displayName:
-                    profile.displayName,
-
-                userName:
-                    profile.displayName,
-
-                avatar:
-                    profile.avatar,
-
-
-                /*
-                 STATS
-                */
-
-                likes:
-                    0,
-
-                comments:
-                    0,
-
-                shares:
-                    0,
-
-                saves:
-                    0,
-
-                views:
-                    0,
-
-
-                /*
-                 EXTRA STATE
-                */
-
-                rotation:
-                    state.rotation,
-
-                fit:
-                    state.fit,
-
-
-                /*
-                 TIMESTAMPS
-                */
-
-                createdAt:
-                    firebase.database.ServerValue.TIMESTAMP,
-
-                updatedAt:
-                    firebase.database.ServerValue.TIMESTAMP
-
-            };
-
-
-            /*
-             --------------------------------------------
-             WRITE POST
-             --------------------------------------------
-            */
-
-            updateProcessing(
-                "Publishing your post..."
-            );
-
-
-            await database
-                .ref(
-                    `posts/${postId}`
-                )
-                .set(
-                    postData
-                );
-
-
-            /*
-             --------------------------------------------
-             USER POST INDEX
-             --------------------------------------------
-            */
-
-            updateProcessing(
-                "Updating your profile..."
-            );
-
-
-            await database
-                .ref(
-                    `userPosts/${user.uid}/${postId}`
-                )
-                .set({
-
-                    postId:
-                        postId,
-
-                    type:
-                        "post",
-
-                    createdAt:
-                        firebase.database.ServerValue.TIMESTAMP
-
+            if (
+                window.VieworaUploadQueue &&
+                typeof window.VieworaUploadQueue.enqueue === "function"
+            ) {
+                await window.VieworaUploadQueue.enqueue({
+                    type: "post",
+                    file: file,
+                    files: files,
+                    meta: meta
                 });
-
-
-            /*
-             --------------------------------------------
-             UPDATE USER POST COUNT
-             --------------------------------------------
-            */
-
-            try {
-
-                const userRef =
-                    database.ref(
-                        `users/${user.uid}`
-                    );
-
-
-                const userSnapshot =
-                    await userRef.once(
-                        "value"
-                    );
-
-
-                const userData =
-                    userSnapshot.val() ||
-                    {};
-
-
-                const currentPosts =
-                    Number(
-                        userData.posts || 0
-                    );
-
-
-                await userRef.update({
-
-                    posts:
-                        currentPosts + 1,
-
-                    updatedAt:
-                        firebase.database.ServerValue.TIMESTAMP
-
-                });
-
-            } catch (countError) {
-
-                /*
-                 Do not fail the post if
-                 only the counter update fails.
-                */
-
-                console.warn(
-                    "Post count update skipped:",
-                    countError
-                );
-
+                showToast("Uploading", "Post uploading in background");
+                window.location.href = "index.html";
+                return;
             }
-
-
-            /*
-             --------------------------------------------
-             CLEAN TEMP MEDIA
-             --------------------------------------------
-            */
-
-            cleanupMediaStorage();
-
-
-            /*
-             --------------------------------------------
-             SUCCESS
-             --------------------------------------------
-            */
-
-            hideProcessing();
-
-
-            showToast(
-                "Post published",
-                "Your post is now live on Viewora."
-            );
-
-
-            /*
-             Prevent second click
-             */
-
-            setPublishState(
-                true
-            );
-
-
-            /*
-             Redirect
-             */
-
-            setTimeout(
-                () => {
-
-                    window.location.replace(
-                        "index.html"
-                    );
-
-                },
-                1000
-            );
-
-
-        } catch (error) {
-
-            console.error(
-                "❌ VIEWORA PUBLISH ERROR:",
-                error
-            );
-
-
-            hideProcessing();
-
-
-            state.publishing =
-                false;
-
-
-            setPublishState(
-                false
-            );
-
-
-            showToast(
-                "Publish failed",
-                getFriendlyError(
-                    error
-                )
-            );
-
+        } catch (err2) {
+            console.warn("BG enqueue failed", err2);
         }
 
+        showToast("Upload unavailable", "Background upload failed. Try again.");
+        state.publishing = false;
+        try {
+            setPublishState(false);
+        } catch (_) {}
     }
 
 
@@ -2379,85 +2496,31 @@ function getCloudinaryConfig() {
        PROCESSING UI
     ====================================================== */
 
-    function showProcessing(
-        message
-    ) {
-
-        const overlay =
-            $("processingOverlay");
-
-
-        if (!overlay) {
-            return;
-        }
-
-
-        const heading =
-            overlay.querySelector(
-                "h2"
-            );
-
-
-        const text =
-            overlay.querySelector(
-                "p"
-            );
-
-
-        if (heading) {
-
-            heading.textContent =
-                message ||
-                "Preparing your post";
-
-        }
-
-
-        if (text) {
-
-            text.textContent =
-                "Please wait...";
-
-        }
-
-
-        overlay.classList.remove(
-            "hidden"
-        );
-
+    function showProcessing(message) {
+        // Full-screen overlay disabled — background banner only
+        try {
+            showToast(message || "Uploading", "In background…");
+        } catch (_) {}
+        try {
+            const overlay = $("processingOverlay");
+            if (overlay) overlay.classList.add("hidden");
+        } catch (_) {}
     }
 
 
-    function updateProcessing(
-        message
-    ) {
+    function updateProcessing(message) {
+        try {
+            const overlay = $("processingOverlay");
+            if (overlay) overlay.classList.add("hidden");
+        } catch (_) {}
 
-        const overlay =
-            $("processingOverlay");
-
-
-        if (!overlay) {
-            return;
-        }
-
-
-        const heading =
-            overlay.querySelector(
-                "h2"
-            );
-
-
-        if (heading) {
-
-            heading.textContent =
-                message;
-
-        }
 
     }
 
 
     function hideProcessing() {
+        try { clearTimeout(window.__processTimeout); } catch (_) {}
+
 
         $("processingOverlay")
             ?.classList.add(
