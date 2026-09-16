@@ -252,14 +252,31 @@
 
     const getPostMediaList = (data) => {
         if (!data) return [];
-        if (Array.isArray(data.mediaUrls) && data.mediaUrls.length) {
-            return data.mediaUrls.map(safeURL).filter(Boolean);
-        }
-        if (Array.isArray(data.images) && data.images.length) {
-            return data.images.map(safeURL).filter(Boolean);
-        }
+        const out = [];
+        const push = (u) => {
+            u = safeURL(u);
+            if (u && out.indexOf(u) === -1) out.push(u);
+        };
+        const asList = (val) => {
+            if (!val) return [];
+            if (Array.isArray(val)) return val;
+            if (typeof val === "object") {
+                return Object.keys(val).sort((a,b)=>(Number(a)||0)-(Number(b)||0)).map(k => {
+                    const v = val[k];
+                    if (typeof v === "string") return v;
+                    if (v && typeof v === "object") return v.url || v.mediaURL || "";
+                    return "";
+                });
+            }
+            if (typeof val === "string") return [val];
+            return [];
+        };
+        asList(data.mediaUrls).forEach(push);
+        asList(data.images).forEach(push);
+        asList(data.mediaList).forEach(push);
         const one = getMediaURL(data);
-        return one ? [one] : [];
+        if (one) push(one);
+        return out.slice(0, 10);
     };
 
 
@@ -391,45 +408,75 @@
     
     function bindPostCarousels(root) {
         (root || document).querySelectorAll(".postMediaWrap.hasCarousel").forEach((wrap) => {
-            if (wrap.dataset.boundCarousel) return;
+            if (wrap.dataset.boundCarousel === "1") return;
             wrap.dataset.boundCarousel = "1";
-            const track = wrap.querySelector(".postCarouselTrack");
-            const imgs = wrap.querySelectorAll(".postMedia");
+            const track = wrap.querySelector(".postCarouselTrack") || wrap.querySelector(".postMediaTrack");
+            const imgs = Array.from(wrap.querySelectorAll(".postMedia, .post-image"));
             const dots = wrap.querySelectorAll(".carouselDot");
             const countEl = wrap.querySelector(".carouselCount");
             let i = 0;
-            const n = imgs.length;
+            const n = imgs.length || (Number(wrap.getAttribute("data-carousel-count")) || 0);
+            if (n < 2) return;
             function go(to) {
-                i = (to + n) % n;
-                if (track) track.style.transform = "translateX(-" + i * 100 + "%)";
-                dots.forEach((d, di) => d.classList.toggle("active", di === i));
-                if (countEl) countEl.textContent = i + 1 + "/" + n;
+                if (!n) return;
+                i = ((to % n) + n) % n;
+                if (track) {
+                    track.style.transform = "translate3d(-" + (i * 100) + "%,0,0)";
+                }
+                imgs.forEach(function (img, idx) {
+                    // keep all in flex track; optional active class
+                    img.classList.toggle("isActive", idx === i);
+                });
+                dots.forEach(function (d, di) {
+                    d.classList.toggle("active", di === i);
+                });
+                if (countEl) countEl.textContent = (i + 1) + "/" + n;
             }
-            wrap.querySelector(".carouselPrev")?.addEventListener("click", (e) => {
+            go(0);
+            wrap.querySelector(".carouselPrev")?.addEventListener("click", function (e) {
+                e.preventDefault();
                 e.stopPropagation();
                 go(i - 1);
             });
-            wrap.querySelector(".carouselNext")?.addEventListener("click", (e) => {
+            wrap.querySelector(".carouselNext")?.addEventListener("click", function (e) {
+                e.preventDefault();
                 e.stopPropagation();
                 go(i + 1);
             });
-            // swipe
-            let sx = 0;
-            wrap.addEventListener(
-                "touchstart",
-                (e) => {
-                    sx = e.touches[0].clientX;
-                },
-                { passive: true }
-            );
-            wrap.addEventListener(
-                "touchend",
-                (e) => {
-                    const dx = e.changedTouches[0].clientX - sx;
-                    if (Math.abs(dx) > 40) go(i + (dx < 0 ? 1 : -1));
-                },
-                { passive: true }
-            );
+            dots.forEach(function (d) {
+                d.addEventListener("click", function (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    go(Number(d.getAttribute("data-dot")) || 0);
+                });
+            });
+            // Touch swipe (horizontal only)
+            let sx = 0, sy = 0, tracking = false;
+            wrap.addEventListener("touchstart", function (e) {
+                if (!e.touches || e.touches.length !== 1) return;
+                sx = e.touches[0].clientX;
+                sy = e.touches[0].clientY;
+                tracking = true;
+            }, { passive: true });
+            wrap.addEventListener("touchmove", function (e) {
+                if (!tracking || !e.touches || e.touches.length !== 1) return;
+                const dx = e.touches[0].clientX - sx;
+                const dy = e.touches[0].clientY - sy;
+                if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 8) {
+                    // horizontal intent — prevent vertical scroll steal only slightly
+                }
+            }, { passive: true });
+            wrap.addEventListener("touchend", function (e) {
+                if (!tracking) return;
+                tracking = false;
+                const t = e.changedTouches && e.changedTouches[0];
+                if (!t) return;
+                const dx = t.clientX - sx;
+                const dy = t.clientY - sy;
+                if (Math.abs(dx) < 35 || Math.abs(dx) < Math.abs(dy) * 0.9) return;
+                if (dx < 0) go(i + 1);
+                else go(i - 1);
+            }, { passive: true });
         });
     }
 
@@ -629,7 +676,7 @@
             ${
                 musicUrl
                     ? `
-                        <div class="postMusicBar" data-music-url="${escapeHTML(musicUrl)}" data-music-title="${escapeHTML(musicTitle || "Original audio")}">
+                        <div class="postMusicBar" data-music-url="${escapeHTML(musicUrl)}" data-music-title="${escapeHTML(musicTitle || "Original audio")}" data-music-start="${Number((musicObj && musicObj.startAt) || data.musicStartAt || 0)}" data-music-duration="${Number((musicObj && musicObj.duration) || data.musicDuration || 15)}">
                             <div class="postMusicLeft">
                                 <i class="fa-solid fa-music postMusicNote"></i>
                                 <span class="postMusicTitle">${escapeHTML(musicTitle || "Original audio")}</span>
@@ -1644,24 +1691,34 @@
 
     function playPostMusic(url, bar) {
         if (!url) return;
-        // same track already playing for this bar
-        if (
-            __postMusicActiveBar === bar &&
-            __postMusicAudio &&
-            !__postMusicAudio.paused
-        ) {
-            return;
-        }
-        stopPostMusic();
         try {
-            const a = new Audio(url);
-            a.loop = true;
-            a.muted = !!__postMusicMuted;
-            a.volume = __postMusicMuted ? 0 : 0.9;
-            __postMusicAudio = a;
-            __postMusicActiveBar = bar || null;
-            const p = a.play();
-            if (p && p.catch) p.catch(() => {});
+            if (__postMusicAudio) {
+                __postMusicAudio.pause();
+                __postMusicAudio.src = "";
+            }
+        } catch (_) {}
+        try {
+            __postMusicAudio = new Audio(url);
+            const startAt = Number((bar && bar.getAttribute("data-music-start")) || 0) || 0;
+            const dur = Number((bar && bar.getAttribute("data-music-duration")) || 15) || 15;
+            __postMusicAudio.loop = false;
+            __postMusicAudio.muted = !!__postMusicMuted;
+            __postMusicAudio.volume = __postMusicMuted ? 0 : 0.9;
+            __postMusicAudio.addEventListener("loadedmetadata", function () {
+                try { __postMusicAudio.currentTime = startAt; } catch (_) {}
+            });
+            __postMusicAudio.addEventListener("timeupdate", function () {
+                try {
+                    if (__postMusicAudio.currentTime >= startAt + dur) {
+                        __postMusicAudio.currentTime = startAt;
+                        __postMusicAudio.play().catch(function () {});
+                    }
+                } catch (_) {}
+            });
+            __postMusicAudio.play().catch(function () {});
+            document.querySelectorAll(".postMusicBar.isPlaying").forEach(function (el) {
+                el.classList.remove("isPlaying");
+            });
             if (bar) bar.classList.add("isPlaying");
             syncPostMuteIcons();
         } catch (_) {}
@@ -1743,7 +1800,7 @@
         function observePosts() {
             document.querySelectorAll(".vieworaPostCard").forEach((card) => {
                 if (card.__musicObs) return;
-                if (!card.querySelector(".postMusicBar")) return;
+                // observe every post so no-music stops audio
                 card.__musicObs = true;
                 obs.observe(card);
             });
@@ -1876,12 +1933,15 @@
                     const viewerImage = $("viewerImage");
                     if (viewer && viewerImage && url) {
                         viewerImage.src = url;
+                        viewerImage.style.opacity = "1";
+                        viewerImage.style.filter = "none";
                         viewerImage.onload = function () {
                             viewerImage.style.opacity = "1";
+                            viewerImage.style.filter = "none";
                         };
-                        viewerImage.style.opacity = "0.99";
                         viewer.classList.remove("hidden");
                         viewer.style.display = "flex";
+                        viewer.style.opacity = "1";
                         document.body.classList.add("viewer-open");
                         document.documentElement.classList.add("viewer-open");
                         // keep scroll position

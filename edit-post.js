@@ -1358,18 +1358,54 @@
             }
         }
         try { renderMediaStrip(); } catch (_) {}
+        const nav = document.getElementById("multiNav");
+        if (nav) nav.style.display = (files.length > 1) ? "flex" : "none";
     }
 
     function setupMediaSwipe() {
+        const img = document.getElementById("previewImage");
         const stage =
             document.querySelector(".previewCard") ||
             document.querySelector(".mediaStage") ||
-            document.getElementById("previewImage")?.parentElement;
-        if (!stage || stage.__swipeBound) return;
+            (img && img.parentElement);
+        if (!stage) return;
+
+        // Visible prev/next when multi
+        let nav = document.getElementById("multiNav");
+        if (!nav) {
+            nav = document.createElement("div");
+            nav.id = "multiNav";
+            nav.className = "multiNav";
+            nav.innerHTML =
+                '<button type="button" id="multiPrev" class="multiNavBtn" aria-label="Previous"><i class="fa-solid fa-chevron-left"></i></button>' +
+                '<button type="button" id="multiNext" class="multiNavBtn" aria-label="Next"><i class="fa-solid fa-chevron-right"></i></button>';
+            stage.style.position = stage.style.position || "relative";
+            stage.appendChild(nav);
+            document.getElementById("multiPrev")?.addEventListener("click", function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                showMediaAt((state.mediaIndex || 0) - 1);
+            });
+            document.getElementById("multiNext")?.addEventListener("click", function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                showMediaAt((state.mediaIndex || 0) + 1);
+            });
+        }
+        function syncNav() {
+            const n = (state.mediaFiles || []).length;
+            if (nav) nav.style.display = n > 1 ? "flex" : "none";
+        }
+        syncNav();
+        const _show = showMediaAt;
+        // wrap showMediaAt to sync nav - already updates counter
+
+        if (stage.__swipeBound) return;
         stage.__swipeBound = true;
 
         let startX = 0, startY = 0, tracking = false;
-        stage.addEventListener("touchstart", function (e) {
+        const target = img || stage;
+        target.addEventListener("touchstart", function (e) {
             if (!e.touches || e.touches.length !== 1) return;
             if ((state.mediaFiles || []).length < 2) return;
             startX = e.touches[0].clientX;
@@ -1377,20 +1413,20 @@
             tracking = true;
         }, { passive: true });
 
-        stage.addEventListener("touchend", function (e) {
+        target.addEventListener("touchend", function (e) {
             if (!tracking) return;
             tracking = false;
             const t = e.changedTouches && e.changedTouches[0];
             if (!t) return;
             const dx = t.clientX - startX;
             const dy = t.clientY - startY;
-            if (Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(dy)) return;
+            if (Math.abs(dx) < 40 || Math.abs(dx) < Math.abs(dy) * 0.8) return;
             const i = state.mediaIndex || 0;
-            if (dx < 0) showMediaAt(i + 1); // swipe left → next
-            else showMediaAt(i - 1); // swipe right → prev
+            if (dx < 0) showMediaAt(i + 1);
+            else showMediaAt(i - 1);
+            syncNav();
         }, { passive: true });
 
-        // also click arrows via keyboard optional
         document.addEventListener("keydown", function (e) {
             if ((state.mediaFiles || []).length < 2) return;
             if (e.key === "ArrowLeft") showMediaAt((state.mediaIndex || 0) - 1);
@@ -2386,6 +2422,13 @@ function getCloudinaryConfig() {
             return;
         }
 
+        if (window.__vieworaPublishingLock || state.publishing) {
+            showToast("Please wait", "Already publishing…");
+            return;
+        }
+        // Share once lock (30s)
+        window.__vieworaPublishingLock = true;
+        setTimeout(function () { try { window.__vieworaPublishingLock = false; } catch(_){} }, 30000);
         state.publishing = true;
         try {
             setPublishState(true);
@@ -2452,9 +2495,21 @@ function getCloudinaryConfig() {
                 window.VieworaUploadQueue &&
                 typeof window.VieworaUploadQueue.enqueueAndLeave === "function"
             ) {
+                // ONE post only — all photos in files[]
+                if (state.music) {
+                    meta.music = Object.assign({}, state.music, {
+                        startAt: Number(state.music.startAt || 0),
+                        duration: Number(state.music.duration || 15),
+                        audioUrl: state.music.audioUrl || state.music.url || ""
+                    });
+                    meta.musicStartAt = meta.music.startAt;
+                    meta.musicDuration = meta.music.duration;
+                }
+                meta.mediaCount = files.length;
+                meta.clientPostKey = "post_" + Date.now() + "_" + Math.random().toString(36).slice(2, 8);
                 await window.VieworaUploadQueue.enqueueAndLeave({
                     type: "post",
-                    file: file,
+                    file: files[0],
                     files: files,
                     returnUrl: "index.html",
                     meta: meta

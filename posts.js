@@ -354,6 +354,45 @@
        MEDIA URL
     ===================================================== */
 
+    
+
+    function toUrlList(val) {
+        if (!val) return [];
+        if (Array.isArray(val)) return val.map(String).map(function (s) { return s.trim(); }).filter(Boolean);
+        if (typeof val === "object") {
+            return Object.keys(val).sort(function (a, b) {
+                return (Number(a) || 0) - (Number(b) || 0);
+            }).map(function (k) {
+                const v = val[k];
+                if (typeof v === "string") return v.trim();
+                if (v && typeof v === "object") return String(v.url || v.mediaURL || v.downloadURL || "").trim();
+                return "";
+            }).filter(Boolean);
+        }
+        if (typeof val === "string" && val.trim()) return [val.trim()];
+        return [];
+    }
+
+    function getMediaList(post) {
+        if (!post) return [];
+        const out = [];
+        const push = function (u) {
+            u = String(u || "").trim();
+            if (u && out.indexOf(u) === -1) out.push(u);
+        };
+        toUrlList(post.mediaUrls).forEach(push);
+        toUrlList(post.images).forEach(push);
+        toUrlList(post.mediaList).forEach(push);
+        if (post.media && typeof post.media === "object") {
+            toUrlList(post.media.urls).forEach(push);
+            push(post.media.url || post.media.mediaURL || post.media.downloadURL);
+        }
+        ["mediaURL","mediaUrl","imageURL","imageUrl","url","downloadURL"].forEach(function (k) {
+            if (typeof post[k] === "string") push(post[k]);
+        });
+        return out.slice(0, 10);
+    }
+
     function getMediaURL(post) {
 
         if (!post) return "";
@@ -1000,6 +1039,72 @@
        RENDER
     ===================================================== */
 
+    
+    function wirePostCarousels(root) {
+        (root || document).querySelectorAll(".postMediaWrap.hasCarousel").forEach(function (wrap) {
+            if (wrap.__carouselWired) return;
+            wrap.__carouselWired = true;
+            const track = wrap.querySelector(".postMediaTrack") || wrap.querySelector(".postCarouselTrack");
+            const imgs = Array.from(wrap.querySelectorAll(".postMedia, .post-image"));
+            const dots = wrap.querySelectorAll(".carouselDot");
+            const countEl = wrap.querySelector(".carouselCount");
+            let i = 0;
+            const n = imgs.length;
+            function show(to) {
+                if (!n) return;
+                i = (to + n) % n;
+                if (track) {
+                    track.style.transform = "translateX(-" + (i * 100) + "%)";
+                } else {
+                    imgs.forEach(function (img, idx) {
+                        img.style.display = idx === i ? "block" : "none";
+                        img.classList.toggle("isActive", idx === i);
+                    });
+                }
+                dots.forEach(function (d, idx) {
+                    d.classList.toggle("active", idx === i);
+                });
+                if (countEl) countEl.textContent = (i + 1) + "/" + n;
+            }
+            show(0);
+            wrap.querySelector(".carouselPrev")?.addEventListener("click", function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                show(i - 1);
+            });
+            wrap.querySelector(".carouselNext")?.addEventListener("click", function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                show(i + 1);
+            });
+            dots.forEach(function (d) {
+                d.addEventListener("click", function (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    show(Number(d.getAttribute("data-dot")) || 0);
+                });
+            });
+            let sx = 0, sy = 0, on = false;
+            wrap.addEventListener("touchstart", function (e) {
+                if (!e.touches || e.touches.length !== 1) return;
+                sx = e.touches[0].clientX;
+                sy = e.touches[0].clientY;
+                on = true;
+            }, { passive: true });
+            wrap.addEventListener("touchend", function (e) {
+                if (!on) return;
+                on = false;
+                const t = e.changedTouches && e.changedTouches[0];
+                if (!t) return;
+                const dx = t.clientX - sx;
+                const dy = t.clientY - sy;
+                if (Math.abs(dx) < 40 || Math.abs(dx) < Math.abs(dy)) return;
+                if (dx < 0) show(i + 1);
+                else show(i - 1);
+            }, { passive: true });
+        });
+    }
+
     function renderPosts() {
 
         if (!loadedPosts.length) {
@@ -1050,6 +1155,7 @@
 
             }
         );
+        try { wirePostCarousels(feed); } catch (_) {}
 
     }
 
@@ -1080,8 +1186,8 @@
         const authorUID =
             getAuthorUID(post);
 
-        const mediaURL =
-            getMediaURL(post);
+        const mediaList = getMediaList(post);
+        const mediaURL = mediaList[0] || getMediaURL(post);
 
         const video =
             isVideo(
@@ -1185,49 +1291,35 @@
             <div class="post-media">
 
                 ${
-                    mediaURL
-
-                    ? (
-
-                        video
-
-                        ? `
-
+                    video && mediaURL
+                    ? `
                             <video
                                 class="post-video"
                                 src="${escapeHTML(mediaURL)}"
                                 playsinline
                                 preload="metadata"
                             ></video>
-
                             <div class="video-play">
-
                                 <i class="fa-solid fa-play"></i>
-
                             </div>
-
                         `
-
-                        : `
-
-                            <img
-                                class="post-image"
-                                src="${escapeHTML(mediaURL)}"
-                                alt="Post"
-                                loading="lazy"
-                            >
-
-                        `
-
-                    )
-
-                    : `
-
-                        <div class="no-media">
-                            No media
-                        </div>
-
-                    `
+                    : (mediaList.length
+                        ? `<div class="postMediaWrap${mediaList.length > 1 ? " hasCarousel" : ""}" data-carousel-count="${mediaList.length}">
+                            <div class="postMediaTrack">
+                                ${mediaList.map((u, i) =>
+                                    `<img src="${escapeHTML(u)}" alt="Post" class="post-image postMedia${i === 0 ? " isActive" : ""}" loading="${i === 0 ? "eager" : "lazy"}" data-carousel-i="${i}" data-view-image="${escapeHTML(u)}" style="${i === 0 ? "" : "display:none"}">`
+                                ).join("")}
+                            </div>
+                            ${mediaList.length > 1
+                                ? `<button type="button" class="carouselPrev" aria-label="Previous"><i class="fa-solid fa-chevron-left"></i></button>
+                            <button type="button" class="carouselNext" aria-label="Next"><i class="fa-solid fa-chevron-right"></i></button>
+                            <div class="carouselDots">${mediaList.map((_, i) =>
+                                `<span class="carouselDot${i === 0 ? " active" : ""}" data-dot="${i}"></span>`
+                            ).join("")}</div>
+                            <span class="carouselCount">1/${mediaList.length}</span>`
+                                : ""}
+                        </div>`
+                        : `<div class="no-media">No media</div>`)
                 }
 
             </div>
@@ -1293,7 +1385,7 @@
 
                 ${
                     musicUrl
-                    ? `<div class="post-music-bar" data-music-url="${escapeHTML(musicUrl)}">
+                    ? `<div class="post-music-bar" data-music-url="${escapeHTML(musicUrl)}" data-music-start="${Number((musicObj && musicObj.startAt) || post.musicStartAt || 0)}" data-music-duration="${Number((musicObj && musicObj.duration) || post.musicDuration || 15)}">
                             <div class="post-music-left">
                                 <i class="fa-solid fa-music"></i>
                                 <span class="post-music-title">${escapeHTML(musicTitle)}</span>
@@ -3252,9 +3344,26 @@ menuCancel?.addEventListener(
             stopMusic();
             try {
                 audio = new Audio(url);
-                audio.loop = true;
+                const startAt = Number(
+                    (bar && (bar.getAttribute("data-music-start") || bar.dataset.musicStart)) || 0
+                ) || 0;
+                const dur = Number(
+                    (bar && (bar.getAttribute("data-music-duration") || bar.dataset.musicDuration)) || 15
+                ) || 15;
+                audio.loop = false;
                 audio.muted = muted;
                 audio.volume = muted ? 0 : 0.9;
+                audio.addEventListener("loadedmetadata", function () {
+                    try { audio.currentTime = startAt; } catch (_) {}
+                });
+                audio.addEventListener("timeupdate", function () {
+                    try {
+                        if (audio.currentTime >= startAt + dur) {
+                            audio.currentTime = startAt;
+                            audio.play().catch(function () {});
+                        }
+                    } catch (_) {}
+                });
                 audio.play().catch(function () {});
                 activeBar = bar || null;
                 if (bar) bar.classList.add("isPlaying");

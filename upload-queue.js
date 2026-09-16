@@ -455,23 +455,79 @@
     }
 
     if (job.type === "post") {
-      const ref = db.ref("posts").push();
+      // Prevent duplicate posts from same client key
+      if (meta.clientPostKey) {
+        try {
+          const dup = await db.ref("posts")
+            .orderByChild("clientPostKey")
+            .equalTo(meta.clientPostKey)
+            .limitToFirst(1)
+            .once("value");
+          if (dup.exists()) {
+            log("skip duplicate post", meta.clientPostKey);
+            return { path: "posts/dup" };
+          }
+        } catch (e) {
+          log("dup check", e);
+        }
+      }
+      // Deterministic id from job → one job = one post (no duplicates)
+      const postId = (job && job.id) ? String(job.id).replace(/[^a-zA-Z0-9_-]/g, "").slice(0, 48) : null;
+      const ref = postId ? db.ref("posts/" + postId) : db.ref("posts").push();
+      const finalPostId = postId || ref.key;
+      const collab = meta.collaborator || null;
+      // If already written, skip
+      try {
+        const existing = await ref.once("value");
+        if (existing.exists() && existing.val() && existing.val().uploadStatus === "ready") {
+          log("post already written", finalPostId);
+          return { path: "posts/" + finalPostId };
+        }
+      } catch (_) {}
+      const postId2 = finalPostId;
+      const music = meta.music ? Object.assign({}, meta.music) : null;
+      if (music) {
+        music.startAt = Number(meta.musicStartAt != null ? meta.musicStartAt : music.startAt) || 0;
+        music.duration = Number(meta.musicDuration != null ? meta.musicDuration : music.duration) || 15;
+        music.audioUrl = music.audioUrl || music.url || music.previewUrl || "";
+      }
+      const mediaUrls = Array.isArray(meta.mediaUrls) && meta.mediaUrls.length
+        ? meta.mediaUrls.filter(Boolean)
+        : [mediaURL];
       await ref.set({
-        id: ref.key,
+        id: finalPostId,
         uid: user.uid,
         userId: user.uid,
+        ownerId: user.uid,
         type: "post",
-        imageUrl: mediaURL,
-        mediaUrl: mediaURL,
+        clientPostKey: meta.clientPostKey || job.id || null,
+        imageUrl: mediaUrls[0] || mediaURL,
+        mediaUrl: mediaUrls[0] || mediaURL,
+        mediaURL: mediaUrls[0] || mediaURL,
+        mediaUrls: mediaUrls,
+        images: mediaUrls,
+        mediaCount: mediaUrls.length,
         caption: meta.caption || "",
         description: meta.description || meta.caption || "",
         username: meta.username || user.displayName || "User",
         name: meta.name || user.displayName || "",
         userPhoto: meta.userPhoto || user.photoURL || "",
         profilePhoto: meta.userPhoto || user.photoURL || "",
-        music: meta.music || null,
+        music: music,
+        musicStartAt: music ? Number(music.startAt || 0) : 0,
+        musicDuration: music ? Number(music.duration || 15) : 0,
         category: meta.category || "",
         tags: meta.tags || [],
+        location: meta.location || "",
+        audience: meta.audience || "Everyone",
+        allowComments: meta.allowComments !== false && meta.commentsDisabled !== true,
+        commentsDisabled: meta.commentsDisabled === true || meta.allowComments === false,
+        hideLikes: meta.hideLikes === true,
+        hideLikeCount: meta.hideLikes === true || meta.hideLikeCount === true,
+        allowSaves: meta.allowSaves !== false,
+        collaborator: collab,
+        collabStatus: collab && collab.uid ? "pending" : null,
+        collabUid: collab && collab.uid ? collab.uid : null,
         likes: 0,
         likesCount: 0,
         comments: 0,
@@ -482,7 +538,32 @@
         uploadStatus: "ready",
         deleted: false
       });
-      return { path: "posts/" + ref.key };
+      // Collaboration invite → activity + message
+      if (collab && collab.uid && collab.uid !== user.uid) {
+        try {
+          await db.ref("activity/" + collab.uid).push({
+            type: "collab_invite",
+            fromUid: user.uid,
+            fromName: meta.username || user.displayName || "User",
+            postId: postId,
+            text: "invited you to collaborate on a post",
+            createdAt: now,
+            read: false
+          });
+        } catch (_) {}
+        try {
+          const chatId = [user.uid, collab.uid].sort().join("_");
+          await db.ref("messages/" + chatId).push({
+            from: user.uid,
+            to: collab.uid,
+            type: "collab_invite",
+            postId: postId,
+            text: "Collaboration invite on a post — open to Accept or Reject",
+            createdAt: now
+          });
+        } catch (_) {}
+      }
+      return { path: "posts/" + postId };
     }
 
     if (job.type === "short") {
@@ -608,14 +689,38 @@
 
     if (cancelRequested) throw new Error("cancelled");
 
-    const media = await uploadCloudinary(file, (p) => {
-      const pct = 8 + Math.round(p * 0.85);
-      setBanner({
-        title: "Uploading " + label,
-        sub: pct + "% — tap ✕ to cancel",
-        percent: pct
+    let media;
+    let extraUrls = [];
+    if (job.blobs && job.blobs.length >= 1 && job.type === "post") {
+      const urls = [];
+      for (let i = 0; i < job.blobs.length; i++) {
+        if (cancelRequested) throw new Error("cancelled");
+        const b = job.blobs[i];
+        const m = await uploadCloudinary(b, (p) => {
+          const base = (i / job.blobs.length) * 90;
+          const pct = Math.round(base + p * (90 / job.blobs.length));
+          setBanner({
+            title: "Uploading photo " + (i + 1) + "/" + job.blobs.length,
+            sub: pct + "% — tap ✕ to cancel",
+            percent: pct
+          });
+        });
+        urls.push(m.secure_url || m.url || "");
+      }
+      media = { secure_url: urls[0], url: urls[0] };
+      extraUrls = urls;
+      job.meta = job.meta || {};
+      job.meta.mediaUrls = urls;
+    } else {
+      media = await uploadCloudinary(file, (p) => {
+        const pct = 8 + Math.round(p * 0.85);
+        setBanner({
+          title: "Uploading " + label,
+          sub: pct + "% — tap ✕ to cancel",
+          percent: pct
+        });
       });
-    });
+    }
 
     if (cancelRequested) throw new Error("cancelled");
 
@@ -642,7 +747,7 @@
     processing = true;
     try {
       const jobs = (await idbGetAll()).filter(
-        (j) => j && (j.status === "queued" || j.status === "uploading")
+        (j) => j && j.status === "queued"
       );
       jobs.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
       for (const job of jobs) {
@@ -680,17 +785,35 @@
 
   async function enqueueAndLeave(opts) {
     opts = opts || {};
-    const file = opts.file;
-    if (!file) throw new Error("No file");
+    let file = opts.file;
+    let files = Array.isArray(opts.files) ? opts.files.filter(Boolean) : [];
+    if (!files.length && file) files = [file];
+    if (!files.length) throw new Error("No file");
+    files = files.slice(0, 10);
+    file = files[0];
+    if (!(file instanceof Blob)) {
+      throw new Error("Invalid file");
+    }
 
     const id = "job_" + Date.now() + "_" + Math.random().toString(36).slice(2, 8);
-    const buffer = await file.arrayBuffer();
-    const blob = new Blob([buffer], {
-      type: file.type || opts.mime || "application/octet-stream"
-    });
+    // Store all blobs for multi-photo posts
+    const blobs = [];
+    for (let i = 0; i < files.length; i++) {
+      const f = files[i];
+      if (!(f instanceof Blob)) continue;
+      const buffer = await f.arrayBuffer();
+      blobs.push(
+        new Blob([buffer], {
+          type: f.type || opts.mime || "application/octet-stream"
+        })
+      );
+    }
+    if (!blobs.length) throw new Error("No file");
+    const blob = blobs[0];
 
     const meta = Object.assign({}, opts.meta || {});
     meta.title = cleanTitle(meta.title || meta.caption, file.name);
+    meta.mediaCount = blobs.length;
 
     const job = {
       id,
@@ -701,6 +824,7 @@
       fileType: file.type || "",
       fileSize: blob.size,
       blob,
+      blobs: blobs.length >= 1 ? blobs : undefined,
       meta,
       returnUrl: opts.returnUrl || ""
     };
