@@ -1825,6 +1825,22 @@
         if (!container) return;
 
         try {
+            const params = new URLSearchParams(window.location.search);
+            const focusUid =
+                params.get("uid") ||
+                params.get("user") ||
+                params.get("userId") ||
+                "";
+            const soloMode =
+                params.get("solo") === "1" ||
+                params.get("solo") === "true" ||
+                params.get("from") === "profile";
+            const requestedId =
+                params.get("id") ||
+                params.get("short") ||
+                params.get("shortId") ||
+                "";
+
             const snap = await db.ref("shorts").once("value");
             const val = snap.val();
 
@@ -1848,22 +1864,63 @@
                         s.visibility !== "private"
                 );
 
-            // Instagram / YouTube style ranking:
-            // engagement + recency (not pure chronological dump)
-            function engagementScore(s) {
-                const likes = safeNumber(s.likes || s.likeCount);
-                const comments = safeNumber(s.comments || s.commentCount);
-                const views = safeNumber(s.views || s.viewCount);
-                const shares = safeNumber(s.shares || s.shareCount);
-                const created = safeNumber(s.createdAt || s.timestamp);
-                const ageH = created
-                    ? Math.max(0.5, (Date.now() - (created < 1e12 ? created * 1000 : created)) / 36e5)
-                    : 48;
-                // Wilson-ish boost: engagement decays with age
-                const eng = likes * 4 + comments * 6 + shares * 5 + views * 0.15;
-                return eng / Math.pow(ageH + 2, 1.15) + (created || 0) / 1e15;
+            // Profile / deep-link: ONLY this creator's shorts
+            if (soloMode && focusUid) {
+                shorts = shorts.filter((s) => {
+                    const owner =
+                        s.uid ||
+                        s.userId ||
+                        s.ownerId ||
+                        s.creatorId ||
+                        s.authorId ||
+                        "";
+                    return String(owner) === String(focusUid);
+                });
             }
-            shorts.sort((a, b) => engagementScore(b) - engagementScore(a));
+
+            // Rank via shared feed helper if present
+            if (window.VieworaFeed && typeof window.VieworaFeed.rankShorts === "function") {
+                shorts = window.VieworaFeed.rankShorts(shorts, {
+                    preferId: requestedId,
+                    solo: soloMode
+                });
+            } else {
+                function engagementScore(s) {
+                    const likes = safeNumber(s.likes || s.likeCount);
+                    const comments = safeNumber(s.comments || s.commentCount);
+                    const views = safeNumber(
+                        s.views || s.viewCount || s.plays || s.playCount
+                    );
+                    const shares = safeNumber(s.shares || s.shareCount);
+                    const created = safeNumber(s.createdAt || s.timestamp);
+                    const ageH = created
+                        ? Math.max(
+                              0.5,
+                              (Date.now() -
+                                  (created < 1e12 ? created * 1000 : created)) /
+                                  36e5
+                          )
+                        : 48;
+                    const eng =
+                        likes * 4 +
+                        comments * 6 +
+                        shares * 5 +
+                        views * 0.15;
+                    return eng / Math.pow(ageH + 2, 1.15) + (created || 0) / 1e15;
+                }
+                shorts.sort((a, b) => engagementScore(b) - engagementScore(a));
+            }
+
+            // Put requested short first so it plays immediately
+            if (requestedId) {
+                const ix = shorts.findIndex(
+                    (s) => String(s.id) === String(requestedId)
+                );
+                if (ix > 0) {
+                    const [hit] = shorts.splice(ix, 1);
+                    shorts.unshift(hit);
+                }
+            }
 
             if (!shorts.length) {
                 showEmpty();
@@ -1917,6 +1974,30 @@
        INTERSECTION OBSERVER
     ===================================================== */
 
+    
+    const viewedShortIds = new Set();
+    async function recordShortView(shortId) {
+        if (!shortId || viewedShortIds.has(shortId)) return;
+        viewedShortIds.add(shortId);
+        try {
+            const ref = db.ref("shorts/" + shortId);
+            await ref.transaction((cur) => {
+                if (!cur) return cur;
+                const n = Number(cur.views || cur.viewCount || 0) + 1;
+                cur.views = n;
+                cur.viewCount = n;
+                return cur;
+            });
+        } catch (e) {
+            try {
+                const snap = await db.ref("shorts/" + shortId).once("value");
+                const cur = snap.val() || {};
+                const n = Number(cur.views || cur.viewCount || 0) + 1;
+                await db.ref("shorts/" + shortId).update({ views: n, viewCount: n });
+            } catch (_) {}
+        }
+    }
+
     function setupObserver() {
         if (observer) observer.disconnect();
 
@@ -1945,6 +2026,8 @@
                             if (preferUnmuted) {
                                 try { video.volume = 1; } catch (_) {}
                             }
+                            const sid = item.getAttribute("data-short-id") || item.dataset.shortId || "";
+                            if (sid) recordShortView(sid);
                             const playPromise = video.play();
                             if (playPromise && typeof playPromise.catch === "function") {
                                 playPromise.catch(() => {

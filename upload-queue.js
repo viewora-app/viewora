@@ -815,6 +815,23 @@
     meta.title = cleanTitle(meta.title || meta.caption, file.name);
     meta.mediaCount = blobs.length;
 
+    // Dedupe: if identical post already queued in last 2 min, skip
+    try {
+      const all = await idbGetAll();
+      const key = String((meta && meta.clientPostKey) || "");
+      const dup = all.find(function (j) {
+        return j && j.type === "post" &&
+          (j.status === "queued" || j.status === "uploading") &&
+          key && j.meta && j.meta.clientPostKey === key;
+      });
+      if (dup) {
+        toast("Already uploading this post…");
+        let go = opts.returnUrl || "index.html";
+        setTimeout(function () { window.location.href = go; }, 80);
+        return dup.id;
+      }
+    } catch (_) {}
+
     const job = {
       id,
       type: opts.type || "post",
