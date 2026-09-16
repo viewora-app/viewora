@@ -221,6 +221,99 @@ auth.onAuthStateChanged(async user => {
 });
 
 
+
+/*==========================================================
+  5b. RANKING (not pure chronological)
+==========================================================*/
+
+function feedNum(v) {
+    const n = Number(v);
+    return Number.isFinite(n) ? n : 0;
+}
+
+function feedCreatedMs(item) {
+    const c = feedNum(
+        item.createdAt ||
+        item.timestamp ||
+        item.uploadedAt ||
+        item.time
+    );
+    if (!c) return 0;
+    return c < 1e12 ? c * 1000 : c;
+}
+
+function feedEngagementScore(item) {
+    const likes = feedNum(item.likes || item.likeCount);
+    const comments = feedNum(item.comments || item.commentCount);
+    const views = feedNum(
+        item.views || item.viewCount || item.plays || item.playCount
+    );
+    const shares = feedNum(item.shares || item.shareCount);
+    const saves = feedNum(item.saves || item.saveCount);
+    const created = feedCreatedMs(item) || Date.now();
+    const ageH = Math.max(0.5, (Date.now() - created) / 36e5);
+    const eng =
+        likes * 4 +
+        comments * 6 +
+        shares * 5 +
+        saves * 3 +
+        views * 0.12;
+    // Time decay so old viral still ranks but fresh content can surface
+    return eng / Math.pow(ageH + 2, 1.12) + created / 1e15;
+}
+
+/**
+ * Rank feed items: engagement + recency.
+ * Avoids pure line-by-line chronological dump.
+ */
+function rankFeedItems(list, options) {
+    options = options || {};
+    const arr = Array.isArray(list) ? list.slice() : [];
+
+    arr.sort(function (a, b) {
+        return feedEngagementScore(b) - feedEngagementScore(a);
+    });
+
+    // Soft shuffle within top band so feed feels alive (not static top-N)
+    if (!options.solo) {
+        const band = Math.min(10, arr.length);
+        for (let i = band - 1; i > 1; i--) {
+            if (Math.random() > 0.7) {
+                const j = 1 + Math.floor(Math.random() * i);
+                const t = arr[i];
+                arr[i] = arr[j];
+                arr[j] = t;
+            }
+        }
+    }
+
+    if (options.preferId) {
+        const ix = arr.findIndex(function (s) {
+            return String(s.id) === String(options.preferId);
+        });
+        if (ix > 0) {
+            const hit = arr.splice(ix, 1)[0];
+            arr.unshift(hit);
+        }
+    }
+
+    return arr;
+}
+
+// Shared API for shorts.js / video / home
+window.VieworaFeed = {
+    engagementScore: feedEngagementScore,
+    rankShorts: function (list, options) {
+        return rankFeedItems(list, options || {});
+    },
+    rankPosts: function (list, options) {
+        return rankFeedItems(list, options || {});
+    },
+    rankFeedItems: rankFeedItems
+};
+
+
+
 /*==========================================================
   6. LOAD FEED
 ==========================================================*/
@@ -258,15 +351,16 @@ function loadFeed(force = false) {
                     const data =
                         child.val() || {};
 
-                    /*
-                        Upload system uses:
-                        postId
-                        mediaURL
-                        mediaType
-                        profilePhoto
-                    */
+                    // Skip deleted / hidden
+                    if (
+                        data.deleted === true ||
+                        data.hidden === true ||
+                        data.archived === true
+                    ) {
+                        return;
+                    }
 
-                    feedPosts.unshift({
+                    feedPosts.push({
 
                         id: child.key,
 
@@ -275,6 +369,9 @@ function loadFeed(force = false) {
                     });
 
                 });
+
+                // Rank by engagement + recency (NOT pure line-by-line createdAt)
+                feedPosts = rankFeedItems(feedPosts);
 
                 renderFeed();
 

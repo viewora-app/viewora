@@ -1,3 +1,4 @@
+// @ts-nocheck
 "use strict";
 
 /*
@@ -1141,9 +1142,36 @@
 
         const startR = $("musicStartRange");
         const lenR = $("musicLenRange");
-        if (startR) startR.value = "0";
-        if (lenR) lenR.value = "15";
+        if (startR) {
+            startR.min = "0";
+            startR.max = "600";
+            startR.step = "0.5";
+            startR.value = "0";
+        }
+        if (lenR) {
+            lenR.min = "5";
+            lenR.max = "60";
+            lenR.value = "15";
+        }
         updateMusicTrimLabels();
+        // Probe full track length so Start can go beyond 120s
+        if (item.audioUrl) {
+            try {
+                const a = new Audio();
+                a.preload = "metadata";
+                a.src = item.audioUrl;
+                a.addEventListener("loadedmetadata", function () {
+                    const dur = Math.max(15, Math.floor(a.duration || 0));
+                    if (startR) {
+                        startR.max = String(Math.max(0, dur - 5));
+                    }
+                    if (lenR) {
+                        lenR.max = String(Math.min(60, dur));
+                    }
+                    updateMusicTrimLabels();
+                });
+            } catch (_) {}
+        }
 
         // Probe duration
         if (item.audioUrl) {
@@ -1204,43 +1232,73 @@
     }
 
     function setupMusicTrim() {
-        $("musicStartRange")?.addEventListener("input", updateMusicTrimLabels);
-        $("musicLenRange")?.addEventListener("input", updateMusicTrimLabels);
+        if (window.__musicTrimWired) return;
+        window.__musicTrimWired = true;
 
-        $("musicPreviewBtn")?.addEventListener("click", () => {
-            if (!pendingMusic?.audioUrl) return;
-            stopPostMusicPreview();
+        function readTrim() {
             const start = Number($("musicStartRange")?.value || 0);
             const len = Number($("musicLenRange")?.value || 15);
-            try {
-                postMusicPreview = new Audio(pendingMusic.audioUrl);
-                postMusicPreview.currentTime = start;
-                postMusicPreview.volume = 0.8;
-                postMusicPreview.play().catch(() => {});
-                clearTimeout(window.__musicTrimStop);
-                window.__musicTrimStop = setTimeout(() => {
-                    stopPostMusicPreview();
-                }, len * 1000);
-            } catch (_) {}
+            return { start: isFinite(start) ? start : 0, len: isFinite(len) && len > 0 ? len : 15 };
+        }
+
+        document.addEventListener("input", function (e) {
+            const t = e.target;
+            if (!t || !t.id) return;
+            if (t.id === "musicStartRange" || t.id === "musicLenRange") {
+                updateMusicTrimLabels();
+            }
         });
 
-        $("musicTrimConfirm")?.addEventListener("click", () => {
-            if (!pendingMusic) return;
-            const start = Number($("musicStartRange")?.value || 0);
-            const len = Number($("musicLenRange")?.value || 15);
-            applyMusicClip(pendingMusic, start, len);
-        });
+        document.addEventListener("click", function (e) {
+            const t = e.target;
+            if (!t) return;
+            const btn = t.closest ? t.closest("button, [role=button], a") : t;
 
-        document.querySelectorAll('[data-close="musicTrimSheet"]').forEach((el) => {
-            el.addEventListener("click", () => {
+            // Preview
+            if (btn && (btn.id === "musicPreviewBtn" || (btn.textContent || "").trim() === "Preview")) {
+                if (!pendingMusic || !pendingMusic.audioUrl) return;
+                e.preventDefault();
+                e.stopPropagation();
+                stopPostMusicPreview();
+                const { start, len } = readTrim();
+                try {
+                    postMusicPreview = new Audio(pendingMusic.audioUrl);
+                    postMusicPreview.currentTime = start;
+                    postMusicPreview.volume = 0.8;
+                    postMusicPreview.play().catch(function () {});
+                    clearTimeout(window.__musicTrimStop);
+                    window.__musicTrimStop = setTimeout(function () {
+                        stopPostMusicPreview();
+                    }, len * 1000);
+                } catch (_) {}
+                return;
+            }
+
+            // Use this clip
+            if (btn && (btn.id === "musicTrimConfirm" || /use this clip/i.test(btn.textContent || ""))) {
+                e.preventDefault();
+                e.stopPropagation();
+                if (!pendingMusic) {
+                    showToast("No track", "Select a song first");
+                    return;
+                }
+                const { start, len } = readTrim();
+                applyMusicClip(pendingMusic, start, len);
+                return;
+            }
+
+            // Close sheet
+            const closer = t.closest ? t.closest('[data-close="musicTrimSheet"]') : null;
+            if (closer || (btn && btn.getAttribute && btn.getAttribute("data-close") === "musicTrimSheet")) {
                 const sheet = $("musicTrimSheet");
                 if (sheet) {
                     sheet.hidden = true;
+                    sheet.classList.remove("open");
                     sheet.style.display = "none";
                 }
                 stopPostMusicPreview();
-            });
-        });
+            }
+        }, true);
     }
 
 
@@ -1996,18 +2054,29 @@
     ====================================================== */
 
     function setupPublish() {
-
-        $("nextBtn")?.addEventListener(
-            "click",
-            publishPost
-        );
-
-
-        $("publishBtn")?.addEventListener(
-            "click",
-            publishPost
-        );
-
+        function oncePublish(e) {
+            try { e && e.preventDefault && e.preventDefault(); } catch (_) {}
+            if (state.publishing || window.__vieworaPublishingLock) return;
+            publishPost();
+        }
+        const pub = $("publishBtn");
+        const next = $("nextBtn");
+        if (pub && !pub.__pubBound) {
+            pub.__pubBound = true;
+            pub.addEventListener("click", oncePublish);
+        }
+        // nextBtn should NOT also publish (was causing double posts)
+        if (next && !next.__pubBound) {
+            next.__pubBound = true;
+            // only go to details step if multi-step; else ignore
+            next.addEventListener("click", function (e) {
+                e.preventDefault();
+                // scroll to caption / details instead of second publish
+                try {
+                    $("captionInput")?.focus();
+                } catch (_) {}
+            });
+        }
     }
 
 
@@ -2404,11 +2473,24 @@ function getCloudinaryConfig() {
 
     async function publishPost() {
 
-        if (state.publishing) {
+        if (state.publishing || window.__vieworaPublishingLock) {
             return;
         }
 
-        if (!state.media) {
+        // If music trim sheet still open → apply current clip first
+        try {
+            if (pendingMusic) {
+                const sheet = $("musicTrimSheet");
+                const open = sheet && !sheet.hidden && sheet.style.display !== "none";
+                if (open || !state.music) {
+                    const start = Number($("musicStartRange")?.value || 0);
+                    const len = Number($("musicLenRange")?.value || 15);
+                    applyMusicClip(pendingMusic, start, len);
+                }
+            }
+        } catch (_) {}
+
+        if (!state.media && !(state.mediaFiles && state.mediaFiles.length)) {
             showToast("No media", "Please select a photo first.");
             return;
         }
@@ -2506,7 +2588,8 @@ function getCloudinaryConfig() {
                     meta.musicDuration = meta.music.duration;
                 }
                 meta.mediaCount = files.length;
-                meta.clientPostKey = "post_" + Date.now() + "_" + Math.random().toString(36).slice(2, 8);
+                // Stable key for this share attempt (prevents double post)
+                meta.clientPostKey = "post_" + String(user.uid || "u") + "_" + files.length + "_" + Date.now();
                 await window.VieworaUploadQueue.enqueueAndLeave({
                     type: "post",
                     file: files[0],
@@ -2518,29 +2601,17 @@ function getCloudinaryConfig() {
             }
         } catch (err) {
             console.warn("BG leave failed", err);
+            // DO NOT enqueue again — that creates a second post
+            showToast("Upload error", "Try again in a moment.");
+            state.publishing = false;
+            window.__vieworaPublishingLock = false;
+            try { setPublishState(false); } catch (_) {}
+            return;
         }
 
-        try {
-            if (
-                window.VieworaUploadQueue &&
-                typeof window.VieworaUploadQueue.enqueue === "function"
-            ) {
-                await window.VieworaUploadQueue.enqueue({
-                    type: "post",
-                    file: file,
-                    files: files,
-                    meta: meta
-                });
-                showToast("Uploading", "Post uploading in background");
-                window.location.href = "index.html";
-                return;
-            }
-        } catch (err2) {
-            console.warn("BG enqueue failed", err2);
-        }
-
-        showToast("Upload unavailable", "Background upload failed. Try again.");
+        showToast("Upload unavailable", "Background upload not ready. Refresh and try again.");
         state.publishing = false;
+        window.__vieworaPublishingLock = false;
         try {
             setPublishState(false);
         } catch (_) {}

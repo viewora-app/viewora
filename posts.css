@@ -1858,3 +1858,88 @@ input:focus-visible{
 body.viewer-open .vieworaPostCard {
   opacity: 1 !important;
 }
+
+
+/* ===== Viewora multi-photo carousel (Instagram style) ===== */
+.postMediaWrap {
+  position: relative !important;
+  overflow: hidden !important;
+  width: 100% !important;
+  background: #000;
+}
+.postMediaWrap.hasCarousel {
+  touch-action: pan-y;
+}
+.postMediaWrap .postCarouselTrack,
+.postMediaWrap .postMediaTrack {
+  display: flex !important;
+  width: 100% !important;
+  transition: transform 0.28s ease;
+  will-change: transform;
+}
+.postMediaWrap .postCarouselTrack > img,
+.postMediaWrap .postMediaTrack > img,
+.postMediaWrap .postMedia,
+.postMediaWrap .post-image {
+  display: block !important;
+  flex: 0 0 100% !important;
+  width: 100% !important;
+  min-width: 100% !important;
+  max-width: 100% !important;
+  height: auto !important;
+  max-height: 70vh;
+  object-fit: cover !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+.postMediaWrap.hasCarousel .carouselPrev,
+.postMediaWrap.hasCarousel .carouselNext {
+  position: absolute !important;
+  top: 50% !important;
+  transform: translateY(-50%);
+  z-index: 5 !important;
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(0,0,0,0.45) !important;
+  color: #fff !important;
+  display: flex !important;
+  align-items: center; justify-content: center;
+  opacity: 0.9;
+  pointer-events: auto !important;
+}
+.postMediaWrap.hasCarousel .carouselPrev { left: 8px !important; }
+.postMediaWrap.hasCarousel .carouselNext { right: 8px !important; }
+.postMediaWrap.hasCarousel .carouselDots {
+  position: absolute !important;
+  bottom: 10px !important;
+  left: 0; right: 0;
+  display: flex !important;
+  justify-content: center;
+  gap: 5px;
+  z-index: 5;
+  pointer-events: auto;
+}
+.postMediaWrap.hasCarousel .carouselDot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.45);
+  display: inline-block;
+}
+.postMediaWrap.hasCarousel .carouselDot.active {
+  background: #fff !important;
+}
+.postMediaWrap.hasCarousel .carouselCount {
+  position: absolute !important;
+  top: 10px !important;
+  right: 10px !important;
+  z-index: 5 !important;
+  background: rgba(0,0,0,0.55) !important;
+  color: #fff !important;
+  font-size: 12px !important;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 12px;
+  display: inline-block !important;
+  pointer-events: none;
+}

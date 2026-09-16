@@ -1044,23 +1044,34 @@
         (root || document).querySelectorAll(".postMediaWrap.hasCarousel").forEach(function (wrap) {
             if (wrap.__carouselWired) return;
             wrap.__carouselWired = true;
-            const track = wrap.querySelector(".postMediaTrack") || wrap.querySelector(".postCarouselTrack");
+            const track = wrap.querySelector(".postCarouselTrack") || wrap.querySelector(".postMediaTrack");
             const imgs = Array.from(wrap.querySelectorAll(".postMedia, .post-image"));
             const dots = wrap.querySelectorAll(".carouselDot");
             const countEl = wrap.querySelector(".carouselCount");
             let i = 0;
-            const n = imgs.length;
+            const n = imgs.length || Number(wrap.getAttribute("data-carousel-count") || 0);
+            if (n < 2) return;
+            if (track) {
+                track.style.display = "flex";
+                track.style.transition = "transform 0.28s ease";
+                track.style.width = "100%";
+                imgs.forEach(function (img) {
+                    img.style.display = "block";
+                    img.style.flex = "0 0 100%";
+                    img.style.width = "100%";
+                    img.style.minWidth = "100%";
+                    img.style.objectFit = "cover";
+                });
+            }
             function show(to) {
                 if (!n) return;
-                i = (to + n) % n;
+                i = ((to % n) + n) % n;
                 if (track) {
-                    track.style.transform = "translateX(-" + (i * 100) + "%)";
-                } else {
-                    imgs.forEach(function (img, idx) {
-                        img.style.display = idx === i ? "block" : "none";
-                        img.classList.toggle("isActive", idx === i);
-                    });
+                    track.style.transform = "translate3d(-" + (i * 100) + "%,0,0)";
                 }
+                imgs.forEach(function (img, idx) {
+                    img.classList.toggle("isActive", idx === i);
+                });
                 dots.forEach(function (d, idx) {
                     d.classList.toggle("active", idx === i);
                 });
@@ -1305,9 +1316,9 @@
                         `
                     : (mediaList.length
                         ? `<div class="postMediaWrap${mediaList.length > 1 ? " hasCarousel" : ""}" data-carousel-count="${mediaList.length}">
-                            <div class="postMediaTrack">
+                            <div class="postCarouselTrack postMediaTrack">
                                 ${mediaList.map((u, i) =>
-                                    `<img src="${escapeHTML(u)}" alt="Post" class="post-image postMedia${i === 0 ? " isActive" : ""}" loading="${i === 0 ? "eager" : "lazy"}" data-carousel-i="${i}" data-view-image="${escapeHTML(u)}" style="${i === 0 ? "" : "display:none"}">`
+                                    `<img src="${escapeHTML(u)}" alt="Post" class="post-image postMedia${i === 0 ? " isActive" : ""}" loading="${i === 0 ? "eager" : "lazy"}" data-carousel-i="${i}" data-view-image="${escapeHTML(u)}">`
                                 ).join("")}
                             </div>
                             ${mediaList.length > 1

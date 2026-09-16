@@ -417,6 +417,18 @@
             let i = 0;
             const n = imgs.length || (Number(wrap.getAttribute("data-carousel-count")) || 0);
             if (n < 2) return;
+            if (track) {
+                track.style.display = "flex";
+                track.style.transition = "transform 0.28s ease";
+                track.style.width = "100%";
+                imgs.forEach(function (img) {
+                    img.style.display = "block";
+                    img.style.flex = "0 0 100%";
+                    img.style.width = "100%";
+                    img.style.minWidth = "100%";
+                    img.style.objectFit = "cover";
+                });
+            }
             function go(to) {
                 if (!n) return;
                 i = ((to % n) + n) % n;
@@ -424,7 +436,6 @@
                     track.style.transform = "translate3d(-" + (i * 100) + "%,0,0)";
                 }
                 imgs.forEach(function (img, idx) {
-                    // keep all in flex track; optional active class
                     img.classList.toggle("isActive", idx === i);
                 });
                 dots.forEach(function (d, di) {
