@@ -599,6 +599,31 @@
     });
   }
 
+  
+  function showViewerPlaceholder(host) {
+    const stage = document.querySelector(".live-stage") || $("liveRoom");
+    if (!stage) return;
+    let ph = document.getElementById("viewerLivePlaceholder");
+    if (!ph) {
+      ph = document.createElement("div");
+      ph.id = "viewerLivePlaceholder";
+      ph.className = "viewer-live-placeholder";
+      stage.insertBefore(ph, stage.firstChild);
+    }
+    const photo = (host && (host.hostPhoto || host.photoURL || host.avatar)) || "assets/default-avatar.png";
+    const name = (host && (host.hostName || host.name)) || "Host";
+    const title = (host && host.title) || "Live";
+    ph.innerHTML =
+      '<img class="vlp-bg" src="' + String(photo).replace(/"/g, "") + '" alt="" onerror="this.style.display=\'none\'">' +
+      '<div class="vlp-center">' +
+      '<img class="vlp-avatar" src="' + String(photo).replace(/"/g, "") + '" alt="" onerror="this.src=\'assets/default-avatar.png\">' +
+      '<strong>' + String(name).replace(/</g, "") + '</strong>' +
+      '<span class="vlp-live"><i class="fa-solid fa-circle"></i> LIVE</span>' +
+      '<p>' + String(title).replace(/</g, "") + '</p>' +
+      '<small>Stream preview · full WebRTC coming soon</small>' +
+      '</div>';
+  }
+
   function attachLiveListeners(uid) {
     liveRef = db.ref("live/" + uid);
     liveRef.on("value", (snap) => {
@@ -610,6 +635,22 @@
           setTimeout(() => {
             location.href = "index.html";
           }, 500);
+        }
+        return;
+      }
+      if (!isHost) {
+        try {
+          var f = d.liveFormat || "story";
+          document.body.classList.remove("live-format-video","live-format-story","live-format-shorts");
+          document.body.classList.add("live-format-" + f);
+          document.body.setAttribute("data-live-format", f);
+          window.__VIEWORA_LIVE_FORMAT = f;
+        } catch (_) {}
+        showViewerPlaceholder(d);
+        if ($("hostName")) $("hostName").textContent = d.hostName || "Host";
+        if ($("liveTitleLabel")) $("liveTitleLabel").textContent = d.title || "Live";
+        if ($("hostAvatar") && d.hostPhoto) {
+          $("hostAvatar").src = d.hostPhoto;
         }
       }
       if ($("viewerCount")) {

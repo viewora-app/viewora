@@ -1443,30 +1443,39 @@
         if (!container || typeof db === "undefined" || !db) return;
         try {
             const snap = await db.ref("feedLive/videos").once("value");
+            // remove old live cards
+            container.querySelectorAll(".liveVideoCard").forEach(function (n) {
+                try { n.remove(); } catch (_) {}
+            });
             if (!snap.exists()) return;
             const frag = document.createDocumentFragment();
             snap.forEach(function (child) {
                 const d = child.val() || {};
-                if (!d.active && d.active !== undefined) return;
+                if (d.active === false) return;
                 const uid = d.hostUid || d.uid || child.key;
+                if (!uid) return;
                 const card = document.createElement("article");
                 card.className = "longVideoCard liveVideoCard";
                 card.dataset.videoId = "live_" + uid;
                 card.dataset.liveUid = uid;
-                const photo = d.hostPhoto || "assets/default-avatar.png";
-                const name = d.hostName || "Live";
-                const title = d.title || "Video Live";
+                const photo = (d.hostPhoto || "assets/default-avatar.png").replace(/"/g, "");
+                const name = String(d.hostName || "Live").replace(/</g, "");
+                const title = String(d.title || "Video Live").replace(/</g, "");
                 card.innerHTML =
-                    '<div class="videoThumbnailWrap liveThumb">' +
-                    '<img src="' + String(photo).replace(/"/g, "") + '" alt="" class="videoThumb" onerror="this.src=\'assets/default-avatar.png\'">' +
-                    '<span class="liveBadgePill"><i class="fa-solid fa-circle"></i> LIVE</span>' +
-                    '<span class="videoDuration">16:9</span></div>' +
-                    '<div class="videoMeta"><div class="videoAuthor">' +
-                    '<img src="' + String(photo).replace(/"/g, "") + '" alt="" onerror="this.src=\'assets/default-avatar.png\'">' +
-                    '<div><strong>' + String(name).replace(/</g, "") + '</strong>' +
-                    '<span class="videoTitle">' + String(title).replace(/</g, "") + '</span></div></div></div>';
+                    '<div class="videoThumbnailWrap liveThumb" style="position:relative;aspect-ratio:16/9;background:#111;border-radius:14px;overflow:hidden">' +
+                    '<img src="' + photo + '" alt="" class="videoThumb" style="width:100%;height:100%;object-fit:cover" onerror="this.src=\'assets/default-avatar.png\">' +
+                    '<div style="position:absolute;inset:0;background:linear-gradient(transparent 40%,rgba(0,0,0,.75))"></div>' +
+                    '<span class="liveBadgePill" style="position:absolute;top:10px;left:10px;background:#ef4444;color:#fff;font-size:11px;font-weight:800;padding:4px 8px;border-radius:6px;z-index:2"><i class="fa-solid fa-circle" style="font-size:7px"></i> LIVE</span>' +
+                    '<span style="position:absolute;bottom:10px;left:12px;right:12px;color:#fff;z-index:2;font-weight:700;font-size:14px;text-shadow:0 1px 4px #000">' + title + '</span>' +
+                    '</div>' +
+                    '<div class="videoMeta" style="display:flex;align-items:center;gap:10px;padding:10px 4px 4px">' +
+                    '<img src="' + photo + '" alt="" style="width:36px;height:36px;border-radius:50%;object-fit:cover;border:2px solid #ef4444" onerror="this.src=\'assets/default-avatar.png\">' +
+                    '<div style="min-width:0;flex:1">' +
+                    '<strong style="display:block;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + name + '</strong>' +
+                    '<span style="font-size:12px;opacity:.65">Video Live · Tap to join</span>' +
+                    '</div></div>';
                 card.addEventListener("click", function () {
-                    location.href = "live.html?uid=" + encodeURIComponent(uid);
+                    location.href = "live.html?uid=" + encodeURIComponent(uid) + "&format=video";
                 });
                 frag.appendChild(card);
             });

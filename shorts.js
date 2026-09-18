@@ -2334,7 +2334,7 @@
           '<button type="button" style="margin-top:18px;padding:12px 22px;border-radius:99px;border:none;background:linear-gradient(135deg,#ef4444,#ec4899);color:#fff;font-weight:700">Join Live</button>' +
           "</div>";
         el.addEventListener("click", function () {
-          location.href = "live.html?uid=" + encodeURIComponent(uid);
+          location.href = "live.html?uid=" + encodeURIComponent(uid) + "&format=shorts";
         });
         nodes.push(el);
       });

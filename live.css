@@ -645,3 +645,121 @@ body.live-format-shorts .live-format-badge {
   15% { opacity: 1; }
   100% { transform: translateY(-220px) scale(1.2); opacity: 0; }
 }
+
+/* Viewer placeholder (no WebRTC stream yet) */
+.viewer-live-placeholder {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: #0a0a0f;
+  overflow: hidden;
+}
+.viewer-live-placeholder .vlp-bg {
+  position: absolute;
+  inset: -20px;
+  width: 120%;
+  height: 120%;
+  object-fit: cover;
+  filter: blur(28px) brightness(.35);
+  transform: scale(1.1);
+}
+.viewer-live-placeholder .vlp-center {
+  position: relative;
+  z-index: 2;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: #fff;
+  text-align: center;
+  padding: 24px;
+}
+.viewer-live-placeholder .vlp-avatar {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #ef4444;
+  box-shadow: 0 0 0 6px rgba(239,68,68,.25);
+}
+.viewer-live-placeholder .vlp-live {
+  background: #ef4444;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 800;
+  padding: 4px 12px;
+  border-radius: 99px;
+  letter-spacing: .06em;
+}
+.viewer-live-placeholder .vlp-live i { font-size: 8px; margin-right: 4px; }
+.viewer-live-placeholder small { opacity: .5; font-size: 11px; margin-top: 8px; }
+
+/* YouTube-style Video Live: 16:9 stage */
+body.live-format-video .live-page,
+body.live-format-video #liveRoom {
+  background: #0f0f0f;
+}
+body.live-format-video .live-stage {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+body.live-format-video #livePreview,
+body.live-format-video #liveVideo {
+  position: relative !important;
+  width: 100% !important;
+  height: auto !important;
+  aspect-ratio: 16 / 9 !important;
+  max-height: 42vh !important;
+  object-fit: contain !important;
+  background: #000 !important;
+  flex-shrink: 0;
+}
+body.live-format-video .live-overlay {
+  position: relative !important;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: #0f0f0f;
+}
+body.live-format-video .live-top {
+  background: transparent !important;
+  padding-top: 10px;
+}
+body.live-format-video .live-bottom {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: #0f0f0f;
+  border-top: 1px solid rgba(255,255,255,.08);
+}
+body.live-format-video .live-comments {
+  flex: 1;
+  max-height: none !important;
+  min-height: 120px;
+}
+body.live-format-video .live-comment {
+  background: transparent;
+  padding: 6px 12px;
+  font-size: 13px;
+}
+body.live-format-video .live-comment b {
+  color: #aaa;
+  margin-right: 6px;
+}
+
+/* Host self-view PiP on video live */
+body.live-format-video #livePreview:not(.hidden) {
+  position: absolute !important;
+  right: 12px;
+  bottom: 180px;
+  width: 120px !important;
+  height: auto !important;
+  aspect-ratio: 16/9 !important;
+  max-height: 90px !important;
+  border-radius: 10px;
+  border: 2px solid rgba(255,255,255,.3);
+  z-index: 15;
+}
