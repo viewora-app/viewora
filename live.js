@@ -535,6 +535,70 @@
     $("liveWaiting")?.classList.add("hidden");
   }
 
+  
+  /* ---------- Reactions + stickers ---------- */
+  function spawnFloatEmoji(emoji) {
+    const layer = $("liveFloatLayer");
+    if (!layer) return;
+    const el = document.createElement("span");
+    el.className = "live-float-emoji";
+    el.textContent = emoji;
+    el.style.left = Math.floor(Math.random() * 40) + "px";
+    layer.appendChild(el);
+    setTimeout(function () {
+      try { el.remove(); } catch (_) {}
+    }, 2500);
+  }
+
+  async function sendLiveReaction(emoji, kind) {
+    if (!hostUid || !me || !emoji) return;
+    spawnFloatEmoji(emoji);
+    try {
+      await db.ref("live/" + hostUid + "/reactions").push({
+        uid: me.uid,
+        emoji: emoji,
+        kind: kind || "reaction",
+        at: Date.now()
+      });
+    } catch (_) {}
+  }
+
+  function bindReactionsUI() {
+    document.querySelectorAll(".live-rx[data-rx]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        sendLiveReaction(btn.getAttribute("data-rx"), "reaction");
+      });
+    });
+    const stickerBtn = $("liveStickerBtn");
+    const panel = $("liveStickerPanel");
+    if (stickerBtn && panel) {
+      stickerBtn.addEventListener("click", function () {
+        panel.classList.toggle("hidden");
+      });
+      panel.querySelectorAll("[data-sticker]").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          sendLiveReaction(btn.getAttribute("data-sticker"), "sticker");
+          panel.classList.add("hidden");
+        });
+      });
+    }
+  }
+
+  let reactionsRef = null;
+  function attachReactions(uid) {
+    if (reactionsRef) {
+      try { reactionsRef.off(); } catch (_) {}
+    }
+    reactionsRef = db.ref("live/" + uid + "/reactions").limitToLast(30);
+    reactionsRef.on("child_added", function (snap) {
+      const d = snap.val() || {};
+      if (d.uid && me && d.uid === me.uid && Date.now() - Number(d.at || 0) < 2000) {
+        return; // already floated locally
+      }
+      if (d.emoji) spawnFloatEmoji(d.emoji);
+    });
+  }
+
   function attachLiveListeners(uid) {
     liveRef = db.ref("live/" + uid);
     liveRef.on("value", (snap) => {
@@ -569,6 +633,7 @@
       const c = snap.val() || {};
       addComment(c.name || "User", c.text || "", snap.key);
     });
+    attachReactions(uid);
   }
 
   let sendingComment = false;
@@ -607,6 +672,7 @@
     stopCam();
     if (liveRef) liveRef.off();
     if (commentsRef) commentsRef.off();
+    if (reactionsRef) try { reactionsRef.off(); } catch (_) {}
     if (viewersRef) viewersRef.off();
     location.href = "index.html";
   }
@@ -628,6 +694,7 @@
     $("endLiveBtn")?.addEventListener("click", leave);
     $("closeLiveBtn")?.addEventListener("click", leave);
     $("sendCommentBtn")?.addEventListener("click", sendComment);
+    try { bindReactionsUI(); } catch (_) {}
     $("liveCommentInput")?.addEventListener("keydown", (e) => {
       if (e.key === "Enter") sendComment();
     });

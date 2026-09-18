@@ -94,7 +94,29 @@
     </div>
 
     <div class="live-bottom">
+      <div id="liveFloatLayer" class="live-float-layer" aria-hidden="true"></div>
       <div id="liveComments" class="live-comments"></div>
+      <div class="live-reactions" id="liveReactions">
+        <button type="button" class="live-rx" data-rx="❤️">❤️</button>
+        <button type="button" class="live-rx" data-rx="🔥">🔥</button>
+        <button type="button" class="live-rx" data-rx="😂">😂</button>
+        <button type="button" class="live-rx" data-rx="👏">👏</button>
+        <button type="button" class="live-rx" data-rx="😍">😍</button>
+        <button type="button" class="live-rx" data-rx="😮">😮</button>
+        <button type="button" class="live-rx" id="liveStickerBtn" title="Stickers">🎁</button>
+      </div>
+      <div id="liveStickerPanel" class="live-sticker-panel hidden">
+        <button type="button" data-sticker="🎉">🎉</button>
+        <button type="button" data-sticker="⭐">⭐</button>
+        <button type="button" data-sticker="💯">💯</button>
+        <button type="button" data-sticker="🙌">🙌</button>
+        <button type="button" data-sticker="✨">✨</button>
+        <button type="button" data-sticker="🥰">🥰</button>
+        <button type="button" data-sticker="💀">💀</button>
+        <button type="button" data-sticker="🚀">🚀</button>
+        <button type="button" data-sticker="👑">👑</button>
+        <button type="button" data-sticker="💥">💥</button>
+      </div>
       <div class="live-compose">
         <input id="liveCommentInput" type="text" maxlength="200" placeholder="Say something…">
         <button type="button" class="live-send" id="sendCommentBtn"><i class="fa-solid fa-paper-plane"></i></button>

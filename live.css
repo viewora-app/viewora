@@ -583,3 +583,65 @@ body.live-format-shorts .live-format-badge {
   background: rgba(236, 72, 153, 0.25);
   color: #f9a8d4;
 }
+
+.live-reactions {
+  display: flex;
+  gap: 6px;
+  padding: 0 12px 8px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.live-rx {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(0,0,0,.45);
+  font-size: 20px;
+  cursor: pointer;
+  flex-shrink: 0;
+  backdrop-filter: blur(8px);
+}
+.live-rx:active { transform: scale(1.15); }
+.live-sticker-panel {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 10px 12px;
+  margin: 0 12px 8px;
+  background: rgba(20,20,28,.92);
+  border-radius: 16px;
+  border: 1px solid rgba(255,255,255,.08);
+}
+.live-sticker-panel.hidden { display: none !important; }
+.live-sticker-panel button {
+  width: 44px;
+  height: 44px;
+  font-size: 24px;
+  border: none;
+  border-radius: 12px;
+  background: rgba(255,255,255,.06);
+  cursor: pointer;
+}
+.live-float-layer {
+  pointer-events: none;
+  position: absolute;
+  right: 12px;
+  bottom: 140px;
+  top: 80px;
+  width: 72px;
+  z-index: 20;
+  overflow: hidden;
+}
+.live-float-emoji {
+  position: absolute;
+  bottom: 0;
+  font-size: 28px;
+  animation: liveFloatUp 2.4s ease-out forwards;
+  opacity: 0;
+}
+@keyframes liveFloatUp {
+  0% { transform: translateY(0) scale(.6); opacity: 0; }
+  15% { opacity: 1; }
+  100% { transform: translateY(-220px) scale(1.2); opacity: 0; }
+}

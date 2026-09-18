@@ -4068,3 +4068,28 @@ body.shareSheetOpen { overflow: hidden !important; }
 }
 .liveBadgePill i { font-size: 8px; animation: livePulse 1s infinite; }
 @keyframes livePulse { 50% { opacity: .4; } }
+
+.liveBadge, .liveBadge-story {
+  position: absolute;
+  bottom: -2px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #ef4444;
+  color: #fff;
+  font-size: 9px;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 4px;
+  letter-spacing: .04em;
+  z-index: 3;
+  white-space: nowrap;
+}
+.liveBadge-shorts {
+  background: linear-gradient(135deg, #ec4899, #f43f5e) !important;
+}
+.liveBadge-video {
+  background: linear-gradient(135deg, #6366f1, #4f46e5) !important;
+}
+.storyCard.live-shorts .live-ring { box-shadow: 0 0 0 2px #ec4899; }
+.storyCard.live-video .live-ring { box-shadow: 0 0 0 2px #6366f1; }
+.storyCard.live-story .live-ring { box-shadow: 0 0 0 2px #ef4444; }

@@ -3677,21 +3677,23 @@
                                         byUser[liveUid] &&
                                         (v.active === true || v.isLive === true || v.status === "live")
                                     ) {
-                                        // Story ring only for Stories Live (followers see it)
+                                        // All live types show on ring for followed users; badge differs
                                         var fmt = v.liveFormat || (v.isStoryLive ? "story" : (v.isShortsLive ? "shorts" : (v.isVideoLive ? "video" : "story")));
-                                        if (fmt === "story" || v.isStoryLive === true) {
-                                            byUser[liveUid].isLive = true;
-                                            byUser[liveUid].liveFormat = "story";
-                                        }
+                                        if (fmt === "shorts" || v.isShortsLive === true) fmt = "shorts";
+                                        else if (fmt === "video" || v.isVideoLive === true) fmt = "video";
+                                        else fmt = "story";
+                                        byUser[liveUid].isLive = true;
+                                        byUser[liveUid].liveFormat = fmt;
                                     }
                                 });
                             }
                         } catch (_) {}
 
-                        // Story Live hosts (followed) even without an active story post
-                        try {
-                            const flSnap = await db.ref("feedLive/stories").once("value");
-                            if (flSnap.exists()) {
+                        // Live hosts on story line (followed only) — story / shorts / video badges
+                        async function mergeLiveFeed(path, defaultFmt) {
+                            try {
+                                const flSnap = await db.ref(path).once("value");
+                                if (!flSnap.exists()) return;
                                 flSnap.forEach((c) => {
                                     const v = c.val() || {};
                                     if (v.active === false) return;
@@ -3708,6 +3710,7 @@
                                             (f) => String(f).toLowerCase() === liveUid
                                         );
                                     if (!isOwn && !isFollowed) return;
+                                    const fmt = v.liveFormat || defaultFmt || "story";
                                     if (!byUser[liveUid]) {
                                         byUser[liveUid] = {
                                             uid: raw,
@@ -3717,17 +3720,20 @@
                                             name: v.hostName || "",
                                             username: "",
                                             isLive: true,
-                                            liveFormat: "story"
+                                            liveFormat: fmt
                                         };
                                     } else {
                                         byUser[liveUid].isLive = true;
-                                        byUser[liveUid].liveFormat = "story";
+                                        byUser[liveUid].liveFormat = fmt;
                                         if (v.hostPhoto) byUser[liveUid].avatar = v.hostPhoto;
                                         if (v.hostName) byUser[liveUid].name = v.hostName;
                                     }
                                 });
-                            }
-                        } catch (_) {}
+                            } catch (_) {}
+                        }
+                        await mergeLiveFeed("feedLive/stories", "story");
+                        await mergeLiveFeed("feedLive/shorts", "shorts");
+                        await mergeLiveFeed("feedLive/videos", "video");
 
                         try {
                             for (const key of Object.keys(byUser)) {
@@ -3735,10 +3741,12 @@
                                 if (us.val() === true) {
                                     try {
                                         const fmtSnap = await db.ref("users/" + byUser[key].uid + "/liveFormat").once("value");
-                                        const fmt = fmtSnap.val();
-                                        if (!fmt || fmt === "story") byUser[key].isLive = true;
+                                        const fmt = fmtSnap.val() || "story";
+                                        byUser[key].isLive = true;
+                                        byUser[key].liveFormat = fmt;
                                     } catch (_) {
                                         byUser[key].isLive = true;
+                                        byUser[key].liveFormat = byUser[key].liveFormat || "story";
                                     }
                                 }
                             }
@@ -3868,8 +3876,9 @@
                             button.type = "button";
 
                             const isLive = !!group.isLive;
+                            const liveFmt = group.liveFormat || "story";
                             const ringClass = isLive
-                                ? "storyCard storyLive live"
+                                ? "storyCard storyLive live live-" + liveFmt
                                 : group.seen
                                     ? "storyCard storySeen"
                                     : "storyCard storyUnseen";
@@ -3879,7 +3888,17 @@
                             button.dataset.storyId = firstStoryId;
                             button.dataset.count = String(group.stories.length);
                             button.dataset.seen = group.seen ? "1" : "0";
-                            if (isLive) button.dataset.live = "1";
+                            if (isLive) {
+                                button.dataset.live = "1";
+                                button.dataset.liveFormat = liveFmt;
+                            }
+
+                            let liveBadgeText = "";
+                            if (isLive) {
+                                if (liveFmt === "shorts") liveBadgeText = "SHORT";
+                                else if (liveFmt === "video") liveBadgeText = "VIDEO";
+                                else liveBadgeText = "LIVE";
+                            }
 
                             button.innerHTML = `
                                 <div class="storyImageWrap${isLive ? " live-ring" : ""}">
@@ -3890,7 +3909,7 @@
                                         loading="lazy"
                                         onerror="this.src='assets/default-avatar.png'"
                                     >
-                                    ${isLive ? '<span class="liveBadge">LIVE</span>' : ""}
+                                    ${isLive ? '<span class="liveBadge liveBadge-' + liveFmt + '">' + liveBadgeText + '</span>' : ""}
                                 </div>
                                 <span class="storyName">
                                     ${isLive ? "🔴 " : ""}${label}
@@ -3898,10 +3917,19 @@
                             `;
 
                             button.addEventListener("click", () => {
-                                if (isLive) {
+                                // Stories Live / Shorts Live → open live room
+                                // Video Live on ring → do NOT open live (join from Long Videos feed); open stories if any
+                                if (isLive && liveFmt !== "video") {
                                     window.location.href =
                                         "live.html?uid=" +
                                         encodeURIComponent(group.uid);
+                                    return;
+                                }
+                                if (isLive && liveFmt === "video" && (!group.stories || !group.stories.length)) {
+                                    // no stories to show — stay / toast
+                                    if (typeof showToast === "function") {
+                                        showToast("Join this live from Long Videos");
+                                    }
                                     return;
                                 }
                                 markStoryUserSeen(group.uid);
