@@ -1,5 +1,47 @@
 "use strict";
 
+  // Live format: story | shorts | video (3 types)
+  (function applyLiveFormat() {
+    try {
+      var params = new URLSearchParams(location.search);
+      var format = (params.get("format") || params.get("type") || "").toLowerCase();
+      var aspect = (params.get("aspect") || "").toLowerCase().replace(":", "x");
+      if (format === "video" || format === "long" || format === "stream") {
+        format = "video";
+      } else if (format === "shorts" || format === "short") {
+        format = "shorts";
+      } else if (format === "story" || format === "stories") {
+        format = "story";
+      } else if (aspect === "16x9" || aspect.indexOf("16x9") !== -1) {
+        format = "video";
+      } else if (aspect === "9x16" || aspect.indexOf("9x16") !== -1) {
+        // default vertical without explicit format → story
+        format = "story";
+      } else {
+        format = "story";
+      }
+      document.body.classList.remove(
+        "live-format-video",
+        "live-format-story",
+        "live-format-shorts"
+      );
+      document.body.classList.add("live-format-" + format);
+      document.body.setAttribute("data-live-format", format);
+      window.__VIEWORA_LIVE_FORMAT = format;
+      var titles = {
+        video: "Video Live • Viewora",
+        shorts: "Shorts Live • Viewora",
+        story: "Stories Live • Viewora"
+      };
+      var t = document.querySelector("title");
+      if (t) t.textContent = titles[format] || titles.story;
+    } catch (_) {
+      document.body.classList.add("live-format-story");
+      window.__VIEWORA_LIVE_FORMAT = "story";
+    }
+  })();
+
+
 /*
 ============================================================
  VIEWORA LIVE
@@ -101,17 +143,50 @@
 
   /* ---------- Media ---------- */
   async function getCam() {
-    const stream = await navigator.mediaDevices.getUserMedia({
-      audio: true,
-      video: {
-        facingMode: "user",
-        width: { ideal: 720 },
-        height: { ideal: 1280 },
-        aspectRatio: { ideal: 9 / 16 }
-      }
-    });
+    const fmt = window.__VIEWORA_LIVE_FORMAT || "story";
+    const isVideo = fmt === "video";
+    const videoConstraints = isVideo
+      ? {
+          facingMode: { ideal: "user" },
+          width: { ideal: 1280, max: 1920 },
+          height: { ideal: 720, max: 1080 },
+          aspectRatio: { ideal: 16 / 9 }
+        }
+      : {
+          // story + shorts = vertical 9:16
+          facingMode: { ideal: "user" },
+          width: { ideal: 720, max: 1080 },
+          height: { ideal: 1280, max: 1920 },
+          aspectRatio: { ideal: 9 / 16 }
+        };
+    let stream;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({
+        audio: true,
+        video: videoConstraints
+      });
+    } catch (e1) {
+      // fallback soft constraints
+      stream = await navigator.mediaDevices.getUserMedia({
+        audio: true,
+        video: { facingMode: "user" }
+      });
+    }
     localStream = stream;
     return stream;
+  }
+
+  function bindPreviewVideo(videoEl, stream) {
+    if (!videoEl || !stream) return;
+    videoEl.srcObject = stream;
+    videoEl.muted = true;
+    videoEl.setAttribute("playsinline", "true");
+    videoEl.playsInline = true;
+    // Natural orientation — NOT mirrored (user asked to remove mirror)
+    videoEl.style.transform = "none";
+    videoEl.style.objectFit = "contain";
+    videoEl.style.background = "#000";
+    videoEl.play().catch(function () {});
   }
 
   function stopCam() {
@@ -140,10 +215,69 @@
       startedAt: firebase.database.ServerValue.TIMESTAMP,
       viewerCount: 0
     };
+    payload.liveFormat = window.__VIEWORA_LIVE_FORMAT || "story";
+    payload.aspect = payload.liveFormat === "video" ? "16:9" : "9:16";
+    payload.isStoryLive = payload.liveFormat === "story";
+    payload.isShortsLive = payload.liveFormat === "shorts";
+    payload.isVideoLive = payload.liveFormat === "video";
     await db.ref("live/" + uid).set(payload);
-    // also flag on user for quick ring checks
-    await db.ref("users/" + uid + "/isLive").set(true);
-    await db.ref("users/" + uid + "/liveAt").set(firebase.database.ServerValue.TIMESTAMP);
+
+    // User flags — story ring ONLY for Stories Live
+    const updates = {
+      liveFormat: payload.liveFormat,
+      liveAt: firebase.database.ServerValue.TIMESTAMP,
+      liveTitle: payload.title || "Live"
+    };
+    if (payload.isStoryLive) {
+      updates.isLive = true;
+      updates.storyLive = true;
+    } else {
+      updates.isLive = false;
+      updates.storyLive = false;
+    }
+    // shorts / video still mark activity for discovery
+    updates.isShortsLive = !!payload.isShortsLive;
+    updates.isVideoLive = !!payload.isVideoLive;
+    await db.ref("users/" + uid).update(updates);
+
+    // Feed cards
+    const card = {
+      active: true,
+      hostUid: uid,
+      uid: uid,
+      title: payload.title || "Live",
+      hostName: payload.hostName,
+      hostPhoto: payload.hostPhoto,
+      liveFormat: payload.liveFormat,
+      aspect: payload.aspect,
+      startedAt: Date.now(),
+      viewerCount: 0,
+      type: "live",
+      isLive: true
+    };
+
+    if (payload.isShortsLive) {
+      await db.ref("feedLive/shorts/" + uid).set(card);
+      await db.ref("shortsLive/" + uid).set(card);
+    } else {
+      await db.ref("feedLive/shorts/" + uid).remove().catch(function () {});
+      await db.ref("shortsLive/" + uid).remove().catch(function () {});
+    }
+
+    if (payload.isVideoLive) {
+      await db.ref("feedLive/videos/" + uid).set(card);
+      await db.ref("videosLive/" + uid).set(card);
+    } else {
+      await db.ref("feedLive/videos/" + uid).remove().catch(function () {});
+      await db.ref("videosLive/" + uid).remove().catch(function () {});
+    }
+
+    if (payload.isStoryLive) {
+      await db.ref("feedLive/stories/" + uid).set(card);
+    } else {
+      await db.ref("feedLive/stories/" + uid).remove().catch(function () {});
+    }
+
     return payload;
   }
 
@@ -229,6 +363,19 @@
         durationSec: durationSec
       });
       await db.ref("users/" + uid + "/isLive").set(false);
+      try {
+        await db.ref("users/" + uid).update({
+          storyLive: false,
+          isShortsLive: false,
+          isVideoLive: false,
+          liveFormat: null
+        });
+        await db.ref("feedLive/shorts/" + uid).remove();
+        await db.ref("feedLive/videos/" + uid).remove();
+        await db.ref("feedLive/stories/" + uid).remove();
+        await db.ref("shortsLive/" + uid).remove();
+        await db.ref("videosLive/" + uid).remove();
+      } catch (_) {}
       await db.ref("live/" + uid + "/viewers").remove();
       console.log("[LIVE] Saved as post", postId);
     } catch (e) {
@@ -273,13 +420,32 @@
     }
   }
 
-  function addComment(name, text) {
+  const seenCommentKeys = {};
+  function addComment(name, text, key) {
     const box = $("liveComments");
     if (!box) return;
+    if (key) {
+      if (seenCommentKeys[key]) return;
+      seenCommentKeys[key] = true;
+    }
+    // also de-dupe identical rapid text from same user (3x spam)
+    const sig = String(name) + "|" + String(text);
+    const now = Date.now();
+    if (addComment._lastSig === sig && now - (addComment._lastAt || 0) < 1500) {
+      return;
+    }
+    addComment._lastSig = sig;
+    addComment._lastAt = now;
+
     const el = document.createElement("div");
     el.className = "live-comment";
-    el.innerHTML = "<b>" + escapeHtml(name) + "</b><span>" + escapeHtml(text) + "</span>";
+    if (key) el.dataset.key = key;
+    el.innerHTML =
+      "<b>" + escapeHtml(name) + "</b> <span>" + escapeHtml(text) + "</span>";
     box.appendChild(el);
+    while (box.children.length > 50) {
+      box.removeChild(box.firstChild);
+    }
     box.scrollTop = box.scrollHeight;
   }
 
@@ -291,11 +457,7 @@
     try {
       const stream = await getCam();
       const v = $("setupPreview");
-      if (v) {
-        v.srcObject = stream;
-        v.muted = true;
-        v.play().catch(() => {});
-      }
+      if (v) bindPreviewVideo(v, stream);
     } catch (e) {
       toast("Camera/mic permission needed to go live.");
       console.error(e);
@@ -327,9 +489,7 @@
       const preview = $("livePreview");
       if (preview && localStream) {
         preview.classList.remove("hidden");
-        preview.srcObject = localStream;
-        preview.muted = true;
-        preview.play().catch(() => {});
+        bindPreviewVideo(preview, localStream);
       }
       if ($("liveTitleLabel")) $("liveTitleLabel").textContent = title;
       await fillHostChrome(me.uid);
@@ -401,26 +561,38 @@
       db.ref("live/" + uid + "/viewerCount").set(n).catch(() => {});
     });
 
+    if (commentsRef) {
+      try { commentsRef.off(); } catch (_) {}
+    }
     commentsRef = db.ref("live/" + uid + "/comments").limitToLast(40);
     commentsRef.on("child_added", (snap) => {
       const c = snap.val() || {};
-      addComment(c.name || "User", c.text || "");
+      addComment(c.name || "User", c.text || "", snap.key);
     });
   }
 
+  let sendingComment = false;
   async function sendComment() {
     const input = $("liveCommentInput");
     const text = (input?.value || "").trim();
-    if (!text || !hostUid || !me) return;
-    const u = await loadUser(me.uid);
-    const name = u.displayName || u.name || u.username || "User";
-    await db.ref("live/" + hostUid + "/comments").push({
-      uid: me.uid,
-      name: name,
-      text: text,
-      at: firebase.database.ServerValue.TIMESTAMP
-    });
-    if (input) input.value = "";
+    if (!text || !hostUid || !me || sendingComment) return;
+    sendingComment = true;
+    try {
+      if (input) input.value = "";
+      const u = await loadUser(me.uid);
+      const name = u.displayName || u.name || u.username || "User";
+      await db.ref("live/" + hostUid + "/comments").push({
+        uid: me.uid,
+        name: name,
+        text: text,
+        at: Date.now()
+      });
+    } catch (e) {
+      console.error(e);
+      if (input) input.value = text;
+    } finally {
+      sendingComment = false;
+    }
   }
 
   async function leave() {

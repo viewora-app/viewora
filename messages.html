@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <script>(function(){try{var t=localStorage.getItem("viewora_theme")||"dark";document.documentElement.setAttribute("data-theme",t);}catch(e){document.documentElement.setAttribute("data-theme","dark");}})();</script>
     <meta charset="UTF-8">
 
     <meta
@@ -19,6 +20,8 @@
     >
 
     <title>Messages • VIEWORA</title>
+    <link rel="icon" href="assets/logo.png">
+    <link rel="apple-touch-icon" href="assets/logo.png">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -36,7 +39,7 @@
         href="messages.css">
     <link rel="stylesheet" href="nav.css"
     >
-  <link rel="stylesheet" href="theme.css">
+    <link rel="stylesheet" href="theme.css">
 </head>
 
 <body>
@@ -56,62 +59,15 @@
          HEADER
     ================================================== -->
 
-    <header class="messagesHeader">
-
-        <div class="headerLeft">
-
-            <div class="vieworaMark">
-                <span>V</span>
-            </div>
-
-            <div class="headerTitle">
-
-                <h1>Messages</h1>
-
-                <div class="headerMeta">
-
-                    <span id="connectionStatus">
-                        Connecting...
-                    </span>
-
-                    <span class="headerDot">•</span>
-
-                    <span>
-                        <span id="chatCount">0</span>
-                        chats
-                    </span>
-
-                </div>
-
-            </div>
-
-        </div>
-
-
-        <div class="headerActions">
-
-            <button
-                id="refreshBtn"
-                class="iconButton"
-                type="button"
-                aria-label="Refresh messages"
-            >
-                <i class="fa-solid fa-rotate"></i>
-            </button>
-
-
-            <button
-                id="newChatBtn"
-                class="headerNewButton"
-                type="button"
-            >
-                <i class="fa-solid fa-pen"></i>
-                <span>New</span>
-            </button>
-
-        </div>
-
+    
+    <!-- Minimal top: search handles primary UI; New is in search row -->
+    <header class="messagesHeader messagesHeaderMinimal">
+        <button id="newChatBtn" class="headerNewButton" type="button" aria-label="New message">
+            <i class="fa-solid fa-pen"></i>
+        </button>
+        <button id="refreshBtn" class="iconButton hidden" type="button" aria-label="Refresh"></button>
     </header>
+
 
 
     <!-- ==================================================
@@ -141,10 +97,45 @@
                 <i class="fa-solid fa-xmark"></i>
             </button>
 
+            <button id="newChatBtnSearch" class="searchNewBtn" type="button" aria-label="New">
+                <i class="fa-solid fa-pen"></i>
+            </button>
+
         </div>
 
     </section>
 
+
+
+    <!-- NOTES / QUICK CREATE (Instagram style) -->
+    <section class="notesSection" id="notesSection">
+        <div class="notesScroller" id="notesScroller">
+            <button type="button" class="noteItem noteCreate" id="createNoteBtn">
+                <span class="noteAvatar notePlus"><i class="fa-solid fa-plus"></i></span>
+                <span class="noteLabel">Your note</span>
+            </button>
+            <button type="button" class="noteItem noteType" data-create="group">
+                <span class="noteAvatar noteGroup"><i class="fa-solid fa-user-group"></i></span>
+                <span class="noteLabel">Group</span>
+            </button>
+            <button type="button" class="noteItem noteType" data-create="community">
+                <span class="noteAvatar noteCommunity"><i class="fa-solid fa-people-roof"></i></span>
+                <span class="noteLabel">Community</span>
+            </button>
+            <button type="button" class="noteItem noteType" data-create="podcast">
+                <span class="noteAvatar notePodcast"><i class="fa-solid fa-microphone-lines"></i></span>
+                <span class="noteLabel">Podcast</span>
+            </button>
+        </div>
+    </section>
+
+    <div class="messagesSectionHead">
+        <h2>Messages</h2>
+        <button type="button" class="requestsLink" id="requestsBtn">
+            Requests
+            <span id="requestsBadge" class="requestsBadge hidden">0</span>
+        </button>
+    </div>
 
     <!-- ==================================================
          FILTERS
@@ -182,6 +173,15 @@
 
             <button
                 class="filter"
+                data-filter="groups"
+                type="button"
+            >
+                <i class="fa-solid fa-user-group"></i>
+                Groups
+            </button>
+
+            <button
+                class="filter"
                 data-filter="online"
                 type="button"
             >
@@ -204,75 +204,12 @@
 
 
     <!-- ==================================================
-         STORIES / ONLINE PEOPLE STRIP
-    ================================================== -->
-
-    <section class="onlineStrip">
-
-        <div class="sectionHeading">
-
-            <div>
-                <span class="sectionEyebrow">
-                    CONNECT
-                </span>
-
-                <h2>Online now</h2>
-            </div>
-
-            <span class="onlineLive">
-                <span></span>
-                LIVE
-            </span>
-
-        </div>
-
-        <div class="onlinePeople">
-
-            <div class="onlinePerson staticPerson">
-
-                <div class="onlineAvatarRing">
-
-                    <div class="onlineAvatar">
-                        <i class="fa-solid fa-user"></i>
-                    </div>
-
-                    <span></span>
-
-                </div>
-
-                <small>You</small>
-
-            </div>
-
-            <div class="onlineHint">
-                <i class="fa-solid fa-bolt"></i>
-                Start a conversation
-            </div>
-
-        </div>
-
-    </section>
-
-
-    <!-- ==================================================
          CHAT AREA
     ================================================== -->
 
     <section class="chatSection">
 
-        <div class="chatSectionHeader">
-
-            <div>
-
-                <span class="sectionEyebrow">
-                    INBOX
-                </span>
-
-                <h2>Your conversations</h2>
-
-            </div>
-
-            <span class="secureLabel">
+        <span class="secureLabel">
                 <i class="fa-solid fa-lock"></i>
                 Private
             </span>
@@ -459,12 +396,37 @@
         </div>
 
 
+        <!-- Create types -->
+        <div class="createTypeRow">
+            <button type="button" class="createTypeBtn" data-create="group">
+                <span class="createTypeIcon group"><i class="fa-solid fa-user-group"></i></span>
+                <span class="createTypeText">
+                    <strong>Group chat</strong>
+                    <small>Chat with multiple friends</small>
+                </span>
+                <i class="fa-solid fa-chevron-right"></i>
+            </button>
+            <button type="button" class="createTypeBtn" data-create="community">
+                <span class="createTypeIcon community"><i class="fa-solid fa-people-roof"></i></span>
+                <span class="createTypeText">
+                    <strong>Community</strong>
+                    <small>Topic-based group for fans</small>
+                </span>
+                <i class="fa-solid fa-chevron-right"></i>
+            </button>
+            <button type="button" class="createTypeBtn" data-create="podcast">
+                <span class="createTypeIcon podcast"><i class="fa-solid fa-microphone-lines"></i></span>
+                <span class="createTypeText">
+                    <strong>Podcast room</strong>
+                    <small>Audio discussions &amp; drops</small>
+                </span>
+                <i class="fa-solid fa-chevron-right"></i>
+            </button>
+        </div>
+
         <!-- Search -->
-
         <div class="newChatSearchBox">
-
             <i class="fa-solid fa-magnifying-glass"></i>
-
             <input
                 id="newChatSearch"
                 type="search"
@@ -472,22 +434,12 @@
                 autocomplete="off"
                 spellcheck="false"
             >
-
         </div>
 
-
         <!-- People -->
-
         <div class="newChatPeopleHeader">
-
-            <span>
-                People
-            </span>
-
-            <span class="peopleHint">
-                Choose someone to chat with
-            </span>
-
+            <span>Suggested</span>
+            <span class="peopleHint">Friends &amp; people you follow</span>
         </div>
 
 
@@ -532,6 +484,47 @@
 
 </div>
 
+
+
+<!-- CREATE GROUP / COMMUNITY / PODCAST -->
+<div id="createGroupSheet" class="createGroupSheet hidden" aria-hidden="true">
+  <div class="createGroupBackdrop" data-close-create></div>
+  <div class="createGroupPanel">
+    <div class="createGroupHandle"></div>
+    <header class="createGroupHead">
+      <button type="button" data-close-create class="createBack" aria-label="Back"><i class="fa-solid fa-arrow-left"></i></button>
+      <h2 id="createGroupTitle">New group</h2>
+      <button type="button" id="createGroupSubmit" class="createSubmit" disabled>Create</button>
+    </header>
+    <div class="createGroupBody">
+      <div class="createAvatarPick">
+        <button type="button" id="groupPhotoBtn" class="groupPhotoBtn">
+          <i class="fa-solid fa-camera"></i>
+          <span>Add photo</span>
+        </button>
+        <input type="file" id="groupPhotoInput" accept="image/*" hidden>
+        <img id="groupPhotoPreview" class="groupPhotoPreview hidden" alt="">
+      </div>
+      <label class="createField">
+        <span id="createNameLabel">Group name</span>
+        <input type="text" id="groupNameInput" maxlength="40" placeholder="Name" autocomplete="off">
+      </label>
+      <label class="createField">
+        <span>Description (optional)</span>
+        <textarea id="groupDescInput" maxlength="160" placeholder="What is this about?" rows="2"></textarea>
+      </label>
+      <div class="createMembersHead">
+        <strong>Add members</strong>
+        <span id="selectedMembersCount">0 selected</span>
+      </div>
+      <div class="createMemberSearch">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input type="search" id="memberSearchInput" placeholder="Search friends..." autocomplete="off">
+      </div>
+      <div id="createMemberList" class="createMemberList"></div>
+    </div>
+  </div>
+</div>
 
 <!-- ======================================================
      TOAST
@@ -592,14 +585,14 @@
 
 <!-- Your Firebase configuration -->
 <script src="firebase.js"></script>
-    <script scr="security.js"></script>
+<script src="theme.js"></script>
   <script src="badges.js"></script>
 
   <script src="call-listener.js"></script>
 <!-- Messages logic -->
 <script src="messages.js"></script>
+<script src="account-session.js"></script>
 <script src="nav.js"></script>
-    <script src="theme.js"></script>
 
 </body>
 </html>

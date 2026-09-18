@@ -460,3 +460,126 @@ img.live-ring,
   color: #ff2d55;
   font-weight: 700;
 }
+
+
+/* ===== Stories Live (9:16) vs Video Live (16:9) ===== */
+body.live-format-story .setup-preview-wrap,
+body.live-format-story #liveVideo,
+body.live-format-story .live-stage,
+body.live-format-story .live-video-wrap {
+  aspect-ratio: 9 / 16;
+  max-width: min(100vw, 420px);
+  margin-left: auto;
+  margin-right: auto;
+  border-radius: 18px;
+  overflow: hidden;
+  background: #000;
+}
+body.live-format-video .setup-preview-wrap,
+body.live-format-video #liveVideo,
+body.live-format-video .live-stage,
+body.live-format-video .live-video-wrap {
+  aspect-ratio: 16 / 9;
+  width: 100%;
+  max-width: 100%;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #000;
+}
+body.live-format-video #liveRoom,
+body.live-format-video .live-room {
+  /* landscape-friendly padding */
+  padding-left: 0;
+  padding-right: 0;
+}
+body.live-format-story::before {
+  /* subtle story badge via content on setup */
+}
+.live-format-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  padding: 4px 10px;
+  border-radius: 99px;
+  margin-bottom: 8px;
+}
+body.live-format-story .live-format-badge {
+  background: rgba(239,68,68,.2);
+  color: #fda4af;
+}
+body.live-format-video .live-format-badge {
+  background: rgba(99,102,241,.2);
+  color: #a5b4fc;
+}
+
+
+/* Camera: no mirror, no aggressive zoom crop */
+#setupPreview,
+#livePreview,
+#liveVideo {
+  transform: none !important;
+  -webkit-transform: none !important;
+  object-fit: contain !important;
+  background: #000 !important;
+  width: 100% !important;
+  height: 100% !important;
+}
+body.live-format-story #setupPreview,
+body.live-format-story #livePreview,
+body.live-format-story #liveVideo {
+  object-fit: cover !important; /* story fills vertical frame without side bars */
+  object-position: center center !important;
+}
+body.live-format-video #setupPreview,
+body.live-format-video #livePreview,
+body.live-format-video #liveVideo {
+  object-fit: contain !important; /* 16:9 rectangle, no face zoom */
+  object-position: center center !important;
+}
+body.live-format-video .live-stage,
+body.live-format-video .live-video-wrap,
+body.live-format-video #liveRoom .preview-wrap {
+  aspect-ratio: 16 / 9 !important;
+  width: 100% !important;
+  max-height: min(56vw, 420px) !important;
+  margin: 0 auto !important;
+  border-radius: 12px !important;
+  overflow: hidden !important;
+  background: #000 !important;
+}
+body.live-format-story .live-stage,
+body.live-format-story .live-video-wrap {
+  aspect-ratio: 9 / 16 !important;
+  max-width: min(100vw, 420px) !important;
+  margin: 0 auto !important;
+}
+
+/* Shorts Live — vertical like stories, badge different */
+body.live-format-shorts .setup-preview-wrap,
+body.live-format-shorts #liveVideo,
+body.live-format-shorts #livePreview,
+body.live-format-shorts .live-stage,
+body.live-format-shorts .live-video-wrap {
+  aspect-ratio: 9 / 16 !important;
+  max-width: min(100vw, 420px) !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  border-radius: 18px !important;
+  overflow: hidden !important;
+  background: #000 !important;
+}
+body.live-format-shorts #setupPreview,
+body.live-format-shorts #livePreview,
+body.live-format-shorts #liveVideo {
+  object-fit: cover !important;
+  object-position: center center !important;
+  transform: none !important;
+}
+body.live-format-shorts .live-format-badge {
+  background: rgba(236, 72, 153, 0.25);
+  color: #f9a8d4;
+}

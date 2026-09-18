@@ -2770,3 +2770,421 @@ console.log(
     "%cVIEWORA MESSAGES V3 LOADED",
     "color:#00e676;font-size:18px;font-weight:800"
 );
+
+
+/* =========================================================
+   VIEWORA — Group / Community / Podcast create
+========================================================= */
+(function wireGroupCreate() {
+  "use strict";
+
+  const TYPE_META = {
+    group: { title: "New group", nameLabel: "Group name", pill: "Group" },
+    community: { title: "New community", nameLabel: "Community name", pill: "Community" },
+    podcast: { title: "New podcast room", nameLabel: "Podcast name", pill: "Podcast" }
+  };
+
+  let createType = "group";
+  let selected = new Set();
+  let peopleCache = [];
+  let photoDataUrl = "";
+
+  function $(id) {
+    return document.getElementById(id);
+  }
+
+  function toast(msg) {
+    if (typeof showToast === "function") showToast(msg);
+    else try {
+      const t = $("toast");
+      const tx = $("toastText");
+      if (tx) tx.textContent = msg;
+      if (t) {
+        t.classList.remove("hidden");
+        setTimeout(() => t.classList.add("hidden"), 2200);
+      }
+    } catch (_) {}
+  }
+
+  function getUid() {
+    try {
+      if (typeof currentUser !== "undefined" && currentUser && currentUser.uid)
+        return currentUser.uid;
+      if (firebase.auth().currentUser) return firebase.auth().currentUser.uid;
+    } catch (_) {}
+    return null;
+  }
+
+  function openCreateSheet(type) {
+    createType = type || "group";
+    selected = new Set();
+    photoDataUrl = "";
+    const meta = TYPE_META[createType] || TYPE_META.group;
+    const sheet = $("createGroupSheet");
+    if (!sheet) return;
+    const title = $("createGroupTitle");
+    const nameLabel = $("createNameLabel");
+    if (title) title.textContent = meta.title;
+    if (nameLabel) nameLabel.textContent = meta.nameLabel;
+    const nameIn = $("groupNameInput");
+    const descIn = $("groupDescInput");
+    if (nameIn) nameIn.value = "";
+    if (descIn) descIn.value = "";
+    const prev = $("groupPhotoPreview");
+    const btn = $("groupPhotoBtn");
+    if (prev) {
+      prev.src = "";
+      prev.classList.add("hidden");
+    }
+    if (btn) btn.classList.remove("hidden");
+    $("createGroupSubmit") && ($("createGroupSubmit").disabled = true);
+    $("selectedMembersCount") &&
+      ($("selectedMembersCount").textContent = "0 selected");
+    sheet.classList.remove("hidden");
+    sheet.setAttribute("aria-hidden", "false");
+    document.body.classList.add("modalOpen");
+    loadMemberCandidates();
+  }
+
+  function closeCreateSheet() {
+    const sheet = $("createGroupSheet");
+    if (!sheet) return;
+    sheet.classList.add("hidden");
+    sheet.setAttribute("aria-hidden", "true");
+    document.body.classList.remove("modalOpen");
+  }
+
+  async function loadMemberCandidates() {
+    const list = $("createMemberList");
+    if (!list) return;
+    list.innerHTML = '<div class="vssLoading" style="padding:20px;text-align:center;color:rgba(255,255,255,.45)">Loading friends…</div>';
+    const me = getUid();
+    peopleCache = [];
+    try {
+      const db = firebase.database();
+      let following = {};
+      try {
+        const fs = await db.ref("following/" + me).once("value");
+        following = fs.val() || {};
+      } catch (_) {
+        try {
+          const fs2 = await db.ref("users/" + me + "/following").once("value");
+          following = fs2.val() || {};
+        } catch (__) {}
+      }
+      const ids = Object.keys(following).filter((k) => {
+        const v = following[k];
+        return v === true || v === 1 || (v && typeof v === "object");
+      }).slice(0, 40);
+
+      // also people from existing chats
+      try {
+        const uc = await db.ref("userChats/" + me).once("value");
+        if (uc.exists()) {
+          uc.forEach((c) => {
+            const v = c.val() || {};
+            const other = v.uid || v.userId || v.peerId;
+            if (other && other !== me && ids.indexOf(other) === -1) ids.push(other);
+          });
+        }
+      } catch (_) {}
+
+      await Promise.all(
+        ids.slice(0, 50).map(async (uid) => {
+          try {
+            const us = await db.ref("users/" + uid).once("value");
+            const u = us.val() || {};
+            const name =
+              u.username || u.userName || u.displayName || u.name || "user";
+            const photo =
+              u.profilePhoto ||
+              u.photoURL ||
+              u.avatar ||
+              "assets/default-avatar.png";
+            peopleCache.push({
+              uid,
+              username: name,
+              displayName: u.displayName || u.name || name,
+              photo
+            });
+          } catch (_) {}
+        })
+      );
+    } catch (e) {
+      console.warn(e);
+    }
+    renderMembers("");
+  }
+
+  function renderMembers(q) {
+    const list = $("createMemberList");
+    if (!list) return;
+    const query = (q || "").toLowerCase().trim();
+    const filtered = !query
+      ? peopleCache
+      : peopleCache.filter(
+          (p) =>
+            String(p.username).toLowerCase().includes(query) ||
+            String(p.displayName).toLowerCase().includes(query)
+        );
+    if (!filtered.length) {
+      list.innerHTML =
+        '<div style="padding:24px;text-align:center;color:rgba(255,255,255,.4);font-size:13px">No friends found. Follow people first.</div>';
+      return;
+    }
+    list.innerHTML = filtered
+      .map((p) => {
+        const sel = selected.has(p.uid) ? " selected" : "";
+        return (
+          '<button type="button" class="memberRow' +
+          sel +
+          '" data-uid="' +
+          p.uid +
+          '">' +
+          '<img src="' +
+          p.photo +
+          '" alt="" onerror="this.src=\'assets/default-avatar.png\'">' +
+          '<span class="memberInfo"><strong>' +
+          escapeHtml(p.displayName) +
+          "</strong><span>@" +
+          escapeHtml(p.username) +
+          "</span></span>" +
+          '<span class="memberCheck"><i class="fa-solid fa-check"></i></span>' +
+          "</button>"
+        );
+      })
+      .join("");
+
+    list.querySelectorAll(".memberRow").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const uid = btn.getAttribute("data-uid");
+        if (selected.has(uid)) selected.delete(uid);
+        else selected.add(uid);
+        btn.classList.toggle("selected", selected.has(uid));
+        updateCreateState();
+      });
+    });
+  }
+
+  function escapeHtml(s) {
+    return String(s || "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
+  function updateCreateState() {
+    const name = (($("groupNameInput") && $("groupNameInput").value) || "").trim();
+    const count = selected.size;
+    const el = $("selectedMembersCount");
+    if (el) el.textContent = count + " selected";
+    const sub = $("createGroupSubmit");
+    if (sub) sub.disabled = !(name.length >= 2 && count >= 1);
+  }
+
+  async function submitCreate() {
+    const me = getUid();
+    if (!me) {
+      toast("Please login");
+      return;
+    }
+    const name = (($("groupNameInput") && $("groupNameInput").value) || "").trim();
+    const desc = (($("groupDescInput") && $("groupDescInput").value) || "").trim();
+    if (name.length < 2 || selected.size < 1) {
+      toast("Name + at least 1 member required");
+      return;
+    }
+    const sub = $("createGroupSubmit");
+    if (sub) {
+      sub.disabled = true;
+      sub.textContent = "Creating…";
+    }
+    try {
+      const db = firebase.database();
+      const ref = db.ref("groups").push();
+      const gid = ref.key;
+      const members = {};
+      members[me] = { role: "admin", joinedAt: Date.now() };
+      selected.forEach((uid) => {
+        members[uid] = { role: "member", joinedAt: Date.now() };
+      });
+
+      // Avoid huge base64 in RTDB (causes write failures / not found)
+      var safePhoto = "";
+      if (photoDataUrl && photoDataUrl.length < 180000) {
+        safePhoto = photoDataUrl;
+      } else if (photoDataUrl) {
+        toast("Photo skipped (too large) — group still created");
+      }
+      const payload = {
+        id: gid,
+        name,
+        description: desc,
+        type: createType,
+        photo: safePhoto,
+        createdBy: me,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        members,
+        memberCount: Object.keys(members).length,
+        lastMessage: "Group created",
+        lastMessageAt: Date.now()
+      };
+      try {
+        await ref.set(payload);
+      } catch (ge) {
+        console.warn("groups/ write failed, using userChats only", ge);
+      }
+
+      const chatMeta = {
+        chatId: gid,
+        groupId: gid,
+        isGroup: true,
+        chatType: createType,
+        name: name,
+        photo: safePhoto || "",
+        updatedAt: Date.now(),
+        lastMessage: "Group created",
+        lastMessageAt: Date.now(),
+        unread: 0
+      };
+      const updates = {};
+      Object.keys(members).forEach((uid) => {
+        updates["userChats/" + uid + "/" + gid] = Object.assign({}, chatMeta, {
+          unread: uid === me ? 0 : 1
+        });
+      });
+      updates["chats/" + gid + "/meta"] = {
+        isGroup: true,
+        type: createType,
+        name: name,
+        photo: safePhoto || "",
+        createdBy: me
+      };
+      var sysKey = db.ref("chats/" + gid + "/messages").push().key;
+      updates["chats/" + gid + "/messages/" + sysKey] = {
+        type: "system",
+        text: name + " was created",
+        senderId: me,
+        createdAt: Date.now()
+      };
+      await db.ref().update(updates);
+
+      toast(
+        (TYPE_META[createType] || TYPE_META.group).pill + " created"
+      );
+      closeCreateSheet();
+      // Stay on messages — group appears in list (chat.html group support optional)
+      setTimeout(function () {
+        try {
+          if (typeof loadChats === "function") loadChats();
+          else if (typeof refreshChats === "function") refreshChats();
+          else location.reload();
+        } catch (_) {
+          location.reload();
+        }
+      }, 500);
+    } catch (e) {
+      console.error("[VIEWORA] create group", e);
+      var msg = (e && e.message) ? String(e.message) : "Could not create";
+      if (/permission|PERMISSION/i.test(msg)) {
+        msg = "Permission denied — check Firebase rules for groups/";
+      } else if (/not found|404/i.test(msg)) {
+        msg = "Create failed — rules or network issue";
+      }
+      toast(msg);
+      if (sub) {
+        sub.disabled = false;
+        sub.textContent = "Create";
+      }
+    }
+  }
+
+  function bind() {
+    // note strip + modal create type buttons
+    document.querySelectorAll("[data-create]").forEach((btn) => {
+      btn.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const type = btn.getAttribute("data-create") || "group";
+        // close new chat modal if open
+        const modal = $("newChatModal");
+        if (modal) modal.classList.add("hidden");
+        openCreateSheet(type);
+      });
+    });
+
+    document.querySelectorAll("[data-close-create]").forEach((el) => {
+      el.addEventListener("click", closeCreateSheet);
+    });
+
+    $("groupNameInput")?.addEventListener("input", updateCreateState);
+    $("memberSearchInput")?.addEventListener("input", function () {
+      renderMembers(this.value);
+    });
+    $("createGroupSubmit")?.addEventListener("click", submitCreate);
+
+    $("groupPhotoBtn")?.addEventListener("click", () => {
+      $("groupPhotoInput")?.click();
+    });
+    $("groupPhotoInput")?.addEventListener("change", function () {
+      const file = this.files && this.files[0];
+      if (!file) return;
+      if (file.size > 2 * 1024 * 1024) {
+        toast("Image max 2MB");
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = () => {
+        photoDataUrl = String(reader.result || "");
+        const prev = $("groupPhotoPreview");
+        const btn = $("groupPhotoBtn");
+        if (prev) {
+          prev.src = photoDataUrl;
+          prev.classList.remove("hidden");
+        }
+        if (btn) btn.classList.add("hidden");
+      };
+      reader.readAsDataURL(file);
+    });
+    $("groupPhotoPreview")?.addEventListener("click", () => {
+      $("groupPhotoInput")?.click();
+    });
+
+    $("requestsBtn")?.addEventListener("click", () => {
+      toast("Message requests — coming with filter");
+      // switch to a requests-like empty for now
+      const unread = document.querySelector('.filter[data-filter="unread"]');
+      if (unread) unread.click();
+    });
+
+    $("createNoteBtn")?.addEventListener("click", () => {
+      toast("Notes — set a short status (soon)");
+    });
+    const openNew = () => {
+      const modal = $("newChatModal");
+      if (modal) modal.classList.remove("hidden");
+      else if (typeof openNewChatModal === "function") openNewChatModal();
+    };
+    $("newChatBtnSearch")?.addEventListener("click", openNew);
+    $("newChatBtn")?.addEventListener("click", openNew);
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", bind, { once: true });
+  } else {
+    bind();
+  }
+
+  // Expose for list rendering of group chats
+  window.VieworaGroupChat = {
+    openCreate: openCreateSheet,
+    isGroupChat: function (data) {
+      return !!(data && (data.isGroup || data.groupId || data.chatType === "group" || data.chatType === "community" || data.chatType === "podcast"));
+    },
+    typeLabel: function (t) {
+      return (TYPE_META[t] || {}).pill || "Group";
+    }
+  };
+})();

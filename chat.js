@@ -1473,6 +1473,40 @@
             return "file";
         }
 
+        const t = String(message.type || "").toLowerCase();
+        if (
+            t === "post" ||
+            t === "post_share" ||
+            t === "shared_post"
+        ) return "post_share";
+        if (
+            t === "short" ||
+            t === "short_share" ||
+            t === "shorts_share"
+        ) return "short_share";
+        if (
+            t === "video_share" ||
+            t === "long_video" ||
+            (t === "video" && (message.contentId || message.videoId || message.postId))
+        ) {
+            // uploaded video file keeps type video + url; shared feed video has contentId
+            if (message.contentId || message.videoId || message.shareUrl) {
+                if (t === "video" && message.url && !message.contentId && !message.videoId) {
+                    /* native video file */
+                } else {
+                    return "video_share";
+                }
+            }
+        }
+        if (
+            t === "story" ||
+            t === "story_share"
+        ) return "story_share";
+        if (
+            t === "profile" ||
+            t === "profile_share"
+        ) return "profile_share";
+
         return "text";
     }
 
@@ -1715,6 +1749,133 @@
                         ></audio>
                     </div>
                 </div>
+            `;
+
+
+        } else if (
+            kind === "post_share" ||
+            kind === "short_share" ||
+            kind === "video_share" ||
+            kind === "story_share" ||
+            kind === "profile_share"
+        ) {
+            const shareType =
+                kind === "post_share"
+                    ? "post"
+                    : kind === "short_share"
+                    ? "short"
+                    : kind === "story_share"
+                    ? "story"
+                    : kind === "profile_share"
+                    ? "profile"
+                    : "video";
+            const contentId =
+                message.contentId ||
+                message.postId ||
+                message.shortId ||
+                message.videoId ||
+                message.storyId ||
+                message.profileUid ||
+                message.id ||
+                "";
+            const thumb =
+                message.thumb ||
+                message.thumbnail ||
+                message.imageUrl ||
+                message.mediaUrl ||
+                message.cover ||
+                "";
+            const title =
+                message.title ||
+                message.caption ||
+                message.text ||
+                (shareType === "post"
+                    ? "Post"
+                    : shareType === "short"
+                    ? "Short"
+                    : shareType === "story"
+                    ? "Story"
+                    : "Video");
+            const author =
+                message.authorName ||
+                message.username ||
+                message.ownerName ||
+                "";
+            const badge =
+                shareType === "post"
+                    ? "Post"
+                    : shareType === "short"
+                    ? "Short"
+                    : shareType === "story"
+                    ? "Story"
+                    : shareType === "profile"
+                    ? "Profile"
+                    : "Video";
+            const thumbClass =
+                shareType === "short" || shareType === "video"
+                    ? "shareCardThumb videoish"
+                    : "shareCardThumb";
+            const openHref =
+                shareType === "post"
+                    ? "post.html?id=" + encodeURIComponent(contentId)
+                    : shareType === "short"
+                    ? "shorts.html?id=" + encodeURIComponent(contentId)
+                    : shareType === "story"
+                    ? "stories.html?uid=" +
+                      encodeURIComponent(
+                          message.ownerId || message.uid || ""
+                      ) +
+                      "&storyId=" +
+                      encodeURIComponent(contentId)
+                    : shareType === "profile"
+                    ? "profile.html?uid=" + encodeURIComponent(contentId)
+                    : "video.html?id=" + encodeURIComponent(contentId);
+
+            content = `
+                <button
+                    type="button"
+                    class="shareCard"
+                    data-action="open-share"
+                    data-share-type="${shareType}"
+                    data-content-id="${escapeHTML(contentId)}"
+                    data-href="${escapeHTML(openHref)}"
+                >
+                    <div class="shareCardMedia">
+                        <span class="messageBadge">${badge}</span>
+                        ${
+                            thumb
+                                ? `<img class="${thumbClass}" src="${escapeHTML(
+                                      safeURL(thumb)
+                                  )}" alt="" loading="lazy"
+                                    onerror="this.onerror=null;this.style.display='none';var p=this.parentNode;if(p&&!p.querySelector('.shareFallback')){var f=document.createElement('div');f.className='shareFallback';f.style.cssText='aspect-ratio:9/16;min-height:160px;display:flex;align-items:center;justify-content:center;background:#1a1b22;color:#fff;font-size:28px';f.innerHTML='<i class=\'fa-solid fa-play\'></i>';p.appendChild(f);}">`
+                                : `<div class="${thumbClass}" style="display:flex;align-items:center;justify-content:center;background:#222">
+                                    <i class="fa-solid fa-${
+                                        shareType === "story"
+                                            ? "circle-notch"
+                                            : shareType === "post"
+                                            ? "image"
+                                            : "play"
+                                    }" style="font-size:28px;opacity:.5"></i>
+                                   </div>`
+                        }
+                    </div>
+                    <div class="shareCardBody">
+                        <strong>${escapeHTML(
+                            String(title).slice(0, 80)
+                        )}</strong>
+                        ${
+                            author
+                                ? `<span>@${escapeHTML(
+                                      String(author).replace(/^@/, "")
+                                  )}</span>`
+                                : ""
+                        }
+                        <div class="shareCardFooter">
+                            <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                            Open ${badge}
+                        </div>
+                    </div>
+                </button>
             `;
 
         } else if (kind === "file") {
@@ -2559,6 +2720,11 @@
         if (type === "file" || type === "document") {
             return "📎 " + (message.fileName || "File");
         }
+        if (type === "post" || type === "post_share" || type === "shared_post") return "Shared a post";
+        if (type === "short" || type === "short_share" || type === "shorts_share") return "Shared a short";
+        if (type === "video_share" || type === "long_video") return "Shared a video";
+        if (type === "story" || type === "story_share") return "Shared a story";
+        if (type === "profile" || type === "profile_share") return "Shared a profile";
 
         const text = String(message.text || message.caption || "").trim();
         if (text) {
@@ -2649,8 +2815,26 @@
                 unread = Number(prev.unread || 0) + 1;
             }
             otherInbox.unread = unread;
+            otherInbox.unreadCount = unread;
+            otherInbox.unreadMessages = unread;
+            otherInbox.unread_count = unread;
+            // clear read flags so home badge counts this chat again
+            otherInbox.read = false;
+            otherInbox.seen = false;
+            otherInbox.isRead = false;
+            otherInbox.updatedAt = now;
+            otherInbox.peerId = myUID;
 
             await otherRef.update(otherInbox);
+
+            // Also key by peer uid for clients that listen that path
+            try {
+                await db.ref("userChats/" + otherUID + "/" + myUID).update({
+                    ...otherInbox,
+                    chatId: chatId,
+                    userId: myUID
+                });
+            } catch (_) {}
 
             // Also keep chat meta updated
             await db.ref("vieworaChats/" + chatId).update({
@@ -6016,4 +6200,299 @@
 
     initialize();
 
+})();
+
+/* ======================================================
+   SHARE POST / SHORT / VIDEO / STORY IN CHAT
+====================================================== */
+(function () {
+  let shareKind = "post";
+  let shareTab = "mine";
+
+  function closePicker() {
+    const el = document.getElementById("contentShareSheet");
+    if (el) {
+      el.classList.add("hidden");
+      el.setAttribute("aria-hidden", "true");
+    }
+  }
+
+  function openPicker(kind) {
+    shareKind = kind || "post";
+    shareTab = "mine";
+    const el = document.getElementById("contentShareSheet");
+    const title = document.getElementById("contentShareTitle");
+    if (title) {
+      title.textContent =
+        shareKind === "post"
+          ? "Share a post"
+          : shareKind === "short"
+          ? "Share a short"
+          : shareKind === "story"
+          ? "Share a story"
+          : "Share a video";
+    }
+    if (el) {
+      el.classList.remove("hidden");
+      el.setAttribute("aria-hidden", "false");
+    }
+    // close attachment sheet
+    try {
+      document.getElementById("attachmentSheet")?.classList.add("hidden");
+    } catch (_) {}
+    document.querySelectorAll(".contentShareTab").forEach((t) => {
+      t.classList.toggle("active", t.getAttribute("data-cs-tab") === shareTab);
+    });
+    loadContentItems();
+  }
+
+  async function loadContentItems() {
+    const list = document.getElementById("contentShareList");
+    if (!list) return;
+    list.innerHTML = '<div class="contentShareLoading">Loading…</div>';
+    const me =
+      (window.state && state.currentUser && state.currentUser.uid) ||
+      (firebase.auth().currentUser && firebase.auth().currentUser.uid);
+    if (!me) {
+      list.innerHTML = '<div class="contentShareEmpty">Login required</div>';
+      return;
+    }
+    const root =
+      shareKind === "post"
+        ? "posts"
+        : shareKind === "short"
+        ? "shorts"
+        : shareKind === "story"
+        ? "stories"
+        : "videos";
+    const items = [];
+    try {
+      const snap = await firebase.database().ref(root).limitToLast(80).once("value");
+      const val = snap.val() || {};
+      let following = {};
+      if (shareTab === "following") {
+        try {
+          const fs = await firebase
+            .database()
+            .ref("following/" + me)
+            .once("value");
+          following = fs.val() || {};
+        } catch (_) {}
+      }
+      Object.keys(val).forEach((id) => {
+        const d = val[id] || {};
+        if (d.deleted === true) return;
+        const owner = String(
+          d.uid || d.userId || d.ownerId || d.authorId || ""
+        );
+        if (shareTab === "mine" && owner !== String(me)) return;
+        if (
+          shareTab === "following" &&
+          owner === String(me) &&
+          !following[owner]
+        ) {
+          // following tab: others I follow
+        }
+        if (shareTab === "following") {
+          if (owner === String(me)) return;
+          if (!(following[owner] === true || following[owner])) return;
+        }
+        // stories: only recent 24h
+        if (shareKind === "story") {
+          const created = Number(d.createdAt || d.timestamp || 0);
+          if (created && Date.now() - created > 24 * 3600 * 1000) return;
+        }
+        const thumb =
+          d.thumbnail ||
+          d.thumb ||
+          d.cover ||
+          d.imageUrl ||
+          (Array.isArray(d.mediaUrls) && d.mediaUrls[0]) ||
+          d.mediaUrl ||
+          d.videoUrl ||
+          d.url ||
+          "";
+        items.push({
+          id,
+          owner,
+          thumb,
+          title:
+            d.caption ||
+            d.title ||
+            d.text ||
+            (shareKind === "story" ? "Story" : shareKind),
+          username: d.username || d.userName || d.authorName || "",
+          createdAt: Number(d.createdAt || d.timestamp || 0)
+        });
+      });
+      items.sort((a, b) => b.createdAt - a.createdAt);
+    } catch (e) {
+      console.error(e);
+      list.innerHTML =
+        '<div class="contentShareEmpty">Could not load content</div>';
+      return;
+    }
+    if (!items.length) {
+      list.innerHTML =
+        '<div class="contentShareEmpty">No ' +
+        shareKind +
+        "s found</div>";
+      return;
+    }
+    list.innerHTML = items
+      .slice(0, 48)
+      .map((it) => {
+        return (
+          '<button type="button" class="contentShareItem" data-id="' +
+          it.id +
+          '" data-owner="' +
+          it.owner +
+          '" data-thumb="' +
+          (it.thumb || "").replace(/"/g, "") +
+          '" data-title="' +
+          String(it.title || "")
+            .replace(/"/g, "&quot;")
+            .slice(0, 80) +
+          '" data-user="' +
+          String(it.username || "").replace(/"/g, "") +
+          '">' +
+          (it.thumb
+            ? '<img src="' +
+              it.thumb +
+              '" alt="" loading="lazy" onerror="this.parentNode.style.background=\'#333\'">'
+            : '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#666"><i class="fa-solid fa-image"></i></div>') +
+          '<span class="csiBadge">' +
+          shareKind +
+          "</span></button>"
+        );
+      })
+      .join("");
+
+    list.querySelectorAll(".contentShareItem").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        sendSharedContent({
+          id: btn.getAttribute("data-id"),
+          owner: btn.getAttribute("data-owner"),
+          thumb: btn.getAttribute("data-thumb"),
+          title: btn.getAttribute("data-title"),
+          username: btn.getAttribute("data-user")
+        });
+      });
+    });
+  }
+
+  async function sendSharedContent(item) {
+    if (!item || !item.id) return;
+    const me =
+      (window.state && state.currentUser && state.currentUser.uid) ||
+      (firebase.auth().currentUser && firebase.auth().currentUser.uid);
+    if (!me || !state.chatId) {
+      if (typeof showToast === "function") showToast("Chat not ready");
+      return;
+    }
+    closePicker();
+    const typeMap = {
+      post: "post_share",
+      short: "short_share",
+      video: "video_share",
+      story: "story_share"
+    };
+    const msgType = typeMap[shareKind] || "post_share";
+    const origin = location.origin || "";
+    const shareUrl =
+      shareKind === "post"
+        ? origin + "/post.html?id=" + encodeURIComponent(item.id)
+        : shareKind === "short"
+        ? origin + "/shorts.html?id=" + encodeURIComponent(item.id)
+        : shareKind === "story"
+        ? origin +
+          "/stories.html?uid=" +
+          encodeURIComponent(item.owner || "") +
+          "&storyId=" +
+          encodeURIComponent(item.id)
+        : origin + "/video.html?id=" + encodeURIComponent(item.id);
+
+    const message = {
+      type: msgType,
+      contentId: item.id,
+      postId: shareKind === "post" ? item.id : null,
+      shortId: shareKind === "short" ? item.id : null,
+      videoId: shareKind === "video" ? item.id : null,
+      storyId: shareKind === "story" ? item.id : null,
+      thumb: item.thumb || "",
+      thumbnail: item.thumb || "",
+      title: item.title || "",
+      caption: item.title || "",
+      text:
+        shareKind === "post"
+          ? "Shared a post"
+          : shareKind === "short"
+          ? "Shared a short"
+          : shareKind === "story"
+          ? "Shared a story"
+          : "Shared a video",
+      authorName: item.username || "",
+      username: item.username || "",
+      ownerId: item.owner || "",
+      uid: item.owner || "",
+      shareUrl,
+      senderId: me,
+      createdAt: Date.now()
+    };
+
+    try {
+      if (typeof sendChatMessage === "function") {
+        await sendChatMessage(message);
+      } else {
+        const ref = firebase
+          .database()
+          .ref("vieworaChats/" + state.chatId + "/messages")
+          .push();
+        message.id = ref.key;
+        await ref.set(message);
+        if (typeof syncInboxAfterSend === "function") {
+          await syncInboxAfterSend(message);
+        }
+      }
+      if (typeof showToast === "function") showToast("Shared");
+    } catch (e) {
+      console.error(e);
+      if (typeof showToast === "function") showToast("Could not share");
+    }
+  }
+
+  function bindShareUI() {
+    document.querySelectorAll("[data-share-kind]").forEach((btn) => {
+      btn.addEventListener("click", (e) => {
+        e.preventDefault();
+        openPicker(btn.getAttribute("data-share-kind") || "post");
+      });
+    });
+    document
+      .getElementById("closeContentShareBtn")
+      ?.addEventListener("click", closePicker);
+    document.querySelectorAll("[data-close-content-share]").forEach((el) => {
+      el.addEventListener("click", closePicker);
+    });
+    document.querySelectorAll(".contentShareTab").forEach((tab) => {
+      tab.addEventListener("click", () => {
+        shareTab = tab.getAttribute("data-cs-tab") || "mine";
+        document.querySelectorAll(".contentShareTab").forEach((t) => {
+          t.classList.toggle(
+            "active",
+            t.getAttribute("data-cs-tab") === shareTab
+          );
+        });
+        loadContentItems();
+      });
+    });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", bindShareUI, { once: true });
+  } else {
+    bindShareUI();
+  }
+
+  window.VieworaChatShare = { open: openPicker, send: sendSharedContent };
 })();

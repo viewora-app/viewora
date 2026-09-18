@@ -141,19 +141,25 @@
         if (!data || typeof data !== "object") {
             return "assets/default-avatar.png";
         }
-
-        const url =
+        let url =
             data.userPhoto ||
             data.profilePhoto ||
             data.photoURL ||
             data.avatar ||
             data.profilePic ||
             data.profile_image ||
-            data.image ||
+            data.profilePicture ||
             data.dp ||
             "";
-
-        return safeURL(url) || "assets/default-avatar.png";
+        if (typeof url !== "string") url = "";
+        url = url.trim();
+        if (!url || url.length < 6 || /^[A-Za-z]$/.test(url)) url = "";
+        const safe = safeURL(url);
+        if (safe && safe.indexOf("default-avatar") === -1) return safe;
+        const name = encodeURIComponent(
+            String(data.username || data.displayName || data.name || "V").slice(0, 20)
+        );
+        return "https://ui-avatars.com/api/?name=" + name + "&background=3b82f6&color=fff&size=128&bold=true";
     };
 
     function cacheMyAvatar(photo, uid) {
@@ -233,21 +239,48 @@
 
     const getMediaURL = (data) => {
         if (!data) return "";
+        function isAvatarUrl(u) {
+            if (!u) return true;
+            var s = String(u).toLowerCase();
+            if (s.indexOf("ui-avatars.com") !== -1) return true;
+            if (s.indexOf("default-avatar") !== -1) return true;
+            if (s.indexOf("dicebear") !== -1) return true;
+            var avatars = [
+                data.profilePhoto,
+                data.photoURL,
+                data.avatar,
+                data.profilePicture
+            ];
+            for (var i = 0; i < avatars.length; i++) {
+                if (avatars[i] && safeURL(avatars[i]) === safeURL(u)) return true;
+            }
+            return false;
+        }
         if (Array.isArray(data.mediaUrls) && data.mediaUrls.length) {
-            return safeURL(data.mediaUrls[0]);
+            for (var i = 0; i < data.mediaUrls.length; i++) {
+                var u = safeURL(
+                    typeof data.mediaUrls[i] === "string"
+                        ? data.mediaUrls[i]
+                        : (data.mediaUrls[i] && data.mediaUrls[i].url) || ""
+                );
+                if (u && !isAvatarUrl(u)) return u;
+            }
         }
         if (Array.isArray(data.images) && data.images.length) {
-            return safeURL(data.images[0]);
+            const first = data.images[0];
+            const u = safeURL(typeof first === "string" ? first : (first && first.url) || "");
+            if (u && !isAvatarUrl(u)) return u;
         }
-        return safeURL(
+        var single = safeURL(
             data.imageUrl ||
             data.mediaUrl ||
             data.mediaURL ||
-            data.image ||
-            data.photoURL ||
-            data.photo ||
+            data.postImage ||
+            data.coverUrl ||
             ""
         );
+        if (single && !isAvatarUrl(single)) return single;
+        return "";
     };
 
     const getPostMediaList = (data) => {
@@ -261,22 +294,62 @@
             if (!val) return [];
             if (Array.isArray(val)) return val;
             if (typeof val === "object") {
-                return Object.keys(val).sort((a,b)=>(Number(a)||0)-(Number(b)||0)).map(k => {
-                    const v = val[k];
-                    if (typeof v === "string") return v;
-                    if (v && typeof v === "object") return v.url || v.mediaURL || "";
-                    return "";
-                });
+                return Object.keys(val)
+                    .sort((a, b) => (Number(a) || 0) - (Number(b) || 0))
+                    .map((k) => {
+                        const v = val[k];
+                        if (typeof v === "string") return v;
+                        if (v && typeof v === "object")
+                            return v.url || v.mediaURL || v.src || "";
+                        return "";
+                    });
             }
             if (typeof val === "string") return [val];
             return [];
         };
+        // Collect ONLY post media fields — never avatar/profile fields
         asList(data.mediaUrls).forEach(push);
         asList(data.images).forEach(push);
         asList(data.mediaList).forEach(push);
-        const one = getMediaURL(data);
-        if (one) push(one);
-        return out.slice(0, 10);
+        asList(data.photos).forEach(push);
+        if (data.imageUrl) push(data.imageUrl);
+        if (data.mediaUrl) push(data.mediaUrl);
+        if (data.mediaURL) push(data.mediaURL);
+        if (data.postImage) push(data.postImage);
+        if (data.coverUrl) push(data.coverUrl);
+
+        // Avatar URLs to exclude (profile photo must never appear as media)
+        const avatarSet = {};
+        [
+            data.profilePhoto,
+            data.photoURL,
+            data.avatar,
+            data.profilePicture,
+            data.userPhoto,
+            data.ownerPhoto
+        ].forEach(function (a) {
+            a = safeURL(a);
+            if (a) avatarSet[a] = true;
+        });
+
+        return out
+            .filter(function (u) {
+                if (!u) return false;
+                if (avatarSet[u]) return false;
+                var s = String(u).toLowerCase();
+                if (s.indexOf("default-avatar") !== -1) return false;
+                if (s.indexOf("default_avatar") !== -1) return false;
+                if (s.indexOf("placeholder") !== -1) return false;
+                if (s.indexOf("ui-avatars.com") !== -1) return false;
+                if (s.indexOf("avatar") !== -1 && s.indexOf("cloudinary") === -1) {
+                    // generic avatar CDN letter images
+                    if (s.indexOf("ui-avatars") !== -1 || s.indexOf("dicebear") !== -1)
+                        return false;
+                }
+                if (s.length < 12) return false;
+                return true;
+            })
+            .slice(0, 10);
     };
 
 
@@ -407,15 +480,15 @@
 
     
     function bindPostCarousels(root) {
-        (root || document).querySelectorAll(".postMediaWrap.hasCarousel").forEach((wrap) => {
-            if (wrap.dataset.boundCarousel === "1") return;
-            wrap.dataset.boundCarousel = "1";
+        (root || document).querySelectorAll(".postMediaWrap.hasCarousel").forEach(function (wrap) {
+            if (wrap.__carouselWired) return;
+            wrap.__carouselWired = true;
             const track = wrap.querySelector(".postCarouselTrack") || wrap.querySelector(".postMediaTrack");
-            const imgs = Array.from(wrap.querySelectorAll(".postMedia, .post-image"));
+            const imgs = Array.from(wrap.querySelectorAll(".postMedia, .post-image, img[data-carousel-i]"));
             const dots = wrap.querySelectorAll(".carouselDot");
             const countEl = wrap.querySelector(".carouselCount");
             let i = 0;
-            const n = imgs.length || (Number(wrap.getAttribute("data-carousel-count")) || 0);
+            const n = imgs.length || Number(wrap.getAttribute("data-carousel-count") || 0);
             if (n < 2) return;
             if (track) {
                 track.style.display = "flex";
@@ -429,64 +502,43 @@
                     img.style.objectFit = "cover";
                 });
             }
-            function go(to) {
-                if (!n) return;
+            function show(to) {
                 i = ((to % n) + n) % n;
-                if (track) {
-                    track.style.transform = "translate3d(-" + (i * 100) + "%,0,0)";
-                }
+                if (track) track.style.transform = "translate3d(-" + (i * 100) + "%,0,0)";
                 imgs.forEach(function (img, idx) {
                     img.classList.toggle("isActive", idx === i);
                 });
-                dots.forEach(function (d, di) {
-                    d.classList.toggle("active", di === i);
+                dots.forEach(function (d, idx) {
+                    d.classList.toggle("active", idx === i);
                 });
                 if (countEl) countEl.textContent = (i + 1) + "/" + n;
             }
-            go(0);
+            show(0);
             wrap.querySelector(".carouselPrev")?.addEventListener("click", function (e) {
-                e.preventDefault();
-                e.stopPropagation();
-                go(i - 1);
+                e.preventDefault(); e.stopPropagation(); show(i - 1);
             });
             wrap.querySelector(".carouselNext")?.addEventListener("click", function (e) {
-                e.preventDefault();
-                e.stopPropagation();
-                go(i + 1);
+                e.preventDefault(); e.stopPropagation(); show(i + 1);
             });
             dots.forEach(function (d) {
                 d.addEventListener("click", function (e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    go(Number(d.getAttribute("data-dot")) || 0);
+                    e.preventDefault(); e.stopPropagation();
+                    show(Number(d.getAttribute("data-dot") || 0));
                 });
             });
-            // Touch swipe (horizontal only)
             let sx = 0, sy = 0, tracking = false;
             wrap.addEventListener("touchstart", function (e) {
                 if (!e.touches || e.touches.length !== 1) return;
-                sx = e.touches[0].clientX;
-                sy = e.touches[0].clientY;
-                tracking = true;
-            }, { passive: true });
-            wrap.addEventListener("touchmove", function (e) {
-                if (!tracking || !e.touches || e.touches.length !== 1) return;
-                const dx = e.touches[0].clientX - sx;
-                const dy = e.touches[0].clientY - sy;
-                if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 8) {
-                    // horizontal intent — prevent vertical scroll steal only slightly
-                }
+                sx = e.touches[0].clientX; sy = e.touches[0].clientY; tracking = true;
             }, { passive: true });
             wrap.addEventListener("touchend", function (e) {
                 if (!tracking) return;
                 tracking = false;
                 const t = e.changedTouches && e.changedTouches[0];
                 if (!t) return;
-                const dx = t.clientX - sx;
-                const dy = t.clientY - sy;
-                if (Math.abs(dx) < 35 || Math.abs(dx) < Math.abs(dy) * 0.9) return;
-                if (dx < 0) go(i + 1);
-                else go(i - 1);
+                const dx = t.clientX - sx, dy = t.clientY - sy;
+                if (Math.abs(dx) < 35 || Math.abs(dx) < Math.abs(dy) * 0.85) return;
+                if (dx < 0) show(i + 1); else show(i - 1);
             }, { passive: true });
         });
     }
@@ -608,13 +660,17 @@
                     )}"
                 >
 
-                    <img
+                    <span class="postAvatarWrap">
+                      <img
                         src="${escapeHTML(avatar)}"
-                        alt="${escapeHTML(username)}"
+                        alt=""
                         class="postAvatar"
-                        loading="lazy"
+                        width="36"
+                        height="36"
+                        decoding="async"
                         onerror="this.onerror=null;this.src='assets/default-avatar.png'"
-                    >
+                      >
+                    </span>
 
                     <span class="postUserInfo">
 
@@ -1382,6 +1438,46 @@
        LOAD LONG VIDEOS
     ====================================================== */
 
+
+    async function injectVideoLives(container) {
+        if (!container || typeof db === "undefined" || !db) return;
+        try {
+            const snap = await db.ref("feedLive/videos").once("value");
+            if (!snap.exists()) return;
+            const frag = document.createDocumentFragment();
+            snap.forEach(function (child) {
+                const d = child.val() || {};
+                if (!d.active && d.active !== undefined) return;
+                const uid = d.hostUid || d.uid || child.key;
+                const card = document.createElement("article");
+                card.className = "longVideoCard liveVideoCard";
+                card.dataset.videoId = "live_" + uid;
+                card.dataset.liveUid = uid;
+                const photo = d.hostPhoto || "assets/default-avatar.png";
+                const name = d.hostName || "Live";
+                const title = d.title || "Video Live";
+                card.innerHTML =
+                    '<div class="videoThumbnailWrap liveThumb">' +
+                    '<img src="' + String(photo).replace(/"/g, "") + '" alt="" class="videoThumb" onerror="this.src=\'assets/default-avatar.png\'">' +
+                    '<span class="liveBadgePill"><i class="fa-solid fa-circle"></i> LIVE</span>' +
+                    '<span class="videoDuration">16:9</span></div>' +
+                    '<div class="videoMeta"><div class="videoAuthor">' +
+                    '<img src="' + String(photo).replace(/"/g, "") + '" alt="" onerror="this.src=\'assets/default-avatar.png\'">' +
+                    '<div><strong>' + String(name).replace(/</g, "") + '</strong>' +
+                    '<span class="videoTitle">' + String(title).replace(/</g, "") + '</span></div></div></div>';
+                card.addEventListener("click", function () {
+                    location.href = "live.html?uid=" + encodeURIComponent(uid);
+                });
+                frag.appendChild(card);
+            });
+            if (frag.childNodes.length) {
+                container.insertBefore(frag, container.firstChild);
+            }
+        } catch (e) {
+            console.warn("[VIEWORA] video lives", e);
+        }
+    }
+
     function loadLongVideos() {
 
         if (!longVideoContainer) return;
@@ -1560,6 +1656,7 @@
 
         if (isOwner) {
             items = [
+                { action: "share", icon: "fa-solid fa-share", label: "Share", sub: "Send to friends" },
                 { action: "edit", icon: "fa-solid fa-pen", label: "Edit", sub: "Edit this content" },
                 { action: "hide", icon: "fa-regular fa-eye-slash", label: "Hide", sub: "Hide from your profile" },
                 { action: "hide_likes", icon: "fa-regular fa-heart", label: "Hide like count", sub: "Hide number of likes" },
@@ -1568,6 +1665,7 @@
             ];
         } else {
             items = [
+                { action: "share", icon: "fa-solid fa-share", label: "Share", sub: "Send to friends" },
                 { action: "not_interested", icon: "fa-solid fa-ban", label: "Not interested", sub: "See fewer like this" },
                 { action: "report", icon: "fa-regular fa-flag", label: "Report", sub: "Report this content", danger: true },
                 { action: "copy", icon: "fa-solid fa-link", label: "Copy link", sub: "Copy share link" }
@@ -1608,7 +1706,23 @@
                 : "posts/" + id;
 
         try {
-            if (action === "copy") {
+            if (action === "share") {
+                closeHomeMenu();
+                if (type === "video") {
+                    if (typeof shareLongVideo === "function") shareLongVideo(id);
+                    else if (window.VieworaShare) {
+                        VieworaShare.open({
+                            type: "video",
+                            id: id,
+                            url: location.origin + "/video.html?id=" + encodeURIComponent(id),
+                            title: "Viewora Video"
+                        });
+                    }
+                } else {
+                    await sharePost(id);
+                }
+                return;
+            } else if (action === "copy") {
                 const url =
                     location.origin +
                     (type === "video"
@@ -1926,9 +2040,79 @@
 
 
     
+
+    function openPostFocus(card) {
+        if (!card) return;
+        closePostFocus();
+        const backdrop = document.createElement("div");
+        backdrop.id = "postFocusBackdrop";
+        backdrop.className = "postFocusBackdrop";
+        const clone = card.cloneNode(true);
+        clone.id = "postFocusCard";
+        clone.classList.add("postFocusCard");
+        // re-bind carousel on clone
+        backdrop.appendChild(clone);
+        document.body.appendChild(backdrop);
+        document.body.classList.add("postFocusOpen");
+        try { document.body.style.overflow = "hidden"; } catch (_) {}
+
+        backdrop.addEventListener("click", function (e) {
+            if (e.target === backdrop) closePostFocus();
+        });
+        // close button
+        const x = document.createElement("button");
+        x.type = "button";
+        x.className = "postFocusClose";
+        x.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+        x.addEventListener("click", function (e) {
+            e.stopPropagation();
+            closePostFocus();
+        });
+        backdrop.appendChild(x);
+
+        // wire actions on clone lightly
+        try { bindPostCarousels(clone); } catch (_) {}
+        clone.querySelectorAll("[data-action]").forEach(function (btn) {
+            btn.addEventListener("click", function (e) {
+                e.stopPropagation();
+                const action = btn.getAttribute("data-action");
+                const id = card.getAttribute("data-post-id");
+                if (action === "comment" && id) {
+                    closePostFocus();
+                    try { openPostComments(id); } catch (_) {}
+                }
+            });
+        });
+    }
+
+    function closePostFocus() {
+        const b = document.getElementById("postFocusBackdrop");
+        if (b) b.remove();
+        document.body.classList.remove("postFocusOpen");
+        try { document.body.style.overflow = ""; } catch (_) {}
+    }
+
+
     function bindPostEvents() {
 
         if (!feedContainer) return;
+
+        // Card click → Instagram-style focus: blur rest, lock post in place
+        if (!feedContainer.__postOpenBound) {
+            feedContainer.__postOpenBound = true;
+            feedContainer.addEventListener("click", function (e) {
+                const t = e.target;
+                if (!t || !t.closest) return;
+                if (t.closest("button, a, .postAction, .carouselPrev, .carouselNext, .postMusicMute, .homeMenuBtn, [data-action], [data-menu-action], .postUser")) {
+                    return;
+                }
+                const card = t.closest(".vieworaPostCard[data-post-id]");
+                if (!card) return;
+                e.preventDefault();
+                e.stopPropagation();
+                openPostFocus(card);
+            }, true);
+        }
 
         // Image lightbox — centered full screen (above bottom nav)
         feedContainer
@@ -2342,26 +2526,255 @@
         }
     }
 
-    async function sharePost(postId) {
-        const shareURL =
-            location.origin +
-            location.pathname +
-            "?post=" +
-            encodeURIComponent(postId || "");
-
-        try {
-            if (navigator.share) {
-                await navigator.share({
-                    title: "Viewora Post",
-                    url: shareURL
-                });
-            } else if (navigator.clipboard) {
-                await navigator.clipboard.writeText(shareURL);
-                showToast("Post link copied");
-            }
-        } catch (error) {
-            console.log("Share cancelled.");
+        /* Instagram-style share sheet */
+    function closeShareSheet() {
+        const el = document.getElementById("vieworaShareSheet");
+        if (el) {
+            el.classList.add("closing");
+            setTimeout(function () { try { el.remove(); } catch (_) {} }, 280);
         }
+        document.body.classList.remove("shareSheetOpen");
+    }
+
+    async function loadShareFriends(myUid) {
+        const friends = [];
+        if (!myUid || !db) return friends;
+        let following = {};
+        try {
+            const fs = await db.ref("following/" + myUid).once("value");
+            following = fs.val() || {};
+        } catch (_) {
+            try {
+                const fs2 = await db.ref("users/" + myUid + "/following").once("value");
+                following = fs2.val() || {};
+            } catch (__) {}
+        }
+        const chatScore = {};
+        try {
+            const cs = await db.ref("userChats/" + myUid).once("value");
+            if (cs.exists()) {
+                cs.forEach(function (child) {
+                    const v = child.val() || {};
+                    const other = v.uid || v.userId || v.peerId || v.with || child.key;
+                    if (!other || other === myUid) return;
+                    const updated = Number(v.updatedAt || v.lastMessageAt || v.timestamp || 0);
+                    const msgs = Number(v.messageCount || v.messages || 0);
+                    chatScore[other] = (chatScore[other] || 0) + msgs * 3;
+                    if (updated && Date.now() - updated < 7 * 864e5) chatScore[other] += 20;
+                    if (updated && Date.now() - updated < 864e5) chatScore[other] += 30;
+                });
+            }
+        } catch (_) {}
+        const followIds = Object.keys(following).filter(function (k) {
+            const v = following[k];
+            return v === true || v === 1 || (v && typeof v === "object");
+        });
+        const ranked = followIds.map(function (uid) {
+            return { uid: uid, score: chatScore[uid] || 0, chatted: !!chatScore[uid] };
+        });
+        ranked.sort(function (a, b) {
+            if (a.chatted !== b.chatted) return a.chatted ? -1 : 1;
+            return b.score - a.score;
+        });
+        const top = ranked.slice(0, 24);
+        await Promise.all(top.map(async function (item, idx) {
+            try {
+                const us = await db.ref("users/" + item.uid).once("value");
+                const u = us.val() || {};
+                const name = u.username || u.userName || u.displayName || u.name || "user";
+                const photo = u.profilePhoto || u.photoURL || u.avatar || u.profilePicture || "";
+                friends.push({
+                    uid: item.uid,
+                    username: name,
+                    avatar: photo || ("https://ui-avatars.com/api/?name=" + encodeURIComponent(name.slice(0, 2)) + "&background=3b82f6&color=fff&size=128"),
+                    score: item.score,
+                    chatted: item.chatted,
+                    rank: idx + 1
+                });
+            } catch (_) {}
+        }));
+        friends.sort(function (a, b) {
+            if (a.chatted !== b.chatted) return a.chatted ? -1 : 1;
+            return b.score - a.score;
+        });
+        return friends;
+    }
+
+    
+    function shareLongVideo(videoId) {
+        if (window.VieworaShare && typeof VieworaShare.open === "function") {
+            let thumb = "";
+            let title = "Viewora Video";
+            try {
+                const card = document.querySelector(
+                    '.longVideoCard[data-video-id="' + videoId + '"]'
+                );
+                const img =
+                    card &&
+                    card.querySelector(
+                        "img.videoThumb, .videoThumbnail, .videoThumbnailWrap img, img"
+                    );
+                if (img && img.src) thumb = img.src;
+                const h =
+                    card && card.querySelector("h3, .videoTitle, .videoMeta h3");
+                if (h) title = (h.textContent || "").trim().slice(0, 80) || title;
+            } catch (_) {}
+            VieworaShare.open({
+                type: "video",
+                id: videoId,
+                url:
+                    (location.origin || "") +
+                    "/video.html?id=" +
+                    encodeURIComponent(videoId || ""),
+                title: title,
+                thumb: thumb,
+                thumbnail: thumb
+            });
+            return;
+        }
+        if (typeof sharePost === "function") sharePost(videoId);
+    }
+
+    async function sharePost(postId) {
+        if (window.VieworaShare && typeof VieworaShare.open === "function") {
+            let thumb = "";
+            let title = "Viewora Post";
+            try {
+                const card = document.querySelector(
+                    '.vieworaPostCard[data-post-id="' + postId + '"]'
+                );
+                const img =
+                    card &&
+                    card.querySelector(".postMedia, .postCarouselTrack img");
+                if (img && img.src) thumb = img.src;
+                const cap = card && card.querySelector(".postCaption");
+                if (cap) title = (cap.textContent || "").trim().slice(0, 80) || title;
+            } catch (_) {}
+            VieworaShare.open({
+                type: "post",
+                id: postId,
+                url:
+                    (location.origin || "") +
+                    "/post.html?id=" +
+                    encodeURIComponent(postId || ""),
+                title: title,
+                thumb: thumb,
+                thumbnail: thumb
+            });
+            return;
+        }
+        // legacy sheet below
+        let myUid = null;
+        try { myUid = (typeof getMyUID === "function" && getMyUID()) || (typeof getCurrentUID === "function" && getCurrentUID()); } catch (_) {}
+        const shareURL = (location.origin || "") + (location.pathname || "/index.html") + "?post=" + encodeURIComponent(postId || "");
+        closeShareSheet();
+        const sheet = document.createElement("div");
+        sheet.id = "vieworaShareSheet";
+        sheet.className = "vieworaShareSheet";
+        sheet.innerHTML = '<div class="vssBackdrop" data-vss-close="1"></div><div class="vssPanel"><div class="vssHandle"></div><p class="vssNote">Share with people you follow. Best friends appear first.</p><div class="vssSearchRow"><i class="fa-solid fa-magnifying-glass"></i><input type="search" id="vssSearch" placeholder="Search" autocomplete="off"></div><div class="vssFriends" id="vssFriends"><div class="vssLoading">Loading friends…</div></div><div class="vssActions"><button type="button" class="vssAct" data-vss="story"><span class="vssActIcon"><i class="fa-regular fa-circle"></i></span><span>Add to story</span></button><button type="button" class="vssAct" data-vss="whatsapp"><span class="vssActIcon wa"><i class="fa-brands fa-whatsapp"></i></span><span>WhatsApp</span></button><button type="button" class="vssAct" data-vss="copy"><span class="vssActIcon"><i class="fa-solid fa-link"></i></span><span>Copy link</span></button><button type="button" class="vssAct" data-vss="system"><span class="vssActIcon"><i class="fa-solid fa-share-nodes"></i></span><span>Share</span></button></div></div>';
+        document.body.appendChild(sheet);
+        document.body.classList.add("shareSheetOpen");
+        requestAnimationFrame(function () { sheet.classList.add("open"); });
+        sheet.addEventListener("click", function (e) {
+            if (e.target && e.target.getAttribute("data-vss-close")) closeShareSheet();
+        });
+        const friendsEl = sheet.querySelector("#vssFriends");
+        let allFriends = [];
+        function renderFriends(list) {
+            if (!friendsEl) return;
+            if (!list.length) {
+                friendsEl.innerHTML = '<div class="vssEmpty">No friends to share with yet.<br>Follow people and chat to see them here.</div>';
+                return;
+            }
+            friendsEl.innerHTML = list.map(function (f, i) {
+                const isBest = f.rank <= 4 && f.chatted;
+                const rankBadge = isBest ? '<span class="vssRank">#' + f.rank + "</span>" : "";
+                const online = isBest ? '<span class="vssOnline"></span>' : "";
+                return '<button type="button" class="vssFriend' + (isBest ? " vssBest" : "") + '" data-uid="' + String(f.uid).replace(/"/g, "") + '" style="animation-delay:' + (i * 0.04) + 's"><span class="vssAvatarWrap">' + rankBadge + '<img src="' + String(f.avatar).replace(/"/g, "") + '" alt="" onerror="this.src=\'https://ui-avatars.com/api/?name=U&background=6366f1&color=fff&size=96\'">' + online + '</span><span class="vssName">' + escapeHTML(f.username) + "</span></button>";
+            }).join("");
+            friendsEl.querySelectorAll(".vssFriend").forEach(function (btn) {
+                btn.addEventListener("click", async function () {
+                    const uid = btn.getAttribute("data-uid");
+                    if (!uid || !myUid) return;
+                    btn.classList.add("sent");
+                    try {
+                        const chatId = [myUid, uid].sort().join("_");
+                        await db.ref("chats/" + chatId + "/messages").push({
+                            type: "post_share",
+                            postId: postId,
+                            text: "Shared a post",
+                            shareUrl: shareURL,
+                            senderId: myUid,
+                            createdAt: Date.now()
+                        });
+                        await db.ref("userChats/" + myUid + "/" + chatId).update({
+                            uid: uid, updatedAt: Date.now(), lastMessage: "Shared a post", lastMessageAt: Date.now()
+                        });
+                        await db.ref("userChats/" + uid + "/" + chatId).update({
+                            uid: myUid, updatedAt: Date.now(), lastMessage: "Shared a post", lastMessageAt: Date.now(), unread: 1
+                        });
+                        showToast("Sent!");
+                        setTimeout(closeShareSheet, 500);
+                    } catch (err) {
+                        console.error(err);
+                        showToast("Could not send");
+                        btn.classList.remove("sent");
+                    }
+                });
+            });
+        }
+        try {
+            allFriends = await loadShareFriends(myUid);
+            renderFriends(allFriends);
+        } catch (e) {
+            if (friendsEl) friendsEl.innerHTML = '<div class="vssEmpty">Could not load friends.</div>';
+        }
+        const search = sheet.querySelector("#vssSearch");
+        if (search) {
+            search.addEventListener("input", function () {
+                const q = (search.value || "").trim().toLowerCase();
+                renderFriends(!q ? allFriends : allFriends.filter(function (f) {
+                    return String(f.username || "").toLowerCase().indexOf(q) !== -1;
+                }));
+            });
+        }
+        sheet.querySelectorAll("[data-vss]").forEach(function (btn) {
+            btn.addEventListener("click", async function () {
+                const act = btn.getAttribute("data-vss");
+                if (act === "copy") {
+                    try { await navigator.clipboard.writeText(shareURL); showToast("Link copied"); } catch (_) { showToast(shareURL); }
+                } else if (act === "whatsapp") {
+                    window.open("https://wa.me/?text=" + encodeURIComponent(shareURL), "_blank");
+                } else if (act === "system") {
+                    try {
+                        if (navigator.share) await navigator.share({ title: "Viewora Post", url: shareURL });
+                        else { await navigator.clipboard.writeText(shareURL); showToast("Link copied"); }
+                    } catch (_) {}
+                } else if (act === "story") {
+                    location.href = "story-upload.html?sharePost=" + encodeURIComponent(postId || "");
+                }
+            });
+        });
+    }
+
+    function wirePostLongPressShare() {
+        if (!feedContainer || feedContainer.__longShare) return;
+        feedContainer.__longShare = true;
+        let timer = null;
+        feedContainer.addEventListener("touchstart", function (e) {
+            const card = e.target && e.target.closest && e.target.closest(".vieworaPostCard[data-post-id]");
+            if (!card) return;
+            if (e.target.closest("button, a, .postAction")) return;
+            const id = card.getAttribute("data-post-id");
+            timer = setTimeout(function () {
+                try { if (navigator.vibrate) navigator.vibrate(12); } catch (_) {}
+                if (id) sharePost(id);
+            }, 480);
+        }, { passive: true });
+        const clear = function () { if (timer) clearTimeout(timer); timer = null; };
+        feedContainer.addEventListener("touchend", clear, { passive: true });
+        feedContainer.addEventListener("touchmove", clear, { passive: true });
+        feedContainer.addEventListener("touchcancel", clear, { passive: true });
     }
 
     function openPostComments(postId) {
@@ -3264,15 +3677,70 @@
                                         byUser[liveUid] &&
                                         (v.active === true || v.isLive === true || v.status === "live")
                                     ) {
-                                        byUser[liveUid].isLive = true;
+                                        // Story ring only for Stories Live (followers see it)
+                                        var fmt = v.liveFormat || (v.isStoryLive ? "story" : (v.isShortsLive ? "shorts" : (v.isVideoLive ? "video" : "story")));
+                                        if (fmt === "story" || v.isStoryLive === true) {
+                                            byUser[liveUid].isLive = true;
+                                            byUser[liveUid].liveFormat = "story";
+                                        }
                                     }
                                 });
                             }
                         } catch (_) {}
+
+                        // Story Live hosts (followed) even without an active story post
+                        try {
+                            const flSnap = await db.ref("feedLive/stories").once("value");
+                            if (flSnap.exists()) {
+                                flSnap.forEach((c) => {
+                                    const v = c.val() || {};
+                                    if (v.active === false) return;
+                                    const raw = String(v.hostUid || v.uid || c.key || "");
+                                    const liveUid = raw.toLowerCase();
+                                    if (!liveUid) return;
+                                    const isOwn =
+                                        currentUserUID &&
+                                        liveUid === String(currentUserUID).toLowerCase();
+                                    const isFollowed =
+                                        followingSet.has(raw) ||
+                                        followingSet.has(liveUid) ||
+                                        [...followingSet].some(
+                                            (f) => String(f).toLowerCase() === liveUid
+                                        );
+                                    if (!isOwn && !isFollowed) return;
+                                    if (!byUser[liveUid]) {
+                                        byUser[liveUid] = {
+                                            uid: raw,
+                                            stories: [],
+                                            latestAt: Date.now(),
+                                            avatar: v.hostPhoto || "",
+                                            name: v.hostName || "",
+                                            username: "",
+                                            isLive: true,
+                                            liveFormat: "story"
+                                        };
+                                    } else {
+                                        byUser[liveUid].isLive = true;
+                                        byUser[liveUid].liveFormat = "story";
+                                        if (v.hostPhoto) byUser[liveUid].avatar = v.hostPhoto;
+                                        if (v.hostName) byUser[liveUid].name = v.hostName;
+                                    }
+                                });
+                            }
+                        } catch (_) {}
+
                         try {
                             for (const key of Object.keys(byUser)) {
                                 const us = await db.ref("users/" + byUser[key].uid + "/isLive").once("value");
-                                if (us.val() === true) byUser[key].isLive = true;
+                                if (us.val() === true) {
+                                    try {
+                                        const fmtSnap = await db.ref("users/" + byUser[key].uid + "/liveFormat").once("value");
+                                        const fmt = fmtSnap.val();
+                                        if (!fmt || fmt === "story") byUser[key].isLive = true;
+                                    } catch (_) {
+                                        byUser[key].isLive = true;
+                                    }
+                                }
                             }
                         } catch (_) {}
 
@@ -3777,6 +4245,115 @@
                 border: 0; border-radius: 14px; color: #fff;
                 background: rgba(255,255,255,.08); font-weight: 700; cursor: pointer;
             }
+
+            /* === POST LAYOUT LOCK (Instagram) === */
+            .vieworaPostCard {
+              display: flex !important;
+              flex-direction: column !important;
+            }
+            .vieworaPostCard .postHeader {
+              display: flex !important;
+              flex-direction: row !important;
+              align-items: center !important;
+              gap: 10px !important;
+              padding: 10px 12px !important;
+              width: 100% !important;
+              box-sizing: border-box !important;
+            }
+            .vieworaPostCard .postUser {
+              display: flex !important;
+              flex-direction: row !important;
+              align-items: center !important;
+              gap: 10px !important;
+              flex: 1 !important;
+              min-width: 0 !important;
+              background: transparent !important;
+              border: 0 !important;
+              padding: 0 !important;
+              text-align: left !important;
+            }
+            .vieworaPostCard .postAvatarWrap {
+              width: 36px !important;
+              height: 36px !important;
+              min-width: 36px !important;
+              max-width: 36px !important;
+              flex: 0 0 36px !important;
+              border-radius: 50% !important;
+              overflow: hidden !important;
+              display: inline-block !important;
+              background: #1a1a24 !important;
+              border: 1.5px solid rgba(255,255,255,0.12) !important;
+            }
+            .vieworaPostCard .postAvatarWrap img,
+            .vieworaPostCard img.postAvatar {
+              width: 36px !important;
+              height: 36px !important;
+              min-width: 36px !important;
+              max-width: 36px !important;
+              border-radius: 50% !important;
+              object-fit: cover !important;
+              display: block !important;
+            }
+            .vieworaPostCard .postUserInfo {
+              display: flex !important;
+              flex-direction: column !important;
+              min-width: 0 !important;
+              flex: 1 !important;
+            }
+            .vieworaPostCard .postMediaWrap {
+              width: 100% !important;
+              overflow: hidden !important;
+              background: #0a0a0e !important;
+            }
+            .vieworaPostCard .postMediaWrap img.postMedia {
+              width: 100% !important;
+              max-height: 70vh !important;
+              object-fit: cover !important;
+              display: block !important;
+              border-radius: 0 !important;
+            }
+            .vieworaPostCard .postActions {
+              display: flex !important;
+              flex-direction: row !important;
+              align-items: center !important;
+              padding: 6px 8px 8px !important;
+              gap: 2px !important;
+            }
+            .vieworaPostCard .postAction {
+              display: inline-flex !important;
+              flex-direction: row !important;
+              align-items: center !important;
+              gap: 6px !important;
+              padding: 8px 12px !important;
+              background: transparent !important;
+              border: 0 !important;
+              color: #fff !important;
+            }
+            .vieworaPostCard .postCaption {
+              padding: 8px 14px 4px !important;
+              font-size: 14px !important;
+              line-height: 1.45 !important;
+            }
+            /* Focus blur lock */
+            body.postFocusOpen { overflow: hidden !important; }
+            .postFocusBackdrop {
+              position: fixed; inset: 0; z-index: 99990;
+              background: rgba(0,0,0,0.75);
+              backdrop-filter: blur(16px);
+              -webkit-backdrop-filter: blur(16px);
+              display: flex; align-items: center; justify-content: center;
+              padding: 16px 12px; overflow-y: auto;
+            }
+            .postFocusCard {
+              width: min(100%, 440px); max-height: 88vh; overflow-y: auto;
+              border-radius: 16px; box-shadow: 0 24px 80px rgba(0,0,0,0.6);
+            }
+            .postFocusClose {
+              position: fixed; top: 12px; right: 12px; z-index: 99999;
+              width: 40px; height: 40px; border-radius: 50%; border: 0;
+              background: rgba(0,0,0,0.55); color: #fff; font-size: 18px;
+              display: flex; align-items: center; justify-content: center;
+            }
         `;
         document.head.appendChild(style);
     }
@@ -4039,6 +4616,10 @@
         loadPosts();
 
         loadLongVideos();
+            setTimeout(function () {
+                const c = document.getElementById("longVideoContainer");
+                if (c) injectVideoLives(c);
+            }, 800);
 
         loadStories();
 

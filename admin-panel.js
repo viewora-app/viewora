@@ -4213,117 +4213,171 @@ function renderDeletions() {
 
 async function permanentlyDeleteUserData(uid) {
     if (!uid) return { ok: false, error: "No uid" };
-
-    const updates = {};
     const errors = [];
+    const uidStr = String(uid);
 
-    // 1) Wipe root user profile
-    updates["users/" + uid] = null;
+    // Helper: multi-path null update in chunks
+    async function applyUpdates(obj) {
+        const keys = Object.keys(obj);
+        const CHUNK = 300;
+        for (let i = 0; i < keys.length; i += CHUNK) {
+            const part = {};
+            keys.slice(i, i + CHUNK).forEach((k) => {
+                part[k] = obj[k];
+            });
+            await db.ref().update(part);
+        }
+    }
 
-    // 2) Social graphs
-    updates["followers/" + uid] = null;
-    updates["following/" + uid] = null;
-    updates["followRequests/" + uid] = null;
-    updates["blocks/" + uid] = null;
-    updates["blockedBy/" + uid] = null;
-
-    // 3) Notifications / activity
-    updates["notifications/" + uid] = null;
-    updates["activity/" + uid] = null;
-
-    // 4) Messaging
-    updates["userChats/" + uid] = null;
-    updates["userMessages/" + uid] = null;
-    updates["presence/" + uid] = null;
-    updates["typing/" + uid] = null;
-    updates["callStatus/" + uid] = null;
-    updates["incomingCalls/" + uid] = null;
-
-    // 5) Monetization / subscription / devices
-    updates["monetization/" + uid] = null;
-    updates["subscriptions/" + uid] = null;
-    updates["devices/" + uid] = null;
-    updates["userSettings/" + uid] = null;
-    updates["private/" + uid] = null;
-
+    // 1) User roots
+    const roots = {
+        ["users/" + uidStr]: null,
+        ["followers/" + uidStr]: null,
+        ["following/" + uidStr]: null,
+        ["followRequests/" + uidStr]: null,
+        ["blocks/" + uidStr]: null,
+        ["blockedBy/" + uidStr]: null,
+        ["notifications/" + uidStr]: null,
+        ["activity/" + uidStr]: null,
+        ["userChats/" + uidStr]: null,
+        ["userMessages/" + uidStr]: null,
+        ["presence/" + uidStr]: null,
+        ["typing/" + uidStr]: null,
+        ["callStatus/" + uidStr]: null,
+        ["incomingCalls/" + uidStr]: null,
+        ["monetization/" + uidStr]: null,
+        ["subscription/" + uidStr]: null,
+        ["earnings/" + uidStr]: null,
+        ["payoutMethods/" + uidStr]: null,
+        ["devices/" + uidStr]: null,
+        ["userSettings/" + uidStr]: null,
+        ["private/" + uidStr]: null,
+        ["highlights/" + uidStr]: null,
+        ["saved/" + uidStr]: null,
+        ["storyHighlights/" + uidStr]: null,
+        ["live/" + uidStr]: null,
+        ["rateLimits/" + uidStr]: null
+    };
     try {
-        await db.ref().update(updates);
+        await applyUpdates(roots);
     } catch (e) {
-        console.error("bulk wipe error", e);
-        errors.push("profile:" + (e.message || e));
-        // fallback: force remove user node
-        try {
-            await db.ref("users/" + uid).remove();
-        } catch (e2) {
+        errors.push("roots:" + (e.message || e));
+        try { await db.ref("users/" + uidStr).remove(); } catch (e2) {
             errors.push("users.remove:" + (e2.message || e2));
         }
     }
 
-    // 6) Content owned by user (posts / videos / shorts / stories)
-    const contentRoots = ["posts", "videos", "shorts", "stories"];
+    // 2) Content: posts, videos, shorts, stories, lives
+    const contentRoots = ["posts", "videos", "shorts", "stories", "lives", "highlights"];
     for (const root of contentRoots) {
         try {
             const snap = await db.ref(root).once("value");
             const all = snap.val() || {};
             const batch = {};
-            let n = 0;
             Object.keys(all).forEach((id) => {
                 const item = all[id] || {};
-                const owner =
-                    item.uid ||
-                    item.userId ||
-                    item.ownerId ||
-                    item.authorId ||
-                    item.createdBy ||
-                    "";
-                if (String(owner) === String(uid)) {
-                    batch[root + "/" + id] = null;
-                    n += 1;
-                }
+                const owner = String(
+                    item.uid || item.userId || item.ownerId || item.authorId ||
+                    item.createdBy || item.creatorId || ""
+                );
+                if (owner === uidStr) batch[root + "/" + id] = null;
             });
-            if (n) {
-                await db.ref().update(batch);
-            }
+            if (Object.keys(batch).length) await applyUpdates(batch);
         } catch (e) {
-            console.warn("content wipe " + root, e);
             errors.push(root + ":" + (e.message || e));
         }
     }
 
-    // 7) Remove this user from other users' following/followers lists
+    // 3) Chats: remove chats where user is participant + messages
     try {
-        const usersSnap = await db.ref("following").once("value");
-        const followingTree = usersSnap.val() || {};
-        const batch2 = {};
-        Object.keys(followingTree).forEach((otherUid) => {
-            if (followingTree[otherUid] && followingTree[otherUid][uid]) {
-                batch2["following/" + otherUid + "/" + uid] = null;
-            }
+        const chatsSnap = await db.ref("chats").once("value");
+        const chats = chatsSnap.val() || {};
+        const batch = {};
+        Object.keys(chats).forEach((cid) => {
+            const c = chats[cid] || {};
+            const members = c.members || c.users || {};
+            const isMember =
+                members[uidStr] ||
+                c.uid1 === uidStr ||
+                c.uid2 === uidStr ||
+                String(cid).split("_").indexOf(uidStr) !== -1;
+            if (isMember) batch["chats/" + cid] = null;
         });
-        const followersSnap = await db.ref("followers").once("value");
-        const followersTree = followersSnap.val() || {};
-        Object.keys(followersTree).forEach((otherUid) => {
-            if (followersTree[otherUid] && followersTree[otherUid][uid]) {
-                batch2["followers/" + otherUid + "/" + uid] = null;
-            }
-        });
-        if (Object.keys(batch2).length) {
-            await db.ref().update(batch2);
-        }
+        if (Object.keys(batch).length) await applyUpdates(batch);
     } catch (e) {
-        console.warn("graph cleanup", e);
+        errors.push("chats:" + (e.message || e));
+    }
+
+    // 4) Remove from others' following/followers
+    try {
+        const batch2 = {};
+        const followingTree = (await db.ref("following").once("value")).val() || {};
+        Object.keys(followingTree).forEach((otherUid) => {
+            if (followingTree[otherUid] && followingTree[otherUid][uidStr]) {
+                batch2["following/" + otherUid + "/" + uidStr] = null;
+            }
+        });
+        const followersTree = (await db.ref("followers").once("value")).val() || {};
+        Object.keys(followersTree).forEach((otherUid) => {
+            if (followersTree[otherUid] && followersTree[otherUid][uidStr]) {
+                batch2["followers/" + otherUid + "/" + uidStr] = null;
+            }
+        });
+        if (Object.keys(batch2).length) await applyUpdates(batch2);
+    } catch (e) {
         errors.push("graph:" + (e.message || e));
     }
 
-    // 8) Tombstone so login can block residual auth sessions
+    // 5) Comments / likes left by user (best effort scan)
+    for (const root of ["postComments", "comments", "postLikes", "likes"]) {
+        try {
+            const snap = await db.ref(root).once("value");
+            if (!snap.exists()) continue;
+            const batch = {};
+            snap.forEach((child) => {
+                const v = child.val();
+                if (!v) return;
+                if (typeof v === "object") {
+                    // structure: postId/{uid} or postId/{commentId with uid}
+                    Object.keys(v).forEach((k) => {
+                        if (k === uidStr) {
+                            batch[root + "/" + child.key + "/" + k] = null;
+                        } else if (v[k] && typeof v[k] === "object") {
+                            const cu = v[k].uid || v[k].userId || "";
+                            if (String(cu) === uidStr) {
+                                batch[root + "/" + child.key + "/" + k] = null;
+                            }
+                        }
+                    });
+                }
+            });
+            if (Object.keys(batch).length) await applyUpdates(batch);
+        } catch (e) {
+            errors.push(root + ":" + (e.message || e));
+        }
+    }
+
+    // 6) Tombstone — block same uid forever
     try {
-        await db.ref("deletedUsers/" + uid).set({
-            deletedAt: firebase.database.ServerValue.TIMESTAMP,
+        await db.ref("deletedUsers/" + uidStr).set({
+            deletedAt: Date.now(),
             deletedBy: currentAdmin ? currentAdmin.uid : null,
-            permanent: true
+            permanent: true,
+            email: null
         });
     } catch (e) {
-        console.warn("tombstone", e);
+        errors.push("tombstone:" + (e.message || e));
+    }
+
+    // 7) Cloud Function Auth delete if available
+    try {
+        if (firebase.functions) {
+            const fn = firebase.functions().httpsCallable("approveAccountDeletion");
+            await fn({ uid: uidStr });
+        }
+    } catch (e) {
+        console.warn("cloud delete auth:", e);
+        // not fatal — RTDB purge is done
     }
 
     return { ok: errors.length === 0, errors };

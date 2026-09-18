@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <script>(function(){try{var t=localStorage.getItem("viewora_theme")||"dark";document.documentElement.setAttribute("data-theme",t);}catch(e){document.documentElement.setAttribute("data-theme","dark");}})();</script>
     <meta charset="UTF-8">
 
     <meta
@@ -19,6 +20,8 @@
     >
 
     <title>Chat • Viewora</title>
+    <link rel="icon" href="assets/logo.png">
+    <link rel="apple-touch-icon" href="assets/logo.png">
 
     <!-- =====================================================
          FONTS
@@ -57,7 +60,7 @@
         rel="stylesheet"
         href="chat.css"
     >
-  <link rel="stylesheet" href="theme.css">
+    <link rel="stylesheet" href="theme.css">
 </head>
 
 <body>
@@ -275,6 +278,15 @@
             <span>Search</span>
         </button>
 
+
+        <button
+            id="menuBlockBtn"
+            class="menuItem danger"
+            type="button"
+        >
+            <i class="fa-solid fa-ban"></i>
+            <span>Block user</span>
+        </button>
 
         <button
             id="menuDeleteChatBtn"
@@ -577,6 +589,26 @@
      ATTACHMENT SHEET
 ========================================================= -->
 
+
+<!-- CONTENT SHARE PICKER (post / short / video / story) -->
+<section id="contentShareSheet" class="contentShareSheet hidden" aria-hidden="true">
+  <div class="contentShareBackdrop" data-close-content-share></div>
+  <div class="contentShareCard">
+    <div class="sheetHandle"></div>
+    <div class="sheetHeader">
+      <strong id="contentShareTitle">Share content</strong>
+      <button type="button" id="closeContentShareBtn" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="contentShareTabs">
+      <button type="button" class="contentShareTab active" data-cs-tab="mine">My content</button>
+      <button type="button" class="contentShareTab" data-cs-tab="following">Following</button>
+    </div>
+    <div id="contentShareList" class="contentShareList">
+      <div class="contentShareLoading">Loading…</div>
+    </div>
+  </div>
+</section>
+
 <section
     id="attachmentSheet"
     class="attachmentSheet hidden"
@@ -680,15 +712,35 @@
                 class="attachmentOption"
                 type="button"
             >
-
                 <span class="attachmentIcon document">
                     <i class="fa-solid fa-file"></i>
                 </span>
+                <strong>Document</strong>
+            </button>
 
-                <strong>
-                    Document
-                </strong>
-
+            <button id="sharePostBtn" class="attachmentOption" type="button" data-share-kind="post">
+                <span class="attachmentIcon" style="background:linear-gradient(135deg,#6366f1,#8b5cf6)">
+                    <i class="fa-solid fa-image"></i>
+                </span>
+                <strong>Post</strong>
+            </button>
+            <button id="shareShortBtn" class="attachmentOption" type="button" data-share-kind="short">
+                <span class="attachmentIcon" style="background:linear-gradient(135deg,#ec4899,#f59e0b)">
+                    <i class="fa-solid fa-clapperboard"></i>
+                </span>
+                <strong>Short</strong>
+            </button>
+            <button id="shareVideoBtn" class="attachmentOption" type="button" data-share-kind="video">
+                <span class="attachmentIcon" style="background:linear-gradient(135deg,#06b6d4,#3b82f6)">
+                    <i class="fa-solid fa-play"></i>
+                </span>
+                <strong>Video</strong>
+            </button>
+            <button id="shareStoryBtn" class="attachmentOption" type="button" data-share-kind="story">
+                <span class="attachmentIcon" style="background:linear-gradient(135deg,#f43f5e,#a855f7)">
+                    <i class="fa-solid fa-circle-notch"></i>
+                </span>
+                <strong>Story</strong>
             </button>
 
         </div>
@@ -1356,7 +1408,7 @@
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
 <script src="firebase.js"></script>
-    <script scr="security.js"></script>
+<script src="theme.js"></script>
   <script src="badges.js"></script>
 
   <script src="call-listener.js"></script>
@@ -1366,8 +1418,6 @@
 <script src="call.js"></script>
 
 <script src="chat.js"></script>
-    <script src="theme.js"></script>
-  <script src="message-listener.js"></script>
   
 </body>
 </html>

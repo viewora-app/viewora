@@ -87,6 +87,7 @@
         tags: [],
 
         audience: "Everyone",
+        ratio: "portrait",
 
         allowComments: true,
 
@@ -94,7 +95,9 @@
 
         allowSaves: true,
 
-        publishing: false
+        publishing: false,
+        isEditMode: false,
+        editPostId: ""
 
     };
 
@@ -109,7 +112,36 @@
     );
 
 
+    
+    function getPreviewImg() {
+        return document.getElementById("postPreview") ||
+               document.getElementById("previewImage") ||
+               document.querySelector(".postPreview");
+    }
+    function getMediaStage() {
+        return document.getElementById("mediaCanvas") ||
+               document.querySelector(".mediaCanvas") ||
+               document.querySelector(".mediaStage") ||
+               document.querySelector(".previewCard") ||
+               (getPreviewImg() && getPreviewImg().parentElement);
+    }
+
     async function init() {
+
+        // Existing post edit → caption/settings only (no media change)
+        try {
+            const p = new URLSearchParams(location.search);
+            state.editPostId = p.get("postId") || p.get("id") || p.get("edit") || "";
+            state.isEditMode = !!state.editPostId;
+            if (state.isEditMode) {
+                document.body.classList.add("editMode");
+                const pub = document.getElementById("publishBtn");
+                if (pub) {
+                    const t = pub.querySelector("span") || pub;
+                    if (t) t.textContent = "Save";
+                }
+            }
+        } catch (_) {}
 
         loadMedia();
 
@@ -138,6 +170,9 @@
         setupPublish();
 
         try { setupMusicTrim(); } catch (e) { console.warn("music trim setup", e); }
+        try { setupRatio(); } catch (e) { console.warn("ratio setup", e); }
+        try { updatePhotoCounter(); } catch (_) {}
+        try { setupMediaSwipe(); } catch (e) { console.warn("swipe init", e); }
 
         setupFilter();
 
@@ -276,9 +311,7 @@
             state.media = files[0];
             state.mediaType = "image";
             state.mediaIndex = 0;
-            const preview =
-                document.getElementById("previewImage") ||
-                document.getElementById("postPreview");
+            const preview = getPreviewImg();
             if (preview) {
                 preview.src = URL.createObjectURL(files[0]);
                 preview.classList.add("loaded");
@@ -289,6 +322,7 @@
             } catch (_) {}
             try { renderMediaStrip(); } catch (_) {}
             console.log("[VIEWORA] multi photos loaded:", files.length);
+            try { updatePhotoCounter(); } catch(_){}
             try {
                 const pc = document.getElementById("photoCounter");
                 if (pc) {
@@ -296,6 +330,8 @@
                     pc.innerHTML = '<i class="fa-regular fa-images"></i><span>1 / ' + files.length + '</span>';
                 }
             } catch (_) {}
+            try { setupMediaSwipe(); } catch (e) { console.warn("swipe", e); }
+            try { showMediaAt(0); } catch (_) {}
             return true;
         } catch (e) {
             console.warn("loadMultiFromIDB", e);
@@ -1125,26 +1161,38 @@
     
     let pendingMusic = null;
 
-    function openMusicTrim(item) {
+        function openMusicTrim(item) {
         pendingMusic = item;
         stopPostMusicPreview();
         closeSheet("musicSheet");
 
+        // Original audio with no URL → apply directly
+        if (!item.audioUrl && item.id === "original") {
+            applyMusicClip(item, 0, 15);
+            return;
+        }
+        if (!item.audioUrl) {
+            applyMusicClip(item, 0, 15);
+            showToast("Music set", item.title || "Track");
+            return;
+        }
+
         const sheet = $("musicTrimSheet");
         if (!sheet) {
-            // fallback direct select
             applyMusicClip(item, 0, 15);
             return;
         }
 
-        $("musicTrimTitle") && ($("musicTrimTitle").textContent =
-            (item.title || "Track") + (item.artist ? " · " + item.artist : ""));
+        if ($("musicTrimTitle")) {
+            $("musicTrimTitle").textContent =
+                (item.title || "Track") + (item.artist ? " · " + item.artist : "");
+        }
 
         const startR = $("musicStartRange");
         const lenR = $("musicLenRange");
         if (startR) {
             startR.min = "0";
-            startR.max = "600";
+            startR.max = "300";
             startR.step = "0.5";
             startR.value = "0";
         }
@@ -1153,8 +1201,14 @@
             lenR.max = "60";
             lenR.value = "15";
         }
-        updateMusicTrimLabels();
-        // Probe full track length so Start can go beyond 120s
+        try { updateMusicTrimLabels(); } catch (_) {}
+
+        // Open as proper overlay (same as music sheet)
+        sheet.classList.remove("hidden");
+        sheet.hidden = false;
+        sheet.style.display = "";
+        document.body.classList.add("sheetOpen");
+
         if (item.audioUrl) {
             try {
                 const a = new Audio();
@@ -1162,48 +1216,14 @@
                 a.src = item.audioUrl;
                 a.addEventListener("loadedmetadata", function () {
                     const dur = Math.max(15, Math.floor(a.duration || 0));
-                    if (startR) {
-                        startR.max = String(Math.max(0, dur - 5));
-                    }
-                    if (lenR) {
-                        lenR.max = String(Math.min(60, dur));
-                    }
-                    updateMusicTrimLabels();
+                    if (startR) startR.max = String(Math.max(0, dur - 5));
+                    if (lenR) lenR.max = String(Math.min(60, dur));
+                    try { updateMusicTrimLabels(); } catch (_) {}
                 });
             } catch (_) {}
         }
-
-        // Probe duration
-        if (item.audioUrl) {
-            try {
-                const a = new Audio();
-                a.preload = "metadata";
-                a.src = item.audioUrl;
-                a.addEventListener("loadedmetadata", () => {
-                    const d = Math.max(5, Math.floor(a.duration || 120));
-                    if (startR) {
-                        startR.max = String(Math.max(0, d - 5));
-                    }
-                    if (lenR) {
-                        lenR.max = String(Math.min(60, d));
-                    }
-                });
-            } catch (_) {}
-        }
-
-        sheet.hidden = false;
-        sheet.removeAttribute("hidden");
-        sheet.classList.add("open");
-        sheet.style.display = "flex";
     }
 
-    function updateMusicTrimLabels() {
-        const start = Number($("musicStartRange")?.value || 0);
-        const len = Number($("musicLenRange")?.value || 15);
-        const end = start + len;
-        if ($("musicStartLabel")) $("musicStartLabel").textContent = start.toFixed(1) + "s";
-        if ($("musicEndLabel")) $("musicEndLabel").textContent = end.toFixed(1) + "s";
-    }
 
     function applyMusicClip(item, startAt, duration) {
         state.music = {
@@ -1222,11 +1242,13 @@
             if (small) small.textContent = item.title + " (" + Math.round(state.music.startAt) + "s)";
         } catch (_) {}
         showToast("Music clip set", item.title);
+        closeSheet("musicTrimSheet");
         const sheet = $("musicTrimSheet");
         if (sheet) {
             sheet.hidden = true;
+            sheet.classList.add("hidden");
             sheet.classList.remove("open");
-            sheet.style.display = "none";
+            sheet.style.display = "";
         }
         stopPostMusicPreview();
     }
@@ -1290,11 +1312,12 @@
             // Close sheet
             const closer = t.closest ? t.closest('[data-close="musicTrimSheet"]') : null;
             if (closer || (btn && btn.getAttribute && btn.getAttribute("data-close") === "musicTrimSheet")) {
+                closeSheet("musicTrimSheet");
                 const sheet = $("musicTrimSheet");
                 if (sheet) {
                     sheet.hidden = true;
+                    sheet.classList.add("hidden");
                     sheet.classList.remove("open");
-                    sheet.style.display = "none";
                 }
                 stopPostMusicPreview();
             }
@@ -1323,15 +1346,18 @@
     function renderMediaStrip() {
         let strip = document.getElementById("postMediaStrip");
         if (!strip) {
-            const host =
-                document.querySelector(".previewCard") ||
-                document.querySelector(".mediaStage") ||
-                document.getElementById("previewImage")?.parentElement;
+            const canvas = document.getElementById("mediaCanvas");
+            const host = document.querySelector(".mediaSection");
             if (!host) return;
             strip = document.createElement("div");
             strip.id = "postMediaStrip";
             strip.className = "postMediaStrip";
-            host.appendChild(strip);
+            // Place UNDER the photo (Instagram style), never beside
+            if (canvas && canvas.parentElement === host) {
+                canvas.insertAdjacentElement("afterend", strip);
+            } else {
+                host.appendChild(strip);
+            }
         }
         const files = state.mediaFiles || [];
         let html = "";
@@ -1351,7 +1377,7 @@
                 (i + 1) +
                 "</span></button>";
         });
-        if (files.length < 10) {
+        if (!state.isEditMode && files.length < 10) {
             html +=
                 '<button type="button" class="stripAdd" id="postAddMediaBtn" title="Add photo (max 10)"><i class="fa-solid fa-plus"></i><small>' +
                 files.length +
@@ -1361,14 +1387,7 @@
         strip.querySelectorAll("[data-strip-i]").forEach((btn) => {
             btn.addEventListener("click", () => {
                 const i = Number(btn.getAttribute("data-strip-i"));
-                state.mediaIndex = i;
-                const f = state.mediaFiles[i];
-                const preview = document.getElementById("previewImage");
-                if (preview && f) {
-                    preview.src =
-                        typeof f === "string" ? f : URL.createObjectURL(f);
-                }
-                renderMediaStrip();
+                showMediaAt(i);
             });
         });
         const addBtn = document.getElementById("postAddMediaBtn");
@@ -1400,10 +1419,21 @@
         if (i >= files.length) i = files.length - 1;
         state.mediaIndex = i;
         state.media = files[i];
-        const preview = document.getElementById("previewImage");
+        const preview = getPreviewImg();
         if (preview && files[i]) {
             const f = files[i];
-            preview.src = typeof f === "string" ? f : URL.createObjectURL(f);
+            // revoke old blob URL to avoid leaks
+            try {
+                if (preview.dataset.blobUrl) URL.revokeObjectURL(preview.dataset.blobUrl);
+            } catch (_) {}
+            if (typeof f === "string") {
+                preview.src = f;
+            } else {
+                const url = URL.createObjectURL(f);
+                preview.dataset.blobUrl = url;
+                preview.src = url;
+            }
+            preview.classList.add("loaded");
         }
         const pc = document.getElementById("photoCounter");
         if (pc) {
@@ -1416,19 +1446,25 @@
             }
         }
         try { renderMediaStrip(); } catch (_) {}
+        try { setupMediaSwipe(); } catch (_) {}
         const nav = document.getElementById("multiNav");
         if (nav) nav.style.display = (files.length > 1) ? "flex" : "none";
+        try { updatePhotoCounter(); } catch (_) {}
     }
 
     function setupMediaSwipe() {
-        const img = document.getElementById("previewImage");
-        const stage =
-            document.querySelector(".previewCard") ||
-            document.querySelector(".mediaStage") ||
-            (img && img.parentElement);
-        if (!stage) return;
+        const img = getPreviewImg();
+        const stage = getMediaStage();
+        if (!stage) {
+            console.warn("[VIEWORA] no media stage for swipe");
+            return;
+        }
 
-        // Visible prev/next when multi
+        stage.style.position = "relative";
+        stage.style.touchAction = "pan-y";
+        stage.style.userSelect = "none";
+        stage.style.webkitUserSelect = "none";
+
         let nav = document.getElementById("multiNav");
         if (!nav) {
             nav = document.createElement("div");
@@ -1437,59 +1473,95 @@
             nav.innerHTML =
                 '<button type="button" id="multiPrev" class="multiNavBtn" aria-label="Previous"><i class="fa-solid fa-chevron-left"></i></button>' +
                 '<button type="button" id="multiNext" class="multiNavBtn" aria-label="Next"><i class="fa-solid fa-chevron-right"></i></button>';
-            stage.style.position = stage.style.position || "relative";
             stage.appendChild(nav);
-            document.getElementById("multiPrev")?.addEventListener("click", function (e) {
+        }
+
+        const prev = document.getElementById("multiPrev");
+        const next = document.getElementById("multiNext");
+        if (prev && !prev.__bound) {
+            prev.__bound = true;
+            prev.addEventListener("click", function (e) {
                 e.preventDefault();
                 e.stopPropagation();
                 showMediaAt((state.mediaIndex || 0) - 1);
             });
-            document.getElementById("multiNext")?.addEventListener("click", function (e) {
+        }
+        if (next && !next.__bound) {
+            next.__bound = true;
+            next.addEventListener("click", function (e) {
                 e.preventDefault();
                 e.stopPropagation();
                 showMediaAt((state.mediaIndex || 0) + 1);
             });
         }
+
         function syncNav() {
             const n = (state.mediaFiles || []).length;
             if (nav) nav.style.display = n > 1 ? "flex" : "none";
         }
         syncNav();
-        const _show = showMediaAt;
-        // wrap showMediaAt to sync nav - already updates counter
 
-        if (stage.__swipeBound) return;
+        if (stage.__swipeBound) {
+            syncNav();
+            return;
+        }
         stage.__swipeBound = true;
 
         let startX = 0, startY = 0, tracking = false;
-        const target = img || stage;
-        target.addEventListener("touchstart", function (e) {
-            if (!e.touches || e.touches.length !== 1) return;
-            if ((state.mediaFiles || []).length < 2) return;
-            startX = e.touches[0].clientX;
-            startY = e.touches[0].clientY;
-            tracking = true;
-        }, { passive: true });
 
-        target.addEventListener("touchend", function (e) {
+        function onStart(clientX, clientY) {
+            if ((state.mediaFiles || []).length < 2) return false;
+            startX = clientX;
+            startY = clientY;
+            tracking = true;
+            return true;
+        }
+        function onEnd(clientX, clientY) {
             if (!tracking) return;
             tracking = false;
-            const t = e.changedTouches && e.changedTouches[0];
-            if (!t) return;
-            const dx = t.clientX - startX;
-            const dy = t.clientY - startY;
-            if (Math.abs(dx) < 40 || Math.abs(dx) < Math.abs(dy) * 0.8) return;
+            const dx = clientX - startX;
+            const dy = clientY - startY;
+            if (Math.abs(dx) < 30 || Math.abs(dx) < Math.abs(dy) * 0.65) return;
             const i = state.mediaIndex || 0;
             if (dx < 0) showMediaAt(i + 1);
             else showMediaAt(i - 1);
             syncNav();
+        }
+
+        stage.addEventListener("touchstart", function (e) {
+            if (!e.touches || e.touches.length !== 1) return;
+            onStart(e.touches[0].clientX, e.touches[0].clientY);
         }, { passive: true });
+
+        stage.addEventListener("touchend", function (e) {
+            const t = e.changedTouches && e.changedTouches[0];
+            if (!t) return;
+            onEnd(t.clientX, t.clientY);
+        }, { passive: true });
+
+        // Also on the image itself
+        if (img) {
+            img.style.pointerEvents = "none"; // let stage receive touches
+        }
+
+        let md = false;
+        stage.addEventListener("mousedown", function (e) {
+            if (e.target && e.target.closest && e.target.closest("button")) return;
+            md = onStart(e.clientX, e.clientY);
+        });
+        stage.addEventListener("mouseup", function (e) {
+            if (!md) return;
+            md = false;
+            onEnd(e.clientX, e.clientY);
+        });
 
         document.addEventListener("keydown", function (e) {
             if ((state.mediaFiles || []).length < 2) return;
             if (e.key === "ArrowLeft") showMediaAt((state.mediaIndex || 0) - 1);
             if (e.key === "ArrowRight") showMediaAt((state.mediaIndex || 0) + 1);
         });
+
+        console.log("[VIEWORA] multi swipe ready, photos:", (state.mediaFiles || []).length);
     }
 
     function setupCropAdjust() {
@@ -2053,28 +2125,117 @@
        PUBLISH BUTTONS
     ====================================================== */
 
+    
+    function applyPreviewRatio(ratio) {
+        const stage = getMediaStage();
+        const img = getPreviewImg();
+        const r = ratio || state.ratio || "portrait";
+        if (stage) {
+            stage.classList.remove("ratio-portrait", "ratio-square", "ratio-mixed");
+            stage.classList.add("ratio-" + r);
+        }
+        if (img) {
+            img.style.width = "100%";
+            img.style.height = "auto";
+            img.style.maxHeight = "70vh";
+            if (r === "square") {
+                img.style.objectFit = "cover";
+                img.style.aspectRatio = "1 / 1";
+            } else if (r === "portrait") {
+                img.style.objectFit = "cover";
+                img.style.aspectRatio = "4 / 5";
+            } else {
+                img.style.objectFit = "contain";
+                img.style.aspectRatio = "auto";
+            }
+        }
+        const label = $("ratioValue");
+        if (label) {
+            label.textContent = r === "square" ? "Square" : r === "mixed" ? "Mixed" : "Portrait";
+        }
+        // Also update any other preview refs
+        try {
+            state.ratio = r;
+        } catch (_) {}
+    }
+
+    function setupRatio() {
+        if (window.__ratioWired) return;
+        window.__ratioWired = true;
+        $("ratioBtn")?.addEventListener("click", function () {
+            openSheet("ratioSheet");
+            qsa(".ratioOption").forEach(function (b) {
+                b.classList.toggle("active", (b.getAttribute("data-ratio") || "") === (state.ratio || "portrait"));
+            });
+        });
+        qsa(".ratioOption").forEach(function (btn) {
+            btn.addEventListener("click", function () {
+                qsa(".ratioOption").forEach(function (b) { b.classList.remove("active"); });
+                btn.classList.add("active");
+                state.ratio = btn.getAttribute("data-ratio") || "portrait";
+                applyPreviewRatio(state.ratio);
+            });
+        });
+        $("ratioDoneBtn")?.addEventListener("click", function () {
+            closeSheet("ratioSheet");
+            applyPreviewRatio(state.ratio);
+        });
+        document.querySelectorAll('[data-close="ratioSheet"]').forEach(function (el) {
+            el.addEventListener("click", function () {
+                closeSheet("ratioSheet");
+            });
+        });
+        applyPreviewRatio(state.ratio || "portrait");
+    }
+
+    
+    function updatePhotoCounter() {
+        const el = document.querySelector(".photoCounter");
+        if (!el) return;
+        const n = (state.mediaFiles && state.mediaFiles.length) || (state.media ? 1 : 0);
+        const i = (state.mediaIndex || 0) + 1;
+        if (n > 1) {
+            el.classList.remove("hidden");
+            el.innerHTML = '<i class="fa-regular fa-images"></i><span>' + i + ' / ' + n + '</span>';
+        } else {
+            el.classList.add("hidden");
+        }
+    }
+
     function setupPublish() {
         function oncePublish(e) {
             try { e && e.preventDefault && e.preventDefault(); } catch (_) {}
-            if (state.publishing || window.__vieworaPublishingLock) return;
-            publishPost();
+            if (state.publishing || window.__vieworaPublishingLock) {
+                try { showToast("Please wait", "Publishing…"); } catch (_) {}
+                return;
+            }
+            publishPost().catch(function (err) {
+                console.error("publish", err);
+                try { showToast("Error", (err && err.message) || "Failed"); } catch (_) {}
+                state.publishing = false;
+                window.__vieworaPublishingLock = false;
+                try { setPublishState(false); } catch (_) {}
+            });
         }
         const pub = $("publishBtn");
-        const next = $("nextBtn");
         if (pub && !pub.__pubBound) {
             pub.__pubBound = true;
             pub.addEventListener("click", oncePublish);
         }
-        // nextBtn should NOT also publish (was causing double posts)
+        // Fallback: any button that says Share Post
+        document.querySelectorAll("button").forEach(function (btn) {
+            const t = (btn.textContent || "").trim().toLowerCase();
+            if ((t === "share post" || t === "share" || t === "save") && !btn.__pubBound) {
+                btn.__pubBound = true;
+                btn.addEventListener("click", oncePublish);
+            }
+        });
+        const next = $("nextBtn");
         if (next && !next.__pubBound) {
             next.__pubBound = true;
-            // only go to details step if multi-step; else ignore
             next.addEventListener("click", function (e) {
                 e.preventDefault();
-                // scroll to caption / details instead of second publish
-                try {
-                    $("captionInput")?.focus();
-                } catch (_) {}
+                try { $("captionInput")?.focus(); } catch (_) {}
             });
         }
     }
@@ -2472,88 +2633,100 @@ function getCloudinaryConfig() {
     ====================================================== */
 
     async function publishPost() {
-
         if (state.publishing || window.__vieworaPublishingLock) {
+            try { showToast("Please wait", "Already publishing…"); } catch (_) {}
             return;
         }
 
-        // If music trim sheet still open → apply current clip first
+        // Apply pending music clip if any
         try {
-            if (pendingMusic) {
-                const sheet = $("musicTrimSheet");
-                const open = sheet && !sheet.hidden && sheet.style.display !== "none";
-                if (open || !state.music) {
-                    const start = Number($("musicStartRange")?.value || 0);
-                    const len = Number($("musicLenRange")?.value || 15);
-                    applyMusicClip(pendingMusic, start, len);
-                }
+            if (pendingMusic && !state.music) {
+                const start = Number($("musicStartRange")?.value || 0);
+                const len = Number($("musicLenRange")?.value || 15);
+                applyMusicClip(pendingMusic, start, len);
             }
         } catch (_) {}
 
-        if (!state.media && !(state.mediaFiles && state.mediaFiles.length)) {
-            showToast("No media", "Please select a photo first.");
-            return;
+        // EDIT existing post → only caption + settings
+        if (state.isEditMode && state.editPostId) {
+            return saveExistingPost();
         }
 
-        const user = getAuthUser();
+        var user = getAuthUser();
+        if (!user) {
+            // wait briefly for auth
+            try {
+                await new Promise(function (r) { setTimeout(r, 400); });
+                user = getAuthUser();
+            } catch (_) {}
+        }
         if (!user) {
             showToast("Login required", "Please login before publishing.");
-            setTimeout(function () {
-                window.location.href = "login.html";
-            }, 1000);
+            setTimeout(function () { location.href = "login.html"; }, 900);
             return;
         }
 
-        if (window.__vieworaPublishingLock || state.publishing) {
-            showToast("Please wait", "Already publishing…");
-            return;
-        }
-        // Share once lock (30s)
         window.__vieworaPublishingLock = true;
-        setTimeout(function () { try { window.__vieworaPublishingLock = false; } catch(_){} }, 30000);
         state.publishing = true;
-        try {
-            setPublishState(true);
-        } catch (_) {}
+        setTimeout(function () {
+            try { window.__vieworaPublishingLock = false; } catch (_) {}
+        }, 45000);
+        try { setPublishState(true); } catch (_) {}
 
         var caption = "";
         try {
-            var el =
-                document.getElementById("captionInput") ||
-                document.getElementById("postCaption");
-            caption = (el && el.value) || state.caption || "";
+            var el = document.getElementById("captionInput") || document.getElementById("postCaption");
+            caption = ((el && el.value) || state.caption || "").trim();
         } catch (_) {}
 
-        var files = (state.mediaFiles && state.mediaFiles.length)
-            ? state.mediaFiles.slice(0, 10)
-            : (state.media ? [state.media] : []);
+        // Collect files (File or Blob)
+        var files = [];
+        try {
+            if (state.mediaFiles && state.mediaFiles.length) {
+                files = state.mediaFiles.slice(0, 10);
+            } else if (state.media) {
+                files = [state.media];
+            }
+        } catch (_) {}
         files = files.filter(function (f) {
-            return f && typeof f !== "string" && (f instanceof Blob);
+            return f && (f instanceof Blob);
         });
+
+        // Reload from IDB if empty
         if (!files.length) {
-            // try convert dataURL media
-            if (typeof state.media === "string" && state.media.indexOf("data:") === 0) {
-                var b = dataURLtoBlob(state.media, "image/jpeg");
-                if (b) files = [b];
+            try {
+                var ok = await loadMultiFromIDB();
+                if (ok && state.mediaFiles && state.mediaFiles.length) {
+                    files = state.mediaFiles.filter(function (f) { return f instanceof Blob; }).slice(0, 10);
+                }
+            } catch (e) {
+                console.warn("IDB reload", e);
             }
         }
-        if (!files.length) {
-            showToast("Upload", "Please re-select the photo.");
-            state.publishing = false;
+        if (!files.length && typeof state.media === "string" && state.media.indexOf("data:") === 0) {
             try {
-                setPublishState(false);
+                var b = dataURLtoBlob(state.media, "image/jpeg");
+                if (b) files = [b];
             } catch (_) {}
+        }
+
+        if (!files.length) {
+            showToast("No photo", "Photos missing. Go back and choose again.");
+            state.publishing = false;
+            window.__vieworaPublishingLock = false;
+            try { setPublishState(false); } catch (_) {}
             return;
         }
-        var file = files[0];
+
+        console.log("[VIEWORA] Share Post files:", files.length, files.map(function (f) { return f.type + " " + f.size; }));
 
         var meta = {
             mediaCount: files.length,
             caption: caption,
             description: caption,
-            title: caption || "",
-            username: (user && (user.displayName || user.email)) || "User",
-            userPhoto: (user && user.photoURL) || "",
+            title: caption || ("Post " + new Date().toLocaleDateString()),
+            username: (user.displayName || user.email || "User"),
+            userPhoto: user.photoURL || "",
             music: state.music || null,
             musicStartAt: state.music ? Number(state.music.startAt || 0) : 0,
             musicDuration: state.music ? Number(state.music.duration || 15) : 0,
@@ -2563,60 +2736,94 @@ function getCloudinaryConfig() {
             text: state.text || "",
             textStyle: state.textStyle || "clean",
             audience: state.audience || "Everyone",
+            ratio: state.ratio || "portrait",
             allowComments: state.allowComments !== false,
             hideLikes: state.hideLikes === true,
             allowSaves: state.allowSaves !== false,
             collaborator: state.collaborator || null,
             hideLikeCount: state.hideLikes === true,
-            commentsDisabled: state.allowComments === false
+            commentsDisabled: state.allowComments === false,
+            clientPostKey: "post_" + String(user.uid || "u") + "_" + files.length + "_" + Date.now()
         };
+        if (state.music) {
+            meta.music = Object.assign({}, state.music, {
+                startAt: Number(state.music.startAt || 0),
+                duration: Number(state.music.duration || 15),
+                audioUrl: state.music.audioUrl || state.music.url || ""
+            });
+        }
 
-        // Background only — no full-screen Preparing / Uploading
         try {
-            if (
-                window.VieworaUploadQueue &&
-                typeof window.VieworaUploadQueue.enqueueAndLeave === "function"
-            ) {
-                // ONE post only — all photos in files[]
-                if (state.music) {
-                    meta.music = Object.assign({}, state.music, {
-                        startAt: Number(state.music.startAt || 0),
-                        duration: Number(state.music.duration || 15),
-                        audioUrl: state.music.audioUrl || state.music.url || ""
-                    });
-                    meta.musicStartAt = meta.music.startAt;
-                    meta.musicDuration = meta.music.duration;
-                }
-                meta.mediaCount = files.length;
-                // Stable key for this share attempt (prevents double post)
-                meta.clientPostKey = "post_" + String(user.uid || "u") + "_" + files.length + "_" + Date.now();
-                await window.VieworaUploadQueue.enqueueAndLeave({
-                    type: "post",
-                    file: files[0],
-                    files: files,
-                    returnUrl: "index.html",
-                    meta: meta
-                });
-                return;
+            if (!window.VieworaUploadQueue || typeof window.VieworaUploadQueue.enqueueAndLeave !== "function") {
+                throw new Error("Upload queue not loaded");
             }
+            showToast("Uploading", "Post uploading in background…");
+            await window.VieworaUploadQueue.enqueueAndLeave({
+                type: "post",
+                file: files[0],
+                files: files,
+                returnUrl: "index.html",
+                meta: meta
+            });
+            // enqueueAndLeave navigates away
+            return;
         } catch (err) {
-            console.warn("BG leave failed", err);
-            // DO NOT enqueue again — that creates a second post
-            showToast("Upload error", "Try again in a moment.");
+            console.error("[VIEWORA] Share failed", err);
+            showToast("Upload error", (err && err.message) || "Try again");
             state.publishing = false;
             window.__vieworaPublishingLock = false;
             try { setPublishState(false); } catch (_) {}
-            return;
         }
-
-        showToast("Upload unavailable", "Background upload not ready. Refresh and try again.");
-        state.publishing = false;
-        window.__vieworaPublishingLock = false;
-        try {
-            setPublishState(false);
-        } catch (_) {}
     }
 
+    async function saveExistingPost() {
+        var user = getAuthUser();
+        if (!user) {
+            showToast("Login required", "Please login.");
+            return;
+        }
+        window.__vieworaPublishingLock = true;
+        state.publishing = true;
+        try { setPublishState(true); } catch (_) {}
+
+        var caption = "";
+        try {
+            var el = document.getElementById("captionInput") || document.getElementById("postCaption");
+            caption = ((el && el.value) || state.caption || "").trim();
+        } catch (_) {}
+
+        try {
+            var db = null;
+            try { db = getDatabase(); } catch (_) {}
+            if (!db && window.firebase) db = firebase.database();
+            if (!db) throw new Error("Database unavailable");
+
+            var updates = {
+                caption: caption,
+                description: caption,
+                title: caption || "",
+                allowComments: state.allowComments !== false,
+                hideLikes: state.hideLikes === true,
+                hideLikeCount: state.hideLikes === true,
+                commentsDisabled: state.allowComments === false,
+                allowSaves: state.allowSaves !== false,
+                audience: state.audience || "Everyone",
+                location: state.location || "",
+                updatedAt: Date.now()
+            };
+            await db.ref("posts/" + state.editPostId).update(updates);
+            showToast("Saved", "Post updated");
+            setTimeout(function () {
+                location.href = "post.html?id=" + encodeURIComponent(state.editPostId);
+            }, 500);
+        } catch (err) {
+            console.error("saveExistingPost", err);
+            showToast("Error", (err && err.message) || "Could not save");
+            state.publishing = false;
+            window.__vieworaPublishingLock = false;
+            try { setPublishState(false); } catch (_) {}
+        }
+    }
 
     /* ======================================================
        PROCESSING UI

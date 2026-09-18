@@ -3517,3 +3517,554 @@ body.viewer-open .vieworaPostCard {
   display: inline-block !important;
   pointer-events: none;
 }
+
+
+/* ===== VIEWORA MULTI-PHOTO CAROUSEL (Index / Profile / Search) ===== */
+.post-media,
+.postMediaArea {
+  position: relative;
+  overflow: hidden;
+  background: #0a0a0e;
+}
+.postMediaWrap {
+  position: relative !important;
+  width: 100% !important;
+  overflow: hidden !important;
+  background: #0a0a0e;
+}
+.postMediaWrap.hasCarousel {
+  position: relative !important;
+  overflow: hidden !important;
+  touch-action: pan-y;
+}
+.postMediaWrap.hasCarousel .postCarouselTrack,
+.postMediaWrap.hasCarousel .postMediaTrack {
+  display: flex !important;
+  width: 100% !important;
+  transition: transform 0.28s cubic-bezier(0.25, 0.8, 0.25, 1);
+  will-change: transform;
+}
+.postMediaWrap.hasCarousel .postCarouselTrack > img,
+.postMediaWrap.hasCarousel .postMediaTrack > img,
+.postMediaWrap.hasCarousel .post-image,
+.postMediaWrap.hasCarousel .postMedia {
+  flex: 0 0 100% !important;
+  width: 100% !important;
+  min-width: 100% !important;
+  max-width: 100% !important;
+  height: auto !important;
+  max-height: 70vh;
+  object-fit: cover !important;
+  display: block !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+.postMediaWrap.hasCarousel .carouselPrev,
+.postMediaWrap.hasCarousel .carouselNext {
+  position: absolute !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  width: 34px !important;
+  height: 34px !important;
+  border-radius: 50% !important;
+  border: 0 !important;
+  background: rgba(0,0,0,0.45) !important;
+  color: #fff !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  z-index: 8 !important;
+  opacity: 0.9;
+  pointer-events: auto !important;
+  cursor: pointer;
+}
+.postMediaWrap.hasCarousel .carouselPrev { left: 8px !important; }
+.postMediaWrap.hasCarousel .carouselNext { right: 8px !important; }
+.postMediaWrap.hasCarousel .carouselDots {
+  position: absolute !important;
+  left: 0; right: 0;
+  bottom: 10px !important;
+  display: flex !important;
+  justify-content: center;
+  gap: 5px;
+  z-index: 8;
+  pointer-events: none;
+}
+.postMediaWrap.hasCarousel .carouselDot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.4);
+  transition: background 0.2s, transform 0.2s;
+}
+.postMediaWrap.hasCarousel .carouselDot.active {
+  background: #fff !important;
+  transform: scale(1.15);
+}
+.postMediaWrap.hasCarousel .carouselCount {
+  position: absolute !important;
+  top: 12px !important;
+  right: 12px !important;
+  z-index: 9 !important;
+  padding: 5px 10px !important;
+  border-radius: 16px !important;
+  background: rgba(0,0,0,0.55) !important;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  color: #fff !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.03em;
+  pointer-events: none;
+  border: 1px solid rgba(255,255,255,0.1);
+}
+/* Profile grid multi-photo badge */
+.profileContentCard .multiBadge,
+.contentCardMulti {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 5;
+  padding: 4px 7px;
+  border-radius: 8px;
+  background: rgba(0,0,0,0.55);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  pointer-events: none;
+}
+
+
+/* =========================================================
+   VIEWORA POST CARD — Instagram clean layout (FINAL)
+========================================================= */
+
+.vieworaPostCard {
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+  border-radius: 16px !important;
+  background: #121218 !important;
+  border: 1px solid rgba(255,255,255,0.08) !important;
+  margin: 0 0 14px !important;
+}
+
+/* HEADER: avatar 36px + name + more */
+.vieworaPostCard > .postHeader {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 10px !important;
+  padding: 10px 12px !important;
+  order: 1 !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+.vieworaPostCard > .postHeader > .postUser {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 10px !important;
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  max-width: calc(100% - 48px) !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  color: #fff !important;
+  text-align: left !important;
+}
+
+/* CRITICAL: avatar never full width */
+.vieworaPostCard > .postHeader img.postAvatar,
+.vieworaPostCard img.postAvatar,
+img.postAvatar {
+  width: 36px !important;
+  height: 36px !important;
+  min-width: 36px !important;
+  max-width: 36px !important;
+  min-height: 36px !important;
+  max-height: 36px !important;
+  flex: 0 0 36px !important;
+  border-radius: 50% !important;
+  object-fit: cover !important;
+  display: block !important;
+  background: #1a1a24 !important;
+  border: 1.5px solid rgba(255,255,255,0.12) !important;
+}
+
+.vieworaPostCard .postUserInfo {
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+  min-width: 0 !important;
+  flex: 1 1 auto !important;
+  gap: 2px !important;
+}
+
+.vieworaPostCard .postUserInfo strong {
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  color: #fff !important;
+  line-height: 1.2 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.vieworaPostCard .postUserInfo small {
+  font-size: 11px !important;
+  color: rgba(255,255,255,0.45) !important;
+}
+
+.vieworaPostCard .postMore {
+  width: 36px !important;
+  height: 36px !important;
+  flex: 0 0 36px !important;
+  border: 0 !important;
+  border-radius: 50% !important;
+  background: transparent !important;
+  color: rgba(255,255,255,0.6) !important;
+  display: grid !important;
+  place-items: center !important;
+}
+
+/* MEDIA */
+.vieworaPostCard > .postMediaWrap {
+  order: 2 !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  overflow: hidden !important;
+  background: #0a0a0e !important;
+  position: relative !important;
+}
+
+.vieworaPostCard > .postMediaWrap img.postMedia,
+.vieworaPostCard .postCarouselTrack > img {
+  width: 100% !important;
+  max-width: 100% !important;
+  height: auto !important;
+  max-height: 70vh !important;
+  object-fit: cover !important;
+  display: block !important;
+  border-radius: 0 !important;
+}
+
+/* CAPTION */
+.vieworaPostCard > .postCaption {
+  order: 3 !important;
+  padding: 10px 14px 2px !important;
+  font-size: 14px !important;
+  line-height: 1.45 !important;
+  color: rgba(255,255,255,0.92) !important;
+  word-break: break-word !important;
+}
+
+/* MUSIC */
+.vieworaPostCard > .postMusicBar {
+  order: 4 !important;
+}
+
+/* ACTIONS */
+.vieworaPostCard > .postActions {
+  order: 5 !important;
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 0 !important;
+  padding: 6px 6px 4px !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+.vieworaPostCard > .postActions .postAction {
+  display: inline-flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 6px !important;
+  padding: 8px 12px !important;
+  border: 0 !important;
+  background: transparent !important;
+  color: #fff !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+}
+
+.vieworaPostCard > .postActions .postAction i {
+  font-size: 20px !important;
+}
+
+.vieworaPostCard > .postActions .postAction.liked i,
+.vieworaPostCard > .postActions .postAction.liked {
+  color: #ff3b5c !important;
+}
+
+/* STATS */
+.vieworaPostCard > .postStats {
+  order: 6 !important;
+  padding: 0 14px 12px !important;
+  font-size: 12px !important;
+  color: rgba(255,255,255,0.4) !important;
+}
+
+/* Focus overlay */
+body.postFocusOpen { overflow: hidden !important; }
+.postFocusBackdrop {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 99990 !important;
+  background: rgba(0,0,0,0.75) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 20px 12px !important;
+  overflow-y: auto !important;
+}
+.postFocusCard {
+  width: min(100%, 440px) !important;
+  max-height: 88vh !important;
+  overflow-y: auto !important;
+  border-radius: 16px !important;
+  box-shadow: 0 24px 80px rgba(0,0,0,0.6) !important;
+  z-index: 2 !important;
+}
+.postFocusClose {
+  position: fixed !important;
+  top: 12px !important;
+  right: 12px !important;
+  z-index: 99999 !important;
+  width: 40px !important;
+  height: 40px !important;
+  border-radius: 50% !important;
+  border: 0 !important;
+  background: rgba(0,0,0,0.55) !important;
+  color: #fff !important;
+  font-size: 18px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+/* Comments unified */
+.commentItem {
+  display: flex !important;
+  align-items: flex-start !important;
+  gap: 10px !important;
+  padding: 12px 14px !important;
+}
+.commentItem > img,
+.commentItem .commentAvatar {
+  width: 36px !important;
+  height: 36px !important;
+  min-width: 36px !important;
+  border-radius: 50% !important;
+  object-fit: cover !important;
+  flex: 0 0 36px !important;
+}
+
+
+/* ===== FINAL POST AVATAR LOCK ===== */
+.vieworaPostCard .postAvatarWrap {
+  width: 36px !important;
+  height: 36px !important;
+  min-width: 36px !important;
+  max-width: 36px !important;
+  flex: 0 0 36px !important;
+  border-radius: 50% !important;
+  overflow: hidden !important;
+  display: inline-block !important;
+  background: #1a1a24 !important;
+}
+.vieworaPostCard .postAvatarWrap img,
+.vieworaPostCard img.postAvatar {
+  width: 36px !important;
+  height: 36px !important;
+  max-width: 36px !important;
+  border-radius: 50% !important;
+  object-fit: cover !important;
+}
+.vieworaPostCard .postHeader {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+}
+.vieworaPostCard .postUser {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 10px !important;
+}
+
+
+/* Instagram share sheet */
+body.shareSheetOpen { overflow: hidden !important; }
+.vieworaShareSheet {
+  position: fixed; inset: 0; z-index: 100000;
+  display: flex; align-items: flex-end; justify-content: center;
+  opacity: 0; pointer-events: none; transition: opacity .25s ease;
+}
+.vieworaShareSheet.open { opacity: 1; pointer-events: auto; }
+.vieworaShareSheet.closing { opacity: 0; }
+.vssBackdrop {
+  position: absolute; inset: 0; background: rgba(0,0,0,.55);
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+}
+.vssPanel {
+  position: relative; z-index: 2; width: 100%; max-width: 480px; max-height: 78vh;
+  background: #1a1b22; border-radius: 22px 22px 0 0;
+  padding: 8px 0 calc(18px + env(safe-area-inset-bottom));
+  transform: translateY(100%);
+  transition: transform .32s cubic-bezier(.22,1,.36,1);
+  overflow: hidden; display: flex; flex-direction: column;
+}
+.vieworaShareSheet.open .vssPanel { transform: translateY(0); }
+.vssHandle {
+  width: 40px; height: 4px; border-radius: 99px;
+  background: rgba(255,255,255,.25); margin: 6px auto 10px;
+}
+.vssNote {
+  text-align: center; font-size: 12px; color: rgba(255,255,255,.45);
+  padding: 0 20px 10px; line-height: 1.4;
+}
+.vssSearchRow {
+  display: flex; align-items: center; gap: 10px;
+  margin: 0 16px 12px; padding: 0 14px; height: 42px; border-radius: 14px;
+  background: rgba(255,255,255,.08);
+}
+.vssSearchRow i { color: rgba(255,255,255,.4); font-size: 14px; }
+.vssSearchRow input {
+  flex: 1; border: 0; background: transparent; color: #fff; font-size: 14px; outline: none;
+}
+.vssFriends {
+  display: flex; flex-wrap: wrap; gap: 14px 10px;
+  padding: 8px 16px 16px; max-height: 42vh; overflow-y: auto;
+}
+.vssFriend {
+  width: calc(25% - 8px); max-width: 80px;
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  border: 0; background: transparent; color: #fff; padding: 4px; cursor: pointer;
+  animation: vssPop .4s cubic-bezier(.22,1,.36,1) both;
+}
+@keyframes vssPop {
+  from { opacity: 0; transform: scale(.6) translateY(12px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+.vssAvatarWrap { position: relative; width: 64px; height: 64px; }
+.vssFriend img {
+  width: 64px; height: 64px; border-radius: 50%; object-fit: cover;
+  background: #2a2a35; border: 2px solid transparent;
+}
+.vssFriend.vssBest img {
+  border-color: #7c5cff;
+  box-shadow: 0 0 0 2px rgba(124,92,255,.35), 0 8px 20px rgba(124,92,255,.25);
+  animation: vssBestPulse 2s ease-in-out infinite;
+}
+@keyframes vssBestPulse {
+  0%, 100% { box-shadow: 0 0 0 2px rgba(124,92,255,.35), 0 8px 20px rgba(124,92,255,.2); }
+  50% { box-shadow: 0 0 0 4px rgba(124,92,255,.2), 0 8px 28px rgba(124,92,255,.4); }
+}
+.vssRank {
+  position: absolute; top: -4px; left: -4px; z-index: 2;
+  min-width: 20px; height: 20px; padding: 0 5px; border-radius: 99px;
+  background: linear-gradient(135deg,#7c5cff,#ec4899);
+  color: #fff; font-size: 10px; font-weight: 800;
+  display: flex; align-items: center; justify-content: center;
+}
+.vssOnline {
+  position: absolute; bottom: 2px; right: 2px;
+  width: 12px; height: 12px; border-radius: 50%;
+  background: #22c55e; border: 2px solid #1a1b22;
+}
+.vssName {
+  font-size: 11px; font-weight: 600; max-width: 72px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: center;
+}
+.vssFriend.sent { opacity: .55; pointer-events: none; }
+.vssFriend.sent .vssAvatarWrap::after {
+  content: "✓"; position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(34,197,94,.75); border-radius: 50%;
+  color: #fff; font-weight: 800; font-size: 22px;
+}
+.vssEmpty, .vssLoading {
+  width: 100%; text-align: center; padding: 24px 12px;
+  color: rgba(255,255,255,.45); font-size: 13px; line-height: 1.5;
+}
+.vssActions {
+  display: flex; gap: 8px; padding: 8px 12px 0;
+  overflow-x: auto; border-top: 1px solid rgba(255,255,255,.06); margin-top: 4px;
+}
+.vssAct {
+  flex: 0 0 auto; display: flex; flex-direction: column; align-items: center;
+  gap: 6px; min-width: 64px; border: 0; background: transparent; color: #fff;
+  font-size: 11px; font-weight: 600; padding: 8px 4px;
+}
+.vssActIcon {
+  width: 52px; height: 52px; border-radius: 50%;
+  background: rgba(255,255,255,.1);
+  display: flex; align-items: center; justify-content: center; font-size: 20px;
+}
+.vssActIcon.wa { background: #25d366; color: #fff; }
+
+
+
+/* FORCE: post avatar never becomes media */
+.vieworaPostCard .postHeader {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 10px !important;
+  padding: 10px 12px 8px !important;
+  order: 0 !important;
+}
+.vieworaPostCard .postAvatar,
+.vieworaPostCard .post-avatar-wrap,
+.vieworaPostCard .postHeader img.postAvatar,
+.vieworaPostCard .postUser img {
+  width: 36px !important;
+  height: 36px !important;
+  min-width: 36px !important;
+  max-width: 36px !important;
+  border-radius: 50% !important;
+  object-fit: cover !important;
+  flex-shrink: 0 !important;
+}
+.vieworaPostCard .postMediaWrap {
+  order: 1 !important;
+  width: 100% !important;
+}
+.vieworaPostCard .postMedia,
+.vieworaPostCard .postCarouselTrack > img {
+  width: 100% !important;
+  max-height: 70vh !important;
+  object-fit: contain !important;
+  background: #0a0a0c !important;
+}
+.vieworaPostCard .postCaption { order: 2 !important; }
+.vieworaPostCard .postActions { order: 3 !important; }
+
+.liveVideoCard .liveThumb { position: relative; }
+.liveBadgePill {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background: #ef4444;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 4px 8px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  z-index: 2;
+}
+.liveBadgePill i { font-size: 8px; animation: livePulse 1s infinite; }
+@keyframes livePulse { 50% { opacity: .4; } }

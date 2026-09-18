@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>Viewora · Account appeal</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      min-height: 100vh;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #0b0b0f;
+      color: #f5f5f5;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 16px;
+    }
+    .card {
+      width: 100%;
+      max-width: 420px;
+      background: #14141a;
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 20px;
+      padding: 28px 22px;
+      text-align: center;
+    }
+    .icon {
+      width: 64px; height: 64px;
+      margin: 0 auto 16px;
+      border-radius: 50%;
+      background: rgba(239,68,68,0.15);
+      color: #f87171;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 28px;
+    }
+    h1 { font-size: 20px; margin-bottom: 8px; }
+    .status {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 20px;
+      background: rgba(239,68,68,0.2);
+      color: #fca5a5;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      margin-bottom: 14px;
+    }
+    p { font-size: 14px; line-height: 1.5; color: rgba(255,255,255,0.65); margin-bottom: 12px; }
+    .reason {
+      background: rgba(255,255,255,0.04);
+      border-radius: 12px;
+      padding: 12px;
+      font-size: 13px;
+      color: rgba(255,255,255,0.8);
+      margin: 12px 0 20px;
+      text-align: left;
+    }
+    textarea {
+      width: 100%;
+      min-height: 100px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.1);
+      background: #0b0b0f;
+      color: #fff;
+      padding: 12px;
+      font-size: 14px;
+      resize: vertical;
+      margin-bottom: 14px;
+    }
+    .btn {
+      width: 100%;
+      height: 48px;
+      border: 0;
+      border-radius: 12px;
+      font-weight: 700;
+      font-size: 15px;
+      cursor: pointer;
+      margin-bottom: 10px;
+    }
+    .btnPrimary {
+      background: linear-gradient(135deg, #7c5cff, #3b82f6);
+      color: #fff;
+    }
+    .btnGhost {
+      background: transparent;
+      color: rgba(255,255,255,0.7);
+      border: 1px solid rgba(255,255,255,0.12);
+    }
+    .ok { color: #86efac; font-size: 13px; margin-top: 8px; display: none; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="icon"><i class="fa-solid fa-shield-halved"></i></div>
+    <h1>Account restricted</h1>
+    <div class="status" id="appealStatus">Suspended</div>
+    <p>This account can’t be used right now. You can send an appeal to Viewora support.</p>
+    <div class="reason" id="appealReason">Loading…</div>
+    <textarea id="appealText" placeholder="Explain why your account should be restored…"></textarea>
+    <button type="button" class="btn btnPrimary" id="submitAppeal">Submit appeal</button>
+    <button type="button" class="btn btnGhost" id="switchOther">Switch account</button>
+    <button type="button" class="btn btnGhost" id="logoutBtn">Log out</button>
+    <div class="ok" id="appealOk">Appeal submitted. We’ll review it soon.</div>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+  <script src="firebase.js"></script>
+  <script src="account-session.js"></script>
+  <script>
+    (function () {
+      var info = {};
+      try {
+        info = JSON.parse(sessionStorage.getItem("viewora_appeal") || "{}") || {};
+      } catch (_) {}
+
+      var statusEl = document.getElementById("appealStatus");
+      var reasonEl = document.getElementById("appealReason");
+      if (statusEl) statusEl.textContent = info.status || "Restricted";
+      if (reasonEl) reasonEl.textContent = info.reason || "No reason provided.";
+
+      document.getElementById("submitAppeal").onclick = async function () {
+        var text = (document.getElementById("appealText").value || "").trim();
+        if (!text) {
+          alert("Please write a short appeal message.");
+          return;
+        }
+        try {
+          var user = firebase.auth().currentUser;
+          var uid = (user && user.uid) || info.uid;
+          if (!uid) throw new Error("Not signed in");
+          var db = firebase.database();
+          await db.ref("appeals/" + uid).push({
+            uid: uid,
+            message: text,
+            status: info.status || "restricted",
+            reason: info.reason || "",
+            createdAt: Date.now()
+          });
+          document.getElementById("appealOk").style.display = "block";
+        } catch (e) {
+          alert((e && e.message) || "Could not submit appeal");
+        }
+      };
+
+      document.getElementById("switchOther").onclick = function () {
+        location.href = "profile.html";
+        setTimeout(function () {
+          // open switcher if available
+          try {
+            var ev = new Event("click");
+          } catch (_) {}
+        }, 100);
+        // fallback login list
+        location.href = "index.html";
+      };
+
+      document.getElementById("logoutBtn").onclick = async function () {
+        try {
+          await firebase.auth().signOut();
+        } catch (_) {}
+        location.href = "login.html";
+      };
+    })();
+  </script>
+</body>
+</html>

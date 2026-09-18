@@ -284,3 +284,137 @@ nav.bottom-nav:not(#vieworaGlobalNav),
         height: 44px;
     }
 }
+
+/* Account switcher — Instagram style */
+.vieworaAccountSwitcher {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+.vieworaAccountSwitcher.hidden { display: none !important; }
+.vasBackdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.55);
+  backdrop-filter: blur(6px);
+}
+.vasSheet {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 480px;
+  background: #1c1c1e;
+  border-radius: 20px 20px 0 0;
+  padding: 10px 16px calc(20px + env(safe-area-inset-bottom));
+  box-shadow: 0 -12px 40px rgba(0,0,0,0.45);
+}
+.vasHandle {
+  width: 40px;
+  height: 4px;
+  border-radius: 4px;
+  background: rgba(255,255,255,0.25);
+  margin: 4px auto 16px;
+}
+.vasItem {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 10px;
+  border: 0;
+  background: transparent;
+  color: #fff;
+  border-radius: 12px;
+  text-align: left;
+  cursor: pointer;
+}
+.vasItem:active { background: rgba(255,255,255,0.06); }
+.vasItem.active { background: rgba(255,255,255,0.04); }
+.vasAvatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #333;
+}
+.vasMeta { flex: 1; }
+.vasMeta strong { font-size: 15px; font-weight: 600; }
+.vasCheck { color: #3b82f6; font-size: 20px; }
+.vasAdd, .vasCenter {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 10px;
+  margin-top: 4px;
+  border: 0;
+  background: transparent;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 500;
+  border-radius: 12px;
+  text-align: left;
+  cursor: pointer;
+}
+.vasAddIcon {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #2c2c2e;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  font-weight: 300;
+}
+.vasCenter {
+  justify-content: center;
+  color: rgba(255,255,255,0.55);
+  font-size: 14px;
+  margin-top: 8px;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  border-radius: 0;
+  padding-top: 16px;
+}
+.vasEmpty {
+  padding: 16px;
+  text-align: center;
+  color: rgba(255,255,255,0.5);
+  font-size: 14px;
+}
+
+.vasPassRow {
+  display: flex;
+  gap: 8px;
+  padding: 8px 4px 12px;
+}
+.vasPassRow.hidden { display: none !important; }
+.vasPassRow input {
+  flex: 1;
+  height: 44px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: #0b0b0f;
+  color: #fff;
+  padding: 0 12px;
+  font-size: 14px;
+}
+.vasPassRow button {
+  height: 44px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #7c5cff, #3b82f6);
+  color: #fff;
+  font-weight: 700;
+  font-size: 14px;
+}
+.vasMeta small {
+  display: block;
+  font-size: 11px;
+  margin-top: 2px;
+  font-weight: 500;
+}

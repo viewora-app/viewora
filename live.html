@@ -8,6 +8,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
   <meta name="theme-color" content="#050507">
   <title>Live • Viewora</title>
+    <link rel="icon" href="assets/logo.png">
+    <link rel="apple-touch-icon" href="assets/logo.png">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
   <link rel="stylesheet" href="live.css">
   <link rel="stylesheet" href="theme.css">
@@ -19,8 +21,38 @@
   <button type="button" class="live-icon-btn" id="setupBack" style="align-self:flex-start">
     <i class="fa-solid fa-arrow-left"></i>
   </button>
-  <h1>Go Live</h1>
-  <p>Start a live session. Your story ring turns red for everyone following you.</p>
+  <span class="live-format-badge" id="liveFormatBadge">Live</span>
+  <h1 id="liveSetupHeading">Go Live</h1>
+  <p id="liveSetupSub">Start a live session. Your story ring turns red for everyone following you.</p>
+  <script>
+  (function(){
+    try {
+      var p = new URLSearchParams(location.search);
+      var f = (p.get("format")||"").toLowerCase();
+      var a = (p.get("aspect")||"").toLowerCase().replace(":","x");
+      var kind = "story";
+      if (f === "video" || f === "long" || a === "16x9") kind = "video";
+      else if (f === "shorts" || f === "short") kind = "shorts";
+      else if (f === "story" || f === "stories" || a === "9x16") kind = "story";
+      var badge = document.getElementById("liveFormatBadge");
+      var h = document.getElementById("liveSetupHeading");
+      var s = document.getElementById("liveSetupSub");
+      if (kind === "video") {
+        if (badge) badge.textContent = "Video Live · 16:9";
+        if (h) h.textContent = "Video Live";
+        if (s) s.textContent = "Long rectangular stream — shows in long video feed.";
+      } else if (kind === "shorts") {
+        if (badge) badge.textContent = "Shorts Live · 9:16";
+        if (h) h.textContent = "Shorts Live";
+        if (s) s.textContent = "Vertical short-style live — appears with Shorts.";
+      } else {
+        if (badge) badge.textContent = "Stories Live · 9:16";
+        if (h) h.textContent = "Stories Live";
+        if (s) s.textContent = "Vertical live — your story ring turns red for followers.";
+      }
+    } catch(e){}
+  })();
+  </script>
   <input id="liveTitleInput" type="text" maxlength="80" placeholder="Live title (optional)">
   <div class="setup-preview-wrap">
     <video id="setupPreview" autoplay muted playsinline></video>
@@ -77,7 +109,6 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <script src="firebase.js"></script>
-    <script scr="security.js"></script>
 <script src="theme.js"></script>
 <script src="live.js"></script>
 </body>
