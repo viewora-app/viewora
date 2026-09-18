@@ -3119,3 +3119,28 @@ button,
   cursor: pointer;
 }
 label.uploadOption { cursor: pointer; display: flex; }
+
+.liveKindRow {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.liveKindChip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,.1);
+  background: rgba(255,255,255,.04);
+  cursor: pointer;
+}
+.liveKindChip:has(input:checked) {
+  border-color: rgba(139,92,246,.6);
+  background: rgba(139,92,246,.12);
+}
+.liveKindChip input { accent-color: #8b5cf6; }
+.liveKindChip span { font-weight: 700; font-size: 14px; }
+.liveKindChip small { width: 100%; padding-left: 24px; opacity: .55; font-size: 12px; }

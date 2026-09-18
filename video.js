@@ -2671,8 +2671,17 @@ function updateLikeCount() {
         );
     }
 
-    function openShare() {
-        show($("shareOverlay"));
+    function openShare(item) {
+        const id = (item && (item.id || item.videoId)) || (new URLSearchParams(location.search).get("id")) || "";
+        if (window.VieworaShare) {
+            VieworaShare.open({
+                type: "video",
+                id: id,
+                url: location.origin + "/video.html?id=" + encodeURIComponent(id),
+                title: (item && (item.title || item.caption)) || "Viewora Video"
+            });
+            return;
+        }
     }
 
     function closeShare() {

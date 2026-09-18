@@ -88,6 +88,48 @@
     const DEFAULT_AVATAR =
         "assets/default-avatar.png";
 
+    /* VIEWORA_PHOTO_HEAL — never lose profile picture on re-login */
+    function healProfilePhoto(uid, data) {
+        if (!uid || !data) return data || {};
+        try {
+            var photo =
+                data.profilePhoto ||
+                data.photoURL ||
+                data.avatar ||
+                data.profilePicture ||
+                data.profile_image ||
+                data.dp ||
+                "";
+            var cached = "";
+            try { cached = localStorage.getItem("viewora_my_avatar") || ""; } catch (_) {}
+            var mine = false;
+            try {
+                mine =
+                    firebase.auth().currentUser &&
+                    firebase.auth().currentUser.uid === uid;
+            } catch (_) {}
+            if (!photo && cached && mine) {
+                photo = cached;
+                data.profilePhoto = photo;
+                data.photoURL = photo;
+                data.avatar = photo;
+                try {
+                    db.ref("users/" + uid).update({
+                        profilePhoto: photo,
+                        photoURL: photo,
+                        avatar: photo
+                    });
+                } catch (_) {}
+            }
+            if (photo && mine) {
+                try { localStorage.setItem("viewora_my_avatar", photo); } catch (_) {}
+            }
+        } catch (_) {}
+        return data;
+    }
+
+
+
     const DEFAULT_BANNER =
         "assets/default-banner.jpg";
 
@@ -1821,7 +1863,11 @@
        VISITOR 3-DOT MENU
     ===================================================== */
 
-    function openVisitorMenu() {
+    function openVisitorMenu(e) {
+        if (e && e.preventDefault) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
         if (isOwnProfile) return;
         const sheet = $("visitorMoreSheet");
         if (!sheet) {
@@ -2056,7 +2102,8 @@
         $("profileMoreBtn")
             ?.addEventListener(
                 "click",
-                openVisitorMenu
+                openVisitorMenu,
+                true
             );
 
         document
@@ -2078,9 +2125,14 @@
             });
 
         $("visitorReportBtn")
-            ?.addEventListener("click", () => {
+            ?.addEventListener("click", (ev) => {
+                ev.preventDefault();
+                ev.stopPropagation();
                 closeVisitorMenu();
-                reportProfileUser();
+                // small delay so sheet closes cleanly; only then report
+                setTimeout(function () {
+                    reportProfileUser();
+                }, 180);
             });
 
         $("visitorBlockBtn")
@@ -2281,69 +2333,42 @@
             "user";
 
         const shareURL =
-            window.location.href;
+            (window.location.origin || "") +
+            "/profile.html?uid=" +
+            encodeURIComponent(profileUID);
+
+        // Prefer in-app share sheet → appears in friend's chat
+        if (window.VieworaShare && typeof VieworaShare.open === "function") {
+            VieworaShare.open({
+                type: "profile",
+                id: profileUID,
+                url: shareURL,
+                title:
+                    (profileData && (profileData.name || profileData.displayName)) ||
+                    ("@" + username)
+            });
+            return;
+        }
 
         const shareData = {
-
-            title:
-                profileData?.name ||
-                "Viewora Profile",
-
-            text:
-                "Check out @" +
-                username +
-                " on Viewora",
-
-            url:
-                shareURL
-
+            title: profileData?.name || "Viewora Profile",
+            text: "Check out @" + username + " on Viewora",
+            url: shareURL
         };
 
-
         try {
-
-            if (
-                navigator.share
-            ) {
-
-                await navigator.share(
-                    shareData
-                );
-
-            } else if (
-                navigator.clipboard
-            ) {
-
-                await navigator.clipboard.writeText(
-                    shareURL
-                );
-
-                showToast(
-                    "Profile link copied"
-                );
-
+            if (navigator.share) {
+                await navigator.share(shareData);
+            } else if (navigator.clipboard) {
+                await navigator.clipboard.writeText(shareURL);
+                showToast("Profile link copied");
             } else {
-
-                showToast(
-                    "Copy this profile link"
-                );
-
+                showToast("Copy this profile link");
             }
-
         } catch (error) {
-
-            if (
-                error?.name !==
-                "AbortError"
-            ) {
-
-                console.warn(
-                    "Share failed:",
-                    error
-                );
-
+            if (error?.name !== "AbortError") {
+                console.warn("Share failed:", error);
             }
-
         }
 
     }
@@ -2634,13 +2659,25 @@
             item.video === true;
 
 
+        const mediaCount = (function () {
+            try {
+                if (Array.isArray(item.mediaUrls) && item.mediaUrls.length) return item.mediaUrls.length;
+                if (Array.isArray(item.images) && item.images.length) return item.images.length;
+                if (Number(item.mediaCount) > 1) return Number(item.mediaCount);
+            } catch (_) {}
+            return 1;
+        })();
+        const multiBadge = mediaCount > 1
+            ? `<span class="multiBadge"><i class="fa-regular fa-images"></i>${mediaCount}</span>`
+            : "";
+
         return `
             <article
                 class="profileContentCard"
                 data-id="${escapeHTML(item.id)}"
                 data-type="post"
             >
-
+                ${multiBadge}
                 ${
                     isVideo
                         ? `
@@ -5391,6 +5428,9 @@
     }
 
     window.VieworaProfile = {
+
+        openMore:
+            openVisitorMenu,
 
         report:
             reportProfileUser,

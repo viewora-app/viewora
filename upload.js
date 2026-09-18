@@ -102,6 +102,7 @@
     ===================================================== */
 
     let currentMode = "shorts";
+    let lastContentMode = "shorts"; // post|shorts|long — for live type
 
     let currentStream = null;
 
@@ -646,6 +647,9 @@
 
         }
 
+        if (mode === "post" || mode === "shorts" || mode === "long") {
+            lastContentMode = mode;
+        }
         currentMode = mode;
 
         const config = MODES[mode];
@@ -3779,9 +3783,29 @@
         );
 
         setTimeout(() => {
-            // Open host live room with title from setup
-            var q = "start=1";
+            // 3 live types from Upload context:
+            // long / default → Video Live 16:9
+            // shorts → Shorts Live 9:16
+            // post → treat as video live
+            var kind = "video";
+            var aspect = "16x9";
+            try {
+                var sel = document.querySelector('input[name="liveKind"]:checked');
+                if (sel && sel.value) kind = sel.value;
+                else if (lastContentMode === "shorts") kind = "shorts";
+                else if (lastContentMode === "long" || lastContentMode === "post") kind = "video";
+            } catch (_) {}
+            if (kind === "shorts") aspect = "9x16";
+            if (kind === "story") aspect = "9x16";
+            if (kind === "video") aspect = "16x9";
+            var q =
+                "start=1&format=" +
+                encodeURIComponent(kind) +
+                "&aspect=" +
+                encodeURIComponent(aspect);
             if (title) q += "&title=" + encodeURIComponent(title);
+            if (description) q += "&desc=" + encodeURIComponent(description.slice(0, 200));
+            if (visibility) q += "&visibility=" + encodeURIComponent(visibility);
             window.location.href = "live.html?" + q;
         }, 450);
     }

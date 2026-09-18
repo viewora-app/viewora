@@ -2067,3 +2067,9 @@ textarea:focus-visible {
 .musicItem.playing {
     border-color: rgba(34,197,94,0.5);
 }
+
+.pickCardLive .liveIcon {
+  background: linear-gradient(135deg, #ef4444, #ec4899) !important;
+  color: #fff !important;
+}
+.pickCardLive strong { color: #fda4af; }

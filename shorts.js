@@ -1752,10 +1752,42 @@
     }
 
     function openShare(short) {
-        activeShort = short;
+        const id = (short && (short.id || short.shortId)) || "";
+        const url =
+            location.origin +
+            "/shorts.html?id=" +
+            encodeURIComponent(id);
+        let thumb =
+            (short &&
+                (short.thumbnail ||
+                    short.thumbnailUrl ||
+                    short.thumb ||
+                    short.cover ||
+                    short.poster ||
+                    short.imageUrl)) ||
+            "";
+        const vurl =
+            (short && (short.videoUrl || short.videoURL || short.url || short.mediaUrl)) ||
+            "";
+        if ((!thumb || /\.mp4|\.webm/i.test(thumb)) && vurl && /cloudinary/i.test(vurl)) {
+            thumb = vurl
+                .replace("/video/upload/", "/video/upload/so_0,w_480,h_840,c_fill,q_auto,f_jpg/")
+                .replace(/\.mp4($|\?)/i, ".jpg$1");
+        }
+        if (window.VieworaShare && typeof VieworaShare.open === "function") {
+            VieworaShare.open({
+                type: "short",
+                id: id,
+                url: url,
+                title: (short && (short.caption || short.title)) || "Viewora Short",
+                thumb: thumb || "",
+                thumbnail: thumb || ""
+            });
+            return;
+        }
+        // fallback
         shareModal?.classList.remove("hidden");
         shareModal?.setAttribute("aria-hidden", "false");
-        document.body.classList.add("modalOpen");
     }
 
     function closeShareModal() {
@@ -2250,4 +2282,85 @@
         getUser
     };
 
+})();
+
+
+/* Shorts Live cards in feed */
+(function () {
+  function findShortsTrack() {
+    return (
+      document.getElementById("shortsTrack") ||
+      document.getElementById("shortsFeed") ||
+      document.getElementById("shortsContainer") ||
+      document.querySelector(".shortsFeed, .shorts-track, .shortsContainer, #feed, main.shorts")
+    );
+  }
+  async function injectShortsLives() {
+    try {
+      var db = window.db || (window.firebase && firebase.database && firebase.database());
+      if (!db) return;
+      var snap = await db.ref("feedLive/shorts").once("value");
+      var track = findShortsTrack();
+      if (!track) return;
+      // remove stale live cards first
+      track.querySelectorAll(".shortLiveCard").forEach(function (n) {
+        try { n.remove(); } catch (_) {}
+      });
+      if (!snap.exists()) return;
+      var nodes = [];
+      snap.forEach(function (child) {
+        var d = child.val() || {};
+        if (d.active === false) return;
+        var uid = d.hostUid || d.uid || child.key;
+        var el = document.createElement("article");
+        el.className = "shortCard shortLiveCard";
+        el.dataset.liveUid = uid;
+        el.dataset.shortId = "live_" + uid;
+        var photo = d.hostPhoto || "assets/default-avatar.png";
+        var name = d.hostName || "Live";
+        var title = d.title || "Shorts Live";
+        el.innerHTML =
+          '<div class="shortLiveInner" style="position:relative;width:100%;min-height:70vh;background:#0a0a0f;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;padding:24px;box-sizing:border-box">' +
+          '<span style="position:absolute;top:16px;left:16px;background:#ef4444;padding:4px 10px;border-radius:99px;font-size:12px;font-weight:800;letter-spacing:.04em">LIVE</span>' +
+          '<img src="' +
+          String(photo).replace(/"/g, "") +
+          '" alt="" style="width:96px;height:96px;border-radius:50%;object-fit:cover;border:3px solid #ef4444" onerror="this.src=\'assets/default-avatar.png\'">' +
+          '<strong style="margin-top:14px;font-size:16px">' +
+          String(name).replace(/</g, "") +
+          "</strong>" +
+          '<span style="opacity:.75;font-size:13px;margin-top:6px;text-align:center">' +
+          String(title).replace(/</g, "") +
+          "</span>" +
+          '<button type="button" style="margin-top:18px;padding:12px 22px;border-radius:99px;border:none;background:linear-gradient(135deg,#ef4444,#ec4899);color:#fff;font-weight:700">Join Live</button>' +
+          "</div>";
+        el.addEventListener("click", function () {
+          location.href = "live.html?uid=" + encodeURIComponent(uid);
+        });
+        nodes.push(el);
+      });
+      nodes.reverse().forEach(function (el) {
+        if (track.firstChild) track.insertBefore(el, track.firstChild);
+        else track.appendChild(el);
+      });
+    } catch (e) {
+      console.warn("[VIEWORA] shorts lives", e);
+    }
+  }
+  function bootLives() {
+    injectShortsLives();
+    setTimeout(injectShortsLives, 1200);
+    setTimeout(injectShortsLives, 3500);
+    try {
+      var db = window.db || (window.firebase && firebase.database && firebase.database());
+      if (db && !window.__vieworaShortsLiveBound) {
+        window.__vieworaShortsLiveBound = true;
+        db.ref("feedLive/shorts").on("value", function () {
+          injectShortsLives();
+        });
+      }
+    } catch (_) {}
+  }
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", bootLives, { once: true });
+  } else bootLives();
 })();

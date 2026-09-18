@@ -3474,14 +3474,16 @@
 <script src="message-listener.js"></script>
     <script src="utils.js"></script>
 
-    <script src="nav.js"></script>
+    <script src="account-session.js"></script>
+<script src="nav.js"></script>
 
 
     <!-- =====================================================
          PROFILE JS
     ====================================================== -->
 
-    <script src="profile.js"></script>
+    <script src="share-sheet.js"></script>
+<script src="profile.js"></script>
 
 
     <!-- =====================================================
@@ -4081,49 +4083,31 @@
                    PROFILE MORE
                 ================================================= */
 
+                /* profileMoreBtn handled by profile.js → openVisitorMenu (NOT report) */
                 document
                     .getElementById(
                         "profileMoreBtn"
                     )
                     ?.addEventListener(
                         "click",
-                        function () {
-
-                            const currentUID =
-                                typeof window.getUID === "function"
-                                    ? window.getUID()
-                                    : window.auth?.currentUser?.uid || null;
-
-                            const uid =
-                                getProfileUID() ||
-                                window.profileUID ||
-                                "";
-
-                            if (
-                                currentUID &&
-                                uid &&
-                                String(currentUID) === String(uid)
-                            ) {
-                                vieworaProfileToast(
-                                    "More profile options coming soon."
-                                );
+                        function (e) {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            // Prefer profile.js menu
+                            if (window.VieworaProfile && typeof window.VieworaProfile.openMore === "function") {
+                                window.VieworaProfile.openMore();
                                 return;
                             }
-
-                            if (!uid) {
-                                vieworaProfileToast(
-                                    "Profile still loading."
-                                );
+                            const sheet = document.getElementById("visitorMoreSheet");
+                            if (sheet) {
+                                sheet.classList.remove("hidden");
+                                sheet.setAttribute("aria-hidden", "false");
+                                document.body.classList.add("modalOpen");
                                 return;
                             }
-
-                            const params = new URLSearchParams();
-                            params.set("type", "user");
-                            params.set("uid", uid);
-                            window.location.href =
-                                "report.html?" + params.toString();
-
-                        }
+                            // last resort: do nothing (never auto-open report)
+                        },
+                        true
                     );
 
 

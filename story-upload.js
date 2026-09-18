@@ -1236,3 +1236,19 @@
     };
 
 })();
+
+/* Stories Live — vertical 9:16 */
+(function () {
+  function goStoryLive() {
+    location.href =
+      "live.html?start=1&format=story&aspect=9x16&title=" +
+      encodeURIComponent("Story Live");
+  }
+  function bind() {
+    var btn = document.getElementById("storyGoLiveBtn");
+    if (btn) btn.addEventListener("click", goStoryLive);
+  }
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", bind, { once: true });
+  } else bind();
+})();
