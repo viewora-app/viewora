@@ -87,7 +87,7 @@
     // Story cards / rings
     document
       .querySelectorAll(
-        "[data-uid], [data-user-id], [data-userid], .storyCard, .story-ring, .storyItem, .userCard, .postAuthor, .chatRow, .messageAvatar, .profileHeader"
+        "[data-uid], [data-user-id], [data-userid], .storyCard, .story-ring, .storyItem, .userCard, .postAuthor, .messageAvatar, .profileHeader"
       )
       .forEach((el) => {
         const uid = getUidFromEl(el);
@@ -158,19 +158,43 @@
     mo.observe(document.body, { childList: true, subtree: true });
   }
 
-  // Click live ring → open live room
+  function isChatSurface(el) {
+    if (!el || !el.closest) return false;
+    const page = (location.pathname || "").split("/").pop() || "";
+    if (page === "messages.html" || page === "chat.html") return true;
+    return !!(
+      el.closest(
+        ".chatRow, .messageRow, .messagesList, .chatCard, .conversation, #messagesList, .composer, .chatHeader, a[href*='chat.html']"
+      )
+    );
+  }
+
+  function isStoryRingTarget(el) {
+    if (!el || !el.closest) return false;
+    return !!(
+      el.closest(
+        ".storyCard, .story-ring, .storyItem, .storyImageWrap, #storyRing, .profileStoryRing, .storiesRow, .storiesScroller, .highlightRing"
+      )
+    );
+  }
+
+  // Click live RING only → open live room
+  // Chat / messages row always opens chat, even if user is live.
   document.addEventListener(
     "click",
     (e) => {
+      if (isChatSurface(e.target)) return;
+      if (!isStoryRingTarget(e.target)) return;
+
       const card = e.target.closest(
-        ".live, .is-live, .live-ring, .storyCard.live, .story-ring.live, #storyRing.live, .profileStoryRing.live"
+        ".live, .is-live, .live-ring, .storyCard, .story-ring, .storyItem, #storyRing, .profileStoryRing"
       );
       if (!card) return;
-      if (!card.classList.contains("live") && !card.classList.contains("is-live") && !card.classList.contains("live-ring")) {
-        // parent might hold live class
-        if (!e.target.closest(".live, .is-live")) return;
-      }
-      const root = e.target.closest("[data-uid], [data-user-id], .storyCard, .story-ring, #storyRing, .profileStoryRing") || card;
+
+      const root =
+        e.target.closest(
+          "[data-uid], [data-user-id], .storyCard, .story-ring, .storyItem, #storyRing, .profileStoryRing"
+        ) || card;
       const uid =
         getUidFromEl(root) ||
         new URLSearchParams(location.search).get("uid") ||

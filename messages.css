@@ -1866,3 +1866,192 @@ img {
 [data-theme="light"] .searchBox {
   background: rgba(0,0,0,.06);
 }
+
+.gatedType.hidden, .createTypeBtn.hidden { display: none !important; }
+.friendsNotes { display: contents; }
+.noteAvatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+.notePlus { position: relative; overflow: hidden; }
+.notePlus i {
+  position: absolute; right: -2px; bottom: -2px; width: 18px; height: 18px;
+  border-radius: 50%; background: #7c3aed; color: #fff; font-size: 10px;
+  display: grid; place-items: center; border: 2px solid #0b0b10;
+}
+.noteBubble {
+  position: absolute; top: -8px; left: 50%; transform: translateX(-50%);
+  background: #1f1f2a; border: 1px solid rgba(255,255,255,.14);
+  color: #fff; font-size: 11px; padding: 5px 9px; border-radius: 12px;
+  white-space: nowrap; max-width: 96px; overflow: hidden; text-overflow: ellipsis;
+  z-index: 2; box-shadow: 0 4px 12px rgba(0,0,0,.35);
+}
+.friendsNotes {
+  display: flex; flex-direction: row; gap: 14px; align-items: flex-start;
+}
+.notesScroller {
+  display: flex; flex-direction: row; gap: 14px; align-items: flex-start;
+  overflow-x: auto; padding: 14px 12px 8px;
+}
+.friendNote .noteAvatar {
+  border: 2px solid #7c3aed;
+}
+.noteItem { position: relative; }
+.noteEditor {
+  position: fixed; inset: 0; z-index: 220; background: rgba(0,0,0,.55);
+  display: flex; align-items: flex-end; justify-content: center;
+}
+.noteEditor.hidden { display: none; }
+.noteEditorCard {
+  width: 100%; max-width: 520px; background: #14141c;
+  border-radius: 20px 20px 0 0; padding: 18px 16px 28px;
+}
+.noteEditorCard h3 { margin: 0 0 10px; }
+.noteEditorCard textarea {
+  width: 100%; min-height: 80px; border-radius: 14px; border: 1px solid rgba(255,255,255,.1);
+  background: #0e0e14; color: #fff; padding: 12px; font-size: 15px;
+}
+.noteEditorActions { display: flex; gap: 8px; margin-top: 12px; }
+.noteEditorActions button {
+  flex: 1; border: none; border-radius: 12px; padding: 12px; font-weight: 700; cursor: pointer;
+}
+#noteSaveBtn { background: linear-gradient(135deg,#7c3aed,#4f46e5); color: #fff; }
+#noteClearBtn, #noteCancelBtn { background: rgba(255,255,255,.08); color: #ddd; }
+
+.noteEditor {
+  padding-bottom: calc(88px + env(safe-area-inset-bottom));
+  align-items: flex-end;
+}
+.noteEditorHead {
+  display: flex; align-items: center; gap: 12px; margin-bottom: 10px;
+}
+.noteEditorHead img {
+  width: 48px; height: 48px; border-radius: 50%; object-fit: cover; background: #222;
+}
+.noteEditorHead h3 { margin: 0; }
+.noteAvatar {
+  width: 58px; height: 58px; border-radius: 50%; overflow: hidden;
+  display: grid; place-items: center; background: #2a2150; position: relative;
+}
+.noteAvatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.requestActions {
+  display: flex; gap: 8px; margin-top: 8px; width: 100%;
+}
+.reqBtn {
+  flex: 1; border: none; border-radius: 10px; padding: 8px 10px;
+  font-size: 12px; font-weight: 700; cursor: pointer;
+}
+.reqBtn.accept { background: #2563eb; color: #fff; }
+.reqBtn.decline { background: rgba(255,255,255,.08); color: #ddd; }
+.reqBtn.block { background: rgba(239,68,68,.15); color: #f87171; }
+.requestCard { border: 1px solid rgba(59,130,246,.25); }
+.requestsLink.active { color: #93c5fd; }
+
+.noteReactBadge {
+  margin-left: 4px; font-size: 12px;
+}
+.notePulse { transform: scale(1.06); transition: transform .2s ease; }
+.noteActionSheet {
+  position: fixed; inset: 0; z-index: 240; background: rgba(0,0,0,.55);
+  display: flex; align-items: flex-end; justify-content: center;
+}
+.noteActionSheet.hidden { display: none; }
+.noteActionCard {
+  width: 100%; max-width: 520px; background: #14141c;
+  border-radius: 20px 20px 0 0; padding: 18px 16px calc(18px + env(safe-area-inset-bottom));
+}
+.noteActionHead strong { display: block; font-size: 16px; margin-bottom: 4px; }
+.noteActionHead p { margin: 0 0 12px; font-size: 13px; color: #9ca3af; }
+.noteEmojiRow {
+  display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px;
+}
+.noteEmojiBtn {
+  width: 44px; height: 44px; border: none; border-radius: 12px;
+  background: rgba(255,255,255,.06); font-size: 22px; cursor: pointer;
+}
+.noteReplyRow {
+  display: flex; gap: 8px; align-items: center; margin-bottom: 10px;
+}
+.noteReplyRow input {
+  flex: 1; border: 1px solid rgba(255,255,255,.1); background: #0e0e14;
+  color: #fff; border-radius: 99px; padding: 12px 14px; font-size: 14px; outline: none;
+}
+.noteReplyRow button {
+  width: 44px; height: 44px; border: none; border-radius: 50%;
+  background: linear-gradient(135deg,#7c3aed,#4f46e5); color: #fff; cursor: pointer;
+}
+.noteActionCancel {
+  width: 100%; border: none; background: transparent; color: #9ca3af;
+  padding: 12px; font-weight: 600; cursor: pointer;
+}
+
+.notePlus {
+  position: relative;
+  overflow: visible !important;
+  width: 58px !important;
+  height: 58px !important;
+  border-radius: 50%;
+  background: #2a2150;
+}
+.notePlus img#myNoteAvatar,
+#myNoteAvatar {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  border-radius: 50% !important;
+  display: block !important;
+}
+.notePlus i {
+  position: absolute !important;
+  right: -2px !important;
+  bottom: -2px !important;
+  width: 18px !important;
+  height: 18px !important;
+  border-radius: 50%;
+  background: #7c3aed;
+  color: #fff;
+  font-size: 10px;
+  display: grid !important;
+  place-items: center;
+  border: 2px solid #0b0b10;
+  z-index: 3;
+}
+.noteItem.noteCreate {
+  position: relative;
+}
+.myNoteBubble {
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 4;
+  max-width: 100px;
+}
+.noteMsgChatBtn {
+  width: 100%;
+  border: none;
+  border-radius: 12px;
+  padding: 12px;
+  margin-bottom: 6px;
+  font-weight: 700;
+  background: linear-gradient(135deg,#7c3aed,#4f46e5);
+  color: #fff;
+  cursor: pointer;
+}
+.friendsNotes {
+  display: flex !important;
+  flex-direction: row;
+  gap: 14px;
+  align-items: flex-start;
+}
+.notesScroller {
+  display: flex !important;
+  flex-direction: row;
+  gap: 14px;
+  overflow-x: auto;
+  padding: 16px 12px 10px;
+  -webkit-overflow-scrolling: touch;
+}
+.chatAvatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}

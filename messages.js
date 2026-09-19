@@ -318,6 +318,10 @@ async function messagesInitialize() {
         messagesListenChats();
 
         messagesInitialized = true;
+        try {
+          if (typeof loadNotesStrip === "function") loadNotesStrip();
+          else if (typeof window.loadNotesStrip === "function") window.loadNotesStrip();
+        } catch (_) {}
 
         console.log(
             "%cVIEWORA MESSAGES READY",
@@ -455,13 +459,48 @@ function messagesListenChats() {
 
             messagesUpdateUnread();
 
-            // Enrich verified + photo from users/
+            // Enrich photos: groups from groups/, users from users/
             Promise.all(
                 messagesChats.map(async (chat) => {
-                    const uid = chat.userId || chat.uid || "";
-                    if (!uid) return;
-                    if (messagesIsVerified(chat) && (chat.photoURL || chat.profilePhoto)) return;
                     try {
+                        const isG = !!(
+                            chat.isGroup ||
+                            chat.groupId ||
+                            chat.chatType === "group" ||
+                            chat.chatType === "community" ||
+                            chat.chatType === "podcast" ||
+                            chat.chatType === "teamwork"
+                        );
+                        if (isG) {
+                            const gid = chat.groupId || chat.chatId || "";
+                            if (!chat.photoURL && chat.photo) chat.photoURL = chat.photo;
+                            if (gid && (!chat.photoURL || !chat.name)) {
+                                const roots = ["groups", "teams", "podcasts"];
+                                for (let r = 0; r < roots.length; r++) {
+                                    const snap = await db.ref(roots[r] + "/" + gid).once("value");
+                                    if (!snap.exists()) continue;
+                                    const g = snap.val() || {};
+                                    if (!chat.photoURL) {
+                                        chat.photoURL =
+                                            g.photoURL || g.photo || "";
+                                        chat.photo = chat.photoURL;
+                                        chat.profilePhoto = chat.photoURL;
+                                    }
+                                    if (!chat.name || chat.name === "Unknown User") {
+                                        chat.name = g.name || chat.name;
+                                    }
+                                    break;
+                                }
+                            }
+                            return;
+                        }
+                        const uid = chat.userId || chat.uid || "";
+                        if (!uid) return;
+                        if (
+                            messagesIsVerified(chat) &&
+                            (chat.photoURL || chat.profilePhoto)
+                        )
+                            return;
                         const snap = await db.ref("users/" + uid).once("value");
                         if (!snap.exists()) return;
                         const u = snap.val() || {};
@@ -648,6 +687,18 @@ function messagesGetFilteredChats() {
     let result =
         messagesChats.slice();
 
+    function isRequestChat(chat) {
+        return !!(chat && chat.request === true && chat.accepted !== true && !chat.isGroup && !chat.groupId);
+    }
+
+    if (messagesFilter === "requests") {
+        result = result.filter(isRequestChat);
+    } else {
+        result = result.filter(function (chat) {
+            return !isRequestChat(chat);
+        });
+    }
+
     const keyword =
         messagesSearch
             ? messagesSearch.value
@@ -726,6 +777,33 @@ function messagesGetFilteredChats() {
                 }
             );
 
+    }
+
+    if (messagesFilter === "groups") {
+        result = result.filter(function (chat) {
+            return !!(
+                chat.isGroup ||
+                chat.groupId ||
+                chat.chatType === "group" ||
+                chat.chatType === "community" ||
+                chat.chatType === "podcast" ||
+                (window.VieworaGroupChat &&
+                    VieworaGroupChat.isGroupChat(chat))
+            );
+        });
+    }
+
+    if (messagesFilter === "private") {
+        result = result.filter(function (chat) {
+            var isG = !!(
+                chat.isGroup ||
+                chat.groupId ||
+                chat.chatType === "group" ||
+                chat.chatType === "community" ||
+                chat.chatType === "podcast"
+            );
+            return !isG;
+        });
     }
 
     return result;
@@ -960,6 +1038,16 @@ function messagesCreateCard(chat) {
               `
             : "";
 
+    const isReq = chat.request === true && chat.accepted !== true && !chat.isGroup;
+    if (isReq) card.classList.add("requestCard");
+    const requestHTML = isReq
+        ? `<div class="requestActions">
+                <button type="button" class="reqBtn accept" data-req="accept">Accept</button>
+                <button type="button" class="reqBtn decline" data-req="decline">Decline</button>
+                <button type="button" class="reqBtn block" data-req="block">Block</button>
+           </div>`
+        : "";
+
     card.innerHTML = `
 
         <div class="chatAvatar">
@@ -1035,9 +1123,30 @@ function messagesCreateCard(chat) {
        NORMAL CLICK
     ================================================== */
 
+    card.querySelectorAll("[data-req]").forEach(function (btn) {
+        btn.addEventListener("click", async function (event) {
+            event.preventDefault();
+            event.stopPropagation();
+            var act = btn.getAttribute("data-req");
+            try {
+                if (act === "accept") await acceptMessageRequest(chat);
+                else if (act === "decline") await declineMessageRequest(chat);
+                else if (act === "block") await blockMessageRequest(chat);
+            } catch (e) {
+                console.error(e);
+                messagesToast("Could not update request", "error");
+            }
+        });
+    });
+
     card.addEventListener(
         "click",
         function(event) {
+            if (event.target.closest("[data-req]")) return;
+            if (chat.request === true && chat.accepted !== true && !chat.isGroup) {
+                // stay on requests until accepted
+                return;
+            }
 
             if (longPressTriggered) {
 
@@ -1047,6 +1156,29 @@ function messagesCreateCard(chat) {
 
                 return;
 
+            }
+
+            // Group / community / podcast → dedicated room page
+            const isGroup =
+                !!(chat.isGroup ||
+                    chat.groupId ||
+                    chat.chatType === "group" ||
+                    chat.chatType === "community" ||
+                    chat.chatType === "podcast" ||
+                    (window.VieworaGroupChat &&
+                        VieworaGroupChat.isGroupChat(chat)));
+            if (isGroup) {
+                const gid = chat.groupId || chat.chatId || chat.id || "";
+                if (!gid) {
+                    messagesToast("Group information missing", "error");
+                    return;
+                }
+                let page = "group.html";
+                const t = chat.chatType || chat.type || "group";
+                if (t === "podcast") page = "podcast.html";
+                else if (t === "community" || t === "teamwork") page = "teamwork.html";
+                location.href = page + "?id=" + encodeURIComponent(gid);
+                return;
             }
 
             // Resolve peer uid (userId or other half of chatId)
@@ -2781,7 +2913,8 @@ console.log(
   const TYPE_META = {
     group: { title: "New group", nameLabel: "Group name", pill: "Group" },
     community: { title: "New community", nameLabel: "Community name", pill: "Community" },
-    podcast: { title: "New podcast room", nameLabel: "Podcast name", pill: "Podcast" }
+    podcast: { title: "New podcast room", nameLabel: "Podcast name", pill: "Podcast" },
+    teamwork: { title: "New teamwork", nameLabel: "Team name", pill: "Teamwork" }
   };
 
   let createType = "group";
@@ -2816,6 +2949,14 @@ console.log(
   }
 
   function openCreateSheet(type) {
+    type = type || "group";
+    if (type !== "group" && typeof canCreateRoomType === "function" && !canCreateRoomType(type)) {
+      toast(type === "teamwork"
+        ? "Teamwork unlocks at 10k followers"
+        : "Community & Podcast need Blue tick / monetization");
+      return;
+    }
+
     createType = type || "group";
     selected = new Set();
     photoDataUrl = "";
@@ -3005,9 +3146,24 @@ console.log(
       const ref = db.ref("groups").push();
       const gid = ref.key;
       const members = {};
-      members[me] = { role: "admin", joinedAt: Date.now() };
-      selected.forEach((uid) => {
-        members[uid] = { role: "member", joinedAt: Date.now() };
+      function memberMeta(uid, role) {
+        var p = null;
+        try {
+          if (typeof peopleCache !== "undefined" && peopleCache) {
+            p = peopleCache.find(function (x) { return x.uid === uid || x.id === uid; });
+          }
+        } catch (_) {}
+        return {
+          role: role,
+          joinedAt: Date.now(),
+          name: (p && (p.name || p.displayName || p.username)) || "",
+          username: (p && p.username) || "",
+          photoURL: (p && (p.photo || p.photoURL || p.avatar)) || ""
+        };
+      }
+      members[me] = memberMeta(me, "owner");
+      selected.forEach(function (uid) {
+        members[uid] = memberMeta(uid, "member");
       });
 
       // Avoid huge base64 in RTDB (causes write failures / not found)
@@ -3023,13 +3179,16 @@ console.log(
         description: desc,
         type: createType,
         photo: safePhoto,
+        photoURL: safePhoto,
+        ownerId: me,
         createdBy: me,
         createdAt: Date.now(),
         updatedAt: Date.now(),
         members,
         memberCount: Object.keys(members).length,
         lastMessage: "Group created",
-        lastMessageAt: Date.now()
+        lastMessageAt: Date.now(),
+        background: ""
       };
       try {
         await ref.set(payload);
@@ -3044,6 +3203,8 @@ console.log(
         chatType: createType,
         name: name,
         photo: safePhoto || "",
+        photoURL: safePhoto || "",
+        ownerId: me,
         updatedAt: Date.now(),
         lastMessage: "Group created",
         lastMessageAt: Date.now(),
@@ -3072,19 +3233,27 @@ console.log(
       await db.ref().update(updates);
 
       toast(
-        (TYPE_META[createType] || TYPE_META.group).pill + " created"
+        ((TYPE_META[createType] || TYPE_META.group).pill || "Room") + " created"
       );
       closeCreateSheet();
-      // Stay on messages — group appears in list (chat.html group support optional)
-      setTimeout(function () {
-        try {
-          if (typeof loadChats === "function") loadChats();
-          else if (typeof refreshChats === "function") refreshChats();
-          else location.reload();
-        } catch (_) {
-          location.reload();
-        }
-      }, 500);
+      try {
+        var page = "group.html";
+        if (createType === "podcast") page = "podcast.html";
+        else if (createType === "community" || createType === "teamwork") page = "teamwork.html";
+        setTimeout(function () {
+          location.href = page + "?id=" + encodeURIComponent(gid);
+        }, 400);
+      } catch (_) {
+        setTimeout(function () {
+          try {
+            if (typeof loadChats === "function") loadChats();
+            else if (typeof refreshChats === "function") refreshChats();
+            else location.reload();
+          } catch (__) {
+            location.reload();
+          }
+        }, 500);
+      }
     } catch (e) {
       console.error("[VIEWORA] create group", e);
       var msg = (e && e.message) ? String(e.message) : "Could not create";
@@ -3100,6 +3269,505 @@ console.log(
       }
     }
   }
+
+
+  async function loadMyPrivileges() {
+    var out = {
+      blue: false,
+      red: false,
+      white: false,
+      monetized: false,
+      influencer: false,
+      followers: 0,
+      photo: "",
+      name: ""
+    };
+    try {
+      var uid = me || (firebase.auth().currentUser && firebase.auth().currentUser.uid);
+      if (!uid) return out;
+      var s = await firebase.database().ref("users/" + uid).once("value");
+      var u = s.val() || {};
+      out.blue = !!(u.verified || u.blueTick || u.tick === "blue" || u.badge === "blue");
+      out.red = !!(u.redTick || u.tick === "red" || u.vip);
+      out.white = !!(u.whiteTick || u.tick === "white");
+      out.monetized = !!(u.monetized || u.monetization || u.monetizationEnabled);
+      out.influencer = !!(u.influencer || u.role === "influencer" || u.creator);
+      out.followers = Number(u.followersCount || u.followers || 0) || 0;
+      if (!out.followers) {
+        try {
+          var fs = await firebase.database().ref("followers/" + uid).once("value");
+          if (fs.exists()) out.followers = fs.numChildren();
+        } catch (_) {}
+      }
+      out.photo = u.profilePhoto || u.photoURL || u.avatar || "";
+      out.name = u.displayName || u.name || u.username || "";
+    } catch (e) {
+      console.warn("priv", e);
+    }
+    window.__vieworaPriv = out;
+    return out;
+  }
+
+  function canCreateRoomType(type) {
+    var p = window.__vieworaPriv || {};
+    var creator = !!(p.blue || p.red || p.monetized || p.influencer);
+    if (type === "group") return true;
+    if (type === "teamwork") return creator || Number(p.followers || 0) >= 10000;
+    if (type === "community" || type === "podcast") return creator;
+    return false;
+  }
+
+  function applyCreateGates() {
+    document.querySelectorAll(".gatedType, [data-need]").forEach(function (btn) {
+      var type = btn.getAttribute("data-create") || "";
+      var ok = canCreateRoomType(type);
+      btn.classList.toggle("hidden", !ok);
+      btn.style.display = ok ? "" : "none";
+    });
+  }
+
+
+  function openMyNoteEditor() {
+    var cur = "";
+    try { cur = ($("myNoteLabel") && $("myNoteLabel").dataset.text) || ""; } catch (_) {}
+    openNoteSheet(cur);
+  }
+
+  function openNoteSheet(cur) {
+    var sheet = document.getElementById("createSheet") || document.getElementById("newChatModal");
+    // lightweight overlay
+    var wrap = document.getElementById("noteEditor");
+    if (!wrap) {
+      wrap = document.createElement("div");
+      wrap.id = "noteEditor";
+      wrap.className = "noteEditor";
+      wrap.innerHTML =
+        '<div class="noteEditorCard">' +
+        '<div class="noteEditorHead"><img id="noteEditorAvatar" src="assets/default-avatar.png" alt=""><h3>Your note</h3></div>' +
+        '<textarea id="noteTextInput" maxlength="60" placeholder="Share a thought…"></textarea>' +
+        '<div class="noteEditorActions">' +
+        '<button type="button" id="noteSaveBtn">Share</button>' +
+        '<button type="button" id="noteClearBtn">Remove</button>' +
+        '<button type="button" id="noteCancelBtn">Cancel</button>' +
+        "</div></div>";
+      document.body.appendChild(wrap);
+      wrap.addEventListener("click", function (e) {
+        if (e.target === wrap) wrap.classList.add("hidden");
+      });
+      document.getElementById("noteCancelBtn").onclick = function () {
+        wrap.classList.add("hidden");
+      };
+      document.getElementById("noteClearBtn").onclick = async function () {
+        await saveNote("");
+        wrap.classList.add("hidden");
+      };
+      document.getElementById("noteSaveBtn").onclick = async function () {
+        var t = (document.getElementById("noteTextInput").value || "").trim();
+        await saveNote(t);
+        wrap.classList.add("hidden");
+      };
+    }
+    wrap.classList.remove("hidden");
+    var ta = document.getElementById("noteTextInput");
+    if (ta) {
+      ta.value = cur || "";
+      ta.focus();
+    }
+    var av = document.getElementById("noteEditorAvatar") || document.getElementById("myNoteAvatar");
+    var src = (document.getElementById("myNoteAvatar") && document.getElementById("myNoteAvatar").src) || "";
+    if (document.getElementById("noteEditorAvatar") && src) {
+      document.getElementById("noteEditorAvatar").src = src;
+    }
+    try {
+      var uid = firebase.auth().currentUser && firebase.auth().currentUser.uid;
+      if (uid) {
+        firebase.database().ref("users/" + uid).once("value").then(function (s) {
+          var u = s.val() || {};
+          var ph = u.profilePhoto || u.photoURL || u.avatar || "";
+          if (ph) {
+            if (document.getElementById("noteEditorAvatar")) document.getElementById("noteEditorAvatar").src = ph;
+            if (document.getElementById("myNoteAvatar")) document.getElementById("myNoteAvatar").src = ph;
+          }
+        });
+      }
+    } catch (_) {}
+  }
+
+  async function saveNote(text) {
+    var uid = (firebase.auth().currentUser && firebase.auth().currentUser.uid) || me || messagesUID || "";
+    if (!uid) {
+      toast("Login required");
+      return;
+    }
+    var db = firebase.database();
+    var p = window.__vieworaPriv || {};
+    var photo = p.photo || "";
+    try {
+      if (!photo) {
+        var us = await db.ref("users/" + uid).once("value");
+        var u = us.val() || {};
+        photo = u.profilePhoto || u.photoURL || u.avatar || "";
+        p.name = p.name || u.displayName || u.name || u.username || "";
+      }
+    } catch (_) {}
+    try {
+      if (!text) {
+        await db.ref("userNotes/" + uid).remove();
+        await db.ref("users/" + uid + "/note").remove();
+        toast("Note removed");
+      } else {
+        var payload = {
+          text: text.slice(0, 60),
+          updatedAt: Date.now(),
+          name: p.name || "",
+          photo: photo || ""
+        };
+        await db.ref("userNotes/" + uid).set(payload);
+        await db.ref("users/" + uid + "/note").set(payload);
+        toast("Note shared");
+      }
+      var av = document.getElementById("myNoteAvatar");
+      if (av && photo) av.src = photo;
+    } catch (e) {
+      console.error("saveNote", e);
+      toast("Note not saved — check login / rules");
+    }
+    loadNotesStrip();
+  }
+
+  async function loadNotesStrip() {
+    // notes strip
+    var box = document.getElementById("friendsNotes");
+    var uid =
+      (firebase.auth().currentUser && firebase.auth().currentUser.uid) ||
+      me ||
+      (typeof messagesUID !== "undefined" ? messagesUID : "") ||
+      "";
+    if (!uid) return;
+    var db = firebase.database();
+
+    // My note + avatar (24h)
+    try {
+      var mine = await db.ref("userNotes/" + uid).once("value");
+      var mv = mine.val();
+      if (!mv || !mv.text) {
+        var mn = await db.ref("users/" + uid + "/note").once("value");
+        mv = mn.val();
+      }
+      var lab = document.getElementById("myNoteLabel");
+      var expired =
+        mv &&
+        mv.updatedAt &&
+        Date.now() - Number(mv.updatedAt) > 24 * 60 * 60 * 1000;
+      var myBtn = document.getElementById("createNoteBtn");
+      var existingBubble = myBtn && myBtn.querySelector(".noteBubble.myNoteBubble");
+      if (existingBubble) existingBubble.remove();
+      if (lab) {
+        if (mv && mv.text && !expired) {
+          lab.textContent = "Your note";
+          lab.dataset.text = String(mv.text);
+          if (myBtn) {
+            var b = document.createElement("span");
+            b.className = "noteBubble myNoteBubble";
+            b.textContent = String(mv.text).slice(0, 40);
+            myBtn.insertBefore(b, myBtn.firstChild);
+          }
+        } else {
+          lab.textContent = "Your note";
+          lab.dataset.text = "";
+          if (expired) {
+            try {
+              await db.ref("userNotes/" + uid).remove();
+              await db.ref("users/" + uid + "/note").remove();
+            } catch (_) {}
+          }
+        }
+      }
+      var us = await db.ref("users/" + uid).once("value");
+      var meU = us.val() || {};
+      var ph =
+        meU.profilePhoto ||
+        meU.photoURL ||
+        meU.avatar ||
+        (mv && mv.photo) ||
+        "";
+      var av = document.getElementById("myNoteAvatar");
+      if (av) {
+        if (ph) av.src = ph;
+        av.style.display = "block";
+        av.onerror = function () {
+          this.src = "assets/default-avatar.png";
+        };
+      }
+    } catch (e) {
+      console.warn("my note", e);
+    }
+
+    if (!box) return;
+
+    // Only: following + people you already chat with
+    var idSet = {};
+    try {
+      var fs = await db.ref("following/" + uid).once("value");
+      Object.keys(fs.val() || {}).forEach(function (k) {
+        if (k && k !== uid) idSet[k] = true;
+      });
+    } catch (_) {}
+    try {
+      var chats = await db.ref("userChats/" + uid).once("value");
+      chats.forEach(function (c) {
+        var ch = c.val() || {};
+        if (ch.isGroup || ch.groupId) return;
+        var peer = ch.userId || ch.uid || ch.peerId || "";
+        if (peer && peer !== uid) idSet[peer] = true;
+      });
+    } catch (_) {}
+
+    var ids = Object.keys(idSet).slice(0, 40);
+    var notes = [];
+
+    for (var i = 0; i < ids.length; i++) {
+      try {
+        var fid = ids[i];
+        var n = null;
+        var ns = await db.ref("userNotes/" + fid).once("value");
+        n = ns.val();
+        if (!n || !n.text) {
+          var n2 = await db.ref("users/" + fid + "/note").once("value");
+          n = n2.val();
+        }
+        if (!n || !n.text) continue;
+        if (n.updatedAt && Date.now() - Number(n.updatedAt) > 24 * 60 * 60 * 1000)
+          continue;
+        var u = {};
+        try {
+          var us2 = await db.ref("users/" + fid).once("value");
+          u = us2.val() || {};
+        } catch (_) {}
+        var myReact = "";
+        try {
+          var rs = await db
+            .ref("userNotes/" + fid + "/reactions/" + uid)
+            .once("value");
+          if (rs.exists()) myReact = rs.val().emoji || rs.val() || "";
+        } catch (_) {}
+        notes.push({
+          uid: fid,
+          text: String(n.text).slice(0, 60),
+          photo:
+            u.profilePhoto ||
+            u.photoURL ||
+            u.avatar ||
+            n.photo ||
+            "assets/default-avatar.png",
+          name: u.displayName || u.name || u.username || n.name || "User",
+          username: u.username || "",
+          at: Number(n.updatedAt || 0),
+          myReact: typeof myReact === "string" ? myReact : ""
+        });
+      } catch (_) {}
+    }
+
+    notes.sort(function (a, b) {
+      return b.at - a.at;
+    });
+
+    box.innerHTML = notes
+      .map(function (n) {
+        return (
+          '<button type="button" class="noteItem friendNote" data-uid="' +
+          n.uid +
+          '" data-text="' +
+          String(n.text).replace(/"/g, "&quot;") +
+          '" data-name="' +
+          String(n.name).replace(/"/g, "&quot;") +
+          '">' +
+          '<span class="noteAvatar"><img src="' +
+          String(n.photo).replace(/"/g, "") +
+          '" alt="" onerror="this.src=\'assets/default-avatar.png\'"></span>' +
+          '<span class="noteBubble">' +
+          String(n.text).replace(/</g, "&lt;") +
+          (n.myReact
+            ? '<span class="noteReactBadge">' + n.myReact + "</span>"
+            : "") +
+          "</span>" +
+          '<span class="noteLabel">' +
+          String(n.username || n.name).replace(/</g, "&lt;") +
+          "</span></button>"
+        );
+      })
+      .join("");
+
+    box.querySelectorAll(".friendNote").forEach(function (btn) {
+      btn.addEventListener("click", function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        openNoteActionSheet(
+          btn.getAttribute("data-uid"),
+          btn.getAttribute("data-text") || "",
+          btn.getAttribute("data-name") || "User"
+        );
+      });
+    });
+  }
+
+  function openNoteActionSheet(targetUid, noteText, name) {
+    if (!targetUid) return;
+    var wrap = document.getElementById("noteActionSheet");
+    if (!wrap) {
+      wrap = document.createElement("div");
+      wrap.id = "noteActionSheet";
+      wrap.className = "noteActionSheet";
+      wrap.innerHTML =
+        '<div class="noteActionCard">' +
+        '<div class="noteActionHead">' +
+        '<strong id="noteActName">Note</strong>' +
+        '<p id="noteActText" class="muted"></p></div>' +
+        '<div class="noteEmojiRow" id="noteEmojiRow">' +
+        ["❤️", "😂", "🔥", "👏", "😍", "😮", "👍", "🙌"]
+          .map(function (e) {
+            return (
+              '<button type="button" class="noteEmojiBtn" data-emoji="' +
+              e +
+              '">' +
+              e +
+              "</button>"
+            );
+          })
+          .join("") +
+        "</div>" +
+        '<div class="noteReplyRow">' +
+        '<input type="text" id="noteReplyInput" maxlength="200" placeholder="Reply to note…">' +
+        '<button type="button" id="noteReplySend"><i class="fa-solid fa-paper-plane"></i></button>' +
+        "</div>" +
+        '<button type="button" class="noteMsgChatBtn" id="noteMsgChatBtn">Message</button>' +
+        '<button type="button" class="noteActionCancel" id="noteActCancel">Close</button>' +
+        "</div>";
+      document.body.appendChild(wrap);
+      wrap.addEventListener("click", function (e) {
+        if (e.target === wrap) wrap.classList.add("hidden");
+      });
+      document.getElementById("noteActCancel").onclick = function () {
+        wrap.classList.add("hidden");
+      };
+      document.getElementById("noteMsgChatBtn").onclick = function () {
+        var u = wrap.dataset.uid;
+        if (u) location.href = "chat.html?uid=" + encodeURIComponent(u);
+      };
+    }
+    wrap.classList.remove("hidden");
+    wrap.dataset.uid = targetUid;
+    var msgBtn = document.getElementById("noteMsgChatBtn");
+    if (msgBtn) {
+      msgBtn.onclick = function () {
+        location.href = "chat.html?uid=" + encodeURIComponent(targetUid);
+      };
+    }
+    var nm = document.getElementById("noteActName");
+    var tx = document.getElementById("noteActText");
+    if (nm) nm.textContent = name || "Note";
+    if (tx) tx.textContent = noteText || "";
+
+    document.querySelectorAll(".noteEmojiBtn").forEach(function (btn) {
+      btn.onclick = async function () {
+        await reactToNote(targetUid, btn.getAttribute("data-emoji"));
+        wrap.classList.add("hidden");
+      };
+    });
+    document.getElementById("noteReplySend").onclick = async function () {
+      var input = document.getElementById("noteReplyInput");
+      var text = (input && input.value.trim()) || "";
+      if (!text) return;
+      await replyToNote(targetUid, noteText, text);
+      if (input) input.value = "";
+      wrap.classList.add("hidden");
+    };
+  }
+
+  async function reactToNote(targetUid, emoji) {
+    var myUid =
+      (firebase.auth().currentUser && firebase.auth().currentUser.uid) || "";
+    if (!myUid || !targetUid || !emoji) return;
+    try {
+      await firebase
+        .database()
+        .ref("userNotes/" + targetUid + "/reactions/" + myUid)
+        .set({ emoji: emoji, at: Date.now() });
+      // also lightweight activity for owner
+      try {
+        await firebase
+          .database()
+          .ref("activity/" + targetUid)
+          .push({
+            type: "note_react",
+            from: myUid,
+            emoji: emoji,
+            createdAt: Date.now()
+          });
+      } catch (_) {}
+      toast(emoji + " reacted");
+      loadNotesStrip();
+    } catch (e) {
+      console.error(e);
+      toast("Could not react");
+    }
+  }
+
+  async function replyToNote(targetUid, noteText, replyText) {
+    var myUid =
+      (firebase.auth().currentUser && firebase.auth().currentUser.uid) || "";
+    if (!myUid || !targetUid) return;
+    var db = firebase.database();
+    try {
+      // open/send as normal chat message so it lands in chat
+      var ids = [myUid, targetUid].sort();
+      var chatId = ids[0] + "_" + ids[1];
+      var preview = "Note reply: " + replyText.slice(0, 80);
+      var msg = {
+        type: "note_reply",
+        text: replyText.slice(0, 200),
+        noteText: String(noteText || "").slice(0, 60),
+        senderId: myUid,
+        createdAt: Date.now()
+      };
+      await db.ref("vieworaChats/" + chatId + "/messages").push(msg);
+      try {
+        await db.ref("chats/" + chatId + "/messages").push(msg);
+      } catch (_) {}
+      var myName = "";
+      var myPhoto = "";
+      try {
+        var us = await db.ref("users/" + myUid).once("value");
+        var u = us.val() || {};
+        myName = u.displayName || u.name || u.username || "User";
+        myPhoto = u.profilePhoto || u.photoURL || "";
+      } catch (_) {}
+      await db.ref("userChats/" + targetUid + "/" + chatId).update({
+        chatId: chatId,
+        userId: myUid,
+        name: myName,
+        photoURL: myPhoto,
+        lastMessage: preview,
+        lastMessageTime: Date.now(),
+        unread: firebase.database.ServerValue.increment
+          ? firebase.database.ServerValue.increment(1)
+          : 1
+      });
+      await db.ref("userChats/" + myUid + "/" + chatId).update({
+        chatId: chatId,
+        userId: targetUid,
+        lastMessage: preview,
+        lastMessageTime: Date.now(),
+        unread: 0
+      });
+      toast("Reply sent");
+      // optional: stay on messages; user can open chat
+    } catch (e) {
+      console.error(e);
+      toast("Reply failed");
+    }
+  }
+
 
   function bind() {
     // note strip + modal create type buttons
@@ -3153,14 +3821,15 @@ console.log(
     });
 
     $("requestsBtn")?.addEventListener("click", () => {
-      toast("Message requests — coming with filter");
-      // switch to a requests-like empty for now
-      const unread = document.querySelector('.filter[data-filter="unread"]');
-      if (unread) unread.click();
+      location.href = "request.html";
     });
 
-    $("createNoteBtn")?.addEventListener("click", () => {
-      toast("Notes — set a short status (soon)");
+    $("createNoteBtn")?.addEventListener("click", openMyNoteEditor);
+    loadNotesStrip();
+    loadMyPrivileges().then(function (p) {
+      applyCreateGates();
+      var av = $("myNoteAvatar");
+      if (av && p.photo) av.src = p.photo;
     });
     const openNew = () => {
       const modal = $("newChatModal");
@@ -3178,6 +3847,7 @@ console.log(
   }
 
   // Expose for list rendering of group chats
+  window.loadNotesStrip = loadNotesStrip;
   window.VieworaGroupChat = {
     openCreate: openCreateSheet,
     isGroupChat: function (data) {

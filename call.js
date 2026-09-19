@@ -752,40 +752,38 @@
                 error
             );
 
-
-            if (
-                error.name ===
-                "NotAllowedError"
-            ) {
-
-                toast(
-                    "Allow microphone/camera for this site, then try again."
-                );
-                showEnded(
-                    "Permission denied. Enable mic/camera in browser settings."
-                );
-
-            } else if (
-                error.name ===
-                "NotFoundError"
-            ) {
-
-                toast(
-                    "Camera or microphone not found."
-                );
-                showEnded("No mic/camera found.");
-
+            // Video failed → try audio-only so call still connects
+            if (callType === "video") {
+                try {
+                    localStream = await navigator.mediaDevices.getUserMedia({
+                        audio: {
+                            echoCancellation: true,
+                            noiseSuppression: true,
+                            autoGainControl: true
+                        },
+                        video: false
+                    });
+                    callType = "audio";
+                    toast("Camera unavailable — voice only.");
+                } catch (e2) {
+                    if (error.name === "NotAllowedError" || e2.name === "NotAllowedError") {
+                        toast("Allow mic/camera in browser, then call again.");
+                        showEnded("Permission denied. Tap site lock icon → allow mic.");
+                    } else {
+                        toast("Unable to access microphone.");
+                        showEnded("Media error. Try again.");
+                    }
+                    throw e2;
+                }
+            } else if (error.name === "NotAllowedError") {
+                toast("Allow microphone for this site, then try again.");
+                showEnded("Permission denied. Enable mic in browser settings.");
+                throw error;
             } else {
-
-                toast(
-                    "Unable to access camera or microphone."
-                );
+                toast("Unable to access microphone.");
                 showEnded("Media error. Try again.");
-
+                throw error;
             }
-
-
-            throw error;
 
         }
 
@@ -1019,6 +1017,7 @@
 
 
                 if (state === "connected") {
+                    try { stopCallerRingtone(); } catch (_) {}
                     iceRestartAttempts = 0;
                     clearRingTimeout();
                     accepted = true;
@@ -1675,11 +1674,94 @@
 
                 }
 
+                if (
+                    data.status === "accepted" ||
+                    data.status === "connected"
+                ) {
+                    try { stopCallerRingtone(); } catch (_) {}
+                    try { clearRingTimeout(); } catch (_) {}
+                    if (role === "caller" && !accepted) {
+                        accepted = true;
+                        setConnecting(false);
+                        setStatus(data.status === "connected" ? "Connected" : "Connecting...");
+                    }
+                    if (data.status === "connected") {
+                        setConnecting(false);
+                        setStatus("Connected");
+                    }
+                }
+
             }
         );
 
     }
 
+
+
+    let callerRingAudio = null;
+
+    function startCallerRingtone() {
+        try {
+            stopCallerRingtone();
+            const src =
+                localStorage.getItem("viewora_call_ringtone") ||
+                "assets/call-ringtone.mp3";
+            const a = new Audio(src);
+            a.loop = true;
+            a.volume = 0.9;
+            const p = a.play();
+            if (p && p.catch) {
+                p.catch(function () {
+                    try {
+                        const Ctx = window.AudioContext || window.webkitAudioContext;
+                        if (!Ctx) return;
+                        const ctx = new Ctx();
+                        const gain = ctx.createGain();
+                        gain.connect(ctx.destination);
+                        gain.gain.value = 0.1;
+                        function beep() {
+                            if (!callerRingAudio || callerRingAudio._dead) return;
+                            const o = ctx.createOscillator();
+                            o.type = "sine";
+                            o.frequency.value = 480;
+                            o.connect(gain);
+                            const t = ctx.currentTime;
+                            o.start(t);
+                            o.stop(t + 0.35);
+                        }
+                        beep();
+                        const iv = setInterval(beep, 1500);
+                        callerRingAudio = {
+                            _dead: false,
+                            pause: function () {},
+                            stop: function () {
+                                this._dead = true;
+                                clearInterval(iv);
+                                try { ctx.close(); } catch (_) {}
+                            }
+                        };
+                    } catch (_) {}
+                });
+            }
+            if (!callerRingAudio) callerRingAudio = a;
+        } catch (e) {
+            console.warn("caller ring", e);
+        }
+    }
+
+    function stopCallerRingtone() {
+        try {
+            if (!callerRingAudio) return;
+            if (typeof callerRingAudio.pause === "function") {
+                callerRingAudio.pause();
+                try { callerRingAudio.currentTime = 0; } catch (_) {}
+            }
+            if (typeof callerRingAudio.stop === "function") {
+                callerRingAudio.stop();
+            }
+        } catch (_) {}
+        callerRingAudio = null;
+    }
 
     /* ======================================================
        OUTGOING CALL
@@ -1759,6 +1841,7 @@
 
         startRingTimeout();
         requestWakeLock();
+        startCallerRingtone();
 
 
         /*
@@ -1905,16 +1988,25 @@
             remoteUserId
         );
 
-
-        showIncoming();
-
-
         listenForOffer();
-
         listenForICE();
-
         listenCallState();
 
+        // Already accepted from banner / URL — skip second Accept screen
+        const alreadyAccepted =
+            autoAccept ||
+            data.status === "accepted" ||
+            data.status === "connected";
+
+        if (alreadyAccepted) {
+            log("📲 Auto-accepting (single accept flow).");
+            if (incomingScreen) incomingScreen.classList.add("hidden");
+            if (callApp) callApp.classList.remove("hidden");
+            await acceptCall();
+            return;
+        }
+
+        showIncoming();
 
         log(
             "📲 Incoming call prepared."
@@ -2789,6 +2881,9 @@
     ====================================================== */
 
     function showEnded(message) {
+
+        try { stopCallerRingtone(); } catch (_) {}
+        try { clearRingTimeout(); } catch (_) {}
 
         setConnecting(
             false

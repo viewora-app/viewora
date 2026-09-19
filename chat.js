@@ -2803,6 +2803,19 @@
         };
 
         try {
+            // Request if they don't follow me and haven't accepted
+            try {
+                const fol = await db.ref("following/" + otherUID + "/" + myUID).once("value");
+                const theyFollow = fol.exists();
+                if (!theyFollow) {
+                    otherInbox.request = true;
+                    otherInbox.accepted = false;
+                } else {
+                    otherInbox.request = false;
+                    otherInbox.accepted = true;
+                }
+            } catch (_) {}
+
             // Update my inbox entry
             await db.ref("userChats/" + myUID + "/" + chatId).update(myInbox);
 

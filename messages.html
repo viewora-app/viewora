@@ -111,21 +111,13 @@
     <section class="notesSection" id="notesSection">
         <div class="notesScroller" id="notesScroller">
             <button type="button" class="noteItem noteCreate" id="createNoteBtn">
-                <span class="noteAvatar notePlus"><i class="fa-solid fa-plus"></i></span>
-                <span class="noteLabel">Your note</span>
+                <span class="noteAvatar notePlus" id="myNoteAvatarWrap">
+                    <img id="myNoteAvatar" src="assets/default-avatar.png" alt="">
+                    <i class="fa-solid fa-plus"></i>
+                </span>
+                <span class="noteLabel" id="myNoteLabel">Your note</span>
             </button>
-            <button type="button" class="noteItem noteType" data-create="group">
-                <span class="noteAvatar noteGroup"><i class="fa-solid fa-user-group"></i></span>
-                <span class="noteLabel">Group</span>
-            </button>
-            <button type="button" class="noteItem noteType" data-create="community">
-                <span class="noteAvatar noteCommunity"><i class="fa-solid fa-people-roof"></i></span>
-                <span class="noteLabel">Community</span>
-            </button>
-            <button type="button" class="noteItem noteType" data-create="podcast">
-                <span class="noteAvatar notePodcast"><i class="fa-solid fa-microphone-lines"></i></span>
-                <span class="noteLabel">Podcast</span>
-            </button>
+            <div id="friendsNotes" class="friendsNotes"></div>
         </div>
     </section>
 
@@ -406,7 +398,15 @@
                 </span>
                 <i class="fa-solid fa-chevron-right"></i>
             </button>
-            <button type="button" class="createTypeBtn" data-create="community">
+            <button type="button" class="createTypeBtn gatedType hidden" data-create="teamwork" data-need="followers">
+                <span class="createTypeIcon teamwork"><i class="fa-solid fa-briefcase"></i></span>
+                <span class="createTypeText">
+                    <strong>Teamwork</strong>
+                    <small>Tasks &amp; collab — 10k followers</small>
+                </span>
+                <i class="fa-solid fa-chevron-right"></i>
+            </button>
+            <button type="button" class="createTypeBtn gatedType hidden" data-create="community" data-need="creator">
                 <span class="createTypeIcon community"><i class="fa-solid fa-people-roof"></i></span>
                 <span class="createTypeText">
                     <strong>Community</strong>
@@ -414,7 +414,7 @@
                 </span>
                 <i class="fa-solid fa-chevron-right"></i>
             </button>
-            <button type="button" class="createTypeBtn" data-create="podcast">
+            <button type="button" class="createTypeBtn gatedType hidden" data-create="podcast" data-need="creator">
                 <span class="createTypeIcon podcast"><i class="fa-solid fa-microphone-lines"></i></span>
                 <span class="createTypeText">
                     <strong>Podcast room</strong>

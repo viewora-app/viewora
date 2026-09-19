@@ -1377,9 +1377,17 @@
                 "&role=receiver" +
                 "&type=" +
                 encodeURIComponent(type) +
+                "&autoAccept=1" +
                 (caller
                     ? "&callerId=" + encodeURIComponent(caller)
                     : "");
+
+            // Gesture unlock audio for next page
+            try {
+                const a = new Audio("assets/call-ringtone.mp3");
+                a.volume = 0.01;
+                a.play().then(() => { a.pause(); }).catch(() => {});
+            } catch (_) {}
 
             window.location.href = url;
 
