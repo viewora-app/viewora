@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script>(function(){try{var t=localStorage.getItem("viewora_theme")||"dark";document.documentElement.setAttribute("data-theme",t);}catch(e){document.documentElement.setAttribute("data-theme","dark");}})();</script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#0a0a0f">
+  <title>Message requests • VIEWORA</title>
+  <link rel="icon" href="assets/logo.png">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <link rel="stylesheet" href="theme.css">
+  <link rel="stylesheet" href="request.css">
+</head>
+<body>
+  <div class="reqApp">
+    <header class="reqHeader">
+      <button type="button" class="iconBtn" id="backBtn" aria-label="Back"><i class="fa-solid fa-arrow-left"></i></button>
+      <h1>Message requests</h1>
+      <button type="button" class="iconBtn" id="spamBtn" aria-label="Spam"><i class="fa-solid fa-filter"></i></button>
+    </header>
+
+    <div class="reqBanner" id="reqBanner">
+      <div>
+        <strong>Spam folder</strong>
+        <p>When you decline a request, you can mark it as spam so it won’t show again.</p>
+      </div>
+      <button type="button" class="bannerClose" id="bannerClose" aria-label="Close">×</button>
+    </div>
+
+    <button type="button" class="spamRow" id="spamFolderBtn">
+      <span class="spamIcon"><i class="fa-solid fa-ban"></i></span>
+      <span>Spam</span>
+      <i class="fa-solid fa-chevron-right"></i>
+    </button>
+
+    <div id="reqList" class="reqList"></div>
+
+    <div id="reqEmpty" class="reqEmpty">
+      <div class="emptyIcon"><i class="fa-regular fa-paper-plane"></i></div>
+      <h2>No message requests yet</h2>
+      <p>You can control who can send you message requests in settings.</p>
+    </div>
+  </div>
+
+  <div id="toast" class="toast hidden"></div>
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+  <script src="firebase.js"></script>
+  <script src="theme.js"></script>
+  <script src="request.js"></script>
+</body>
+</html>

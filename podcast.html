@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#0a0a0f">
+  <title>Podcast • Viewora</title>
+  <link rel="icon" href="assets/logo.png">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <link rel="stylesheet" href="theme.css">
+  <link rel="stylesheet" href="podcast.css">
+</head>
+<body data-room="podcast">
+  <div id="app" class="roomApp">
+    <header class="roomHeader">
+      <button type="button" class="iconBtn" id="backBtn" aria-label="Back"><i class="fa-solid fa-arrow-left"></i></button>
+      <div class="roomHeaderMain" id="headerMain">
+        <img id="roomAvatar" class="roomAvatar" src="assets/default-avatar.png" alt="">
+        <div class="roomHeaderText">
+          <strong id="roomName">Group</strong>
+          <span id="roomSub">Members</span>
+        </div>
+      </div>
+      <button type="button" class="iconBtn" id="roomMoreBtn" aria-label="More"><i class="fa-solid fa-ellipsis-vertical"></i></button>
+    </header>
+
+    <div class="roomTabs">
+      <button type="button" class="roomTab active" data-tab="chat">Lobby</button>
+      <button type="button" class="roomTab" data-tab="episodes">Episodes</button>
+      <button type="button" class="roomTab" data-tab="members">Members</button>
+      <button type="button" class="roomTab" data-tab="info">Info</button>
+    </div>
+
+    <main class="roomMain">
+      <section id="tabChat" class="roomPanel active">
+        <div class="podcastHero">
+          <div class="podcastWave"><i class="fa-solid fa-microphone-lines"></i></div>
+          <h2 id="podStatus">Lobby</h2>
+          <p class="muted">Owner / admins can start a session. Members can listen & chat.</p>
+          <button type="button" class="primaryBtn" id="startSessionBtn"><i class="fa-solid fa-tower-broadcast"></i> Start session</button>
+        </div>
+        <div id="messagesBox" class="messagesBox"></div>
+        <div class="composer">
+          <input id="msgInput" type="text" maxlength="2000" placeholder="Message the room…" autocomplete="off">
+          <button type="button" class="sendBtn" id="sendBtn"><i class="fa-solid fa-paper-plane"></i></button>
+        </div>
+      </section>
+
+      <section id="tabEpisodes" class="roomPanel">
+        <div class="panelHead">
+          <h2>Episodes</h2>
+          <button type="button" class="pillBtn" id="addEpisodeBtn"><i class="fa-solid fa-plus"></i> Add</button>
+        </div>
+        <div id="episodesList" class="episodesList"></div>
+      </section>
+
+      <section id="tabMembers" class="roomPanel">
+        <div class="panelHead">
+          <h2>Members</h2>
+          <button type="button" class="pillBtn" id="inviteBtn"><i class="fa-solid fa-user-plus"></i> Invite</button>
+        </div>
+        <div id="membersList" class="membersList"></div>
+      </section>
+
+      <section id="tabInfo" class="roomPanel">
+        <div class="infoCard">
+          <img id="infoAvatar" class="infoAvatar" src="assets/default-avatar.png" alt="">
+          <h2 id="infoName">—</h2>
+          <p id="infoDesc" class="muted">—</p>
+          <div class="rolePill" id="myRolePill">Member</div>
+        </div>
+        <div class="settingsList" id="settingsList"></div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Group profile (IG-style) -->
+  <div id="groupProfile" class="groupProfile hidden">
+    <div class="gpTop">
+      <button type="button" class="iconBtn" id="gpBack"><i class="fa-solid fa-arrow-left"></i></button>
+      <span class="gpTopTitle">Group info</span>
+      <span></span>
+    </div>
+    <div class="gpHero" id="gpHero">
+      <div class="gpHeroBg" id="gpHeroBg"></div>
+      <img id="gpAvatar" class="gpAvatar" src="assets/default-avatar.png" alt="">
+      <h1 id="gpName">Group</h1>
+      <button type="button" class="linkBtn" id="gpChangeName">Change group name</button>
+      <div class="gpActions">
+        <button type="button" class="gpAct" id="gpMute"><i class="fa-solid fa-bell-slash"></i><span>Mute</span></button>
+        <button type="button" class="gpAct danger" id="gpReport"><i class="fa-solid fa-flag"></i><span>Report</span></button>
+        <button type="button" class="gpAct" id="gpLeave"><i class="fa-solid fa-arrow-right-from-bracket"></i><span>Leave</span></button>
+      </div>
+    </div>
+    <div class="gpSection">
+      <div class="gpSectionHead">
+        <strong>Members <span id="gpMemberCount">(0)</span></strong>
+        <button type="button" class="pillBtn" id="gpInvite"><i class="fa-solid fa-user-plus"></i> Add</button>
+      </div>
+      <div id="gpMembers" class="gpMembers"></div>
+    </div>
+    <div class="gpSection">
+      <button type="button" class="setBtn" id="gpBgBtn"><i class="fa-solid fa-image"></i> Change chat background</button>
+      <button type="button" class="setBtn" id="gpPhotoBtn"><i class="fa-solid fa-camera"></i> Change group photo</button>
+      <input type="file" id="gpBgInput" accept="image/*" hidden>
+      <input type="file" id="gpPhotoInput" accept="image/*" hidden>
+    </div>
+  </div>
+
+  <div id="sheet" class="sheet hidden">
+    <div class="sheetBackdrop" data-close="1"></div>
+    <div class="sheetPanel" id="sheetPanel"></div>
+  </div>
+
+  <div id="toast" class="toast hidden"></div>
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+  <script src="firebase.js"></script>
+  <script src="theme.js"></script>
+  <script src="podcast.js"></script>
+</body>
+</html>
