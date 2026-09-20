@@ -161,8 +161,7 @@
       });
       n.onclick = function () {
         window.focus();
-        location.href =
-          "chat.html?uid=" + encodeURIComponent(peerId || "");
+        openChatUrl(peerId || "");
         n.close();
       };
       setTimeout(() => {
@@ -220,7 +219,7 @@
         hideBanner();
         return;
       }
-      if (peerId) location.href = "chat.html?uid=" + encodeURIComponent(peerId);
+      openChatUrl(peerId, name, photo);
     };
 
     requestAnimationFrame(() => bannerEl.classList.add("show"));
@@ -253,56 +252,116 @@
     return chat.lastText || chat.preview || "New message";
   }
 
+  function resolvePeerId(key, chat, myUid) {
+    chat = chat || {};
+    myUid = String(myUid || "");
+    const candidates = [
+      chat.userId,
+      chat.peerId,
+      chat.otherUid,
+      chat.otherId,
+      chat.uid,
+      chat.senderId
+    ];
+    for (let i = 0; i < candidates.length; i++) {
+      const id = String(candidates[i] || "").trim();
+      if (id && id !== myUid && id.indexOf("_") === -1) return id;
+    }
+    // Canonical chatId: uidA_uidB
+    const k = String(key || "");
+    if (k.indexOf("_") !== -1 && myUid) {
+      const parts = k.split("_");
+      if (parts.length >= 2) {
+        if (parts[0] === myUid) return parts.slice(1).join("_");
+        if (parts[parts.length - 1] === myUid) return parts.slice(0, -1).join("_");
+        // two-part sorted ids
+        if (parts.length === 2) {
+          return parts[0] === myUid ? parts[1] : parts[0];
+        }
+      }
+    }
+    // Legacy: key itself is peer uid
+    if (k && k !== myUid && k.indexOf("_") === -1) return k;
+    return "";
+  }
+
+  function openChatUrl(peerId, name, photo) {
+    peerId = String(peerId || "").trim();
+    if (!peerId) {
+      location.href = "messages.html";
+      return;
+    }
+    let url = "chat.html?uid=" + encodeURIComponent(peerId);
+    if (name) url += "&name=" + encodeURIComponent(name);
+    if (photo) url += "&photo=" + encodeURIComponent(photo);
+    location.href = url;
+  }
+
   function handleChatSnap(snap) {
     const data = snap.val() || {};
-    const peerIds = Object.keys(data);
+    const keys = Object.keys(data);
+    const myUid = currentUser && currentUser.uid ? currentUser.uid : "";
 
     // First snapshot: only seed, no alerts
     if (!primed) {
-      peerIds.forEach((pid) => {
-        const c = data[pid] || {};
-        known[pid] = {
+      keys.forEach((key) => {
+        const c = data[key] || {};
+        const peerId = resolvePeerId(key, c, myUid) || key;
+        known[key] = {
           unread: Number(c.unread || c.unreadCount || 0),
           lastAt: lastAtOf(c),
-          lastText: lastTextOf(c)
+          lastText: lastTextOf(c),
+          peerId: peerId
         };
       });
       primed = true;
-      log("primed", peerIds.length, "chats");
+      log("primed", keys.length, "chats");
       return;
     }
 
-    peerIds.forEach((pid) => {
-      const c = data[pid] || {};
+    keys.forEach((key) => {
+      const c = data[key] || {};
+      const peerId = resolvePeerId(key, c, myUid);
       const unread = Number(c.unread || c.unreadCount || 0);
       const lastAt = lastAtOf(c);
       const lastText = lastTextOf(c);
-      const prev = known[pid] || { unread: 0, lastAt: 0, lastText: "" };
+      const prev = known[key] || { unread: 0, lastAt: 0, lastText: "", peerId: "" };
 
       const isNew =
         (unread > prev.unread && unread > 0) ||
         (lastAt > prev.lastAt && unread > 0);
 
-      known[pid] = { unread: unread, lastAt: lastAt, lastText: lastText };
+      known[key] = {
+        unread: unread,
+        lastAt: lastAt,
+        lastText: lastText,
+        peerId: peerId || prev.peerId || ""
+      };
 
       if (!isNew) return;
-      if (isOnChatWith(pid)) return; // already reading this chat
+
+      const openId = peerId || prev.peerId || "";
+      if (!openId) {
+        log("skip alert — no peerId for key", key);
+        return;
+      }
+      if (isOnChatWith(openId)) return;
 
       const name =
         c.name || c.displayName || c.username || c.peerName || "Someone";
       const photo =
-        c.photoURL || c.avatar || c.profilePic || c.peerPhoto || "";
+        c.photoURL || c.avatar || c.profilePic || c.peerPhoto || c.photo || "";
 
-      log("new message from", pid, lastText);
+      log("new message from", openId, lastText);
 
       playMessageSound();
       showBanner({
         name: name,
         text: lastText,
         photo: photo,
-        peerId: pid
+        peerId: openId
       });
-      showSystemNotification(name, lastText, pid);
+      showSystemNotification(name, lastText, openId);
     });
   }
 

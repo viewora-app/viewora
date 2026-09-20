@@ -551,8 +551,9 @@
             window.location.search
         );
 
-    const targetUid =
+    let targetUid =
         params.get(CHAT_PARAM) ||
+        params.get("uid") ||
         params.get("userId") ||
         params.get("user") ||
         params.get("peer") ||
@@ -560,6 +561,19 @@
         params.get("to") ||
         "";
 
+    // If URL passed chatId (uidA_uidB) instead of peer uid, extract other user
+    try {
+        const me =
+            (firebase.auth().currentUser && firebase.auth().currentUser.uid) ||
+            "";
+        if (targetUid && targetUid.indexOf("_") !== -1 && me) {
+            const parts = targetUid.split("_");
+            if (parts.length === 2) {
+                if (parts[0] === me) targetUid = parts[1];
+                else if (parts[1] === me) targetUid = parts[0];
+            }
+        }
+    } catch (_) {}
 
     /* ======================================================
        VALIDATE CHAT USER
