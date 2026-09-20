@@ -1831,6 +1831,55 @@
                     ? "profile.html?uid=" + encodeURIComponent(contentId)
                     : "video.html?id=" + encodeURIComponent(contentId);
 
+            if (shareType === "profile") {
+                const pName =
+                    message.authorName ||
+                    message.displayName ||
+                    message.name ||
+                    message.username ||
+                    message.title ||
+                    "User";
+                const pUser =
+                    message.username
+                        ? (String(message.username).startsWith("@")
+                            ? message.username
+                            : "@" + message.username)
+                        : "";
+                const pPhoto =
+                    message.thumb ||
+                    message.thumbnail ||
+                    message.photoURL ||
+                    message.profilePhoto ||
+                    message.avatar ||
+                    message.imageUrl ||
+                    "";
+                content = `
+                <button
+                    type="button"
+                    class="shareCard profileShareCard"
+                    data-action="open-share"
+                    data-share-type="profile"
+                    data-content-id="${escapeHTML(contentId)}"
+                    data-href="${escapeHTML(openHref)}"
+                >
+                    <div class="profileShareInner">
+                        <div class="profileShareAvatar">
+                            ${
+                                pPhoto
+                                    ? `<img src="${escapeHTML(safeURL(pPhoto))}" alt="" onerror="this.style.display='none';this.nextElementSibling&&(this.nextElementSibling.style.display='grid')">
+                                       <span class="profileShareFallback" style="display:none">👤</span>`
+                                    : `<span class="profileShareFallback">👤</span>`
+                            }
+                        </div>
+                        <div class="profileShareMeta">
+                            <strong>${escapeHTML(pName)}</strong>
+                            <span>${escapeHTML(pUser || "View profile")}</span>
+                        </div>
+                        <i class="fa-solid fa-chevron-right profileShareChev"></i>
+                    </div>
+                </button>
+                `;
+            } else {
             content = `
                 <button
                     type="button"
@@ -1877,6 +1926,7 @@
                     </div>
                 </button>
             `;
+            }
 
         } else if (kind === "file") {
 
@@ -2187,12 +2237,109 @@
             return;
         }
 
+        // One-tap open shared post / short / video / profile
+        messagesList
+            .querySelectorAll("[data-action='open-share']")
+            .forEach(function (el) {
+                if (el.__shareBound) return;
+                el.__shareBound = true;
+                el.addEventListener("click", function (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const href = el.getAttribute("data-href") || "";
+                    const type = el.getAttribute("data-share-type") || "";
+                    const id = el.getAttribute("data-content-id") || "";
+                    if (href) {
+                        window.location.href = href;
+                        return;
+                    }
+                    if (type === "short" && id) {
+                        window.location.href = "shorts.html?id=" + encodeURIComponent(id);
+                    } else if (type === "video" && id) {
+                        window.location.href = "video.html?id=" + encodeURIComponent(id);
+                    } else if (type === "post" && id) {
+                        window.location.href = "post.html?id=" + encodeURIComponent(id);
+                    } else if (type === "profile" && id) {
+                        window.location.href = "profile.html?uid=" + encodeURIComponent(id);
+                    }
+                });
+            });
+
         messagesList
             .querySelectorAll(
                 ".messageBubble"
             )
             .forEach(
                 element => {
+
+                    // Double-tap / double-click → ❤️ like
+                    if (!element.__likeTapBound) {
+                        element.__likeTapBound = true;
+                        var lastTap = 0;
+                        function heartMsg(e) {
+                            if (e) {
+                                e.preventDefault();
+                                e.stopPropagation();
+                            }
+                            const id = element.dataset.messageId;
+                            if (id) toggleReaction(id, "❤️");
+                        }
+                        element.addEventListener("dblclick", heartMsg);
+                        element.addEventListener("click", function (e) {
+                            // ignore share card clicks (they navigate)
+                            if (e.target.closest("[data-action='open-share']")) return;
+                            if (e.target.closest("a, button, audio, video, input")) return;
+                            var now = Date.now();
+                            if (now - lastTap < 320) {
+                                lastTap = 0;
+                                heartMsg(e);
+                            } else {
+                                lastTap = now;
+                            }
+                        });
+                    }
+
+                    // Swipe left → reply
+                    if (!element.__swipeBound) {
+                        element.__swipeBound = true;
+                        var sx = 0, sy = 0, tracking = false;
+                        element.addEventListener("touchstart", function (e) {
+                            if (!e.touches || !e.touches[0]) return;
+                            sx = e.touches[0].clientX;
+                            sy = e.touches[0].clientY;
+                            tracking = true;
+                            element.style.transition = "none";
+                        }, { passive: true });
+                        element.addEventListener("touchmove", function (e) {
+                            if (!tracking || !e.touches || !e.touches[0]) return;
+                            var dx = e.touches[0].clientX - sx;
+                            var dy = e.touches[0].clientY - sy;
+                            if (Math.abs(dy) > Math.abs(dx)) return; // vertical scroll
+                            // only swipe left (negative dx)
+                            if (dx < 0 && dx > -90) {
+                                element.style.transform = "translateX(" + dx + "px)";
+                            }
+                        }, { passive: true });
+                        element.addEventListener("touchend", function (e) {
+                            if (!tracking) return;
+                            tracking = false;
+                            element.style.transition = "transform .2s ease";
+                            var dx = 0;
+                            try {
+                                var t = e.changedTouches && e.changedTouches[0];
+                                if (t) dx = t.clientX - sx;
+                            } catch (_) {}
+                            element.style.transform = "";
+                            // swipe left far enough → reply
+                            if (dx < -56) {
+                                const id = element.dataset.messageId;
+                                const msg = state.messages && state.messages.get
+                                    ? state.messages.get(id)
+                                    : null;
+                                if (msg) startReply(msg);
+                            }
+                        }, { passive: true });
+                    }
 
                     element.addEventListener(
                         "contextmenu",
@@ -2840,14 +2987,7 @@
 
             await otherRef.update(otherInbox);
 
-            // Also key by peer uid for clients that listen that path
-            try {
-                await db.ref("userChats/" + otherUID + "/" + myUID).update({
-                    ...otherInbox,
-                    chatId: chatId,
-                    userId: myUID
-                });
-            } catch (_) {}
+            // Single canonical key only: sorted uidA_uidB (no dual key = no duplicate rows)
 
             // Also keep chat meta updated
             await db.ref("vieworaChats/" + chatId).update({
@@ -2863,26 +3003,61 @@
 
     async function clearMyUnread() {
         if (!state.currentUser || !state.chatId) return;
+        const myUID = state.currentUser.uid;
+        const chatId = state.chatId;
+        const otherUID =
+            state.otherUser?.uid ||
+            state.otherUserId ||
+            state.peerUid ||
+            "";
+        const patch = {
+            unread: 0,
+            unreadCount: 0,
+            unreadMessages: 0,
+            unread_count: 0,
+            read: true,
+            seen: true,
+            isRead: true,
+            lastReadAt: Date.now()
+        };
         try {
-            await db
-                .ref(
-                    "userChats/" +
-                    state.currentUser.uid +
-                    "/" +
-                    state.chatId
-                )
-                .update({
-                    unread: 0,
-                    unreadCount: 0,
-                    unreadMessages: 0,
-                    unread_count: 0,
-                    read: true,
-                    seen: true,
-                    isRead: true
-                });
+            await db.ref("userChats/" + myUID + "/" + chatId).update(patch);
         } catch (e) {
-            console.warn("Clear unread failed:", e);
+            console.warn("Clear unread chatId path:", e);
         }
+        // Legacy / alternate inbox key = peer uid
+        if (otherUID && otherUID !== chatId) {
+            try {
+                // legacy bare key cleared via clearMyUnread multi-path
+            } catch (_) {}
+        }
+        // Also zero any duplicate keys that point to same chatId
+        try {
+            const snap = await db.ref("userChats/" + myUID).once("value");
+            const updates = {};
+            snap.forEach(function (ch) {
+                const v = ch.val() || {};
+                const key = ch.key;
+                if (
+                    key === chatId ||
+                    key === otherUID ||
+                    v.chatId === chatId ||
+                    (otherUID && v.userId === otherUID)
+                ) {
+                    if (Number(v.unread || v.unreadCount || 0) > 0) {
+                        updates[key + "/unread"] = 0;
+                        updates[key + "/unreadCount"] = 0;
+                        updates[key + "/unreadMessages"] = 0;
+                        updates[key + "/unread_count"] = 0;
+                        updates[key + "/read"] = true;
+                        updates[key + "/seen"] = true;
+                    }
+                }
+            });
+            if (Object.keys(updates).length) {
+                await db.ref("userChats/" + myUID).update(updates);
+            }
+        } catch (_) {}
     }
 
     async function sendText() {
@@ -3080,10 +3255,8 @@
                     updates
                 );
 
-            // Clear inbox unread when messages are seen
-            if (state.isNearBottom) {
-                await clearMyUnread();
-            }
+            // Clear inbox unread when messages are seen / opened
+            await clearMyUnread();
 
         } catch (error) {
 
@@ -3193,18 +3366,21 @@
             await messagesRef()
                 .child(message.id)
                 .update({
-                    deletedForEveryone:
-                        true,
-
-                    deletedAt:
-                        serverTimestamp(),
-
-                    text:
-                        "",
-
-                    caption:
-                        ""
+                    deletedForEveryone: true,
+                    deletedAt: serverTimestamp(),
+                    text: "",
+                    caption: "",
+                    url: null,
+                    mediaUrl: null,
+                    imageUrl: null
                 });
+
+            // Refresh inbox preview so Messages list is not stuck on old text
+            try {
+                await refreshInboxAfterDelete(message.id);
+            } catch (inboxErr) {
+                console.warn("inbox after delete", inboxErr);
+            }
 
             closeDeleteModal();
 
@@ -3224,6 +3400,87 @@
                 "error"
             );
         }
+    }
+
+    async function refreshInboxAfterDelete(deletedId) {
+        if (!state.currentUser || !state.chatId) return;
+        const myUID = state.currentUser.uid;
+        const otherUID =
+            state.otherUser?.uid ||
+            state.otherUserId ||
+            state.peerUid ||
+            "";
+        const chatId = state.chatId;
+
+        // Find latest non-deleted message for preview
+        let preview = "Message deleted";
+        let lastTime = Date.now();
+        let lastSender = myUID;
+        try {
+            const snap = await messagesRef().orderByChild("createdAt").limitToLast(40).once("value");
+            const list = [];
+            if (snap.exists()) {
+                snap.forEach(function (c) {
+                    const m = c.val() || {};
+                    m.id = c.key;
+                    list.push(m);
+                });
+            }
+            list.sort(function (a, b) {
+                return Number(a.createdAt || 0) - Number(b.createdAt || 0);
+            });
+            for (let i = list.length - 1; i >= 0; i--) {
+                const m = list[i];
+                if (m.deletedForEveryone) continue;
+                if (m.id === deletedId) continue;
+                lastTime = Number(m.createdAt || m.timestamp || Date.now());
+                lastSender = m.senderId || myUID;
+                if (m.type === "image" || m.imageUrl || m.mediaUrl) {
+                    preview = "Photo";
+                } else if (m.type === "video") {
+                    preview = "Video";
+                } else if (m.type === "audio" || m.type === "voice") {
+                    preview = "Voice message";
+                } else if (m.type === "short" || m.shareType === "short") {
+                    preview = "Shared a short";
+                } else if (m.type === "post" || m.shareType === "post") {
+                    preview = "Shared a post";
+                } else if (m.text) {
+                    preview = String(m.text).slice(0, 80);
+                } else {
+                    preview = "Message";
+                }
+                break;
+            }
+            // if all deleted
+            if (list.length && list.every(function (m) { return m.deletedForEveryone || m.id === deletedId; })) {
+                preview = "Message deleted";
+            }
+        } catch (_) {}
+
+        const patch = {
+            lastMessage: preview,
+            lastMessageTime: lastTime,
+            lastSenderId: lastSender,
+            updatedAt: Date.now()
+        };
+
+        try {
+            await db.ref("userChats/" + myUID + "/" + chatId).update(patch);
+        } catch (_) {}
+        if (otherUID) {
+            try {
+                await db.ref("userChats/" + otherUID + "/" + chatId).update(patch);
+            } catch (_) {}
+        }
+        try {
+            await db.ref("vieworaChats/" + chatId).update({
+                lastMessage: preview,
+                lastMessageTime: lastTime,
+                lastSenderId: lastSender,
+                updatedAt: Date.now()
+            });
+        } catch (_) {}
     }
 
 
@@ -4137,180 +4394,142 @@
 
         closeMediaPreview();
 
-        openUploadOverlay(
-            file
-        );
+        state.uploadCancelled = false;
 
-        state.uploadCancelled =
-            false;
+        // Optimistic bubble — no full-screen upload modal / no .jpg text
+        const localPreviewUrl = URL.createObjectURL(file);
+        const tempId = "local_" + Date.now();
+        const optimistic = {
+            id: tempId,
+            senderId: state.currentUser.uid,
+            receiverId: targetUid,
+            type: messageType,
+            url: localPreviewUrl,
+            secure_url: localPreviewUrl,
+            caption: caption || "",
+            fileName: "",
+            fileSize: file.size,
+            mimeType: file.type,
+            createdAt: Date.now(),
+            uploading: true,
+            local: true
+        };
+        try {
+            if (state.messages && typeof state.messages.set === "function") {
+                state.messages.set(tempId, optimistic);
+            } else if (state.messages instanceof Map) {
+                state.messages.set(tempId, optimistic);
+            } else if (state.messages) {
+                state.messages[tempId] = optimistic;
+            }
+            if (typeof renderMessages === "function") renderMessages();
+            requestAnimationFrame(scrollToBottom);
+        } catch (_) {}
+
+        showInlineUploadProgress(0);
 
         try {
+            const result = await window.VieworaMediaUpload.upload(file, {
+                onProgress: function (percent) {
+                    showInlineUploadProgress(percent);
+                }
+            });
 
-            const result =
-                await window.VieworaMediaUpload
-                    .upload(
-                        file,
-                        {
-                            onProgress:
-                                percent => {
-
-                                    updateUploadProgress(
-                                        percent
-                                    );
-                                },
-
-                            onSpeed:
-                                speed => {
-
-                                    if (
-                                        uploadSpeed
-                                    ) {
-                                        uploadSpeed.textContent =
-                                            speed;
-                                    }
-                                }
-                        }
-                    );
-
-            if (
-                state.uploadCancelled
-            ) {
+            if (state.uploadCancelled) {
+                removeOptimistic(tempId);
+                hideInlineUploadProgress();
+                try { URL.revokeObjectURL(localPreviewUrl); } catch (_) {}
                 return;
             }
 
-            if (
-                !result ||
-                !result.url
-            ) {
-                throw new Error(
-                    "Cloudinary did not return a valid URL."
-                );
+            if (!result || !(result.url || result.secure_url)) {
+                throw new Error("Upload failed. Try again.");
             }
 
-            const messageRef =
-                messagesRef().push();
-
+            const messageRef = messagesRef().push();
             const message = {
-
-                id:
-                    messageRef.key,
-
-                senderId:
-                    state.currentUser.uid,
-
-                receiverId:
-                    targetUid,
-
-                type:
-                    messageType,
-
-                url:
-                    result.url,
-
-                secure_url:
-                    result.secure_url ||
-                    result.url,
-
-                publicId:
-                    result.public_id ||
-                    "",
-
-                format:
-                    result.format ||
-                    "",
-
-                fileName:
-                    file.name,
-
-                fileSize:
-                    file.size,
-
-                mimeType:
-                    file.type,
-
-                caption,
-
-                width:
-                    result.width ||
-                    null,
-
-                height:
-                    result.height ||
-                    null,
-
-                duration:
-                    result.duration ||
-                    null,
-
-                createdAt:
-                    serverTimestamp(),
-
-                deliveredAt:
-                    null,
-
-                seenAt:
-                    null,
-
-                edited:
-                    false,
-
-                pinned:
-                    false,
-
-                deletedForEveryone:
-                    false
+                id: messageRef.key,
+                senderId: state.currentUser.uid,
+                receiverId: targetUid,
+                type: messageType,
+                url: result.url || result.secure_url,
+                secure_url: result.secure_url || result.url,
+                publicId: result.public_id || "",
+                format: result.format || "",
+                fileName: "",
+                fileSize: file.size || 0,
+                mimeType: file.type || "",
+                caption: caption || "",
+                width: result.width || null,
+                height: result.height || null,
+                duration: result.duration || null,
+                createdAt: serverTimestamp(),
+                deliveredAt: null,
+                seenAt: null,
+                edited: false,
+                pinned: false,
+                deletedForEveryone: false
             };
 
             if (state.replyTo) {
-
-                message.replyTo =
-                    {
-                        ...state.replyTo
-                    };
+                message.replyTo = { ...state.replyTo };
             }
 
-            await messageRef.set(
-                message
-            );
+            await messageRef.set(message);
+            try { await syncInboxAfterSend(message); } catch (_) {}
+            try { clearReply(); } catch (_) {}
 
-            await syncInboxAfterSend(message);
-
-            clearReply();
-
-            hideUploadOverlay();
-
-            showToast(
-                "Media sent."
-            );
-
-            requestAnimationFrame(
-                scrollToBottom
-            );
+            removeOptimistic(tempId);
+            try { URL.revokeObjectURL(localPreviewUrl); } catch (_) {}
+            hideInlineUploadProgress();
+            requestAnimationFrame(scrollToBottom);
 
         } catch (error) {
-
-            console.error(
-                "Media upload/send error:",
-                error
-            );
-
-            hideUploadOverlay();
-
-            if (
-                !state.uploadCancelled
-            ) {
-
-                showToast(
-                    error?.message ||
-                    "Media upload failed.",
-                    "error"
-                );
+            console.error("Media upload/send error:", error);
+            removeOptimistic(tempId);
+            hideInlineUploadProgress();
+            try { URL.revokeObjectURL(localPreviewUrl); } catch (_) {}
+            if (!state.uploadCancelled) {
+                showToast(error?.message || "Could not send media.", "error");
             }
-        } finally {
-
-            state.uploadTask =
-                null;
         }
+    }
+
+
+
+    function showInlineUploadProgress(percent) {
+        let bar = document.getElementById("chatInlineUpload");
+        if (!bar) {
+            bar = document.createElement("div");
+            bar.id = "chatInlineUpload";
+            bar.className = "chatInlineUpload";
+            bar.innerHTML = '<div class="chatInlineUploadFill"></div>';
+            const host = document.querySelector(".composer") || document.querySelector(".chatComposer") || document.body;
+            host.appendChild(bar);
+        }
+        bar.classList.remove("hidden");
+        const fill = bar.querySelector(".chatInlineUploadFill");
+        if (fill) fill.style.width = Math.max(2, Math.min(100, Number(percent) || 0)) + "%";
+        try { hideUploadOverlay(); } catch (_) {}
+    }
+
+    function hideInlineUploadProgress() {
+        const bar = document.getElementById("chatInlineUpload");
+        if (bar) bar.classList.add("hidden");
+        try { hideUploadOverlay(); } catch (_) {}
+    }
+
+    function removeOptimistic(tempId) {
+        try {
+            if (state.messages && typeof state.messages.delete === "function") {
+                state.messages.delete(tempId);
+            } else if (state.messages) {
+                delete state.messages[tempId];
+            }
+            document.querySelector('[data-message-id="' + tempId + '"]')?.remove();
+            document.querySelector('[data-id="' + tempId + '"]')?.remove();
+            if (typeof renderMessages === "function") renderMessages();
+        } catch (_) {}
     }
 
 
@@ -4319,7 +4538,9 @@
     ====================================================== */
 
     function openUploadOverlay(file) {
-
+        // Full-screen upload modal disabled — use inline progress only
+        try { hideUploadOverlay(); } catch (_) {}
+        return;
         if (uploadOverlay) {
             uploadOverlay.classList.remove(
                 "hidden"
@@ -6042,8 +6263,13 @@
 
             updateComposerMode();
 
-            // Opening chat → clear unread badge
+            // Opening chat → clear unread badge (force)
             clearMyUnread();
+            setTimeout(clearMyUnread, 400);
+            setTimeout(clearMyUnread, 1500);
+            document.addEventListener("visibilitychange", function () {
+                if (document.visibilityState === "visible") clearMyUnread();
+            });
 
             hideLoading();
 

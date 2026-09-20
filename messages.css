@@ -2055,3 +2055,174 @@ img {
   object-fit: cover;
   border-radius: 50%;
 }
+
+a.searchNewBtn {
+  display: grid;
+  place-items: center;
+  text-decoration: none;
+  color: inherit;
+}
+a.newMessageFab {
+  text-decoration: none;
+}
+
+
+/* ===== Notes strip — circular DP always + bright bubbles ===== */
+.notesSection {
+  padding: 4px 0 8px;
+  border-bottom: 1px solid rgba(255,255,255,.06);
+  overflow: visible;
+}
+.notesScroller {
+  display: flex !important;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 16px;
+  overflow-x: auto;
+  overflow-y: visible;
+  padding: 28px 14px 12px;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+.notesScroller::-webkit-scrollbar { display: none; }
+.friendsNotes {
+  display: flex !important;
+  flex-direction: row;
+  gap: 16px;
+  align-items: flex-start;
+}
+.noteItem {
+  position: relative;
+  flex: 0 0 auto;
+  width: 74px;
+  border: 0;
+  background: transparent;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 0;
+  cursor: pointer;
+}
+/* Perfect circle ring behind every DP */
+.noteAvatar {
+  position: relative;
+  width: 58px !important;
+  height: 58px !important;
+  min-width: 58px;
+  min-height: 58px;
+  border-radius: 50% !important;
+  overflow: hidden !important;
+  display: grid !important;
+  place-items: center;
+  flex-shrink: 0;
+  background: linear-gradient(145deg, #2b2155, #151525);
+  border: 2.5px solid transparent;
+  background-clip: padding-box;
+  box-shadow:
+    0 0 0 2.5px #a78bfa,
+    0 4px 14px rgba(124, 92, 255, .35);
+}
+.friendNote .noteAvatar {
+  box-shadow:
+    0 0 0 2.5px #f472b6,
+    0 4px 14px rgba(236, 72, 153, .35);
+}
+.noteAvatar img,
+.notePlus img,
+#myNoteAvatar {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  border-radius: 50% !important;
+  display: block !important;
+}
+.notePlus {
+  overflow: hidden !important;
+  box-shadow:
+    0 0 0 2.5px #60a5fa,
+    0 4px 14px rgba(96, 165, 250, .35) !important;
+}
+.notePlus i {
+  position: absolute !important;
+  right: -1px !important;
+  bottom: -1px !important;
+  width: 18px !important;
+  height: 18px !important;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #7c5cff, #2563eb);
+  color: #fff;
+  font-size: 9px;
+  display: grid !important;
+  place-items: center;
+  border: 2px solid #0b0b10;
+  z-index: 3;
+}
+/* Bright note bubble above avatar */
+.noteBubble,
+.myNoteBubble {
+  position: absolute;
+  top: -6px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 5;
+  max-width: 110px;
+  padding: 6px 10px;
+  border-radius: 14px;
+  font-size: 11px;
+  font-weight: 650;
+  line-height: 1.25;
+  color: #0f0f14;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  background: linear-gradient(135deg, #fde68a, #fbbf24);
+  border: 1px solid rgba(255,255,255,.35);
+  box-shadow: 0 6px 16px rgba(251, 191, 36, .35);
+}
+.friendNote .noteBubble {
+  background: linear-gradient(135deg, #f9a8d4, #e879f9);
+  box-shadow: 0 6px 16px rgba(232, 121, 249, .35);
+}
+.noteReactBadge {
+  margin-left: 4px;
+  font-size: 12px;
+}
+.noteLabel {
+  font-size: 11px;
+  font-weight: 600;
+  max-width: 74px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: rgba(255,255,255,.75);
+  text-align: center;
+}
+/* Smooth chat list updates */
+.chatCard {
+  transition: opacity .2s ease, transform .2s ease, background .2s ease;
+}
+.chatCard.chatCardEnter {
+  animation: chatCardIn .28s ease;
+}
+@keyframes chatCardIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.chatCard.removing {
+  opacity: 0;
+  transform: translateX(-20px);
+  pointer-events: none;
+}
+
+/* Group / community rows — brighter accent */
+.chatCard[data-group="1"],
+.chatCard.isGroup {
+  border-left: 3px solid #a78bfa;
+  background: linear-gradient(90deg, rgba(124,92,255,.12), transparent 40%);
+}
+.chatCard.community {
+  border-left: 3px solid #f472b6;
+  background: linear-gradient(90deg, rgba(236,72,153,.12), transparent 40%);
+}

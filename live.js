@@ -285,12 +285,13 @@
     if (!me) return;
     const uid = hostUid || me.uid;
     try {
-      // Read live meta before closing
       const liveSnap = await db.ref("live/" + uid).once("value");
       const live = liveSnap.val() || {};
       const startedAt = Number(live.startedAt || 0);
       const endedAt = Date.now();
-      const durationSec = startedAt ? Math.max(0, Math.round((endedAt - startedAt) / 1000)) : 0;
+      const durationSec = startedAt
+        ? Math.max(0, Math.round((endedAt - startedAt) / 1000))
+        : 0;
       let peakViewers = Number(live.viewerCount || 0);
       try {
         const vSnap = await db.ref("live/" + uid + "/viewers").once("value");
@@ -313,24 +314,29 @@
         user.profilePic ||
         "";
       const title = live.title || "Live";
+      const format =
+        live.liveFormat ||
+        window.__VIEWORA_LIVE_FORMAT ||
+        (live.isVideoLive ? "video" : live.isShortsLive ? "shorts" : "story");
 
-      // Save replay / live post so it appears in feed & profile
-      const postRef = db.ref("posts").push();
-      const postId = postRef.key;
-      const postPayload = {
-        id: postId,
+      const replayId = db.ref("liveReplays").push().key;
+      const payload = {
+        id: replayId,
         uid: uid,
         userId: uid,
-        type: "live",
+        type: "live_replay",
+        liveFormat: format,
         isLiveReplay: true,
+        isStoryLive: format === "story",
+        isShortsLive: format === "shorts",
+        isVideoLive: format === "video",
         title: title,
-        caption: title + " · Live ended",
-        text: title + " · Live ended",
-        description: "Live stream · " + formatDuration(durationSec),
+        caption: title,
+        description: "Live · " + formatDuration(durationSec),
         hostName: hostName,
         hostPhoto: hostPhoto,
         photoURL: hostPhoto,
-        avatar: hostPhoto,
+        thumbnail: hostPhoto,
         name: hostName,
         username: user.username || "",
         duration: durationSec,
@@ -342,42 +348,69 @@
         timestamp: endedAt,
         liveStartedAt: startedAt || null,
         liveEndedAt: endedAt,
-        status: "public"
+        status: "public",
+        // no fake image/video URL — UI uses live replay card
+        hasMedia: false
       };
-      await postRef.set(postPayload);
 
-      // Archive under liveReplays
-      await db.ref("liveReplays/" + postId).set({
-        ...postPayload,
-        liveId: uid
+      // Always archive under liveReplays (profile Live tab + admin)
+      await db.ref("liveReplays/" + replayId).set(payload);
+      await db.ref("users/" + uid + "/liveReplays/" + replayId).set({
+        id: replayId,
+        title: title,
+        liveFormat: format,
+        duration: durationSec,
+        endedAt: endedAt,
+        viewerCount: peakViewers,
+        thumbnail: hostPhoto
       });
 
-      // Link on user
-      await db.ref("users/" + uid + "/lastLivePostId").set(postId);
+      // Route by format — NEVER write empty "posts" without media
+      if (format === "video") {
+        await db.ref("videos/" + replayId).set({
+          ...payload,
+          type: "live_replay",
+          wasLive: true,
+          isLive: false
+        });
+      } else if (format === "shorts") {
+        await db.ref("shorts/" + replayId).set({
+          ...payload,
+          type: "live_replay",
+          wasLive: true,
+          isLive: false,
+          isShort: true
+        });
+      }
+      // story live → only liveReplays (stories ring / highlights flow), not posts grid
 
+      // Close live flags & feed cards
+      await db.ref("users/" + uid).update({
+        isLive: false,
+        storyLive: false,
+        isShortsLive: false,
+        isVideoLive: false,
+        liveFormat: null,
+        liveAt: null,
+        liveTitle: null
+      });
       await db.ref("live/" + uid).update({
         active: false,
-        endedAt: firebase.database.ServerValue.TIMESTAMP,
-        savedPostId: postId,
-        peakViewers: peakViewers,
-        durationSec: durationSec
+        endedAt: endedAt,
+        duration: durationSec
       });
-      await db.ref("users/" + uid + "/isLive").set(false);
       try {
-        await db.ref("users/" + uid).update({
-          storyLive: false,
-          isShortsLive: false,
-          isVideoLive: false,
-          liveFormat: null
-        });
         await db.ref("feedLive/shorts/" + uid).remove();
         await db.ref("feedLive/videos/" + uid).remove();
-        await db.ref("feedLive/stories/" + uid).remove();
         await db.ref("shortsLive/" + uid).remove();
         await db.ref("videosLive/" + uid).remove();
+        await db.ref("live/" + uid + "/viewers").remove();
       } catch (_) {}
-      await db.ref("live/" + uid + "/viewers").remove();
-      console.log("[LIVE] Saved as post", postId);
+
+      console.log("[LIVE] Replay saved", replayId, format);
+      try {
+        toast("Live ended · saved to " + (format === "video" ? "Videos" : format === "shorts" ? "Shorts" : "Live history"));
+      } catch (_) {}
     } catch (e) {
       console.warn("endLiveSession", e);
       try {
