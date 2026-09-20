@@ -3804,3 +3804,96 @@ audio {
   color: #fff;
   text-transform: uppercase;
 }
+
+.chatInlineUpload {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: calc(58px + env(safe-area-inset-bottom));
+  height: 3px;
+  border-radius: 99px;
+  background: rgba(255,255,255,.12);
+  overflow: hidden;
+  z-index: 30;
+  pointer-events: none;
+}
+.chatInlineUpload.hidden { display: none; }
+.chatInlineUploadFill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #7c3aed, #60a5fa);
+  transition: width .15s linear;
+}
+.uploadOverlay { display: none !important; }
+
+/* Profile share — rectangle card */
+.messageBubble .shareCard.profileShareCard {
+  width: min(280px, 78vw);
+  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(40,36,70,.95), rgba(20,20,32,.98));
+  border: 1px solid rgba(167,139,250,.25);
+  overflow: hidden;
+}
+.profileShareInner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  min-height: 64px;
+}
+.profileShareAvatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: linear-gradient(145deg, #3b2a8f, #1a1535);
+  display: grid;
+  place-items: center;
+}
+.profileShareAvatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.profileShareFallback {
+  font-size: 22px;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+}
+.profileShareMeta {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+}
+.profileShareMeta strong {
+  display: block;
+  font-size: 14px;
+  font-weight: 750;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: #fff;
+}
+.profileShareMeta span {
+  display: block;
+  font-size: 12px;
+  color: rgba(255,255,255,.55);
+  margin-top: 2px;
+}
+.profileShareChev {
+  color: rgba(255,255,255,.35);
+  font-size: 12px;
+  flex-shrink: 0;
+}
+
+/* Swipe reply visual */
+.messageBubble {
+  will-change: transform;
+}
+.messageRow.mine .messageBubble {
+  /* own messages also swipeable */
+}

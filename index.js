@@ -826,6 +826,21 @@
     ====================================================== */
 
     async function renderPosts(snapshot) {
+        // Like/comment updates must NOT rebuild feed (prevents jump + reorder)
+        try {
+            if (feedOrderLocked && feedContainer && feedContainer.querySelector(".vieworaPostCard")) {
+                let any = false;
+                snapshot.forEach(function (child) {
+                    any = true;
+                    patchPostCardCounts(child.key, child.val() || {});
+                });
+                if (any) {
+                    hideSkeleton(feedSkeleton);
+                    return;
+                }
+            }
+        } catch (_) {}
+
 
         if (!feedContainer) return;
 
@@ -994,12 +1009,33 @@
         try { wirePostPinchZoom(); } catch (_) {}
         // Show red heart if already liked + correct count
         hydratePostLikes();
+        feedOrderLocked = true;
     }
 
 
     /* ======================================================
        LOAD POSTS
     ====================================================== */
+
+    let feedOrderLocked = false;
+    let feedSkipNextFullRender = false;
+
+    function patchPostCardCounts(postId, data) {
+        if (!feedContainer || !postId) return;
+        const card = feedContainer.querySelector('[data-post-id="' + postId + '"]');
+        if (!card) return;
+        const d = data || {};
+        const likes = Number(d.likesCount ?? d.likes ?? d.likeCount ?? 0) || 0;
+        const comments = Number(d.commentsCount ?? d.comments ?? d.commentCount ?? 0) || 0;
+        const likeSpan = card.querySelector(".likeCountSpan");
+        if (likeSpan && d.likesHidden !== true) {
+            likeSpan.textContent = likes > 0 ? String(likes) : "";
+        }
+        const cSpan = card.querySelector(".commentCountSpan, [data-comment-count]");
+        if (cSpan) {
+            cSpan.textContent = comments > 0 ? String(comments) : (cSpan.textContent || "");
+        }
+    }
 
     function loadPosts() {
 
@@ -2354,13 +2390,32 @@
         return arr.length;
     }
 
-    function showPostLikeSpamWarning() {
+        function showPostLikeSpamWarning() {
         const msg =
             "Please do not spam likes. Rapid like / unlike is against Viewora Community Guidelines. Repeated abuse may lead to account suspension.";
         try {
-            window.alert(msg);
+            var existing = document.getElementById("vieworaSpamSheet");
+            if (existing) existing.remove();
+            var wrap = document.createElement("div");
+            wrap.id = "vieworaSpamSheet";
+            wrap.className = "vieworaSpamSheet";
+            wrap.innerHTML =
+                '<div class="vieworaSpamBackdrop" data-close="1"></div>' +
+                '<div class="vieworaSpamCard" role="dialog" aria-modal="true">' +
+                '<div class="vieworaSpamIcon"><i class="fa-solid fa-shield-halved"></i></div>' +
+                '<h3>Community Guidelines</h3>' +
+                '<p>' + msg + '</p>' +
+                '<button type="button" class="vieworaSpamOk" data-close="1">Got it</button>' +
+                '</div>';
+            document.body.appendChild(wrap);
+            requestAnimationFrame(function () { wrap.classList.add("show"); });
+            wrap.addEventListener("click", function (e) {
+                if (!e.target.closest("[data-close]")) return;
+                wrap.classList.remove("show");
+                setTimeout(function () { try { wrap.remove(); } catch (_) {} }, 220);
+            });
         } catch (_) {
-            showToast(msg);
+            try { showToast(msg); } catch (__) {}
         }
     }
 
@@ -2416,6 +2471,27 @@
             button.disabled = true;
             button.style.pointerEvents = "none";
         }
+
+        // Instant UI — no wait for network (smooth, no jump)
+        try {
+            const icon = button && button.querySelector("i");
+            const span = button && button.querySelector(".likeCountSpan");
+            const currentlyLiked = icon && icon.classList.contains("fa-solid");
+            const nextLiked = !currentlyLiked;
+            let count = Number(
+                (card && card.dataset.likeCount) ||
+                (span && span.textContent) ||
+                0
+            ) || 0;
+            if (nextLiked) count += 1;
+            else count = Math.max(0, count - 1);
+            if (icon) {
+                icon.className = nextLiked ? "fa-solid fa-heart" : "fa-regular fa-heart";
+                icon.style.color = nextLiked ? "#ff2d55" : "";
+            }
+            if (span) span.textContent = count > 0 ? String(count) : "";
+            if (card) card.dataset.likeCount = String(count);
+        } catch (_) {}
 
         const likeRefA = db.ref("postLikes/" + postId + "/" + uid);
         const likeRefB = db.ref("likes/" + postId + "/" + uid);
@@ -4076,12 +4152,24 @@
                                 }
                                 e.preventDefault();
                                 e.stopPropagation();
+                                // While uploading: show status (don't open empty viewer)
+                                let uploading = false;
+                                try {
+                                    uploading = sessionStorage.getItem("viewora_story_uploading") === "1";
+                                } catch (_) {}
+                                if (uploading && !hasOwnStory) {
+                                    if (typeof showToast === "function") {
+                                        showToast("Story is uploading…", "info");
+                                    } else {
+                                        alert("Story is uploading…");
+                                    }
+                                    return;
+                                }
                                 if (hasOwnStory && myUid) {
                                     markStoryUserSeen(myUid);
                                     const first = ownStories[0];
                                     const params = new URLSearchParams();
                                     params.set("uid", myUid);
-                                    // Home: start at own, then continue to friends
                                     params.set("from", "home");
                                     if (first && first.id) {
                                         params.set("story", first.id);
@@ -4126,6 +4214,94 @@
                 console.error("Stories init failed:", err);
             });
     }
+
+    
+    /* Story ring upload progress (colorful circle fill) */
+        function applyStoryUploadRingUI() {
+        try {
+            const uploading = sessionStorage.getItem("viewora_story_uploading") === "1";
+            let pct = Math.max(0, Math.min(100, Number(sessionStorage.getItem("viewora_story_upload_pct") || 0)));
+            const addBtn = document.getElementById("addStoryBtn");
+            const your = document.querySelector(".storyCard.yourStory") || document.querySelector(".yourStory") || addBtn;
+            const targets = [];
+            if (addBtn) targets.push(addBtn);
+            if (your && your !== addBtn) targets.push(your);
+            targets.forEach(function (el) {
+                if (!el) return;
+                const wrap = el.querySelector(".storyImageWrap") || el;
+                if (uploading || (pct > 0 && pct < 100)) {
+                    el.classList.add("storyUploading");
+                    wrap.style.setProperty("--story-pct", String(pct));
+                    el.style.setProperty("--story-pct", String(pct));
+                    el.setAttribute("data-upload-pct", String(Math.round(pct)));
+                    let badge = el.querySelector(".storyUploadingBadge");
+                    if (!badge) {
+                        badge = document.createElement("span");
+                        badge.className = "storyUploadingBadge";
+                        wrap.appendChild(badge);
+                    }
+                    badge.textContent = Math.round(pct) + "%";
+                } else {
+                    el.classList.remove("storyUploading");
+                    wrap.style.removeProperty("--story-pct");
+                    el.style.removeProperty("--story-pct");
+                    el.removeAttribute("data-upload-pct");
+                    const badge = el.querySelector(".storyUploadingBadge");
+                    if (badge) badge.remove();
+                }
+            });
+        } catch (_) {}
+    }
+
+
+    
+    function celebrateStoryRing() {
+        try {
+            if (sessionStorage.getItem("viewora_story_celebrate") !== "1") return;
+            sessionStorage.removeItem("viewora_story_celebrate");
+            const el = document.querySelector(".storyCard.yourStory") || document.getElementById("addStoryBtn");
+            if (!el) return;
+            el.classList.add("storyCelebrate");
+            // soft vibration if available
+            try {
+                if (navigator.vibrate) navigator.vibrate([40, 60, 40]);
+            } catch (_) {}
+            setTimeout(function () {
+                el.classList.remove("storyCelebrate");
+            }, 1200);
+            // small toast
+            try {
+                if (typeof showToast === "function") showToast("Story uploaded");
+            } catch (_) {}
+        } catch (_) {}
+    }
+
+    // Watch for upload complete → celebrate
+    (function watchStoryComplete() {
+        let wasUploading = sessionStorage.getItem("viewora_story_uploading") === "1";
+        setInterval(function () {
+            try {
+                const uploading = sessionStorage.getItem("viewora_story_uploading") === "1";
+                const pct = Number(sessionStorage.getItem("viewora_story_upload_pct") || 0);
+                if (wasUploading && (!uploading || pct >= 100)) {
+                    wasUploading = false;
+                    celebrateStoryRing();
+                    try { applyStoryUploadRingUI(); } catch (_) {}
+                }
+                if (uploading) wasUploading = true;
+                if (sessionStorage.getItem("viewora_story_celebrate") === "1" && !uploading) {
+                    celebrateStoryRing();
+                }
+            } catch (_) {}
+        }, 500);
+    })();
+
+    (function pollStoryUploadRing() {
+        applyStoryUploadRingUI();
+        setInterval(applyStoryUploadRingUI, 400);
+        window.addEventListener("storage", applyStoryUploadRingUI);
+    })();
+
 
     /* ======================================================
        START

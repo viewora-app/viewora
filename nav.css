@@ -17,6 +17,10 @@
 html.has-bottom-nav,
 body.has-bottom-nav {
     padding-bottom: calc(var(--nav-height) + env(safe-area-inset-bottom, 0px)) !important;
+    /* never lock page scroll */
+    overflow-y: auto !important;
+    height: auto !important;
+    max-height: none !important;
 }
 
 /* Bottom Navigation */

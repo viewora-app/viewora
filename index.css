@@ -4093,3 +4093,236 @@ body.shareSheetOpen { overflow: hidden !important; }
 .storyCard.live-shorts .live-ring { box-shadow: 0 0 0 2px #ec4899; }
 .storyCard.live-video .live-ring { box-shadow: 0 0 0 2px #6366f1; }
 .storyCard.live-story .live-ring { box-shadow: 0 0 0 2px #ef4444; }
+
+/* Story ring uploading */
+
+.yourStory.storyUploading {
+  position: relative;
+}
+#addStoryBtn.storyUploading .storyImageWrap,
+.yourStory.storyUploading .storyImageWrap {
+  position: relative;
+}
+#addStoryBtn.storyUploading::before,
+.yourStory.storyUploading::before {
+  content: "";
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  background: conic-gradient(
+    from 0deg,
+    #f58529,
+    #dd2a7b,
+    #8134af,
+    #515bd4,
+    #f58529
+  );
+  animation: storyUniverseSpin 1.1s linear infinite;
+  z-index: 0;
+  pointer-events: none;
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 2px));
+  mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 2px));
+}
+#addStoryBtn.storyUploading::after,
+.yourStory.storyUploading::after {
+  content: "";
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  background: conic-gradient(from 180deg, transparent 0 70%, rgba(255,255,255,.85) 85%, transparent 100%);
+  animation: storyUniverseSpin 1.1s linear infinite;
+  z-index: 1;
+  pointer-events: none;
+  mix-blend-mode: screen;
+  opacity: .9;
+}
+@keyframes storyUniverseSpin {
+  to { transform: rotate(360deg); }
+}
+.storyUploadingBadge {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #7c3aed, #2563eb);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 800;
+  display: grid;
+  place-items: center;
+  z-index: 3;
+  border: 2px solid #0a0a0a;
+  box-shadow: 0 2px 8px rgba(0,0,0,.4);
+}
+
+
+
+
+
+/* ===== Story upload progress — perfect CIRCLE on DP only ===== */
+.storyCard.yourStory.storyUploading .storyImageWrap,
+#addStoryBtn.storyUploading .storyImageWrap {
+  position: relative;
+  --story-pct: 0;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+.storyCard.yourStory.storyUploading .storyImageWrap::after,
+#addStoryBtn.storyUploading .storyImageWrap::after {
+  content: "";
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  background: conic-gradient(
+    from -90deg,
+    #f58529 0deg,
+    #dd2a7b calc(var(--story-pct) * 3.6deg * 0.4),
+    #8134af calc(var(--story-pct) * 3.6deg * 0.7),
+    #515bd4 calc(var(--story-pct) * 3.6deg),
+    rgba(255,255,255,0.14) calc(var(--story-pct) * 3.6deg),
+    rgba(255,255,255,0.14) 360deg
+  );
+  z-index: 0;
+  pointer-events: none;
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 3.5px), #000 calc(100% - 2.5px));
+  mask: radial-gradient(farthest-side, transparent calc(100% - 3.5px), #000 calc(100% - 2.5px));
+  box-shadow: 0 0 14px rgba(221, 42, 123, 0.4);
+  animation: storyRingGlow 1.2s ease-in-out infinite;
+}
+@keyframes storyRingGlow {
+  0%, 100% { filter: brightness(1) saturate(1.15); }
+  50% { filter: brightness(1.2) saturate(1.4); }
+}
+.storyUploadingBadge {
+  position: absolute;
+  left: 50%;
+  bottom: -6px;
+  transform: translateX(-50%);
+  min-width: 28px;
+  height: 18px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #dd2a7b, #515bd4);
+  color: #fff;
+  font-size: 9px;
+  font-weight: 800;
+  display: grid;
+  place-items: center;
+  z-index: 6;
+  border: 2px solid #0a0a0a;
+  box-shadow: 0 2px 10px rgba(221, 42, 123, 0.45);
+  font-family: Inter, system-ui, sans-serif;
+  pointer-events: none;
+}
+/* Prevent egg shape: no pseudo on outer tall card */
+#addStoryBtn.storyUploading::before,
+#addStoryBtn.storyUploading::after,
+.storyCard.yourStory.storyUploading::before,
+.storyCard.yourStory.storyUploading::after,
+.yourStory.storyUploading::before,
+.yourStory.storyUploading::after {
+  content: none !important;
+  display: none !important;
+  animation: none !important;
+  background: none !important;
+}
+
+
+/* Story uploaded — ring spins twice + soft pulse */
+.storyCard.yourStory.storyCelebrate .storyImageWrap,
+#addStoryBtn.storyCelebrate .storyImageWrap {
+  animation: storyCelebrateSpin 0.9s cubic-bezier(.2,.8,.2,1) 2;
+}
+.storyCard.yourStory.storyCelebrate,
+#addStoryBtn.storyCelebrate {
+  animation: storyCelebrateShake 0.45s ease-in-out 2;
+}
+@keyframes storyCelebrateSpin {
+  0% { transform: rotate(0deg) scale(1); }
+  40% { transform: rotate(180deg) scale(1.06); }
+  100% { transform: rotate(360deg) scale(1); }
+}
+@keyframes storyCelebrateShake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-3px); }
+  75% { transform: translateX(3px); }
+}
+
+
+/* Premium Community Guidelines sheet (no native alert) */
+.vieworaSpamSheet {
+  position: fixed;
+  inset: 0;
+  z-index: 200000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .2s ease;
+}
+.vieworaSpamSheet.show {
+  opacity: 1;
+  pointer-events: auto;
+}
+.vieworaSpamBackdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,.55);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+.vieworaSpamCard {
+  position: relative;
+  width: min(340px, 100%);
+  padding: 22px 20px 18px;
+  border-radius: 20px;
+  background: linear-gradient(165deg, #1a1b24 0%, #12131a 100%);
+  border: 1px solid rgba(255,255,255,.1);
+  box-shadow: 0 20px 50px rgba(0,0,0,.5);
+  text-align: center;
+  transform: scale(.94) translateY(8px);
+  transition: transform .22s ease;
+}
+.vieworaSpamSheet.show .vieworaSpamCard {
+  transform: scale(1) translateY(0);
+}
+.vieworaSpamIcon {
+  width: 52px;
+  height: 52px;
+  margin: 0 auto 12px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: rgba(248,113,113,.15);
+  color: #f87171;
+  font-size: 20px;
+}
+.vieworaSpamCard h3 {
+  margin: 0 0 8px;
+  font-size: 16px;
+  font-weight: 800;
+  color: #fff;
+}
+.vieworaSpamCard p {
+  margin: 0 0 16px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: rgba(255,255,255,.62);
+}
+.vieworaSpamOk {
+  width: 100%;
+  height: 44px;
+  border: none;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #7c5cff, #5b4bea);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.vieworaSpamOk:active { transform: scale(.98); }
