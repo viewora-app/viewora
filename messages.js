@@ -416,6 +416,127 @@ async function messagesLoadUser() {
    REALTIME CHATS
 ========================================================= */
 
+
+function messagesCanonicalChatId(uidA, uidB) {
+    if (!uidA || !uidB) return "";
+    return [String(uidA), String(uidB)].sort().join("_");
+}
+
+function messagesPeerFromChat(chat, me) {
+    if (!chat) return "";
+    const isG = !!(
+        chat.isGroup ||
+        chat.groupId ||
+        chat.chatType === "group" ||
+        chat.chatType === "community" ||
+        chat.chatType === "podcast" ||
+        chat.chatType === "teamwork"
+    );
+    if (isG) return "";
+    let peer =
+        chat.userId ||
+        chat.peerId ||
+        chat.otherUid ||
+        chat.otherUserId ||
+        chat.uid ||
+        "";
+    const cid = String(chat.chatId || chat.id || "");
+    if ((!peer || peer === me) && cid.indexOf("_") !== -1 && me) {
+        const parts = cid.split("_");
+        if (parts.length === 2) {
+            peer = parts[0] === me ? parts[1] : parts[0];
+        }
+    }
+    // Legacy key was only the other user's uid
+    if (!peer && cid && cid.indexOf("_") === -1 && cid !== me) {
+        peer = cid;
+    }
+    return peer || "";
+}
+
+/** One row per peer — merge image/video share duplicates */
+function messagesDedupeChats(list) {
+    const me = messagesUID || "";
+    const groups = [];
+    const byPeer = new Map();
+
+    (list || []).forEach(function (chat) {
+        if (!chat) return;
+        const isG = !!(
+            chat.isGroup ||
+            chat.groupId ||
+            chat.chatType === "group" ||
+            chat.chatType === "community" ||
+            chat.chatType === "podcast" ||
+            chat.chatType === "teamwork"
+        );
+        if (isG) {
+            groups.push(chat);
+            return;
+        }
+        const peer = messagesPeerFromChat(chat, me);
+        if (!peer) {
+            groups.push(chat);
+            return;
+        }
+        // Normalize chatId to sorted pair
+        const canonical = messagesCanonicalChatId(me, peer);
+        if (canonical) {
+            chat.chatId = canonical;
+            chat.userId = peer;
+            chat.peerId = peer;
+        }
+        const prev = byPeer.get(peer);
+        if (!prev) {
+            byPeer.set(peer, chat);
+            return;
+        }
+        // Keep the richer / newer entry
+        const tNew = Number(chat.lastMessageTime || chat.updatedAt || 0);
+        const tOld = Number(prev.lastMessageTime || prev.updatedAt || 0);
+        const winner = tNew >= tOld ? chat : prev;
+        const loser = tNew >= tOld ? prev : chat;
+        // Merge unread max + best photo/name
+        winner.unread = Math.max(
+            Number(winner.unread || 0),
+            Number(winner.unreadCount || 0),
+            Number(loser.unread || 0),
+            Number(loser.unreadCount || 0)
+        );
+        winner.unreadCount = winner.unread;
+        if (!winner.photoURL && loser.photoURL) winner.photoURL = loser.photoURL;
+        if (!winner.profilePhoto && loser.profilePhoto) winner.profilePhoto = loser.profilePhoto;
+        if ((!winner.name || winner.name === "Unknown User") && loser.name) winner.name = loser.name;
+        if (!winner.lastMessage && loser.lastMessage) winner.lastMessage = loser.lastMessage;
+        byPeer.set(peer, winner);
+    });
+
+    return groups.concat(Array.from(byPeer.values()));
+}
+
+
+
+function messagesCleanupDuplicateKeys(rawList) {
+    const me = messagesUID;
+    if (!me || !rawList || !rawList.length) return;
+    const hasCanonical = {};
+    rawList.forEach(function (c) {
+        const k = String(c.chatId || c.id || "");
+        if (k.indexOf("_") !== -1) hasCanonical[k] = true;
+    });
+    const del = {};
+    rawList.forEach(function (chat) {
+        const key = String(chat.chatId || chat.id || "");
+        if (!key || key.indexOf("_") !== -1) return;
+        const peer = key;
+        const canonical = messagesCanonicalChatId(me, peer);
+        if (canonical && hasCanonical[canonical]) del[peer] = null;
+    });
+    if (Object.keys(del).length) {
+        db.ref("userChats/" + me).update(del).catch(function () {});
+    }
+}
+
 function messagesListenChats() {
 
     if (!messagesUID) {
@@ -453,11 +574,16 @@ function messagesListenChats() {
 
             }
 
-            messagesChats = newChats;
+            messagesChats = messagesDedupeChats(newChats);
 
             messagesSortChats();
 
             messagesUpdateUnread();
+
+            // Cleanup legacy dual keys in background (uid-only keys)
+            try {
+                messagesCleanupDuplicateKeys(newChats);
+            } catch (_) {}
 
             // Enrich photos: groups from groups/, users from users/
             Promise.all(
@@ -618,8 +744,13 @@ function messagesUpdateUnread() {
                 return;
             }
 
-            totalUnread +=
-                Number(chat.unread || 0);
+            totalUnread += Math.max(
+                0,
+                Number(chat.unread || 0),
+                Number(chat.unreadCount || 0),
+                Number(chat.unreadMessages || 0),
+                Number(chat.unread_count || 0)
+            );
 
         }
     );
@@ -929,11 +1060,11 @@ function messagesRender() {
 
     result.forEach(
         function(chat) {
-
-            messagesChatList.appendChild(
-                messagesCreateCard(chat)
-            );
-
+            var card = messagesCreateCard(chat);
+            if (card) {
+                card.classList.add("chatCardEnter");
+                messagesChatList.appendChild(card);
+            }
         }
     );
 
@@ -968,6 +1099,14 @@ function messagesCreateCard(chat) {
         document.createElement("div");
 
     card.className = "chatCard";
+    try {
+        const isG = !!(chat.isGroup || chat.groupId || chat.chatType === "group" || chat.chatType === "community" || chat.chatType === "podcast" || chat.chatType === "teamwork");
+        if (isG) {
+            card.classList.add("isGroup");
+            card.dataset.group = "1";
+            if (chat.chatType === "community") card.classList.add("community");
+        }
+    } catch (_) {}
 
     card.dataset.chatid =
         chat.chatId || "";
@@ -991,8 +1130,13 @@ function messagesCreateCard(chat) {
             "Start chatting..."
         );
 
-    const unread =
-        Number(chat.unread || 0);
+    const unread = Math.max(
+        0,
+        Number(chat.unread || 0),
+        Number(chat.unreadCount || 0),
+        Number(chat.unreadMessages || 0),
+        Number(chat.unread_count || 0)
+    );
 
     const muted =
         chat.muted === true;
@@ -1203,25 +1347,41 @@ function messagesCreateCard(chat) {
                 return;
             }
 
-            // Clear unread so home badge updates
+            // Click = read — clear all unread keys for this peer
             try {
                 const me =
                     (typeof getCurrentUID === "function" && getCurrentUID()) ||
                     (window.auth && auth.currentUser && auth.currentUser.uid) ||
                     (firebase.auth && firebase.auth().currentUser && firebase.auth().currentUser.uid) ||
+                    messagesUID ||
                     "";
-                const cid = chat.id || chat.chatId || "";
-                if (me && cid && typeof clearChatUnread === "function") {
-                    clearChatUnread(me, cid);
-                } else if (me && cid && typeof db !== "undefined") {
-                    db.ref("userChats/" + me + "/" + cid).update({
-                        unread: 0,
-                        unreadCount: 0,
-                        unreadMessages: 0,
-                        read: true,
-                        seen: true
-                    });
+                const peer = messagesPeerFromChat(chat, me);
+                const cid = chat.chatId || chat.id || (peer ? messagesCanonicalChatId(me, peer) : "");
+                const patch = {
+                    unread: 0,
+                    unreadCount: 0,
+                    unreadMessages: 0,
+                    unread_count: 0,
+                    read: true,
+                    seen: true,
+                    isRead: true
+                };
+                if (me && cid) {
+                    db.ref("userChats/" + me + "/" + cid).update(patch);
                 }
+                // also clear legacy bare-peer key
+                if (me && peer && peer !== cid) {
+                    db.ref("userChats/" + me + "/" + peer).update(patch).catch(function () {});
+                }
+                // optimistic UI
+                chat.unread = 0;
+                chat.unreadCount = 0;
+                try {
+                    const badge = card.querySelector(".unreadBadge");
+                    if (badge) badge.remove();
+                    card.classList.remove("unread");
+                } catch (_) {}
+                try { messagesUpdateUnread(); } catch (_) {}
             } catch (_) {}
             location.href =
                 "chat.html?uid=" +
@@ -2318,6 +2478,8 @@ if (messagesRefresh) {
 ========================================================= */
 
 function messagesOpenModal() {
+    location.href = "users.html";
+    return;
 
     if (!messagesModal) {
         return;
@@ -3599,14 +3761,25 @@ console.log(
       .join("");
 
     box.querySelectorAll(".friendNote").forEach(function (btn) {
+      var lastTap = 0;
       btn.addEventListener("click", function (e) {
         e.preventDefault();
         e.stopPropagation();
-        openNoteActionSheet(
-          btn.getAttribute("data-uid"),
-          btn.getAttribute("data-text") || "",
-          btn.getAttribute("data-name") || "User"
-        );
+        var now = Date.now();
+        var uid = btn.getAttribute("data-uid");
+        var text = btn.getAttribute("data-text") || "";
+        var name = btn.getAttribute("data-name") || "User";
+        if (now - lastTap < 320) {
+          lastTap = 0;
+          clearTimeout(btn.__noteTapTimer);
+          reactToNote(uid, "❤️");
+          return;
+        }
+        lastTap = now;
+        clearTimeout(btn.__noteTapTimer);
+        btn.__noteTapTimer = setTimeout(function () {
+          openNoteActionSheet(uid, text, name);
+        }, 300);
       });
     });
   }
@@ -3832,11 +4005,13 @@ console.log(
       if (av && p.photo) av.src = p.photo;
     });
     const openNew = () => {
-      const modal = $("newChatModal");
-      if (modal) modal.classList.remove("hidden");
-      else if (typeof openNewChatModal === "function") openNewChatModal();
+      location.href = "users.html";
     };
-    $("newChatBtnSearch")?.addEventListener("click", openNew);
+    $("newChatBtnSearch")?.addEventListener("click", function (e) {
+        e.preventDefault();
+        location.href = "users.html";
+    });
+    // findUsersBtn is an <a href="users.html"> — no blur modal
     $("newChatBtn")?.addEventListener("click", openNew);
   }
 
