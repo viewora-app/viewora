@@ -2361,3 +2361,24 @@ tbody tr:hover {
   opacity: .65;
   border-color: rgba(239,68,68,.3);
 }
+
+/* adminModal pointer fix */
+.adminModal {
+  pointer-events: auto !important;
+  z-index: 99999 !important;
+}
+.adminModal .modalCard {
+  pointer-events: auto !important;
+  position: relative;
+  z-index: 100000;
+}
+.adminModal .modalActions button,
+.adminModal .modalAction {
+  pointer-events: auto !important;
+  cursor: pointer !important;
+  position: relative;
+  z-index: 100001;
+}
+.contentAdminThumb img {
+  background: #111;
+}

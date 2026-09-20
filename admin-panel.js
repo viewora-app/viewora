@@ -1431,57 +1431,22 @@ function openUserModal(uid) {
                   `;
     }
 
-    /* Inject Verify + Monetize actions if missing */
-    const actions = $("userModalActions");
-    if (actions) {
-        if (!$("grantBlueTickBtn")) {
-            const btn = document.createElement("button");
-            btn.id = "grantBlueTickBtn";
-            btn.className = "modalAction";
-            btn.innerHTML = `
-                <i class="fa-solid fa-circle-check"></i>
-                <span id="grantBlueTickLabel">Grant Blue Tick</span>
-            `;
-            btn.addEventListener("click", async () => {
-                if (!selectedUserId) return;
-                const u = cachedUsers[selectedUserId] || {};
-                const isVerified =
-                    u.verified === true ||
-                    u.isVerified === true ||
-                    u.blueTick === true;
-                await grantBlueTick(selectedUserId, !isVerified);
-                closeUserModal();
-            });
-            actions.appendChild(btn);
+    /* Labels only — clicks handled by document delegation */
+    try {
+        const blueBtn = $("grantBlueTickBtn");
+        if (blueBtn) {
+            const hasBlue = user.blueTick === true || user.verified === true;
+            blueBtn.innerHTML =
+                '<i class="fa-solid fa-certificate" style="color:#3b82f6"></i> ' +
+                (hasBlue ? "Remove Blue Tick" : "Grant Blue Tick");
         }
-
-        if (!$("monetizeUserBtn")) {
-            const btn = document.createElement("button");
-            btn.id = "monetizeUserBtn";
-            btn.className = "modalAction";
-            btn.innerHTML = `
-                <i class="fa-solid fa-coins"></i>
-                <span>Check Monetization</span>
-            `;
-            btn.addEventListener("click", async () => {
-                if (!selectedUserId) return;
-                await reviewMonetizationForUser(selectedUserId);
-            });
-            actions.appendChild(btn);
+        const blockButton2 = $("blockUserBtn");
+        if (blockButton2) {
+            blockButton2.innerHTML = user.blocked
+                ? '<i class="fa-solid fa-unlock"></i> Unblock / Enable'
+                : '<i class="fa-solid fa-ban"></i> Disable / Block Account';
         }
-
-        const tickLabel = $("grantBlueTickLabel");
-        const isVerified =
-            user.verified === true ||
-            user.isVerified === true ||
-            user.blueTick === true;
-        if (tickLabel) {
-            tickLabel.textContent =
-                isVerified
-                    ? "Remove Blue Tick"
-                    : "Grant Blue Tick";
-        }
-    }
+    } catch (_) {}
 
     modal.classList.remove("hidden");
     modal.classList.add("show");
@@ -1720,35 +1685,69 @@ async function loadPosts() {
 
         const merged = {};
 
-        function ingest(snapVal, forcedType) {
+        function looksLikeContent(item) {
+            if (!item || typeof item !== "object") return false;
+            return !!(
+                item.url ||
+                item.mediaURL ||
+                item.mediaUrl ||
+                item.videoUrl ||
+                item.imageUrl ||
+                item.thumbnail ||
+                item.thumb ||
+                item.cover ||
+                item.coverUrl ||
+                item.poster ||
+                item.caption ||
+                item.title ||
+                item.description ||
+                (Array.isArray(item.mediaUrls) && item.mediaUrls.length) ||
+                item.storagePath ||
+                item.downloadURL
+            );
+        }
+
+        function ingest(snapVal, forcedType, rootName) {
             const val = snapVal || {};
             Object.keys(val).forEach((id) => {
-                const item = val[id] || {};
-                // skip nested user-keyed maps without media
-                if (item && typeof item === "object" && !item.url && !item.mediaURL && !item.mediaUrls && !item.thumbnail && !item.caption && !item.title && !item.videoUrl) {
-                    // maybe user folder of posts
-                    Object.keys(item).forEach((subId) => {
-                        const sub = item[subId];
-                        if (!sub || typeof sub !== "object") return;
-                        merged[subId] = Object.assign({}, sub, {
-                            __id: subId,
-                            __root: forcedType,
-                            type: sub.type || forcedType
-                        });
+                const item = val[id];
+                if (!item || typeof item !== "object") return;
+
+                if (looksLikeContent(item)) {
+                    merged[forcedType + "_" + id] = Object.assign({}, item, {
+                        __id: id,
+                        __root: rootName || (forcedType === "short" ? "shorts" : forcedType === "video" ? "videos" : "posts"),
+                        type: item.type || item.contentType || forcedType
                     });
                     return;
                 }
-                merged[id] = Object.assign({}, item, {
-                    __id: id,
-                    __root: forcedType,
-                    type: item.type || forcedType
+
+                // Nested: posts/{uid}/{postId} or shorts/{uid}/{id}
+                Object.keys(item).forEach((subId) => {
+                    const sub = item[subId];
+                    if (!looksLikeContent(sub)) return;
+                    merged[forcedType + "_" + subId] = Object.assign({}, sub, {
+                        __id: subId,
+                        __root: rootName || (forcedType === "short" ? "shorts" : forcedType === "video" ? "videos" : "posts"),
+                        type: sub.type || sub.contentType || forcedType,
+                        uid: sub.uid || sub.userId || id
+                    });
                 });
             });
         }
 
-        ingest(postsSnap.val(), "post");
-        ingest(shortsSnap.val(), "short");
-        ingest(videosSnap.val(), "video");
+        ingest(postsSnap.val(), "post", "posts");
+        ingest(shortsSnap.val(), "short", "shorts");
+        ingest(videosSnap.val(), "video", "videos");
+        // Also try alternate roots used by app
+        try {
+            const extra = await Promise.all([
+                db.ref("longVideos").once("value").catch(() => null),
+                db.ref("reels").once("value").catch(() => null)
+            ]);
+            if (extra[0] && extra[0].val) ingest(extra[0].val(), "video", "longVideos");
+            if (extra[1] && extra[1].val) ingest(extra[1].val(), "short", "reels");
+        } catch (_) {}
 
         cachedPosts = merged;
         renderContent();
@@ -1775,20 +1774,34 @@ async function loadPosts() {
 
 function getContentThumb(post) {
     if (!post) return "";
-    return (
+    let m0 = "";
+    try {
+        if (Array.isArray(post.mediaUrls) && post.mediaUrls[0]) {
+            m0 = typeof post.mediaUrls[0] === "string"
+                ? post.mediaUrls[0]
+                : (post.mediaUrls[0].url || post.mediaUrls[0].src || "");
+        } else if (post.media && typeof post.media === "object") {
+            m0 = post.media.url || post.media.src || "";
+        }
+    } catch (_) {}
+    const raw =
         post.thumbnail ||
+        post.thumbUrl ||
         post.thumb ||
         post.cover ||
         post.coverUrl ||
         post.poster ||
-        (Array.isArray(post.mediaUrls) && post.mediaUrls[0]) ||
-        post.mediaURL ||
         post.imageUrl ||
         post.photoURL ||
+        m0 ||
+        post.mediaURL ||
+        post.mediaUrl ||
+        post.downloadURL ||
         post.url ||
         post.videoUrl ||
-        ""
-    );
+        "";
+    // Prefer image-looking URLs for preview; video url still ok as poster attempt
+    return String(raw || "");
 }
 
 /* =========================================================
@@ -1996,13 +2009,23 @@ async function deletePost(postId, root) {
 
     if (!postId) return;
     root = root || "posts";
+    // Merged keys look like post_ID / short_ID
+    let realId = postId;
+    const m = String(postId).match(/^(post|short|video)_(.+)$/);
+    if (m) realId = m[2];
+    // Prefer cached __id
+    try {
+        const cached = cachedPosts[postId];
+        if (cached && cached.__id) realId = cached.__id;
+        if (cached && cached.__root) root = cached.__root;
+    } catch (_) {}
 
     openConfirmModal(
         "Delete Content?",
         "This content will be permanently removed from Firebase.",
         async () => {
             try {
-                await db.ref(root + "/" + postId).remove();
+                await db.ref(root + "/" + realId).remove();
                 // also try posts path if nested
                 if (root !== "posts") {
                     try { await db.ref("posts/" + postId).remove(); } catch (_) {}
@@ -2021,12 +2044,18 @@ async function deletePost(postId, root) {
 async function blockContent(postId, root) {
     if (!postId) return;
     root = root || "posts";
+    let realId = postId;
+    try {
+        const cached = cachedPosts[postId];
+        if (cached && cached.__id) realId = cached.__id;
+        if (cached && cached.__root) root = cached.__root;
+    } catch (_) {}
     openConfirmModal(
         "Block Content?",
         "This post/short/video will be hidden from feeds (blocked).",
         async () => {
             try {
-                await db.ref(root + "/" + postId).update({
+                await db.ref(root + "/" + realId).update({
                     blocked: true,
                     hidden: true,
                     status: "blocked",
@@ -2045,90 +2074,126 @@ async function blockContent(postId, root) {
 
 
 /* =========================================================
-   TICKS + PERMANENT DELETE
+   TICKS + PERMANENT DELETE — event delegation (always works)
 ========================================================= */
 
-(function wireAdminUserActions() {
-    function bind(id, fn) {
-        const el = $(id);
-        if (!el || el.__wired) return;
-        el.__wired = true;
-        el.addEventListener("click", fn);
+document.addEventListener("click", async function vieworaAdminClick(e) {
+    const t = e.target.closest("button, a, [data-user-action]");
+    if (!t) return;
+
+    // Open user modal from table
+    if (t.hasAttribute("data-user-action") || t.dataset.userId) {
+        const uid = t.dataset.userId || t.getAttribute("data-user-action");
+        if (uid && typeof openUserModal === "function") {
+            // let existing handler run too; if none, open here
+        }
     }
 
-    bind("grantBlueTickBtn", async () => {
-        if (!selectedUserId) return;
-        try {
-            await setUserTick(selectedUserId, "blue");
-            showToast("Blue tick granted.");
-            closeUserModal();
-            await loadUsers();
-        } catch (e) {
-            console.error(e);
-            showToast("Failed to grant blue tick.", "error");
-        }
-    });
+    if (!selectedUserId) {
+        // still allow content buttons without selected user
+    }
 
-    bind("grantRedTickBtn", async () => {
-        if (!selectedUserId) return;
-        try {
-            await setUserTick(selectedUserId, "red");
-            showToast("Red VIP tick granted.");
-            closeUserModal();
-            await loadUsers();
-        } catch (e) {
-            console.error(e);
-            showToast("Failed to grant red tick.", "error");
-        }
-    });
+    const id = t.id;
 
-    bind("grantWhiteTickBtn", async () => {
-        if (!selectedUserId) return;
+    async function safe(fn, okMsg, errMsg) {
         try {
-            await setUserTick(selectedUserId, "white");
-            showToast("White tick granted.");
-            closeUserModal();
-            await loadUsers();
-        } catch (e) {
-            console.error(e);
-            showToast("Failed to grant white tick.", "error");
+            await fn();
+            if (okMsg) showToast(okMsg);
+            try { closeUserModal(); } catch (_) {}
+            try { await loadUsers(); } catch (_) {}
+        } catch (err) {
+            console.error(err);
+            showToast(errMsg || (err && err.message) || "Action failed", "error");
         }
-    });
+    }
 
-    bind("removeTickBtn", async () => {
+    if (id === "grantBlueTickBtn") {
+        e.preventDefault();
+        e.stopPropagation();
         if (!selectedUserId) return;
-        try {
-            await setUserTick(selectedUserId, "none");
-            showToast("All ticks removed.");
-            closeUserModal();
-            await loadUsers();
-        } catch (e) {
-            console.error(e);
-            showToast("Failed to remove ticks.", "error");
-        }
-    });
-
-    bind("deleteUserBtn", () => {
+        const u = cachedUsers[selectedUserId] || {};
+        const has = u.blueTick === true || u.verified === true;
+        await safe(
+            () => setUserTick(selectedUserId, has ? "none" : "blue"),
+            has ? "Blue tick removed." : "Blue tick granted."
+        );
+        return;
+    }
+    if (id === "grantRedTickBtn") {
+        e.preventDefault();
+        e.stopPropagation();
+        if (!selectedUserId) return;
+        await safe(() => setUserTick(selectedUserId, "red"), "Red VIP tick granted.");
+        return;
+    }
+    if (id === "grantWhiteTickBtn") {
+        e.preventDefault();
+        e.stopPropagation();
+        if (!selectedUserId) return;
+        await safe(() => setUserTick(selectedUserId, "white"), "White tick granted.");
+        return;
+    }
+    if (id === "removeTickBtn") {
+        e.preventDefault();
+        e.stopPropagation();
+        if (!selectedUserId) return;
+        await safe(() => setUserTick(selectedUserId, "none"), "All ticks removed.");
+        return;
+    }
+    if (id === "deleteUserBtn") {
+        e.preventDefault();
+        e.stopPropagation();
         if (!selectedUserId) return;
         const user = cachedUsers[selectedUserId] || {};
         openConfirmModal(
             "Permanent Delete?",
-            "This will delete " + getUserName(user) + " and their content from Firebase. Cannot undo.",
+            "Delete " + getUserName(user) + " and their content from Firebase?",
             async () => {
                 try {
-                    await permanentDeleteUser(selectedUserId);
+                    const uid = selectedUserId;
+                    await permanentDeleteUser(uid);
                     showToast("User permanently deleted.");
                     closeUserModal();
                     await loadUsers();
                     await loadPosts();
-                } catch (e) {
-                    console.error(e);
+                } catch (err) {
+                    console.error(err);
                     showToast("Delete failed.", "error");
                 }
             }
         );
-    });
-})();
+        return;
+    }
+    if (id === "monetizeUserBtn") {
+        e.preventDefault();
+        if (!selectedUserId) return;
+        try {
+            if (typeof reviewMonetizationForUser === "function") {
+                await reviewMonetizationForUser(selectedUserId);
+            } else {
+                showToast("Monetization review not available.", "warning");
+            }
+        } catch (err) {
+            console.error(err);
+        }
+        return;
+    }
+
+    // Content delete / block (delegation)
+    if (t.hasAttribute("data-delete-post")) {
+        e.preventDefault();
+        e.stopPropagation();
+        deletePost(t.getAttribute("data-delete-post"), t.getAttribute("data-root") || "posts");
+        return;
+    }
+    if (t.hasAttribute("data-block-post")) {
+        e.preventDefault();
+        e.stopPropagation();
+        blockContent(t.getAttribute("data-block-post"), t.getAttribute("data-root") || "posts");
+        return;
+    }
+});
+
 
 
 /* =========================================================
