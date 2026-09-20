@@ -375,6 +375,109 @@
        LOAD VIDEO
     ======================================================== */
 
+
+    function formatCountShort(n) {
+        n = Number(n) || 0;
+        if (n >= 1e7) return (n / 1e7).toFixed(1).replace(/\.0$/, "") + " Cr";
+        if (n >= 1e5) return (n / 1e5).toFixed(1).replace(/\.0$/, "") + " Lakh";
+        if (n >= 1e3) return (n / 1e3).toFixed(1).replace(/\.0$/, "") + "K";
+        return String(n);
+    }
+
+    function openDescSheet() {
+        const v = state.video || {};
+        const title = v.title || v.name || "Video";
+        const desc = v.description || v.caption || v.text || "No description added.";
+        const likes = v.likesCount || v.likes || state.likeCount || 0;
+        const views = v.views || v.viewCount || v.viewsCount || 0;
+        const dateRaw = v.createdAt || v.timestamp || v.uploadedAt || null;
+        let dateStr = "—";
+        try {
+            const d = dateRaw ? new Date(typeof dateRaw === "number" ? dateRaw : dateRaw) : null;
+            if (d && !isNaN(d)) {
+                dateStr = d.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
+            }
+        } catch (_) {}
+
+        const set = (id, val) => { const el = $(id); if (el) el.textContent = val; };
+        set("descSheetTitle", title);
+        set("descLikes", formatCountShort(likes));
+        set("descViews", formatCountShort(views));
+        set("descDate", dateStr.split(" ").slice(0, 2).join(" ") || dateStr);
+        set("descDetailDate", dateStr);
+        set("descDetailViews", formatCountShort(views));
+        set("descDetailLikes", formatCountShort(likes));
+        const body = $("descBody");
+        if (body) {
+            body.textContent = desc;
+            body.classList.remove("expanded");
+        }
+        const see = $("descSeeMore");
+        if (see) {
+            if (String(desc).length > 180) see.classList.remove("hidden");
+            else see.classList.add("hidden");
+        }
+
+        // hashtags
+        const tags = [];
+        const tagSrc = v.tags || v.hashtags || [];
+        if (Array.isArray(tagSrc)) tagSrc.forEach(t => tags.push(String(t).replace(/^#/, "")));
+        String(desc).replace(/#([\w\u0900-\u097F]+)/g, (_, t) => { tags.push(t); return ""; });
+        const ht = $("descHashtags");
+        if (ht) {
+            const uniq = [...new Set(tags)].slice(0, 12);
+            ht.innerHTML = uniq.map(t => "<span>#" + t + "</span>").join("");
+        }
+
+        // music
+        const musicTitle =
+            v.musicTitle || v.songName || v.audioTitle ||
+            (v.music && (v.music.title || v.music.name)) ||
+            "Original audio";
+        const musicArtist =
+            v.musicArtist || v.artist ||
+            (v.music && (v.music.artist || v.music.author)) ||
+            state.creator?.name || state.creator?.username || "Creator";
+        set("descMusicTitle", musicTitle);
+        set("descMusicArtist", musicArtist);
+        const art = $("descMusicArt");
+        if (art) {
+            const cover = v.musicCover || v.thumbnail || v.thumb || "";
+            if (cover) art.innerHTML = '<img src="' + cover + '" alt="">';
+            else art.innerHTML = '<i class="fa-solid fa-music"></i>';
+        }
+
+        show($("descSheet"));
+    }
+
+    function startRemixFromVideo() {
+        const v = state.video || {};
+        const audioUrl =
+            v.musicURL || v.audioURL || v.songURL ||
+            (v.music && (v.music.url || v.music.src)) ||
+            v.videoURL || v.mediaURL || v.url || "";
+        const payload = {
+            source: "video_remix",
+            videoId: state.videoId || v.id || "",
+            audioUrl: audioUrl,
+            musicTitle: v.musicTitle || v.songName || "Original audio",
+            musicArtist: v.musicArtist || state.creator?.name || "",
+            thumbnail: v.thumbnail || v.thumb || "",
+            ownerId: v.uid || v.userId || "",
+            at: Date.now()
+        };
+        try {
+            sessionStorage.setItem("VIEWORA_REMIX_AUDIO", JSON.stringify(payload));
+            localStorage.setItem("VIEWORA_REMIX_AUDIO", JSON.stringify(payload));
+        } catch (_) {}
+        // Shorts create flow
+        location.href =
+            "upload.html?type=short&remix=1&audio=" +
+            encodeURIComponent(audioUrl || "") +
+            "&title=" + encodeURIComponent(payload.musicTitle);
+    }
+
+
     async function loadVideo() {
 
         state.videoId = getVideoId();
@@ -798,8 +901,8 @@
                     ? '<i class="fa-solid fa-pause"></i>'
                     : '<i class="fa-solid fa-play"></i>';
             }
-            if (bigPlay) {
-                bigPlay.classList.toggle("hidden", !!playing);
+            if (!playing) {
+                showPlayerChrome(3000);
             }
         }
 
@@ -821,14 +924,18 @@
         });
         backBtn?.addEventListener("click", (e) => {
             e.stopPropagation();
+            e.preventDefault();
             player.currentTime = Math.max(0, (player.currentTime || 0) - 10);
             syncTime();
+            showPlayerChrome(3000);
         });
         fwdBtn?.addEventListener("click", (e) => {
             e.stopPropagation();
+            e.preventDefault();
             const dur = player.duration || 0;
             player.currentTime = Math.min(dur, (player.currentTime || 0) + 10);
             syncTime();
+            showPlayerChrome(3000);
         });
         muteBtn?.addEventListener("click", (e) => {
             e.stopPropagation();
@@ -848,19 +955,23 @@
             syncTime();
         });
 
-        // tap video to toggle controls / play
-        let hideTimer = null;
+        // tap video: show ±10s + bottom bar for 3s; if paused, play
         function flashControls() {
-            shell?.classList.add("showControls");
-            clearTimeout(hideTimer);
-            hideTimer = setTimeout(() => {
-                if (!player.paused) shell?.classList.remove("showControls");
-            }, 2800);
+            showPlayerChrome(3000);
         }
-        player.addEventListener("click", () => {
-            if (player.paused) togglePlay();
-            else flashControls();
+        player.addEventListener("click", (e) => {
+            // don't steal clicks from seek buttons
+            if (e.target.closest && e.target.closest(".seekSkipBtn, .customControls, .playerChrome")) return;
+            if (player.paused) {
+                togglePlay();
+                showPlayerChrome(3000);
+            } else {
+                showPlayerChrome(3000);
+            }
         });
+        shell?.addEventListener("touchstart", function () {
+            showPlayerChrome(3000);
+        }, { passive: true });
 
         player.addEventListener("loadedmetadata", () => {
             hide($("playerLoading"));
@@ -3012,6 +3123,21 @@ function updateLikeCount() {
     }
 
     function setupPlayerSettings() {
+        
+        $("videoTitle")?.addEventListener("click", openDescSheet);
+        // description box removed — title / More opens sheet
+        $("descriptionToggle")?.addEventListener("click", openDescSheet);
+        $("descSeeMore")?.addEventListener("click", () => {
+            $("descBody")?.classList.toggle("expanded");
+            const b = $("descSeeMore");
+            if (b) b.textContent = $("descBody")?.classList.contains("expanded") ? "See less" : "See more";
+        });
+        $("descRemixBtn")?.addEventListener("click", startRemixFromVideo);
+        $("descMusicCard")?.addEventListener("click", startRemixFromVideo);
+        document.querySelectorAll('[data-close="descSheet"]').forEach((el) => {
+            el.addEventListener("click", () => hide($("descSheet")));
+        });
+
         $("playerSettingsBtn")?.addEventListener("click", (e) => {
             e.stopPropagation();
             openPlayerSettings();
@@ -3072,6 +3198,12 @@ function updateLikeCount() {
                     toast("Music", "Music mode coming soon.", "info");
                 } else if (key === "vr") {
                     toast("VR", "VR mode is not available on this device.", "info");
+                } else if (key === "description") {
+                    closePlayerSettings();
+                    openDescSheet();
+                } else if (key === "remix") {
+                    closePlayerSettings();
+                    startRemixFromVideo();
                 } else if (key === "help") {
                     toast("Help", "Report issues from the video menu.", "info");
                     closePlayerSettings();

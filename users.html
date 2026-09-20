@@ -36,7 +36,7 @@
 </head>
 
 
-<body>
+<body data-page="users" class="users-page-body">
 
     <!-- =====================================================
          APP
@@ -822,207 +822,7 @@
 
 
 
-    <!-- =====================================================
-         BOTTOM NAV
-    ====================================================== -->
-
-    <nav
-        class="bottom-nav"
-        aria-label="Main navigation"
-    >
-
-        <a
-            href="index.html"
-            class="nav-item"
-            aria-label="Home"
-        >
-
-            <svg
-                width="26"
-                height="26"
-                viewBox="0 0 24 24"
-                fill="none"
-                aria-hidden="true"
-            >
-                <path
-                    d="M3 10.5L12 3L21 10.5V20C21 20.55 20.55 21 20 21H4C3.45 21 3 20.55 3 20V10.5Z"
-                    stroke="currentColor"
-                    stroke-width="1.9"
-                    stroke-linejoin="round"
-                />
-
-                <path
-                    d="M9 21V14H15V21"
-                    stroke="currentColor"
-                    stroke-width="1.9"
-                    stroke-linejoin="round"
-                />
-            </svg>
-
-            <span>Home</span>
-
-        </a>
-
-
-        <a
-            href="shorts.html"
-            class="nav-item"
-            aria-label="Shorts"
-        >
-
-            <svg
-                width="26"
-                height="26"
-                viewBox="0 0 24 24"
-                fill="none"
-                aria-hidden="true"
-            >
-                <path
-                    d="M5 4H19V20H5V4Z"
-                    stroke="currentColor"
-                    stroke-width="1.8"
-                    stroke-linejoin="round"
-                />
-
-                <path
-                    d="M8 4L16 20"
-                    stroke="currentColor"
-                    stroke-width="1.8"
-                />
-
-                <path
-                    d="M16 4L8 20"
-                    stroke="currentColor"
-                    stroke-width="1.8"
-                />
-            </svg>
-
-            <span>Shorts</span>
-
-        </a>
-
-
-        <a
-            href="#"
-            class="nav-create"
-            id="createBtn"
-            aria-label="Create"
-        >
-
-            <span class="create-circle">
-
-                <svg
-                    width="31"
-                    height="31"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    aria-hidden="true"
-                >
-                    <path
-                        d="M12 5V19"
-                        stroke="currentColor"
-                        stroke-width="2.3"
-                        stroke-linecap="round"
-                    />
-
-                    <path
-                        d="M5 12H19"
-                        stroke="currentColor"
-                        stroke-width="2.3"
-                        stroke-linecap="round"
-                    />
-                </svg>
-
-            </span>
-
-        </a>
-
-
-        <a
-            href="users.html"
-            class="nav-item active"
-            aria-label="Users"
-        >
-
-            <svg
-                width="27"
-                height="27"
-                viewBox="0 0 24 24"
-                fill="none"
-                aria-hidden="true"
-            >
-                <circle
-                    cx="9"
-                    cy="8"
-                    r="3.5"
-                    stroke="currentColor"
-                    stroke-width="1.9"
-                />
-
-                <circle
-                    cx="17"
-                    cy="9"
-                    r="2.5"
-                    stroke="currentColor"
-                    stroke-width="1.8"
-                />
-
-                <path
-                    d="M2.5 20C2.5 16.7 5.4 14 9 14C12.6 14 15.5 16.7 15.5 20"
-                    stroke="currentColor"
-                    stroke-width="1.9"
-                    stroke-linecap="round"
-                />
-
-                <path
-                    d="M15 14.8C18.3 15 20.5 17 20.5 20"
-                    stroke="currentColor"
-                    stroke-width="1.8"
-                    stroke-linecap="round"
-                />
-            </svg>
-
-            <span>Users</span>
-
-        </a>
-
-
-        <a
-            href="profile.html"
-            class="nav-item"
-            aria-label="Profile"
-        >
-
-            <svg
-                width="26"
-                height="26"
-                viewBox="0 0 24 24"
-                fill="none"
-                aria-hidden="true"
-            >
-                <circle
-                    cx="12"
-                    cy="8"
-                    r="4"
-                    stroke="currentColor"
-                    stroke-width="1.9"
-                />
-
-                <path
-                    d="M4 21C4.8 16.9 7.5 14.5 12 14.5C16.5 14.5 19.2 16.9 20 21"
-                    stroke="currentColor"
-                    stroke-width="1.9"
-                    stroke-linecap="round"
-                />
-            </svg>
-
-            <span>Profile</span>
-
-        </a>
-
-    </nav>
-
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
 
@@ -1032,7 +832,6 @@
 <script src="message-listener.js"></script>
   <script src="badges.js"></script>
   
-<script src="nav.js"></script>
 <script src="users.js"></script>
     <script src="theme.js"></script>
 
@@ -1165,123 +964,6 @@
         }
 
 
-        /* Bottom navigation internals */
-
-        .bottom-nav {
-            display: grid;
-
-            grid-template-columns:
-                1fr
-                1fr
-                1.15fr
-                1fr
-                1fr;
-
-            align-items: center;
-
-            padding:
-                5px 8px
-                max(5px, env(safe-area-inset-bottom));
-        }
-
-
-        .nav-item {
-            height: 64px;
-
-            display: flex;
-
-            flex-direction: column;
-
-            align-items: center;
-
-            justify-content: center;
-
-            gap: 4px;
-
-            color: #8c92a4;
-
-            text-decoration: none;
-
-            font-size: 11px;
-
-            font-weight: 650;
-
-            transition:
-                color .2s ease,
-                transform .2s ease;
-        }
-
-
-        .nav-item svg {
-            transition:
-                transform .2s ease;
-        }
-
-
-        .nav-item.active {
-            color: #18bfff;
-        }
-
-
-        .nav-item.active svg {
-            filter:
-                drop-shadow(
-                    0 0 8px rgba(24,191,255,.35)
-                );
-        }
-
-
-        .nav-item:active {
-            transform: scale(.92);
-        }
-
-
-        .nav-create {
-            height: 72px;
-
-            display: grid;
-
-            place-items: center;
-
-            text-decoration: none;
-        }
-
-
-        .create-circle {
-            width: 58px;
-            height: 58px;
-
-            display: grid;
-
-            place-items: center;
-
-            border-radius: 50%;
-
-            background:
-                linear-gradient(
-                    135deg,
-                    #20bfff,
-                    #2879ff
-                );
-
-            color: white;
-
-            border:
-                4px solid rgba(8,10,18,.96);
-
-            box-shadow:
-                0 7px 25px rgba(25,168,255,.35);
-
-            transition:
-                transform .2s ease;
-        }
-
-
-        .nav-create:active .create-circle {
-            transform: scale(.9);
-        }
-
-
         /* Make cards cleaner when JS has no bio */
 
         .user-card-content:empty,
@@ -1337,18 +1019,18 @@
             /* Back */
 
             if (backBtn) {
-
-                backBtn.addEventListener("click", () => {
-
-                    if (history.length > 1) {
+                backBtn.addEventListener("click", (e) => {
+                    e.preventDefault();
+                    // Prefer messages if came from there, else home
+                    const ref = (document.referrer || "");
+                    if (ref.indexOf("messages.html") !== -1) {
+                        window.location.href = "messages.html";
+                    } else if (history.length > 1) {
                         history.back();
                     } else {
-                        window.location.href =
-                            "index.html";
+                        window.location.href = "index.html";
                     }
-
                 });
-
             }
 
 
@@ -1553,6 +1235,19 @@
 
     </script>
 
+
+<script>
+(function usersScrollFix() {
+  document.documentElement.classList.add("users-scroll");
+  document.body.style.overflowY = "auto";
+  document.body.style.height = "auto";
+  document.documentElement.style.overflowY = "auto";
+  document.documentElement.style.height = "auto";
+  document.querySelectorAll("nav.bottom-nav, #vieworaGlobalNav").forEach(function (n) {
+    try { n.remove(); } catch (_) { n.style.display = "none"; }
+  });
+})();
+</script>
 </body>
 
 </html>

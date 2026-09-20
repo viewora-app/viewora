@@ -385,9 +385,41 @@
         try {
             if (musicPreviewAudio) {
                 musicPreviewAudio.pause();
+                try { musicPreviewAudio.src = ""; } catch (_) {}
                 musicPreviewAudio = null;
             }
         } catch (_) {}
+        try {
+            document.querySelectorAll("audio.vieworaStageMusic").forEach(function (a) {
+                a.pause();
+                a.remove();
+            });
+        } catch (_) {}
+    }
+
+    /** Loop music on the story editor so user can hear trim before Share */
+    function playStageMusicPreview() {
+        stopMusicPreview();
+        if (!state.music || state.music.id === "original" || state.music.id === "original-audio") return;
+        var url = state.music.audioUrl || state.music.url || state.music.src || "";
+        if (!url) return;
+        var start = Number(state.musicStartAt || 0) || 0;
+        try {
+            musicPreviewAudio = new Audio(url);
+            musicPreviewAudio.className = "vieworaStageMusic";
+            musicPreviewAudio.loop = true;
+            musicPreviewAudio.volume = 0.85;
+            musicPreviewAudio.addEventListener("loadedmetadata", function () {
+                try {
+                    var maxStart = Math.max(0, (musicPreviewAudio.duration || 0) - 1.5);
+                    musicPreviewAudio.currentTime = Math.min(start, maxStart);
+                } catch (_) {}
+                musicPreviewAudio.play().catch(function () {});
+            }, { once: true });
+            musicPreviewAudio.play().catch(function () {});
+        } catch (e) {
+            console.warn("stage music preview", e);
+        }
     }
 
     function placeStickerOnStage(payload) {
@@ -595,6 +627,7 @@
                 stopMusicPreview();
                 state.music = track;
                 state.musicStartAt = 0;
+                try { updateMusicBadge(); } catch (_) {}
                 updateMusicBadge();
                 renderMusic();
                 openMusicTrim(track);
@@ -676,7 +709,9 @@
         const box = $("musicTrimBox");
         $("musicTrimPreview")?.addEventListener("click", () => {
             if (!musicPreviewAudio) {
-                if (state.music) openMusicTrim(state.music);
+                if (state.music) {
+                    openMusicTrim(state.music);
+                }
                 return;
             }
             try {
@@ -685,10 +720,13 @@
             } catch (_) {}
         });
         $("musicTrimDone")?.addEventListener("click", () => {
-            stopMusicPreview();
+            const sec = Number(slider && slider.value) || 0;
+            state.musicStartAt = sec;
             if (box) box.classList.add("hidden");
             updateMusicBadge();
             closeSheet("musicPanel");
+            // Keep playing on stage so user can hear before Share
+            playStageMusicPreview();
         });
         slider?.addEventListener("input", () => {
             const sec = Number(slider.value) || 0;
@@ -718,6 +756,19 @@
                 ? (label + " · @" + Math.floor(start) + "s")
                 : label;
         }
+        // Allow moving song badge like stickers
+        if (!musicBadge.dataset.dragBound) {
+            musicBadge.dataset.dragBound = "1";
+            musicBadge.style.position = "absolute";
+            musicBadge.style.zIndex = "20";
+            musicBadge.style.touchAction = "none";
+            musicBadge.style.cursor = "grab";
+            if (!musicBadge.style.left) musicBadge.style.left = "24px";
+            if (!musicBadge.style.bottom && !musicBadge.style.top) {
+                musicBadge.style.bottom = "120px";
+            }
+            makeDraggable(musicBadge);
+        }
     }
 
 
@@ -733,12 +784,20 @@
             const pt = e.touches ? e.touches[0] : e;
             startX = pt.clientX;
             startY = pt.clientY;
+            const parent = el.parentElement || document.body;
             const rect = el.getBoundingClientRect();
-            const parent = el.parentElement.getBoundingClientRect();
-            origX = rect.left - parent.left + rect.width / 2;
-            origY = rect.top - parent.top + rect.height / 2;
+            const parentRect = parent.getBoundingClientRect();
+            // Switch from bottom to top/left absolute for free move
+            el.style.bottom = "auto";
+            el.style.right = "auto";
+            origX = rect.left - parentRect.left + rect.width / 2;
+            origY = rect.top - parentRect.top + rect.height / 2;
+            el.style.left = origX + "px";
+            el.style.top = origY + "px";
+            el.style.transform = "translate(-50%, -50%)";
             el.style.cursor = "grabbing";
             e.preventDefault();
+            e.stopPropagation();
         };
 
         const onMove = (e) => {
@@ -749,6 +808,7 @@
             el.style.left = (origX + dx) + "px";
             el.style.top = (origY + dy) + "px";
             el.style.transform = "translate(-50%, -50%)";
+            e.preventDefault();
         };
 
         const onEnd = () => {
@@ -873,6 +933,33 @@
     }
 
 
+
+    function showThinShareBar(pct) {
+        let bar = document.getElementById("storyThinShare");
+        if (!bar) {
+            bar = document.createElement("div");
+            bar.id = "storyThinShare";
+            bar.innerHTML = '<div class="storyThinShareInner"><span class="storyThinShareTxt">Sharing story…</span><div class="storyThinShareTrack"><div class="storyThinShareFill"></div></div></div>';
+            bar.style.cssText = "position:fixed;left:12px;right:12px;bottom:calc(18px + env(safe-area-inset-bottom));z-index:9999;pointer-events:none;";
+            document.body.appendChild(bar);
+            if (!document.getElementById("storyThinShareStyle")) {
+                const st = document.createElement("style");
+                st.id = "storyThinShareStyle";
+                st.textContent = ".storyThinShareInner{background:rgba(20,20,24,.94);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:12px 14px;box-shadow:0 8px 28px rgba(0,0,0,.45)}.storyThinShareTxt{font-size:13px;font-weight:700;color:#fff}.storyThinShareTrack{margin-top:8px;height:3px;border-radius:99px;background:rgba(255,255,255,.12);overflow:hidden}.storyThinShareFill{height:100%;width:0;background:linear-gradient(90deg,#a78bfa,#60a5fa);transition:width .2s linear}";
+                document.head.appendChild(st);
+            }
+        }
+        bar.style.display = "block";
+        const fill = bar.querySelector(".storyThinShareFill");
+        if (fill) fill.style.width = Math.max(2, Math.min(100, Number(pct) || 0)) + "%";
+        const txt = bar.querySelector(".storyThinShareTxt");
+        if (txt && pct >= 100) txt.textContent = "Story shared!";
+    }
+    function hideThinShareBar() {
+        const bar = document.getElementById("storyThinShare");
+        if (bar) bar.style.display = "none";
+    }
+
     async function shareStory() {
         const MAX_STORIES_PER_USER = 50;
         try {
@@ -894,165 +981,168 @@
         }
 
         state.uploading = true;
+        try { stopMusicPreview(); } catch (_) {}
         const btn = $("shareStoryBtn");
         if (btn) btn.disabled = true;
 
-        // signal home screen to spin the ring
+        // Home ring: colorful progress circle while uploading
         try {
             sessionStorage.setItem("viewora_story_uploading", "1");
+            sessionStorage.setItem("viewora_story_upload_pct", "8");
         } catch (_) {}
 
-        /* YouTube-style: queue + leave immediately */
-        if (window.VieworaUploadQueue && typeof VieworaUploadQueue.enqueueAndLeave === "function") {
+        try { showUploadOverlay(false); } catch (_) {}
+
+        const overlays = collectOverlays();
+        const p = state.profile || {};
+        const u = state.user;
+        const username =
+            p.username ||
+            p.userName ||
+            p.displayName ||
+            (u && u.displayName) ||
+            (u && u.email && u.email.split("@")[0]) ||
+            "User";
+        const avatar =
+            p.profilePhoto ||
+            p.photoURL ||
+            p.photoUrl ||
+            p.avatar ||
+            (u && u.photoURL) ||
+            "";
+
+        let musicMeta = null;
+        if (state.music && state.music.id && state.music.id !== "original" && state.music.id !== "original-audio") {
+            musicMeta = {
+                id: state.music.id,
+                name: state.music.name || state.music.title || "Music",
+                title: state.music.title || state.music.name || "Music",
+                artist: state.music.artist || "",
+                audioUrl: state.music.audioUrl || state.music.url || state.music.src || "",
+                coverUrl: state.music.coverUrl || "",
+                startAt: Number(state.musicStartAt != null ? state.musicStartAt : (state.music.startAt || 0)) || 0
+            };
+            if (!musicMeta.audioUrl) musicMeta = null;
+        }
+
+        // Preferred path: queue + leave → ring shows progress on index
+        if (window.VieworaUploadQueue && typeof window.VieworaUploadQueue.enqueueAndLeave === "function") {
             try {
-                const overlays = collectOverlays();
-                const p = state.profile || {};
-                const u = state.user || {};
-                const username =
-                    p.username || p.userName || p.displayName || u.displayName || "Viewora User";
-                const avatar =
-                    p.avatar || p.photoURL || p.profilePhoto || p.profileImage || u.photoURL ||
-                    "assets/default-avatar.png";
-                await VieworaUploadQueue.enqueueAndLeave({
+                // Instant leave — no linger on this screen
+                try {
+                    document.body.style.opacity = "0.01";
+                    document.body.style.pointerEvents = "none";
+                } catch (_) {}
+                await window.VieworaUploadQueue.enqueueAndLeave({
                     type: "story",
                     file: state.file,
-                    returnUrl: "index.html",
+                    returnUrl: "index.html?story=1&t=" + Date.now(),
                     meta: {
-                        caption: state.caption || "",
-                        title: "Story",
-                        username,
-                        avatar,
-                        music: state.music
-                            ? {
-                                id: state.music.id,
-                                name: state.music.name || state.music.title,
-                                title: state.music.title || state.music.name,
-                                artist: state.music.artist || "",
-                                audioUrl: state.music.audioUrl || state.music.url || "",
-                                coverUrl: state.music.coverUrl || "",
-                                startAt: Number(state.musicStartAt || 0) || 0
-                              }
-                            : null,
-                        musicStartAt: Number(state.musicStartAt || 0) || 0,
+                        caption: (state.caption || "").trim(),
+                        username: username,
+                        avatar: avatar,
+                        music: musicMeta,
+                        musicStartAt: musicMeta ? musicMeta.startAt : 0,
                         texts: overlays.texts || [],
                         stickers: overlays.stickers || []
                     }
                 });
                 return;
-            } catch (err) {
-                console.warn("BG story queue failed, fallback", err);
+            } catch (qe) {
+                console.warn("[VIEWORA] Story queue failed, sync fallback:", qe);
             }
         }
 
-        showUploadOverlay(true);
-
+        // Sync fallback (stay on page until done)
+        showThinShareBar(0);
         try {
-            const uploadResult = await uploadToCloudinary(state.file, setUploadProgress);
+            const uploadResult = await uploadToCloudinary(state.file, function (pct) {
+                setUploadProgress(pct);
+                showThinShareBar(pct);
+                try { sessionStorage.setItem("viewora_story_upload_pct", String(Math.round(pct))); } catch (_) {}
+            });
             setUploadProgress(92);
+            try { sessionStorage.setItem("viewora_story_upload_pct", "92"); } catch (_) {}
 
             const mediaURL = uploadResult.secure_url;
             const resourceType = uploadResult.resource_type || state.mediaType;
-            const overlays = collectOverlays();
             const now = Date.now();
             const expiresAt = now + CONFIG.MAX_DURATION_MS;
-
-            const p = state.profile || {};
-            const u = state.user;
-
-            const username =
-                p.username ||
-                p.userName ||
-                p.displayName ||
-                u.displayName ||
-                "Viewora User";
-
-            const avatar =
-                p.avatar ||
-                p.photoURL ||
-                p.profilePhoto ||
-                p.profileImage ||
-                u.photoURL ||
-                "assets/default-avatar.png";
-
-            const db = firebase.database();
-            const ref = db.ref(CONFIG.STORIES_PATH).push();
-            const storyId = ref.key;
+            const mediaType = resourceType === "video" || state.mediaType === "video" ? "video" : "image";
+            const storyId = db.ref("stories").push().key;
+            const ref = db.ref("stories/" + storyId);
 
             const storyData = {
                 id: storyId,
                 uid: u.uid,
                 userId: u.uid,
                 ownerId: u.uid,
-                username,
-                userName: username,
-                displayName: username,
-                creatorName: username,
-                avatar,
-                photoURL: avatar,
-                profilePhoto: avatar,
-                mediaURL,
+                mediaURL: mediaURL,
                 mediaUrl: mediaURL,
                 url: mediaURL,
-                mediaType: resourceType === "video" ? "video" : "image",
-                type: resourceType === "video" ? "video" : "image",
-                filter: state.filterId,
-                music: (!state.music || state.music.id === "original") ? null : {
-                    id: state.music.id,
-                    name: state.music.name || state.music.title,
-                    title: state.music.name || state.music.title,
-                    artist: state.music.artist || "",
-                    audioUrl: state.music.audioUrl || "",
-                    coverUrl: state.music.coverUrl || "",
-                    startAt: Number(state.musicStartAt || 0) || 0
-                },
-                musicStartAt: Number(state.musicStartAt || 0) || 0,
-                audioName: (!state.music || state.music.id === "original")
-                    ? "Original audio"
-                    : (state.music.name || state.music.title || "Music"),
-                texts: overlays.texts,
-                stickers: overlays.stickers,
+                type: mediaType,
+                mediaType: mediaType,
+                caption: (state.caption || "").trim(),
+                username: username,
+                userName: username,
+                displayName: username,
+                avatar: avatar,
+                photoURL: avatar,
+                profilePhoto: avatar,
+                userPhoto: avatar,
+                music: musicMeta,
+                musicStartAt: musicMeta ? musicMeta.startAt : 0,
+                audioName: musicMeta ? (musicMeta.name || "Music") : "Original audio",
+                texts: overlays.texts || [],
+                stickers: overlays.stickers || [],
                 visibility: "followers",
-                createdAt: firebase.database.ServerValue.TIMESTAMP,
+                createdAt: now,
                 timestamp: now,
-                expiresAt,
+                expiresAt: expiresAt,
                 views: 0,
                 viewCount: 0,
-                viewers: {}
+                viewers: {},
+                uploadStatus: "ready"
             };
 
             await ref.set(storyData);
-
-            // mirror under user for profile
             try {
-                await db.ref(`${CONFIG.USERS_PATH}/${u.uid}/stories/${storyId}`).set({
+                await db.ref(CONFIG.USERS_PATH + "/" + u.uid + "/stories/" + storyId).set({
                     id: storyId,
-                    mediaURL,
-                    mediaType: storyData.mediaType,
+                    mediaURL: mediaURL,
+                    mediaUrl: mediaURL,
+                    mediaType: mediaType,
+                    type: mediaType,
                     createdAt: now,
-                    expiresAt
+                    expiresAt: expiresAt,
+                    username: username,
+                    avatar: avatar
                 });
+            } catch (_) {}
+            try {
+                await db.ref("userStories/" + u.uid + "/" + storyId).set(storyData);
             } catch (_) {}
 
             setUploadProgress(100);
-            if ($("uploadTitle")) $("uploadTitle").textContent = "Story shared!";
-            if ($("uploadSub")) $("uploadSub").textContent = "Visible to your followers for 24h";
-
+            showThinShareBar(100);
             try {
                 sessionStorage.removeItem("viewora_story_uploading");
+                sessionStorage.setItem("viewora_story_upload_pct", "100");
                 sessionStorage.setItem("viewora_story_just_posted", "1");
             } catch (_) {}
 
             showToast("Story shared");
-
-            setTimeout(() => {
-                window.location.href = "index.html";
-            }, 900);
-
+            setTimeout(function () {
+                window.location.href = "index.html?story=1&t=" + Date.now();
+            }, 400);
         } catch (error) {
             console.error("Story upload error:", error);
-            showUploadOverlay(false);
+            try { showUploadOverlay(false); } catch (_) {}
             showToast(error.message || "Could not share story", "error");
-            try { sessionStorage.removeItem("viewora_story_uploading"); } catch (_) {}
+            try {
+                sessionStorage.removeItem("viewora_story_uploading");
+                sessionStorage.removeItem("viewora_story_upload_pct");
+            } catch (_) {}
             if (btn) btn.disabled = false;
             state.uploading = false;
         }

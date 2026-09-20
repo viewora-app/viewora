@@ -129,8 +129,32 @@
     }
 
     function showToast(msg, icon) {
+        const text = String(msg || "");
+        // Premium floating pill for feed refresh & key actions
+        if (/feed refreshed/i.test(text) || !toastEl) {
+            try {
+                let pill = document.getElementById("vieworaPremiumToast");
+                if (!pill) {
+                    pill = document.createElement("div");
+                    pill.id = "vieworaPremiumToast";
+                    pill.className = "vieworaPremiumToast";
+                    document.body.appendChild(pill);
+                }
+                pill.innerHTML =
+                    '<span class="vptIcon"><i class="' +
+                    (icon || "fa-solid fa-arrows-rotate") +
+                    '"></i></span><span class="vptText"></span>';
+                pill.querySelector(".vptText").textContent = text.replace(/^🔄\s*/, "");
+                pill.classList.add("show");
+                clearTimeout(window.__vptTimer);
+                window.__vptTimer = setTimeout(function () {
+                    pill.classList.remove("show");
+                }, 2000);
+                if (!toastEl) return;
+            } catch (_) {}
+        }
         if (!toastEl) return;
-        if (toastText) toastText.textContent = String(msg || "");
+        if (toastText) toastText.textContent = text;
         if (toastIcon) {
             toastIcon.className = icon || "fa-solid fa-circle-check";
         }
@@ -1279,9 +1303,28 @@
         const msg =
             "Please do not spam likes. Rapid like / unlike is against Viewora Community Guidelines. Repeated abuse may lead to account suspension.";
         try {
-            window.alert(msg);
+            var existing = document.getElementById("vieworaSpamSheet");
+            if (existing) existing.remove();
+            var wrap = document.createElement("div");
+            wrap.id = "vieworaSpamSheet";
+            wrap.className = "vieworaSpamSheet";
+            wrap.innerHTML =
+                '<div class="vieworaSpamBackdrop" data-close="1"></div>' +
+                '<div class="vieworaSpamCard" role="dialog" aria-modal="true">' +
+                '<div class="vieworaSpamIcon"><i class="fa-solid fa-shield-halved"></i></div>' +
+                '<h3>Community Guidelines</h3>' +
+                '<p>' + msg + '</p>' +
+                '<button type="button" class="vieworaSpamOk" data-close="1">Got it</button>' +
+                '</div>';
+            document.body.appendChild(wrap);
+            requestAnimationFrame(function () { wrap.classList.add("show"); });
+            wrap.addEventListener("click", function (e) {
+                if (!e.target.closest("[data-close]")) return;
+                wrap.classList.remove("show");
+                setTimeout(function () { try { wrap.remove(); } catch (_) {} }, 220);
+            });
         } catch (_) {
-            showToast(msg);
+            try { showToast(msg); } catch (__) {}
         }
     }
 
@@ -1294,17 +1337,12 @@
         const id = String(short.id || short.shortId || short.key || "");
         if (!id) return;
 
-        // Prevent concurrent toggles (race → count jumps 3,4,5…)
         const lockKey = id + ":" + currentUser.uid;
-        if (likeInFlight.has(lockKey)) {
-            return;
-        }
+        if (likeInFlight.has(lockKey)) return;
 
-        // Spam detection
         const taps = trackLikeSpam(id);
         if (taps >= LIKE_SPAM_LIMIT) {
             showLikeSpamWarning();
-            // still allow one settle but block this spam burst
             return;
         }
 
@@ -1313,51 +1351,53 @@
         const label = likeBtn?.querySelector("span");
 
         likeInFlight.add(lockKey);
-        if (likeBtn) likeBtn.style.pointerEvents = "none";
 
-        const primaryRef = db.ref(
-            "shortLikes/" + id + "/" + currentUser.uid
-        );
+        // Optimistic UI first — instant feedback
+        const wasLikedUI = likeBtn?.classList.contains("liked");
+        let willLike = fromDoubleTap ? true : !wasLikedUI;
+        if (fromDoubleTap && wasLikedUI) {
+            showHeart();
+            likeInFlight.delete(lockKey);
+            return;
+        }
 
+        let optimisticCount = safeNumber(card.__likes ?? short.likes ?? short.likeCount);
+        if (willLike && !wasLikedUI) optimisticCount += 1;
+        if (!willLike && wasLikedUI) optimisticCount = Math.max(0, optimisticCount - 1);
+
+        card.__likes = optimisticCount;
+        short.likes = optimisticCount;
+        short.likeCount = optimisticCount;
+        if (label) label.textContent = formatCount(optimisticCount);
+        if (willLike) {
+            likeBtn?.classList.add("liked");
+            if (icon) icon.className = "fa-solid fa-heart";
+            if (fromDoubleTap) showHeart();
+        } else {
+            likeBtn?.classList.remove("liked");
+            if (icon) icon.className = "fa-regular fa-heart";
+        }
+
+        // Background Firebase (non-blocking feel)
         try {
-            // Atomic membership toggle
+            const primaryRef = db.ref("shortLikes/" + id + "/" + currentUser.uid);
             let wasLiked = false;
             await primaryRef.transaction((cur) => {
                 if (cur === null) {
                     wasLiked = false;
-                    return {
-                        uid: currentUser.uid,
-                        at: Date.now()
-                    };
+                    return willLike ? { uid: currentUser.uid, at: Date.now() } : null;
                 }
                 wasLiked = true;
-                if (fromDoubleTap) {
-                    // keep liked
-                    return cur;
-                }
-                return null; // unlike
+                return willLike ? cur : null;
             });
 
-            // After transaction, read definitive state
             const afterSnap = await primaryRef.once("value");
             const isLiked = afterSnap.exists();
-
-            // Double-tap on already-liked: no count change
-            if (fromDoubleTap && wasLiked && isLiked) {
-                showHeart();
-                return;
-            }
-
-            // Atomic count update based on final state vs previous
-            // delta: +1 if newly liked, -1 if unliked, 0 otherwise
             let delta = 0;
             if (isLiked && !wasLiked) delta = 1;
             if (!isLiked && wasLiked) delta = -1;
 
-            let finalCount = safeNumber(
-                card.__likes ?? short.likes ?? short.likeCount
-            );
-
+            let finalCount = optimisticCount;
             if (delta !== 0) {
                 const countRef = db.ref("shorts/" + id + "/likes");
                 const tx = await countRef.transaction((cur) => {
@@ -1366,82 +1406,60 @@
                 });
                 if (tx.committed && tx.snapshot) {
                     finalCount = safeNumber(tx.snapshot.val());
-                } else {
-                    finalCount = Math.max(0, finalCount + delta);
                 }
-
-                // keep likeCount in sync
                 try {
-                    await db.ref("shorts/" + id + "/likeCount").set(finalCount);
+                    db.ref("shorts/" + id + "/likeCount").set(finalCount);
                 } catch (_) {}
             }
 
-            // Mirrors (non-critical)
-            try {
-                if (isLiked) {
-                    const payload = {
-                        uid: currentUser.uid,
-                        at: Date.now()
-                    };
-                    await Promise.all([
-                        db
-                            .ref("shorts/" + id + "/likedBy/" + currentUser.uid)
-                            .set(payload)
-                            .catch(() => {}),
-                        db
-                            .ref("likes/" + id + "/" + currentUser.uid)
-                            .set(payload)
-                            .catch(() => {})
-                    ]);
-                } else {
-                    await Promise.all([
-                        db
-                            .ref("shorts/" + id + "/likedBy/" + currentUser.uid)
-                            .remove()
-                            .catch(() => {}),
-                        db
-                            .ref("likes/" + id + "/" + currentUser.uid)
-                            .remove()
-                            .catch(() => {})
-                    ]);
-                }
-            } catch (_) {}
-
-            // UI
             card.__likes = finalCount;
             short.likes = finalCount;
             short.likeCount = finalCount;
             if (label) label.textContent = formatCount(finalCount);
-
             if (isLiked) {
                 likeBtn?.classList.add("liked");
                 if (icon) icon.className = "fa-solid fa-heart";
-                if (fromDoubleTap) showHeart();
             } else {
                 likeBtn?.classList.remove("liked");
                 if (icon) icon.className = "fa-regular fa-heart";
             }
 
-            // Notify only on first like in this toggle
+            // Non-critical mirrors (fire and forget)
+            try {
+                if (isLiked) {
+                    const payload = { uid: currentUser.uid, at: Date.now() };
+                    db.ref("shorts/" + id + "/likedBy/" + currentUser.uid).set(payload);
+                    db.ref("users/" + currentUser.uid + "/likedShorts/" + id).set(payload);
+                } else {
+                    db.ref("shorts/" + id + "/likedBy/" + currentUser.uid).remove();
+                    db.ref("users/" + currentUser.uid + "/likedShorts/" + id).remove();
+                }
+            } catch (_) {}
+
             const ownerId = getCreatorId(short);
             if (delta === 1 && ownerId && ownerId !== currentUser.uid) {
-                try {
-                    await db.ref("notifications/" + ownerId).push({
-                        type: "like",
-                        contentType: "short",
-                        contentId: id,
-                        senderUID: currentUser.uid,
-                        createdAt: firebase.database.ServerValue.TIMESTAMP,
-                        read: false
-                    });
-                } catch (_) {}
+                db.ref("notifications/" + ownerId).push({
+                    type: "like",
+                    contentType: "short",
+                    contentId: id,
+                    senderUID: currentUser.uid,
+                    createdAt: firebase.database.ServerValue.TIMESTAMP,
+                    read: false
+                }).catch(function () {});
             }
         } catch (err) {
             console.error("Like failed:", err);
+            // rollback UI
+            if (wasLikedUI) {
+                likeBtn?.classList.add("liked");
+                if (icon) icon.className = "fa-solid fa-heart";
+            } else {
+                likeBtn?.classList.remove("liked");
+                if (icon) icon.className = "fa-regular fa-heart";
+            }
             showToast("Like failed");
         } finally {
             likeInFlight.delete(lockKey);
-            if (likeBtn) likeBtn.style.pointerEvents = "";
         }
     }
 

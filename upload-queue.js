@@ -177,6 +177,40 @@
   }
 
   function setBanner(state) {
+    try {
+      if (state && typeof state.percent === "number") {
+        sessionStorage.setItem("viewora_story_upload_pct", String(Math.round(state.percent)));
+        if (state.percent < 100 && state.percent > 0) {
+          sessionStorage.setItem("viewora_story_uploading", "1");
+        }
+      }
+      if (state && state.hidden) {
+        /* leave pct until complete handler clears */
+      }
+    } catch (_) {}
+
+    // Stories: only ring progress on home — no bottom banner
+    var isStoryJob = false;
+    try {
+      isStoryJob =
+        (activeJobId && false) ||
+        sessionStorage.getItem("viewora_story_uploading") === "1" ||
+        (state && state.storyOnly);
+      if (activeJobId) {
+        /* activeJob type checked below via state.forceBanner */
+      }
+    } catch (_) {}
+    if (!state.forceBanner && (state.storyHide || sessionStorage.getItem("viewora_story_uploading") === "1")) {
+      // still write pct above; skip visible banner unless error/done toast needed
+      if (!state.error && !state.done) {
+        try {
+          const elH = document.getElementById("vieworaUploadBanner");
+          if (elH) elH.classList.remove("show");
+        } catch (_) {}
+        return;
+      }
+    }
+
     const el = ensureBanner();
     const title = el.querySelector(".vu-title");
     const sub = el.querySelector(".vu-sub");
@@ -190,7 +224,10 @@
     el.classList.add("show");
     if (state.done) el.classList.add("done");
     if (state.error) el.classList.add("error");
-    if (title) title.textContent = state.title || "Uploading…";
+    if (title) {
+      const t = state.title || "Uploading…";
+      title.textContent = /\.(jpg|jpeg|png|gif|webp|mp4|mov)/i.test(t) ? "Uploading…" : t;
+    }
     if (sub) sub.textContent = state.sub || "";
     if (fill) fill.style.width = Math.max(0, Math.min(100, Number(state.percent) || 0)) + "%";
     if (cancelBtn) {
@@ -449,7 +486,12 @@
         viewers: {}
       });
       try {
+        sessionStorage.setItem("viewora_story_upload_pct", "100");
         sessionStorage.removeItem("viewora_story_uploading");
+        sessionStorage.setItem("viewora_story_just_posted", "1");
+        setTimeout(function () {
+          try { sessionStorage.removeItem("viewora_story_upload_pct"); } catch (_) {}
+        }, 1500);
       } catch (_) {}
       return { path: "stories/" + ref.key };
     }
@@ -661,7 +703,12 @@
     cancelRequested = false;
     activeJobId = job.id;
     const label = typeLabel(job.type);
-    setBanner({ title: "Uploading " + label, sub: "Starting…", percent: 2 });
+    setBanner({
+      title: job.type === "chat" || job.type === "story" ? "Sending…" : ("Uploading " + label),
+      sub: job.type === "chat" || job.type === "story" ? "" : "Starting…",
+      percent: 2,
+      storyHide: job.type === "story"
+    });
     await idbUpdate(job.id, { status: "uploading" });
 
     const file = job.blob;
@@ -713,18 +760,21 @@
       job.meta.mediaUrls = urls;
     } else {
       media = await uploadCloudinary(file, (p) => {
-        const pct = 8 + Math.round(p * 0.85);
+        // p is 0–100 from XHR; map to 5–90 so Firebase write can finish 90→100
+        const raw = Math.max(0, Math.min(100, Number(p) || 0));
+        const pct2 = Math.min(90, Math.max(5, Math.round(raw * 0.9)));
         setBanner({
-          title: "Uploading " + label,
-          sub: pct + "% — tap ✕ to cancel",
-          percent: pct
+          title: job.type === "story" ? "Story" : ("Uploading " + label),
+          sub: job.type === "story" ? (pct2 + "%") : (pct2 + "% — tap ✕ to cancel"),
+          percent: pct2,
+          storyHide: job.type === "story"
         });
       });
     }
 
     if (cancelRequested) throw new Error("cancelled");
 
-    setBanner({ title: "Finishing " + label, sub: "Saving…", percent: 96 });
+    setBanner({ title: "Finishing " + label, sub: "Saving…", percent: 96, storyHide: job.type === "story" });
     // Ensure title cleaned before write
     job.meta = job.meta || {};
     job.meta.title = cleanTitle(job.meta.title || job.meta.caption, job.fileName);
@@ -733,13 +783,28 @@
     await idbDelete(job.id);
     activeJobId = null;
     setBanner({
-      title: label + " uploaded",
+      title: job.type === "story" ? "Story uploaded" : (label + " uploaded"),
       sub: "Done",
       percent: 100,
       done: true
     });
-    toast(label + " is live");
-    setTimeout(() => setBanner({ hidden: true }), 2500);
+    try {
+      sessionStorage.setItem("viewora_story_upload_pct", "100");
+      sessionStorage.removeItem("viewora_story_uploading");
+      sessionStorage.setItem("viewora_story_just_posted", "1");
+      setTimeout(function () {
+        try { sessionStorage.removeItem("viewora_story_upload_pct"); } catch (_) {}
+      }, 1200);
+    } catch (_) {}
+    if (job.type === "story") {
+      toast("Story uploaded");
+      try {
+        sessionStorage.setItem("viewora_story_celebrate", "1");
+      } catch (_) {}
+    } else {
+      toast(label + " is live");
+    }
+    setTimeout(() => setBanner({ hidden: true }), job.type === "story" ? 600 : 2500);
   }
 
   async function processQueue() {
@@ -747,7 +812,7 @@
     processing = true;
     try {
       const jobs = (await idbGetAll()).filter(
-        (j) => j && j.status === "queued"
+        (j) => j && (j.status === "queued" || (j.status === "uploading" && j.id !== activeJobId))
       );
       jobs.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
       for (const job of jobs) {
@@ -847,7 +912,15 @@
     };
 
     await idbPut(job);
-    toast("Uploading in background…");
+    if (job.type === "story") {
+      try {
+        sessionStorage.setItem("viewora_story_uploading", "1");
+        sessionStorage.setItem("viewora_story_upload_pct", "5");
+      } catch (_) {}
+      // No toast on upload page — leave instantly, ring shows on home
+    } else {
+      toast("Uploading in background…");
+    }
 
     let go = opts.returnUrl || "index.html";
     try {
@@ -857,10 +930,15 @@
       }
     } catch (_) {}
 
-    setTimeout(() => processQueue(), 40);
-    setTimeout(() => {
-      window.location.href = go;
-    }, 100);
+    // Kick queue, then leave immediately for stories (full speed)
+    setTimeout(() => processQueue(), 20);
+    if (job.type === "story") {
+      window.location.replace(go);
+    } else {
+      setTimeout(function () {
+        window.location.href = go;
+      }, 80);
+    }
     return id;
   }
 
@@ -888,9 +966,20 @@
     return id;
   }
 
+  async function recoverStuckJobs() {
+    try {
+      const all = await idbGetAll();
+      for (const j of all) {
+        if (j && j.status === "uploading") {
+          await idbUpdate(j.id, { status: "queued" });
+        }
+      }
+    } catch (_) {}
+  }
+
   function boot() {
     ensureBanner();
-    processQueue();
+    recoverStuckJobs().then(function () { processQueue(); }).catch(function () { processQueue(); });
     window.addEventListener("online", () => processQueue());
     document.addEventListener("visibilitychange", () => {
       if (document.visibilityState === "visible") processQueue();

@@ -121,7 +121,24 @@
        FIREBASE
     ===================================================== */
 
-    function firebaseReady() {
+    
+function isEmptyLiveReplayPost(p) {
+    if (!p) return false;
+    const t = String(p.type || "").toLowerCase();
+    if (p.isLiveReplay || t === "live" || t === "live_replay") {
+        const media =
+            p.mediaURL ||
+            p.videoURL ||
+            p.imageURL ||
+            p.thumbnailURL ||
+            (Array.isArray(p.images) && p.images.length) ||
+            (Array.isArray(p.media) && p.media.length);
+        return !media;
+    }
+    return false;
+}
+
+function firebaseReady() {
 
         return (
             typeof firebase !== "undefined" &&
@@ -893,6 +910,10 @@
                 await getPostsForProfile(
                     profileUID
                 );
+
+            loadedPosts = (loadedPosts || []).filter(function (post) {
+                return !isEmptyLiveReplayPost(post);
+            });
 
             /* -------------------------------------------
                EXACT POST FALLBACK

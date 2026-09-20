@@ -148,17 +148,20 @@
       if (state.musicAudio) {
         state.musicAudio.pause();
         try { state.musicAudio.currentTime = 0; } catch (_) {}
+        try { state.musicAudio.src = ""; } catch (_) {}
         state.musicAudio = null;
       }
     } catch (_) {}
-    const el = $("storyAudio");
-    if (el) {
-      try {
-        el.pause();
-        el.removeAttribute("src");
-        el.load();
-      } catch (_) {}
-    }
+    try {
+      document.querySelectorAll("audio.vieworaStoryAudio, #storyAudio").forEach(function (a) {
+        try {
+          a.pause();
+          a.removeAttribute("src");
+          a.load();
+        } catch (_) {}
+      });
+    } catch (_) {}
+    window.__vieworaMusicPlayingUrl = "";
   }
 
   async function resolveMusicUrl(info) {
@@ -201,6 +204,52 @@
   }
 
   let musicUnlockBound = false;
+  
+  // One-time audio unlock (gesture lost on page navigation)
+  window.__vieworaMusicGestureUnlocked = false;
+  window.__vieworaMusicPlayingUrl = "";
+  function unlockStoryAudioFromGesture() {
+    if (window.__vieworaMusicGestureUnlocked) return;
+    window.__vieworaMusicGestureUnlocked = true;
+    try {
+      const el = ensureAudioEl();
+      el.muted = false;
+      el.volume = 1;
+      const p = el.play();
+      if (p && p.then) {
+        p.then(function () {
+          if (!el.getAttribute("src") && !el.src) el.pause();
+        }).catch(function () {});
+      }
+    } catch (_) {}
+    try {
+      if (window.AudioContext || window.webkitAudioContext) {
+        if (!window.__vieworaAudioCtx) {
+          window.__vieworaAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (window.__vieworaAudioCtx.resume) window.__vieworaAudioCtx.resume();
+      }
+    } catch (_) {}
+  }
+  ["pointerdown", "touchstart", "click"].forEach(function (ev) {
+    document.addEventListener(
+      ev,
+      function onFirstGesture() {
+        unlockStoryAudioFromGesture();
+        // Resume current track only if paused — do NOT restart / stack
+        try {
+          var el = document.getElementById("storyAudio") || state.musicAudio;
+          if (el && el.src && el.paused) {
+            el.muted = false;
+            el.volume = 1;
+            el.play().catch(function () {});
+          }
+        } catch (_) {}
+      },
+      { capture: true, passive: true }
+    );
+  });
+
   function bindMusicUnlock() {
     if (musicUnlockBound) return;
     musicUnlockBound = true;
@@ -217,7 +266,6 @@
   }
 
   async function playStoryMusic(data) {
-    stopMusic();
     bindMusicUnlock();
 
     const info = musicInfo(data);
@@ -231,6 +279,18 @@
       console.warn("Story music has no audioUrl", info);
       return;
     }
+
+    // Prevent garble: same track already playing → just unmute/resume
+    try {
+      var cur = document.getElementById("storyAudio") || state.musicAudio;
+      if (cur && window.__vieworaMusicPlayingUrl === url && !cur.paused) {
+        cur.muted = false;
+        cur.volume = 1;
+        return;
+      }
+    } catch (_) {}
+
+    stopMusic();
 
     // Seek offset (seconds) — set when uploading story
     let startAt = 0;
@@ -249,9 +309,12 @@
       const el = ensureAudioEl();
       el.loop = true;
       el.volume = 1;
-      el.muted = false;
+      // Try muted autoplay first (allowed), then unmute — reduces "need 2nd tap"
+      el.muted = true;
       el.src = url;
+      el.classList.add("vieworaStoryAudio");
       state.musicAudio = el;
+      window.__vieworaMusicPlayingUrl = url;
 
       let seekDone = false;
       const seekAndPlay = () => {
@@ -262,18 +325,35 @@
             seekDone = true;
           }
         } catch (_) {}
-        el.muted = false;
         el.volume = 1;
-        const p = el.play();
-        if (p && p.catch) {
-          p.catch((err) => {
-            console.warn("Autoplay blocked, waiting for tap:", err && err.message);
-          });
+        const tryPlay = () => {
+          const p = el.play();
+          if (p && p.then) {
+            p.then(function () {
+              try {
+                el.muted = false;
+                el.volume = 1;
+              } catch (_) {}
+            }).catch(function (err) {
+              console.warn("Autoplay blocked, waiting for tap:", err && err.message);
+              // Will resume on first user gesture via unlock listener
+            });
+          } else {
+            try { el.muted = false; } catch (_) {}
+          }
+        };
+        tryPlay();
+        // If gesture already unlocked on this page, force unmute path
+        if (window.__vieworaMusicGestureUnlocked) {
+          el.muted = false;
+          tryPlay();
         }
       };
 
       el.onloadedmetadata = () => {
         try {
+          el.muted = false;
+          el.volume = 1;
           if (startAt > 0 && isFinite(el.duration) && el.duration > 0.5) {
             const maxStart = Math.max(0, el.duration - 1.5);
             el.currentTime = Math.min(startAt, maxStart);
@@ -428,18 +508,36 @@
       }
     } catch (_) {}
 
-    // Name + tick (blue / red / white) — always enrich from users/
+    // Name + tick — show immediately from story data, enrich in background
     const nameEl = $("storiesName");
     let baseName =
       g.username ||
       nameOf(item.data) ||
-      "User";
+      (item.data && (item.data.username || item.data.userName || item.data.displayName || item.data.creatorName)) ||
+      "";
+    if (!baseName || /^(user|viewora user|viewora)$/i.test(String(baseName).trim())) {
+      baseName = g.username || "…";
+    }
     let userNode = null;
     let verified = isVerifiedUser(item.data);
 
+    // Paint name NOW so UI is not stuck on "User"
+    if (nameEl) {
+      nameEl.textContent = baseName;
+    }
     try {
-      userNode = await fetchUser(g.uid);
-      if (userNode) {
+      const av0 =
+        g.avatar ||
+        (item.data && (item.data.avatar || item.data.photoURL || item.data.profilePhoto || item.data.userPhoto)) ||
+        "";
+      if (av0 && $("storiesAvatar")) $("storiesAvatar").src = av0;
+    } catch (_) {}
+
+    // Background enrich (non-blocking)
+    (async () => {
+      try {
+        userNode = await fetchUser(g.uid);
+        if (!userNode) return;
         const realName =
           userNode.username ||
           userNode.userName ||
@@ -447,14 +545,14 @@
           userNode.name ||
           userNode.fullName ||
           "";
-        // Replace generic placeholders
-        const generic = /^(user|viewora user|viewora)$/i;
-        if (realName && (generic.test(String(baseName).trim()) || !baseName || baseName === "User")) {
+        if (realName) {
           baseName = realName;
-        } else if (realName) {
-          baseName = realName;
+          g.username = realName;
+          if (nameEl) {
+            // re-apply with tick below via small refresh
+            nameEl.textContent = realName;
+          }
         }
-        g.username = baseName;
         if (isVerifiedUser(userNode)) verified = true;
         const photo =
           userNode.profilePhoto ||
@@ -462,12 +560,12 @@
           userNode.avatar ||
           userNode.profilePicture ||
           "";
-        if (photo) {
+        if (photo && $("storiesAvatar")) {
           $("storiesAvatar").src = photo;
           g.avatar = photo;
         }
-      }
-    } catch (_) {}
+      } catch (_) {}
+    })();
 
     if (nameEl) {
       nameEl.innerHTML = "";
@@ -691,9 +789,12 @@
     // Photo + music = 15s minimum; photo alone = 5s
     const imageDuration = hasMusic ? IMAGE_MUSIC_MS : IMAGE_MS;
 
-    // Soft loading: keep stage dark until media is ready (avoids blank user flash)
+    // Soft loading — brief only; show media ASAP (no long black "User" screen)
     const stage = $("storyStage") || $("storiesStage") || img?.parentElement;
-    if (stage) stage.classList.add("storyLoading");
+    if (stage) {
+      stage.classList.add("storyLoading");
+      setTimeout(() => { try { stage.classList.remove("storyLoading"); } catch (_) {} }, 1200);
+    }
 
     if (isVideo && vid) {
       img?.classList.add("hidden");
@@ -1046,11 +1147,44 @@
     }
   }
 
+  function showDeleteConfirm() {
+    return new Promise(function (resolve) {
+      var existing = document.getElementById("vieworaDeleteSheet");
+      if (existing) existing.remove();
+      var wrap = document.createElement("div");
+      wrap.id = "vieworaDeleteSheet";
+      wrap.className = "vieworaConfirmSheet";
+      wrap.innerHTML =
+        '<div class="vieworaConfirmBackdrop" data-act="no"></div>' +
+        '<div class="vieworaConfirmCard">' +
+        '<div class="vieworaConfirmIcon"><i class="fa-regular fa-trash-can"></i></div>' +
+        '<h3>Delete story?</h3>' +
+        '<p>This story will be removed permanently. You cannot undo this.</p>' +
+        '<div class="vieworaConfirmActions">' +
+        '<button type="button" class="vieworaConfirmBtn ghost" data-act="no">Cancel</button>' +
+        '<button type="button" class="vieworaConfirmBtn danger" data-act="yes">Delete</button>' +
+        '</div></div>';
+      document.body.appendChild(wrap);
+      requestAnimationFrame(function () { wrap.classList.add("show"); });
+      function close(val) {
+        wrap.classList.remove("show");
+        setTimeout(function () { try { wrap.remove(); } catch (_) {} }, 220);
+        resolve(val);
+      }
+      wrap.addEventListener("click", function (e) {
+        var t = e.target.closest("[data-act]");
+        if (!t) return;
+        close(t.getAttribute("data-act") === "yes");
+      });
+    });
+  }
+
   async function deleteCurrent() {
     if (!isOwner()) return;
     const item = currentItem();
     if (!item) return;
-    if (!confirm("Delete this story?")) return;
+    const ok = await showDeleteConfirm();
+    if (!ok) return;
     try {
       await firebase.database().ref(`stories/${item.id}`).remove();
       try {

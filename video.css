@@ -2454,3 +2454,306 @@ body.playerLocked .playerChrome {
     .ccBigPlay { width: 60px; height: 60px; font-size: 20px; }
     .customControls { padding: 8px 10px 12px; gap: 6px; }
 }
+
+
+/* ===== YouTube-style: ONE more button inside player ===== */
+.videoTitleRow .moreButton,
+#headerMoreBtn[hidden],
+#headerMoreBtn.hidden {
+  display: none !important;
+}
+
+.playerChrome {
+  position: absolute !important;
+  top: 10px !important;
+  right: 10px !important;
+  left: auto !important;
+  display: flex !important;
+  flex-direction: row !important;
+  gap: 6px !important;
+  z-index: 12 !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
+.playerChromeBtn {
+  width: 36px !important;
+  height: 36px !important;
+  min-width: 36px !important;
+  border-radius: 50% !important;
+  border: none !important;
+  background: rgba(0,0,0,.45) !important;
+  color: #fff !important;
+  font-size: 15px !important;
+  display: grid !important;
+  place-items: center !important;
+  backdrop-filter: blur(6px);
+  box-shadow: 0 2px 8px rgba(0,0,0,.25);
+}
+
+.playerChromeBtn.ytMoreBtn {
+  width: 34px !important;
+  height: 34px !important;
+}
+
+.playerSettingsSheet {
+  max-width: 320px;
+  margin-left: auto;
+  margin-right: 8px;
+  border-radius: 14px !important;
+  background: #1f1f1f !important;
+  border: 1px solid rgba(255,255,255,.08);
+  box-shadow: 0 12px 40px rgba(0,0,0,.5);
+}
+
+@media (max-width: 640px) {
+  .playerSettingsSheet {
+    max-width: 100%;
+    margin: 0;
+    border-radius: 16px 16px 0 0 !important;
+  }
+}
+
+.playerSettingsTitle {
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  letter-spacing: .02em;
+  color: #f1f1f1 !important;
+  padding: 6px 12px 10px !important;
+}
+
+.psItem {
+  min-height: 44px !important;
+  font-size: 13px !important;
+  border-radius: 10px !important;
+  padding: 8px 12px !important;
+}
+
+.psLeft i {
+  font-size: 15px !important;
+  color: #aaa !important;
+}
+
+/* Cleaner creator + stats like YouTube */
+.videoStatsLine {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  font-size: 13px;
+  color: #aaa;
+  margin: 4px 0 10px;
+}
+.videoStatsLine .dot { opacity: .5; }
+
+.creatorRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 8px 0 12px;
+}
+.creatorIdentity {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: none;
+  color: inherit;
+  text-align: left;
+  padding: 0;
+  cursor: pointer;
+}
+.creatorAvatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: #222;
+}
+.creatorAvatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.creatorText {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.creatorText strong {
+  font-size: 14px;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.creatorText span {
+  font-size: 12px;
+  color: #9ca3af;
+}
+.followButton {
+  flex-shrink: 0;
+  border: none;
+  border-radius: 18px;
+  padding: 8px 16px;
+  font-weight: 700;
+  font-size: 13px;
+  background: #fff;
+  color: #0f0f0f;
+  cursor: pointer;
+}
+.followButton.following,
+.followButton.isFollowing {
+  background: rgba(255,255,255,.12);
+  color: #fff;
+}
+.videoActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin: 8px 0 14px;
+}
+.actionButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: none;
+  border-radius: 20px;
+  padding: 8px 12px;
+  background: rgba(255,255,255,.08);
+  color: #eee;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.actionButton.liked,
+.actionButton.active {
+  color: #ff4d6d;
+}
+.videoTitleRow h1 {
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.35;
+  margin: 0;
+  flex: 1;
+}
+
+.descSheetPanel {
+  max-height: 88dvh;
+  overflow-y: auto;
+  padding: 8px 16px calc(24px + env(safe-area-inset-bottom));
+  background: #121212 !important;
+  border-radius: 16px 16px 0 0 !important;
+}
+.descSheetHead {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 8px;
+}
+.descSheetHead h2 { margin: 0; font-size: 18px; font-weight: 800; }
+.descSheetTitle {
+  margin: 4px 0 12px; font-size: 15px; font-weight: 700; line-height: 1.35;
+}
+.descStatRow {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px;
+}
+.descStat {
+  background: rgba(255,255,255,.06); border-radius: 12px; padding: 12px 8px; text-align: center;
+}
+.descStat strong { display: block; font-size: 15px; margin-bottom: 4px; }
+.descStat span { font-size: 11px; color: #9ca3af; }
+.descHashtags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.descHashtags span {
+  background: rgba(255,255,255,.08); border-radius: 999px; padding: 5px 10px; font-size: 12px; color: #93c5fd;
+}
+.descBody {
+  background: rgba(255,255,255,.05); border-radius: 12px; padding: 12px;
+  font-size: 13px; line-height: 1.5; color: #ddd; white-space: pre-wrap;
+  max-height: 160px; overflow: hidden;
+}
+.descBody.expanded { max-height: none; }
+.descSeeMore {
+  width: 100%; margin: 8px 0 14px; border: none; border-radius: 999px;
+  padding: 10px; background: rgba(255,255,255,.08); color: #fff; font-weight: 700; cursor: pointer;
+}
+.descSectionLabel {
+  font-size: 14px; font-weight: 800; margin: 14px 0 8px;
+}
+.descMusicCard {
+  width: 100%; display: flex; align-items: center; gap: 12px;
+  border: none; background: rgba(255,255,255,.05); border-radius: 12px;
+  padding: 10px; color: #fff; text-align: left; cursor: pointer;
+}
+.descMusicArt {
+  width: 48px; height: 48px; border-radius: 8px; background: #222;
+  display: grid; place-items: center; overflow: hidden; flex-shrink: 0;
+}
+.descMusicArt img { width: 100%; height: 100%; object-fit: cover; }
+.descMusicMeta { flex: 1; min-width: 0; }
+.descMusicMeta strong { display: block; font-size: 13px; }
+.descMusicMeta span { font-size: 12px; color: #9ca3af; }
+.descRemixBtn {
+  width: 100%; margin-top: 10px; border: none; border-radius: 999px;
+  padding: 12px; font-weight: 800; cursor: pointer;
+  background: linear-gradient(135deg, #7c3aed, #2563eb); color: #fff;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+.descDetailsList { display: flex; flex-direction: column; gap: 10px; }
+.descDetailRow {
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 13px; color: #ccc; padding: 6px 0;
+  border-bottom: 1px solid rgba(255,255,255,.06);
+}
+.descDetailRow span:first-child { display: flex; align-items: center; gap: 8px; color: #9ca3af; }
+.videoTitleRow h1 { cursor: pointer; }
+
+/* ±10s seek overlay — upper mid, touch 3s */
+.seekOverlay {
+  position: absolute;
+  left: 0; right: 0;
+  top: 18%;
+  display: flex;
+  justify-content: space-between;
+  padding: 0 18px;
+  z-index: 11;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity .2s ease;
+}
+.seekOverlay.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+.seekSkipBtn {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(0,0,0,.45);
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  font-size: 11px;
+  font-weight: 700;
+  backdrop-filter: blur(6px);
+  cursor: pointer;
+}
+.seekSkipBtn i { font-size: 16px; }
+.seekSkipBtn:active { transform: scale(.92); background: rgba(0,0,0,.6); }
+
+/* hide big center play if residual */
+.ccBigPlay { display: none !important; }
+
+/* bottom bar cleaner without dual fs */
+.customControls .ccSmall { display: none; }
+#ccFs { display: none !important; }
+
+/* description box gone */
+.descriptionBox { display: none !important; }

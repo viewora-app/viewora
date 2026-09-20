@@ -61,6 +61,21 @@
        3. STATE
     ===================================================== */
 
+    
+    function usersRef() {
+        return db.ref("users");
+    }
+    function userRef(uid) {
+        return db.ref("users/" + uid);
+    }
+    function followingRef(uid) {
+        return db.ref("following/" + uid);
+    }
+    function followersRef(uid) {
+        return db.ref("followers/" + uid);
+    }
+
+
     const state = {
 
         currentUser: null,
@@ -305,15 +320,102 @@
     }
 
 
-    function getUserPhoto(user) {
+    
+    function getBadgeKind(user) {
+        try {
+            if (window.VieworaBadges && typeof VieworaBadges.resolve === "function") {
+                const r = VieworaBadges.resolve(user);
+                if (r && r.level && r.level !== "none") return r.level;
+            }
+        } catch (_) {}
+        if (user.redTick || user.vip || user.elite) return "red";
+        if (user.blueTick || user.verified || user.isVerified) return "blue";
+        if (user.whiteTick || user.monetized) return "white";
+        return "";
+    }
 
-        return (
+    function badgeHTML(user) {
+        try {
+            if (window.vieworaBadgeHTML) {
+                const h = vieworaBadgeHTML(user);
+                if (h) return h;
+            }
+            if (window.VieworaBadges && typeof VieworaBadges.resolve === "function") {
+                const r = VieworaBadges.resolve(user);
+                if (r && r.html) return r.html;
+            }
+        } catch (_) {}
+        const kind = getBadgeKind(user);
+        if (!kind) return "";
+        if (kind === "red") {
+            return '<span class="v-tick v-tick-red" title="VIP">✓</span>';
+        }
+        if (kind === "white") {
+            return '<span class="v-tick v-tick-white" title="Monetized">✓</span>';
+        }
+        return '<span class="v-tick v-tick-blue" title="Verified">✓</span>';
+    }
+
+    function isPrivateAccount(user) {
+        return !!(
+            user.private === true ||
+            user.isPrivate === true ||
+            user.privacy === "private" ||
+            user.accountPrivacy === "private" ||
+            user.profilePrivate === true
+        );
+    }
+
+    function canViewUserStories(user) {
+        if (!user) return false;
+        if (!isPrivateAccount(user)) return true;
+        // private: only if I follow them
+        const uid = user.uid;
+        return !!(state.following && state.following[uid]);
+    }
+
+    const storyOwnersCache = { loaded: false, set: {} };
+
+    async function loadActiveStoryOwners() {
+        try {
+            const snap = await db.ref("stories").limitToLast(200).once("value");
+            const set = {};
+            const now = Date.now();
+            if (snap.exists()) {
+                snap.forEach(function (c) {
+                    const s = c.val() || {};
+                    const uid = s.uid || s.userId || s.ownerId || "";
+                    if (!uid) return;
+                    const exp = Number(s.expiresAt || 0);
+                    if (exp && exp < now) return;
+                    if (s.deleted === true) return;
+                    set[uid] = true;
+                });
+            }
+            storyOwnersCache.set = set;
+            storyOwnersCache.loaded = true;
+        } catch (e) {
+            console.warn("stories load", e);
+            storyOwnersCache.loaded = true;
+        }
+    }
+
+    function hasActiveStory(uid) {
+        return !!(storyOwnersCache.set && storyOwnersCache.set[uid]);
+    }
+
+
+    function getUserPhoto(user) {
+        const p =
             user.profilePhoto ||
             user.photoURL ||
             user.photoUrl ||
-            "assets/default-avatar.png"
-        );
-
+            user.avatar ||
+            user.profilePic ||
+            user.profilePicture ||
+            user.dp ||
+            "";
+        return p || "assets/default-avatar.png";
     }
 
 
@@ -899,6 +1001,13 @@
 
         }
 
+        if (state.activeFilter === "creators") {
+            users = users.filter(function (u) {
+                const k = getBadgeKind(u);
+                return k === "blue" || k === "red" || k === "white" || u.verified === true;
+            });
+        }
+
 
         if (
             state.activeFilter ===
@@ -1068,7 +1177,6 @@
         card.dataset.uid =
             user.uid;
 
-
         const photo =
             escapeHTML(
                 getUserPhoto(user)
@@ -1091,16 +1199,27 @@
                 getUserBio(user)
             );
 
+        const tick = badgeHTML(user);
+        const storyRing =
+            hasActiveStory(user.uid) && canViewUserStories(user)
+                ? " has-story"
+                : hasActiveStory(user.uid) && isPrivateAccount(user)
+                    ? " has-story private-story"
+                    : "";
+        const priv = isPrivateAccount(user)
+            ? '<span class="priv-badge" title="Private">🔒</span>'
+            : "";
 
         card.innerHTML = `
 
-            <div class="user-card-image">
+            <div class="user-card-image${storyRing}">
 
                 <img
                     src="${photo}"
                     alt="${name}"
                     loading="lazy"
                     data-profile="${user.uid}"
+                    onerror="this.src='assets/default-avatar.png'"
                 >
 
                 ${
@@ -1133,7 +1252,7 @@
                     role="button"
                     tabindex="0"
                 >
-                    ${name}
+                    ${name}${tick}${priv}
                 </h3>
 
                 <span class="username">
@@ -1156,6 +1275,26 @@
 
         `;
 
+        // Story ring click → stories if allowed
+        const imgWrap = card.querySelector(".user-card-image");
+        if (imgWrap && imgWrap.classList.contains("has-story") && !imgWrap.classList.contains("private-story")) {
+            imgWrap.addEventListener("click", function (e) {
+                if (e.target.closest("[data-dismiss]")) return;
+                e.preventDefault();
+                e.stopPropagation();
+                window.location.href =
+                    "stories.html?uid=" +
+                    encodeURIComponent(user.uid) +
+                    "&from=users";
+            });
+        } else if (imgWrap && imgWrap.classList.contains("private-story")) {
+            imgWrap.addEventListener("click", function (e) {
+                if (e.target.closest("[data-dismiss]")) return;
+                e.preventDefault();
+                e.stopPropagation();
+                showToast("This account is private. Follow to see stories.");
+            });
+        }
 
         return card;
 
@@ -1236,7 +1375,6 @@
         card.dataset.uid =
             user.uid;
 
-
         const photo =
             escapeHTML(
                 getUserPhoto(user)
@@ -1254,17 +1392,26 @@
                 )
             );
 
-
         const isFollowing =
             !!state.following[
                 user.uid
             ];
 
+        const tick = badgeHTML(user);
+        const storyRing =
+            hasActiveStory(user.uid) && canViewUserStories(user)
+                ? " has-story"
+                : hasActiveStory(user.uid) && isPrivateAccount(user)
+                    ? " has-story private-story"
+                    : "";
+        const priv = isPrivateAccount(user)
+            ? ' <span class="priv-badge" title="Private">🔒</span>'
+            : "";
 
         card.innerHTML = `
 
             <div
-                class="avatar"
+                class="avatar${storyRing}"
                 data-profile="${user.uid}"
                 role="button"
                 tabindex="0"
@@ -1274,6 +1421,7 @@
                     src="${photo}"
                     alt="${name}"
                     loading="lazy"
+                    onerror="this.src='assets/default-avatar.png'"
                 >
 
                 ${
@@ -1298,16 +1446,11 @@
             >
 
                 <h3>
-                    ${name}
+                    ${name}${tick}${priv}
                 </h3>
 
                 <p>
                     ${username}
-                    ${
-                        user.verified === true
-                            ? " • ✓ Verified"
-                            : ""
-                    }
                 </p>
 
             </div>
@@ -1341,6 +1484,23 @@
 
         `;
 
+        const av = card.querySelector(".avatar");
+        if (av && av.classList.contains("has-story") && !av.classList.contains("private-story")) {
+            av.addEventListener("click", function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                window.location.href =
+                    "stories.html?uid=" +
+                    encodeURIComponent(user.uid) +
+                    "&from=users";
+            });
+        } else if (av && av.classList.contains("private-story")) {
+            av.addEventListener("click", function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                showToast("Private account — follow to see stories.");
+            });
+        }
 
         return card;
 
@@ -2480,7 +2640,9 @@
 
             loadFollowing(),
 
-            loadFollowers()
+            loadFollowers(),
+
+            loadActiveStoryOwners()
 
         ]);
 

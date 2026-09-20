@@ -202,6 +202,36 @@
     }
 
 
+    
+    function postsRef() {
+        return db.ref("posts");
+    }
+    function shortsRef() {
+        return db.ref("shorts");
+    }
+    function videosRef() {
+        return db.ref("videos");
+    }
+    function storiesRef() {
+        return db.ref("stories");
+    }
+    function followingRef(uid) {
+        return db.ref("following/" + uid);
+    }
+    function followersRef(uid) {
+        return db.ref("followers/" + uid);
+    }
+    function userRef(uid) {
+        return db.ref("users/" + uid);
+    }
+    function usersRef() {
+        return db.ref("users");
+    }
+    function savedPostsRef(uid) {
+        return db.ref("saved/" + uid + "/posts");
+    }
+
+
     function setText(id, value) {
 
         const element = $(id);
@@ -283,17 +313,38 @@
     }
 
     function badgeHTMLFor(data) {
-        if (window.VieworaBadges && typeof VieworaBadges.resolve === "function") {
-            return VieworaBadges.resolve(data).html || "";
+        if (!data || typeof data !== "object") return "";
+        try {
+            if (window.VieworaBadges && typeof VieworaBadges.resolve === "function") {
+                const r = VieworaBadges.resolve(data);
+                if (r && r.html) return r.html;
+                if (r && r.level === "red") {
+                    return '<i class="fa-solid fa-circle-check vieworaTick redTick" title="VIP" style="color:#ef4444"></i>';
+                }
+                if (r && r.level === "blue") {
+                    return '<i class="fa-solid fa-circle-check vieworaTick blueTick" title="Verified" style="color:#1d9bf0"></i>';
+                }
+                if (r && r.level === "white") {
+                    return '<i class="fa-solid fa-circle-check vieworaTick whiteTick" title="Monetized" style="color:#e5e7eb"></i>';
+                }
+            }
+        } catch (_) {}
+        // Manual hierarchy: RED > BLUE > WHITE
+        if (data.redTick || data.vip || data.elite) {
+            return '<i class="fa-solid fa-circle-check vieworaTick redTick" title="VIP" style="color:#ef4444"></i>';
         }
-        if (!isVerifiedUser(data)) return "";
-        if (data.redTick || data.vip || String(data.badge||"").toLowerCase()==="vip") {
-            return '<i class="fa-solid fa-certificate vieworaTick redTick" title="VIP Elite"></i>';
+        if (
+            data.blueTick ||
+            data.verified ||
+            data.isVerified ||
+            data.verificationStatus === "verified"
+        ) {
+            return '<i class="fa-solid fa-circle-check vieworaTick blueTick" title="Verified" style="color:#1d9bf0"></i>';
         }
-        if (data.whiteTick && !data.blueTick && !data.verified) {
-            return '<i class="fa-solid fa-circle-check vieworaTick whiteTick" title="Monetized"></i>';
+        if (data.whiteTick || data.monetized) {
+            return '<i class="fa-solid fa-circle-check vieworaTick whiteTick" title="Monetized" style="color:#e5e7eb"></i>';
         }
-        return '<i class="fa-solid fa-circle-check vieworaTick blueTick verifiedTick" title="Verified"></i>';
+        return "";
     }
 
 
@@ -711,6 +762,179 @@
        RENDER PROFILE
     ===================================================== */
 
+
+    async function loadProfileNote(uid) {
+        if (!uid || !db) return;
+        try {
+            let n = null;
+            const a = await db.ref("userNotes/" + uid).once("value");
+            n = a.val();
+            if (!n || !n.text) {
+                const b = await db.ref("users/" + uid + "/note").once("value");
+                n = b.val();
+            }
+            if (!n || !n.text) {
+                removeProfileNoteUI();
+                return;
+            }
+            if (n.updatedAt && Date.now() - Number(n.updatedAt) > 24 * 60 * 60 * 1000) {
+                removeProfileNoteUI();
+                return;
+            }
+            // reactions
+            let reactions = {};
+            try {
+                const rs = await db.ref("userNotes/" + uid + "/reactions").once("value");
+                reactions = rs.val() || {};
+            } catch (_) {}
+            const counts = {};
+            Object.keys(reactions).forEach(function (k) {
+                const e = reactions[k] && (reactions[k].emoji || reactions[k]);
+                if (!e) return;
+                counts[e] = (counts[e] || 0) + 1;
+            });
+            renderProfileNoteUI(String(n.text), counts, uid);
+        } catch (e) {
+            console.warn("profile note", e);
+        }
+    }
+
+    function removeProfileNoteUI() {
+        document.getElementById("profileNoteBubble")?.remove();
+        document.getElementById("profileNoteReactions")?.remove();
+    }
+
+    function renderProfileNoteUI(text, counts, noteUid) {
+        removeProfileNoteUI();
+        const pic = document.getElementById("profilePic");
+        if (!pic) return;
+        const wrap =
+            pic.closest(".profileAvatarWrap") ||
+            pic.closest(".avatarWrap") ||
+            pic.parentElement;
+        if (!wrap) return;
+        if (getComputedStyle(wrap).position === "static") {
+            wrap.style.position = "relative";
+        }
+        const full = String(text || "").trim();
+        if (!full) return;
+
+        const bubble = document.createElement("div");
+        bubble.id = "profileNoteBubble";
+        bubble.className = "profileNoteBubble";
+        bubble.setAttribute("role", "button");
+        bubble.setAttribute("tabindex", "0");
+        bubble.setAttribute("title", "Tap to reply");
+        bubble.textContent = full;
+        bubble.dataset.full = full;
+        bubble.dataset.uid = noteUid || profileUID || "";
+        wrap.appendChild(bubble);
+
+        // Tap note → reply (other user) or edit (own)
+        bubble.addEventListener("click", function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            const uid = bubble.dataset.uid || profileUID;
+            if (isOwnProfile) {
+                // optional: go messages to edit note
+                try {
+                    window.location.href = "messages.html#note";
+                } catch (_) {}
+                return;
+            }
+            openProfileNoteReply(uid, full);
+        });
+
+        const entries = Object.entries(counts || {}).sort(function (a, b) {
+            return b[1] - a[1];
+        });
+        if (!entries.length) return;
+        const float = document.createElement("div");
+        float.id = "profileNoteReactions";
+        float.className = "profileNoteReactions";
+        float.innerHTML = entries
+            .slice(0, 5)
+            .map(function (pair, i) {
+                return (
+                    '<span class="pnrItem" style="animation-delay:' +
+                    i * 0.35 +
+                    's">' +
+                    pair[0] +
+                    (pair[1] > 1 ? " " + pair[1] : "") +
+                    "</span>"
+                );
+            })
+            .join("");
+        wrap.appendChild(float);
+    }
+
+    function openProfileNoteReply(targetUid, noteText) {
+        if (!targetUid || !currentUser) {
+            showToast && showToast("Login required");
+            return;
+        }
+        if (document.getElementById("profileNoteReplySheet")) return;
+        const sheet = document.createElement("div");
+        sheet.id = "profileNoteReplySheet";
+        sheet.className = "profileNoteReplySheet";
+        sheet.innerHTML =
+            '<div class="pnrBackdrop" data-close="1"></div>' +
+            '<div class="pnrCard">' +
+            '<h3>Reply to note</h3>' +
+            '<p class="pnrQuote">' + String(noteText || "").replace(/</g, "&lt;").slice(0, 120) + "</p>" +
+            '<textarea id="pnrInput" maxlength="200" placeholder="Write a reply..."></textarea>' +
+            '<div class="pnrActions">' +
+            '<button type="button" class="pnrCancel" data-close="1">Cancel</button>' +
+            '<button type="button" class="pnrSend" id="pnrSendBtn">Send</button>' +
+            "</div></div>";
+        document.body.appendChild(sheet);
+        requestAnimationFrame(function () { sheet.classList.add("show"); });
+        sheet.addEventListener("click", function (e) {
+            if (e.target.closest("[data-close]")) {
+                sheet.classList.remove("show");
+                setTimeout(function () { sheet.remove(); }, 220);
+            }
+        });
+        document.getElementById("pnrSendBtn")?.addEventListener("click", async function () {
+            const text = (document.getElementById("pnrInput")?.value || "").trim();
+            if (!text) return;
+            try {
+                const myUid = currentUser.uid;
+                const ids = [myUid, targetUid].sort();
+                const chatId = ids[0] + "_" + ids[1];
+                const msg = {
+                    type: "note_reply",
+                    text: text.slice(0, 200),
+                    noteText: String(noteText || "").slice(0, 120),
+                    senderId: myUid,
+                    createdAt: Date.now()
+                };
+                await db.ref("vieworaChats/" + chatId + "/messages").push(msg);
+                try { await db.ref("chats/" + chatId + "/messages").push(msg); } catch (_) {}
+                const preview = "Note reply: " + text.slice(0, 60);
+                await db.ref("userChats/" + targetUid + "/" + chatId).update({
+                    chatId: chatId,
+                    userId: myUid,
+                    lastMessage: preview,
+                    lastMessageTime: Date.now()
+                });
+                await db.ref("userChats/" + myUid + "/" + chatId).update({
+                    chatId: chatId,
+                    userId: targetUid,
+                    lastMessage: preview,
+                    lastMessageTime: Date.now()
+                });
+                sheet.remove();
+                if (typeof showToast === "function") showToast("Reply sent");
+                else window.location.href = "chat.html?uid=" + encodeURIComponent(targetUid);
+            } catch (err) {
+                console.error(err);
+                if (typeof showToast === "function") showToast("Reply failed");
+            }
+        });
+    }
+
+
     function renderProfile(user) {
 
         if (!user) {
@@ -769,24 +993,35 @@
             if (verified || (window.VieworaBadges && VieworaBadges.isVerified(user))) {
                 const badge = (window.VieworaBadges && VieworaBadges.resolve(user)) || null;
                 const tick = document.createElement("i");
-                if (badge && badge.level === "red") {
+                const level = (badge && badge.level) || (
+                    (user.redTick || user.vip || user.elite) ? "red" :
+                    (user.blueTick || user.verified || user.isVerified) ? "blue" :
+                    (user.whiteTick || user.monetized) ? "white" : "none"
+                );
+                // RED > BLUE > WHITE — never show white if blue/red
+                if (level === "red") {
                     tick.className = "fa-solid fa-certificate profileRedTick vieworaTick redTick";
                     tick.title = "VIP Elite";
                     tick.style.cssText = "color:#ff3b5c;margin-left:6px;font-size:0.9em;vertical-align:middle";
-                } else if (badge && badge.level === "white") {
+                } else if (level === "blue") {
+                    tick.className = "fa-solid fa-circle-check profileBlueTick vieworaTick blueTick verifiedTick";
+                    tick.title = "Verified";
+                    tick.style.cssText = "color:#1d9bf0;margin-left:6px;font-size:0.85em;vertical-align:middle";
+                } else if (level === "white") {
                     tick.className = "fa-solid fa-circle-check profileWhiteTick vieworaTick whiteTick";
                     tick.title = "Monetized creator";
                     tick.style.cssText = "color:#f0f4fa;margin-left:6px;font-size:0.85em;vertical-align:middle";
                 } else {
-                    tick.className = "fa-solid fa-circle-check profileBlueTick vieworaTick blueTick verifiedTick";
-                    tick.title = "Verified";
-                    tick.style.cssText = "color:#1d9bf0;margin-left:6px;font-size:0.85em;vertical-align:middle";
+                    tick.remove();
+                    if (verifiedBadge) verifiedBadge.classList.add("hidden");
                 }
+                if (level === "red" || level === "blue" || level === "white") {
                 tick.setAttribute("aria-label", tick.title);
                 nameEl.appendChild(tick);
                 if (verifiedBadge) {
                     verifiedBadge.classList.remove("hidden");
                     verifiedBadge.innerHTML = tick.outerHTML;
+                }
                 }
             } else if (verifiedBadge) {
                 verifiedBadge.classList.add("hidden");
@@ -855,6 +1090,12 @@
             };
         }
 
+
+        /* NOTE + REACTIONS */
+        try {
+            const noteUid = user.uid || user.id || profileUID;
+            if (noteUid) loadProfileNote(noteUid);
+        } catch (_) {}
 
         /* COVER */
 
@@ -2523,16 +2764,44 @@
 
         try {
 
-            const snapshot =
-                await postsRef()
+            let data = {};
+            try {
+                const snapshot = await postsRef()
                     .orderByChild("uid")
                     .equalTo(profileUID)
                     .once("value");
-
-
-            const data =
-                snapshot.val() || {};
-
+                data = snapshot.val() || {};
+            } catch (e1) {
+                console.warn("posts by uid", e1);
+            }
+            // Fallback: userId field
+            if (!data || !Object.keys(data).length) {
+                try {
+                    const snap2 = await postsRef()
+                        .orderByChild("userId")
+                        .equalTo(profileUID)
+                        .once("value");
+                    data = snap2.val() || {};
+                } catch (e2) {
+                    console.warn("posts by userId", e2);
+                }
+            }
+            // Fallback: scan last posts (no index)
+            if (!data || !Object.keys(data).length) {
+                try {
+                    const snap3 = await postsRef().limitToLast(80).once("value");
+                    const all = snap3.val() || {};
+                    const filtered = {};
+                    Object.keys(all).forEach(function (id) {
+                        const p = all[id] || {};
+                        const owner = p.uid || p.userId || p.ownerId || p.authorId || "";
+                        if (owner === profileUID) filtered[id] = p;
+                    });
+                    data = filtered;
+                } catch (e3) {
+                    console.warn("posts scan", e3);
+                }
+            }
 
             const items =
                 Object.entries(data)
@@ -2545,8 +2814,18 @@
                     .filter(
                         item =>
                             item.archived !== true &&
-                            item.deleted !== true
+                            item.deleted !== true &&
+                            item.hidden !== true
                     )
+                    .filter(function (item) {
+                        // Must have real post media — never count avatar-only junk rows
+                        const media = getMediaURL(item);
+                        if (!media) return false;
+                        // Drop if media is clearly a profile/default avatar path reused by bug
+                        const low = media.toLowerCase();
+                        if (low.indexOf("default-avatar") !== -1) return false;
+                        return true;
+                    })
                     .sort(
                         (a, b) =>
                             safeNumber(
@@ -2562,15 +2841,19 @@
              * Update post count from actual content.
              */
 
-            if (isOwnProfile) {
-
-                setText(
-                    "postsCount",
-                    formatNumber(
-                        items.length
-                    )
-                );
-
+            // Always show real count from loaded posts (not stale user.posts)
+            setText(
+                "postsCount",
+                formatNumber(items.length)
+            );
+            // Heal stale counter on own profile
+            if (isOwnProfile && profileUID) {
+                try {
+                    db.ref("users/" + profileUID).update({
+                        posts: items.length,
+                        postsCount: items.length
+                    });
+                } catch (_) {}
             }
 
 
@@ -3410,34 +3693,65 @@
        MEDIA URL
     ===================================================== */
 
-    function getMediaURL(item) {
+        function getMediaURL(item) {
+        if (!item) return "";
 
-        if (!item) {
+        function pick(v) {
+            if (!v) return "";
+            if (typeof v === "string") {
+                const s = v.trim();
+                if (!s || s === "undefined" || s === "null") return "";
+                // skip data URLs that look like tiny placeholders
+                if (s.indexOf("data:image/svg") === 0) return "";
+                if (/^https?:\/\//i.test(s) || s.indexOf("//") === 0 || s.indexOf("data:") === 0) return s;
+                if (s.indexOf("res.cloudinary") !== -1 || s.indexOf("cloudinary") !== -1) return s;
+                // relative uploads path
+                if (s.indexOf("uploads/") === 0 || s.indexOf("/uploads/") !== -1) return s;
+                return "";
+            }
+            if (typeof v === "object") {
+                return pick(v.secure_url || v.url || v.src || v.path || v.downloadURL || v.mediaUrl || "");
+            }
             return "";
         }
 
-        if (Array.isArray(item.mediaUrls) && item.mediaUrls[0]) {
-            return item.mediaUrls[0];
+        // Never treat author/profile fields as post media
+        const ban = new Set([
+            "photoURL", "photoUrl", "profilePhoto", "avatar", "profilePic",
+            "profilePicture", "dp", "authorPhoto", "userPhoto", "ownerPhoto"
+        ]);
+
+        if (Array.isArray(item.mediaUrls) && item.mediaUrls.length) {
+            for (let i = 0; i < item.mediaUrls.length; i++) {
+                const u = pick(item.mediaUrls[i]);
+                if (u) return u;
+            }
         }
-        if (Array.isArray(item.images) && item.images[0]) {
-            return item.images[0];
+        if (Array.isArray(item.images) && item.images.length) {
+            for (let i = 0; i < item.images.length; i++) {
+                const u = pick(item.images[i]);
+                if (u) return u;
+            }
+        }
+        if (Array.isArray(item.media) && item.media.length) {
+            for (let i = 0; i < item.media.length; i++) {
+                const u = pick(item.media[i]);
+                if (u) return u;
+            }
         }
 
-        return (
-            item.videoUrl ||
-            item.videoURL ||
-            item.mediaUrl ||
-            item.mediaURL ||
-            item.url ||
-            item.fileUrl ||
-            item.cloudinaryUrl ||
-            item.secure_url ||
-            item.downloadURL ||
-            item.imageUrl ||
-            item.imageURL ||
-            ""
-        );
-
+        const keys = [
+            "thumbnailUrl", "thumbnail", "thumbnailURL", "thumb", "thumbUrl",
+            "videoUrl", "videoURL", "mediaUrl", "mediaURL", "url", "fileUrl",
+            "cloudinaryUrl", "secure_url", "downloadURL", "imageUrl", "imageURL",
+            "postImage", "coverImage", "poster"
+        ];
+        for (let i = 0; i < keys.length; i++) {
+            if (ban.has(keys[i])) continue;
+            const u = pick(item[keys[i]]);
+            if (u) return u;
+        }
+        return "";
     }
 
     function getThumbURL(item) {
@@ -4686,9 +5000,11 @@
                 } else if (isOwnProfile) {
                     window.location.href = "story-upload.html";
                 }
-                // Other profile with no story: do nothing (or still try open)
+                // Other profile with no active story → do NOT open stories
                 else {
-                    openProfileStories();
+                    if (typeof showToast === "function") {
+                        showToast("No story right now");
+                    }
                 }
             });
         }
