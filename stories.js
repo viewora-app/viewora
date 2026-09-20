@@ -64,7 +64,7 @@
     return d?.avatar || d?.photoURL || d?.profilePhoto || d?.profileImage || "assets/default-avatar.png";
   }
   function nameOf(d) {
-    return d?.username || d?.userName || d?.displayName || d?.creatorName || d?.name || "User";
+    return d?.username || d?.userName || d?.displayName || d?.creatorName || d?.name || "…";
   }
 
   function isVerifiedUser(d) {
@@ -236,13 +236,19 @@
       ev,
       function onFirstGesture() {
         unlockStoryAudioFromGesture();
-        // Resume current track only if paused — do NOT restart / stack
         try {
-          var el = document.getElementById("storyAudio") || state.musicAudio;
-          if (el && el.src && el.paused) {
+          sessionStorage.setItem("VIEWORA_AUDIO_UNLOCK", "1");
+        } catch (_) {}
+        // Resume current / pending track — unmute + play
+        try {
+          var el =
+            document.getElementById("storyAudio") ||
+            state.musicAudio ||
+            window.__vieworaPendingMusic;
+          if (el && el.src) {
             el.muted = false;
             el.volume = 1;
-            el.play().catch(function () {});
+            if (el.paused) el.play().catch(function () {});
           }
         } catch (_) {}
       },
@@ -267,9 +273,18 @@
 
   async function playStoryMusic(data) {
     bindMusicUnlock();
+    // Gesture may have been unlocked on index before navigation
+    try {
+      if (sessionStorage.getItem("VIEWORA_AUDIO_UNLOCK") === "1") {
+        window.__vieworaMusicGestureUnlocked = true;
+      }
+    } catch (_) {}
 
     const info = musicInfo(data);
-    if (!info) return;
+    if (!info) {
+      stopMusic();
+      return;
+    }
 
     let url = info.audioUrl || "";
     if (!url) {
@@ -277,6 +292,7 @@
     }
     if (!url) {
       console.warn("Story music has no audioUrl", info);
+      stopMusic();
       return;
     }
 
@@ -373,8 +389,26 @@
         } catch (_) {}
       };
       seekAndPlay();
-      setTimeout(seekAndPlay, 250);
-      setTimeout(seekAndPlay, 700);
+      setTimeout(seekAndPlay, 120);
+      setTimeout(seekAndPlay, 400);
+      setTimeout(seekAndPlay, 900);
+      // Keep retrying unmute until playing (max ~2s)
+      let tries = 0;
+      const kick = setInterval(function () {
+        tries++;
+        try {
+          if (!el || !el.src) { clearInterval(kick); return; }
+          if (!el.paused && !el.muted) { clearInterval(kick); return; }
+          el.muted = false;
+          el.volume = 1;
+          el.play().then(function () {
+            el.muted = false;
+            clearInterval(kick);
+          }).catch(function () {});
+        } catch (_) {}
+        if (tries > 12) clearInterval(kick);
+      }, 160);
+      window.__vieworaPendingMusic = el;
     } catch (e) {
       console.warn("Music play failed", e);
     }
@@ -508,16 +542,33 @@
       }
     } catch (_) {}
 
-    // Name + tick — show immediately from story data, enrich in background
+    // Name + tick — show immediately from story data / URL, enrich in background
     const nameEl = $("storiesName");
+    const urlName = (new URLSearchParams(location.search).get("name") || "").trim();
     let baseName =
       g.username ||
+      urlName ||
       nameOf(item.data) ||
-      (item.data && (item.data.username || item.data.userName || item.data.displayName || item.data.creatorName)) ||
+      (item.data && (item.data.username || item.data.userName || item.data.displayName || item.data.creatorName || item.data.name)) ||
       "";
-    if (!baseName || /^(user|viewora user|viewora)$/i.test(String(baseName).trim())) {
-      baseName = g.username || "…";
+    if (!baseName || /^(user|viewora user|viewora|creator)$/i.test(String(baseName).trim())) {
+      baseName = g.username || urlName || "…";
     }
+    // Avatar immediately
+    try {
+      const av =
+        g.avatar ||
+        avatarOf(item.data) ||
+        (item.data && (item.data.profilePhoto || item.data.photoURL || item.data.avatar)) ||
+        new URLSearchParams(location.search).get("photo") ||
+        "";
+      if (av && $("storiesAvatar")) {
+        $("storiesAvatar").src = av;
+        $("storiesAvatar").onerror = function () {
+          this.src = "assets/default-avatar.png";
+        };
+      }
+    } catch (_) {}
     let userNode = null;
     let verified = isVerifiedUser(item.data);
 
@@ -695,6 +746,28 @@
     });
   }
 
+  function preloadNextStoryMedia() {
+    try {
+      const g = currentGroup();
+      if (!g) return;
+      const next = g.items[state.itemIndex + 1];
+      if (!next) return;
+      const url = mediaURL(next.data || {});
+      if (!url) return;
+      const type = String((next.data || {}).mediaType || (next.data || {}).type || "").toLowerCase();
+      const isVid = type === "video" || /\.(mp4|webm|mov)(\?|$)/i.test(url);
+      if (isVid) {
+        const v = document.createElement("video");
+        v.preload = "auto";
+        v.muted = true;
+        v.src = url;
+      } else {
+        const i = new Image();
+        i.src = url;
+      }
+    } catch (_) {}
+  }
+
   function showItem() {
     state._advancing = false;
     const g = currentGroup();
@@ -774,6 +847,7 @@
 
     // Play attached music
     playStoryMusic(data);
+    preloadNextStoryMedia();
 
     const type = String(data.mediaType || data.type || "").toLowerCase();
     const isVideo = type === "video" || /\.(mp4|webm|mov)(\?|$)/i.test(url);
@@ -793,7 +867,7 @@
     const stage = $("storyStage") || $("storiesStage") || img?.parentElement;
     if (stage) {
       stage.classList.add("storyLoading");
-      setTimeout(() => { try { stage.classList.remove("storyLoading"); } catch (_) {} }, 1200);
+      setTimeout(() => { try { stage.classList.remove("storyLoading"); } catch (_) {} }, 400);
     }
 
     if (isVideo && vid) {
@@ -868,7 +942,17 @@
       params.get("expired") === "1";
 
     let following = new Set();
-    if (state.user && !soloMode) {
+    // Solo / focused uid: skip following fetch (faster open)
+    if (state.user && !soloMode && !focusUid) {
+      try {
+        let snap = await db.ref(`following/${state.user.uid}`).once("value");
+        if (!snap.exists()) {
+          snap = await db.ref(`users/${state.user.uid}/following`).once("value");
+        }
+        following = new Set(Object.keys(snap.val() || {}));
+      } catch (_) {}
+    } else if (state.user && !soloMode && focusUid) {
+      // Still need following for multi-user chain after current
       try {
         let snap = await db.ref(`following/${state.user.uid}`).once("value");
         if (!snap.exists()) {
@@ -878,7 +962,14 @@
       } catch (_) {}
     }
 
-    const snap = await db.ref("stories").once("value");
+    // Prefer querying only focus user stories when opening one ring
+    let snap;
+    if (focusUid && (soloMode || true)) {
+      // Full scan still needed for home chain; but prioritize speed with once
+      snap = await db.ref("stories").once("value");
+    } else {
+      snap = await db.ref("stories").once("value");
+    }
     const byUser = {};
 
     snap.forEach((child) => {
@@ -935,53 +1026,15 @@
     });
 
     // Enrich group names/avatars/ticks from users/
-    await Promise.all(
-      Object.values(byUser).map(async (g) => {
-        try {
-          const u = await fetchUser(g.uid);
-          if (!u) return;
-          const n =
-            u.username ||
-            u.userName ||
-            u.displayName ||
-            u.name ||
-            u.fullName ||
-            "";
-          if (n) g.username = n;
-          const photo =
-            u.profilePhoto ||
-            u.photoURL ||
-            u.avatar ||
-            "";
-          if (photo) g.avatar = photo;
-          g.userNode = u;
-        } catch (_) {}
-      })
-    );
-
-    // Mark live users (followed live goes to front with red LIVE)
+    // FAST PATH: do NOT block on user profile / live fetches
+    // Apply URL name/photo for focus user immediately
     try {
-      const liveSnap = await db.ref("live").once("value");
-      if (liveSnap.exists()) {
-        liveSnap.forEach((c) => {
-          const v = c.val() || {};
-          const lid = String(v.uid || c.key || "");
-          if (!lid || !byUser[lid]) return;
-          if (v.active === true || v.isLive === true || v.status === "live") {
-            byUser[lid].isLive = true;
-          }
-        });
+      const urlName = (params.get("name") || "").trim();
+      const urlPhoto = (params.get("photo") || "").trim();
+      if (focusUid && byUser[focusUid]) {
+        if (urlName) byUser[focusUid].username = urlName;
+        if (urlPhoto) byUser[focusUid].avatar = urlPhoto;
       }
-    } catch (_) {}
-    try {
-      await Promise.all(
-        Object.keys(byUser).map(async (uid) => {
-          try {
-            const s = await db.ref("users/" + uid + "/isLive").once("value");
-            if (s.val() === true) byUser[uid].isLive = true;
-          } catch (_) {}
-        })
-      );
     } catch (_) {}
 
     state.groups = Object.values(byUser).sort((a, b) => {
@@ -997,18 +1050,26 @@
     });
 
 
-    // Highlight album playlist: only chosen stories
+    // Highlight album playlist: ONLY when explicitly opening a highlight
     let playlistIds = null;
+    const isHighlightOpen =
+      params.get("highlight") === "1" ||
+      params.get("expired") === "1" ||
+      !!params.get("album");
     try {
-      const raw = sessionStorage.getItem("vieworaHighlightPlaylist");
-      if (raw) {
-        const pl = JSON.parse(raw);
-        if (pl && Array.isArray(pl.storyIds) && pl.storyIds.length) {
-          // Only apply if same uid (or no uid set)
-          if (!pl.uid || !focusUid || String(pl.uid) === String(focusUid)) {
-            playlistIds = new Set(pl.storyIds.map(String));
+      if (isHighlightOpen) {
+        const raw = sessionStorage.getItem("vieworaHighlightPlaylist");
+        if (raw) {
+          const pl = JSON.parse(raw);
+          if (pl && Array.isArray(pl.storyIds) && pl.storyIds.length) {
+            if (!pl.uid || !focusUid || String(pl.uid) === String(focusUid)) {
+              playlistIds = new Set(pl.storyIds.map(String));
+            }
           }
         }
+      } else {
+        // Normal story open from home/profile — clear stale playlist
+        try { sessionStorage.removeItem("vieworaHighlightPlaylist"); } catch (_) {}
       }
     } catch (_) {}
     const albumParam = params.get("album") || "";
@@ -1047,6 +1108,19 @@
       });
     }
 
+    // Rebuild groups after any byUser item filters
+    state.groups = Object.values(byUser)
+      .filter((g) => g && g.items && g.items.length)
+      .sort((a, b) => {
+        if (!!a.isLive !== !!b.isLive) return a.isLive ? -1 : 1;
+        if (state.user) {
+          const aOwn = a.uid === state.user.uid;
+          const bOwn = b.uid === state.user.uid;
+          if (aOwn !== bOwn) return aOwn ? -1 : 1;
+        }
+        return b.latest - a.latest;
+      });
+
     // Hard lock: if solo + focusUid, never keep other users
     if (soloMode && focusUid) {
       state.groups = state.groups.filter((g) => g.uid === focusUid);
@@ -1055,11 +1129,21 @@
     if (!state.groups.length) {
       showToast("No stories");
       setTimeout(() => {
-        if (window.history.length > 1) history.back();
-        else location.href = focusUid
-          ? "profile.html?uid=" + encodeURIComponent(focusUid)
-          : "index.html";
-      }, 800);
+        try {
+          if (window.history.length > 1) {
+            history.back();
+            return;
+          }
+        } catch (_) {}
+        const from = (params.get("from") || "").toLowerCase();
+        if (from === "profile" && focusUid) {
+          location.href = "profile.html?uid=" + encodeURIComponent(focusUid);
+        } else if (focusUid && soloMode) {
+          location.href = "profile.html?uid=" + encodeURIComponent(focusUid);
+        } else {
+          location.href = "index.html";
+        }
+      }, 600);
       return;
     }
 
@@ -1074,6 +1158,19 @@
         const j = state.groups[i].items.findIndex((it) => it.id === focusId);
         if (j >= 0) { gi = i; ii = j; break; }
       }
+    } else if (state.user && state.groups[gi]) {
+      // Instagram-style: jump to first unseen; if all seen → start from 0 (rewatch)
+      const me = state.user.uid;
+      const items = state.groups[gi].items || [];
+      let firstUnseen = -1;
+      for (let k = 0; k < items.length; k++) {
+        const viewers = (items[k].data && items[k].data.viewers) || {};
+        if (!viewers[me]) {
+          firstUnseen = k;
+          break;
+        }
+      }
+      ii = firstUnseen >= 0 ? firstUnseen : 0;
     }
 
     state.groupIndex = gi;
@@ -1081,6 +1178,54 @@
     // Prevent advancing to other users in solo mode
     state.soloMode = soloMode && !!focusUid;
     showItem();
+
+    // Background: enrich names / avatars / live (does not block first paint)
+    (async function enrichInBackground() {
+      try {
+        await Promise.all(
+          state.groups.map(async (g) => {
+            try {
+              const u = await fetchUser(g.uid);
+              if (!u) return;
+              const n =
+                u.username ||
+                u.userName ||
+                u.displayName ||
+                u.name ||
+                u.fullName ||
+                "";
+              if (n) g.username = n;
+              const photo =
+                u.profilePhoto ||
+                u.photoURL ||
+                u.avatar ||
+                "";
+              if (photo) g.avatar = photo;
+              g.userNode = u;
+            } catch (_) {}
+          })
+        );
+        // Refresh chrome for current group if still viewing
+        try {
+          const cur = currentGroup();
+          if (cur) updateChrome();
+        } catch (_) {}
+      } catch (_) {}
+      try {
+        const liveSnap = await db.ref("live").once("value");
+        if (liveSnap.exists()) {
+          liveSnap.forEach((c) => {
+            const v = c.val() || {};
+            const lid = String(v.uid || c.key || "");
+            const g = state.groups.find((x) => x.uid === lid);
+            if (!g) return;
+            if (v.active === true || v.isLive === true || v.status === "live") {
+              g.isLive = true;
+            }
+          });
+        }
+      } catch (_) {}
+    })();
   }
 
   async function sendReply() {
@@ -1437,8 +1582,25 @@
     document.head.appendChild(s);
   }
 
+  function paintFromUrlParams() {
+    try {
+      const p = new URLSearchParams(location.search);
+      const name = (p.get("name") || "").trim();
+      const photo = (p.get("photo") || "").trim();
+      const ne = $("storiesName");
+      const ae = $("storiesAvatar");
+      if (ne && name) ne.textContent = name;
+      if (ae && photo) {
+        ae.src = photo;
+        ae.onerror = function () { this.src = "assets/default-avatar.png"; };
+      }
+      if (ne && !name) ne.textContent = "";
+    } catch (_) {}
+  }
+
   function init() {
     injectStoriesCSS();
+    paintFromUrlParams();
     if (!ready()) {
       showToast("Firebase not ready");
       return;

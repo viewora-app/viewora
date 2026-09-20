@@ -4955,6 +4955,15 @@
             url += "&album=" + encodeURIComponent(story.id);
         }
 
+        try {
+            sessionStorage.setItem("VIEWORA_AUDIO_UNLOCK", "1");
+            if (!window.__vieworaUnlockAudio) {
+                window.__vieworaUnlockAudio = new Audio(
+                    "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABAAZGF0YQAAAAA="
+                );
+            }
+            window.__vieworaUnlockAudio.play().catch(function () {});
+        } catch (_) {}
         window.location.href = url;
 
     }
@@ -4971,10 +4980,41 @@
         }
 
         // Solo = only this user's stories, no swipe to others
-        window.location.href =
-            "stories.html?uid=" +
-            encodeURIComponent(profileUID) +
-            "&solo=1&from=profile";
+        try {
+            sessionStorage.setItem("VIEWORA_AUDIO_UNLOCK", "1");
+            if (!window.__vieworaUnlockAudio) {
+                window.__vieworaUnlockAudio = new Audio(
+                    "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABAAZGF0YQAAAAA="
+                );
+            }
+            window.__vieworaUnlockAudio.play().catch(function () {});
+        } catch (_) {}
+        (function () {
+            var url =
+                "stories.html?uid=" +
+                encodeURIComponent(profileUID) +
+                "&solo=1&from=profile";
+            try {
+                var nm =
+                    (window.__profileData &&
+                        (__profileData.username ||
+                            __profileData.displayName ||
+                            __profileData.name)) ||
+                    (document.getElementById("profileUsername") &&
+                        document.getElementById("profileUsername").textContent) ||
+                    (document.getElementById("displayName") &&
+                        document.getElementById("displayName").textContent) ||
+                    "";
+                nm = String(nm || "").replace(/^@/, "").trim();
+                if (nm) url += "&name=" + encodeURIComponent(nm);
+                var img =
+                    document.querySelector("#profileAvatar img, #storyRing img, .profileAvatar img");
+                if (img && img.src && img.src.indexOf("default") === -1) {
+                    url += "&photo=" + encodeURIComponent(img.src);
+                }
+            } catch (_) {}
+            window.location.href = url;
+        })();
 
     }
 

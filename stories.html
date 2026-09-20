@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <script>(function(){try{var t=localStorage.getItem("viewora_theme")||"dark";document.documentElement.setAttribute("data-theme",t);}catch(e){document.documentElement.setAttribute("data-theme","dark");}})();</script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="theme-color" content="#000000">
@@ -10,7 +11,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
     <link rel="stylesheet" href="stories.css">
-  <link rel="stylesheet" href="theme.css">
+    <link rel="stylesheet" href="theme.css">
 </head>
 <body>
 <div id="app" class="storiesApp">
@@ -23,7 +24,11 @@
         <div class="storiesUser" id="storiesUser">
             <img id="storiesAvatar" src="assets/default-avatar.png" alt="">
             <div>
-                <strong id="storiesName">User</strong>
+                <strong id="storiesName"></strong>
+<script>
+/* VIEWORA_STORIES_BOOT — paint name/photo before stories.js loads */
+(function(){try{var p=new URLSearchParams(location.search);var n=(p.get("name")||"").trim();var ph=(p.get("photo")||"").trim();var ne=document.getElementById("storiesName");if(ne&&n)ne.textContent=n;var ae=document.getElementById("storiesAvatar");if(ae&&ph){ae.src=ph;ae.onerror=function(){this.src="assets/default-avatar.png";};}}catch(e){}})();
+</script>
                 <small id="storiesTime"></small>
             </div>
         </div>
@@ -146,11 +151,25 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
 <script src="firebase.js"></script>
-    <script scr="security.js"></script>
-  <script src="call-listener.js"></script>
-<script src="message-listener.js"></script>
-  <script src="badges.js"></script>
+<script src="theme.js"></script>
 <script src="stories.js"></script>
-    <script src="theme.js"></script>
+
+<script>
+(function () {
+  try {
+    var p = new URLSearchParams(location.search);
+    var name = (p.get("name") || "").trim();
+    var photo = (p.get("photo") || "").trim();
+    if (name) {
+      var n = document.getElementById("storiesName");
+      if (n) n.textContent = name;
+    }
+    if (photo) {
+      var a = document.getElementById("storiesAvatar");
+      if (a) { a.src = photo; a.onerror = function () { this.src = "assets/default-avatar.png"; }; }
+    }
+  } catch (e) {}
+})();
+</script>
 </body>
 </html>

@@ -511,3 +511,37 @@ button { cursor: pointer; }
   box-shadow: 0 6px 18px rgba(239,68,68,.35);
 }
 .vieworaConfirmBtn:active { transform: scale(0.98); }
+
+/* Soft load — no long black screen */
+.storyLoading #storyImg,
+.storyLoading #storyVid {
+  opacity: 0.35;
+  transition: opacity .2s ease;
+}
+#storyImg, #storyVid {
+  opacity: 1;
+  transition: opacity .18s ease;
+}
+.storiesHeader .storiesName {
+  min-height: 1.1em;
+}
+
+/* no black user flash */
+.storiesTop .storiesUser strong:empty::after {
+  content: "";
+}
+.stage {
+  background: #0a0a0a;
+}
+.stage::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at center, #1a1a22 0%, #000 70%);
+  z-index: 0;
+  pointer-events: none;
+}
+.stage .storyMedia {
+  position: relative;
+  z-index: 1;
+}

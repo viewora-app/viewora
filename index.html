@@ -1,6 +1,19 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+
+<script>
+/* Viewora entry: show splash once per session */
+(function(){
+  try {
+    if (sessionStorage.getItem("viewora_splash_seen")) return;
+    if (/[?&]nosplash=1/.test(location.search)) return;
+    sessionStorage.setItem("viewora_return_to", "index.html");
+    location.replace("splash.html");
+  } catch(e) {}
+})();
+</script>
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#08080d">
@@ -392,9 +405,11 @@
 <!-- page ka apna js -->
     <script src="security.js"></script>
   <script src="badges.js"></script>
+<script src="share-sheet.js"></script>
 <script src="index.js"></script>
 <!-- activity.js only on activity page -->
 <!-- profile.js only on profile page -->
+<script src="account-session.js"></script>
 <script src="nav.js"></script>
   <script src="theme.js"></script>
   

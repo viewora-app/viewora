@@ -4020,13 +4020,32 @@
                                 markStoryUserSeen(group.uid);
                                 const params = new URLSearchParams();
                                 if (group.uid) params.set("uid", group.uid);
+                                var ringName =
+                                    group.username ||
+                                    group.name ||
+                                    group.displayName ||
+                                    (group.stories &&
+                                        group.stories[0] &&
+                                        (group.stories[0].username ||
+                                            group.stories[0].userName ||
+                                            group.stories[0].displayName ||
+                                            group.stories[0].name)) ||
+                                    "";
+                                var ringPhoto =
+                                    group.avatar ||
+                                    group.photoURL ||
+                                    group.profilePhoto ||
+                                    (group.stories &&
+                                        group.stories[0] &&
+                                        (group.stories[0].profilePhoto ||
+                                            group.stories[0].photoURL ||
+                                            group.stories[0].avatar)) ||
+                                    "";
+                                if (ringName) params.set("name", String(ringName).replace(/^@/, ""));
+                                if (ringPhoto) params.set("photo", ringPhoto);
                                 params.set("from", "home");
-                                if (firstStoryId) {
-                                    params.set("story", firstStoryId);
-                                    params.set("storyId", firstStoryId);
-                                }
-                                window.location.href =
-                                    "stories.html?" + params.toString();
+                                // Do NOT lock to one storyId — play full user stack (1→2→3)
+                                openStoriesViewer(params);
                             });
 
                             let lpTimer = null;
@@ -4175,7 +4194,7 @@
                                         params.set("story", first.id);
                                         params.set("storyId", first.id);
                                     }
-                                    window.location.href = "stories.html?" + params.toString();
+                                    openStoriesViewer(params);
                                 } else {
                                     window.location.href = "story-upload.html";
                                 }
@@ -4191,6 +4210,30 @@
                             }
                         })();
                 };
+
+                
+    function openStoriesViewer(params) {
+        try {
+            sessionStorage.setItem("VIEWORA_AUDIO_UNLOCK", "1");
+            if (!window.__vieworaUnlockAudio) {
+                window.__vieworaUnlockAudio = new Audio(
+                    "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABAAZGF0YQAAAAA="
+                );
+            }
+            window.__vieworaUnlockAudio.play().catch(function () {});
+        } catch (_) {}
+        var href;
+        if (typeof params === "string") {
+            href = params.indexOf("stories.html") === 0
+                ? params
+                : "stories.html?" + params;
+        } else if (params && typeof params.toString === "function") {
+            href = "stories.html?" + params.toString();
+        } else {
+            href = "stories.html";
+        }
+        window.location.href = href;
+    }
 
                 window.__vieworaStoriesHandler = storiesHandler;
                 try {

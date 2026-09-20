@@ -156,17 +156,105 @@ function getUserAvatar(user) {
 
 function getUserTickHTML(user) {
     if (!user) return "";
-    // Priority: Red (VIP) > Blue > White
-    if (user.redTick === true || user.vip === true || user.plan === "elite" || (user.subscription && (user.subscription.plan === "elite" || user.subscription.tier === "elite"))) {
-        return '<span class="tickBadge red" title="VIP Red Tick"><i class="fa-solid fa-check"></i></span>';
+    // Explicit tickType wins; else priority Red > Blue > White (only ONE shown)
+    const tt = String(user.tickType || user.badge || "").toLowerCase();
+    const isRed =
+        tt === "red" ||
+        user.redTick === true ||
+        user.vip === true ||
+        user.plan === "elite" ||
+        (user.subscription &&
+            (user.subscription.plan === "elite" ||
+                user.subscription.tier === "elite" ||
+                user.subscription.plan === "yearly_vip"));
+    const isBlue =
+        !isRed &&
+        (tt === "blue" ||
+            user.blueTick === true ||
+            ((user.verified === true || user.isVerified === true || user.verificationStatus === "verified") &&
+                user.whiteTick !== true &&
+                user.redTick !== true));
+    // White only if not red/blue — monetization alone should not look like blue
+    const isWhite =
+        !isRed &&
+        !isBlue &&
+        (tt === "white" ||
+            user.whiteTick === true ||
+            user.monetizationEnabled === true ||
+            user.monetizationStatus === "active");
+
+    if (isRed) {
+        return '<span class="tickBadge tickRed" title="VIP Red Tick">✓</span>';
     }
-    if (user.verified === true || user.isVerified === true || user.blueTick === true || user.verificationStatus === "verified") {
-        return '<span class="tickBadge blue" title="Blue Tick"><i class="fa-solid fa-check"></i></span>';
+    if (isBlue) {
+        return '<span class="tickBadge tickBlue" title="Verified Blue Tick">✓</span>';
     }
-    if (user.whiteTick === true || user.monetizationEnabled === true || user.monetizationStatus === "active") {
-        return '<span class="tickBadge white" title="White Tick (Monetized)"><i class="fa-solid fa-check"></i></span>';
+    if (isWhite) {
+        return '<span class="tickBadge tickWhite" title="Monetized White Tick">✓</span>';
     }
     return "";
+}
+
+async function setUserTick(uid, kind) {
+    // kind: "red" | "blue" | "white" | "none"
+    if (!uid) return;
+    const updates = {
+        redTick: kind === "red",
+        blueTick: kind === "blue",
+        whiteTick: kind === "white",
+        verified: kind === "blue" || kind === "red",
+        isVerified: kind === "blue" || kind === "red",
+        verificationStatus: kind === "blue" || kind === "red" ? "verified" : "none",
+        tickType: kind === "none" ? null : kind,
+        vip: kind === "red",
+        tickUpdatedAt: firebase.database.ServerValue.TIMESTAMP,
+        tickUpdatedBy: (currentAdmin && currentAdmin.uid) || null
+    };
+    if (kind === "red") {
+        updates.role = "influencer";
+    } else if (kind === "blue") {
+        // keep role if already creator/admin
+        const u = cachedUsers[uid] || {};
+        if (!u.role || u.role === "user") updates.role = "creator";
+    }
+    await db.ref("users/" + uid).update(updates);
+}
+
+async function permanentDeleteUser(uid) {
+    if (!uid) return;
+    const roots = ["posts", "shorts", "videos", "stories"];
+    // Remove user node
+    await db.ref("users/" + uid).remove();
+    // Remove content owned by user (best-effort)
+    for (const root of roots) {
+        try {
+            const snap = await db.ref(root).once("value");
+            const val = snap.val() || {};
+            const updates = {};
+            Object.keys(val).forEach((id) => {
+                const item = val[id] || {};
+                const owner =
+                    item.uid ||
+                    item.userId ||
+                    item.ownerId ||
+                    item.authorId ||
+                    "";
+                if (String(owner) === String(uid)) {
+                    updates[root + "/" + id] = null;
+                }
+            });
+            if (Object.keys(updates).length) {
+                await db.ref().update(updates);
+            }
+        } catch (e) {
+            console.warn("purge", root, e);
+        }
+    }
+    try {
+        await db.ref("followers/" + uid).remove();
+        await db.ref("following/" + uid).remove();
+        await db.ref("userChats/" + uid).remove();
+    } catch (_) {}
 }
 
 
@@ -1571,7 +1659,12 @@ if (blockUserBtn) {
                             "users/" +
                             selectedUserId
                         ).update({
-                            blocked: shouldBlock
+                            blocked: shouldBlock,
+                            disabled: shouldBlock,
+                            status: shouldBlock ? "disabled" : "active",
+                            blockedAt: shouldBlock
+                                ? firebase.database.ServerValue.TIMESTAMP
+                                : null
                         });
 
                         showToast(
@@ -1619,15 +1712,46 @@ async function loadPosts() {
     `;
 
     try {
+        const [postsSnap, shortsSnap, videosSnap] = await Promise.all([
+            db.ref("posts").once("value"),
+            db.ref("shorts").once("value"),
+            db.ref("videos").once("value")
+        ]);
 
-        const snapshot =
-            await db.ref("posts").once("value");
+        const merged = {};
 
-        cachedPosts =
-            snapshot.val() || {};
+        function ingest(snapVal, forcedType) {
+            const val = snapVal || {};
+            Object.keys(val).forEach((id) => {
+                const item = val[id] || {};
+                // skip nested user-keyed maps without media
+                if (item && typeof item === "object" && !item.url && !item.mediaURL && !item.mediaUrls && !item.thumbnail && !item.caption && !item.title && !item.videoUrl) {
+                    // maybe user folder of posts
+                    Object.keys(item).forEach((subId) => {
+                        const sub = item[subId];
+                        if (!sub || typeof sub !== "object") return;
+                        merged[subId] = Object.assign({}, sub, {
+                            __id: subId,
+                            __root: forcedType,
+                            type: sub.type || forcedType
+                        });
+                    });
+                    return;
+                }
+                merged[id] = Object.assign({}, item, {
+                    __id: id,
+                    __root: forcedType,
+                    type: item.type || forcedType
+                });
+            });
+        }
 
+        ingest(postsSnap.val(), "post");
+        ingest(shortsSnap.val(), "short");
+        ingest(videosSnap.val(), "video");
+
+        cachedPosts = merged;
         renderContent();
-
         updateDashboardStats();
 
     } catch (error) {
@@ -1647,6 +1771,24 @@ async function loadPosts() {
             "error"
         );
     }
+}
+
+function getContentThumb(post) {
+    if (!post) return "";
+    return (
+        post.thumbnail ||
+        post.thumb ||
+        post.cover ||
+        post.coverUrl ||
+        post.poster ||
+        (Array.isArray(post.mediaUrls) && post.mediaUrls[0]) ||
+        post.mediaURL ||
+        post.imageUrl ||
+        post.photoURL ||
+        post.url ||
+        post.videoUrl ||
+        ""
+    );
 }
 
 /* =========================================================
@@ -1755,67 +1897,66 @@ function renderContent() {
                         ? "fa-video"
                         : "fa-image";
 
+            const thumb = getContentThumb(post);
+            const root = post.__root || (type === "short" ? "shorts" : type === "video" ? "videos" : "posts");
+            const blocked = post.blocked === true || post.hidden === true || post.status === "blocked";
+
             return `
                 <div
-                    class="contentAdminCard"
+                    class="contentAdminCard ${blocked ? "isBlocked" : ""}"
                     data-content-type="${type}"
+                    data-content-root="${root}"
                 >
-
-                    <div class="contentAdminIcon">
-                        <i class="fa-solid ${icon}"></i>
+                    <div class="contentAdminThumb">
+                        ${thumb
+                            ? `<img src="${escapeAttribute(thumb)}" alt="" loading="lazy" onerror="this.style.display='none';this.parentElement.classList.add('noThumb')">`
+                            : `<div class="contentAdminIcon"><i class="fa-solid ${icon}"></i></div>`
+                        }
+                        <span class="contentTypeBadge">${type.toUpperCase()}</span>
                     </div>
 
                     <div class="contentAdminInfo">
-
-                        <span class="contentTypeBadge">
-                            ${type.toUpperCase()}
-                        </span>
-
-                        <h3>
-                            ${title}
-                        </h3>
-
-                        <p>
-                            ${author}
-                        </p>
-
+                        <h3>${title}</h3>
+                        <p>${author}</p>
                         <small>
                             <i class="fa-solid fa-eye"></i>
                             ${views} views
+                            ${blocked ? " · <span style='color:#f87171'>Blocked</span>" : ""}
                         </small>
-
                     </div>
 
-                    <button
-                        class="contentDeleteBtn"
-                        data-delete-post="${escapeAttribute(id)}"
-                        title="Delete content"
-                    >
-
-                        <i class="fa-solid fa-trash"></i>
-
-                    </button>
-
+                    <div class="contentAdminActions">
+                        <button
+                            class="contentBlockBtn"
+                            data-block-post="${escapeAttribute(id)}"
+                            data-root="${escapeAttribute(root)}"
+                            title="Block / hide content"
+                        >
+                            <i class="fa-solid fa-ban"></i>
+                        </button>
+                        <button
+                            class="contentDeleteBtn"
+                            data-delete-post="${escapeAttribute(id)}"
+                            data-root="${escapeAttribute(root)}"
+                            title="Delete content"
+                        >
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </div>
                 </div>
             `;
 
         }).join("");
 
-    qsa(
-        "[data-delete-post]",
-        grid
-    ).forEach(button => {
-
-        button.addEventListener(
-            "click",
-            () => {
-
-                deletePost(
-                    button.dataset.deletePost
-                );
-
-            }
-        );
+    qsa("[data-delete-post]", grid).forEach(button => {
+        button.addEventListener("click", () => {
+            deletePost(button.dataset.deletePost, button.dataset.root || "posts");
+        });
+    });
+    qsa("[data-block-post]", grid).forEach(button => {
+        button.addEventListener("click", () => {
+            blockContent(button.dataset.blockPost, button.dataset.root || "posts");
+        });
     });
 }
 
@@ -1851,41 +1992,144 @@ function getContentType(post) {
    DELETE CONTENT
 ========================================================= */
 
-async function deletePost(postId) {
+async function deletePost(postId, root) {
 
     if (!postId) return;
+    root = root || "posts";
 
     openConfirmModal(
         "Delete Content?",
-        "This content will be permanently removed.",
+        "This content will be permanently removed from Firebase.",
         async () => {
-
             try {
-
-                await db.ref(
-                    "posts/" + postId
-                ).remove();
-
-                showToast(
-                    "Content deleted successfully."
-                );
-
+                await db.ref(root + "/" + postId).remove();
+                // also try posts path if nested
+                if (root !== "posts") {
+                    try { await db.ref("posts/" + postId).remove(); } catch (_) {}
+                }
+                showToast("Content deleted successfully.");
                 await loadPosts();
-
-                await loadDashboard();
-
+                try { await loadDashboard(); } catch (_) {}
             } catch (error) {
-
                 console.error(error);
-
-                showToast(
-                    "Unable to delete content.",
-                    "error"
-                );
+                showToast("Unable to delete content.", "error");
             }
         }
     );
 }
+
+async function blockContent(postId, root) {
+    if (!postId) return;
+    root = root || "posts";
+    openConfirmModal(
+        "Block Content?",
+        "This post/short/video will be hidden from feeds (blocked).",
+        async () => {
+            try {
+                await db.ref(root + "/" + postId).update({
+                    blocked: true,
+                    hidden: true,
+                    status: "blocked",
+                    blockedAt: firebase.database.ServerValue.TIMESTAMP,
+                    blockedBy: (currentAdmin && currentAdmin.uid) || null
+                });
+                showToast("Content blocked.");
+                await loadPosts();
+            } catch (error) {
+                console.error(error);
+                showToast("Unable to block content.", "error");
+            }
+        }
+    );
+}
+
+
+/* =========================================================
+   TICKS + PERMANENT DELETE
+========================================================= */
+
+(function wireAdminUserActions() {
+    function bind(id, fn) {
+        const el = $(id);
+        if (!el || el.__wired) return;
+        el.__wired = true;
+        el.addEventListener("click", fn);
+    }
+
+    bind("grantBlueTickBtn", async () => {
+        if (!selectedUserId) return;
+        try {
+            await setUserTick(selectedUserId, "blue");
+            showToast("Blue tick granted.");
+            closeUserModal();
+            await loadUsers();
+        } catch (e) {
+            console.error(e);
+            showToast("Failed to grant blue tick.", "error");
+        }
+    });
+
+    bind("grantRedTickBtn", async () => {
+        if (!selectedUserId) return;
+        try {
+            await setUserTick(selectedUserId, "red");
+            showToast("Red VIP tick granted.");
+            closeUserModal();
+            await loadUsers();
+        } catch (e) {
+            console.error(e);
+            showToast("Failed to grant red tick.", "error");
+        }
+    });
+
+    bind("grantWhiteTickBtn", async () => {
+        if (!selectedUserId) return;
+        try {
+            await setUserTick(selectedUserId, "white");
+            showToast("White tick granted.");
+            closeUserModal();
+            await loadUsers();
+        } catch (e) {
+            console.error(e);
+            showToast("Failed to grant white tick.", "error");
+        }
+    });
+
+    bind("removeTickBtn", async () => {
+        if (!selectedUserId) return;
+        try {
+            await setUserTick(selectedUserId, "none");
+            showToast("All ticks removed.");
+            closeUserModal();
+            await loadUsers();
+        } catch (e) {
+            console.error(e);
+            showToast("Failed to remove ticks.", "error");
+        }
+    });
+
+    bind("deleteUserBtn", () => {
+        if (!selectedUserId) return;
+        const user = cachedUsers[selectedUserId] || {};
+        openConfirmModal(
+            "Permanent Delete?",
+            "This will delete " + getUserName(user) + " and their content from Firebase. Cannot undo.",
+            async () => {
+                try {
+                    await permanentDeleteUser(selectedUserId);
+                    showToast("User permanently deleted.");
+                    closeUserModal();
+                    await loadUsers();
+                    await loadPosts();
+                } catch (e) {
+                    console.error(e);
+                    showToast("Delete failed.", "error");
+                }
+            }
+        );
+    });
+})();
+
 
 /* =========================================================
    REPORTS
