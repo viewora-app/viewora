@@ -622,18 +622,37 @@ function messagesListenChats() {
                         }
                         const uid = chat.userId || chat.uid || "";
                         if (!uid) return;
-                        if (
-                            messagesIsVerified(chat) &&
-                            (chat.photoURL || chat.profilePhoto)
-                        )
-                            return;
                         const snap = await db.ref("users/" + uid).once("value");
                         if (!snap.exists()) return;
                         const u = snap.val() || {};
-                        if (messagesIsVerified(u)) {
+                        // Full badge copy — red wins over blue in UI
+                        if (
+                            u.redTick === true ||
+                            u.redTickForce === true ||
+                            u.vip === true ||
+                            u.elite === true ||
+                            String(u.tickType || "").toLowerCase() === "red" ||
+                            String(u.tickType || "").toLowerCase() === "vip"
+                        ) {
+                            chat.redTick = true;
+                            chat.redTickForce = true;
+                            chat.vip = true;
+                            chat.tickType = "red";
+                        }
+                        if (u.whiteTick === true || u.whiteTickForce === true || String(u.tickType || "").toLowerCase() === "white") {
+                            chat.whiteTick = true;
+                            chat.whiteTickForce = !!u.whiteTickForce;
+                            if (!chat.redTick) chat.tickType = chat.tickType || "white";
+                        }
+                        if (u.blueTick === true || u.verified === true || u.isVerified === true) {
+                            chat.blueTick = true;
                             chat.verified = true;
                             chat.isVerified = true;
+                            if (!chat.redTick && !chat.whiteTick) chat.tickType = chat.tickType || "blue";
                         }
+                        if (u.tickType && !chat.tickType) chat.tickType = u.tickType;
+                        if (u.vip) chat.vip = true;
+                        if (u.elite) chat.elite = true;
                         if (!chat.photoURL && !chat.profilePhoto) {
                             chat.photoURL =
                                 u.profilePhoto ||
@@ -1078,19 +1097,50 @@ function messagesRender() {
 
 function messagesIsVerified(data) {
     if (!data || typeof data !== "object") return false;
+    try {
+        if (window.VieworaBadges && typeof VieworaBadges.isVerified === "function") {
+            return VieworaBadges.isVerified(data);
+        }
+    } catch (_) {}
     return (
+        data.redTick === true ||
+        data.redTickForce === true ||
+        data.vip === true ||
+        data.elite === true ||
+        data.whiteTick === true ||
+        data.whiteTickForce === true ||
         data.verified === true ||
         data.isVerified === true ||
         data.blueTick === true ||
         data.badge === "verified" ||
-        data.verification === true ||
+        data.tickType === "red" ||
+        data.tickType === "blue" ||
+        data.tickType === "white" ||
         data.verificationStatus === "verified"
     );
 }
 
 function messagesVerifiedHTML(data) {
-    if (!messagesIsVerified(data)) return "";
-    return '<span class="verifiedTick" title="Verified"><i class="fa-solid fa-circle-check"></i></span>';
+    if (!data || typeof data !== "object") return "";
+    try {
+        if (window.VieworaBadges && typeof VieworaBadges.resolve === "function") {
+            const b = VieworaBadges.resolve(data);
+            if (b && b.html) {
+                return '<span class="verifiedTick vieworaTickWrap" title="' +
+                    (b.title || "") + '">' + b.html + "</span>";
+            }
+        }
+    } catch (_) {}
+    if (data.redTick || data.redTickForce || data.vip || data.elite || data.tickType === "red" || data.tickType === "vip") {
+        return '<span class="verifiedTick" title="VIP"><i class="fa-solid fa-certificate vieworaTick redTick" style="color:#ff3b5c"></i></span>';
+    }
+    if (data.whiteTick || data.whiteTickForce || data.tickType === "white") {
+        return '<span class="verifiedTick" title="Monetized"><i class="fa-solid fa-circle-check vieworaTick whiteTick" style="color:#e8eef7"></i></span>';
+    }
+    if (messagesIsVerified(data)) {
+        return '<span class="verifiedTick" title="Verified"><i class="fa-solid fa-circle-check vieworaTick blueTick" style="color:#1d9bf0"></i></span>';
+    }
+    return "";
 }
 
 function messagesCreateCard(chat) {

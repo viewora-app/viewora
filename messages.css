@@ -2226,3 +2226,19 @@ a.newMessageFab {
   border-left: 3px solid #f472b6;
   background: linear-gradient(90deg, rgba(236,72,153,.12), transparent 40%);
 }
+
+.verifiedTick .vieworaTick,
+.chatName .vieworaTick {
+  margin-left: 5px;
+  font-size: 13px;
+  vertical-align: middle;
+}
+.vieworaTick.redTick { color: #ff3b5c !important; }
+.vieworaTick.blueTick { color: #1d9bf0 !important; }
+.vieworaTick.whiteTick { color: #e8eef7 !important; }
+
+/* VIEWORA_TICK_COLORS */
+.vieworaTick.redTick, i.redTick { color: #ff3b5c !important; filter: drop-shadow(0 0 4px rgba(255,59,92,.4)); }
+.vieworaTick.blueTick, i.blueTick, .verifiedTick i.blueTick { color: #1d9bf0 !important; }
+.vieworaTick.whiteTick, i.whiteTick { color: #e8eef7 !important; }
+.chatName .vieworaTick, .messagesName .vieworaTick { margin-left: 5px; font-size: 12px; vertical-align: middle; }

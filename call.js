@@ -685,159 +685,109 @@
     async function getLocalMedia() {
 
         if (localStream) {
-
             return localStream;
-
         }
-
 
         if (
             !navigator.mediaDevices ||
             !navigator.mediaDevices.getUserMedia
         ) {
-
-            throw new Error(
-                "Camera/microphone unavailable."
-            );
-
+            throw new Error("Camera/microphone unavailable on this browser.");
         }
 
+        // Soft constraints first (mobile-friendly)
+        const wantVideo = callType === "video";
+        const attempts = [];
 
-        const constraints = {
-
-            audio: {
-
-                echoCancellation: true,
-
-                noiseSuppression: true,
-
-                autoGainControl: true
-
-            },
-
-            video:
-
-                callType === "video"
-
-                    ? {
-
-                        facingMode:
-                            "user",
-
-                        width: {
-                            ideal: 640
-                        },
-
-                        height: {
-                            ideal: 480
-                        },
-
-                        frameRate: {
-                            ideal: 24
-                        }
-
-                    }
-
-                    : false
-
-        };
-
-
-        try {
-
-            localStream =
-                await navigator
-                    .mediaDevices
-                    .getUserMedia(
-                        constraints
-                    );
-
-        } catch (error) {
-
-            logError(
-                "getUserMedia:",
-                error
-            );
-
-            // Video failed → try audio-only so call still connects
-            if (callType === "video") {
-                try {
-                    localStream = await navigator.mediaDevices.getUserMedia({
-                        audio: {
-                            echoCancellation: true,
-                            noiseSuppression: true,
-                            autoGainControl: true
-                        },
-                        video: false
-                    });
-                    callType = "audio";
-                    toast("Camera unavailable — voice only.");
-                } catch (e2) {
-                    if (error.name === "NotAllowedError" || e2.name === "NotAllowedError") {
-                        toast("Allow mic/camera in browser, then call again.");
-                        showEnded("Permission denied. Tap site lock icon → allow mic.");
-                    } else {
-                        toast("Unable to access microphone.");
-                        showEnded("Media error. Try again.");
-                    }
-                    throw e2;
+        if (wantVideo) {
+            attempts.push({
+                audio: true,
+                video: { facingMode: "user" }
+            });
+            attempts.push({
+                audio: {
+                    echoCancellation: true,
+                    noiseSuppression: true
+                },
+                video: {
+                    facingMode: "user",
+                    width: { ideal: 640 },
+                    height: { ideal: 480 }
                 }
-            } else if (error.name === "NotAllowedError") {
-                toast("Allow microphone for this site, then try again.");
-                showEnded("Permission denied. Enable mic in browser settings.");
-                throw error;
-            } else {
-                toast("Unable to access microphone.");
-                showEnded("Media error. Try again.");
-                throw error;
-            }
-
+            });
         }
 
+        attempts.push({
+            audio: {
+                echoCancellation: true,
+                noiseSuppression: true,
+                autoGainControl: true
+            },
+            video: false
+        });
+        attempts.push({ audio: true, video: false });
 
-        window.localStream =
-            localStream;
+        let lastErr = null;
 
+        for (let i = 0; i < attempts.length; i++) {
+            try {
+                localStream = await navigator.mediaDevices.getUserMedia(
+                    attempts[i]
+                );
+                if (wantVideo && !localStream.getVideoTracks().length) {
+                    callType = "audio";
+                    try { toast("Camera unavailable — voice only."); } catch (_) {}
+                }
+                lastErr = null;
+                break;
+            } catch (err) {
+                lastErr = err;
+                logError("getUserMedia attempt " + i + ":", err);
+            }
+        }
 
-        if (
-            callType === "video" &&
-            localVideo
-        ) {
-
-            localVideo.srcObject =
-                localStream;
-
-            localVideo.muted =
-                true;
-
-            localVideo.playsInline =
-                true;
-
-
-            if (localVideoWrap) {
-
-                localVideoWrap.classList.remove(
-                    "hidden"
+        if (!localStream) {
+            const name = lastErr && lastErr.name ? lastErr.name : "";
+            const denied =
+                name === "NotAllowedError" ||
+                name === "PermissionDeniedError" ||
+                /permission|denied|NotAllowed/i.test(
+                    String(lastErr && lastErr.message)
                 );
 
+            if (denied) {
+                // Don't hard-end — throw typed error for UI retry
+                const e = new Error(
+                    "Permission denied. Allow microphone (and camera) for this site, then tap Join again."
+                );
+                e.name = "NotAllowedError";
+                e.code = "PERMISSION_DENIED";
+                throw e;
             }
 
-
-            localVideo
-                .play()
-                .catch(() => {});
-
+            throw lastErr || new Error("Unable to access microphone.");
         }
 
+        window.localStream = localStream;
+
+        if (localVideo && localStream.getVideoTracks().length) {
+            try {
+                localVideo.srcObject = localStream;
+                localVideo.muted = true;
+                localVideo.playsInline = true;
+                localVideo.play().catch(() => {});
+            } catch (_) {}
+        }
+
+        if (localVideoWrap && localStream.getVideoTracks().length) {
+            try {
+                localVideoWrap.classList.remove("hidden");
+            } catch (_) {}
+        }
 
         return localStream;
-
     }
 
-
-    /* ======================================================
-       CREATE PEER
-    ====================================================== */
 
     function createPeerConnection() {
 
@@ -2175,22 +2125,71 @@
 
         } catch (error) {
 
-            accepted =
-                false;
+            accepted = false;
 
+            logError("Accept error:", error);
 
-            logError(
-                "Accept error:",
-                error
+            const msg = String(
+                (error && error.message) || error || ""
             );
+            const denied =
+                (error && error.name === "NotAllowedError") ||
+                (error && error.code === "PERMISSION_DENIED") ||
+                /permission|denied|NotAllowed/i.test(msg);
 
+            if (denied) {
+                toast("Allow mic/camera, then tap Join Call");
+                showPermissionRetry();
+                return;
+            }
 
-            toast(
-                "Could not accept call."
-            );
-
+            toast("Could not accept call.");
+            showEnded(msg || "Could not accept call.");
         }
 
+    }
+
+    function showPermissionRetry() {
+        try {
+            if (incomingScreen) incomingScreen.classList.add("hidden");
+            if (callApp) callApp.classList.add("hidden");
+        } catch (_) {}
+
+        let box = document.getElementById("permissionRetryScreen");
+        if (!box) {
+            box = document.createElement("div");
+            box.id = "permissionRetryScreen";
+            box.style.cssText =
+                "position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:#0a0b10;padding:24px;";
+            box.innerHTML =
+                '<div style="max-width:340px;width:100%;text-align:center;background:rgba(24,26,36,.96);border:1px solid rgba(255,255,255,.08);border-radius:22px;padding:28px 20px;">' +
+                '<div style="width:64px;height:64px;margin:0 auto 14px;border-radius:50%;background:rgba(255,59,92,.12);display:grid;place-items:center;color:#ff3b5c;font-size:26px;"><i class="fa-solid fa-microphone-slash"></i></div>' +
+                "<h2 style=\"margin:0 0 8px;font-size:20px;color:#fff\">Microphone needed</h2>" +
+                '<p style="margin:0 0 18px;font-size:13px;line-height:1.5;color:#9aa0b0">Browser blocked mic/camera. Tap the lock icon in the address bar → allow Microphone (and Camera), then Join.</p>' +
+                '<button type="button" id="permJoinBtn" style="width:100%;height:48px;border:0;border-radius:14px;background:linear-gradient(135deg,#7c5cff,#a855f7);color:#fff;font-weight:800;font-size:15px;cursor:pointer;margin-bottom:10px;">Join Call</button>' +
+                '<button type="button" id="permBackBtn" style="width:100%;height:42px;border:0;border-radius:12px;background:rgba(255,255,255,.06);color:#ccc;font-weight:600;cursor:pointer;">Back</button>' +
+                "</div>";
+            document.body.appendChild(box);
+            document.getElementById("permJoinBtn").onclick = async function () {
+                try {
+                    box.remove();
+                } catch (_) {}
+                await acceptCall();
+            };
+            document.getElementById("permBackBtn").onclick = function () {
+                try {
+                    box.remove();
+                } catch (_) {}
+                try {
+                    if (window.history.length > 1) history.back();
+                    else location.href = "messages.html";
+                } catch (_) {
+                    location.href = "messages.html";
+                }
+            };
+        } else {
+            box.style.display = "flex";
+        }
     }
 
 
