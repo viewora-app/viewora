@@ -1949,17 +1949,16 @@
         listenForICE();
         listenCallState();
 
-        // Already accepted from banner / URL — skip second Accept screen
+        // Banner already tapped Accept once — but getUserMedia needs a gesture
+        // on many mobile browsers after navigation. Show one-tap Join (gesture).
         const alreadyAccepted =
             !!autoAccept ||
             data.status === "accepted" ||
             data.status === "connected";
 
         if (alreadyAccepted) {
-            log("📲 Auto-accepting (single accept flow).");
-            if (incomingScreen) incomingScreen.classList.add("hidden");
-            if (callApp) callApp.classList.remove("hidden");
-            await acceptCall();
+            log("📲 Show Join (gesture required for mic/camera).");
+            showJoinCallScreen();
             return;
         }
 
@@ -2149,7 +2148,58 @@
 
     }
 
-    function showPermissionRetry() {
+    function showJoinCallScreen() {
+        try {
+            if (incomingScreen) incomingScreen.classList.add("hidden");
+            if (callApp) callApp.classList.add("hidden");
+            if (endedScreen) endedScreen.classList.add("hidden");
+        } catch (_) {}
+
+        let box = document.getElementById("joinCallScreen");
+        if (box) {
+            box.style.display = "flex";
+            return;
+        }
+
+        box = document.createElement("div");
+        box.id = "joinCallScreen";
+        box.style.cssText =
+            "position:fixed;inset:0;z-index:9998;display:flex;align-items:center;justify-content:center;background:#0a0b10;padding:24px;";
+        const isVideo = callType === "video";
+        box.innerHTML =
+            '<div style="max-width:340px;width:100%;text-align:center;background:rgba(24,26,36,.96);border:1px solid rgba(255,255,255,.08);border-radius:22px;padding:28px 20px;">' +
+            '<div style="width:72px;height:72px;margin:0 auto 16px;border-radius:50%;background:linear-gradient(135deg,#7c5cff,#a855f7);display:grid;place-items:center;color:#fff;font-size:28px;">' +
+            (isVideo ? '<i class="fa-solid fa-video"></i>' : '<i class="fa-solid fa-phone"></i>') +
+            "</div>" +
+            '<h2 style="margin:0 0 8px;font-size:20px;color:#fff">Incoming ' +
+            (isVideo ? "Video" : "Voice") +
+            " Call</h2>" +
+            '<p style="margin:0 0 20px;font-size:13px;line-height:1.5;color:#9aa0b0">Tap Join to connect. Your browser will ask for microphone' +
+            (isVideo ? " and camera" : "") +
+            " permission.</p>" +
+            '<button type="button" id="joinCallBtn" style="width:100%;height:50px;border:0;border-radius:14px;background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff;font-weight:800;font-size:16px;cursor:pointer;margin-bottom:10px;"><i class="fa-solid fa-phone"></i> Join Call</button>' +
+            '<button type="button" id="joinDeclineBtn" style="width:100%;height:42px;border:0;border-radius:12px;background:rgba(255,59,92,.15);color:#ff6b81;font-weight:700;cursor:pointer;">Decline</button>' +
+            "</div>";
+        document.body.appendChild(box);
+
+        document.getElementById("joinCallBtn").onclick = async function () {
+            try { box.remove(); } catch (_) {}
+            // User gesture → getUserMedia allowed
+            await acceptCall();
+        };
+        document.getElementById("joinDeclineBtn").onclick = async function () {
+            try { box.remove(); } catch (_) {}
+            try {
+                if (typeof rejectCall === "function") await rejectCall();
+                else if (window.history.length > 1) history.back();
+                else location.href = "messages.html";
+            } catch (_) {
+                location.href = "messages.html";
+            }
+        };
+    }
+
+        function showPermissionRetry() {
         try {
             if (incomingScreen) incomingScreen.classList.add("hidden");
             if (callApp) callApp.classList.add("hidden");

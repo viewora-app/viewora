@@ -204,17 +204,14 @@
 
     async function getUser(uid) {
         if (!uid) return null;
-        // Re-fetch if cache lacks tick fields (stale from old load)
+        // Re-fetch if cache is thin (old builds only stored verified)
         if (userCache[uid]) {
             const c = userCache[uid];
-            const hasTickInfo =
-                "redTick" in c ||
-                "redTickForce" in c ||
-                "blueTick" in c ||
-                "tickType" in c ||
-                "vip" in c ||
-                "verified" in c;
-            if (hasTickInfo) return c;
+            if ("redTick" in c && "vip" in c && "tickType" in c) {
+                return c;
+            }
+            // stale cache without full badge fields — drop and re-fetch
+            delete userCache[uid];
         }
 
         try {
@@ -251,6 +248,11 @@
                     data.name ||
                     data.displayName ||
                     "",
+                displayName:
+                    data.displayName ||
+                    data.name ||
+                    data.fullName ||
+                    "",
                 username:
                     data.username ||
                     data.userName ||
@@ -261,12 +263,35 @@
                     data.profilePhoto ||
                     data.photoURL ||
                     data.avatar ||
+                    data.profilePic ||
                     "",
                 photoURL:
                     data.photoURL ||
                     data.profilePhoto ||
+                    data.avatar ||
                     "",
-                verified: data.verified === true
+                // Full badge fields (profile parity — red/blue/white)
+                verified: data.verified === true || data.isVerified === true,
+                isVerified: data.isVerified === true || data.verified === true,
+                blueTick: data.blueTick === true,
+                redTick: data.redTick === true,
+                redTickForce: data.redTickForce === true,
+                whiteTick: data.whiteTick === true,
+                whiteTickForce: data.whiteTickForce === true,
+                vip: data.vip === true,
+                elite: data.elite === true,
+                tickType: data.tickType || data.badge || "",
+                badge: data.badge || "",
+                verificationStatus: data.verificationStatus || "",
+                monetized: data.monetized === true,
+                monetizationEnabled: data.monetizationEnabled === true,
+                premium: data.premium === true,
+                isPremium: data.isPremium === true,
+                plan: data.plan || (data.subscription && data.subscription.plan) || "",
+                subscription: data.subscription || null,
+                subscriptionActive: data.subscriptionActive === true,
+                subscriptionStatus: data.subscriptionStatus || "",
+                subscriptionExpiresAt: data.subscriptionExpiresAt || null
             };
 
             userCache[uid] = user;
