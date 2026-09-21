@@ -200,22 +200,42 @@ async function setUserTick(uid, kind) {
     if (!uid) return;
     const updates = {
         redTick: kind === "red",
+        redTickForce: kind === "red",
         blueTick: kind === "blue",
         whiteTick: kind === "white",
+        whiteTickForce: kind === "white",
         verified: kind === "blue" || kind === "red",
         isVerified: kind === "blue" || kind === "red",
-        verificationStatus: kind === "blue" || kind === "red" ? "verified" : "none",
-        tickType: kind === "none" ? null : kind,
+        verificationStatus:
+            kind === "blue" || kind === "red" ? "verified" : "none",
+        tickType: kind === "none" ? "none" : kind,
         vip: kind === "red",
-        tickUpdatedAt: firebase.database.ServerValue.TIMESTAMP,
-        tickUpdatedBy: (currentAdmin && currentAdmin.uid) || null
+        elite: kind === "red",
+        tickUpdatedAt:
+            (firebase.database &&
+                firebase.database.ServerValue &&
+                firebase.database.ServerValue.TIMESTAMP) ||
+            Date.now(),
+        tickUpdatedBy:
+            (typeof currentAdmin !== "undefined" &&
+                currentAdmin &&
+                currentAdmin.uid) ||
+            null
     };
     if (kind === "red") {
         updates.role = "influencer";
     } else if (kind === "blue") {
-        // keep role if already creator/admin
         const u = cachedUsers[uid] || {};
         if (!u.role || u.role === "user") updates.role = "creator";
+    } else if (kind === "white" || kind === "none") {
+        // clear red force when removing / white only
+        updates.redTickForce = false;
+        updates.vip = false;
+        updates.elite = false;
+    }
+    if (kind === "none") {
+        updates.whiteTickForce = false;
+        updates.redTickForce = false;
     }
     await db.ref("users/" + uid).update(updates);
 }
@@ -266,7 +286,10 @@ function showToast(message, type = "success") {
     const toast = $("adminToast");
 
     if (!toast) {
-        console.log(message);
+        console.log("[toast]", type, message);
+        if (type === "error") {
+            try { alert(message); } catch (_) {}
+        }
         return;
     }
 
@@ -5340,43 +5363,178 @@ if (refreshMonetizationBtn) {
 
 
 window.VieworaAdmin = {
-
     switchSection,
-
     loadDashboard,
-
     loadUsers,
-
     loadPosts,
-
     loadReports,
-
     loadLive,
-
     loadVerification,
-
     loadAnalytics,
-
     loadMusicAdmin,
-
     loadStickersAdmin,
-
     loadMonetizationAdmin,
-
     loadDeletions,
-
     showToast,
-
     grantBlueTick,
-
     grantMonetization,
-
     reviewMonetizationForUser,
-
     getCreatorStats,
+    MONETIZATION_RULES,
 
-    MONETIZATION_RULES
+    async grantTick(kind) {
+        if (!selectedUserId) {
+            alert("No user selected");
+            return;
+        }
+        try {
+            await setUserTick(selectedUserId, kind);
+            showToast(
+                kind === "none"
+                    ? "All ticks removed."
+                    : String(kind).toUpperCase() + " tick granted."
+            );
+            closeUserModal();
+            await loadUsers();
+        } catch (err) {
+            console.error("[VieworaAdmin] grantTick", err);
+            alert("Failed: " + (err && err.message ? err.message : String(err)));
+            showToast("Failed to update tick.", "error");
+        }
+    },
 
+    async toggleBlue() {
+        if (!selectedUserId) return;
+        const u = cachedUsers[selectedUserId] || {};
+        const has =
+            u.blueTick === true ||
+            u.verified === true ||
+            u.isVerified === true;
+        await window.VieworaAdmin.grantTick(has ? "none" : "blue");
+    },
+
+    async deleteUser() {
+        if (!selectedUserId) return;
+        const user = cachedUsers[selectedUserId] || {};
+        const name = getUserName(user);
+        if (
+            !window.confirm(
+                "PERMANENT DELETE\n\nDelete " +
+                    name +
+                    " and their content from Firebase?\nThis cannot be undone."
+            )
+        ) {
+            return;
+        }
+        try {
+            const uid = selectedUserId;
+            await permanentDeleteUser(uid);
+            showToast("User permanently deleted.");
+            closeUserModal();
+            await loadUsers();
+            try {
+                await loadPosts();
+            } catch (_) {}
+        } catch (err) {
+            console.error(err);
+            alert("Delete failed: " + (err && err.message ? err.message : String(err)));
+        }
+    },
+
+    async blockUser() {
+        if (!selectedUserId) return;
+        const user = cachedUsers[selectedUserId] || {};
+        const shouldBlock = user.blocked !== true;
+        if (
+            !window.confirm(
+                shouldBlock
+                    ? "Disable / block this account?"
+                    : "Enable / unblock this account?"
+            )
+        ) {
+            return;
+        }
+        try {
+            await db.ref("users/" + selectedUserId).update({
+                blocked: shouldBlock,
+                disabled: shouldBlock,
+                status: shouldBlock ? "disabled" : "active",
+                blockedAt: shouldBlock
+                    ? (firebase.database &&
+                          firebase.database.ServerValue &&
+                          firebase.database.ServerValue.TIMESTAMP) ||
+                      Date.now()
+                    : null
+            });
+            showToast(shouldBlock ? "User blocked." : "User unblocked.");
+            closeUserModal();
+            await loadUsers();
+        } catch (err) {
+            console.error(err);
+            alert("Block failed: " + (err && err.message ? err.message : String(err)));
+        }
+    },
+
+    async changeRole() {
+        if (!selectedUserId) return;
+        const user = cachedUsers[selectedUserId] || {};
+        const currentRole = user.role || "user";
+        const newRole = window.prompt(
+            "Enter role: user, creator, influencer, admin",
+            currentRole
+        );
+        if (!newRole) return;
+        const allowed = ["user", "creator", "influencer", "admin"];
+        if (!allowed.includes(newRole.toLowerCase())) {
+            alert("Invalid role");
+            return;
+        }
+        try {
+            await db.ref("users/" + selectedUserId).update({
+                role: newRole.toLowerCase()
+            });
+            showToast("Role updated to " + newRole);
+            closeUserModal();
+            await loadUsers();
+        } catch (err) {
+            alert(
+                "Role update failed: " +
+                    (err && err.message ? err.message : String(err))
+            );
+        }
+    },
+
+    viewProfile() {
+        if (!selectedUserId) return;
+        const user = cachedUsers[selectedUserId] || {};
+        const url =
+            "profile.html?uid=" + encodeURIComponent(selectedUserId);
+        window.open(url, "_blank");
+        showToast(getUserName(user) + " profile opened");
+    },
+
+    async checkMonetization() {
+        if (!selectedUserId) return;
+        try {
+            if (typeof reviewMonetizationForUser === "function") {
+                await reviewMonetizationForUser(selectedUserId);
+            } else {
+                const u = cachedUsers[selectedUserId] || {};
+                alert(
+                    "User: " +
+                        getUserName(u) +
+                        "\nMonetization: " +
+                        (u.monetizationStatus ||
+                            u.monetizationEnabled ||
+                            "n/a") +
+                        "\nFollowers: " +
+                        (u.followersCount || 0)
+                );
+            }
+        } catch (err) {
+            alert("Error: " + (err && err.message ? err.message : String(err)));
+        }
+    }
 };
 
 /* =========================================================

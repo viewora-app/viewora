@@ -69,6 +69,9 @@
     /** Admin / creator blue from panel (not auto from followers) */
     function hasAdminBlue(user) {
         if (!user || typeof user !== "object") return false;
+        const tt = String(user.tickType || "").toLowerCase();
+        if (tt === "red" || tt === "white" || tt === "none") return false;
+
         if (
             user.blueTick === true ||
             user.verified === true ||
@@ -80,42 +83,51 @@
         const status = String(
             user.verificationStatus ||
             user.badge ||
-            user.role ||
-            user.accountType ||
             ""
         ).toLowerCase();
+        // role alone (influencer) must NOT force blue — admin uses tickType/redTick
         return (
             status === "verified" ||
-            status === "creator" ||
-            status === "influencer" ||
-            status === "admin"
+            status === "creator"
         );
     }
 
-    /** RED: Elite VIP only */
+    /** RED: Admin grant OR Elite VIP subscription */
     function hasRed(user) {
         if (!user || typeof user !== "object") return false;
-        if (user.redTickForce === true) return true;
+
+        const tt = String(user.tickType || user.badge || "").toLowerCase();
+        // Admin panel grant always wins
+        if (
+            user.redTickForce === true ||
+            user.redTick === true ||
+            tt === "red" ||
+            tt === "vip"
+        ) {
+            return true;
+        }
+
+        if (user.vip === true || user.elite === true) {
+            const plan = planOf(user);
+            if (plan === "elite" && subActive(user)) return true;
+            // vip/elite flags without active elite plan — still show red if explicit
+            if (user.redTick === true) return true;
+        }
 
         const plan = planOf(user);
         if (plan === "elite" && subActive(user)) return true;
 
-        // Forced redTick only if subscription still active elite OR explicit force
-        if (user.redTick === true || user.vip === true || user.elite === true) {
-            if (user.redTickForce === true) return true;
-            if (plan === "elite" && subActive(user)) return true;
-            // stale redTick without active elite → ignore for display
-            if (!subActive(user) && plan !== "elite") return false;
-            // redTick true with active any sub was wrongly granting red — only elite
-            return plan === "elite";
-        }
         return false;
     }
 
-    /** BLUE: creator/admin OR any active paid plan (plus/pro/elite) */
+    /** BLUE: Admin grant / creator OR active paid plan (plus/pro) */
     function hasBlue(user) {
         if (!user || typeof user !== "object") return false;
         if (hasRed(user)) return false;
+
+        const tt = String(user.tickType || user.badge || "").toLowerCase();
+        if (tt === "white") return false; // exclusive white
+        if (tt === "blue" || user.blueTick === true) return true;
 
         if (hasAdminBlue(user)) return true;
 
@@ -126,36 +138,47 @@
         return false;
     }
 
-    /** WHITE: monetized + 1L followers (or views), never if blue/red */
+    /** WHITE: Admin grant OR monetized + scale — never if red/blue */
     function hasWhite(user) {
         if (!user || typeof user !== "object") return false;
-        if (hasRed(user) || hasBlue(user) || hasAdminBlue(user)) return false;
+        // Red / blue always win
+        if (hasRed(user)) return false;
+
+        const tt = String(user.tickType || user.badge || "").toLowerCase();
+        // If admin granted blue, not white
+        if (tt === "blue" || user.blueTick === true) {
+            // only skip white if still blue-level
+            if (hasBlue(user)) return false;
+        } else if (hasBlue(user)) {
+            return false;
+        }
+
+        // Admin white grant always shows (when not red/blue)
+        if (
+            user.whiteTickForce === true ||
+            user.whiteTick === true ||
+            tt === "white"
+        ) {
+            return true;
+        }
 
         const followers =
             num(user.followers) ||
             num(user.followersCount) ||
-            num(user.followerCount);
-
+            num(user.followerCount) ||
+            0;
         const views =
             num(user.totalViews) ||
             num(user.views) ||
-            num(user.lifetimeViews);
-
+            num(user.viewCount) ||
+            0;
         const monetized =
-            user.monetization === true ||
-            user.monetized === true ||
-            user.monetizationStatus === "approved" ||
+            user.monetizationEnabled === true ||
             user.monetizationStatus === "active" ||
-            user.whiteTick === true ||
-            user.whiteTickForce === true;
+            user.monetized === true;
 
-        if (user.whiteTickForce === true) return true;
-
-        // Need monetization path + scale
         if (followers >= FOLLOWERS_WHITE_MIN) {
-            // 1L+ followers: white only if monetized OR explicit whiteTick
             if (monetized || user.whiteTick === true) return true;
-            // pure 1L without monetization flag — still allow white as "established"
             return true;
         }
 
