@@ -2025,26 +2025,95 @@
     ===================================================== */
 
     
+    /* One view per user (or device) per short — not every scroll/replay */
     const viewedShortIds = new Set();
-    async function recordShortView(shortId) {
-        if (!shortId || viewedShortIds.has(shortId)) return;
-        viewedShortIds.add(shortId);
+
+    function shortsViewerKey() {
         try {
-            const ref = db.ref("shorts/" + shortId);
-            await ref.transaction((cur) => {
+            if (currentUser && currentUser.uid) return String(currentUser.uid);
+        } catch (_) {}
+        try {
+            if (auth && auth.currentUser && auth.currentUser.uid) {
+                return String(auth.currentUser.uid);
+            }
+        } catch (_) {}
+        try {
+            let did = localStorage.getItem("viewora_device_id");
+            if (!did) {
+                did =
+                    "d_" +
+                    Math.random().toString(36).slice(2) +
+                    Date.now().toString(36);
+                localStorage.setItem("viewora_device_id", did);
+            }
+            return did;
+        } catch (_) {
+            return null;
+        }
+    }
+
+    async function recordShortView(shortId) {
+        if (!shortId) return;
+        if (viewedShortIds.has(shortId)) return;
+
+        const viewerKey = shortsViewerKey();
+        if (!viewerKey) return;
+
+        // Session de-dupe
+        viewedShortIds.add(shortId);
+
+        // Local persistent de-dupe (survives refresh)
+        const localKey = "viewora_short_viewed_" + shortId + "_" + viewerKey;
+        try {
+            if (localStorage.getItem(localKey)) return;
+            localStorage.setItem(localKey, "1");
+        } catch (_) {}
+
+        try {
+            const shortRef = db.ref("shorts/" + shortId);
+            const viewedRef = shortRef.child("viewedBy/" + viewerKey);
+
+            const already = await viewedRef.once("value");
+            if (already.exists()) {
+                return; // this user already counted
+            }
+
+            // Mark viewer first, then increment once
+            await viewedRef.set({
+                at: Date.now(),
+                uid: (currentUser && currentUser.uid) || viewerKey
+            });
+
+            await shortRef.transaction((cur) => {
                 if (!cur) return cur;
                 const n = Number(cur.views || cur.viewCount || 0) + 1;
                 cur.views = n;
                 cur.viewCount = n;
                 return cur;
             });
-        } catch (e) {
+
+            // Update on-screen count if this short is visible
             try {
-                const snap = await db.ref("shorts/" + shortId).once("value");
-                const cur = snap.val() || {};
-                const n = Number(cur.views || cur.viewCount || 0) + 1;
-                await db.ref("shorts/" + shortId).update({ views: n, viewCount: n });
+                const card = container && container.querySelector(
+                    '.shortCard[data-id="' + shortId + '"]'
+                );
+                if (card) {
+                    const el =
+                        card.querySelector("[data-views]") ||
+                        card.querySelector(".shortViews");
+                    if (el) {
+                        const snap = await shortRef.child("views").once("value");
+                        const n = Number(snap.val() || 0);
+                        el.textContent =
+                            (typeof formatCount === "function"
+                                ? formatCount(n)
+                                : n) + " views";
+                    }
+                }
             } catch (_) {}
+        } catch (e) {
+            console.warn("[shorts] view record failed", e);
+            // Do not blindly increment on failure — avoids multi-count
         }
     }
 
