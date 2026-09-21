@@ -151,6 +151,13 @@
     // Optional: from accept URL
     const urlCallerId = params.get("callerId") || "";
 
+    // Banner / first Accept → call.html?autoAccept=1 (must be defined!)
+    const autoAccept =
+        params.get("autoAccept") === "1" ||
+        params.get("autoAccept") === "true" ||
+        params.get("accepted") === "1" ||
+        params.get("accept") === "1";
+
 
     /* ======================================================
        STATE
@@ -1994,7 +2001,7 @@
 
         // Already accepted from banner / URL — skip second Accept screen
         const alreadyAccepted =
-            autoAccept ||
+            !!autoAccept ||
             data.status === "accepted" ||
             data.status === "connected";
 
