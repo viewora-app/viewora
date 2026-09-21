@@ -204,7 +204,18 @@
 
     async function getUser(uid) {
         if (!uid) return null;
-        if (userCache[uid]) return userCache[uid];
+        // Re-fetch if cache lacks tick fields (stale from old load)
+        if (userCache[uid]) {
+            const c = userCache[uid];
+            const hasTickInfo =
+                "redTick" in c ||
+                "redTickForce" in c ||
+                "blueTick" in c ||
+                "tickType" in c ||
+                "vip" in c ||
+                "verified" in c;
+            if (hasTickInfo) return c;
+        }
 
         try {
             const snap = await db.ref("users/" + uid).once("value");
@@ -597,8 +608,58 @@
 
         const media = getMediaURL(short);
         const thumbnail = getThumbnail(short);
-        const verified =
-            short.verified === true || creator?.verified === true;
+        // Tick hierarchy: Red VIP > Blue > White — profile parity
+        let tickHTML = "";
+        try {
+            const u = creator && typeof creator === "object" ? Object.assign({}, creator) : {};
+            // Never let short.verified override a red VIP creator
+            const isRed =
+                u.redTick === true ||
+                u.redTickForce === true ||
+                u.vip === true ||
+                u.elite === true ||
+                String(u.tickType || "").toLowerCase() === "red" ||
+                String(u.tickType || "").toLowerCase() === "vip" ||
+                String(u.badge || "").toLowerCase() === "vip" ||
+                short.redTick === true ||
+                short.redTickForce === true ||
+                short.tickType === "red";
+
+            if (isRed) {
+                u.redTick = true;
+                u.redTickForce = true;
+                u.vip = true;
+                u.tickType = "red";
+                // strip blue so hierarchy stays red
+                u.blueTick = false;
+            } else {
+                if (short.blueTick || short.verified || short.tickType === "blue") {
+                    u.blueTick = u.blueTick || true;
+                    u.verified = u.verified || true;
+                }
+                if (short.whiteTick || short.tickType === "white") {
+                    u.whiteTick = true;
+                    u.tickType = u.tickType || "white";
+                }
+            }
+
+            if (window.VieworaBadges && typeof VieworaBadges.resolve === "function") {
+                const r = VieworaBadges.resolve(u);
+                if (r && r.level === "red") {
+                    tickHTML = '<i class="fa-solid fa-certificate vieworaTick redTick" title="VIP Elite" aria-label="VIP" style="color:#ff3b5c;font-size:12px;margin-left:5px;vertical-align:middle"></i>';
+                } else if (r && r.html) {
+                    tickHTML = r.html;
+                }
+            } else if (isRed) {
+                tickHTML = '<i class="fa-solid fa-certificate vieworaTick redTick" style="color:#ff3b5c;font-size:12px;margin-left:5px;vertical-align:middle" title="VIP Elite"></i>';
+            } else if (u.blueTick || u.verified || u.isVerified) {
+                tickHTML = '<i class="fa-solid fa-circle-check vieworaTick blueTick" style="color:#1d9bf0;font-size:11px;margin-left:4px" title="Verified"></i>';
+            } else if (u.whiteTick || u.monetized) {
+                tickHTML = '<i class="fa-solid fa-circle-check vieworaTick whiteTick" style="color:#e8e8e8;font-size:11px;margin-left:4px" title="Monetized"></i>';
+            }
+        } catch (e) {
+            console.warn("[shorts] tick resolve", e);
+        }
 
         const likes = safeNumber(short.likes || short.likeCount);
         const comments = safeNumber(short.comments || short.commentCount);
@@ -692,7 +753,7 @@
                         >
                         <span class="shortUsername">
                             ${escapeHTML(displayName)}
-                            ${verified ? '<i class="fa-solid fa-circle-check" style="color:#27cfff;font-size:11px;margin-left:4px"></i>' : ""}
+                            ${tickHTML}
                         </span>
                     </div>
                     ${

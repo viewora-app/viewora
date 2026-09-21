@@ -2347,3 +2347,40 @@ img.postAvatar {
 @keyframes vptSpin {
   to { transform: rotate(360deg); }
 }
+
+/* Viewora ticks — red > blue > white */
+.shortUsername .vieworaTick,
+.creatorRow .vieworaTick {
+  margin-left: 5px;
+  font-size: 12px;
+  vertical-align: middle;
+}
+.vieworaTick.redTick { color: #ff3b5c !important; filter: drop-shadow(0 0 4px rgba(255,59,92,.45)); }
+.vieworaTick.blueTick { color: #1d9bf0 !important; }
+.vieworaTick.whiteTick { color: #e8eef7 !important; }
+i.redTick { color: #ff3b5c !important; }
+
+
+/* VIEWORA_TICK_COLORS */
+.vieworaTick.redTick,
+i.redTick,
+.profileRedTick {
+  color: #ff3b5c !important;
+  filter: drop-shadow(0 0 5px rgba(255, 59, 92, 0.45));
+}
+.vieworaTick.blueTick,
+i.blueTick,
+.verifiedTick {
+  color: #1d9bf0 !important;
+}
+.vieworaTick.whiteTick,
+i.whiteTick {
+  color: #e8eef7 !important;
+}
+.shortUsername .vieworaTick,
+.post-name-text .vieworaTick,
+#creatorName .vieworaTick {
+  margin-left: 5px;
+  font-size: 12px;
+  vertical-align: middle;
+}

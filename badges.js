@@ -92,28 +92,28 @@
         );
     }
 
-    /** RED: Admin grant OR Elite VIP subscription */
+    /** RED: Admin grant OR Elite VIP — same as profile (always wins) */
     function hasRed(user) {
         if (!user || typeof user !== "object") return false;
 
-        const tt = String(user.tickType || user.badge || "").toLowerCase();
-        // Admin panel grant always wins
+        const tt = String(
+            user.tickType || user.badge || user.verificationStatus || ""
+        ).toLowerCase();
+
+        // Explicit admin / VIP flags — always red (profile parity)
         if (
             user.redTickForce === true ||
             user.redTick === true ||
+            user.vip === true ||
+            user.elite === true ||
             tt === "red" ||
-            tt === "vip"
+            tt === "vip" ||
+            tt === "elite"
         ) {
             return true;
         }
 
-        if (user.vip === true || user.elite === true) {
-            const plan = planOf(user);
-            if (plan === "elite" && subActive(user)) return true;
-            // vip/elite flags without active elite plan — still show red if explicit
-            if (user.redTick === true) return true;
-        }
-
+        // Active Elite subscription
         const plan = planOf(user);
         if (plan === "elite" && subActive(user)) return true;
 
