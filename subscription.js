@@ -40,6 +40,8 @@
 
     const CONFIG = {
 
+        // LIVE key only for real money: rzp_live_XXXX
+        // Test key (rzp_test_...) will open demo bank and will NOT activate subscription.
         razorpayKeyId: "rzp_test_TXf3ABJldKpgFq",
 
         // Optional: https://REGION-PROJECT.cloudfunctions.net
@@ -48,6 +50,12 @@
         currency: "INR",
 
         functionsRegion: null,
+
+        // Security: never grant plan on client-only test payments
+        allowTestActivation: false,
+
+        // If true, require Cloud Function verify before activate (recommended for live)
+        requireServerVerification: false,
 
         plans: {
 
@@ -552,6 +560,17 @@
 
     async function activateSubscriptionLocal(paymentResponse) {
 
+        const key = String(CONFIG.razorpayKeyId || "").trim();
+        if (isRazorpayTestKey(key) && !CONFIG.allowTestActivation) {
+            throw new Error(
+                "Test payments cannot activate subscription. Use Razorpay LIVE key."
+            );
+        }
+
+        if (!paymentResponse || !paymentResponse.razorpay_payment_id) {
+            throw new Error("Missing payment id — subscription not activated.");
+        }
+
         const user =
             currentUser ||
             requireUser();
@@ -627,11 +646,14 @@
                 };
                 if (plan === "elite") {
                     badgeUpdate.redTick = true;
+                    badgeUpdate.redTickForce = true;
                     badgeUpdate.vip = true;
                     badgeUpdate.elite = true;
                     badgeUpdate.verified = true;
                     badgeUpdate.isVerified = true;
-                    badgeUpdate.blueTick = true;
+                    badgeUpdate.blueTick = false;
+                    badgeUpdate.whiteTick = false;
+                    badgeUpdate.tickType = "red";
                     badgeUpdate.badge = "vip";
                     badgeUpdate.verificationStatus = "vip";
                 } else if (plan === "plus" || plan === "pro") {
@@ -639,7 +661,10 @@
                     badgeUpdate.isVerified = true;
                     badgeUpdate.blueTick = true;
                     badgeUpdate.redTick = false;
+                    badgeUpdate.redTickForce = false;
                     badgeUpdate.vip = false;
+                    badgeUpdate.elite = false;
+                    badgeUpdate.tickType = "blue";
                     badgeUpdate.badge = "verified";
                     badgeUpdate.verificationStatus = "verified";
                 }
@@ -936,6 +961,14 @@
        REAL PAYMENT FLOW
     ====================================================== */
 
+    function isRazorpayTestKey(key) {
+        return String(key || "").trim().startsWith("rzp_test_");
+    }
+
+    function isRazorpayLiveKey(key) {
+        return String(key || "").trim().startsWith("rzp_live_");
+    }
+
     async function startPayment() {
 
         if (processingPayment) {
@@ -962,12 +995,22 @@
             !key.startsWith("rzp_")
         ) {
             toast(
-                "Add Razorpay Key Id in subscription.js (CONFIG.razorpayKeyId)"
+                "Add Razorpay Live Key Id in subscription.js (rzp_live_...)"
             );
             console.error(
-                "Set CONFIG.razorpayKeyId to your rzp_test_... or rzp_live_... key"
+                "Set CONFIG.razorpayKeyId to your rzp_live_... key for real payments"
             );
             return;
+        }
+
+        if (isRazorpayTestKey(key) && !CONFIG.allowTestActivation) {
+            toast(
+                "Test key active — demo payment only. Subscription will NOT activate. Add rzp_live_ key."
+            );
+            console.warn(
+                "[Viewora] Using Razorpay TEST key. Real money + real activation requires rzp_live_..."
+            );
+            // Still allow opening checkout so admin can test UI, but activation blocked later
         }
 
         if (typeof Razorpay === "undefined") {
@@ -1002,10 +1045,50 @@
 
             setLoading(true, "Confirming payment...");
 
-            // Optional server verify
-            await tryVerifyServer(paymentResponse);
+            const keyNow = String(CONFIG.razorpayKeyId || "").trim();
+            const isTest = isRazorpayTestKey(keyNow);
 
-            // Always activate locally after successful checkout handler
+            // Demo / test bank success must NOT grant premium
+            if (isTest && !CONFIG.allowTestActivation) {
+                setLoading(false);
+                toast(
+                    "Demo payment only — no subscription granted. Switch to Razorpay LIVE key."
+                );
+                console.warn(
+                    "[Viewora] Blocked activation on test payment:",
+                    paymentResponse
+                );
+                return;
+            }
+
+            // Must have a real payment id from Razorpay
+            if (
+                !paymentResponse ||
+                !paymentResponse.razorpay_payment_id
+            ) {
+                setLoading(false);
+                toast("Payment incomplete. Subscription not activated.");
+                return;
+            }
+
+            // Optional / required server verify
+            let verified = await tryVerifyServer(paymentResponse);
+
+            if (
+                CONFIG.requireServerVerification &&
+                !(verified && verified.success)
+            ) {
+                setLoading(false);
+                toast(
+                    "Payment received — waiting server verification. Plan not active yet."
+                );
+                console.warn(
+                    "[Viewora] requireServerVerification=true and verify failed"
+                );
+                return;
+            }
+
+            // Activate only after real (or allowed) payment
             await activateSubscriptionLocal(paymentResponse);
 
             setLoading(false);
