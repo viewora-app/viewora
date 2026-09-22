@@ -69,14 +69,28 @@
     /** Admin / creator blue from panel (not auto from followers) */
     function hasAdminBlue(user) {
         if (!user || typeof user !== "object") return false;
-        const tt = String(user.tickType || "").toLowerCase();
+        const tt = String(user.tickType || user.badge || "").toLowerCase();
+        // Explicit white / red never counts as admin blue
         if (tt === "red" || tt === "white" || tt === "none") return false;
+        if (user.whiteTickForce === true || user.whiteTick === true) {
+            // pure white grant — only blue if admin also set blueTick explicitly
+            if (user.blueTick !== true && tt !== "blue") return false;
+        }
+        if (user.redTickForce === true || user.redTick === true) return false;
 
         if (
             user.blueTick === true ||
-            user.verified === true ||
+            tt === "blue"
+        ) {
+            return true;
+        }
+        // verified alone only if NOT white-only monetized
+        if (
+            (user.verified === true ||
             user.isVerified === true ||
-            user.verification === true
+            user.verification === true) &&
+            user.whiteTick !== true &&
+            tt !== "white"
         ) {
             return true;
         }
@@ -92,30 +106,37 @@
         );
     }
 
-    /** RED: Admin grant OR Elite VIP — same as profile (always wins) */
+    /** RED: Admin force OR active Elite subscription only */
     function hasRed(user) {
         if (!user || typeof user !== "object") return false;
 
         const tt = String(
-            user.tickType || user.badge || user.verificationStatus || ""
+            user.tickType || user.badge || ""
         ).toLowerCase();
 
-        // Explicit admin / VIP flags — always red (profile parity)
+        // Admin panel explicit grant always wins
         if (
             user.redTickForce === true ||
             user.redTick === true ||
-            user.vip === true ||
-            user.elite === true ||
-            tt === "red" ||
-            tt === "vip" ||
-            tt === "elite"
+            tt === "red"
         ) {
             return true;
         }
 
-        // Active Elite subscription
+        // Subscription Elite only when plan is active (not expired)
         const plan = planOf(user);
-        if (plan === "elite" && subActive(user)) return true;
+        if (plan === "elite" && subActive(user)) {
+            return true;
+        }
+
+        // vip/elite flags only count with active elite plan (prevents stale demo grants)
+        if (
+            (user.vip === true || user.elite === true || tt === "vip" || tt === "elite") &&
+            plan === "elite" &&
+            subActive(user)
+        ) {
+            return true;
+        }
 
         return false;
     }

@@ -202,18 +202,21 @@
         if (window.VieworaBadges && typeof VieworaBadges.resolve === "function") {
             return VieworaBadges.resolve(data).html || "";
         }
-        if (!isVerifiedUser(data)) return "";
-        // Prefer blue over white when flags mixed
-        if (data.redTick || data.vip) {
+        // Prefer VieworaBadges; fallback respects tickType
+        const tt = String(data.tickType || data.badge || "").toLowerCase();
+        if (data.redTick || data.redTickForce || data.vip || data.elite || tt === "red") {
             return `<i class="fa-solid fa-certificate vieworaTick redTick" title="VIP Elite"></i>`;
         }
-        if (data.verified || data.isVerified || data.blueTick) {
+        if (data.whiteTick || data.whiteTickForce || tt === "white") {
+            // white takes priority over stale verified flag
+            if (!(data.blueTick === true || tt === "blue")) {
+                return `<i class="fa-solid fa-circle-check vieworaTick whiteTick" title="Monetized"></i>`;
+            }
+        }
+        if (data.blueTick || data.verified || data.isVerified || tt === "blue") {
             return `<i class="fa-solid fa-circle-check vieworaTick blueTick verifiedTick" title="Verified"></i>`;
         }
-        if (data.whiteTick) {
-            return `<i class="fa-solid fa-circle-check vieworaTick whiteTick" title="Monetized"></i>`;
-        }
-        return `<i class="fa-solid fa-circle-check vieworaTick blueTick verifiedTick" title="Verified"></i>`;
+        return "";
     };
 
     /* Cache users node for avatar / verified / name */
@@ -352,6 +355,22 @@
             .slice(0, 10);
     };
 
+
+
+    window.openVieworaVideo = function (id, url) {
+        try {
+            sessionStorage.setItem("viewora_open_video", JSON.stringify({
+                id: id || "",
+                url: url || "",
+                at: Date.now()
+            }));
+            if (id) {
+                sessionStorage.setItem("vieworaVideoId", id);
+                localStorage.setItem("vieworaVideoId", id);
+            }
+        } catch (_) {}
+        window.location.href = "video.html?id=" + encodeURIComponent(id || "");
+    };
 
     const getVideoURL = (data) => {
 
@@ -987,8 +1006,10 @@
                         post.data[k] = user[k];
                     }
                 });
-                if (isVerifiedUser(user)) {
-                    post.data.verified = true;
+                if (isVerifiedUser(user) && !(user.whiteTick === true || String(user.tickType||"").toLowerCase() === "white") || user.blueTick === true) {
+                    if (user.blueTick === true || user.redTick === true || (user.verified && !user.whiteTick)) {
+                        post.data.verified = true;
+                    }
                 }
             })
         );
@@ -1391,8 +1412,11 @@
                         video.data[k] = user[k];
                     }
                 });
-                if (isVerifiedUser(user)) {
-                    video.data.verified = true;
+                // Don't stamp verified on pure white-tick users (would force blue elsewhere)
+                if (isVerifiedUser(user) && !(user.whiteTick === true && user.blueTick !== true && String(user.tickType||"").toLowerCase() !== "blue")) {
+                    if (!(user.whiteTick === true || String(user.tickType||"").toLowerCase() === "white")) {
+                        video.data.verified = true;
+                    }
                 }
             })
         ).then(async () => {
@@ -3154,8 +3178,20 @@
                     const card = thumbnail.closest(".longVideoCard");
                     if (!card) return;
                     const id = card.dataset.videoId;
+                    const vUrl = card.dataset.videoUrl || "";
+                    try {
+                        sessionStorage.setItem("viewora_open_video", JSON.stringify({
+                            id: id,
+                            url: vUrl,
+                            at: Date.now()
+                        }));
+                        if (id) {
+                            sessionStorage.setItem("vieworaVideoId", id);
+                            localStorage.setItem("vieworaVideoId", id);
+                        }
+                    } catch (_) {}
                     window.location.href =
-                        "video.html?id=" + encodeURIComponent(id);
+                        "video.html?id=" + encodeURIComponent(id || "");
                 });
             });
 

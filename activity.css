@@ -1448,3 +1448,12 @@ body.has-bottom-nav .toast {
     color: #bbb;
     border: 1px solid rgba(255,255,255,.08);
 }
+
+.notificationText .vieworaTick {
+  margin-left: 4px;
+  font-size: 12px;
+  vertical-align: middle;
+}
+.vieworaTick.redTick { color: #ff3b5c !important; }
+.vieworaTick.blueTick { color: #1d9bf0 !important; }
+.vieworaTick.whiteTick { color: #e8eef7 !important; }

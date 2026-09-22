@@ -559,7 +559,28 @@
     }
 
 
-    function isFollow(notification) {
+    
+    function activityTickHTML(user) {
+        if (!user || typeof user !== "object") return "";
+        try {
+            if (window.VieworaBadges && typeof VieworaBadges.resolve === "function") {
+                const b = VieworaBadges.resolve(user);
+                if (b && b.html) return " " + b.html;
+            }
+        } catch (_) {}
+        if (user.redTick || user.redTickForce || user.tickType === "red") {
+            return ' <i class="fa-solid fa-certificate vieworaTick redTick" style="color:#ff3b5c;margin-left:4px;font-size:12px"></i>';
+        }
+        if (user.whiteTick || user.whiteTickForce || user.tickType === "white") {
+            return ' <i class="fa-solid fa-circle-check vieworaTick whiteTick" style="color:#e8eef7;margin-left:4px;font-size:12px"></i>';
+        }
+        if (user.blueTick || user.verified || user.isVerified) {
+            return ' <i class="fa-solid fa-circle-check vieworaTick blueTick" style="color:#1d9bf0;margin-left:4px;font-size:12px"></i>';
+        }
+        return "";
+    }
+
+function isFollow(notification) {
 
         const type =
             safeString(
@@ -1655,7 +1676,7 @@
                     <strong>
                         ${escapeHTML(
                             message.name
-                        )}
+                        )}${activityTickHTML(user)}
                     </strong>
 
                     <span>
