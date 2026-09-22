@@ -2277,3 +2277,126 @@ i.whiteTick {
   font-size: 12px;
   vertical-align: middle;
 }
+
+
+/* ========== Premium comment sheet (Instagram-style) ========== */
+.comment-panel,
+#commentSheet,
+.commentSheet {
+  z-index: 200000 !important;
+}
+body.sheet-open .bottomNav,
+body.sheet-open #vieworaGlobalNav,
+body.sheet-open #bottomNav {
+  opacity: 0 !important;
+  pointer-events: none !important;
+  transform: translateY(110%) !important;
+}
+.comment-list {
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  overflow-y: auto !important;
+  padding: 8px 14px 16px !important;
+  -webkit-overflow-scrolling: touch;
+}
+.comment-item {
+  display: flex !important;
+  align-items: flex-start !important;
+  gap: 12px !important;
+  padding: 12px 4px !important;
+  border-bottom: 1px solid rgba(255,255,255,.06) !important;
+}
+.comment-item.csReplyItem {
+  margin-left: 44px !important;
+  padding-left: 10px !important;
+  border-left: 2px solid rgba(124,92,255,.35) !important;
+}
+.comment-avatar {
+  width: 36px !important;
+  height: 36px !important;
+  min-width: 36px !important;
+  border-radius: 50% !important;
+  object-fit: cover !important;
+  background: #1a1a24 !important;
+}
+.comment-body {
+  flex: 1 !important;
+  min-width: 0 !important;
+}
+.comment-author {
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  color: #fff !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 5px !important;
+  margin-bottom: 3px !important;
+}
+.comment-text {
+  font-size: 14px !important;
+  line-height: 1.45 !important;
+  color: rgba(255,255,255,.9) !important;
+  word-break: break-word !important;
+  margin: 0 0 6px !important;
+}
+.commentMeta,
+.comment-item .commentMeta {
+  display: flex !important;
+  align-items: center !important;
+  gap: 14px !important;
+  margin-top: 4px !important;
+}
+.commentMeta .cLike,
+.commentMeta .cReply {
+  border: 0 !important;
+  background: transparent !important;
+  color: rgba(255,255,255,.5) !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  padding: 0 !important;
+  cursor: pointer !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+}
+.commentMeta .cLike:active,
+.commentMeta .cReply:active {
+  color: #fff !important;
+}
+.csReplyLabel {
+  font-size: 11px !important;
+  color: rgba(255,255,255,.45) !important;
+  margin-bottom: 2px !important;
+}
+.csReplyLabel b { color: #8ab4ff !important; }
+.comment-input-area {
+  flex: 0 0 auto !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  padding: 12px 14px calc(14px + env(safe-area-inset-bottom, 0px)) !important;
+  border-top: 1px solid rgba(255,255,255,.1) !important;
+  background: #0e0e14 !important;
+}
+.comment-input {
+  flex: 1 !important;
+  min-height: 46px !important;
+  border-radius: 24px !important;
+  border: 0 !important;
+  padding: 12px 16px !important;
+  background: rgba(255,255,255,.09) !important;
+  color: #fff !important;
+  font-size: 15px !important;
+  outline: none !important;
+}
+.comment-send {
+  height: 46px !important;
+  min-width: 72px !important;
+  padding: 0 18px !important;
+  border: 0 !important;
+  border-radius: 24px !important;
+  background: linear-gradient(135deg, #7c5cff, #a855f7) !important;
+  color: #fff !important;
+  font-weight: 700 !important;
+  font-size: 14px !important;
+}

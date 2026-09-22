@@ -2430,46 +2430,102 @@ i.whiteTick {
   font-size: 15px;
 }
 
-/* Comments modal — keep sheet usable, don't jump feed */
+/* Comments modal ABOVE bottom nav (nav is 99999) */
 body.modalOpen {
-  overflow: hidden;
+  overflow: hidden !important;
 }
+body.modalOpen .bottomNav,
+body.modalOpen #vieworaGlobalNav,
+body.modalOpen #bottomNav,
+body.modalOpen nav.bottomNav {
+  opacity: 0 !important;
+  pointer-events: none !important;
+  transform: translateY(110%) !important;
+}
+#commentsModal.modal,
 #commentsModal {
-  z-index: 12000;
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 200000 !important;
+  display: flex !important;
+  align-items: flex-end !important;
+  justify-content: center !important;
+  background: transparent !important;
+}
+#commentsModal.hidden {
+  display: none !important;
+}
+#commentsModal .modalOverlay,
+#commentsOverlay {
+  position: absolute !important;
+  inset: 0 !important;
+  background: rgba(0,0,0,.55) !important;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
 }
 #commentsModal .commentsSheet {
-  display: flex;
-  flex-direction: column;
-  max-height: min(78vh, 640px);
+  position: relative !important;
+  z-index: 2 !important;
+  width: 100% !important;
+  max-width: 560px !important;
+  height: min(82dvh, 720px) !important;
+  max-height: min(82dvh, 720px) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+  border-radius: 22px 22px 0 0 !important;
+  background: #121218 !important;
+  box-shadow: 0 -12px 40px rgba(0,0,0,.5);
 }
 #commentsModal .commentsContainer {
-  flex: 1;
-  overflow-y: auto;
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  overflow-y: auto !important;
   -webkit-overflow-scrolling: touch;
-  min-height: 120px;
+  padding: 8px 14px 12px !important;
 }
 #commentsModal .commentComposer {
-  flex-shrink: 0;
+  flex: 0 0 auto !important;
   display: flex !important;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 12px calc(12px + env(safe-area-inset-bottom, 0px));
-  border-top: 1px solid rgba(255,255,255,.08);
-  background: #12131a;
+  visibility: visible !important;
+  opacity: 1 !important;
+  align-items: center !important;
+  gap: 10px !important;
+  padding: 12px 14px calc(14px + env(safe-area-inset-bottom, 0px)) !important;
+  border-top: 1px solid rgba(255,255,255,.1) !important;
+  background: #0e0e14 !important;
+  z-index: 5 !important;
 }
 #commentsModal .commentInputWrap {
-  flex: 1;
-  display: flex;
-  gap: 8px;
+  flex: 1 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  min-height: 46px !important;
+  padding: 0 6px 0 14px !important;
+  border-radius: 999px !important;
+  background: rgba(255,255,255,.09) !important;
 }
 #commentsModal #commentText {
-  flex: 1;
-  min-height: 40px;
-  border-radius: 20px;
-  border: 0;
-  padding: 10px 14px;
-  background: rgba(255,255,255,.08);
-  color: #fff;
+  flex: 1 !important;
+  min-height: 42px !important;
+  border: 0 !important;
+  outline: 0 !important;
+  background: transparent !important;
+  color: #fff !important;
+  font-size: 15px !important;
+  padding: 10px 4px !important;
+}
+#commentsModal #sendComment {
+  width: 42px !important;
+  height: 42px !important;
+  border: 0 !important;
+  border-radius: 50% !important;
+  background: linear-gradient(135deg, #7c5cff, #a855f7) !important;
+  color: #fff !important;
+  display: grid !important;
+  place-items: center !important;
+  flex-shrink: 0 !important;
 }
 .csReplyItem {
   margin-left: 36px;

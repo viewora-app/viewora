@@ -2887,19 +2887,7 @@
     }
 
     function openPostComments(postId) {
-        // Prefer dedicated page if present, else simple prompt fallback
         if (!postId) return;
-
-        // If comments modal exists in HTML, use it
-        const modal = $("commentsModal") || $("postCommentsModal");
-        if (modal) {
-            modal.classList.remove("hidden");
-            modal.dataset.postId = postId;
-            loadPostComments(postId);
-            return;
-        }
-
-        // Lightweight inline sheet
         ensurePostCommentSheet(postId);
     }
 
@@ -2908,59 +2896,152 @@
         if (!sheet) {
             sheet = document.createElement("div");
             sheet.id = "homePostComments";
-            sheet.className = "homeContentMenu";
+            sheet.className = "homePostCommentsOverlay";
             sheet.innerHTML = `
-                <div class="homeMenuBackdrop" data-close-comments="1"></div>
-                <div class="homeMenuSheet" style="max-height:70vh;display:flex;flex-direction:column;">
-                    <div class="homeMenuHandle"></div>
-                    <div class="homeMenuTitle">Comments</div>
-                    <div id="homeCommentsList" style="flex:1;overflow:auto;padding:4px 4px 12px;min-height:120px;"></div>
-                    <div style="display:flex;gap:8px;padding:8px 4px 4px;">
-                        <input id="homeCommentInput" type="text" placeholder="Add a comment..."
-                            style="flex:1;height:44px;border-radius:14px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.06);color:#fff;padding:0 14px;outline:none;" />
-                        <button type="button" id="homeCommentSend"
-                            style="height:44px;padding:0 16px;border:0;border-radius:14px;background:linear-gradient(135deg,#7c5cff,#a855f7);color:#fff;font-weight:700;">
-                            Send
-                        </button>
+                <div class="hpcBackdrop" data-close-comments="1"></div>
+                <div class="hpcSheet">
+                    <div class="hpcHandle"></div>
+                    <div class="hpcHeader">
+                        <strong>Comments</strong>
+                        <button type="button" class="hpcClose" data-close-comments="1" aria-label="Close">×</button>
                     </div>
-                    <button type="button" class="homeMenuCancel" data-close-comments="1">Close</button>
+                    <div id="homeCommentsList" class="hpcList"></div>
+                    <div id="hpcReplyHint" class="hpcReplyHint hidden"></div>
+                    <div class="hpcComposer">
+                        <input id="homeCommentInput" type="text" maxlength="1000" placeholder="Add a comment..." autocomplete="off" />
+                        <button type="button" id="homeCommentSend">Post</button>
+                    </div>
                 </div>
             `;
             document.body.appendChild(sheet);
 
+            // inject CSS once
+            if (!document.getElementById("hpcStyles")) {
+                const st = document.createElement("style");
+                st.id = "hpcStyles";
+                st.textContent = `
+                    .homePostCommentsOverlay {
+                        position: fixed; inset: 0; z-index: 200000;
+                        display: flex; align-items: flex-end; justify-content: center;
+                    }
+                    .homePostCommentsOverlay.hidden { display: none !important; }
+                    .hpcBackdrop {
+                        position: absolute; inset: 0;
+                        background: rgba(0,0,0,.55); backdrop-filter: blur(6px);
+                    }
+                    .hpcSheet {
+                        position: relative; z-index: 2; width: 100%; max-width: 560px;
+                        height: min(78dvh, 680px); display: flex; flex-direction: column;
+                        background: #121218; border-radius: 22px 22px 0 0;
+                        box-shadow: 0 -12px 40px rgba(0,0,0,.45);
+                    }
+                    .hpcHandle {
+                        width: 36px; height: 4px; margin: 10px auto 4px;
+                        border-radius: 99px; background: rgba(255,255,255,.25);
+                    }
+                    .hpcHeader {
+                        display: flex; align-items: center; justify-content: space-between;
+                        padding: 8px 16px 12px; border-bottom: 1px solid rgba(255,255,255,.08);
+                    }
+                    .hpcHeader strong { font-size: 16px; font-weight: 800; color: #fff; }
+                    .hpcClose {
+                        width: 34px; height: 34px; border: 0; border-radius: 50%;
+                        background: rgba(255,255,255,.08); color: #fff; font-size: 20px;
+                        display: grid; place-items: center; cursor: pointer;
+                    }
+                    .hpcList {
+                        flex: 1 1 auto; min-height: 0; overflow-y: auto;
+                        padding: 8px 14px 12px; -webkit-overflow-scrolling: touch;
+                    }
+                    .hpcItem {
+                        display: flex; gap: 12px; padding: 12px 2px;
+                        border-bottom: 1px solid rgba(255,255,255,.05);
+                    }
+                    .hpcItem.reply { margin-left: 40px; border-left: 2px solid rgba(124,92,255,.35); padding-left: 10px; }
+                    .hpcItem img {
+                        width: 36px; height: 36px; border-radius: 50%; object-fit: cover;
+                        background: #1a1a24; flex-shrink: 0;
+                    }
+                    .hpcItem strong { font-size: 13px; font-weight: 700; color: #fff; }
+                    .hpcItem p { margin: 4px 0 6px; font-size: 14px; line-height: 1.4; color: rgba(255,255,255,.9); word-break: break-word; }
+                    .hpcMeta { display: flex; gap: 14px; align-items: center; }
+                    .hpcMeta button {
+                        border: 0; background: transparent; color: rgba(255,255,255,.5);
+                        font-size: 12px; font-weight: 600; cursor: pointer;
+                        display: inline-flex; align-items: center; gap: 4px; padding: 0;
+                    }
+                    .hpcReplyLabel { font-size: 11px; color: rgba(255,255,255,.45); margin-bottom: 2px; }
+                    .hpcReplyHint {
+                        padding: 6px 14px; font-size: 12px; color: rgba(255,255,255,.65);
+                        background: rgba(124,92,255,.12); display: flex; justify-content: space-between;
+                    }
+                    .hpcReplyHint.hidden { display: none !important; }
+                    .hpcReplyHint button { border: 0; background: transparent; color: #8ab4ff; font-weight: 700; }
+                    .hpcComposer {
+                        flex: 0 0 auto; display: flex; gap: 10px; align-items: center;
+                        padding: 12px 14px calc(14px + env(safe-area-inset-bottom, 0px));
+                        border-top: 1px solid rgba(255,255,255,.1); background: #0e0e14;
+                    }
+                    .hpcComposer input {
+                        flex: 1; min-height: 46px; border-radius: 24px; border: 0;
+                        padding: 0 16px; background: rgba(255,255,255,.09); color: #fff;
+                        font-size: 15px; outline: none;
+                    }
+                    .hpcComposer button#homeCommentSend {
+                        height: 46px; min-width: 72px; padding: 0 18px; border: 0;
+                        border-radius: 24px; background: linear-gradient(135deg,#7c5cff,#a855f7);
+                        color: #fff; font-weight: 700; font-size: 14px; cursor: pointer;
+                    }
+                    body.hpcOpen .bottomNav,
+                    body.hpcOpen #vieworaGlobalNav,
+                    body.hpcOpen #bottomNav {
+                        opacity: 0 !important; pointer-events: none !important;
+                        transform: translateY(110%) !important;
+                    }
+                `;
+                document.head.appendChild(st);
+            }
+
             sheet.addEventListener("click", (e) => {
                 if (e.target.closest("[data-close-comments]")) {
                     sheet.classList.add("hidden");
+                    document.body.classList.remove("hpcOpen");
+                    window.__homeReplyToId = "";
+                    window.__homeReplyToName = "";
                 }
             });
 
-            sheet
-                .querySelector("#homeCommentSend")
-                ?.addEventListener("click", () => {
+            sheet.querySelector("#homeCommentSend")?.addEventListener("click", () => {
+                submitHomeComment(sheet.dataset.postId);
+            });
+            sheet.querySelector("#homeCommentInput")?.addEventListener("keydown", (e) => {
+                if (e.key === "Enter") {
+                    e.preventDefault();
                     submitHomeComment(sheet.dataset.postId);
-                });
-
-            sheet
-                .querySelector("#homeCommentInput")
-                ?.addEventListener("keydown", (e) => {
-                    if (e.key === "Enter") {
-                        e.preventDefault();
-                        submitHomeComment(sheet.dataset.postId);
-                    }
-                });
+                }
+            });
         }
 
         sheet.dataset.postId = postId;
         sheet.classList.remove("hidden");
+        document.body.classList.add("hpcOpen");
+        const hint = sheet.querySelector("#hpcReplyHint");
+        if (hint) hint.classList.add("hidden");
+        const input = sheet.querySelector("#homeCommentInput");
+        if (input) {
+            input.placeholder = "Add a comment...";
+            input.value = "";
+        }
+        window.__homeReplyToId = "";
+        window.__homeReplyToName = "";
         loadPostComments(postId);
     }
 
     async function loadPostComments(postId) {
         const list = document.getElementById("homeCommentsList");
         if (!list) return;
-
         list.innerHTML =
-            '<div style="padding:20px;text-align:center;color:#8b8b9a;font-size:12px;">Loading...</div>';
+            '<div style="padding:24px;text-align:center;color:#8b8b9a;font-size:13px;">Loading...</div>';
 
         try {
             const [snapA, snapB] = await Promise.all([
@@ -2968,78 +3049,178 @@
                 db.ref("posts/" + postId + "/comments").once("value")
             ]);
             const merged = {};
-            const a = snapA.val() || {};
-            const b = snapB.val() || {};
-            Object.keys(a).forEach((k) => { merged[k] = a[k]; });
-            Object.keys(b).forEach((k) => { if (!merged[k]) merged[k] = b[k]; });
-            const val = merged;
+            if (snapA.exists()) Object.assign(merged, snapA.val() || {});
+            if (snapB.exists()) {
+                const b = snapB.val() || {};
+                Object.keys(b).forEach(function (k) {
+                    if (!merged[k]) merged[k] = b[k];
+                });
+            }
 
-            if (!Object.keys(val).length) {
+            let items = Object.keys(merged).map(function (k) {
+                return Object.assign({ id: k }, merged[k] || {});
+            }).filter(function (c) {
+                return !c.deleted && !c.hidden && (c.text || c.comment);
+            });
+
+            // Strong dedupe
+            const byFp = {};
+            items.forEach(function (c) {
+                const fp =
+                    String(c.uid || c.userId || "") +
+                    "|" +
+                    String(c.text || c.comment || "").trim().toLowerCase() +
+                    "|" +
+                    String(c.parentId || "root");
+                const t = Number(c.createdAt || c.timestamp || 0);
+                if (!byFp[fp] || t > Number(byFp[fp].createdAt || byFp[fp].timestamp || 0)) {
+                    byFp[fp] = c;
+                }
+            });
+            items = Object.keys(byFp).map(function (k) { return byFp[k]; });
+
+            const roots = items.filter(function (c) { return !c.parentId; });
+            const kids = {};
+            items.forEach(function (c) {
+                if (c.parentId) {
+                    if (!kids[c.parentId]) kids[c.parentId] = [];
+                    kids[c.parentId].push(c);
+                }
+            });
+            roots.sort(function (a, b) {
+                return Number(b.createdAt || b.timestamp || 0) - Number(a.createdAt || a.timestamp || 0);
+            });
+            const ordered = [];
+            roots.forEach(function (r) {
+                ordered.push(r);
+                (kids[r.id] || []).sort(function (a, b) {
+                    return Number(a.createdAt || a.timestamp || 0) - Number(b.createdAt || b.timestamp || 0);
+                }).forEach(function (k) { ordered.push(k); });
+            });
+
+            if (!ordered.length) {
                 list.innerHTML =
-                    '<div style="padding:24px;text-align:center;color:#8b8b9a;font-size:13px;">No comments yet. Be the first.</div>';
+                    '<div style="padding:40px 20px;text-align:center;color:#8b8b9a;">' +
+                    '<div style="font-size:28px;margin-bottom:8px;opacity:.5;">💬</div>' +
+                    "<strong style=\"color:#ccc;display:block;margin-bottom:4px;\">No comments yet</strong>" +
+                    "<span style=\"font-size:12px;\">Be the first to comment.</span></div>";
                 return;
             }
 
-            const items = Object.entries(val)
-                .map(([id, data]) => ({ id, ...(data || {}) }))
-                .sort(
-                    (a, b) =>
-                        Number(a.createdAt || a.timestamp || 0) -
-                        Number(b.createdAt || b.timestamp || 0)
-                );
-
-            // Enrich comment authors for verified + avatar
-            for (const c of items) {
-                const cuid = c.uid || c.userId || "";
+            // enrich users
+            for (const c of ordered) {
+                const cuid = c.uid || c.userId;
                 if (!cuid) continue;
-                const user = await fetchUserNode(cuid);
-                if (!user) continue;
-                if (!c.profilePhoto && !c.photoURL) {
-                    c.profilePhoto =
-                        user.profilePhoto ||
-                        user.photoURL ||
-                        "";
-                }
-                if (!c.name && !c.username) {
-                    c.name =
-                        user.name ||
-                        user.displayName ||
-                        user.username ||
-                        "";
-                }
-                if (isVerifiedUser(user)) {
-                    c.verified = true;
-                }
+                try {
+                    const user = await fetchUserNode(cuid);
+                    if (!user) continue;
+                    if (!c.profilePhoto && !c.photoURL) {
+                        c.profilePhoto = user.profilePhoto || user.photoURL || "";
+                    }
+                    if (!c.name && !c.username) {
+                        c.name = user.name || user.displayName || user.username || "";
+                    }
+                    c._user = user;
+                } catch (_) {}
             }
 
-            list.innerHTML = items
-                .map((c) => {
-                    const name = escapeHTML(
-                        c.name ||
-                        c.username ||
-                        c.displayName ||
-                        "User"
-                    );
-                    const text = escapeHTML(c.text || c.comment || "");
-                    const avatar = escapeHTML(
-                        c.profilePhoto ||
-                        c.photoURL ||
-                        "assets/default-avatar.png"
-                    );
-                    const tick = isVerifiedUser(c)
-                        ? '<i class="fa-solid fa-circle-check verifiedTick" style="color:#27cfff;font-size:11px;margin-left:4px;"></i>'
-                        : "";
-                    return `
-                        <div style="display:flex;gap:10px;padding:10px 8px;border-bottom:1px solid rgba(255,255,255,.05);">
-                            <img src="${avatar}" alt="" style="width:34px;height:34px;border-radius:50%;object-fit:cover;background:#1a1a24;" onerror="this.src='assets/default-avatar.png'">
-                            <div style="min-width:0;flex:1;">
-                                <strong style="font-size:12px;">${name}${tick}</strong>
-                                <p style="margin-top:3px;font-size:13px;color:#ddd;line-height:1.4;word-break:break-word;">${text}</p>
-                            </div>
-                        </div>
-                    `;
-                })
-                .join("");
+            list.innerHTML = "";
+            ordered.forEach(function (c) {
+                const name = escapeHTML(
+                    c.name || c.username || c.displayName || "User"
+                );
+                const text = escapeHTML(c.text || c.comment || "");
+                const avatar = escapeHTML(
+                    c.profilePhoto || c.photoURL || "assets/default-avatar.png"
+                );
+                let tick = "";
+                try {
+                    if (window.VieworaBadges && VieworaBadges.resolve) {
+                        const r = VieworaBadges.resolve(Object.assign({}, c._user || {}, c));
+                        tick = (r && r.html) ? r.html : "";
+                    } else if (isVerifiedUser(c) || isVerifiedUser(c._user || {})) {
+                        tick = '<i class="fa-solid fa-circle-check" style="color:#27cfff;font-size:11px;margin-left:4px;"></i>';
+                    }
+                } catch (_) {}
+                const likes = Number(c.likesCount || c.likes || 0) || 0;
+                const replyLabel = c.replyToName
+                    ? '<div class="hpcReplyLabel">↳ @' + escapeHTML(String(c.replyToName).replace(/^@/, "")) + "</div>"
+                    : "";
+                const item = document.createElement("div");
+                item.className = "hpcItem" + (c.parentId ? " reply" : "");
+                item.innerHTML =
+                    '<img src="' + avatar + '" alt="" onerror="this.src=\'assets/default-avatar.png\'">' +
+                    "<div style=\"min-width:0;flex:1;\">" +
+                    "<strong>" + name + (tick ? " " + tick : "") + "</strong>" +
+                    replyLabel +
+                    "<p>" + text + "</p>" +
+                    '<div class="hpcMeta">' +
+                    '<button type="button" class="hpcLike" data-id="' + escapeHTML(c.id) + '">' +
+                    '<i class="fa-regular fa-heart"></i> ' + likes + "</button>" +
+                    '<button type="button" class="hpcReply" data-id="' + escapeHTML(c.id) +
+                    '" data-name="' + name + '">Reply</button>' +
+                    "</div></div>";
+                list.appendChild(item);
+            });
+
+            list.querySelectorAll(".hpcLike").forEach(function (btn) {
+                btn.addEventListener("click", async function (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const user = (typeof getCurrentUser === "function" ? getCurrentUser() : null) ||
+                        (firebase.auth && firebase.auth().currentUser);
+                    if (!user) {
+                        showToast("Login required");
+                        return;
+                    }
+                    if (btn.dataset.busy === "1") return;
+                    btn.dataset.busy = "1";
+                    const cid = btn.getAttribute("data-id");
+                    try {
+                        const ref = db.ref("comments/" + postId + "/" + cid + "/likedBy/" + user.uid);
+                        const snap = await ref.once("value");
+                        const was = snap.exists();
+                        if (was) await ref.remove();
+                        else await ref.set(true);
+                        const tree = await db.ref("comments/" + postId + "/" + cid + "/likedBy").once("value");
+                        const count = tree.exists() ? Object.keys(tree.val() || {}).length : 0;
+                        await db.ref("comments/" + postId + "/" + cid).update({ likesCount: count, likes: count });
+                        btn.innerHTML = was
+                            ? '<i class="fa-regular fa-heart"></i> ' + count
+                            : '<i class="fa-solid fa-heart" style="color:#ff304f"></i> ' + count;
+                    } catch (err) {
+                        console.warn(err);
+                    } finally {
+                        btn.dataset.busy = "0";
+                    }
+                });
+            });
+
+            list.querySelectorAll(".hpcReply").forEach(function (btn) {
+                btn.addEventListener("click", function (e) {
+                    e.preventDefault();
+                    window.__homeReplyToId = btn.getAttribute("data-id") || "";
+                    window.__homeReplyToName = btn.getAttribute("data-name") || "";
+                    const input = document.getElementById("homeCommentInput");
+                    const hint = document.getElementById("hpcReplyHint");
+                    if (input) {
+                        input.focus();
+                        input.placeholder = "Reply to @" + window.__homeReplyToName + "…";
+                    }
+                    if (hint) {
+                        hint.classList.remove("hidden");
+                        hint.innerHTML =
+                            "<span>Replying to <b>@" + escapeHTML(window.__homeReplyToName) +
+                            '</b></span><button type="button" id="hpcReplyCancel">Cancel</button>';
+                        document.getElementById("hpcReplyCancel")?.addEventListener("click", function () {
+                            window.__homeReplyToId = "";
+                            window.__homeReplyToName = "";
+                            hint.classList.add("hidden");
+                            if (input) input.placeholder = "Add a comment...";
+                        });
+                    }
+                });
+            });
         } catch (err) {
             console.error("Comments load failed:", err);
             list.innerHTML =
@@ -3047,44 +3228,53 @@
         }
     }
 
+    let __homeCommentInFlight = false;
     async function submitHomeComment(postId) {
-        const uid = getMyUID();
-        if (!uid) {
-            showToast("Login required to comment");
+        if (!postId || __homeCommentInFlight) return;
+        const user =
+            (typeof getCurrentUser === "function" ? getCurrentUser() : null) ||
+            (firebase.auth && firebase.auth().currentUser);
+        if (!user) {
+            showToast("Login required");
             return;
         }
-        if (!postId) return;
-
         const input = document.getElementById("homeCommentInput");
-        const text = String(input?.value || "").trim();
+        let text = (input && input.value || "").trim();
         if (!text) return;
 
+        __homeCommentInFlight = true;
+        const sendBtn = document.getElementById("homeCommentSend");
+        if (sendBtn) sendBtn.disabled = true;
+
         try {
-            let name = "Viewora User";
-            let photo = "assets/default-avatar.png";
+            const uid = user.uid;
+            let name = user.displayName || "User";
+            let photo = user.photoURL || "";
             try {
                 const us = await db.ref("users/" + uid).once("value");
-                if (us.exists()) {
-                    const u = us.val() || {};
-                    name =
-                        u.name ||
-                        u.fullName ||
-                        u.displayName ||
-                        u.username ||
-                        name;
-                    photo =
-                        u.profilePhoto ||
-                        u.photoURL ||
-                        photo;
-                }
+                const u = us.val() || {};
+                name = u.displayName || u.name || u.username || name;
+                photo = u.profilePhoto || u.photoURL || photo;
             } catch (e) {}
 
+            const parentId = window.__homeReplyToId || null;
+            const replyToName = window.__homeReplyToName || "";
+            if (parentId && replyToName) {
+                const m = "@" + String(replyToName).replace(/^@/, "");
+                if (text.indexOf(m) !== 0) text = m + " " + text;
+            }
+
             const payload = {
-                uid,
+                uid: uid,
                 userId: uid,
-                text,
-                name,
+                text: text,
+                name: name,
+                displayName: name,
                 profilePhoto: photo,
+                photoURL: photo,
+                parentId: parentId || null,
+                replyToName: replyToName || null,
+                likesCount: 0,
                 createdAt:
                     (typeof firebase !== "undefined" &&
                         firebase.database &&
@@ -3094,22 +3284,14 @@
                 timestamp: Date.now()
             };
 
+            // Single write path only — prevents duplicates
             const pushRef = db.ref("comments/" + postId).push();
             await pushRef.set(payload);
-            try {
-                await db
-                    .ref("posts/" + postId + "/comments/" + pushRef.key)
-                    .set(payload);
-            } catch (e) {}
 
-            // bump comment count (transaction-safe)
             try {
                 const countRef = db.ref("posts/" + postId + "/commentsCount");
-                const tx = await countRef.transaction((cur) => {
-                    const n =
-                        typeof cur === "number" && Number.isFinite(cur)
-                            ? cur
-                            : 0;
+                const tx = await countRef.transaction(function (cur) {
+                    const n = typeof cur === "number" && Number.isFinite(cur) ? cur : 0;
                     return n + 1;
                 });
                 const n =
@@ -3120,23 +3302,29 @@
                     comments: n,
                     commentsCount: n
                 });
-
-                // Update card UI
-                const card = feedContainer?.querySelector(
-                    `.vieworaPostCard[data-post-id="${CSS.escape(postId)}"]`
+                const card = feedContainer && feedContainer.querySelector(
+                    '.vieworaPostCard[data-post-id="' + CSS.escape(postId) + '"]'
                 );
-                const label = card?.querySelector(
-                    '[data-action="comment"] span'
-                );
+                const label = card && card.querySelector('[data-action="comment"] span');
                 if (label && n) label.textContent = formatCount(n);
             } catch (e) {}
 
-            if (input) input.value = "";
+            if (input) {
+                input.value = "";
+                input.placeholder = "Add a comment...";
+            }
+            window.__homeReplyToId = "";
+            window.__homeReplyToName = "";
+            const hint = document.getElementById("hpcReplyHint");
+            if (hint) hint.classList.add("hidden");
             showToast("Comment added");
             await loadPostComments(postId);
         } catch (err) {
             console.error("Comment failed:", err);
             showToast("Comment failed");
+        } finally {
+            __homeCommentInFlight = false;
+            if (sendBtn) sendBtn.disabled = false;
         }
     }
 
