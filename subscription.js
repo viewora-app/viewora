@@ -571,19 +571,31 @@
             throw new Error("Missing payment id — subscription not activated.");
         }
 
-        const user =
+        // ONLY the logged-in payer gets the plan (never other users)
+        const authUser =
+            (firebase.auth && firebase.auth().currentUser) ||
             currentUser ||
             requireUser();
 
-        if (!user) {
+        if (!authUser || !authUser.uid) {
             throw new Error("Please login first.");
         }
+
+        const user = authUser;
 
         if (
             typeof firebase === "undefined" ||
             !firebase.database
         ) {
             throw new Error("Firebase Database unavailable.");
+        }
+
+        // Reject test-looking payment ids when live mode expected
+        const payId = String(
+            (paymentResponse && paymentResponse.razorpay_payment_id) || ""
+        );
+        if (!payId || !payId.startsWith("pay_")) {
+            throw new Error("Invalid payment id.");
         }
 
         const now = Date.now();
@@ -850,7 +862,7 @@
             ) {
                 reject(
                     new Error(
-                        "Razorpay Key Id missing. Open subscription.js → set CONFIG.razorpayKeyId = 'rzp_test_...'"
+                        "Razorpay LIVE Key missing. Set CONFIG.razorpayKeyId = 'rzp_live_...'"
                     )
                 );
                 return;
@@ -1003,14 +1015,22 @@
             return;
         }
 
-        if (isRazorpayTestKey(key) && !CONFIG.allowTestActivation) {
-            toast(
-                "Test key active — demo payment only. Subscription will NOT activate. Add rzp_live_ key."
-            );
-            console.warn(
-                "[Viewora] Using Razorpay TEST key. Real money + real activation requires rzp_live_..."
-            );
-            // Still allow opening checkout so admin can test UI, but activation blocked later
+        // HARD BLOCK: demo/test key cannot open real subscription checkout
+        if (isRazorpayTestKey(key) || key.indexOf("PASTE_YOUR") >= 0) {
+            if (CONFIG.blockTestCheckout !== false) {
+                toast(
+                    "Live Razorpay key required. Open subscription.js → set razorpayKeyId = rzp_live_..."
+                );
+                console.error(
+                    "[Viewora] Demo/test key blocked. Paste rzp_live_ key from Razorpay Dashboard (Live mode)."
+                );
+                return;
+            }
+        }
+
+        if (!isRazorpayLiveKey(key)) {
+            toast("Invalid Razorpay key. Must start with rzp_live_ for real payments.");
+            return;
         }
 
         if (typeof Razorpay === "undefined") {

@@ -2531,75 +2531,128 @@ function firebaseReady() {
 
             }
 
+            // Dedupe
+            const byFp = {};
+            comments.forEach(function (c) {
+                const fp =
+                    String(c.uid || c.userId || "") +
+                    "|" +
+                    String(c.text || c.comment || "").trim().toLowerCase() +
+                    "|" +
+                    String(c.parentId || "root");
+                const t = Number(c.createdAt || c.timestamp || 0);
+                if (!byFp[fp] || t > Number(byFp[fp].createdAt || byFp[fp].timestamp || 0)) {
+                    byFp[fp] = c;
+                }
+            });
+            const deduped = Object.keys(byFp).map(function (k) { return byFp[k]; });
+            const roots = deduped.filter(function (c) { return !c.parentId; });
+            const kids = {};
+            deduped.forEach(function (c) {
+                if (c.parentId) {
+                    if (!kids[c.parentId]) kids[c.parentId] = [];
+                    kids[c.parentId].push(c);
+                }
+            });
+            const ordered = [];
+            roots.sort(function (a, b) {
+                return Number(b.createdAt || b.timestamp || 0) - Number(a.createdAt || a.timestamp || 0);
+            });
+            roots.forEach(function (r) {
+                ordered.push(r);
+                (kids[r.id] || []).forEach(function (k) { ordered.push(k); });
+            });
+
             commentList.innerHTML = "";
 
-            for (const comment of comments) {
-
-                const uid =
-                    normalizeUID(
-                        comment.uid ||
-                        comment.userId ||
-                        comment.authorId
-                    );
-
-                const user =
-                    await getUser(uid);
-
+            for (const comment of ordered) {
+                const uid = normalizeUID(
+                    comment.uid || comment.userId || comment.authorId
+                );
+                const user = await getUser(uid);
                 const avatar =
+                    comment.profilePhoto ||
+                    comment.photoURL ||
                     user.profilePhoto ||
                     user.profilePicture ||
                     user.photoURL ||
                     user.avatar ||
                     "assets/default-avatar.png";
-
                 const author =
+                    comment.displayName ||
+                    comment.name ||
                     user.username ||
                     user.userName ||
                     user.name ||
                     user.fullName ||
                     "User";
-
-                const text =
-                    comment.text ||
-                    comment.comment ||
-                    "";
-
-                const item =
-                    document.createElement(
-                        "div"
-                    );
-
-                item.className =
-                    "comment-item";
-
-                item.innerHTML = `
-
-                    <img
-                        class="comment-avatar"
-                        src="${escapeHTML(avatar)}"
-                        alt=""
-                        loading="lazy"
-                    >
-
-                    <div class="comment-body">
-
-                        <div class="comment-author">
-                            ${escapeHTML(author)}
-                        </div>
-
-                        <div class="comment-text">
-                            ${escapeHTML(text)}
-                        </div>
-
-                    </div>
-
-                `;
-
-                commentList.appendChild(
-                    item
-                );
-
+                const text = comment.text || comment.comment || "";
+                let tick = "";
+                try {
+                    if (window.VieworaBadges && VieworaBadges.resolve) {
+                        const r = VieworaBadges.resolve(Object.assign({}, user, comment));
+                        tick = (r && r.html) ? r.html : "";
+                    }
+                } catch (_) {}
+                const likes = Number(comment.likesCount || comment.likes || 0) || 0;
+                const replyHint = comment.replyToName
+                    ? '<div class="csReplyLabel">↳ @' + escapeHTML(String(comment.replyToName).replace(/^@/, "")) + "</div>"
+                    : "";
+                const item = document.createElement("div");
+                item.className = "comment-item" + (comment.parentId ? " csReplyItem" : "");
+                item.innerHTML =
+                    '<img class="comment-avatar" src="' + escapeHTML(avatar) + '" alt="" loading="lazy">' +
+                    '<div class="comment-body">' +
+                    '<div class="comment-author">' + escapeHTML(author) + (tick ? " " + tick : "") + "</div>" +
+                    replyHint +
+                    '<div class="comment-text">' + escapeHTML(text) + "</div>" +
+                    '<div class="commentMeta">' +
+                    '<button type="button" class="cLike" data-id="' + escapeHTML(comment.id) + '">' +
+                    '<i class="fa-regular fa-heart"></i> ' + likes + "</button>" +
+                    '<button type="button" class="cReply" data-reply-id="' + escapeHTML(comment.id) +
+                    '" data-reply-name="' + escapeHTML(author) + '">Reply</button>' +
+                    "</div></div>";
+                commentList.appendChild(item);
             }
+
+            commentList.querySelectorAll(".cLike").forEach(function (btn) {
+                btn.addEventListener("click", async function (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (!currentUser || !activePost) return;
+                    if (btn.dataset.busy === "1") return;
+                    btn.dataset.busy = "1";
+                    const cid = btn.getAttribute("data-id");
+                    try {
+                        const ref = db.ref("comments/" + activePost.id + "/" + cid + "/likedBy/" + currentUser.uid);
+                        const snap = await ref.once("value");
+                        const was = snap.exists();
+                        if (was) await ref.remove();
+                        else await ref.set(true);
+                        const tree = await db.ref("comments/" + activePost.id + "/" + cid + "/likedBy").once("value");
+                        const count = tree.exists() ? Object.keys(tree.val() || {}).length : 0;
+                        await db.ref("comments/" + activePost.id + "/" + cid).update({ likesCount: count, likes: count });
+                        btn.innerHTML = was
+                            ? '<i class="fa-regular fa-heart"></i> ' + count
+                            : '<i class="fa-solid fa-heart" style="color:#ff304f"></i> ' + count;
+                    } catch (err) {
+                        console.warn(err);
+                    } finally {
+                        btn.dataset.busy = "0";
+                    }
+                });
+            });
+            commentList.querySelectorAll(".cReply").forEach(function (btn) {
+                btn.addEventListener("click", function (e) {
+                    e.preventDefault();
+                    window.__postReplyToId = btn.getAttribute("data-reply-id") || "";
+                    window.__postReplyToName = btn.getAttribute("data-reply-name") || "";
+                    if (commentInput) {
+                        commentInput.focus();
+                        commentInput.placeholder = "Reply to @" + window.__postReplyToName + "…";
+                    }
+                });
+            });
 
         } catch (error) {
 
@@ -2625,89 +2678,52 @@ function firebaseReady() {
        ADD COMMENT
     ===================================================== */
 
+    let __postCommentInFlight = false;
     async function addComment() {
-
-        if (!activePost) {
-            return;
-        }
-
+        if (!activePost) return;
         if (!currentUser) {
-
-            showToast(
-                "Please login to comment."
-            );
-
-            return;
-
-        }
-
-        const text =
-            commentInput.value.trim();
-
-        if (!text) {
+            showToast("Please login to comment.");
             return;
         }
-
-        if (commentSend) {
-            commentSend.disabled = true;
-        }
-
+        if (__postCommentInFlight) return;
+        const text = (commentInput && commentInput.value || "").trim();
+        if (!text) return;
+        __postCommentInFlight = true;
+        if (commentSend) commentSend.disabled = true;
         try {
-
-            const ref =
-                db
-                    .ref(
-                        "comments/" +
-                        activePost.id
-                    )
-                    .push();
-
-            await ref.set({
-
-                uid:
-                    currentUser.uid,
-
-                userId:
-                    currentUser.uid,
-
-                text,
-
-                createdAt:
-                    firebase.database
-                        .ServerValue
-                        .TIMESTAMP
-
-            });
-
-            commentInput.value = "";
-
-            showToast(
-                "Comment added."
-            );
-
-            await loadComments(
-                activePost
-            );
-
-        } catch (error) {
-
-            console.error(
-                "Comment failed:",
-                error
-            );
-
-            showToast(
-                "Comment failed."
-            );
-
-        } finally {
-
-            if (commentSend) {
-                commentSend.disabled = false;
+            let finalText = text;
+            const parentId = window.__postReplyToId || null;
+            const replyToName = window.__postReplyToName || "";
+            if (parentId && replyToName) {
+                const m = "@" + String(replyToName).replace(/^@/, "");
+                if (finalText.indexOf(m) !== 0) finalText = m + " " + finalText;
             }
-
+            const ref = db.ref("comments/" + activePost.id).push();
+            await ref.set({
+                uid: currentUser.uid,
+                userId: currentUser.uid,
+                text: finalText,
+                parentId: parentId || null,
+                replyToName: replyToName || null,
+                likesCount: 0,
+                createdAt: firebase.database.ServerValue.TIMESTAMP,
+                timestamp: Date.now()
+            });
+            if (commentInput) {
+                commentInput.value = "";
+                commentInput.placeholder = "Add a comment...";
+            }
+            window.__postReplyToId = "";
+            window.__postReplyToName = "";
+            showToast("Comment added.");
+            await loadComments(activePost);
+        } catch (error) {
+            console.error("Comment failed:", error);
+            showToast("Comment failed.");
+        } finally {
+            __postCommentInFlight = false;
+            if (commentSend) commentSend.disabled = false;
         }
-
     }
 
 

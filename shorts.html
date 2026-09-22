@@ -534,7 +534,7 @@
             <header class="menuHeader">
 
                 <strong>
-                    Short options
+                    Viewora · Options
                 </strong>
 
                 <button
@@ -557,7 +557,17 @@
                 class="menuGroup hidden"
             >
 
-                <button
+                
+                <button type="button" id="descOwnShortBtn" class="menuItem">
+                    <span class="menuIcon"><i class="fa-solid fa-align-left"></i></span>
+                    <span class="menuText">
+                        <strong>Description</strong>
+                        <small>View title & caption</small>
+                    </span>
+                    <i class="fa-solid fa-chevron-right"></i>
+                </button>
+
+<button
                     type="button"
                     id="editShortBtn"
                     class="menuItem"
@@ -730,57 +740,58 @@
                 class="menuGroup hidden"
             >
 
-                <button
-                    type="button"
-                    id="notInterestedBtn"
-                    class="menuItem"
-                >
-
-                    <span class="menuIcon">
-                        <i class="fa-solid fa-ban"></i>
-                    </span>
-
+                <button type="button" id="descShortBtn" class="menuItem">
+                    <span class="menuIcon"><i class="fa-solid fa-align-left"></i></span>
                     <span class="menuText">
-
-                        <strong>
-                            Not interested
-                        </strong>
-
-                        <small>
-                            See fewer Shorts like this
-                        </small>
-
+                        <strong>Description</strong>
+                        <small>Title, caption & upload info</small>
                     </span>
-
                     <i class="fa-solid fa-chevron-right"></i>
-
                 </button>
 
-
-                <button
-                    type="button"
-                    id="reportShortBtn"
-                    class="menuItem danger"
-                >
-
-                    <span class="menuIcon">
-                        <i class="fa-regular fa-flag"></i>
-                    </span>
-
+                <button type="button" id="saveShortMenuBtn" class="menuItem">
+                    <span class="menuIcon"><i class="fa-regular fa-bookmark"></i></span>
                     <span class="menuText">
-
-                        <strong>
-                            Report
-                        </strong>
-
-                        <small>
-                            Report this Short
-                        </small>
-
+                        <strong>Save Short</strong>
+                        <small>Add to your collection</small>
                     </span>
-
                     <i class="fa-solid fa-chevron-right"></i>
+                </button>
 
+                <button type="button" id="useAudioMenuBtn" class="menuItem">
+                    <span class="menuIcon"><i class="fa-solid fa-music"></i></span>
+                    <span class="menuText">
+                        <strong>Use this audio</strong>
+                        <small>Create a Short with this sound</small>
+                    </span>
+                    <i class="fa-solid fa-chevron-right"></i>
+                </button>
+
+                <button type="button" id="notInterestedBtn" class="menuItem">
+                    <span class="menuIcon"><i class="fa-solid fa-eye-slash"></i></span>
+                    <span class="menuText">
+                        <strong>Less like this</strong>
+                        <small>Tune your Viewora feed</small>
+                    </span>
+                    <i class="fa-solid fa-chevron-right"></i>
+                </button>
+
+                <button type="button" id="hideCreatorBtn" class="menuItem">
+                    <span class="menuIcon"><i class="fa-solid fa-user-slash"></i></span>
+                    <span class="menuText">
+                        <strong>Hide this creator</strong>
+                        <small>Skip their Shorts for a while</small>
+                    </span>
+                    <i class="fa-solid fa-chevron-right"></i>
+                </button>
+
+                <button type="button" id="reportShortBtn" class="menuItem danger">
+                    <span class="menuIcon"><i class="fa-regular fa-flag"></i></span>
+                    <span class="menuText">
+                        <strong>Report</strong>
+                        <small>Community guidelines</small>
+                    </span>
+                    <i class="fa-solid fa-chevron-right"></i>
                 </button>
 
             </div>

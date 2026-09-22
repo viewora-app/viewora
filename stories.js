@@ -584,7 +584,38 @@
       if (av0 && $("storiesAvatar")) $("storiesAvatar").src = av0;
     } catch (_) {}
 
-    // Background enrich (non-blocking)
+    function applyStoriesNameTick(displayName, source) {
+      if (!nameEl) return;
+      nameEl.innerHTML = "";
+      nameEl.appendChild(document.createTextNode(displayName || "…"));
+      let tickHtml = "";
+      const badgeSource = source || {};
+      try {
+        if (window.VieworaBadges && typeof VieworaBadges.resolve === "function") {
+          const b = VieworaBadges.resolve(badgeSource);
+          if (b && b.html) tickHtml = b.html;
+        }
+      } catch (_) {}
+      if (!tickHtml) {
+        if (badgeSource.redTick || badgeSource.redTickForce || badgeSource.tickType === "red" || badgeSource.vip) {
+          tickHtml = '<i class="fa-solid fa-certificate vieworaTick redTick storiesBlueTick" title="VIP Elite" style="color:#ff3b5c;margin-left:5px;font-size:12px;vertical-align:middle"></i>';
+        } else if (badgeSource.whiteTick || badgeSource.whiteTickForce || badgeSource.tickType === "white") {
+          tickHtml = '<i class="fa-solid fa-circle-check vieworaTick whiteTick storiesBlueTick" title="Monetized" style="color:#f0f4fa;margin-left:5px;font-size:12px;vertical-align:middle"></i>';
+        } else if (badgeSource.blueTick || badgeSource.verified || badgeSource.isVerified || badgeSource.tickType === "blue") {
+          tickHtml = '<i class="fa-solid fa-circle-check vieworaTick blueTick storiesBlueTick" title="Verified" style="color:#1d9bf0;margin-left:5px;font-size:12px;vertical-align:middle"></i>';
+        }
+      }
+      if (tickHtml) {
+        const wrap = document.createElement("span");
+        wrap.innerHTML = tickHtml;
+        while (wrap.firstChild) nameEl.appendChild(wrap.firstChild);
+      }
+    }
+
+    // Paint immediately from story data
+    applyStoriesNameTick(baseName, item.data || {});
+
+    // Background enrich — re-apply tick with full user profile
     (async () => {
       try {
         userNode = await fetchUser(g.uid);
@@ -599,10 +630,6 @@
         if (realName) {
           baseName = realName;
           g.username = realName;
-          if (nameEl) {
-            // re-apply with tick below via small refresh
-            nameEl.textContent = realName;
-          }
         }
         if (isVerifiedUser(userNode)) verified = true;
         const photo =
@@ -615,35 +642,10 @@
           $("storiesAvatar").src = photo;
           g.avatar = photo;
         }
+        applyStoriesNameTick(baseName, userNode);
       } catch (_) {}
     })();
 
-    if (nameEl) {
-      nameEl.innerHTML = "";
-      nameEl.appendChild(document.createTextNode(baseName));
-
-      // Prefer VieworaBadges hierarchy (red > blue > white)
-      let tickHtml = "";
-      const badgeSource = userNode || item.data || {};
-      if (window.VieworaBadges && typeof VieworaBadges.resolve === "function") {
-        const b = VieworaBadges.resolve(badgeSource);
-        if (b && b.html) tickHtml = b.html;
-      }
-      if (!tickHtml && verified) {
-        if (badgeSource.redTick || badgeSource.vip) {
-          tickHtml = '<i class="fa-solid fa-certificate vieworaTick redTick storiesBlueTick" title="VIP Elite" style="color:#ff3b5c;margin-left:5px;font-size:12px;vertical-align:middle"></i>';
-        } else if (badgeSource.whiteTick && !badgeSource.blueTick && !badgeSource.verified) {
-          tickHtml = '<i class="fa-solid fa-circle-check vieworaTick whiteTick storiesBlueTick" title="Monetized" style="color:#f0f4fa;margin-left:5px;font-size:12px;vertical-align:middle"></i>';
-        } else {
-          tickHtml = '<i class="fa-solid fa-circle-check vieworaTick blueTick storiesBlueTick" title="Verified" style="color:#1d9bf0;margin-left:5px;font-size:12px;vertical-align:middle"></i>';
-        }
-      }
-      if (tickHtml) {
-        const wrap = document.createElement("span");
-        wrap.innerHTML = tickHtml;
-        while (wrap.firstChild) nameEl.appendChild(wrap.firstChild);
-      }
-    }
 
     // Time + music under name
     const timeEl = $("storiesTime");

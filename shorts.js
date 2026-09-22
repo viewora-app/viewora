@@ -1021,8 +1021,20 @@
                 openMoreMenu(short, card);
                 break;
             case "caption":
-                // Toggle YouTube-style views / likes / time
-                toggleCaptionMeta(card);
+                // Open Viewora description sheet (title / desc / date / use audio)
+                try {
+                    if (typeof openShortDescriptionSheet === "function") {
+                        openShortDescriptionSheet(Object.assign({}, short, {
+                            title: short.title || short.caption || "",
+                            description: short.description || short.caption || short.text || "",
+                            id: short.id || card.dataset.id
+                        }));
+                    } else {
+                        toggleCaptionMeta(card);
+                    }
+                } catch (_) {
+                    toggleCaptionMeta(card);
+                }
                 break;
             case "music": {
                 const uname =
@@ -1630,17 +1642,43 @@
        COMMENTS
     ===================================================== */
 
+    let __shortsScrollY = 0;
     function openComments(short) {
+        if (!short) return;
         activeShort = short;
+        const sid = String(short.id || short.shortId || short.key || short.videoId || "");
+        if (!sid) {
+            showToast("Cannot open comments");
+            return;
+        }
+        // remember scroll so page does not jump to top
+        try {
+            __shortsScrollY = (container && container.scrollTop) || 0;
+        } catch (_) {}
         commentsModal?.classList.remove("hidden");
         commentsModal?.setAttribute("aria-hidden", "false");
         document.body.classList.add("modalOpen");
+        // keep composer visible
+        try {
+            const sheet = commentsModal?.querySelector(".commentsSheet");
+            if (sheet) sheet.scrollTop = 0;
+        } catch (_) {}
 
-        if (commentUserAvatar && currentUser?.photoURL) {
-            commentUserAvatar.src = currentUser.photoURL;
-        }
+        (async function () {
+            try {
+                if (commentUserAvatar && currentUser) {
+                    let photo = currentUser.photoURL || "";
+                    if (db) {
+                        const us = await db.ref("users/" + currentUser.uid).once("value");
+                        const u = us.val() || {};
+                        photo = u.profilePhoto || u.photoURL || photo;
+                    }
+                    commentUserAvatar.src = photo || "assets/default-avatar.png";
+                }
+            } catch (_) {}
+        })();
 
-        loadComments(String(short.id || short.shortId || short.key));
+        loadComments(sid);
     }
 
     function closeCommentsModal() {
@@ -1648,107 +1686,214 @@
         commentsModal?.setAttribute("aria-hidden", "true");
         document.body.classList.remove("modalOpen");
         activeShort = null;
+        // restore scroll position
+        try {
+            if (container) {
+                requestAnimationFrame(function () {
+                    container.scrollTop = __shortsScrollY || 0;
+                });
+            }
+        } catch (_) {}
     }
 
     async function loadComments(id) {
         if (!commentsContainer || !id) return;
 
-        commentsContainer.innerHTML = `
-            <div class="commentsLoading">
-                <div class="loadingSpinner"></div>
-                <span>Loading comments...</span>
-            </div>
-        `;
+        if (!db && typeof firebase !== "undefined") {
+            try { db = firebase.database(); window.db = db; } catch (_) {}
+        }
+
+        commentsContainer.innerHTML =
+            '<div class="commentsLoading"><div class="loadingSpinner"></div><span>Loading comments...</span></div>';
 
         try {
-            // Support both legacy paths
-            const [snapA, snapB] = await Promise.all([
-                db.ref("comments/" + id).once("value"),
-                db.ref("shorts/" + id + "/comments").once("value")
-            ]);
+            if (!db) throw new Error("no db");
 
-            const merged = {};
-            const a = snapA.val() || {};
-            const b = snapB.val() || {};
-            Object.keys(a).forEach((k) => {
-                merged[k] = a[k];
-            });
-            Object.keys(b).forEach((k) => {
-                if (!merged[k]) merged[k] = b[k];
-            });
+            const snapA = await db.ref("comments/" + id).once("value");
+            let merged = snapA.val() || {};
+            // legacy path only if primary empty
+            if (!Object.keys(merged).length) {
+                try {
+                    const snapB = await db.ref("shorts/" + id + "/comments").once("value");
+                    merged = snapB.val() || {};
+                } catch (_) {}
+            }
 
-            const list = Object.entries(merged)
-                .map(([key, data]) => ({ id: key, ...(data || {}) }))
-                .sort(
-                    (a, b) =>
-                        safeNumber(a.createdAt || a.timestamp) -
-                        safeNumber(b.createdAt || b.timestamp)
+            let list = Object.entries(merged)
+                .map(function (pair) {
+                    return Object.assign({ id: pair[0] }, pair[1] || {});
+                })
+                .filter(function (c) {
+                    return !c.deleted && !c.hidden && (c.text || c.comment || c.message);
+                });
+
+            // Strong dedupe: keep newest per uid+text+parent
+            const byFp = {};
+            list.forEach(function (c) {
+                const fp =
+                    String(c.uid || c.userId || "") +
+                    "|" +
+                    String(c.text || c.comment || "").trim().toLowerCase() +
+                    "|" +
+                    String(c.parentId || "root");
+                const t = safeNumber(c.createdAt || c.timestamp);
+                if (!byFp[fp] || t > safeNumber(byFp[fp].createdAt || byFp[fp].timestamp)) {
+                    byFp[fp] = c;
+                }
+            });
+            list = Object.keys(byFp).map(function (k) { return byFp[k]; });
+
+            list.sort(function (a, b) {
+                return (
+                    safeNumber(a.createdAt || a.timestamp) -
+                    safeNumber(b.createdAt || b.timestamp)
                 );
+            });
 
             if (!list.length) {
-                commentsContainer.innerHTML = `
-                    <div class="noComments">
-                        <i class="fa-regular fa-comment"></i>
-                        <strong>No comments yet</strong>
-                        <span>Be the first to comment.</span>
-                    </div>
-                `;
-                if (commentCountText) {
-                    commentCountText.textContent = "0 comments";
-                }
+                commentsContainer.innerHTML =
+                    '<div class="noComments">' +
+                    '<i class="fa-regular fa-comment"></i>' +
+                    "<strong>No comments yet</strong>" +
+                    "<span>Be the first to comment.</span></div>";
+                if (commentCountText) commentCountText.textContent = "0 comments";
                 return;
             }
 
             if (commentCountText) {
                 commentCountText.textContent =
-                    list.length +
-                    (list.length === 1 ? " comment" : " comments");
+                    list.length + (list.length === 1 ? " comment" : " comments");
             }
 
             commentsContainer.innerHTML = "";
-
             for (const c of list) {
-                const user = await getUser(c.uid || c.userId);
+                let user = {};
+                try {
+                    user = (await getUser(c.uid || c.userId)) || {};
+                } catch (_) {}
                 const name = safeText(
-                    c.name ||
-                        c.username ||
-                        user?.name ||
-                        user?.username,
+                    c.displayName || c.name || c.username || user.name || user.username,
                     "User"
                 );
                 const avatar =
                     c.profilePhoto ||
                     c.photoURL ||
-                    user?.profilePhoto ||
-                    user?.photoURL ||
+                    c.avatar ||
+                    user.profilePhoto ||
+                    user.photoURL ||
                     "assets/default-avatar.png";
                 const text = safeText(c.text || c.comment || c.message, "");
                 const when = timeAgo(c.createdAt || c.timestamp);
+                const likes = safeNumber(c.likesCount || c.likes || 0);
 
+                                let tick = "";
+                try {
+                    if (window.VieworaBadges && typeof VieworaBadges.resolve === "function") {
+                        const r = VieworaBadges.resolve(Object.assign({}, user, c));
+                        tick = (r && r.html) ? r.html : "";
+                    }
+                } catch (_) {}
+                const replyHint = c.replyToName
+                    ? '<div class="csReplyLabel">↳ @' + escapeHTML(String(c.replyToName).replace(/^@/, "")) + "</div>"
+                    : "";
                 const row = document.createElement("div");
-                row.className = "commentItem";
-                row.innerHTML = `
-                    <img src="${escapeHTML(avatar)}" alt="" onerror="this.src='assets/default-avatar.png'">
-                    <div>
-                        <strong>${escapeHTML(name)}</strong>
-                        <p>${escapeHTML(text)}</p>
-                        <small>${escapeHTML(when)}</small>
-                    </div>
-                `;
+                row.className = "commentItem" + (c.parentId ? " csReplyItem" : "");
+                row.innerHTML =
+                    '<img src="' +
+                    escapeHTML(avatar) +
+                    '" alt="" onerror="this.src=\'assets/default-avatar.png\'">' +
+                    '<div class="commentBody">' +
+                    "<strong>" +
+                    escapeHTML(name) +
+                    (tick ? " " + tick : "") +
+                    "</strong>" +
+                    replyHint +
+                    "<p>" +
+                    escapeHTML(text) +
+                    "</p>" +
+                    '<div class="commentMeta">' +
+                    "<small>" +
+                    escapeHTML(when) +
+                    "</small>" +
+                    '<button type="button" class="cLike" data-id="' +
+                    escapeHTML(c.id) +
+                    '"><i class="fa-regular fa-heart"></i> ' +
+                    likes +
+                    "</button>" +
+                    '<button type="button" class="cReply" data-reply-name="' +
+                    escapeHTML(name) +
+                    '" data-reply-id="' +
+                    escapeHTML(c.id) +
+                    '">Reply</button>' +
+                    "</div></div>";
                 commentsContainer.appendChild(row);
+
             }
 
-            // scroll to bottom
+            commentsContainer.querySelectorAll(".cLike").forEach(function (btn) {
+                btn.addEventListener("click", async function (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (!currentUser) {
+                        showToast("Login required");
+                        return;
+                    }
+                    const cid = btn.getAttribute("data-id");
+                    if (!cid || !db) return;
+                    if (btn.dataset.busy === "1") return;
+                    btn.dataset.busy = "1";
+                    const ref = db.ref(
+                        "comments/" + id + "/" + cid + "/likedBy/" + currentUser.uid
+                    );
+                    try {
+                        const snap = await ref.once("value");
+                        const was = snap.exists();
+                        if (was) await ref.remove();
+                        else await ref.set(true);
+                        const tree = await db
+                            .ref("comments/" + id + "/" + cid + "/likedBy")
+                            .once("value");
+                        const count = tree.exists()
+                            ? Object.keys(tree.val() || {}).length
+                            : 0;
+                        await db.ref("comments/" + id + "/" + cid).update({
+                            likesCount: count,
+                            likes: count
+                        });
+                        btn.innerHTML = was
+                            ? '<i class="fa-regular fa-heart"></i> ' + count
+                            : '<i class="fa-solid fa-heart" style="color:#ff304f"></i> ' + count;
+                    } catch (err) {
+                        console.warn(err);
+                    } finally {
+                        btn.dataset.busy = "0";
+                    }
+                });
+            });
+            commentsContainer.querySelectorAll(".cReply").forEach(function (btn) {
+                btn.addEventListener("click", function (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    window.__shortReplyToId = btn.getAttribute("data-reply-id") || "";
+                    window.__shortReplyToName = btn.getAttribute("data-reply-name") || "";
+                    if (commentText) {
+                        commentText.focus();
+                        commentText.placeholder =
+                            "Reply to @" + (window.__shortReplyToName || "user") + "…";
+                    }
+                });
+            });
+
             commentsContainer.scrollTop = commentsContainer.scrollHeight;
         } catch (err) {
             console.error("Comments failed:", err);
-            commentsContainer.innerHTML = `
-                <div class="noComments">
-                    <span>Comments unavailable.</span>
-                </div>
-            `;
+            commentsContainer.innerHTML =
+                '<div class="noComments"><span>Comments unavailable.</span></div>';
         }
     }
+
+
+    let __shortCommentInFlight = false;
 
     async function submitComment() {
         if (!currentUser) {
@@ -1756,6 +1901,7 @@
             return;
         }
         if (!activeShort) return;
+        if (__shortCommentInFlight) return;
 
         const text = (commentText?.value || "").trim();
         if (!text) return;
@@ -1763,68 +1909,87 @@
         const id = String(
             activeShort.id || activeShort.shortId || activeShort.key || ""
         );
-        if (!id) return;
+        if (!id) {
+            showToast("Short not found");
+            return;
+        }
 
+        __shortCommentInFlight = true;
         if (sendComment) sendComment.disabled = true;
 
         try {
-            const me = await getUser(currentUser.uid);
+            if (!db && typeof firebase !== "undefined") {
+                db = firebase.database();
+                window.db = db;
+            }
+            if (!db) {
+                showToast("Offline");
+                return;
+            }
+
+            let me = {};
+            try {
+                const us = await db.ref("users/" + currentUser.uid).once("value");
+                me = us.val() || {};
+            } catch (_) {}
+
             const name =
-                me?.name ||
+                me.displayName ||
+                me.name ||
                 currentUser.displayName ||
-                me?.username ||
+                me.username ||
                 "Viewora User";
-            const username = me?.username || "";
+            const username = me.username || "";
             const profilePhoto =
-                me?.profilePhoto ||
+                me.profilePhoto ||
+                me.photoURL ||
                 currentUser.photoURL ||
                 "assets/default-avatar.png";
 
+            const pushRef = db.ref("comments/" + id).push();
+            let finalText = text;
+            const parentId = window.__shortReplyToId || null;
+            const replyToName = window.__shortReplyToName || "";
+            if (parentId && replyToName) {
+                const m = "@" + String(replyToName).replace(/^@/, "");
+                if (finalText.indexOf(m) !== 0) finalText = m + " " + finalText;
+            }
             const payload = {
                 uid: currentUser.uid,
                 userId: currentUser.uid,
-                text,
-                name,
-                username,
-                profilePhoto,
-                createdAt: firebase.database.ServerValue.TIMESTAMP,
+                text: finalText,
+                name: name,
+                displayName: name,
+                username: username,
+                profilePhoto: profilePhoto,
+                photoURL: profilePhoto,
+                avatar: profilePhoto,
+                likesCount: 0,
+                parentId: parentId || null,
+                replyToName: replyToName || null,
+                createdAt: Date.now(),
                 timestamp: Date.now()
             };
-
-            // Write to BOTH paths for compatibility with comments.js + admin
-            const pushRef = db.ref("comments/" + id).push();
             await pushRef.set(payload);
-            try {
-                await db.ref("shorts/" + id + "/comments/" + pushRef.key).set(payload);
-            } catch (_) {}
+            window.__shortReplyToId = "";
+            window.__shortReplyToName = "";
+            if (commentText) commentText.placeholder = "Add a comment...";
 
-            // Bump comment count on short
             try {
                 const shortRef = db.ref("shorts/" + id);
                 const snap = await shortRef.once("value");
                 const cur = snap.val() || {};
-                const next =
-                    safeNumber(cur.comments || cur.commentCount) + 1;
-                await shortRef.update({
-                    comments: next,
-                    commentCount: next
-                });
+                const next = safeNumber(cur.comments || cur.commentCount) + 1;
+                await shortRef.update({ comments: next, commentCount: next });
                 activeShort.comments = next;
                 activeShort.commentCount = next;
-
-                // Update visible count on card
                 const card = container?.querySelector(
-                    `[data-short-id="${CSS.escape(id)}"]`
+                    '[data-short-id="' + CSS.escape(id) + '"]'
                 );
-                const commentLabel = card?.querySelector(
-                    '[data-action="comment"] span'
-                );
-                if (commentLabel) {
-                    commentLabel.textContent = formatCount(next);
-                }
+                const commentLabel = card?.querySelector('[data-action="comment"] span');
+                if (commentLabel) commentLabel.textContent = formatCount(next);
             } catch (_) {}
 
-            // Notify owner
             const ownerId = getCreatorId(activeShort);
             if (ownerId && ownerId !== currentUser.uid) {
                 try {
@@ -1834,7 +1999,7 @@
                         contentId: id,
                         text: text.slice(0, 120),
                         senderUID: currentUser.uid,
-                        createdAt: firebase.database.ServerValue.TIMESTAMP,
+                        createdAt: Date.now(),
                         read: false
                     });
                 } catch (_) {}
@@ -1846,14 +2011,16 @@
         } catch (err) {
             console.error("Comment failed:", err);
             showToast(
-                err?.code === "PERMISSION_DENIED"
+                err && err.code === "PERMISSION_DENIED"
                     ? "Permission denied for comments"
                     : "Comment failed"
             );
         } finally {
+            __shortCommentInFlight = false;
             if (sendComment) sendComment.disabled = false;
         }
     }
+
 
     function openShare(short) {
         const id = (short && (short.id || short.shortId)) || "";
@@ -2351,6 +2518,53 @@
         $("copyShortLinkBtn")?.addEventListener("click", copyActiveShortLink);
         $("deleteShortBtn")?.addEventListener("click", deleteActiveShort);
         $("hideShortBtn")?.addEventListener("click", hideActiveShort);
+        
+        $("descShortBtn")?.addEventListener("click", () => {
+            closeMoreMenu();
+            if (menuShort && typeof openShortDescriptionSheet === "function") {
+                openShortDescriptionSheet(menuShort);
+            }
+        });
+        $("descOwnShortBtn")?.addEventListener("click", () => {
+            closeMoreMenu();
+            if (menuShort && typeof openShortDescriptionSheet === "function") {
+                openShortDescriptionSheet(menuShort);
+            }
+        });
+        $("useAudioMenuBtn")?.addEventListener("click", () => {
+            closeMoreMenu();
+            if (!menuShort) return;
+            try {
+                sessionStorage.setItem("vieworaUseAudio", JSON.stringify({
+                    musicId: menuShort.musicId || menuShort.audioId || "",
+                    musicUrl: menuShort.musicUrl || menuShort.audioUrl || "",
+                    title: menuShort.musicTitle || menuShort.caption || "Audio",
+                    fromShortId: menuShort.id || ""
+                }));
+            } catch (_) {}
+            location.href = "upload.html?type=short&useAudio=1";
+        });
+        $("saveShortMenuBtn")?.addEventListener("click", async () => {
+            closeMoreMenu();
+            if (menuCard && menuShort && typeof doSave === "function") {
+                await doSave(menuCard, menuShort);
+            }
+        });
+        $("hideCreatorBtn")?.addEventListener("click", () => {
+            closeMoreMenu();
+            try {
+                const uid = getCreatorId(menuShort);
+                if (uid) {
+                    const key = "viewora_hidden_creators";
+                    const arr = JSON.parse(localStorage.getItem(key) || "[]");
+                    if (!arr.includes(uid)) arr.push(uid);
+                    localStorage.setItem(key, JSON.stringify(arr));
+                    showToast("Creator hidden from your feed");
+                    if (menuCard) menuCard.remove();
+                }
+            } catch (_) {}
+        });
+
         $("notInterestedBtn")?.addEventListener("click", notInterestedShort);
         $("reportShortBtn")?.addEventListener("click", openReportSheet);
         $("editShortBtn")?.addEventListener("click", editActiveShort);
@@ -2573,3 +2787,110 @@
     document.addEventListener("DOMContentLoaded", bootLives, { once: true });
   } else bootLives();
 })();
+
+
+    /* ---- Short title → description sheet (upload date + use this audio) ---- */
+    function openShortDescriptionSheet(shortObj) {
+        if (!shortObj) return;
+        let sheet = document.getElementById("vieworaShortDescSheet");
+        if (!sheet) {
+            sheet = document.createElement("div");
+            sheet.id = "vieworaShortDescSheet";
+            sheet.innerHTML = `
+              <div class="vsdBackdrop" data-close="1"></div>
+              <div class="vsdPanel">
+                <div class="vsdHandle"></div>
+                <div class="vsdTitle" id="vsdTitle"></div>
+                <div class="vsdMeta" id="vsdMeta"></div>
+                <div class="vsdDesc" id="vsdDesc"></div>
+                <button type="button" class="vsdAudioBtn" id="vsdUseAudio">
+                  <i class="fa-solid fa-music"></i> Use this audio
+                </button>
+                <button type="button" class="vsdClose" data-close="1">Close</button>
+              </div>`;
+            document.body.appendChild(sheet);
+            if (!document.getElementById("vsdCSS")) {
+                const st = document.createElement("style");
+                st.id = "vsdCSS";
+                st.textContent = `
+                  #vieworaShortDescSheet{position:fixed;inset:0;z-index:99999;display:none;align-items:flex-end;justify-content:center}
+                  #vieworaShortDescSheet.open{display:flex}
+                  .vsdBackdrop{position:absolute;inset:0;background:rgba(0,0,0,.55)}
+                  .vsdPanel{position:relative;width:100%;max-width:480px;background:#1a1b22;border-radius:16px 16px 0 0;padding:12px 16px 28px;color:#fff}
+                  .vsdHandle{width:40px;height:4px;border-radius:4px;background:rgba(255,255,255,.25);margin:0 auto 14px}
+                  .vsdTitle{font-size:16px;font-weight:700;margin-bottom:6px;line-height:1.3}
+                  .vsdMeta{font-size:12px;color:rgba(255,255,255,.55);margin-bottom:12px}
+                  .vsdDesc{font-size:14px;line-height:1.45;color:rgba(255,255,255,.85);max-height:160px;overflow:auto;margin-bottom:16px;white-space:pre-wrap}
+                  .vsdAudioBtn{width:100%;border:0;border-radius:24px;padding:12px;background:linear-gradient(135deg,#7c5cff,#4f8cff);color:#fff;font-weight:700;font-size:14px;margin-bottom:10px}
+                  .vsdClose{width:100%;border:0;border-radius:24px;padding:12px;background:rgba(255,255,255,.08);color:#fff;font-size:14px}
+                `;
+                document.head.appendChild(st);
+            }
+            sheet.addEventListener("click", function(e) {
+                if (e.target.closest("[data-close]")) {
+                    sheet.classList.remove("open");
+                }
+            });
+        }
+        const title = shortObj.title || shortObj.caption || "Short";
+        const desc = shortObj.description || shortObj.caption || shortObj.title || "No description.";
+        const when = shortObj.createdAt || shortObj.timestamp || shortObj.uploadedAt || shortObj.date;
+        let dateStr = "";
+        try {
+            const d = typeof when === "number" ? new Date(when) : new Date(when);
+            if (!isNaN(d.getTime())) dateStr = d.toLocaleDateString(undefined, { day:"numeric", month:"short", year:"numeric" });
+        } catch(_) {}
+        const views = shortObj.views != null ? Number(shortObj.views) : 0;
+        sheet.querySelector("#vsdTitle").textContent = title;
+        var likes = shortObj.likes != null ? Number(shortObj.likes) : (shortObj.likeCount || 0);
+        sheet.querySelector("#vsdMeta").innerHTML =
+            '<div class="vsdStats">' +
+            '<span><b>' + (likes >= 1000 ? (likes/1000).toFixed(1)+"K" : likes) + '</b><small>Likes</small></span>' +
+            '<span><b>' + (views >= 1000 ? (views/1000).toFixed(1)+"K" : views) + '</b><small>Views</small></span>' +
+            '<span><b>' + (dateStr || "—") + '</b><small>Uploaded</small></span>' +
+            '</div>';
+        sheet.querySelector("#vsdDesc").textContent = desc;
+        const audioBtn = sheet.querySelector("#vsdUseAudio");
+        const musicId = shortObj.musicId || shortObj.audioId || shortObj.originalAudioId || "";
+        const musicUrl = shortObj.musicUrl || shortObj.audioUrl || shortObj.soundUrl || "";
+        audioBtn.onclick = function() {
+            try {
+                const payload = {
+                    musicId: musicId,
+                    musicUrl: musicUrl,
+                    title: shortObj.musicTitle || shortObj.musicName || title,
+                    fromShortId: shortObj.id || shortObj.shortId || ""
+                };
+                sessionStorage.setItem("vieworaUseAudio", JSON.stringify(payload));
+            } catch(_) {}
+            window.location.href = "upload.html?type=short&useAudio=1";
+        };
+        sheet.classList.add("open");
+    }
+    window.openShortDescriptionSheet = openShortDescriptionSheet;
+
+
+    document.addEventListener("click", function (e) {
+        const t = e.target.closest(".shortMusicLabel, .musicTitleBtn, .short-title, [data-short-title], .bottomTitle, .shortsTitle");
+        if (!t) return;
+        e.preventDefault();
+        e.stopPropagation();
+        let shortObj = null;
+        try {
+            if (window.currentShort) shortObj = window.currentShort;
+            else if (typeof getActiveShort === "function") shortObj = getActiveShort();
+            else if (t.dataset && t.dataset.shortId && window.__shortsMap) shortObj = window.__shortsMap[t.dataset.shortId];
+        } catch (_) {}
+        if (!shortObj) {
+            shortObj = {
+                title: t.textContent || t.getAttribute("title") || "Short",
+                description: t.getAttribute("data-desc") || "",
+                createdAt: t.getAttribute("data-created") || null,
+                musicUrl: t.getAttribute("data-music") || "",
+                musicId: t.getAttribute("data-music-id") || "",
+                id: t.getAttribute("data-short-id") || ""
+            };
+        }
+        if (typeof openShortDescriptionSheet === "function") openShortDescriptionSheet(shortObj);
+    }, true);
+    window.vsdTitleClickBound = true;

@@ -328,9 +328,9 @@
                 if (r && r.level && r.level !== "none") return r.level;
             }
         } catch (_) {}
-        if (user.redTick || user.vip || user.elite) return "red";
-        if (user.blueTick || user.verified || user.isVerified) return "blue";
-        if (user.whiteTick || user.monetized) return "white";
+        if (user.redTick || user.redTickForce || user.vip || user.elite || user.tickType === "red") return "red";
+        if (user.blueTick || user.verified || user.isVerified || user.tickType === "blue") return "blue";
+        if (user.whiteTick || user.whiteTickForce || user.monetized || user.tickType === "white") return "white";
         return "";
     }
 

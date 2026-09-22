@@ -2384,3 +2384,99 @@ i.whiteTick {
   font-size: 12px;
   vertical-align: middle;
 }
+
+
+/* Comment like + reply (Instagram style) */
+.csActions, .commentMeta {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 6px;
+}
+.csLike, .csReply, .cLike, .cReply {
+  border: 0;
+  background: transparent;
+  color: rgba(255,255,255,.55);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 0;
+  cursor: pointer;
+}
+.csLike:active, .cLike:active { color: #ff304f; }
+.csReplyHint {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 10px;
+  font-size: 12px;
+  color: rgba(255,255,255,.65);
+  background: rgba(255,255,255,.05);
+  border-radius: 8px;
+  margin-bottom: 6px;
+}
+.csReplyHint.hidden { display: none !important; }
+.csReplyHint button {
+  border: 0;
+  background: transparent;
+  color: #8ab4ff;
+  font-weight: 700;
+  font-size: 12px;
+}
+.commentComposer, .csComposer {
+  padding: 10px 12px calc(10px + env(safe-area-inset-bottom, 0px));
+}
+.commentInputWrap input, #csInput, #commentText {
+  min-height: 40px;
+  font-size: 15px;
+}
+
+/* Comments modal — keep sheet usable, don't jump feed */
+body.modalOpen {
+  overflow: hidden;
+}
+#commentsModal {
+  z-index: 12000;
+}
+#commentsModal .commentsSheet {
+  display: flex;
+  flex-direction: column;
+  max-height: min(78vh, 640px);
+}
+#commentsModal .commentsContainer {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  min-height: 120px;
+}
+#commentsModal .commentComposer {
+  flex-shrink: 0;
+  display: flex !important;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px calc(12px + env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid rgba(255,255,255,.08);
+  background: #12131a;
+}
+#commentsModal .commentInputWrap {
+  flex: 1;
+  display: flex;
+  gap: 8px;
+}
+#commentsModal #commentText {
+  flex: 1;
+  min-height: 40px;
+  border-radius: 20px;
+  border: 0;
+  padding: 10px 14px;
+  background: rgba(255,255,255,.08);
+  color: #fff;
+}
+.csReplyItem {
+  margin-left: 36px;
+  opacity: .95;
+}
+.csReplyLabel {
+  font-size: 11px;
+  color: rgba(255,255,255,.45);
+  margin-bottom: 2px;
+}
