@@ -4520,3 +4520,22 @@ input.ccSeek::-webkit-slider-runnable-track {
 }
 .csReplyLabel b { color: #8ab4ff; font-weight: 700; }
 .csLike .fa-heart { margin-right: 4px; }
+
+/* VIEWORA_YT_RED_PROGRESS */
+.progressFill,
+#progressFill,
+.progressTrack .fill,
+.seekBar .fill,
+.ccSeek::-webkit-slider-thumb {
+  background: #ff0033 !important;
+}
+.progressFill,
+#progressFill {
+  background: linear-gradient(90deg, #ff0033, #ff3355) !important;
+}
+input.ccSeek {
+  accent-color: #ff0033;
+}
+input.ccSeek::-webkit-slider-runnable-track {
+  background: linear-gradient(to right, #ff0033 var(--seek-pct, 0%), rgba(255,255,255,.25) var(--seek-pct, 0%));
+}

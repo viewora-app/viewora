@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <meta name="theme-color" content="#05050a">
+  <meta name="theme-color" content="#0a0614">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <title>Viewora</title>
   <link rel="icon" href="assets/logo.png">
@@ -13,53 +13,42 @@
 </head>
 <body>
   <div class="splash" id="splash">
-    <!-- ambient orbs -->
-    <div class="orb orb-a"></div>
-    <div class="orb orb-b"></div>
-    <div class="orb orb-c"></div>
+    <div class="bgGlow bgGlow-a"></div>
+    <div class="bgGlow bgGlow-b"></div>
+    <div class="stars" id="stars" aria-hidden="true"></div>
 
-    <!-- Phase 1: world + 4 hands -->
-    <div class="phase phase-world" id="phaseWorld">
-      <div class="worldWrap">
-        <div class="world">
-          <div class="worldGlow"></div>
-          <div class="worldSphere">
-            <div class="worldGrid"></div>
-            <div class="worldShine"></div>
-          </div>
-          <!-- 4 hands reaching toward the world -->
-          <div class="hand hand-n" aria-hidden="true">
-            <svg viewBox="0 0 64 64" fill="none"><path d="M32 8c2 0 4 2 4 5v14l3-2c2-1 5 0 5 3 0 1-1 2-2 3l-6 5v10c0 3-2 5-5 5s-5-2-5-5V36l-6-5c-1-1-2-2-2-3 0-3 3-4 5-3l3 2V13c0-3 2-5 4-5z" fill="url(#hg)" opacity=".95"/><defs><linearGradient id="hg" x1="20" y1="8" x2="44" y2="56"><stop stop-color="#a78bfa"/><stop offset="1" stop-color="#6366f1"/></linearGradient></defs></svg>
-          </div>
-          <div class="hand hand-e" aria-hidden="true">
-            <svg viewBox="0 0 64 64" fill="none"><path d="M32 8c2 0 4 2 4 5v14l3-2c2-1 5 0 5 3 0 1-1 2-2 3l-6 5v10c0 3-2 5-5 5s-5-2-5-5V36l-6-5c-1-1-2-2-2-3 0-3 3-4 5-3l3 2V13c0-3 2-5 4-5z" fill="url(#hg2)" opacity=".95"/><defs><linearGradient id="hg2" x1="20" y1="8" x2="44" y2="56"><stop stop-color="#818cf8"/><stop offset="1" stop-color="#c084fc"/></linearGradient></defs></svg>
-          </div>
-          <div class="hand hand-s" aria-hidden="true">
-            <svg viewBox="0 0 64 64" fill="none"><path d="M32 8c2 0 4 2 4 5v14l3-2c2-1 5 0 5 3 0 1-1 2-2 3l-6 5v10c0 3-2 5-5 5s-5-2-5-5V36l-6-5c-1-1-2-2-2-3 0-3 3-4 5-3l3 2V13c0-3 2-5 4-5z" fill="url(#hg3)" opacity=".95"/><defs><linearGradient id="hg3" x1="20" y1="8" x2="44" y2="56"><stop stop-color="#f472b6"/><stop offset="1" stop-color="#8b5cf6"/></linearGradient></defs></svg>
-          </div>
-          <div class="hand hand-w" aria-hidden="true">
-            <svg viewBox="0 0 64 64" fill="none"><path d="M32 8c2 0 4 2 4 5v14l3-2c2-1 5 0 5 3 0 1-1 2-2 3l-6 5v10c0 3-2 5-5 5s-5-2-5-5V36l-6-5c-1-1-2-2-2-3 0-3 3-4 5-3l3 2V13c0-3 2-5 4-5z" fill="url(#hg4)" opacity=".95"/><defs><linearGradient id="hg4" x1="20" y1="8" x2="44" y2="56"><stop stop-color="#38bdf8"/><stop offset="1" stop-color="#6366f1"/></linearGradient></defs></svg>
-          </div>
-          <div class="pulseRing"></div>
-          <div class="pulseRing delay"></div>
-        </div>
-        <p class="worldTagline">Connecting the world</p>
-      </div>
-    </div>
-
-    <!-- Phase 2: logo + wordmark -->
-    <div class="phase phase-logo" id="phaseLogo">
+    <div class="brand" id="brand">
       <div class="logoMark">
-        <div class="logoRing"></div>
-        <img src="assets/logo.png" alt="Viewora" class="logoImg" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'">
-        <div class="logoFallback" style="display:none">V</div>
+        <img src="assets/logo.png" alt="Viewora" class="logoImg"
+             onerror="this.style.display='none';this.nextElementSibling.style.display='grid'">
+        <div class="logoFallback" style="display:none" aria-hidden="true">V</div>
       </div>
-      <h1 class="brand">VIEWORA</h1>
-      <p class="tagline">Create · Watch · Share · Connect</p>
-      <div class="loaderBar"><span></span></div>
+
+      <h1 class="wordmark" aria-label="Viewora">
+        <span class="letter">V</span>
+        <span class="letter">i</span>
+        <span class="letter">e</span>
+        <span class="letter">w</span>
+        <span class="letter oWrap">
+          <span class="oLetter">o</span>
+          <span class="universe" aria-hidden="true">
+            <span class="ring ring1"></span>
+            <span class="ring ring2"></span>
+            <span class="ring ring3"></span>
+            <span class="core"></span>
+            <span class="spark s1"></span>
+            <span class="spark s2"></span>
+            <span class="spark s3"></span>
+            <span class="spark s4"></span>
+          </span>
+        </span>
+        <span class="letter">r</span>
+        <span class="letter">a</span>
+      </h1>
+
+      <p class="tagline">See the universe</p>
     </div>
   </div>
-
   <script src="splash.js"></script>
 </body>
 </html>

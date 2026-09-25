@@ -2196,3 +2196,143 @@ body {
   background: linear-gradient(135deg, #8b7cff, #6366f1);
   color: #fff;
 }
+
+
+/* Watch history strip on profile */
+.histStrip {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding: 4px 2px 8px;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.histStrip::-webkit-scrollbar { display: none; }
+.histStripCard {
+  flex: 0 0 auto;
+  width: 120px;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  color: inherit;
+  padding: 0;
+  cursor: pointer;
+}
+.histStripThumbWrap {
+  position: relative;
+  width: 120px;
+  height: 68px;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #1a1a22;
+}
+.histStripThumbWrap.short {
+  width: 72px;
+  height: 120px;
+}
+.histStripCard:has(.histStripThumbWrap.short) { width: 72px; }
+.histStripThumb {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.histStripThumb.short {
+  width: 100%;
+  height: 100%;
+}
+.histStripProg {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: 3px;
+  background: rgba(255,255,255,.25);
+}
+.histStripProg i {
+  display: block;
+  height: 100%;
+  background: #ff0033;
+  border-radius: 0 2px 2px 0;
+}
+.histStripTitle {
+  margin-top: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  line-height: 1.3;
+}
+.hlHistTabBar { display: inline-flex; gap: 6px; }
+.hlHistTab {
+  padding: 6px 12px;
+  border-radius: 99px;
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.08);
+  color: rgba(255,255,255,.55);
+  font-size: 12px;
+  font-weight: 700;
+}
+.hlHistTab.active {
+  background: #fff;
+  color: #0a0a0f;
+}
+#openWatchHistoryBtn {
+  font-size: 11px;
+  font-weight: 700;
+  color: #8d86ff;
+  background: transparent;
+  border: 0;
+}
+
+/* Website + social links on profile */
+.profileWebsite {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 10px auto 0;
+  max-width: 90%;
+  color: #3b82f6;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  word-break: break-all;
+}
+.profileWebsite:hover { text-decoration: underline; }
+.profileWebsite[hidden] { display: none !important; }
+.profileWebsite i { font-size: 12px; opacity: .9; }
+
+.profileSocials {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 12px auto 0;
+  max-width: 320px;
+}
+.profileSocials[hidden] { display: none !important; }
+.profileSocials a {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.1);
+  color: #fff;
+  font-size: 18px;
+  text-decoration: none;
+  transition: transform .15s, background .15s;
+}
+.profileSocials a:active { transform: scale(0.94); }
+.profileSocials a.ig { color: #E1306C; }
+.profileSocials a.fb { color: #1877F2; }
+.profileSocials a.tw { color: #e7e9ea; }
+.profileSocials a.yt { color: #FF0000; }
+.profileSocials a.li { color: #0A66C2; }
+.profileSocials a.pin { color: #E60023; }
+html[data-theme="light"] .profileSocials a {
+  background: rgba(0,0,0,.04);
+  border-color: rgba(0,0,0,.08);
+}
+html[data-theme="light"] .profileWebsite { color: #2563eb; }

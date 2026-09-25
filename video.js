@@ -381,9 +381,106 @@
     let __mediaCandidates = [];
     let __mediaCandidateIndex = 0;
 
+    function __vieworaHistMeta() {
+        try {
+            let vid =
+                (typeof state !== "undefined" && state.videoId) ||
+                window.currentVideoId ||
+                "";
+            if (!vid) {
+                try {
+                    const p = new URLSearchParams(location.search);
+                    vid = p.get("id") || p.get("videoId") || "";
+                } catch (_) {}
+            }
+            if (!vid) {
+                try {
+                    const m = String(location.pathname || "").match(/video[^/]*\/([^/?#]+)/i);
+                    if (m) vid = m[1];
+                } catch (_) {}
+            }
+            const v = (typeof state !== "undefined" && state.video) || {};
+            let thumb =
+                v.thumbnailUrl ||
+                v.thumbnail ||
+                v.thumb ||
+                v.coverUrl ||
+                v.cover ||
+                v.poster ||
+                "";
+            if (!thumb) {
+                try {
+                    const pl = document.getElementById("mainVideo");
+                    thumb = (pl && (pl.getAttribute("poster") || "")) || "";
+                } catch (_) {}
+            }
+            return {
+                videoId: String(vid || ""),
+                type: "video",
+                title:
+                    v.title ||
+                    v.name ||
+                    (document.getElementById("videoTitle") &&
+                        document.getElementById("videoTitle").textContent) ||
+                    "Video",
+                thumb: thumb,
+                ownerName: v.username || v.userName || v.ownerName || v.displayName || ""
+            };
+        } catch (_) {
+            return { videoId: "", type: "video" };
+        }
+    }
+
+    function __vieworaBindHistoryOnce(player) {
+        try {
+            if (!player || player.dataset.vieworaHistBound === "1") return;
+            player.dataset.vieworaHistBound = "1";
+            const bump = function (force) {
+                try {
+                    const meta = __vieworaHistMeta();
+                    if (!meta.videoId) return;
+                    const cur = player.currentTime || 0;
+                    const dur = player.duration || 0;
+                    // 1 second rule: only save once we've actually played ~1s (or force after ended)
+                    if (!force && cur < 0.9) return;
+                    if (window.VieworaWatchProgress) {
+                        VieworaWatchProgress(meta, Math.max(cur, force && cur < 0.9 ? 1 : cur), dur || 15);
+                    } else if (window.VieworaRecordWatch) {
+                        const p = dur > 0 ? Math.min(1, cur / dur) : 0.05;
+                        VieworaRecordWatch(Object.assign({}, meta, { progress: Math.max(p, 0.05) }));
+                    }
+                } catch (_) {}
+            };
+            // After 1s of continuous play, force first history write
+            let __histOneSec = null;
+            player.addEventListener("playing", function () {
+                try { clearTimeout(__histOneSec); } catch (_) {}
+                __histOneSec = setTimeout(function () {
+                    if (!player.paused && !player.ended) bump(true);
+                }, 1000);
+                bump(false);
+            });
+            player.addEventListener("pause", function () {
+                try { clearTimeout(__histOneSec); } catch (_) {}
+                if ((player.currentTime || 0) >= 0.9) bump(true);
+            });
+            player.addEventListener("timeupdate", function () { bump(false); });
+            player.addEventListener("pause", function () { bump(true); });
+            player.addEventListener("ended", function () {
+                try {
+                    const meta = __vieworaHistMeta();
+                    if (meta.videoId && window.VieworaRecordWatch) {
+                        VieworaRecordWatch(Object.assign({}, meta, { progress: 1 }));
+                    }
+                } catch (_) {}
+            });
+        } catch (_) {}
+    }
+
     function applyMediaToPlayer(url) {
         const player = $("mainVideo");
         if (!player || !url) return false;
+        try { __vieworaBindHistoryOnce(player); } catch (_) {}
         clearPlayerError();
         hide($("playerLoading"));
         try { player.pause(); } catch (_) {}
@@ -941,6 +1038,36 @@
         show($("playerLoading"));
         clearPlayerError();
         startMediaPlayback(video);
+        try {
+            const vid =
+                (video && (video.id || video.videoId || video.key)) ||
+                (typeof state !== "undefined" && state.videoId) ||
+                window.currentVideoId ||
+                "";
+            if (window.VieworaRecordWatch && vid) {
+                VieworaRecordWatch({
+                    videoId: String(vid),
+                    type: "video",
+                    title: (video && (video.title || video.name)) || "Video",
+                    thumb:
+                        (video &&
+                            (video.thumbnailUrl ||
+                                video.thumbnail ||
+                                video.thumb ||
+                                video.coverUrl ||
+                                video.cover ||
+                                video.poster)) ||
+                        "",
+                    ownerName:
+                        (video &&
+                            (video.username ||
+                                video.userName ||
+                                video.ownerName ||
+                                video.displayName)) ||
+                        ""
+                });
+            }
+        } catch (_) {}
 
         const visibility =
             video.visibility ||
@@ -5083,3 +5210,62 @@ function openShortDescriptionSheet(shortObj) {
     sheet.classList.add("open");
 }
 window.openShortDescriptionSheet = openShortDescriptionSheet;
+
+/* VIEWORA_HIST_FORCE_BIND */
+(function () {
+    function tryBind() {
+        try {
+            var p = document.getElementById("mainVideo");
+            if (p && typeof __vieworaBindHistoryOnce === "function") {
+                __vieworaBindHistoryOnce(p);
+            }
+        } catch (_) {}
+    }
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", function () {
+            tryBind();
+            setTimeout(tryBind, 800);
+            setTimeout(tryBind, 2000);
+        });
+    } else {
+        tryBind();
+        setTimeout(tryBind, 800);
+    }
+})();
+
+
+/* VIEWORA_FORCE_HIST_VIDEO */
+(function () {
+  function forceVideoHist() {
+    try {
+      if (!window.VieworaRecordWatch) return;
+      var p = document.getElementById("mainVideo");
+      if (!p || p.paused || p.ended) return;
+      if ((p.currentTime || 0) < 0.5 && !p.dataset.vwhForce) {
+        // still allow after 1s wall via dataset
+      }
+      var id = "";
+      try {
+        var sp = new URLSearchParams(location.search);
+        id = sp.get("id") || sp.get("videoId") || "";
+      } catch (_) {}
+      if (!id) return;
+      var title = (document.getElementById("videoTitle") || {}).textContent || "Video";
+      var thumb = p.getAttribute("poster") || "";
+      var cur = p.currentTime || 0;
+      var dur = p.duration || 0;
+      var progress = dur > 0 ? Math.min(1, cur / dur) : 0.15;
+      if (cur < 0.8 && progress < 0.1) progress = 0.15;
+      VieworaRecordWatch({
+        videoId: String(id),
+        type: "video",
+        title: String(title).trim().slice(0, 120),
+        thumb: thumb,
+        progress: progress
+      });
+    } catch (e) {
+      console.warn("[FORCE_HIST_V]", e);
+    }
+  }
+  setInterval(forceVideoHist, 2500);
+})();

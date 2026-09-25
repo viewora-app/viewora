@@ -15,6 +15,66 @@
     }
     window.__VIEWORA_SHORTS_READY__ = true;
 
+    /* watch history */
+    function __recordShortWatch(data, progress) {
+        try {
+            if (!window.VieworaRecordWatch || !data) return;
+            var id = data.id || data.shortId || data.videoId;
+            if (!id) return;
+            VieworaRecordWatch({
+                videoId: id,
+                type: "short",
+                title: data.title || data.caption || "Short",
+                thumb: data.thumbnail || data.thumb || data.coverUrl || data.poster || "",
+                ownerName: data.username || data.userName || data.ownerName || "",
+                progress: progress != null ? progress : 0.15
+            });
+        } catch (_) {}
+    }
+
+    function __bindShortProgress(videoEl, data) {
+        try {
+            if (!videoEl || videoEl.dataset.vieworaHistBound === "1") return;
+            videoEl.dataset.vieworaHistBound = "1";
+            var meta = {
+                videoId: data.id || data.shortId || data.videoId,
+                type: "short",
+                title: data.title || data.caption || "Short",
+                thumb: data.thumbnail || data.thumb || data.coverUrl || "",
+                ownerName: data.username || data.userName || data.ownerName || ""
+            };
+            var tick = function (force) {
+                try {
+                    if (!data) return;
+                    var dur = videoEl.duration || 0;
+                    var cur = videoEl.currentTime || 0;
+                    if (!force && cur < 0.9) return;
+                    if (window.VieworaWatchProgress) {
+                        VieworaWatchProgress(meta, Math.max(cur, 1), dur || 15);
+                    } else {
+                        __recordShortWatch(data, dur > 0 ? Math.min(1, Math.max(cur, 1) / dur) : 0.1);
+                    }
+                } catch (_) {}
+            };
+            var oneSec = null;
+            videoEl.addEventListener("playing", function () {
+                try { clearTimeout(oneSec); } catch (_) {}
+                oneSec = setTimeout(function () {
+                    if (!videoEl.paused && !videoEl.ended) tick(true);
+                }, 1000);
+            });
+            videoEl.addEventListener("timeupdate", function () { tick(false); });
+            videoEl.addEventListener("pause", function () {
+                try { clearTimeout(oneSec); } catch (_) {}
+                if ((videoEl.currentTime || 0) >= 0.9) tick(true);
+            });
+            videoEl.addEventListener("ended", function () {
+                __recordShortWatch(data, 1);
+            });
+        } catch (_) {}
+    }
+
+
 
     /* =====================================================
        ELEMENTS
@@ -932,7 +992,8 @@
             if (video) {
                 if (video.paused) {
                     if (preferUnmuted) video.muted = false;
-                    video.play().catch(() => {
+                    try { if (typeof currentShort !== "undefined") __recordShortWatch(currentShort); else if (typeof activeShort !== "undefined") __recordShortWatch(activeShort, 0.1); } catch(_r){}
+                        video.play().catch(() => {
                         video.muted = true;
                         video.play().catch(() => {});
                     });
@@ -2282,6 +2343,7 @@
        UNIQUE VIEWS — 1 logged-in user = 1 view per short (forever)
     ===================================================== */
     const viewedShortIds = new Set(); // session memory
+    const historyRecordedIds = new Set();
 
     function shortsViewerUid() {
         try {
@@ -2309,6 +2371,73 @@
         // Session lock (sync) — blocks rapid observer double-fire
         if (viewedShortIds.has(shortId)) return;
         viewedShortIds.add(shortId);
+
+        // Profile → History
+        try {
+            let title = "Short";
+            let thumb = "";
+            let ownerName = "";
+            const card =
+                container &&
+                container.querySelector(
+                    '.shortCard[data-short-id="' +
+                        (window.CSS && CSS.escape ? CSS.escape(shortId) : shortId) +
+                        '"]'
+                );
+            if (card) {
+                title =
+                    card.getAttribute("data-title") ||
+                    card.querySelector(".shortTitle")?.textContent ||
+                    card.querySelector(".caption")?.textContent ||
+                    title;
+                const img = card.querySelector("img, video");
+                if (img) {
+                    thumb = img.getAttribute("poster") || img.getAttribute("src") || "";
+                }
+                ownerName =
+                    card.getAttribute("data-username") ||
+                    card.querySelector(".shortUsername")?.textContent ||
+                    card.querySelector(".username")?.textContent ||
+                    "";
+            }
+            if (window.__shortsById && window.__shortsById[shortId]) {
+                const s = window.__shortsById[shortId];
+                title = s.title || s.caption || title;
+                thumb = s.thumbnail || s.thumb || s.coverUrl || thumb;
+                ownerName = s.username || s.userName || ownerName;
+            }
+            if (typeof __recordShortWatch === "function") {
+                __recordShortWatch({
+                    id: shortId,
+                    shortId: shortId,
+                    title: String(title || "Short").trim().slice(0, 120),
+                    thumbnail: thumb,
+                    username: String(ownerName || "").replace(/^@/, "").trim()
+                });
+                try {
+                    const vEl = card && card.querySelector("video");
+                    if (vEl && typeof __bindShortProgress === "function") {
+                        __bindShortProgress(vEl, {
+                            id: shortId,
+                            shortId: shortId,
+                            title: String(title || "Short").trim().slice(0, 120),
+                            thumbnail: thumb,
+                            username: String(ownerName || "").replace(/^@/, "").trim()
+                        });
+                    }
+                } catch (_bp) {}
+            } else if (window.VieworaRecordWatch) {
+                VieworaRecordWatch({
+                    videoId: shortId,
+                    type: "short",
+                    title: String(title || "Short").trim().slice(0, 120),
+                    thumb: thumb,
+                    ownerName: String(ownerName || "").replace(/^@/, "").trim()
+                });
+            }
+        } catch (histErr) {
+            console.warn("[shorts history]", histErr);
+        }
 
         const uid = shortsViewerUid();
         if (!uid) {
@@ -2435,7 +2564,28 @@
                                 try { video.volume = 1; } catch (_) {}
                             }
                             const sid = item.getAttribute("data-short-id") || item.dataset.shortId || "";
-                            if (sid) recordShortView(sid);
+                            if (sid) {
+                                recordShortView(sid);
+                                try {
+                                    if (!historyRecordedIds.has(sid)) {
+                                        historyRecordedIds.add(sid);
+                                        let title = "Short", thumb = "", ownerName = "";
+                                        title = item.getAttribute("data-title") || item.querySelector(".shortTitle,.caption,.shortCaption")?.textContent || title;
+                                        const media = item.querySelector("video.shortVideo, img");
+                                        if (media) thumb = media.getAttribute("poster") || media.currentSrc || media.src || "";
+                                        ownerName = item.getAttribute("data-username") || item.querySelector(".shortUsername,.username,.userName")?.textContent || "";
+                                        if (window.VieworaRecordWatch) {
+                                            VieworaRecordWatch({
+                                                videoId: sid,
+                                                type: "short",
+                                                title: String(title || "Short").trim().slice(0, 120),
+                                                thumb: thumb,
+                                                ownerName: String(ownerName || "").replace(/^@/, "").trim()
+                                            });
+                                        }
+                                    }
+                                } catch (_) {}
+                            }
                             const playPromise = video.play();
                             if (playPromise && typeof playPromise.catch === "function") {
                                 playPromise.catch(() => {
@@ -2894,3 +3044,48 @@
         if (typeof openShortDescriptionSheet === "function") openShortDescriptionSheet(shortObj);
     }, true);
     window.vsdTitleClickBound = true;
+
+
+/* VIEWORA_FORCE_HIST_SHORT — guarantee history write */
+(function () {
+  function forceRecord() {
+    try {
+      if (!window.VieworaRecordWatch) return;
+      var card = document.querySelector(".shortCard.active, .shortCard[data-active='1']") ||
+        document.querySelector(".shortCard video.shortVideo:not([paused])")?.closest(".shortCard");
+      if (!card) {
+        var videos = document.querySelectorAll("video.shortVideo");
+        for (var i = 0; i < videos.length; i++) {
+          if (!videos[i].paused && !videos[i].ended) {
+            card = videos[i].closest(".shortCard");
+            break;
+          }
+        }
+      }
+      if (!card) return;
+      var sid = card.getAttribute("data-short-id") || card.dataset.shortId || "";
+      if (!sid) return;
+      var title = card.getAttribute("data-title") ||
+        (card.querySelector(".shortCaption, .shortTitle, .caption") || {}).textContent || "Short";
+      var thumb = "";
+      var v = card.querySelector("video");
+      if (v) thumb = v.getAttribute("poster") || v.currentSrc || "";
+      var owner = card.getAttribute("data-username") ||
+        (card.querySelector(".shortUsername") || {}).textContent || "";
+      VieworaRecordWatch({
+        videoId: String(sid),
+        type: "short",
+        title: String(title).trim().slice(0, 120),
+        thumb: thumb,
+        ownerName: String(owner || "").replace(/^@/, "").trim(),
+        progress: 0.2
+      });
+    } catch (e) {
+      console.warn("[FORCE_HIST]", e);
+    }
+  }
+  setInterval(forceRecord, 2500);
+  document.addEventListener("visibilitychange", function () {
+    if (document.hidden) forceRecord();
+  });
+})();

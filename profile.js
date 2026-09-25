@@ -1,3 +1,4 @@
+function escapeHtml(s){return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
 "use strict";
 
 /*
@@ -1049,6 +1050,13 @@
             "Welcome to Viewora 🚀"
         );
 
+        /* WEBSITE + SOCIALS */
+        try {
+            renderProfileLinks(user);
+        } catch (e) {
+            console.warn("renderProfileLinks", e);
+        }
+
 
         /* PROFILE IMAGE */
 
@@ -1174,9 +1182,9 @@
         /* LOCATION */
 
         const location =
+            user.country ||
             user.location ||
             user.city ||
-            user.country ||
             "";
 
         const locationElement =
@@ -1208,6 +1216,82 @@
     ===================================================== */
 
     
+    
+    function renderProfileLinks(user) {
+        if (!user) return;
+        const webEl = $("profileWebsite");
+        const socialsEl = $("profileSocials");
+        const website = (user.website || user.link || "").trim();
+        if (webEl) {
+            if (website) {
+                let href = website;
+                if (!/^https?:\/\//i.test(href)) href = "https://" + href;
+                let label = website.replace(/^https?:\/\//i, "").replace(/\/$/, "");
+                if (label.length > 42) label = label.slice(0, 40) + "…";
+                webEl.href = href;
+                webEl.innerHTML = '<i class="fa-solid fa-link"></i> ' + escapeHTML(label);
+                webEl.hidden = false;
+            } else {
+                webEl.hidden = true;
+                webEl.removeAttribute("href");
+                webEl.innerHTML = "";
+            }
+        }
+        if (!socialsEl) return;
+        let socials = user.socials || user.socialLinks || {};
+        if (typeof socials === "string") {
+            try { socials = JSON.parse(socials) || {}; } catch (_) { socials = {}; }
+        }
+        const platforms = [
+            { key: "instagram", cls: "ig", icon: "fa-brands fa-instagram", label: "Instagram" },
+            { key: "facebook", cls: "fb", icon: "fa-brands fa-facebook", label: "Facebook" },
+            { key: "x", cls: "tw", icon: "fa-brands fa-x-twitter", label: "X" },
+            { key: "youtube", cls: "yt", icon: "fa-brands fa-youtube", label: "YouTube" },
+            { key: "linkedin", cls: "li", icon: "fa-brands fa-linkedin", label: "LinkedIn" },
+            { key: "pinterest", cls: "pin", icon: "fa-brands fa-pinterest", label: "Pinterest" }
+        ];
+        function buildUrl(platform, handleOrUrl) {
+            const raw = String(handleOrUrl || "").trim();
+            if (!raw) return "";
+            if (/^https?:\/\//i.test(raw)) return raw;
+            const h = raw.replace(/^@/, "").replace(/\s+/g, "");
+            if (!h) return "";
+            switch (platform) {
+                case "instagram": return "https://instagram.com/" + encodeURIComponent(h);
+                case "facebook": return "https://facebook.com/" + encodeURIComponent(h);
+                case "x": return "https://x.com/" + encodeURIComponent(h);
+                case "youtube":
+                    return h.indexOf("UC") === 0
+                        ? "https://youtube.com/channel/" + encodeURIComponent(h)
+                        : "https://youtube.com/@" + encodeURIComponent(h);
+                case "linkedin": return "https://linkedin.com/in/" + encodeURIComponent(h);
+                case "pinterest": return "https://pinterest.com/" + encodeURIComponent(h);
+                default: return raw;
+            }
+        }
+        const parts = [];
+        platforms.forEach((p) => {
+            let s = socials[p.key];
+            let url = "";
+            if (typeof s === "string" && s.trim()) url = buildUrl(p.key, s);
+            else if (s && (s.url || s.handle)) url = s.url || buildUrl(p.key, s.handle);
+            else if (user[p.key]) url = buildUrl(p.key, user[p.key]);
+            if (!url) return;
+            parts.push(
+                '<a class="' + p.cls + '" href="' + escapeHTML(url) +
+                '" target="_blank" rel="noopener noreferrer" title="' + p.label +
+                '" aria-label="' + p.label + '"><i class="' + p.icon + '"></i></a>'
+            );
+        });
+        if (parts.length) {
+            socialsEl.innerHTML = parts.join("");
+            socialsEl.hidden = false;
+        } else {
+            socialsEl.innerHTML = "";
+            socialsEl.hidden = true;
+        }
+    }
+
     function paintAbout(user) {
         const box = $("profileAbout");
         if (!box || !user) return;
@@ -2301,6 +2385,211 @@
         sheet.setAttribute("aria-hidden", "true");
     }
 
+        function openWatchHistory() {
+            const sheet = $("watchHistorySheet");
+            if (!sheet) return;
+            sheet.classList.remove("hidden");
+            sheet.setAttribute("aria-hidden", "false");
+            document.body.style.overflow = "hidden";
+            loadWatchHistory();
+        }
+
+        function closeWatchHistory() {
+            const sheet = $("watchHistorySheet");
+            if (!sheet) return;
+            sheet.classList.add("hidden");
+            sheet.setAttribute("aria-hidden", "true");
+            document.body.style.overflow = "";
+        }
+
+        function formatWhTime(ts) {
+            const n = Number(ts) || 0;
+            if (!n) return "";
+            const d = Date.now() - n;
+            const m = Math.floor(d / 60000);
+            if (m < 1) return "Just now";
+            if (m < 60) return m + "m ago";
+            const h = Math.floor(m / 60);
+            if (h < 24) return h + "h ago";
+            const days = Math.floor(h / 24);
+            if (days < 7) return days + "d ago";
+            try {
+                return new Date(n).toLocaleDateString();
+            } catch (_) {
+                return "";
+            }
+        }
+
+        async function loadWatchHistory() {
+            const list = $("watchHistoryList");
+            if (!list) return;
+            list.innerHTML = '<div class="whEmpty">Loading…</div>';
+            const items = [];
+
+            // 1) Firebase
+            try {
+                const __histUid = (currentUser && currentUser.uid) || (typeof firebase !== "undefined" && firebase.auth && firebase.auth().currentUser && firebase.auth().currentUser.uid);
+                if (db && __histUid) {
+                    const snap = await db
+                        .ref("users/" + __histUid + "/watchHistory")
+                        .limitToLast(80)
+                        .once("value");
+                    if (snap.exists()) {
+                        snap.forEach((ch) => {
+                            const v = ch.val() || {};
+                            items.push({
+                                id: ch.key,
+                                videoId: v.videoId || v.id || ch.key,
+                                type: (v.type || v.kind || "video").toLowerCase(),
+                                title: v.title || v.caption || "Video",
+                                thumb: v.thumb || v.thumbnail || v.cover || "",
+                                ownerName: v.ownerName || v.username || "",
+                                at: v.at || v.watchedAt || v.timestamp || 0
+                            });
+                        });
+                    }
+                }
+            } catch (err) {
+                console.warn("[watchHistory] fb", err);
+            }
+
+            // 2) localStorage fallback / merge
+            try {
+                const raw = localStorage.getItem("viewora_watch_history");
+                if (raw) {
+                    const arr = JSON.parse(raw);
+                    if (Array.isArray(arr)) {
+                        arr.forEach((v) => {
+                            if (!v) return;
+                            const vid = v.videoId || v.id;
+                            if (!vid) return;
+                            if (items.some((x) => x.videoId === vid && x.type === (v.type || "video"))) return;
+                            items.push({
+                                id: vid,
+                                videoId: vid,
+                                type: (v.type || "video").toLowerCase(),
+                                title: v.title || "Video",
+                                thumb: v.thumb || "",
+                                ownerName: v.ownerName || "",
+                                at: v.at || 0
+                            });
+                        });
+                    }
+                }
+            } catch (_) {}
+
+            items.sort((a, b) => (b.at || 0) - (a.at || 0));
+
+            if (!items.length) {
+                list.innerHTML =
+                    '<div class="whEmpty">No history yet.<br>Videos & Shorts you watch will show up here.</div>';
+                return;
+            }
+
+            list.innerHTML = items
+                .map((it) => {
+                    const isShort = it.type === "short" || it.type === "shorts";
+                    const thumb = it.thumb
+                        ? '<img class="whThumb' +
+                          (isShort ? " short" : "") +
+                          '" src="' +
+                          escapeHtml(it.thumb) +
+                          '" alt="" loading="lazy" onerror="this.style.opacity=.3">'
+                        : '<div class="whThumb' +
+                          (isShort ? " short" : "") +
+                          '" style="display:grid;place-items:center;color:#666"><i class="fa-solid fa-play"></i></div>';
+                    const href =
+                        isShort
+                            ? "shorts.html?id=" + encodeURIComponent(it.videoId)
+                            : "video.html?id=" + encodeURIComponent(it.videoId);
+                    return (
+                        '<button type="button" class="whItem" data-href="' +
+                        escapeHtml(href) +
+                        '">' +
+                        thumb +
+                        '<div class="whMeta">' +
+                        '<div class="whType">' +
+                        (isShort ? "Short" : "Video") +
+                        "</div>" +
+                        '<div class="whTitle">' +
+                        escapeHtml(it.title) +
+                        "</div>" +
+                        '<div class="whSub">' +
+                        escapeHtml(
+                            [it.ownerName, formatWhTime(it.at)].filter(Boolean).join(" · ")
+                        ) +
+                        "</div></div></button>"
+                    );
+                })
+                .join("");
+
+            list.querySelectorAll(".whItem").forEach((btn) => {
+                btn.addEventListener("click", () => {
+                    const href = btn.getAttribute("data-href");
+                    if (href) window.location.href = href;
+                });
+            });
+        }
+
+        async function clearWatchHistory() {
+            if (!confirm("Clear all watch history?")) return;
+            try {
+                if (db && currentUser && currentUser.uid) {
+                    await db.ref("users/" + currentUser.uid + "/watchHistory").remove();
+                }
+            } catch (_) {}
+            try {
+                localStorage.removeItem("viewora_watch_history");
+            } catch (_) {}
+            loadWatchHistory();
+            showToast("History cleared");
+        }
+
+        /** Global helper — call from video/shorts when user watches */
+        window.VieworaRecordWatch = function (entry) {
+            try {
+                if (!entry || !entry.videoId) return;
+                const row = {
+                    videoId: String(entry.videoId),
+                    type: (entry.type || "video").toLowerCase(),
+                    title: entry.title || "Video",
+                    thumb: entry.thumb || "",
+                    ownerName: entry.ownerName || "",
+                    at: Date.now()
+                };
+                // local
+                let arr = [];
+                try {
+                    arr = JSON.parse(localStorage.getItem("viewora_watch_history") || "[]") || [];
+                } catch (_) {
+                    arr = [];
+                }
+                arr = arr.filter(
+                    (x) => !(x.videoId === row.videoId && (x.type || "video") === row.type)
+                );
+                arr.unshift(row);
+                arr = arr.slice(0, 100);
+                localStorage.setItem("viewora_watch_history", JSON.stringify(arr));
+                // firebase
+                try {
+                    const uid =
+                        (window.currentUser && currentUser.uid) ||
+                        (firebase.auth && firebase.auth().currentUser && firebase.auth().currentUser.uid);
+                    if (uid && firebase.database) {
+                        const key = row.type + "_" + row.videoId;
+                        firebase
+                            .database()
+                            .ref("users/" + uid + "/watchHistory/" + key)
+                            .set(row);
+                    }
+                } catch (_) {}
+            } catch (e) {
+                console.warn("[VieworaRecordWatch]", e);
+            }
+        };
+
+
+
 
     function setupProfileButtons() {
 
@@ -2443,6 +2732,181 @@
                 if (!isOwnProfile) return;
                 window.location.href = "story-highlight.html";
             });
+
+
+        // History fold (book style near highlights)
+        
+        // Highlights ↔ History tabs (A→B, same strip · own profile only)
+        (function wireHlHistTabs() {
+            const tabBar = $("hlHistTabBar");
+            const tabHl = $("tabHighlights");
+            const tabHist = $("tabHistory");
+            const paneHl = $("paneHighlights");
+            const paneHist = $("paneHistory");
+            const viewAll = $("openWatchHistoryBtn");
+            const onlyTitle = $("hlOnlyTitle");
+
+            function showPane(name) {
+                const isHist = name === "history";
+                if (tabHl) tabHl.classList.toggle("active", !isHist);
+                if (tabHist) tabHist.classList.toggle("active", isHist);
+                if (paneHl) {
+                    paneHl.hidden = isHist;
+                    paneHl.classList.toggle("active", !isHist);
+                    paneHl.style.display = isHist ? "none" : "";
+                }
+                if (paneHist) {
+                    paneHist.hidden = !isHist;
+                    paneHist.classList.toggle("active", isHist);
+                    paneHist.style.display = isHist ? "" : "none";
+                }
+                if (viewAll) {
+                    viewAll.hidden = !isHist;
+                    viewAll.style.display = isHist ? "inline-flex" : "none";
+                }
+                if (isHist) fillProfileHistStrip();
+            }
+
+            if (tabHl) tabHl.addEventListener("click", () => showPane("highlights"));
+            if (tabHist) tabHist.addEventListener("click", () => showPane("history"));
+
+            // expose for own-profile visibility
+            window.__vieworaShowHlHistTabs = function (own) {
+                if (tabBar) {
+                    tabBar.hidden = !own;
+                    tabBar.style.display = own ? "" : "none";
+                }
+                if (onlyTitle) {
+                    onlyTitle.hidden = !!own;
+                    onlyTitle.style.display = own ? "none" : "";
+                }
+                // Always land on Highlights first so View all stays hidden
+                showPane("highlights");
+            };
+        })();
+
+        try {
+            window.addEventListener("viewora-history-updated", function () {
+                try {
+                    const pane = $("paneHistory");
+                    if (pane && !pane.hidden) fillProfileHistStrip();
+                } catch (_) {}
+            });
+        } catch (_) {}
+
+        async function fillProfileHistStrip() {
+            const strip = $("profileHistStrip");
+            if (!strip) return;
+            let items = [];
+            try {
+                if (window.VieworaGetWatchHistory) {
+                    items = VieworaGetWatchHistory() || [];
+                }
+            } catch (_) {}
+            if (!items.length) {
+                try {
+                    items = JSON.parse(localStorage.getItem("viewora_watch_history") || "[]") || [];
+                } catch (_) {
+                    items = [];
+                }
+            }
+            if (!items.length) {
+                try {
+                    items = JSON.parse(sessionStorage.getItem("viewora_watch_history") || "[]") || [];
+                } catch (_) {}
+            }
+            if (!Array.isArray(items)) items = [];
+            try { console.log("[profile-history] items", items.length); } catch (_) {}
+            try {
+                const uid =
+                    (currentUser && currentUser.uid) ||
+                    (firebase.auth && firebase.auth().currentUser && firebase.auth().currentUser.uid);
+                if (db && uid) {
+                    const snap = await db.ref("users/" + uid + "/watchHistory").limitToLast(24).once("value");
+                    if (snap.exists()) {
+                        snap.forEach(function (ch) {
+                            const v = ch.val() || {};
+                            items.push({
+                                videoId: v.videoId || ch.key,
+                                type: v.type || "video",
+                                title: v.title || "Video",
+                                thumb: v.thumb || "",
+                                at: v.at || 0
+                            });
+                        });
+                    }
+                }
+            } catch (_) {}
+            const map = {};
+            items.forEach(function (it) {
+                if (!it || !it.videoId) return;
+                const k = (it.type || "video") + "_" + it.videoId;
+                if (!map[k] || (it.at || 0) > (map[k].at || 0)) map[k] = it;
+            });
+            items = Object.keys(map)
+                .map(function (k) {
+                    return map[k];
+                })
+                .sort(function (a, b) {
+                    return (b.at || 0) - (a.at || 0);
+                })
+                .slice(0, 16);
+            if (!items.length) {
+                strip.innerHTML =
+                    '<div class="whEmpty" style="padding:16px;font-size:12px;opacity:.55">No history yet</div>';
+                return;
+            }
+            strip.innerHTML = items
+                .map(function (it) {
+                    const isShort = /short/i.test(it.type || "");
+                    const href = isShort
+                        ? "shorts.html?id=" + encodeURIComponent(it.videoId)
+                        : "video.html?id=" + encodeURIComponent(it.videoId);
+                    const pct = Math.round(Math.min(1, Math.max(0, Number(it.progress) || 0)) * 100);
+                    const thumbInner = it.thumb
+                        ? '<img class="histStripThumb' +
+                          (isShort ? " short" : "") +
+                          '" src="' +
+                          escapeHtml(it.thumb) +
+                          '" alt="" loading="lazy">'
+                        : '<div class="histStripThumb' +
+                          (isShort ? " short" : "") +
+                          '" style="display:grid;place-items:center;color:#555"><i class="fa-solid fa-play"></i></div>';
+                    const progress =
+                        pct > 0
+                            ? '<div class="histProg"><i style="width:' + pct + '%"></i></div>'
+                            : "";
+                    return (
+                        '<button type="button" class="histStripCard' +
+                        (isShort ? " shortCard" : "") +
+                        '" data-href="' +
+                        escapeHtml(href) +
+                        '"><div class="histThumbWrap">' +
+                        thumbInner +
+                        progress +
+                        '</div><div class="histStripTitle">' +
+                        escapeHtml(it.title || "Video") +
+                        "</div></button>"
+                    );
+                })
+                .join("");
+            strip.querySelectorAll("[data-href]").forEach(function (btn) {
+                btn.addEventListener("click", function () {
+                    location.href = btn.getAttribute("data-href");
+                });
+            });
+        }
+
+
+        document
+            .querySelectorAll("[data-close-watch-history]")
+            .forEach((el) =>
+                el.addEventListener("click", closeWatchHistory)
+            );
+        $("watchHistoryBack")
+            ?.addEventListener("click", closeWatchHistory);
+        $("watchHistoryClear")
+            ?.addEventListener("click", clearWatchHistory);
 
 
 
@@ -4870,6 +5334,21 @@
                 hlWrap.removeAttribute("hidden");
                 // Owner always sees Highlights; visitors see only if pinned exist
                 if (highlightStories.length || isOwnProfile) {
+            try {
+                if (typeof window.__vieworaShowHlHistTabs === "function") {
+                    window.__vieworaShowHlHistTabs(!!isOwnProfile);
+                }
+            } catch (_) {}
+
+            try {
+                const historyBtn = $("openWatchHistoryBtn");
+                // View all only on History tab (managed by showPane)
+                if (historyBtn && !isOwnProfile) {
+                    historyBtn.hidden = true;
+                    historyBtn.style.display = "none";
+                }
+            } catch (_) {}
+
                     hlSection.removeAttribute("hidden");
                     hlSection.hidden = false;
                     hlSection.style.setProperty("display", "block", "important");
