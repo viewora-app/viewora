@@ -200,3 +200,27 @@ html[data-theme="light"] .vieworaThemeFab {
   border-color: rgba(0, 0, 0, 0.1);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
 }
+
+/* Viewora smoothness / performance */
+html {
+  scroll-behavior: smooth;
+  -webkit-tap-highlight-color: transparent;
+}
+body {
+  text-rendering: optimizeSpeed;
+}
+img, video {
+  content-visibility: auto;
+}
+.shortCard, .shortVideo, #mainVideo, video {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+/* Reduce expensive backdrop blur on low-end if preferred */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

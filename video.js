@@ -1343,6 +1343,19 @@
             }
         }
 
+        
+        // Mobile play reliability
+        try {
+            player.setAttribute("playsinline", "");
+            player.setAttribute("webkit-playsinline", "");
+            player.playsInline = true;
+            if (!player.getAttribute("preload")) player.setAttribute("preload", "metadata");
+        } catch (_) {}
+        player.addEventListener("play", function () { try { setPlayingUI(true); } catch (_) {} });
+        player.addEventListener("pause", function () { try { setPlayingUI(false); } catch (_) {} });
+        player.addEventListener("playing", function () { try { setPlayingUI(true); } catch (_) {} });
+        player.addEventListener("waiting", function () { /* buffering */ });
+
         function setPlayingUI(playing) {
             shell?.classList.toggle("isPlaying", !!playing);
             const icon = playing
@@ -1410,23 +1423,24 @@
             });
         }
 
-        // tap player to toggle center controls
+        // tap player: always toggle play/pause (YouTube-like, reliable on mobile)
         if (shell && !shell.__centerBound) {
             shell.__centerBound = true;
             shell.addEventListener("click", function (e) {
-                if (e.target.closest("button, input, a, .customControls, .playerChrome, .centerPlayBar")) return;
-                // 1 click: toggle play/pause + show controls 3.8s
-                if (player.paused) {
-                    player.play().catch(function () {});
-                } else {
-                    // if controls hidden, first click only shows UI; second pauses
-                    if (!shell.classList.contains("showControls")) {
-                        showPlayerChrome(3800);
-                        return;
+                if (e.target.closest("button, input, a, .customControls, .playerChrome, .centerPlayBar, .seekBar, .progressWrap")) return;
+                try {
+                    if (player.paused || player.ended) {
+                        var p = player.play();
+                        if (p && p.catch) p.catch(function () {
+                            player.muted = true;
+                            player.play().catch(function () {});
+                        });
+                    } else {
+                        player.pause();
                     }
-                    player.pause();
-                }
-                showPlayerChrome(3800);
+                } catch (_) {}
+                try { showPlayerChrome(3800); } catch (_) {}
+                try { setPlayingUI(!player.paused); } catch (_) {}
             });
         }
 

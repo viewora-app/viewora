@@ -1006,16 +1006,45 @@
             }
         });
 
-        // Double-tap like
+        // Double-tap → next short in feed (swipe alternative)
         let lastTap = 0;
         card.addEventListener("touchend", (e) => {
+            if (e.target.closest("[data-action], button, a, input, textarea")) return;
             const now = Date.now();
-            if (now - lastTap < 280) {
+            if (now - lastTap < 300) {
                 e.preventDefault();
-                doLike(card, short, true);
-                showHeart();
+                e.stopPropagation();
+                try {
+                    const container = document.getElementById("shortsContainer") || document.getElementById("shortsFeed") || document.querySelector(".shortsFeed");
+                    if (container) {
+                        const cards = Array.from(container.querySelectorAll(".shortCard, .short-item, [data-short-id]"));
+                        const idx = cards.indexOf(card);
+                        const next = cards[idx + 1];
+                        if (next) {
+                            next.scrollIntoView({ behavior: "smooth", block: "start" });
+                        } else if (typeof loadMoreShorts === "function") {
+                            loadMoreShorts();
+                        }
+                    }
+                } catch (_) {}
+                lastTap = 0;
+                return;
             }
             lastTap = now;
+        });
+        // Double-click (desktop) same
+        card.addEventListener("dblclick", (e) => {
+            if (e.target.closest("[data-action], button, a")) return;
+            e.preventDefault();
+            try {
+                const container = document.getElementById("shortsContainer") || document.getElementById("shortsFeed") || document.querySelector(".shortsFeed");
+                if (container) {
+                    const cards = Array.from(container.querySelectorAll(".shortCard, .short-item, [data-short-id]"));
+                    const idx = cards.indexOf(card);
+                    const next = cards[idx + 1];
+                    if (next) next.scrollIntoView({ behavior: "smooth", block: "start" });
+                }
+            } catch (_) {}
         });
 
         if (video) {

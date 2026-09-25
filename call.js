@@ -172,6 +172,10 @@
     let callRef = null;
 
     let peerConnection = null;
+    const MAX_CALL_PARTICIPANTS = 6; // group call limit (mesh / room)
+    window.VieworaCall = window.VieworaCall || {};
+    window.VieworaCall.MAX_PARTICIPANTS = MAX_CALL_PARTICIPANTS;
+
 
     let localStream = null;
 
@@ -688,6 +692,15 @@
             return localStream;
         }
 
+        if (!window.isSecureContext) {
+            const e = new Error(
+                "Calls need HTTPS. Open https://viewora-app.github.io (not http)."
+            );
+            e.name = "NotAllowedError";
+            e.code = "PERMISSION_DENIED";
+            throw e;
+        }
+
         if (
             !navigator.mediaDevices ||
             !navigator.mediaDevices.getUserMedia
@@ -695,11 +708,37 @@
             throw new Error("Camera/microphone unavailable on this browser.");
         }
 
-        // Soft constraints first (mobile-friendly)
+        // Chrome: if already permanently blocked, surface that clearly
+        try {
+            if (navigator.permissions && navigator.permissions.query) {
+                const mic = await navigator.permissions.query({ name: "microphone" });
+                if (mic && mic.state === "denied") {
+                    const e = new Error(
+                        "Chrome blocked microphone for this site. Reset permission then Join."
+                    );
+                    e.name = "NotAllowedError";
+                    e.code = "PERMISSION_DENIED";
+                    e.permanent = true;
+                    throw e;
+                }
+            }
+        } catch (permErr) {
+            if (permErr && permErr.permanent) throw permErr;
+            // permissions.query unsupported or camera name fails — ignore
+        }
+
+        // Soft constraints first (mobile-friendly) — simplest first for Chrome
         const wantVideo = callType === "video";
         const attempts = [];
 
+        // Always try plain audio first (highest success on Chrome mobile)
+        attempts.push({ audio: true, video: false });
+
         if (wantVideo) {
+            attempts.push({
+                audio: true,
+                video: true
+            });
             attempts.push({
                 audio: true,
                 video: { facingMode: "user" }
@@ -725,7 +764,6 @@
             },
             video: false
         });
-        attempts.push({ audio: true, video: false });
 
         let lastErr = null;
 
@@ -2199,47 +2237,89 @@
         };
     }
 
-        function showPermissionRetry() {
+    function showPermissionRetry() {
         try {
             if (incomingScreen) incomingScreen.classList.add("hidden");
             if (callApp) callApp.classList.add("hidden");
+            const ended = document.getElementById("callEndedScreen");
+            if (ended) ended.classList.add("hidden");
         } catch (_) {}
 
         let box = document.getElementById("permissionRetryScreen");
-        if (!box) {
-            box = document.createElement("div");
-            box.id = "permissionRetryScreen";
-            box.style.cssText =
-                "position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:#0a0b10;padding:24px;";
-            box.innerHTML =
-                '<div style="max-width:340px;width:100%;text-align:center;background:rgba(24,26,36,.96);border:1px solid rgba(255,255,255,.08);border-radius:22px;padding:28px 20px;">' +
-                '<div style="width:64px;height:64px;margin:0 auto 14px;border-radius:50%;background:rgba(255,59,92,.12);display:grid;place-items:center;color:#ff3b5c;font-size:26px;"><i class="fa-solid fa-microphone-slash"></i></div>' +
-                "<h2 style=\"margin:0 0 8px;font-size:20px;color:#fff\">Microphone needed</h2>" +
-                '<p style="margin:0 0 18px;font-size:13px;line-height:1.5;color:#9aa0b0">Browser blocked mic/camera. Tap the lock icon in the address bar → allow Microphone (and Camera), then Join.</p>' +
-                '<button type="button" id="permJoinBtn" style="width:100%;height:48px;border:0;border-radius:14px;background:linear-gradient(135deg,#7c5cff,#a855f7);color:#fff;font-weight:800;font-size:15px;cursor:pointer;margin-bottom:10px;">Join Call</button>' +
-                '<button type="button" id="permBackBtn" style="width:100%;height:42px;border:0;border-radius:12px;background:rgba(255,255,255,.06);color:#ccc;font-weight:600;cursor:pointer;">Back</button>' +
-                "</div>";
-            document.body.appendChild(box);
-            document.getElementById("permJoinBtn").onclick = async function () {
-                try {
-                    box.remove();
-                } catch (_) {}
-                await acceptCall();
-            };
-            document.getElementById("permBackBtn").onclick = function () {
-                try {
-                    box.remove();
-                } catch (_) {}
-                try {
-                    if (window.history.length > 1) history.back();
-                    else location.href = "messages.html";
-                } catch (_) {
-                    location.href = "messages.html";
-                }
-            };
-        } else {
-            box.style.display = "flex";
+        if (box) {
+            try { box.remove(); } catch (_) {}
         }
+
+        box = document.createElement("div");
+        box.id = "permissionRetryScreen";
+        box.style.cssText =
+            "position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:#0a0b10;padding:20px;";
+        box.innerHTML =
+            '<div style="max-width:360px;width:100%;text-align:left;background:rgba(24,26,36,.98);border:1px solid rgba(255,255,255,.1);border-radius:22px;padding:24px 18px;">' +
+            '<div style="text-align:center;margin-bottom:14px;">' +
+            '<div style="width:64px;height:64px;margin:0 auto 12px;border-radius:50%;background:rgba(255,59,92,.12);display:grid;place-items:center;color:#ff3b5c;font-size:26px;"><i class="fa-solid fa-microphone-slash"></i></div>' +
+            '<h2 style="margin:0 0 6px;font-size:19px;color:#fff;text-align:center">Microphone blocked</h2>' +
+            '<p style="margin:0;font-size:12px;color:#9aa0b0;text-align:center;line-height:1.45">Chrome ne Viewora ke liye mic band kar diya. Pehle Allow karo, phir Join.</p>' +
+            "</div>" +
+            '<ol style="margin:0 0 16px;padding-left:18px;color:#c9cdd8;font-size:12px;line-height:1.65;">' +
+            "<li><strong style=\"color:#fff\">Address bar</strong> me 🔒 / ⓘ icon dabao</li>" +
+            "<li><strong style=\"color:#fff\">Permissions</strong> / Site settings kholo</li>" +
+            "<li><strong style=\"color:#fff\">Microphone</strong> → <span style=\"color:#22c55e\">Allow</span></li>" +
+            "<li>Video call ho to <strong style=\"color:#fff\">Camera</strong> bhi Allow</li>" +
+            "<li>Page <strong style=\"color:#fff\">Reload</strong> karo, phir neeche Join dabao</li>" +
+            "</ol>" +
+            '<p style="margin:0 0 14px;font-size:11px;color:#7a8090;line-height:1.4;text-align:center">Android Chrome: ⋮ → Settings → Site settings → Microphone → viewora-app.github.io → Allow</p>' +
+            '<button type="button" id="permJoinBtn" style="width:100%;height:48px;border:0;border-radius:14px;background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff;font-weight:800;font-size:15px;cursor:pointer;margin-bottom:8px;"><i class="fa-solid fa-phone"></i> Try Join again</button>' +
+            '<button type="button" id="permReloadBtn" style="width:100%;height:42px;border:0;border-radius:12px;background:rgba(124,92,255,.2);color:#c4b5fd;font-weight:700;cursor:pointer;margin-bottom:8px;">Reload page</button>' +
+            '<button type="button" id="permBackBtn" style="width:100%;height:40px;border:0;border-radius:12px;background:transparent;color:#888;font-weight:600;cursor:pointer;">Back</button>' +
+            "</div>";
+        document.body.appendChild(box);
+
+        document.getElementById("permJoinBtn").onclick = async function () {
+            const btn = document.getElementById("permJoinBtn");
+            if (btn) {
+                btn.disabled = true;
+                btn.textContent = "Requesting mic…";
+            }
+            try {
+                // Direct request under user gesture (Chrome requires this)
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    audio: true,
+                    video: false
+                });
+                if (stream) {
+                    try {
+                        stream.getTracks().forEach(function (tr) { tr.stop(); });
+                    } catch (_) {}
+                }
+                try { box.remove(); } catch (_) {}
+                accepted = false;
+                await acceptCall();
+            } catch (err) {
+                console.warn("[Viewora] mic retry failed", err);
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fa-solid fa-phone"></i> Try Join again';
+                }
+                try {
+                    toast("Still blocked — Allow mic in Chrome site settings, then Reload.");
+                } catch (_) {
+                    alert("Still blocked. Chrome → Site settings → Microphone → Allow for viewora-app.github.io, then reload.");
+                }
+            }
+        };
+        document.getElementById("permReloadBtn").onclick = function () {
+            location.reload();
+        };
+        document.getElementById("permBackBtn").onclick = function () {
+            try { box.remove(); } catch (_) {}
+            try {
+                if (window.history.length > 1) history.back();
+                else location.href = "messages.html";
+            } catch (_) {
+                location.href = "messages.html";
+            }
+        };
     }
 
 
@@ -2526,6 +2606,48 @@
 
     let usingFrontCamera = true;
 
+
+    async function inviteToCall(uid) {
+        if (!uid) return;
+        try {
+            const room = callId;
+            if (!room || !db) {
+                toast("Start a call first, then add people.");
+                return;
+            }
+            const ref = db.ref("calls/" + room + "/participants");
+            const snap = await ref.once("value");
+            const map = snap.val() || {};
+            const count = Object.keys(map).length;
+            if (count >= MAX_CALL_PARTICIPANTS) {
+                toast("Max " + MAX_CALL_PARTICIPANTS + " people in a call");
+                return;
+            }
+            if (map[uid]) {
+                toast("Already in call");
+                return;
+            }
+            await ref.child(uid).set({
+                invitedAt: Date.now(),
+                by: currentUser && currentUser.uid,
+                status: "invited"
+            });
+            // Notify invitee
+            try {
+                await db.ref("users/" + uid + "/incomingCallInvite").set({
+                    callId: room,
+                    from: currentUser && currentUser.uid,
+                    type: callType || "video",
+                    at: Date.now()
+                });
+            } catch (_) {}
+            toast("Invite sent");
+        } catch (e) {
+            console.warn(e);
+            toast("Could not invite");
+        }
+    }
+
     async function switchCamera() {
         if (callType !== "video") {
             toast("Camera switch only on video calls.");
@@ -2546,85 +2668,103 @@
         usingFrontCamera = !usingFrontCamera;
         const facing = usingFrontCamera ? "user" : "environment";
 
-        try {
-            // Request new camera WITHOUT touching audio (prevents pause glitch)
-            const newStream = await navigator.mediaDevices.getUserMedia({
-                audio: false,
-                video: {
-                    facingMode: { exact: facing },
-                    width: { ideal: 1280 },
-                    height: { ideal: 720 },
-                    frameRate: { ideal: 30 }
-                }
-            });
-
-            const newTrack = newStream.getVideoTracks()[0];
+        async function applyNewTrack(newTrack, leftoverStream) {
             if (!newTrack) throw new Error("No new video track");
-
-            // Replace sender track first (WebRTC stays alive)
             if (peerConnection) {
                 const sender = peerConnection
                     .getSenders()
                     .find(s => s.track && s.track.kind === "video");
-                if (sender) {
-                    await sender.replaceTrack(newTrack);
-                }
+                if (sender) await sender.replaceTrack(newTrack);
             }
-
-            // Swap local tracks without stopping whole stream
-            try {
-                localStream.removeTrack(oldTrack);
-            } catch (_) {}
+            try { localStream.removeTrack(oldTrack); } catch (_) {}
             localStream.addTrack(newTrack);
             try { oldTrack.stop(); } catch (_) {}
-
             window.localStream = localStream;
-
             if (localVideo) {
                 localVideo.srcObject = localStream;
                 localVideo.playsInline = true;
                 localVideo.muted = true;
                 localVideo.setAttribute("playsinline", "");
-                // Keep playing — never pause remote
                 await localVideo.play().catch(() => {});
             }
-
-            // Ensure remote video still playing
             if (typeof remoteVideo !== "undefined" && remoteVideo) {
                 remoteVideo.play().catch(() => {});
             }
+            if (leftoverStream) {
+                leftoverStream.getTracks().forEach(t => {
+                    if (t.id !== newTrack.id) {
+                        try { t.stop(); } catch (_) {}
+                    }
+                });
+            }
+            toast(usingFrontCamera ? "Front camera" : "Back camera");
+        }
 
-            newStream.getTracks().forEach(t => {
-                if (t.id !== newTrack.id) {
-                    try { t.stop(); } catch (_) {}
+        // 1) Prefer deviceId from enumerateDevices (works on Android WebView where facingMode:exact fails)
+        try {
+            const devices = await navigator.mediaDevices.enumerateDevices();
+            const cams = devices.filter(d => d.kind === "videoinput");
+            let targetId = null;
+            if (cams.length >= 2) {
+                // Heuristic: environment/back often has "back"/"rear"/"environment" in label
+                const back = cams.find(d => /back|rear|environment|world/i.test(d.label || ""));
+                const front = cams.find(d => /front|user|face/i.test(d.label || ""));
+                if (!usingFrontCamera && back) targetId = back.deviceId;
+                else if (usingFrontCamera && front) targetId = front.deviceId;
+                else {
+                    // Toggle between first two cameras by index
+                    const curId = oldTrack.getSettings && oldTrack.getSettings().deviceId;
+                    const idx = Math.max(0, cams.findIndex(c => c.deviceId === curId));
+                    const next = cams[(idx + 1) % cams.length];
+                    targetId = next && next.deviceId;
+                }
+            }
+            if (targetId) {
+                const s = await navigator.mediaDevices.getUserMedia({
+                    audio: false,
+                    video: {
+                        deviceId: { exact: targetId },
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 },
+                        frameRate: { ideal: 30 }
+                    }
+                });
+                await applyNewTrack(s.getVideoTracks()[0], s);
+                return;
+            }
+        } catch (e1) {
+            logError("Camera deviceId switch:", e1);
+        }
+
+        // 2) facingMode ideal (not exact) — better Android support
+        try {
+            const newStream = await navigator.mediaDevices.getUserMedia({
+                audio: false,
+                video: {
+                    facingMode: { ideal: facing },
+                    width: { ideal: 1280 },
+                    height: { ideal: 720 },
+                    frameRate: { ideal: 24 }
                 }
             });
+            await applyNewTrack(newStream.getVideoTracks()[0], newStream);
+            return;
+        } catch (e2) {
+            logError("Camera facingMode switch:", e2);
+        }
 
-            toast(usingFrontCamera ? "Front camera" : "Back camera");
+        // 3) Last resort: plain facingMode string
+        try {
+            const s3 = await navigator.mediaDevices.getUserMedia({
+                audio: false,
+                video: { facingMode: facing }
+            });
+            await applyNewTrack(s3.getVideoTracks()[0], s3);
+            return;
         } catch (error) {
-            // Fallback: ideal instead of exact (some devices reject exact)
-            try {
-                const fallback = await navigator.mediaDevices.getUserMedia({
-                    audio: false,
-                    video: { facingMode: { ideal: facing } }
-                });
-                const nt = fallback.getVideoTracks()[0];
-                if (nt && peerConnection) {
-                    const sender = peerConnection.getSenders().find(s => s.track && s.track.kind === "video");
-                    if (sender) await sender.replaceTrack(nt);
-                    try { localStream.removeTrack(oldTrack); oldTrack.stop(); } catch (_) {}
-                    localStream.addTrack(nt);
-                    if (localVideo) {
-                        localVideo.srcObject = localStream;
-                        await localVideo.play().catch(() => {});
-                    }
-                    toast(usingFrontCamera ? "Front camera" : "Back camera");
-                    return;
-                }
-            } catch (_) {}
             logError("Camera switch:", error);
             usingFrontCamera = !usingFrontCamera;
-            toast("Unable to switch camera.");
+            toast("Unable to switch camera. Allow camera permission.");
         }
     }
 
@@ -3186,6 +3326,7 @@
         toggleCamera:
             toggleCamera,
 
+        inviteToCall: inviteToCall,
         switchCamera:
             switchCamera,
 

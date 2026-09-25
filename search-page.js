@@ -277,7 +277,13 @@
       const snap = await db.ref("users/" + uid).once("value");
       if (!snap.exists()) return true; // account gone
       const u = snap.val() || {};
-      if (u.deleted === true || u.disabled === true || u.banned === true) return true;
+      if (
+        u.deleted === true || u.disabled === true || u.banned === true ||
+        u.suspended === true || u.isDeleted === true || u.permanentDelete === true ||
+        u.accountStatus === "disabled" || u.accountStatus === "deleted" ||
+        u.accountStatus === "suspended" || u.accountStatus === "banned" ||
+        u.status === "disabled" || u.status === "deleted" || u.status === "banned"
+      ) return true;
     } catch (_) {}
     return false;
   }
@@ -583,7 +589,21 @@
         const uid = ch.key;
         const user = ch.val() || {};
         if (!user || typeof user !== "object") return;
-        if (user.deleted === true || user.disabled === true || user.banned === true) return;
+        if (
+          user.deleted === true ||
+          user.disabled === true ||
+          user.banned === true ||
+          user.suspended === true ||
+          user.isDeleted === true ||
+          user.permanentDelete === true ||
+          user.accountStatus === "disabled" ||
+          user.accountStatus === "deleted" ||
+          user.accountStatus === "suspended" ||
+          user.accountStatus === "banned" ||
+          user.status === "disabled" ||
+          user.status === "deleted" ||
+          user.status === "banned"
+        ) return;
         if (deletedUserSet && deletedUserSet.has(uid)) return;
         if (authUser && uid === authUser.uid) return;
 
@@ -672,7 +692,12 @@
         try {
           if (ownerUid && usersSnap && usersSnap.child) {
             const u = usersSnap.child(ownerUid).val();
-            if (u && (u.deleted === true || u.disabled === true || u.banned === true)) return;
+            if (u && (
+              u.deleted === true || u.disabled === true || u.banned === true ||
+              u.suspended === true || u.isDeleted === true || u.permanentDelete === true ||
+              u.accountStatus === "disabled" || u.accountStatus === "deleted" ||
+              u.accountStatus === "suspended" || u.accountStatus === "banned"
+            )) return;
           }
         } catch (_) {}
 
