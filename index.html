@@ -1,24 +1,26 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-
-<script>
-/* Viewora entry: show splash once per session */
-(function(){
-  try {
-    if (sessionStorage.getItem("viewora_splash_seen")) return;
-    if (/[?&]nosplash=1/.test(location.search)) return;
-    sessionStorage.setItem("viewora_return_to", "index.html");
-    location.replace("splash.html");
-  } catch(e) {}
-})();
-</script>
-
-    <meta charset="UTF-8">
+<meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#08080d">
     <meta name="description" content="Viewora — Create, Watch, Share & Connect">
     <title>Viewora • Home</title>
+
+    <!-- Viewora boot: splash once per session -->
+    <script>
+    (function () {
+      try {
+        if (/splash\.html/i.test(location.pathname)) return;
+        if (sessionStorage.getItem("viewora_splash_seen")) return;
+        // mark so we don't loop if replace fails
+        if (sessionStorage.getItem("viewora_splash_redirecting") === "1") return;
+        sessionStorage.setItem("viewora_splash_redirecting", "1");
+        location.replace("splash.html");
+      } catch (e) {}
+    })();
+    </script>
+
 
     <!-- FONT -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -334,15 +336,17 @@
     </main>
 
     <!-- GLOBAL LOADING -->
-    <div id="loadingOverlay" class="loadingOverlay hidden">
+    <div id="loadingOverlay" class="loadingOverlay" aria-live="polite">
         <div class="premiumLoading">
             <div class="loadingLogo">
-                <img src="assets/logo.png" alt="Viewora" onerror="this.onerror=null;this.src='assets/default-avatar.png'">
+                <img src="assets/logo.png" alt="Viewora"
+                     onerror="this.style.display='none';this.nextElementSibling.style.display='grid'">
+                <div class="loadingLogoFallback" style="display:none">V</div>
             </div>
             <div class="loadingOrbit"></div>
         </div>
-        <strong id="loadingText">Loading...</strong>
-        <span>Please wait</span>
+        <strong id="loadingText">Loading</strong>
+        <span>Preparing your feed…</span>
     </div>
 
     <!-- IMAGE VIEWER -->
@@ -406,6 +410,7 @@
     <script src="security.js"></script>
   <script src="badges.js"></script>
 <script src="share-sheet.js"></script>
+<script src="watch-history.js"></script>
 <script src="index.js"></script>
 <!-- activity.js only on activity page -->
 <!-- profile.js only on profile page -->

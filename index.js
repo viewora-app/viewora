@@ -5070,11 +5070,39 @@
                 app.style.setProperty("max-height", "none", "important");
             }
             // Kill stuck full-screen loaders
-            document.querySelectorAll("#pageLoader, .pageLoader").forEach((el) => {
+            document.querySelectorAll("#pageLoader, .pageLoader, #loadingOverlay, .loadingOverlay").forEach((el) => {
                 el.classList.add("hidden", "loaderHide");
-                el.style.display = "none";
                 el.style.pointerEvents = "none";
             });
+        } catch (_) {}
+    }
+
+
+    function hideBootLoading() {
+        try {
+            const el = document.getElementById("loadingOverlay");
+            if (!el) return;
+            el.classList.add("hidden", "loaderHide");
+            el.style.pointerEvents = "none";
+            setTimeout(function () {
+                try {
+                    if (el.parentNode && el.classList.contains("hidden")) {
+                        el.style.display = "none";
+                    }
+                } catch (_) {}
+            }, 450);
+        } catch (_) {}
+    }
+
+    function showBootLoading(text) {
+        try {
+            const el = document.getElementById("loadingOverlay");
+            if (!el) return;
+            el.style.display = "flex";
+            el.classList.remove("hidden", "loaderHide");
+            el.style.pointerEvents = "auto";
+            const t = document.getElementById("loadingText");
+            if (t && text) t.textContent = text;
         } catch (_) {}
     }
 
@@ -5102,6 +5130,11 @@
             }, 800);
 
         loadStories();
+
+        // Instagram-style: hide splash/loader once shell is ready
+        setTimeout(hideBootLoading, 600);
+        setTimeout(hideBootLoading, 1800);
+        setTimeout(hideBootLoading, 3500);
 
     }
 

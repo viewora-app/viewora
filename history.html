@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0a0a0f">
+<title>History • Viewora</title>
+<link rel="icon" href="assets/logo.png">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+<link rel="stylesheet" href="history.css">
+</head>
+<body>
+  <header class="hTop">
+    <button type="button" id="hBack" aria-label="Back"><i class="fa-solid fa-arrow-left"></i></button>
+    <h1>History</h1>
+    <button type="button" id="hClear" class="hClear">Clear</button>
+  </header>
+
+  <div class="hSearch">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <input type="search" id="hQuery" placeholder="Search watch history" autocomplete="off">
+  </div>
+
+  <div class="hTabs" id="hTabs">
+    <button type="button" class="hTab active" data-filter="all">All</button>
+    <button type="button" class="hTab" data-filter="video">Videos</button>
+    <button type="button" class="hTab" data-filter="short">Shorts</button>
+  </div>
+
+  <main class="hMain" id="hMain">
+    <div class="hEmpty" id="hEmpty">No history yet.<br>Videos & Shorts you watch will show up here.</div>
+  </main>
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+  <script src="firebase.js"></script>
+<script src="watch-history.js"></script>
+<script src="history.js"></script>
+</body>
+</html>

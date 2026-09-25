@@ -1,1904 +1,580 @@
-"use strict";
+/* Viewora Edit Profile — banner, avatar, IP country, social links */
+(function () {
+  "use strict";
 
-/* =========================================================
-   VIEWORA • EDIT PROFILE JS
-   Profile Photo • Banner • Name • Username • URL
-   Gender • Bio • Firebase Realtime Database
-   Cloudinary Image Upload
-========================================================= */
+  var auth = null;
+  var db = null;
+  var storage = null;
+  var user = null;
+  var profile = {};
+  var avatarFile = null;
+  var bannerFile = null;
+  var avatarPreviewUrl = null;
+  var bannerPreviewUrl = null;
+  var usernameCheckTimer = null;
+  var usernameOk = true;
+  var detectedCountry = "";
+  var detectedCountryCode = "";
 
-document.addEventListener("DOMContentLoaded", () => {
+  var SOCIAL_KEYS = [
+    "instagram",
+    "facebook",
+    "x",
+    "youtube",
+    "linkedin",
+    "pinterest"
+  ];
 
-    console.log("🚀 Viewora Edit Profile JS Started");
+  function $(id) {
+    return document.getElementById(id);
+  }
 
-    /* =====================================================
-       DOM
-    ===================================================== */
+  function toast(msg) {
+    var t = $("toast");
+    if (!t) return;
+    t.textContent = msg;
+    t.classList.add("show");
+    clearTimeout(toast._tm);
+    toast._tm = setTimeout(function () {
+      t.classList.remove("show");
+    }, 2400);
+  }
 
-    const profilePhotoButton =
-        document.getElementById("profilePhotoButton");
-
-    const profilePhotoInput =
-        document.getElementById("profilePhotoInput");
-
-    const profilePreview =
-        document.getElementById("profilePreview");
-
-    const bannerArea =
-        document.getElementById("bannerArea");
-
-    const bannerInput =
-        document.getElementById("bannerInput");
-
-    const bannerPreview =
-        document.getElementById("bannerPreview");
-
-    const nameInput =
-        document.getElementById("nameInput");
-
-    const usernameInput =
-        document.getElementById("usernameInput");
-
-    const profileUrlInput =
-        document.getElementById("profileUrlInput");
-
-    const genderInput =
-        document.getElementById("genderInput");
-
-    const bioInput =
-        document.getElementById("bioInput");
-
-    const previewName =
-        document.getElementById("previewName");
-
-    const previewUsername =
-        document.getElementById("previewUsername");
-
-    const previewBio =
-        document.getElementById("previewBio");
-
-    const nameCounter =
-        document.getElementById("nameCounter");
-
-    const usernameCounter =
-        document.getElementById("usernameCounter");
-
-    const bioCounter =
-        document.getElementById("bioCounter");
-
-    const usernameStatus =
-        document.getElementById("usernameStatus");
-
-    const profileUrlPreview =
-        document.getElementById("profileUrlPreview");
-
-    const publicProfileLink =
-        document.getElementById("publicProfileLink");
-
-    const copyProfileUrl =
-        document.getElementById("copyProfileUrl");
-
-    const saveProfileBtn =
-        document.getElementById("saveProfileBtn");
-
-    const saveTopBtn =
-        document.getElementById("saveTopBtn");
-
-    const backBtn =
-        document.getElementById("backBtn");
-
-    const toast =
-        document.getElementById("toast");
-
-    const toastText =
-        document.getElementById("toastText");
-
-    const toastIcon =
-        document.getElementById("toastIcon");
-
-    const loadingOverlay =
-        document.getElementById("loadingOverlay");
-
-    const loadingTitle =
-        document.getElementById("loadingTitle");
-
-    const loadingText =
-        document.getElementById("loadingText");
-
-
-    /* =====================================================
-       DEFAULTS
-    ===================================================== */
-
-    const DEFAULT_AVATAR =
-        "assets/default-avatar.png";
-
-    const DEFAULT_BANNER =
-        "assets/default-banner.jpg";
-
-
-    /* =====================================================
-       CLOUDINARY CONFIGURATION
-    ===================================================== */
-
-    const CLOUDINARY_CLOUD_NAME =
-        "z5m6wjdf";
-
-    const CLOUDINARY_UPLOAD_PRESET =
-        "Viewora-upload";
-
-    const CLOUDINARY_UPLOAD_URL =
-        `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/auto/upload`;
-
-
-    /* =====================================================
-       STATE
-    ===================================================== */
-
-    let currentUID = null;
-
-    let currentProfile = {};
-
-    let selectedProfileFile = null;
-
-    let selectedBannerFile = null;
-
-    let originalUsername = "";
-
-    let saving = false;
-
-
-    /* =====================================================
-       TOAST
-    ===================================================== */
-
-    function showToast(
-        message,
-        type = "success"
-    ) {
-
-        if (!toast || !toastText) return;
-
-        toastText.textContent =
-            message;
-
-        if (toastIcon) {
-
-            toastIcon.className =
-                type === "error"
-                    ? "fa-solid fa-circle-exclamation"
-                    : "fa-solid fa-circle-check";
-        }
-
-        toast.classList.remove("hidden");
-
-        clearTimeout(
-            showToast.timer
-        );
-
-        showToast.timer =
-            setTimeout(() => {
-
-                toast.classList.add(
-                    "hidden"
-                );
-
-            }, 3000);
+  function setLoading(on) {
+    var m = $("loadingMask");
+    if (m) m.hidden = !on;
+    var btn = $("saveBtn");
+    if (btn) {
+      btn.disabled = !!on;
+      btn.classList.toggle("busy", !!on);
     }
+  }
 
-
-    /* =====================================================
-       LOADING
-    ===================================================== */
-
-    function showLoading(
-        title,
-        message
-    ) {
-
-        if (!loadingOverlay) return;
-
-        if (loadingTitle) {
-
-            loadingTitle.textContent =
-                title ||
-                "Saving profile";
-        }
-
-        if (loadingText) {
-
-            loadingText.textContent =
-                message ||
-                "Please wait...";
-        }
-
-        loadingOverlay.classList.remove(
-            "hidden"
-        );
+  /* ---- Country from IP ---- */
+  async function detectCountry() {
+    var label = $("countryLabel");
+    if (profile.country && profile.country !== "Unknown") {
+      detectedCountry = profile.country;
+      detectedCountryCode = profile.countryCode || "";
+      if (label) label.textContent = detectedCountry;
+      return;
     }
-
-
-    function hideLoading() {
-
-        if (!loadingOverlay) return;
-
-        loadingOverlay.classList.add(
-            "hidden"
-        );
+    try {
+      var res = await fetch("https://ipapi.co/json/", {
+        signal: AbortSignal.timeout ? AbortSignal.timeout(6000) : undefined
+      });
+      if (!res.ok) throw new Error("ipapi failed");
+      var data = await res.json();
+      detectedCountry = data.country_name || data.country || "";
+      detectedCountryCode = data.country_code || "";
+      if (!detectedCountry) throw new Error("empty");
+      if (label) label.textContent = detectedCountry;
+    } catch (_) {
+      try {
+        var res2 = await fetch("https://api.country.is/");
+        var d2 = await res2.json();
+        detectedCountryCode = d2.country || "";
+        var names = {
+          IN: "India", US: "United States", PK: "Pakistan", BD: "Bangladesh",
+          GB: "United Kingdom", CA: "Canada", AU: "Australia", AE: "United Arab Emirates",
+          SA: "Saudi Arabia", NP: "Nepal", LK: "Sri Lanka", DE: "Germany",
+          FR: "France", BR: "Brazil", NG: "Nigeria", ID: "Indonesia",
+          PH: "Philippines", MY: "Malaysia", SG: "Singapore", JP: "Japan"
+        };
+        detectedCountry = names[detectedCountryCode] || detectedCountryCode || "Unknown";
+        if (label) label.textContent = detectedCountry;
+      } catch (__) {
+        detectedCountry = profile.country || "Unknown";
+        if (label) label.textContent = detectedCountry;
+      }
     }
+  }
 
-
-    /* =====================================================
-       FIREBASE
-    ===================================================== */
-
-    function getCurrentUser() {
-
-        if (
-            typeof firebase !== "undefined" &&
-            firebase.auth
-        ) {
-
-            return firebase.auth()
-                .currentUser;
+  /* ---- Social normalize: handle or full URL → clean handle + canonical URL ---- */
+  function stripHandle(raw) {
+    raw = String(raw || "").trim();
+    if (!raw) return "";
+    raw = raw.replace(/^@/, "");
+    try {
+      if (/^https?:\/\//i.test(raw)) {
+        var u = new URL(raw);
+        var path = (u.pathname || "").replace(/^\/+|\/+$/g, "");
+        if (/youtube\.com/i.test(u.hostname)) {
+          path = path.replace(/^(c|channel|user|@)\//, "").replace(/^@/, "");
         }
+        if (/linkedin\.com/i.test(u.hostname)) {
+          path = path.replace(/^(in|company)\//, "");
+        }
+        if (/facebook\.com|fb\.com/i.test(u.hostname)) {
+          path = path.replace(/^profile\.php.*/, "").split("/")[0];
+        }
+        return path.split("/")[0] || raw;
+      }
+    } catch (_) {}
+    return raw.replace(/\s+/g, "");
+  }
 
-        return null;
+  function buildSocialUrl(platform, handleOrUrl) {
+    var raw = String(handleOrUrl || "").trim();
+    if (!raw) return "";
+    if (/^https?:\/\//i.test(raw)) return raw;
+    var h = stripHandle(raw);
+    if (!h) return "";
+    switch (platform) {
+      case "instagram":
+        return "https://instagram.com/" + encodeURIComponent(h);
+      case "facebook":
+        return "https://facebook.com/" + encodeURIComponent(h);
+      case "x":
+        return "https://x.com/" + encodeURIComponent(h);
+      case "youtube":
+        return h.indexOf("UC") === 0
+          ? "https://youtube.com/channel/" + encodeURIComponent(h)
+          : "https://youtube.com/@" + encodeURIComponent(h.replace(/^@/, ""));
+      case "linkedin":
+        return "https://linkedin.com/in/" + encodeURIComponent(h);
+      case "pinterest":
+        return "https://pinterest.com/" + encodeURIComponent(h);
+      default:
+        return raw;
     }
+  }
 
+  function readSocialsFromForm() {
+    var out = {};
+    SOCIAL_KEYS.forEach(function (k) {
+      var el = $("social_" + k);
+      var val = el ? (el.value || "").trim() : "";
+      if (val) {
+        out[k] = {
+          handle: stripHandle(val),
+          url: buildSocialUrl(k, val)
+        };
+      }
+    });
+    return out;
+  }
 
-    function getDatabase() {
+  function fillForm(p) {
+    profile = p || {};
+    var name =
+      profile.name ||
+      profile.fullName ||
+      profile.displayName ||
+      (user && user.displayName) ||
+      "";
+    var uname = String(
+      profile.username || profile.userName || ""
+    ).replace(/^@/, "");
+    var bio = profile.bio || "";
+    var web = profile.website || profile.link || "";
 
-        if (
-            typeof db !== "undefined" &&
-            db
-        ) {
+    $("nameInput").value = name;
+    $("usernameInput").value = uname;
+    $("bioInput").value = bio;
+    $("websiteInput").value = web;
+    $("bioCount").textContent = String(bio.length);
 
-            return db;
-        }
-
-        if (
-            typeof firebase !== "undefined" &&
-            firebase.database
-        ) {
-
-            return firebase.database();
-        }
-
-        return null;
+    var socials = profile.socials || profile.socialLinks || {};
+    if (typeof socials === "string") {
+      try {
+        socials = JSON.parse(socials) || {};
+      } catch (_) {
+        socials = {};
+      }
     }
-
-
-    /* =====================================================
-       NORMALIZATION
-    ===================================================== */
-
-    function normalizeUsername(value) {
-
-        return String(value || "")
-            .trim()
-            .toLowerCase()
-            .replace(/^@+/, "")
-            .replace(/\s+/g, "");
-    }
-
-
-    function normalizeProfileURL(value) {
-
-        return String(value || "")
-            .trim()
-            .toLowerCase()
-            .replace(
-                /^https?:\/\/[^/]+\//i,
-                ""
-            )
-            .replace(/^\/+/, "")
-            .replace(/\s+/g, "-")
-            .replace(
-                /[^a-z0-9._-]/g,
-                ""
-            )
-            .substring(0, 40);
-    }
-
-
-    /* =====================================================
-       COUNTERS
-    ===================================================== */
-
-    function updateCounters() {
-
-        if (
-            nameCounter &&
-            nameInput
-        ) {
-
-            nameCounter.textContent =
-                `${nameInput.value.length}/50`;
-        }
-
-
-        if (
-            usernameCounter &&
-            usernameInput
-        ) {
-
-            usernameCounter.textContent =
-                `${usernameInput.value.length}/30`;
-        }
-
-
-        if (
-            bioCounter &&
-            bioInput
-        ) {
-
-            bioCounter.textContent =
-                `${bioInput.value.length}/160`;
-        }
-    }
-
-
-    /* =====================================================
-       LIVE PREVIEW
-    ===================================================== */
-
-    function updatePreview() {
-
-        const name =
-            nameInput?.value.trim() ||
-            "Your Name";
-
-
-        const username =
-            normalizeUsername(
-                usernameInput?.value
-            ) ||
-            "username";
-
-
-        const bio =
-            bioInput?.value.trim() ||
-            "Your bio will appear here";
-
-
-        const profileURL =
-            normalizeProfileURL(
-                profileUrlInput?.value
-            ) ||
-            username;
-
-
-        if (previewName) {
-
-            previewName.textContent =
-                name;
-        }
-
-
-        if (previewUsername) {
-
-            previewUsername.textContent =
-                `@${username}`;
-        }
-
-
-        if (previewBio) {
-
-            previewBio.textContent =
-                bio;
-        }
-
-
-        if (profileUrlPreview) {
-
-            profileUrlPreview.textContent =
-                profileURL;
-        }
-
-
-        if (publicProfileLink) {
-
-            publicProfileLink.textContent =
-                `viewora.app/${profileURL}`;
-        }
-
-
-        updateCounters();
-    }
-
-
-    /* =====================================================
-       PROFILE PHOTO SELECT
-    ===================================================== */
-
-    if (profilePhotoButton) {
-
-        profilePhotoButton.addEventListener(
-            "click",
-            () => {
-
-                if (profilePhotoInput) {
-
-                    profilePhotoInput.click();
-                }
-            }
-        );
-    }
-
-
-    if (profilePhotoInput) {
-
-        profilePhotoInput.addEventListener(
-            "change",
-            event => {
-
-                const file =
-                    event.target.files?.[0];
-
-                if (!file) return;
-
-
-                if (!file.type.startsWith("image/")) {
-
-                    showToast(
-                        "Please select an image.",
-                        "error"
-                    );
-
-                    profilePhotoInput.value = "";
-
-                    return;
-                }
-
-
-                if (
-                    file.size >
-                    10 * 1024 * 1024
-                ) {
-
-                    showToast(
-                        "Profile photo must be under 10 MB.",
-                        "error"
-                    );
-
-                    profilePhotoInput.value = "";
-
-                    return;
-                }
-
-
-                selectedProfileFile =
-                    file;
-
-
-                const reader =
-                    new FileReader();
-
-
-                reader.onload =
-                    e => {
-
-                        if (profilePreview) {
-
-                            profilePreview.src =
-                                e.target.result;
-                        }
-                    };
-
-
-                reader.readAsDataURL(file);
-            }
-        );
-    }
-
-
-    /* =====================================================
-       BANNER SELECT
-    ===================================================== */
-
-    if (bannerArea) {
-
-        bannerArea.addEventListener(
-            "click",
-            () => {
-
-                if (bannerInput) {
-
-                    bannerInput.click();
-                }
-            }
-        );
-
-
-        bannerArea.addEventListener(
-            "keydown",
-            event => {
-
-                if (
-                    event.key === "Enter" ||
-                    event.key === " "
-                ) {
-
-                    event.preventDefault();
-
-                    bannerInput?.click();
-                }
-            }
-        );
-    }
-
-
-    if (bannerInput) {
-
-        bannerInput.addEventListener(
-            "change",
-            event => {
-
-                const file =
-                    event.target.files?.[0];
-
-                if (!file) return;
-
-
-                if (!file.type.startsWith("image/")) {
-
-                    showToast(
-                        "Please select an image.",
-                        "error"
-                    );
-
-                    bannerInput.value = "";
-
-                    return;
-                }
-
-
-                if (
-                    file.size >
-                    15 * 1024 * 1024
-                ) {
-
-                    showToast(
-                        "Banner must be under 15 MB.",
-                        "error"
-                    );
-
-                    bannerInput.value = "";
-
-                    return;
-                }
-
-
-                selectedBannerFile =
-                    file;
-
-
-                const reader =
-                    new FileReader();
-
-
-                reader.onload =
-                    e => {
-
-                        if (bannerPreview) {
-
-                            bannerPreview.src =
-                                e.target.result;
-                        }
-                    };
-
-
-                reader.readAsDataURL(file);
-            }
-        );
-    }
-
-
-    /* =====================================================
-       INPUT EVENTS
-    ===================================================== */
-
-    [
-        nameInput,
-        usernameInput,
-        profileUrlInput,
-        bioInput
-    ]
-    .filter(Boolean)
-    .forEach(input => {
-
-        input.addEventListener(
-            "input",
-            updatePreview
-        );
+    SOCIAL_KEYS.forEach(function (k) {
+      var el = $("social_" + k);
+      if (!el) return;
+      var s = socials[k];
+      if (typeof s === "string") el.value = s;
+      else if (s && (s.handle || s.url)) el.value = s.handle || s.url || "";
+      else el.value = profile[k] || "";
     });
 
+    var photo =
+      profile.profilePhoto ||
+      profile.photoURL ||
+      profile.avatar ||
+      (user && user.photoURL) ||
+      "";
+    setAvatar(photo);
 
-    /* =====================================================
-       USERNAME CLEANUP
-    ===================================================== */
+    var cover =
+      profile.coverPhoto ||
+      profile.banner ||
+      profile.cover ||
+      "";
+    setBanner(cover);
 
-    if (usernameInput) {
+    detectCountry();
+  }
 
-        usernameInput.addEventListener(
-            "input",
-            () => {
-
-                usernameInput.value =
-                    usernameInput.value
-                        .replace(/\s/g, "")
-                        .replace(
-                            /[^a-zA-Z0-9._]/g,
-                            ""
-                        );
-
-                updatePreview();
-            }
-        );
+  function setAvatar(url) {
+    var img = $("avatarImg");
+    var fb = $("avatarFb");
+    if (url) {
+      img.style.display = "block";
+      img.src = url;
+      fb.style.display = "none";
+    } else {
+      img.style.display = "none";
+      fb.style.display = "grid";
+      var letter = (
+        ($("nameInput").value || $("usernameInput").value || "V")[0] || "V"
+      ).toUpperCase();
+      fb.textContent = letter;
     }
+  }
 
-
-    /* =====================================================
-       PROFILE URL CLEANUP
-    ===================================================== */
-
-    if (profileUrlInput) {
-
-        profileUrlInput.addEventListener(
-            "input",
-            () => {
-
-                profileUrlInput.value =
-                    normalizeProfileURL(
-                        profileUrlInput.value
-                    );
-
-                updatePreview();
-            }
-        );
+  function setBanner(url) {
+    var img = $("bannerImg");
+    if (!img) return;
+    if (url) {
+      img.src = url;
+      img.style.opacity = "1";
+    } else {
+      img.src = "assets/default-banner.jpg";
     }
+  }
 
+  function updateBioCount() {
+    $("bioCount").textContent = String(($("bioInput").value || "").length);
+  }
 
-    /* =====================================================
-       USERNAME VALIDATION
-    ===================================================== */
-
-    function validateUsername(
-        username
-    ) {
-
-        if (!username) {
-
-            return {
-                valid: false,
-                message:
-                    "Username is required."
-            };
-        }
-
-
-        if (username.length < 3) {
-
-            return {
-                valid: false,
-                message:
-                    "Minimum 3 characters."
-            };
-        }
-
-
-        if (username.length > 30) {
-
-            return {
-                valid: false,
-                message:
-                    "Maximum 30 characters."
-            };
-        }
-
-
-        if (
-            !/^[a-zA-Z0-9._]+$/.test(
-                username
-            )
-        ) {
-
-            return {
-                valid: false,
-                message:
-                    "Only letters, numbers, dots and underscores."
-            };
-        }
-
-
-        return {
-            valid: true,
-            message:
-                "Valid username"
-        };
+  function scheduleUsernameCheck() {
+    clearTimeout(usernameCheckTimer);
+    var hint = $("usernameHint");
+    var raw = ($("usernameInput").value || "")
+      .trim()
+      .replace(/^@/, "")
+      .toLowerCase();
+    if (!raw) {
+      usernameOk = false;
+      hint.textContent = "Username required";
+      hint.className = "hint error";
+      return;
     }
-
-
-    function setUsernameStatus(
-        message,
-        valid
-    ) {
-
-        if (!usernameStatus) return;
-
-        usernameStatus.textContent =
-            message;
-
-        usernameStatus.classList.remove(
-            "valid",
-            "invalid"
-        );
-
-        usernameStatus.classList.add(
-            valid
-                ? "valid"
-                : "invalid"
-        );
+    if (!/^[a-z0-9_]{3,30}$/.test(raw)) {
+      usernameOk = false;
+      hint.textContent = "3–30 chars: letters, numbers, underscores only";
+      hint.className = "hint error";
+      return;
     }
-
-
-    /* =====================================================
-       CHECK USERNAME
-    ===================================================== */
-
-    async function checkUsernameAvailable(
-        username
-    ) {
-
-        if (
-            username ===
-            originalUsername
-        ) {
-
-            return true;
+    var current = String(profile.username || profile.userName || "")
+      .toLowerCase()
+      .replace(/^@/, "");
+    if (raw === current) {
+      usernameOk = true;
+      hint.textContent = "Current username";
+      hint.className = "hint ok";
+      return;
+    }
+    hint.textContent = "Checking…";
+    hint.className = "hint";
+    usernameCheckTimer = setTimeout(async function () {
+      if (!db) return;
+      try {
+        var snap = await db.ref("usernames/" + raw).once("value");
+        if (snap.exists() && snap.val() !== (user && user.uid)) {
+          usernameOk = false;
+          hint.textContent = "Username already taken";
+          hint.className = "hint error";
+        } else {
+          usernameOk = true;
+          hint.textContent = "Available";
+          hint.className = "hint ok";
         }
+      } catch (_) {
+        usernameOk = true;
+        hint.textContent = "Could not verify — will check on save";
+        hint.className = "hint";
+      }
+    }, 450);
+  }
 
+  function pickAvatar() {
+    $("avatarInput").click();
+  }
+  function pickBanner() {
+    $("bannerInput").click();
+  }
 
-        const database =
-            getDatabase();
+  function onAvatarPicked(e) {
+    var file = e.target.files && e.target.files[0];
+    if (!file) return;
+    if (!/^image\//.test(file.type)) {
+      toast("Please choose an image");
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      toast("Image must be under 10 MB");
+      return;
+    }
+    avatarFile = file;
+    if (avatarPreviewUrl) {
+      try {
+        URL.revokeObjectURL(avatarPreviewUrl);
+      } catch (_) {}
+    }
+    avatarPreviewUrl = URL.createObjectURL(file);
+    setAvatar(avatarPreviewUrl);
+  }
 
+  function onBannerPicked(e) {
+    var file = e.target.files && e.target.files[0];
+    if (!file) return;
+    if (!/^image\//.test(file.type)) {
+      toast("Please choose an image");
+      return;
+    }
+    if (file.size > 12 * 1024 * 1024) {
+      toast("Banner must be under 12 MB");
+      return;
+    }
+    bannerFile = file;
+    if (bannerPreviewUrl) {
+      try {
+        URL.revokeObjectURL(bannerPreviewUrl);
+      } catch (_) {}
+    }
+    bannerPreviewUrl = URL.createObjectURL(file);
+    setBanner(bannerPreviewUrl);
+  }
 
-        if (!database) {
-
-            return true;
-        }
-
-
+  function compressImage(file, maxSide, quality) {
+    return new Promise(function (resolve, reject) {
+      var img = new Image();
+      var url = URL.createObjectURL(file);
+      img.onload = function () {
         try {
-
-            const snapshot =
-                await database
-                    .ref("users")
-                    .orderByChild(
-                        "username"
-                    )
-                    .equalTo(username)
-                    .once("value");
-
-
-            if (!snapshot.exists()) {
-
-                return true;
-            }
-
-
-            let foundOtherUser =
-                false;
-
-
-            snapshot.forEach(
-                child => {
-
-                    if (
-                        child.key !==
-                        currentUID
-                    ) {
-
-                        foundOtherUser =
-                            true;
-                    }
-                }
-            );
-
-
-            return !foundOtherUser;
-
-        } catch (error) {
-
-            console.error(
-                "Username check error:",
-                error
-            );
-
-            return true;
-        }
-    }
-
-
-    let usernameCheckTimer =
-        null;
-
-
-    if (usernameInput) {
-
-        usernameInput.addEventListener(
-            "blur",
-            async () => {
-
-                const username =
-                    normalizeUsername(
-                        usernameInput.value
-                    );
-
-
-                const result =
-                    validateUsername(
-                        username
-                    );
-
-
-                if (!result.valid) {
-
-                    setUsernameStatus(
-                        result.message,
-                        false
-                    );
-
-                    return;
-                }
-
-
-                setUsernameStatus(
-                    "Checking...",
-                    true
-                );
-
-
-                clearTimeout(
-                    usernameCheckTimer
-                );
-
-
-                usernameCheckTimer =
-                    setTimeout(
-                        async () => {
-
-                            const available =
-                                await checkUsernameAvailable(
-                                    username
-                                );
-
-
-                            if (available) {
-
-                                setUsernameStatus(
-                                    "✓ Available",
-                                    true
-                                );
-
-                            } else {
-
-                                setUsernameStatus(
-                                    "✕ Username already taken",
-                                    false
-                                );
-                            }
-
-                        },
-                        250
-                    );
-            }
+          URL.revokeObjectURL(url);
+        } catch (_) {}
+        var w = img.width;
+        var h = img.height;
+        var scale = Math.min(1, maxSide / Math.max(w, h));
+        w = Math.round(w * scale);
+        h = Math.round(h * scale);
+        var canvas = document.createElement("canvas");
+        canvas.width = w;
+        canvas.height = h;
+        var ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, w, h);
+        canvas.toBlob(
+          function (blob) {
+            if (!blob) return reject(new Error("Compress failed"));
+            resolve(blob);
+          },
+          "image/jpeg",
+          quality
         );
-    }
-
-
-    /* =====================================================
-       LOAD PROFILE
-    ===================================================== */
-
-    async function loadProfile() {
-
-        const user =
-            getCurrentUser();
-
-
-        if (!user) {
-
-            showToast(
-                "Please login first.",
-                "error"
-            );
-
-
-            setTimeout(
-                () => {
-
-                    location.href =
-                        "login.html";
-
-                },
-                1000
-            );
-
-            return;
-        }
-
-
-        currentUID =
-            user.uid;
-
-
-        const database =
-            getDatabase();
-
-
-        if (!database) {
-
-            showToast(
-                "Firebase database unavailable.",
-                "error"
-            );
-
-            return;
-        }
-
-
+      };
+      img.onerror = function () {
         try {
+          URL.revokeObjectURL(url);
+        } catch (_) {}
+        reject(new Error("Invalid image"));
+      };
+      img.src = url;
+    });
+  }
 
-            const snapshot =
-                await database
-                    .ref(
-                        `users/${currentUID}`
-                    )
-                    .once("value");
+  async function uploadImage(file, folder, uid, maxSide) {
+    if (!file || !storage) return null;
+    var blob = await compressImage(file, maxSide || 720, 0.82);
+    var path = folder + "/" + uid + "/" + Date.now() + ".jpg";
+    var ref = storage.ref(path);
+    await ref.put(blob, { contentType: "image/jpeg" });
+    return await ref.getDownloadURL();
+  }
 
+  async function save() {
+    if (!user || !db) {
+      toast("Login required");
+      return;
+    }
+    var name = ($("nameInput").value || "").trim().slice(0, 50);
+    var uname = ($("usernameInput").value || "")
+      .trim()
+      .replace(/^@/, "")
+      .toLowerCase()
+      .slice(0, 30);
+    var bio = ($("bioInput").value || "").trim().slice(0, 150);
+    var website = ($("websiteInput").value || "").trim().slice(0, 160);
+    if (website && !/^https?:\/\//i.test(website)) {
+      website = "https://" + website;
+    }
+    var socials = readSocialsFromForm();
 
-            currentProfile =
-                snapshot.val() || {};
-
-
-            fillProfile(
-                currentProfile,
-                user
-            );
-
-
-            console.log(
-                "✅ Profile loaded"
-            );
-
-        } catch (error) {
-
-            console.error(
-                "Profile loading error:",
-                error
-            );
-
-
-            showToast(
-                "Unable to load profile.",
-                "error"
-            );
-        }
+    if (!name) {
+      toast("Name is required");
+      $("nameInput").focus();
+      return;
+    }
+    if (!/^[a-z0-9_]{3,30}$/.test(uname)) {
+      toast("Invalid username");
+      $("usernameInput").focus();
+      return;
+    }
+    if (!usernameOk) {
+      toast("Choose an available username");
+      $("usernameInput").focus();
+      return;
     }
 
+    setLoading(true);
+    try {
+      var oldUname = String(profile.username || profile.userName || "")
+        .toLowerCase()
+        .replace(/^@/, "");
 
-    /* =====================================================
-       FILL PROFILE
-    ===================================================== */
-
-    function fillProfile(
-        profile,
-        user
-    ) {
-
-        const name =
-            profile.name ||
-            profile.fullName ||
-            user.displayName ||
-            "";
-
-
-        const username =
-            normalizeUsername(
-                profile.username ||
-                profile.userName ||
-                ""
-            );
-
-
-        const profileURL =
-            normalizeProfileURL(
-                profile.profileUrl ||
-                profile.profileURL ||
-                profile.slug ||
-                username
-            );
-
-
-        const gender =
-            profile.gender ||
-            "";
-
-
-        const bio =
-            profile.bio ||
-            "";
-
-
-        originalUsername =
-            username;
-
-
-        if (nameInput) {
-
-            nameInput.value =
-                name;
+      if (uname !== oldUname) {
+        var taken = await db.ref("usernames/" + uname).once("value");
+        if (taken.exists() && taken.val() !== user.uid) {
+          toast("Username already taken");
+          usernameOk = false;
+          $("usernameHint").textContent = "Username already taken";
+          $("usernameHint").className = "hint error";
+          setLoading(false);
+          return;
         }
+      }
 
-
-        if (usernameInput) {
-
-            usernameInput.value =
-                username;
-        }
-
-
-        if (profileUrlInput) {
-
-            profileUrlInput.value =
-                profileURL;
-        }
-
-
-        if (genderInput) {
-
-            genderInput.value =
-                gender;
-        }
-
-
-        if (bioInput) {
-
-            bioInput.value =
-                bio;
-        }
-
-
-        const photo =
-            profile.profilePhoto ||
-            profile.profilePhotoURL ||
-            profile.photoURL ||
-            profile.avatar ||
-            user.photoURL ||
-            DEFAULT_AVATAR;
-
-
-        const banner =
-            profile.banner ||
-            profile.bannerUrl ||
-            profile.bannerURL ||
-            profile.coverPhoto ||
-            profile.coverPhotoURL ||
-            DEFAULT_BANNER;
-
-
-        if (profilePreview) {
-
-            profilePreview.src =
-                photo;
-        }
-
-
-        if (bannerPreview) {
-
-            bannerPreview.src =
-                banner;
-        }
-
-
-        updatePreview();
-    }
-
-
-    /* =====================================================
-       CLOUDINARY UPLOAD
-    ===================================================== */
-
-    async function uploadToCloudinary(
-        file,
-        folder
-    ) {
-
-        if (!file) {
-
-            return null;
-        }
-
-
-        if (!CLOUDINARY_CLOUD_NAME) {
-
-            throw new Error(
-                "Cloudinary cloud name is missing."
-            );
-        }
-
-
-        if (!CLOUDINARY_UPLOAD_PRESET) {
-
-            throw new Error(
-                "Cloudinary upload preset is missing."
-            );
-        }
-
-
-        const formData =
-            new FormData();
-
-
-        formData.append(
-            "file",
-            file
-        );
-
-
-        formData.append(
-            "upload_preset",
-            CLOUDINARY_UPLOAD_PRESET
-        );
-
-
-        if (folder) {
-
-            formData.append(
-                "folder",
-                folder
-            );
-        }
-
-
-        const response =
-            await fetch(
-                CLOUDINARY_UPLOAD_URL,
-                {
-                    method: "POST",
-                    body: formData
-                }
-            );
-
-
-        let data = {};
-
+      var photoURL = null;
+      var coverURL = null;
+      if (avatarFile) {
         try {
-
-            data =
-                await response.json();
-
-        } catch (error) {
-
-            console.error(
-                "Cloudinary response parse error:",
-                error
-            );
+          photoURL = await uploadImage(avatarFile, "avatars", user.uid, 720);
+        } catch (upErr) {
+          console.warn("Avatar upload failed", upErr);
+          toast("Photo upload failed — saving other fields");
         }
-
-
-        if (!response.ok) {
-
-            console.error(
-                "Cloudinary error:",
-                data
-            );
-
-
-            const message =
-                data?.error?.message ||
-                "Cloudinary upload failed.";
-
-
-            throw new Error(
-                message
-            );
-        }
-
-
-        if (!data.secure_url) {
-
-            throw new Error(
-                "Cloudinary did not return an image URL."
-            );
-        }
-
-
-        console.log(
-            "✅ Cloudinary upload successful:",
-            data.secure_url
-        );
-
-
-        return data.secure_url;
-    }
-
-
-    /* =====================================================
-       SAVE PROFILE
-    ===================================================== */
-
-    async function saveProfile() {
-
-        if (saving) return;
-
-
-        const user =
-            getCurrentUser();
-
-
-        if (!user) {
-
-            showToast(
-                "Please login first.",
-                "error"
-            );
-
-            return;
-        }
-
-
-        const database =
-            getDatabase();
-
-
-        if (!database) {
-
-            showToast(
-                "Firebase database unavailable.",
-                "error"
-            );
-
-            return;
-        }
-
-
-        const name =
-            nameInput?.value.trim() ||
-            "";
-
-
-        const username =
-            normalizeUsername(
-                usernameInput?.value
-            );
-
-
-        const profileURL =
-            normalizeProfileURL(
-                profileUrlInput?.value
-            ) ||
-            username;
-
-
-        const gender =
-            genderInput?.value ||
-            "";
-
-
-        const bio =
-            bioInput?.value.trim() ||
-            "";
-
-
-        /* =================================================
-           VALIDATION
-        ================================================= */
-
-        if (!name) {
-
-            showToast(
-                "Please enter your name.",
-                "error"
-            );
-
-            nameInput?.focus();
-
-            return;
-        }
-
-
-        const usernameValidation =
-            validateUsername(
-                username
-            );
-
-
-        if (
-            !usernameValidation.valid
-        ) {
-
-            showToast(
-                usernameValidation.message,
-                "error"
-            );
-
-            usernameInput?.focus();
-
-            return;
-        }
-
-
-        if (!profileURL) {
-
-            showToast(
-                "Please enter a profile URL.",
-                "error"
-            );
-
-            profileUrlInput?.focus();
-
-            return;
-        }
-
-
-        if (
-            !/^[a-zA-Z0-9._-]+$/.test(
-                profileURL
-            )
-        ) {
-
-            showToast(
-                "Invalid profile URL.",
-                "error"
-            );
-
-            profileUrlInput?.focus();
-
-            return;
-        }
-
-
-        saving = true;
-
-
-        if (saveProfileBtn) {
-
-            saveProfileBtn.disabled =
-                true;
-        }
-
-
-        if (saveTopBtn) {
-
-            saveTopBtn.disabled =
-                true;
-        }
-
-
+      }
+      if (bannerFile) {
         try {
-
-            showLoading(
-                "Saving profile",
-                "Preparing your changes..."
-            );
-
-
-            /* =============================================
-               USERNAME CHECK
-            ============================================= */
-
-            const usernameAvailable =
-                await checkUsernameAvailable(
-                    username
-                );
-
-
-            if (!usernameAvailable) {
-
-                throw new Error(
-                    "This username is already taken."
-                );
-            }
-
-
-            /* =============================================
-               CURRENT IMAGE URLS
-            ============================================= */
-
-            let profilePhotoURL =
-                currentProfile.profilePhoto ||
-                currentProfile.profilePhotoURL ||
-                currentProfile.photoURL ||
-                currentProfile.avatar ||
-                user.photoURL ||
-                DEFAULT_AVATAR;
-
-
-            let bannerURL =
-                currentProfile.banner ||
-                currentProfile.bannerUrl ||
-                currentProfile.bannerURL ||
-                currentProfile.coverPhoto ||
-                currentProfile.coverPhotoURL ||
-                DEFAULT_BANNER;
-
-
-            /* =============================================
-               PROFILE PHOTO UPLOAD
-            ============================================= */
-
-            if (selectedProfileFile) {
-
-                showLoading(
-                    "Uploading profile photo",
-                    "Uploading image to Cloudinary..."
-                );
-
-
-                const uploadedPhoto =
-                    await uploadToCloudinary(
-                        selectedProfileFile,
-                        `viewora/users/${currentUID}/profile`
-                    );
-
-
-                if (uploadedPhoto) {
-
-                    profilePhotoURL =
-                        uploadedPhoto;
-                }
-            }
-
-
-            /* =============================================
-               BANNER UPLOAD
-            ============================================= */
-
-            if (selectedBannerFile) {
-
-                showLoading(
-                    "Uploading banner",
-                    "Uploading banner to Cloudinary..."
-                );
-
-
-                const uploadedBanner =
-                    await uploadToCloudinary(
-                        selectedBannerFile,
-                        `viewora/users/${currentUID}/banner`
-                    );
-
-
-                if (uploadedBanner) {
-
-                    bannerURL =
-                        uploadedBanner;
-                }
-            }
-
-
-            /* =============================================
-               SAVE FIREBASE DATABASE
-            ============================================= */
-
-            showLoading(
-                "Saving profile",
-                "Updating your Viewora profile..."
-            );
-
-
-            const now =
-                firebase.database
-                    .ServerValue
-                    .TIMESTAMP;
-
-
-            const profileData = {
-
-                ...currentProfile,
-
-                uid:
-                    currentUID,
-
-                name:
-                    name,
-
-                fullName:
-                    name,
-
-                username:
-                    username,
-
-                profileUrl:
-                    profileURL,
-
-                profileURL:
-                    profileURL,
-
-                slug:
-                    profileURL,
-
-                gender:
-                    gender,
-
-                bio:
-                    bio,
-
-                profilePhoto:
-                    profilePhotoURL,
-
-                profilePhotoURL:
-                    profilePhotoURL,
-
-                photoURL:
-                    profilePhotoURL,
-
-                avatar:
-                    profilePhotoURL,
-
-                banner:
-                    bannerURL,
-
-                bannerUrl:
-                    bannerURL,
-
-                bannerURL:
-                    bannerURL,
-
-                coverPhoto:
-                    bannerURL,
-
-                coverPhotoURL:
-                    bannerURL,
-
-                updatedAt:
-                    now
-            };
-
-
-            await database
-                .ref(
-                    `users/${currentUID}`
-                )
-                .update(
-                    profileData
-                );
-
-
-            /* =============================================
-               PROFILE URL INDEX
-            ============================================= */
-
-            await database
-                .ref(
-                    `profileUrls/${profileURL}`
-                )
-                .set({
-
-                    uid:
-                        currentUID,
-
-                    username:
-                        username,
-
-                    updatedAt:
-                        now
-                });
-
-
-            /* =============================================
-               USERNAME INDEX
-            ============================================= */
-
-            await database
-                .ref(
-                    `usernames/${username}`
-                )
-                .set(
-                    currentUID
-                );
-
-
-            /* =============================================
-               UPDATE LOCAL STATE
-            ============================================= */
-
-            currentProfile = {
-                ...profileData
-            };
-
-
-            originalUsername =
-                username;
-
-
-            selectedProfileFile =
-                null;
-
-
-            selectedBannerFile =
-                null;
-
-
-            if (profilePhotoInput) {
-
-                profilePhotoInput.value =
-                    "";
-            }
-
-
-            if (bannerInput) {
-
-                bannerInput.value =
-                    "";
-            }
-
-
-            hideLoading();
-
-
-            showToast(
-                "Profile updated successfully!"
-            );
-
-
-            /* =============================================
-               REDIRECT
-            ============================================= */
-
-            setTimeout(
-                () => {
-
-                    location.href =
-                        `profile.html?uid=${encodeURIComponent(
-                            currentUID
-                        )}`;
-
-                },
-                900
-            );
-
-
-        } catch (error) {
-
-            console.error(
-                "❌ Save profile error:",
-                error
-            );
-
-
-            hideLoading();
-
-
-            showToast(
-                error.message ||
-                "Unable to save profile.",
-                "error"
-            );
-
-        } finally {
-
-            saving = false;
-
-
-            if (saveProfileBtn) {
-
-                saveProfileBtn.disabled =
-                    false;
-            }
-
-
-            if (saveTopBtn) {
-
-                saveTopBtn.disabled =
-                    false;
-            }
+          coverURL = await uploadImage(bannerFile, "banners", user.uid, 1600);
+        } catch (upErr) {
+          console.warn("Banner upload failed", upErr);
+          toast("Banner upload failed — saving other fields");
         }
+      }
+
+      if (!detectedCountry) await detectCountry();
+
+      var patch = {
+        name: name,
+        fullName: name,
+        displayName: name,
+        username: uname,
+        userName: uname,
+        bio: bio,
+        website: website || null,
+        link: website || null,
+        socials: socials,
+        country: detectedCountry || profile.country || null,
+        countryCode: detectedCountryCode || profile.countryCode || null,
+        location: detectedCountry || profile.location || null,
+        updatedAt: Date.now()
+      };
+      if (photoURL) {
+        patch.profilePhoto = photoURL;
+        patch.photoURL = photoURL;
+        patch.avatar = photoURL;
+      }
+      if (coverURL) {
+        patch.coverPhoto = coverURL;
+        patch.banner = coverURL;
+        patch.cover = coverURL;
+      }
+
+      var updates = {};
+      Object.keys(patch).forEach(function (k) {
+        updates["users/" + user.uid + "/" + k] = patch[k];
+      });
+      updates["usernames/" + uname] = user.uid;
+      if (oldUname && oldUname !== uname) {
+        updates["usernames/" + oldUname] = null;
+      }
+
+      await db.ref().update(updates);
+
+      try {
+        var authPatch = { displayName: name };
+        if (photoURL) authPatch.photoURL = photoURL;
+        await user.updateProfile(authPatch);
+      } catch (_) {}
+
+      try {
+        if (photoURL) localStorage.setItem("viewora_my_avatar", photoURL);
+        localStorage.setItem("viewora_my_name", name);
+        localStorage.setItem("viewora_my_username", uname);
+      } catch (_) {}
+
+      profile = Object.assign(profile, patch);
+      avatarFile = null;
+      bannerFile = null;
+      toast("Profile updated");
+      setTimeout(function () {
+        if (history.length > 1) history.back();
+        else location.href = "profile.html";
+      }, 600);
+    } catch (e) {
+      console.error(e);
+      toast(e.message || "Could not save");
+    } finally {
+      setLoading(false);
     }
+  }
 
+  function wire() {
+    $("backBtn").addEventListener("click", function () {
+      if (history.length > 1) history.back();
+      else location.href = "settings.html";
+    });
+    $("saveBtn").addEventListener("click", save);
+    $("avatarCam").addEventListener("click", pickAvatar);
+    $("changePhotoBtn").addEventListener("click", pickAvatar);
+    $("avatarInput").addEventListener("change", onAvatarPicked);
+    $("bannerCam").addEventListener("click", pickBanner);
+    $("bannerInput").addEventListener("change", onBannerPicked);
+    $("bioInput").addEventListener("input", updateBioCount);
+    $("usernameInput").addEventListener("input", scheduleUsernameCheck);
+    $("usernameInput").addEventListener("blur", scheduleUsernameCheck);
+  }
 
-    /* =====================================================
-       SAVE BUTTONS
-    ===================================================== */
-
-    if (saveProfileBtn) {
-
-        saveProfileBtn.addEventListener(
-            "click",
-            saveProfile
-        );
+  function boot() {
+    wire();
+    try {
+      auth = firebase.auth();
+      db = firebase.database();
+      if (typeof firebase.storage === "function") {
+        storage = firebase.storage();
+      }
+    } catch (e) {
+      console.warn(e);
+      toast("Firebase not available");
+      return;
     }
-
-
-    if (saveTopBtn) {
-
-        saveTopBtn.addEventListener(
-            "click",
-            saveProfile
-        );
-    }
-
-
-    /* =====================================================
-       COPY PROFILE URL
-    ===================================================== */
-
-    if (copyProfileUrl) {
-
-        copyProfileUrl.addEventListener(
-            "click",
-            async () => {
-
-                const slug =
-                    normalizeProfileURL(
-                        profileUrlInput?.value
-                    ) ||
-                    normalizeUsername(
-                        usernameInput?.value
-                    );
-
-
-                const url =
-                    `${location.origin}/profile.html?user=${encodeURIComponent(
-                        slug
-                    )}`;
-
-
-                try {
-
-                    await navigator.clipboard
-                        .writeText(url);
-
-
-                    showToast(
-                        "Profile link copied!"
-                    );
-
-                } catch (error) {
-
-                    const textarea =
-                        document.createElement(
-                            "textarea"
-                        );
-
-
-                    textarea.value =
-                        url;
-
-
-                    textarea.style.position =
-                        "fixed";
-
-                    textarea.style.opacity =
-                        "0";
-
-
-                    document.body.appendChild(
-                        textarea
-                    );
-
-
-                    textarea.select();
-
-
-                    document.execCommand(
-                        "copy"
-                    );
-
-
-                    textarea.remove();
-
-
-                    showToast(
-                        "Profile link copied!"
-                    );
-                }
-            }
-        );
-    }
-
-
-    /* =====================================================
-       BACK BUTTON
-    ===================================================== */
-
-    if (backBtn) {
-
-        backBtn.addEventListener(
-            "click",
-            () => {
-
-                if (
-                    document.referrer &&
-                    document.referrer.includes(
-                        location.hostname
-                    )
-                ) {
-
-                    history.back();
-
-                } else {
-
-                    location.href =
-                        "profile.html";
-                }
-            }
-        );
-    }
-
-
-    /* =====================================================
-       BEFORE LEAVING
-    ===================================================== */
-
-    window.addEventListener(
-        "beforeunload",
-        event => {
-
-            if (
-                selectedProfileFile ||
-                selectedBannerFile
-            ) {
-
-                event.preventDefault();
-
-                event.returnValue = "";
-            }
-        }
-    );
-
-
-    /* =====================================================
-       FIREBASE AUTH READY
-    ===================================================== */
-
-    function waitForAuth() {
-
-        if (
-            typeof firebase === "undefined" ||
-            !firebase.auth
-        ) {
-
-            setTimeout(
-                waitForAuth,
-                300
-            );
-
-            return;
-        }
-
-
-        firebase
-            .auth()
-            .onAuthStateChanged(
-                user => {
-
-                    if (user) {
-
-                        loadProfile();
-
-                    } else {
-
-                        location.href =
-                            "login.html";
-                    }
-                }
-            );
-    }
-
-
-    /* =====================================================
-       START
-    ===================================================== */
-
-    waitForAuth();
-
-
-    console.log(
-        "✅ Viewora Edit Profile JS Ready"
-    );
-
-});
+    auth.onAuthStateChanged(function (u) {
+      if (!u) {
+        toast("Login required");
+        setTimeout(function () {
+          location.href = "index.html";
+        }, 800);
+        return;
+      }
+      user = u;
+      db.ref("users/" + u.uid)
+        .once("value")
+        .then(function (snap) {
+          fillForm(snap.val() || {});
+        })
+        .catch(function () {
+          fillForm({});
+        });
+    });
+  }
+
+  if (window.firebase && firebase.apps && firebase.apps.length) boot();
+  else setTimeout(boot, 150);
+})();
