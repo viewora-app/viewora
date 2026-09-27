@@ -93,30 +93,55 @@
        WEBRTC CONFIG
     ====================================================== */
 
-    /* STUN + free public TURN (works across mobile data / NAT).
-       For production scale, replace TURN with your Metered/Twilio credentials. */
-    const RTC_CONFIG = {
-        iceServers: [
+    /* STUN + TURN. Production: set window.VieworaTurnConfig = { urls, username, credential }
+       or localStorage viewora_turn_config JSON before call starts. */
+    function buildRtcConfig() {
+        var servers = [
             {
                 urls: [
                     "stun:stun.l.google.com:19302",
                     "stun:stun1.l.google.com:19302",
                     "stun:stun2.l.google.com:19302",
+                    "stun:stun3.l.google.com:19302",
                     "stun:stun.cloudflare.com:3478"
                 ]
-            },
-            {
+            }
+        ];
+        var custom = null;
+        try {
+            if (window.VieworaTurnConfig && window.VieworaTurnConfig.urls) {
+                custom = window.VieworaTurnConfig;
+            } else {
+                var raw = localStorage.getItem("viewora_turn_config");
+                if (raw) custom = JSON.parse(raw);
+            }
+        } catch (_) {}
+        if (custom && custom.urls) {
+            servers.push({
+                urls: Array.isArray(custom.urls) ? custom.urls : [custom.urls],
+                username: custom.username || "",
+                credential: custom.credential || custom.credentialPassword || ""
+            });
+        } else {
+            // Public openrelay (dev/fallback — rate limited)
+            servers.push({
                 urls: [
                     "turn:openrelay.metered.ca:80",
                     "turn:openrelay.metered.ca:443",
-                    "turn:openrelay.metered.ca:443?transport=tcp"
+                    "turns:openrelay.metered.ca:443"
                 ],
                 username: "openrelayproject",
                 credential: "openrelayproject"
-            }
-        ],
-        iceCandidatePoolSize: 10
-    };
+            });
+        }
+        return {
+            iceServers: servers,
+            iceCandidatePoolSize: 16,
+            iceTransportPolicy: "all",
+            bundlePolicy: "max-bundle"
+        };
+    }
+    var RTC_CONFIG = buildRtcConfig();
 
 
     /* ======================================================
@@ -214,7 +239,8 @@
 
     const RING_TIMEOUT_MS = 45000;
 
-    const MAX_ICE_RESTARTS = 2;
+    const MAX_ICE_RESTARTS = 4;
+    const CALL_PURGE_MS = 45000; // delete signaling after end
 
 
     /* ======================================================
@@ -603,6 +629,9 @@
                 callId
             );
 
+        try {
+            attachCallOnDisconnect();
+        } catch (_) {}
 
         return callRef;
 
@@ -836,6 +865,11 @@
         }
 
 
+        // Rebuild in case TURN config was set after page load
+        try {
+            RTC_CONFIG = buildRtcConfig();
+        } catch (_) {}
+
         peerConnection =
             new RTCPeerConnection(
                 RTC_CONFIG
@@ -1018,6 +1052,16 @@
                     accepted = true;
                     setConnecting(false);
                     setStatus("Connected");
+                    try {
+                        if (db && currentUser) {
+                            db.ref("users/" + currentUser.uid + "/callStatus").set({
+                                busy: true,
+                                callId: callId,
+                                at: Date.now()
+                            });
+                        }
+                        sessionStorage.setItem("viewora_call_busy", "1");
+                    } catch (_) {}
                     startTimer();
                     removeIncomingCall().catch(() => {});
                     try {
@@ -1251,53 +1295,54 @@
         offer
     ) {
 
-        if (
-            offerHandled ||
-            !accepted
-        ) {
-
+        if (!accepted) {
             return;
-
         }
-
 
         if (!offer) {
             return;
         }
 
+        // First offer only once; later offers allowed if iceRestart renegotiation
+        var isRestart = !!(offer.iceRestart) || offerHandled;
+        if (offerHandled && !isRestart) {
+            return;
+        }
 
-        offerHandled =
-            true;
-
+        offerHandled = true;
 
         try {
 
             const peer =
-                createPeerConnection();
+                peerConnection || createPeerConnection();
 
+            // ICE restart: may already have remote description
+            if (peer.signalingState === "stable" && peer.currentRemoteDescription && isRestart) {
+                // Perfect negotiation: set remote offer while stable needs careful handling
+                await peer.setRemoteDescription(
+                    new RTCSessionDescription({ type: offer.type, sdp: offer.sdp })
+                );
+            } else if (!peer.currentRemoteDescription) {
+                await peer.setRemoteDescription(
+                    new RTCSessionDescription({ type: offer.type, sdp: offer.sdp })
+                );
+            } else if (offer.iceRestart) {
+                await peer.setRemoteDescription(
+                    new RTCSessionDescription({ type: offer.type, sdp: offer.sdp })
+                );
+            } else {
+                return;
+            }
 
-            await peer.setRemoteDescription(
-                new RTCSessionDescription(
-                    offer
-                )
-            );
-
-
-            remoteDescriptionSet =
-                true;
-
-
+            remoteDescriptionSet = true;
             await flushPendingICE();
-
 
             const answer =
                 await peer.createAnswer();
 
-
             await peer.setLocalDescription(
                 answer
             );
-
 
             await callRef
                 .child("answer")
@@ -1307,10 +1352,12 @@
                         peer.localDescription.type,
 
                     sdp:
-                        peer.localDescription.sdp
+                        peer.localDescription.sdp,
+
+                    iceRestart: !!offer.iceRestart,
+                    at: Date.now()
 
                 });
-
 
             await updateCall({
 
@@ -1375,61 +1422,36 @@
 
                     if (
                         !answer ||
-                        answerHandled ||
                         !peerConnection
                     ) {
-
                         return;
-
                     }
 
-
+                    // Skip duplicate unless ICE restart answer
+                    if (answerHandled && !answer.iceRestart) {
+                        return;
+                    }
                     if (
-                        peerConnection
-                            .currentRemoteDescription
+                        peerConnection.currentRemoteDescription &&
+                        !answer.iceRestart
                     ) {
-
                         return;
-
                     }
-
 
                     try {
-
-                        answerHandled =
-                            true;
-
-
-                        await peerConnection
-                            .setRemoteDescription(
-                                new RTCSessionDescription(
-                                    answer
-                                )
-                            );
-
-
-                        remoteDescriptionSet =
-                            true;
-
-
+                        answerHandled = true;
+                        await peerConnection.setRemoteDescription(
+                            new RTCSessionDescription({
+                                type: answer.type,
+                                sdp: answer.sdp
+                            })
+                        );
+                        remoteDescriptionSet = true;
                         await flushPendingICE();
-
-
-                        log(
-                            "📥 Answer received."
-                        );
-
+                        log("📥 Answer received.", answer.iceRestart ? "(ICE restart)" : "");
                     } catch (error) {
-
-                        answerHandled =
-                            false;
-
-
-                        logError(
-                            "Answer error:",
-                            error
-                        );
-
+                        answerHandled = false;
+                        logError("Answer error:", error);
                     }
 
                 }
@@ -1837,6 +1859,7 @@
         startRingTimeout();
         requestWakeLock();
         startCallerRingtone();
+        try { setStatus("Calling…"); } catch (_) {}
 
 
         /*
@@ -1995,8 +2018,14 @@
             data.status === "connected";
 
         if (alreadyAccepted) {
-            log("📲 Show Join (gesture required for mic/camera).");
-            showJoinCallScreen();
+            log("📲 Auto-accept (no Join screen).");
+            // Accept is itself a user gesture when navigated from banner Accept
+            try {
+                await acceptCall();
+            } catch (e) {
+                logError("auto accept:", e);
+                showIncoming();
+            }
             return;
         }
 
@@ -2475,12 +2504,72 @@
 
 
         cleanup();
-
+        scheduleCallPurge();
 
         showEnded(
             "Call ended."
         );
 
+    }
+
+    function clearBusyFlag() {
+        try {
+            sessionStorage.removeItem("viewora_call_busy");
+            if (db && currentUser) {
+                db.ref("users/" + currentUser.uid + "/callStatus").remove();
+            }
+        } catch (_) {}
+    }
+
+    function scheduleCallPurge() {
+        clearBusyFlag();
+
+        if (!callId || !db) return;
+        var id = callId;
+        var rid = receiverId || remoteUserId;
+        var cid = callerId || (currentUser && currentUser.uid);
+        // Cancel onDisconnect so clean hangup doesn't get overwritten
+        try {
+            if (callRef) {
+                callRef.onDisconnect().cancel();
+                callRef.child("presence/" + (currentUser && currentUser.uid)).onDisconnect().cancel();
+            }
+        } catch (_) {}
+        try {
+            if (callRef) {
+                callRef.child("candidates").remove().catch(function () {});
+                callRef.child("offer").remove().catch(function () {});
+                callRef.child("answer").remove().catch(function () {});
+            }
+        } catch (_) {}
+        try {
+            if (rid) db.ref("incomingCalls/" + rid + "/" + id).remove().catch(function () {});
+            if (cid) db.ref("incomingCalls/" + cid + "/" + id).remove().catch(function () {});
+            if (currentUser) db.ref("incomingCalls/" + currentUser.uid + "/" + id).remove().catch(function () {});
+        } catch (_) {}
+        setTimeout(function () {
+            try {
+                db.ref("calls/" + id).remove().catch(function () {});
+            } catch (_) {}
+        }, typeof CALL_PURGE_MS === "number" ? CALL_PURGE_MS : 45000);
+    }
+
+    function attachCallOnDisconnect() {
+        if (!callRef || !currentUser) return;
+        try {
+            callRef.child("presence/" + currentUser.uid).onDisconnect().set({
+                online: false,
+                at: firebase.database.ServerValue.TIMESTAMP
+            });
+            callRef.onDisconnect().update({
+                status: "ended",
+                endedBy: currentUser.uid,
+                endedReason: "disconnect",
+                endedAt: firebase.database.ServerValue.TIMESTAMP
+            });
+        } catch (e) {
+            logError("onDisconnect:", e);
+        }
     }
 
 
@@ -2498,28 +2587,59 @@
 
         iceRestartAttempts++;
         log("ICE restart attempt", iceRestartAttempts, reason);
+        setStatus("Reconnecting… (" + iceRestartAttempts + "/" + MAX_ICE_RESTARTS + ")");
 
         try {
-            if (role === "caller" && typeof peerConnection.restartIce === "function") {
-                peerConnection.restartIce();
-                const offer = await peerConnection.createOffer({ iceRestart: true });
+            // Drop stale remote candidates so fresh ICE can form
+            try {
+                if (callRef && currentUser) {
+                    await callRef.child("candidates/" + currentUser.uid).remove();
+                }
+            } catch (_) {}
+            pendingIceCandidates = [];
+
+            if (role === "caller") {
+                if (typeof peerConnection.restartIce === "function") {
+                    peerConnection.restartIce();
+                }
+                const offer = await peerConnection.createOffer({
+                    iceRestart: true,
+                    offerToReceiveAudio: true,
+                    offerToReceiveVideo: callType === "video"
+                });
                 await peerConnection.setLocalDescription(offer);
+                answerHandled = false; // allow new answer
+                await callRef.child("offer").set({
+                    type: offer.type,
+                    sdp: offer.sdp,
+                    iceRestart: true,
+                    at: Date.now()
+                });
                 await updateCall({
-                    offer: {
-                        type: offer.type,
-                        sdp: offer.sdp
-                    },
-                    iceRestartAt: firebase.database.ServerValue.TIMESTAMP
+                    iceRestartAt: firebase.database.ServerValue.TIMESTAMP,
+                    iceRestartAttempt: iceRestartAttempts
                 });
                 return true;
             }
-            // Receiver side: wait for new offer from caller
+            // Receiver: handleOffer will process new offer with iceRestart flag
             return iceRestartAttempts < MAX_ICE_RESTARTS;
         } catch (err) {
             logError("ICE restart failed:", err);
             return false;
         }
     }
+
+    // Network came back — try ICE restart
+    try {
+        window.addEventListener("online", function () {
+            if (callEnded || !peerConnection) return;
+            var st = peerConnection.iceConnectionState;
+            if (st === "disconnected" || st === "failed" || st === "checking") {
+                tryRestartIce("online");
+            }
+        });
+    } catch (_) {}
+
 
 
     /* ======================================================
@@ -2530,27 +2650,51 @@
         speakerOn = !speakerOn;
 
         const btn = $("speakerBtn");
-        if (btn) {
-            btn.classList.toggle("active", speakerOn);
-            const icon = btn.querySelector("i");
+        const btn2 = $("callSpeakerBtn");
+        [btn, btn2].forEach(function (b) {
+            if (!b) return;
+            b.classList.toggle("active", speakerOn);
+            const icon = b.querySelector("i");
             if (icon) {
                 icon.className = speakerOn
                     ? "fa-solid fa-volume-high"
                     : "fa-solid fa-volume-low";
             }
-        }
+        });
 
-        try {
-            const el = callType === "video" ? remoteVideo : remoteAudio;
-            if (el && typeof el.setSinkId === "function") {
-                // "" = default (earpiece on many mobiles), "default" = system default
-                await el.setSinkId(speakerOn ? "default" : "");
+        // Always keep remote audio audible — never mute when toggling speaker
+        const targets = [remoteAudio, remoteVideo].filter(Boolean);
+        for (const el of targets) {
+            try {
+                el.muted = false;
+                el.volume = 1;
+                if (typeof el.setSinkId === "function") {
+                    // Prefer explicit device when speaker ON; leave default when OFF
+                    if (speakerOn) {
+                        try {
+                            const devices = await navigator.mediaDevices.enumerateDevices();
+                            const outs = devices.filter(d => d.kind === "audiooutput");
+                            const speaker = outs.find(d =>
+                                /speaker|loud|external/i.test(d.label || "")
+                            ) || outs[outs.length - 1];
+                            if (speaker && speaker.deviceId) {
+                                await el.setSinkId(speaker.deviceId);
+                            } else {
+                                await el.setSinkId("default");
+                            }
+                        } catch (_) {
+                            await el.setSinkId("default");
+                        }
+                    }
+                    // speaker off: do NOT setSinkId("") — that silences many Android WebViews
+                }
+                el.play().catch(function () {});
+            } catch (err) {
+                log("speaker toggle:", err && err.message);
             }
-        } catch (err) {
-            log("setSinkId not supported:", err && err.message);
         }
 
-        toast(speakerOn ? "Speaker on" : "Speaker off");
+        toast(speakerOn ? "Speaker on" : "Earpiece");
     }
 
 
@@ -2606,6 +2750,126 @@
 
     let usingFrontCamera = true;
 
+
+
+    async function openAddUsersSheet() {
+        if (callEnded) return;
+        if (!currentUser || !db) {
+            toast("Login required");
+            return;
+        }
+        let sheet = $("addUsersSheet");
+        if (!sheet) {
+            sheet = document.createElement("div");
+            sheet.id = "addUsersSheet";
+            sheet.className = "add-users-sheet";
+            sheet.innerHTML =
+                '<div class="add-users-mask" data-close-add></div>' +
+                '<div class="add-users-panel">' +
+                '<div class="add-users-handle"></div>' +
+                '<div class="add-users-head"><strong>Add to call</strong>' +
+                '<span class="add-users-limit">Max 6</span></div>' +
+                '<p class="add-users-hint">Friends you follow or chat with</p>' +
+                '<div id="addUsersList" class="add-users-list"><div class="add-users-loading">Loading…</div></div>' +
+                '</div>';
+            document.body.appendChild(sheet);
+            sheet.querySelector("[data-close-add]")?.addEventListener("click", function () {
+                sheet.classList.remove("open");
+            });
+        }
+        sheet.classList.add("open");
+        const list = $("addUsersList");
+        if (!list) return;
+        list.innerHTML = '<div class="add-users-loading">Loading…</div>';
+
+        try {
+            const uid = currentUser.uid;
+            const [folSnap, chatSnap, partSnap] = await Promise.all([
+                db.ref("users/" + uid + "/following").limitToFirst(40).once("value"),
+                db.ref("userChats/" + uid).limitToFirst(30).once("value").catch(function () {
+                    return db.ref("chats").orderByChild("members/" + uid).equalTo(true).limitToFirst(20).once("value").catch(function () { return { val: function () { return null; } }; });
+                }),
+                callId ? db.ref("calls/" + callId + "/participants").once("value") : Promise.resolve({ val: function () { return {}; } })
+            ]);
+            const inCall = Object.keys(partSnap.val() || {});
+            if (currentUser) inCall.push(currentUser.uid);
+            if (remoteUserId) inCall.push(remoteUserId);
+
+            const ids = new Set();
+            const fol = folSnap.val() || {};
+            Object.keys(fol).forEach(function (k) { if (fol[k]) ids.add(k); });
+            const chats = chatSnap.val() || {};
+            Object.keys(chats).forEach(function (k) {
+                const c = chats[k] || {};
+                if (c.uid) ids.add(c.uid);
+                if (c.peerId) ids.add(c.peerId);
+                if (c.with) ids.add(c.with);
+                if (c.members) Object.keys(c.members).forEach(function (m) { ids.add(m); });
+            });
+            ids.delete(uid);
+
+            const arr = Array.from(ids).slice(0, 40);
+            if (!arr.length) {
+                list.innerHTML = '<div class="add-users-empty">No friends yet — follow or chat first</div>';
+                return;
+            }
+
+            const rows = await Promise.all(arr.map(async function (id) {
+                try {
+                    const s = await db.ref("users/" + id).once("value");
+                    const u = s.val() || {};
+                    return {
+                        uid: id,
+                        name: u.name || u.fullName || u.displayName || u.username || "User",
+                        username: u.username || "",
+                        photo: u.profilePhoto || u.photoURL || u.avatar || "assets/default-avatar.png",
+                        inCall: inCall.indexOf(id) !== -1
+                    };
+                } catch (_) {
+                    return null;
+                }
+            }));
+
+            list.innerHTML = rows.filter(Boolean).map(function (u) {
+                const disabled = u.inCall || inCall.length >= MAX_CALL_PARTICIPANTS;
+                return (
+                    '<button type="button" class="add-user-row' + (disabled ? " disabled" : "") + '" data-add-uid="' + u.uid + '"' +
+                    (disabled ? " disabled" : "") + ">" +
+                    '<img src="' + String(u.photo).replace(/"/g, "") + '" alt="" >' +
+                    '<div><strong>' + String(u.name).replace(/</g, "") + '</strong>' +
+                    (u.username ? '<small>@' + String(u.username).replace(/</g, "") + '</small>' : '') +
+                    '</div>' +
+                    (u.inCall ? '<span class="tag">In call</span>' : '<i class="fa-solid fa-phone"></i>') +
+                    '</button>'
+                );
+            }).join("") || '<div class="add-users-empty">No friends found</div>';
+
+            list.querySelectorAll("[data-add-uid]").forEach(function (btn) {
+                btn.addEventListener("click", async function () {
+                    var id = btn.getAttribute("data-add-uid");
+                    if (!id) return;
+                    if (inCall.length >= MAX_CALL_PARTICIPANTS) {
+                        toast("Max " + MAX_CALL_PARTICIPANTS + " people");
+                        return;
+                    }
+                    btn.disabled = true;
+                    await inviteToCall(id);
+                    try {
+                        var tag = document.createElement("span");
+                        tag.className = "tag";
+                        tag.textContent = "Invited";
+                        var ic = btn.querySelector("i.fa-phone");
+                        if (ic) ic.replaceWith(tag);
+                        else btn.appendChild(tag);
+                    } catch (_) {}
+                });
+            });
+
+        } catch (e) {
+            console.warn(e);
+            list.innerHTML = '<div class="add-users-empty">Could not load friends</div>';
+        }
+    }
 
     async function inviteToCall(uid) {
         if (!uid) return;
@@ -2845,60 +3109,96 @@
             return;
         }
 
-
         const videoTrack =
-            localStream
-                .getVideoTracks()[0];
-
+            localStream.getVideoTracks()[0];
 
         if (!videoTrack) {
             return;
         }
 
-
-        videoTrack.enabled =
-            !videoTrack.enabled;
-
+        videoTrack.enabled = !videoTrack.enabled;
+        const on = !!videoTrack.enabled;
 
         const buttons = [
-
             $("cameraToggleBtn"),
-
-            $("cameraCallBtn")
-
+            $("cameraCallBtn"),
+            $("cameraBtn")
         ];
 
-
         buttons.forEach(button => {
-
-            if (!button) {
-                return;
-            }
-
-
-            button.classList.toggle(
-                "active",
-                !videoTrack.enabled
-            );
-
-
-            const icon =
-                button.querySelector("i");
-
-
+            if (!button) return;
+            button.classList.toggle("active", !on);
+            const icon = button.querySelector("i");
             if (icon) {
-
-                icon.className =
-                    videoTrack.enabled
-
-                        ? "fa-solid fa-video"
-
-                        : "fa-solid fa-video-slash";
-
+                icon.className = on
+                    ? "fa-solid fa-video"
+                    : "fa-solid fa-video-slash";
             }
-
         });
 
+        // Local PiP: hide video, show DP when camera off
+        try {
+            const wrap = $("localVideoWrap");
+            const vid = $("localVideo");
+            let av = $("localCameraOffAvatar");
+            if (wrap && !av) {
+                av = document.createElement("div");
+                av.id = "localCameraOffAvatar";
+                av.className = "local-camera-off";
+                av.innerHTML = '<img alt="" /><span>Camera off</span>';
+                wrap.appendChild(av);
+            }
+            if (av) {
+                const img = av.querySelector("img");
+                if (img) {
+                    img.src =
+                        (currentUser && currentUser.photoURL) ||
+                        localStorage.getItem("viewora_my_avatar") ||
+                        "assets/default-avatar.png";
+                }
+                av.classList.toggle("show", !on);
+            }
+            if (vid) vid.style.opacity = on ? "1" : "0";
+        } catch (_) {}
+
+        // Tell peer so they can show our DP
+        try {
+            if (callRef && currentUser) {
+                callRef.child("media/" + currentUser.uid).update({
+                    camera: on,
+                    at: Date.now()
+                });
+            }
+        } catch (_) {}
+    }
+
+    function listenRemoteMediaFlags() {
+        if (!callRef || !remoteUserId) return;
+        callRef.child("media/" + remoteUserId).on("value", function (snap) {
+            const v = snap.val() || {};
+            const camOn = v.camera !== false;
+            try {
+                let ov = $("remoteCameraOff");
+                if (!ov) {
+                    ov = document.createElement("div");
+                    ov.id = "remoteCameraOff";
+                    ov.className = "remote-camera-off";
+                    ov.innerHTML = '<img id="remoteCameraOffImg" alt="" /><span>Camera off</span>';
+                    const host = $("callApp") || document.body;
+                    host.appendChild(ov);
+                }
+                const img = $("remoteCameraOffImg");
+                if (img) {
+                    img.src =
+                        ($("remoteAvatar") && $("remoteAvatar").src) ||
+                        "assets/default-avatar.png";
+                }
+                ov.classList.toggle("show", !camOn && callType === "video");
+                if (remoteVideo) {
+                    remoteVideo.style.opacity = camOn ? "1" : "0";
+                }
+            } catch (_) {}
+        });
     }
 
 
@@ -3193,24 +3493,97 @@
             "click",
             toggleSpeaker
         );
-
-
-    $("minimizeCallBtn")
+    $("callSpeakerBtn")
         ?.addEventListener(
             "click",
-            () => {
-
-                {
-                    const backUid = receiverId || remoteUserId || params.get("uid") || "";
-                    if (backUid) {
-                        window.location.href = "chat.html?uid=" + encodeURIComponent(backUid);
-                    } else {
-                        window.history.back();
-                    }
-                }
-
-            }
+            toggleSpeaker
         );
+    $("cameraBtn")
+        ?.addEventListener(
+            "click",
+            toggleCamera
+        );
+    $("addCallUsersBtn")
+        ?.addEventListener(
+            "click",
+            openAddUsersSheet
+        );
+
+
+    function minimizeCallUI() {
+        if (callEnded) return;
+        try {
+            document.body.classList.add("call-minimized");
+            let bubble = $("callMiniBubble");
+            if (!bubble) {
+                bubble = document.createElement("div");
+                bubble.id = "callMiniBubble";
+                bubble.className = "call-mini-bubble";
+                bubble.innerHTML =
+                    '<img id="callMiniAvatar" src="assets/default-avatar.png" alt="">' +
+                    '<div class="call-mini-meta"><strong id="callMiniName">On call</strong>' +
+                    '<span id="callMiniTimer">00:00</span></div>' +
+                    '<button type="button" id="callMiniExpand" aria-label="Expand">' +
+                    '<i class="fa-solid fa-up-right-and-down-left-from-center"></i></button>';
+                document.body.appendChild(bubble);
+                $("callMiniExpand")?.addEventListener("click", expandCallUI);
+                bubble.addEventListener("click", function (e) {
+                    if (e.target.closest("#callMiniExpand")) return;
+                    expandCallUI();
+                });
+            }
+            const av = $("remoteAvatar");
+            const img = $("callMiniAvatar");
+            if (img && av) img.src = av.src || img.src;
+            const nm = $("callMiniName");
+            if (nm) nm.textContent = ($("remoteName") && $("remoteName").textContent) || "On call";
+            // Keep media alive — do not navigate away
+            try {
+                sessionStorage.setItem("viewora_active_call", JSON.stringify({
+                    callId: callId,
+                    type: callType,
+                    at: Date.now()
+                }));
+            } catch (_) {}
+            toast("Call continues — tap bubble to return");
+        } catch (e) {
+            logError("minimize:", e);
+        }
+    }
+
+    function expandCallUI() {
+        document.body.classList.remove("call-minimized");
+        try {
+            const b = $("callMiniBubble");
+            if (b) b.remove();
+        } catch (_) {}
+    }
+
+    // Sync mini timer
+    setInterval(function () {
+        try {
+            if (!document.body.classList.contains("call-minimized")) return;
+            const src = $("callDuration");
+            const dst = $("callMiniTimer");
+            if (src && dst) dst.textContent = src.textContent || "00:00";
+        } catch (_) {}
+    }, 1000);
+
+    $("minimizeCallBtn")
+        ?.addEventListener("click", minimizeCallUI);
+
+    // Hardware / browser back → minimize, do not kill call
+    try {
+        history.pushState({ vieworaCall: 1 }, "", location.href);
+        window.addEventListener("popstate", function (e) {
+            if (callEnded) return;
+            if (!document.body.classList.contains("call-minimized")) {
+                history.pushState({ vieworaCall: 1 }, "", location.href);
+                minimizeCallUI();
+            }
+        });
+    } catch (_) {}
+
 
     // Re-acquire wake lock if tab becomes visible again mid-call
     document.addEventListener("visibilitychange", () => {

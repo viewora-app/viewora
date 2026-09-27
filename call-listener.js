@@ -701,6 +701,7 @@
                 <div class="viewora-call-glow"></div>
 
                 <div class="viewora-call-ringing"></div>
+                <div class="viewora-call-busy-label" id="vieworaCallBusyLabel" style="display:none;text-align:center;font-size:12px;color:#fbbf24;font-weight:700;margin-top:6px;">On another call</div>
 
                 <div class="viewora-call-top">
 
@@ -1001,7 +1002,11 @@
         // 1) Custom ringtone path from settings (localStorage)
         //    User can set: localStorage.setItem('viewora_call_ringtone', 'assets/my-ring.mp3')
         try {
-            let customSrc = localStorage.getItem("viewora_call_ringtone") || "assets/call-ringtone.mp3";
+            let isBusy = false;
+        try { isBusy = sessionStorage.getItem("viewora_call_busy") === "1"; } catch (_) {}
+        let customSrc = isBusy
+            ? (localStorage.getItem("viewora_call_busy_ringtone") || "assets/iphone-ringtone.mp3")
+            : (localStorage.getItem("viewora_call_ringtone") || "assets/call-ringtone.mp3");
             // Never use message tone as call ring
             if (customSrc.indexOf("message") !== -1) {
                 customSrc = "assets/call-ringtone.mp3";

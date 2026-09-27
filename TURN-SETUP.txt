@@ -1,0 +1,29 @@
+Viewora TURN (production)
+=========================
+Public openrelay is only a fallback (rate-limited).
+
+Option A — Metered.ca
+1. Sign up https://www.metered.ca/
+2. Create TURN credentials
+3. In browser console or a small config script before call.js:
+
+window.VieworaTurnConfig = {
+  urls: [
+    "turn:YOUR.metered.live:80",
+    "turn:YOUR.metered.live:443",
+    "turns:YOUR.metered.live:443"
+  ],
+  username: "YOUR_USERNAME",
+  credential: "YOUR_PASSWORD"
+};
+
+Option B — localStorage (survives refresh):
+localStorage.setItem("viewora_turn_config", JSON.stringify({
+  urls: ["turn:YOUR.metered.live:80", "turns:YOUR.metered.live:443"],
+  username: "…",
+  credential: "…"
+}));
+
+Then hard-refresh call.html / app.
+
+Firebase rules: deploy database.rules.json after pull.
