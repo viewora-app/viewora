@@ -2744,6 +2744,116 @@
     }
 
 
+
+    /* ======================================================
+       WEBRTC MESH (4–6 participants)
+    ====================================================== */
+
+    function startMeshLayer() {
+        if (!window.VieworaMesh || !db || !callId || !currentUser) return;
+        if (!localStream) return;
+        try {
+            VieworaMesh.init({
+                db: db,
+                callId: callId,
+                uid: currentUser.uid,
+                localStream: localStream,
+                callType: callType,
+                max: MAX_CALL_PARTICIPANTS,
+                onRemoteStream: function (remoteUid, stream) {
+                    attachMeshRemote(remoteUid, stream);
+                },
+                onPeerLeft: function (remoteUid) {
+                    removeMeshRemote(remoteUid);
+                },
+                onParticipants: function (map) {
+                    updateParticipantsGrid(map);
+                }
+            });
+            var photo =
+                (currentUser.photoURL) ||
+                localStorage.getItem("viewora_my_avatar") ||
+                "";
+            var name =
+                currentUser.displayName ||
+                localStorage.getItem("viewora_my_name") ||
+                "Me";
+            VieworaMesh.join({
+                name: name,
+                photo: photo,
+                camera: true
+            });
+            log("Mesh layer started");
+        } catch (e) {
+            logError("Mesh init:", e);
+        }
+    }
+
+    function attachMeshRemote(remoteUid, stream) {
+        var grid = $("participantsGrid");
+        if (!grid) return;
+        grid.hidden = false;
+        var id = "meshVideo_" + remoteUid;
+        var cell = document.getElementById(id);
+        if (!cell) {
+            cell = document.createElement("div");
+            cell.id = id;
+            cell.className = "mesh-cell";
+            cell.innerHTML =
+                '<video autoplay playsinline></video>' +
+                '<div class="mesh-cell-label"></div>';
+            grid.appendChild(cell);
+        }
+        var vid = cell.querySelector("video");
+        if (vid && vid.srcObject !== stream) {
+            vid.srcObject = stream;
+            vid.play().catch(function () {});
+        }
+        // Hide single remote when multi
+        try {
+            if (Object.keys(VieworaMesh.getPeers()).length >= 1) {
+                if (remoteVideo) remoteVideo.classList.add("mesh-hidden-primary");
+            }
+        } catch (_) {}
+    }
+
+    function removeMeshRemote(remoteUid) {
+        var cell = document.getElementById("meshVideo_" + remoteUid);
+        if (cell) cell.remove();
+        var grid = $("participantsGrid");
+        if (grid && !grid.children.length) {
+            grid.hidden = true;
+            if (remoteVideo) remoteVideo.classList.remove("mesh-hidden-primary");
+        }
+    }
+
+    function updateParticipantsGrid(map) {
+        var grid = $("participantsGrid");
+        if (!grid || !map) return;
+        var n = Object.keys(map).length;
+        if (n <= 2) {
+            grid.classList.remove("mesh-3", "mesh-4", "mesh-many");
+        } else if (n === 3) {
+            grid.classList.add("mesh-3");
+            grid.classList.remove("mesh-4", "mesh-many");
+        } else if (n === 4) {
+            grid.classList.add("mesh-4");
+            grid.classList.remove("mesh-3", "mesh-many");
+        } else {
+            grid.classList.add("mesh-many");
+            grid.classList.remove("mesh-3", "mesh-4");
+        }
+        Object.keys(map).forEach(function (uid) {
+            if (currentUser && uid === currentUser.uid) return;
+            var cell = document.getElementById("meshVideo_" + uid);
+            if (cell) {
+                var lab = cell.querySelector(".mesh-cell-label");
+                if (lab) lab.textContent = (map[uid] && (map[uid].name || map[uid].username)) || "User";
+            }
+        });
+    }
+
+
     /* ======================================================
        SWITCH CAMERA (front / back) — no pause glitch
     ====================================================== */
@@ -2891,19 +3001,46 @@
                 toast("Already in call");
                 return;
             }
-            await ref.child(uid).set({
+                        await ref.child(uid).set({
                 invitedAt: Date.now(),
                 by: currentUser && currentUser.uid,
                 status: "invited"
             });
-            // Notify invitee
+            // Ensure we are listed as participant too
             try {
-                await db.ref("users/" + uid + "/incomingCallInvite").set({
-                    callId: room,
-                    from: currentUser && currentUser.uid,
-                    type: callType || "video",
-                    at: Date.now()
+                await ref.child(currentUser.uid).update({
+                    uid: currentUser.uid,
+                    joinedAt: Date.now(),
+                    name: currentUser.displayName || "User",
+                    status: "joined"
                 });
+            } catch (_) {}
+            if (remoteUserId) {
+                try {
+                    await ref.child(remoteUserId).update({
+                        uid: remoteUserId,
+                        status: "joined"
+                    });
+                } catch (_) {}
+            }
+            // Ring invitee via same incomingCalls path (group flag)
+            try {
+                var invitePayload = {
+                    callId: room,
+                    callerId: currentUser.uid,
+                    receiverId: uid,
+                    type: callType || "video",
+                    status: "ringing",
+                    group: true,
+                    createdAt: Date.now(),
+                    createdAtMs: Date.now()
+                };
+                await db.ref("incomingCalls/" + uid + "/" + room).set(invitePayload);
+            } catch (_) {}
+            try {
+                if (window.VieworaMesh && localStream) {
+                    startMeshLayer();
+                }
             } catch (_) {}
             toast("Invite sent");
         } catch (e) {
@@ -2962,6 +3099,11 @@
                 });
             }
             toast(usingFrontCamera ? "Front camera" : "Back camera");
+            try {
+                if (window.VieworaMesh && newTrack) {
+                    VieworaMesh.replaceTrack("video", newTrack);
+                }
+            } catch (_) {}
         }
 
         // 1) Prefer deviceId from enumerateDevices (works on Android WebView where facingMode:exact fails)
@@ -3277,6 +3419,10 @@
     ====================================================== */
 
     function cleanupMedia() {
+        try {
+            if (window.VieworaMesh) VieworaMesh.leave();
+        } catch (_) {}
+
 
         if (localStream) {
 

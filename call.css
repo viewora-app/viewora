@@ -1935,3 +1935,57 @@ body.call-minimized .call-ended-screen {
 .participants-grid:not([hidden]) {
   pointer-events: auto;
 }
+
+/* Mesh participant grid */
+.participants-grid {
+  position: absolute;
+  inset: 70px 8px 150px;
+  z-index: 6;
+  display: grid;
+  gap: 6px;
+  grid-template-columns: repeat(2, 1fr);
+  grid-auto-rows: minmax(0, 1fr);
+}
+.participants-grid[hidden] { display: none !important; }
+.participants-grid.mesh-3 {
+  grid-template-columns: repeat(2, 1fr);
+}
+.participants-grid.mesh-4 {
+  grid-template-columns: repeat(2, 1fr);
+}
+.participants-grid.mesh-many {
+  grid-template-columns: repeat(2, 1fr);
+}
+.mesh-cell {
+  position: relative;
+  border-radius: 16px;
+  overflow: hidden;
+  background: #121218;
+  border: 1px solid rgba(255,255,255,.1);
+  min-height: 120px;
+}
+.mesh-cell video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  background: #0a0a10;
+}
+.mesh-cell-label {
+  position: absolute;
+  left: 8px;
+  bottom: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: 8px;
+  background: rgba(0,0,0,.55);
+  color: #fff;
+  max-width: 90%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.remote-video.mesh-hidden-primary {
+  opacity: 0;
+  pointer-events: none;
+}
