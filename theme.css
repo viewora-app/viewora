@@ -224,3 +224,23 @@ img, video {
     scroll-behavior: auto !important;
   }
 }
+
+/* Global font scale from Settings */
+html {
+  --v-font-scale: 1;
+}
+html[data-font="large"] {
+  --v-font-scale: 1.12;
+  font-size: 17px !important;
+}
+html[data-font="xlarge"] {
+  --v-font-scale: 1.25;
+  font-size: 19px !important;
+}
+html[data-font="default"] {
+  font-size: 16px;
+}
+body[data-font="large"],
+body[data-font="xlarge"] {
+  line-height: 1.45;
+}

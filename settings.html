@@ -133,12 +133,39 @@
   <div class="sheet" id="sheetPassword">
     <div class="sheetHandle"></div>
     <h3>Password &amp; Security</h3>
-    <p class="desc">Min 6 characters. Re-login may be required for security.</p>
+    <p class="desc">Current password required. Min 6 characters for new password.</p>
+    <label class="fieldLabel">Current password</label>
+    <input type="password" id="currentPass" placeholder="Current password" autocomplete="current-password">
+    <label class="fieldLabel">New password</label>
     <input type="password" id="newPass" placeholder="New password" autocomplete="new-password">
+    <label class="fieldLabel">Confirm new password</label>
     <input type="password" id="newPass2" placeholder="Confirm password" autocomplete="new-password">
+    <button type="button" class="linkBtn" id="forgotPassBtn">Forgot password?</button>
     <div class="actions">
       <button type="button" class="btn btnGhost" data-close="sheetPassword">Cancel</button>
       <button type="button" class="btn btnPrimary" id="passActionBtn">Update</button>
+    </div>
+  </div>
+
+  <!-- Forgot password / OTP sheet -->
+  <div class="mask" id="maskForgot"></div>
+  <div class="sheet" id="sheetForgot">
+    <div class="sheetHandle"></div>
+    <h3>Forgot password</h3>
+    <p class="desc" id="forgotDesc">We'll send a code to verify it's you.</p>
+    <div id="forgotChannelBox" class="channelBox"></div>
+    <div id="forgotOtpStep" class="otpStep hidden">
+      <label class="fieldLabel">Enter OTP</label>
+      <input type="text" id="forgotOtpInput" inputmode="numeric" maxlength="6" placeholder="6-digit code" autocomplete="one-time-code">
+      <p class="hint" id="forgotOtpHint"></p>
+      <label class="fieldLabel">New password</label>
+      <input type="password" id="forgotNewPass" placeholder="New password" autocomplete="new-password">
+      <label class="fieldLabel">Confirm</label>
+      <input type="password" id="forgotNewPass2" placeholder="Confirm password" autocomplete="new-password">
+    </div>
+    <div class="actions">
+      <button type="button" class="btn btnGhost" data-close="sheetForgot">Cancel</button>
+      <button type="button" class="btn btnPrimary" id="forgotActionBtn">Send OTP</button>
     </div>
   </div>
 
@@ -155,19 +182,74 @@
     </div>
   </div>
 
-  <!-- Email & Phone sheet -->
+  <!-- Email & Phone sheet (up to 2 each, OTP required) -->
   <div class="mask" id="maskEmail"></div>
   <div class="sheet" id="sheetEmail">
     <div class="sheetHandle"></div>
     <h3>Email &amp; Phone</h3>
-    <p class="desc">Verified contact details on your account</p>
-    <label class="fieldLabel">Email</label>
-    <input type="email" id="emailInput" placeholder="email@example.com" autocomplete="email">
-    <label class="fieldLabel">Phone</label>
-    <input type="tel" id="phoneInput" placeholder="+91 98765 43210" autocomplete="tel">
+    <p class="desc">OTP verify required before save. Unverified stays pending.</p>
+
+    <div class="contactBlock">
+      <label class="fieldLabel">Email 1 <span class="badge" id="email1Badge">—</span></label>
+      <input type="email" id="email1Input" placeholder="email@example.com" autocomplete="email">
+      <div class="contactActions">
+        <button type="button" class="btnTiny" id="email1SendOtp">Send OTP</button>
+        <input type="text" id="email1Otp" class="otpMini" inputmode="numeric" maxlength="6" placeholder="OTP" hidden>
+        <button type="button" class="btnTiny primary" id="email1Verify" hidden>Verify</button>
+      </div>
+    </div>
+    <div class="contactBlock" id="email2Block" hidden>
+      <label class="fieldLabel">Email 2 <span class="badge" id="email2Badge">optional</span></label>
+      <input type="email" id="email2Input" placeholder="second@email.com" autocomplete="email">
+      <div class="contactActions">
+        <button type="button" class="btnTiny" id="email2SendOtp">Send OTP</button>
+        <input type="text" id="email2Otp" class="otpMini" inputmode="numeric" maxlength="6" placeholder="OTP" hidden>
+        <button type="button" class="btnTiny primary" id="email2Verify" hidden>Verify</button>
+      </div>
+    </div>
+    <button type="button" class="addSlotBtn" id="addEmailBtn"><i class="fa-solid fa-plus"></i> Add email</button>
+
+    <div class="contactBlock">
+      <label class="fieldLabel">Phone 1 <span class="badge" id="phone1Badge">—</span></label>
+      <input type="tel" id="phone1Input" placeholder="+91 98765 43210" autocomplete="tel">
+      <div class="contactActions">
+        <button type="button" class="btnTiny" id="phone1SendOtp">Send OTP</button>
+        <input type="text" id="phone1Otp" class="otpMini" inputmode="numeric" maxlength="6" placeholder="OTP" hidden>
+        <button type="button" class="btnTiny primary" id="phone1Verify" hidden>Verify</button>
+      </div>
+    </div>
+    <div class="contactBlock" id="phone2Block" hidden>
+      <label class="fieldLabel">Phone 2 <span class="badge" id="phone2Badge">optional</span></label>
+      <input type="tel" id="phone2Input" placeholder="+91 98765 43211" autocomplete="tel">
+      <div class="contactActions">
+        <button type="button" class="btnTiny" id="phone2SendOtp">Send OTP</button>
+        <input type="text" id="phone2Otp" class="otpMini" inputmode="numeric" maxlength="6" placeholder="OTP" hidden>
+        <button type="button" class="btnTiny primary" id="phone2Verify" hidden>Verify</button>
+      </div>
+    </div>
+    <button type="button" class="addSlotBtn" id="addPhoneBtn"><i class="fa-solid fa-plus"></i> Add phone</button>
+
+    <div id="recaptchaContainer" style="position:fixed;left:-9999px;width:1px;height:1px;opacity:0"></div>
     <div class="actions">
-      <button type="button" class="btn btnGhost" data-close="sheetEmail">Cancel</button>
-      <button type="button" class="btn btnPrimary" id="emailSave">Save</button>
+      <button type="button" class="btn btnGhost" data-close="sheetEmail">Close</button>
+      <button type="button" class="btn btnPrimary" id="emailSave">Save verified</button>
+    </div>
+  </div>
+
+  <!-- Generic OTP confirm (device channel) -->
+  <div class="mask" id="maskOtp"></div>
+  <div class="sheet" id="sheetOtp">
+    <div class="sheetHandle"></div>
+    <h3 id="otpTitle">Verify OTP</h3>
+    <p class="desc" id="otpDesc">Enter the 6-digit code</p>
+    <div id="deviceOtpReveal" class="deviceOtpReveal hidden">
+      <span class="deviceOtpCode" id="deviceOtpCode">••••••</span>
+      <small>Code on this device (no email/phone verified)</small>
+    </div>
+    <input type="text" id="otpInput" inputmode="numeric" maxlength="6" placeholder="6-digit code" autocomplete="one-time-code">
+    <div class="actions">
+      <button type="button" class="btn btnGhost" data-close="sheetOtp">Cancel</button>
+      <button type="button" class="btn btnPrimary" id="otpConfirmBtn">Confirm</button>
     </div>
   </div>
 
