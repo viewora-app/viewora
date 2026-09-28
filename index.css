@@ -4351,3 +4351,37 @@ i.whiteTick {
   font-size: 12px;
   vertical-align: middle;
 }
+
+/* VIEWORA_DELETE_CSS */
+.homeMenuItem.danger {
+  color: #ff3b5c !important;
+  background: rgba(255, 59, 92, 0.08);
+}
+.homeMenuItem.danger:hover {
+  background: rgba(255, 59, 92, 0.16) !important;
+}
+.homeMenuItem.danger .homeMenuIcon {
+  background: rgba(255, 59, 92, 0.18);
+  color: #ff3b5c;
+}
+.homeMenuItem.danger .homeMenuText strong {
+  color: #ff3b5c;
+}
+
+/* VIEWORA_DELETE_CSS_V2 */
+.homeMenuItem.danger {
+  color: #ff2d55 !important;
+  background: rgba(255, 45, 85, 0.1) !important;
+  border: 1px solid rgba(255, 45, 85, 0.25);
+}
+.homeMenuItem.danger .homeMenuIcon {
+  background: rgba(255, 45, 85, 0.2) !important;
+  color: #ff2d55 !important;
+}
+.homeMenuItem.danger .homeMenuText strong {
+  color: #ff2d55 !important;
+  font-weight: 800;
+}
+.homeMenuItem.danger .homeMenuText small {
+  color: rgba(255, 45, 85, 0.75) !important;
+}

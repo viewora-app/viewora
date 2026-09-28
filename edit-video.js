@@ -1282,6 +1282,7 @@
 
         const preferredNames = [
 
+            "VIEWORA_MEDIA_DB",
             "Viewora",
             "viewora",
             "VieworaDB",
@@ -2777,6 +2778,31 @@
                         url
                     );
 
+                    // VIEWORA_AUTO_FRAME_ON_SELECT
+                    try {
+                        if (isUglyFilenameTitle(state.title) || !state.title) {
+                            state.title = "";
+                            setInputValue("longTitle", "");
+                        }
+                        var prev = $("videoPreview") || $("thumbnailVideo") || document.querySelector("video");
+                        if (prev) {
+                            captureVideoFrameToURL(prev, 0.15).then(function (frameUrl) {
+                                if (!frameUrl) return;
+                                if (state.thumbnailObjectURL) {
+                                    try { URL.revokeObjectURL(state.thumbnailObjectURL); } catch (_) {}
+                                }
+                                state.thumbnailObjectURL = frameUrl;
+                                state.thumbnailURL = frameUrl;
+                                try { prev.setAttribute("poster", frameUrl); } catch (_) {}
+                                var img = $("thumbnailImage");
+                                if (img) { img.src = frameUrl; img.classList.remove("hidden"); }
+                                var ph = $("thumbnailPlaceholder");
+                                if (ph) ph.classList.add("hidden");
+                                updateSummary && updateSummary();
+                            });
+                        }
+                    } catch (_af) {}
+
                     updateVideoPlaceholder();
                     updateVideoMetadata();
                     updatePreview();
@@ -2925,6 +2951,83 @@
 
         }
 
+    }
+
+
+
+    function isUglyFilenameTitle(s) {
+        s = String(s || "").trim();
+        if (!s) return true;
+        // uuid-like or raw media extensions as title
+        if (/\.(mp4|mov|webm|mkv|avi|m4v)(\?|$)/i.test(s)) return true;
+        if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i.test(s)) return true;
+        if (/^[0-9a-f]{16,}_/i.test(s)) return true;
+        if (/_all_\d+/i.test(s)) return true;
+        if (s.length > 80 && !/\s/.test(s)) return true;
+        return false;
+    }
+
+    function cleanSuggestedTitle(raw) {
+        var s = String(raw || "").trim();
+        if (!s || isUglyFilenameTitle(s)) return "";
+        // strip extension
+        s = s.replace(/\.(mp4|mov|webm|mkv|avi|m4v)$/i, "");
+        s = s.replace(/[_-]+/g, " ").replace(/\s+/g, " ").trim();
+        if (isUglyFilenameTitle(s) || s.length < 2) return "";
+        return s.slice(0, 150);
+    }
+
+    /** Capture first visible frame → blob URL for preview/thumb (no play-icon poster) */
+    function captureVideoFrameToURL(videoEl, atTime) {
+        return new Promise(function (resolve) {
+            try {
+                if (!videoEl) return resolve("");
+                var v = videoEl;
+                var target = typeof atTime === "number" ? atTime : Math.min(0.25, (v.duration || 1) * 0.05);
+                function draw() {
+                    try {
+                        var w = v.videoWidth || 0;
+                        var h = v.videoHeight || 0;
+                        if (w < 2 || h < 2) return resolve("");
+                        var c = document.createElement("canvas");
+                        c.width = w;
+                        c.height = h;
+                        var ctx = c.getContext("2d");
+                        ctx.drawImage(v, 0, 0, w, h);
+                        c.toBlob(function (blob) {
+                            if (!blob) return resolve("");
+                            resolve(URL.createObjectURL(blob));
+                        }, "image/jpeg", 0.85);
+                    } catch (e) {
+                        resolve("");
+                    }
+                }
+                if (v.readyState >= 2 && (v.videoWidth || 0) > 0) {
+                    try {
+                        if (Math.abs((v.currentTime || 0) - target) > 0.05) {
+                            var onSeek = function () {
+                                v.removeEventListener("seeked", onSeek);
+                                draw();
+                            };
+                            v.addEventListener("seeked", onSeek);
+                            try { v.currentTime = target; } catch (_) { draw(); }
+                        } else draw();
+                    } catch (_) { draw(); }
+                } else {
+                    var onMeta = function () {
+                        v.removeEventListener("loadeddata", onMeta);
+                        v.removeEventListener("loadedmetadata", onMeta);
+                        try {
+                            v.currentTime = target;
+                        } catch (_) {}
+                        setTimeout(draw, 120);
+                    };
+                    v.addEventListener("loadeddata", onMeta);
+                    v.addEventListener("loadedmetadata", onMeta);
+                    setTimeout(function () { if ((v.videoWidth || 0) > 0) draw(); }, 800);
+                }
+            } catch (_) { resolve(""); }
+        });
     }
 
 
@@ -4899,11 +5002,8 @@
                 uid
             )
         ) {
-
-            throw new Error(
-                "You can only edit your own video."
-            );
-
+            console.warn("Not owner or foreign video id — skip existing load");
+            return false;
         }
 
 
@@ -4933,7 +5033,10 @@
 
 
         state.title =
-            normalized.title;
+            cleanSuggestedTitle(normalized.title) ||
+            cleanSuggestedTitle(normalized.caption) ||
+            "";
+        if (isUglyFilenameTitle(state.title)) state.title = "";
 
 
         state.description =
@@ -5053,6 +5156,56 @@
        LOAD NEW VIDEO FROM INDEXEDDB
     ========================================================= */
 
+
+    async function loadCurrentVideoFast() {
+        try {
+            if (typeof indexedDB === "undefined") return null;
+            const db = await new Promise(function (resolve, reject) {
+                const req = indexedDB.open("VIEWORA_MEDIA_DB", 1);
+                req.onupgradeneeded = function () {
+                    try {
+                        const d = req.result;
+                        if (!d.objectStoreNames.contains("uploads")) {
+                            d.createObjectStore("uploads");
+                        }
+                    } catch (_) {}
+                };
+                req.onsuccess = function () { resolve(req.result); };
+                req.onerror = function () { reject(req.error); };
+            });
+            const record = await new Promise(function (resolve, reject) {
+                try {
+                    const tx = db.transaction("uploads", "readonly");
+                    const store = tx.objectStore("uploads");
+                    const g = store.get("currentVideo");
+                    g.onsuccess = function () { resolve(g.result || null); };
+                    g.onerror = function () { reject(g.error); };
+                } catch (e) {
+                    reject(e);
+                }
+            });
+            try { db.close(); } catch (_) {}
+            if (!record) return null;
+            // File, Blob, or { file/blob/url }
+            if (record instanceof Blob || (typeof File !== "undefined" && record instanceof File)) {
+                return { blob: record, record: { name: record.name || "video.mp4", type: record.type || "video/mp4" } };
+            }
+            if (record && typeof record === "object") {
+                const blob = record.file || record.blob || record.data || null;
+                if (blob instanceof Blob) {
+                    return { blob: blob, record: record };
+                }
+                if (record.url || record.videoUrl || record.videoURL) {
+                    return { url: record.url || record.videoUrl || record.videoURL, record: record };
+                }
+            }
+            return null;
+        } catch (e) {
+            console.warn("loadCurrentVideoFast", e);
+            return null;
+        }
+    }
+
     async function loadNewEditorVideo() {
 
         updateProcessing(
@@ -5064,12 +5217,14 @@
         let result =
             null;
 
+        // Fast path: exact key written by upload.js
+        result = await loadCurrentVideoFast();
 
         const targetId =
             getVideoIdFromURL();
 
 
-        if (targetId) {
+        if (!result && targetId) {
 
             result =
                 await findIndexedDBVideoById(
@@ -5145,9 +5300,11 @@
 
 
         state.title =
-            record.title ||
-            record.name ||
+            cleanSuggestedTitle(record.title) ||
+            cleanSuggestedTitle(record.caption) ||
             "";
+        // never use raw file name as title
+        if (isUglyFilenameTitle(state.title)) state.title = "";
 
 
         state.description =
@@ -5250,72 +5407,71 @@
         state.source =
             getSource();
 
-
         const requestedId =
             getVideoId();
-
 
         state.videoId =
             requestedId;
 
-
         const editorSource =
-            state.source ===
-            "editor";
+            state.source === "editor";
 
+        // Gallery/camera upload must load IndexedDB blob first — ignore stale video ids
+        const isFreshUpload =
+            state.source === "upload" ||
+            state.source === "camera" ||
+            !!(function () {
+                try {
+                    return sessionStorage.getItem("vieworaUploadMode");
+                } catch (_) {
+                    return null;
+                }
+            })();
 
         showProcessing(
             "Opening editor...",
             "Loading your video..."
         );
 
-
         try {
 
             let loaded =
                 false;
 
-
-            if (
-                requestedId
-            ) {
-
+            if (isFreshUpload) {
+                // Clear stale edit ids so we do not open an old published video
+                [
+                    "viewora_edit_video_id",
+                    "vieworaEditVideoId",
+                    "viewora_video_id",
+                    "vieworaVideoId",
+                    "editVideoId",
+                    "longVideoId",
+                    "viewora_long_video_id",
+                    "vieworaLongVideoId"
+                ].forEach(function (key) {
+                    try { sessionStorage.removeItem(key); } catch (_) {}
+                    try { localStorage.removeItem(key); } catch (_) {}
+                });
+                state.videoId = "";
+                state.isNewVideo = true;
+                loaded = await loadNewEditorVideo();
+                if (!loaded) {
+                    // Retry direct VIEWORA_MEDIA_DB read once
+                    loaded = await loadNewEditorVideo();
+                }
+            } else if (requestedId) {
                 loaded =
                     await loadExistingVideo(
                         user.uid,
                         requestedId
                     );
-
-
-                /*
-                 -------------------------------------------------
-                 If an ID was supplied by editor but Firebase does
-                 not have it yet, treat it as a new IndexedDB video.
-                 -------------------------------------------------
-                */
-
-                if (
-                    !loaded &&
-                    editorSource
-                ) {
-
-                    loaded =
-                        await loadNewEditorVideo();
-
+                if (!loaded && (editorSource || state.source === "upload")) {
+                    loaded = await loadNewEditorVideo();
                 }
-
             } else {
-
-                /*
-                 -------------------------------------------------
-                 No Firebase ID:
-                 editor/new-upload mode.
-                 -------------------------------------------------
-                */
-
                 loaded =
                     await loadNewEditorVideo();
-
             }
 
 
@@ -6910,11 +7066,18 @@
        SAVE DATABASE
     ========================================================= */
 
+    var __publishLock = false;
     async function persistVideo(
         formData,
         publishMode
     ) {
 
+        if (__publishLock) {
+            console.warn("Publish already in progress");
+            return;
+        }
+        __publishLock = true;
+        try {
         const user =
             getCurrentUser();
 
@@ -7221,14 +7384,14 @@
                 );
 
 
-            if (
-                longSnapshot.exists()
-            ) {
-
-                await longRef.set(
-                    finalData
-                );
-
+            // Mirror to longVideos only for long-form (not shorts/posts)
+            var isLong = true;
+            try {
+                var ty = String((finalData && finalData.type) || (formData && formData.type) || "video").toLowerCase();
+                if (ty === "short" || ty === "shorts" || ty === "post" || ty === "image") isLong = false;
+            } catch (_) {}
+            if (isLong) {
+                await longRef.set(Object.assign({}, finalData, { type: "video", mediaType: "video", kind: "long" }));
             }
 
         } catch (longError) {
@@ -7243,88 +7406,25 @@
 
         /*
          --------------------------------------------------------
-         POSTS MIRROR
-         --------------------------------------------------------
-         Only update if an existing post points to this video.
+         POSTS MIRROR — OFF for long videos (stops Home 2x cards)
          --------------------------------------------------------
         */
-
         try {
-
-            const postRef =
-                db.ref(
-                    `posts/${state.videoId}`
-                );
-
-
-            const postSnapshot =
-                await postRef.once(
-                    "value"
-                );
-
-
-            if (
-                postSnapshot.exists()
-            ) {
-
-                const oldPost =
-                    postSnapshot.val() ||
-                    {};
-
-
-                const mediaIsVideo =
-                    oldPost.mediaType ===
-                    "video" ||
-                    !!(
-                        oldPost.videoUrl ||
-                        oldPost.videoURL ||
-                        oldPost.video
-                    );
-
-
-                if (
-                    mediaIsVideo
-                ) {
-
+            const postRef = db.ref("posts/" + state.videoId);
+            const postSnapshot = await postRef.once("value");
+            if (postSnapshot.exists()) {
+                const oldPost = postSnapshot.val() || {};
+                if (oldPost.videoUrl || oldPost.videoURL || oldPost.mediaType === "video" || oldPost.type === "video") {
                     await postRef.update({
-
-                        video:
-                            finalVideoURL,
-
-                        videoUrl:
-                            finalVideoURL,
-
-                        videoURL:
-                            finalVideoURL,
-
-                        thumbnail:
-                            finalThumbnailURL,
-
-                        thumbnailUrl:
-                            finalThumbnailURL,
-
-                        title:
-                            formData.title,
-
-                        description:
-                            formData.description,
-
-                        updatedAt:
-                            serverTimestamp()
-
+                        deleted: true,
+                        archived: true,
+                        deletedAt: Date.now(),
+                        mirrorRemoved: true
                     });
-
                 }
-
             }
-
         } catch (postError) {
-
-            console.warn(
-                "POST MIRROR SKIPPED:",
-                postError
-            );
-
+            console.warn("POST MIRROR SKIPPED:", postError);
         }
 
 
@@ -7416,6 +7516,10 @@
 
         };
 
+        } finally {
+            __publishLock = false;
+        }
+
     }
 
 
@@ -7426,7 +7530,10 @@
     async function saveChanges(
         mode = "draft"
     ) {
-
+        // VIEWORA_SAVE_ONCE
+        if (state.processing || (mode === "publish" && window.__vieworaPublishingNow && state.processing)) {
+            return;
+        }
         if (
             state.processing
         ) {
@@ -7689,13 +7796,20 @@
             ?.addEventListener(
                 "click",
                 () => {
-
+                    if (window.__vieworaPublishingNow) return;
+                    window.__vieworaPublishingNow = true;
+                    try {
+                        var b = $("confirmPublishBtn");
+                        if (b) { b.disabled = true; b.style.opacity = "0.6"; }
+                    } catch (_) {}
                     closePublishDialog();
-
-                    saveChanges(
-                        "publish"
-                    );
-
+                    saveChanges("publish").finally(function () {
+                        window.__vieworaPublishingNow = false;
+                        try {
+                            var b2 = $("confirmPublishBtn");
+                            if (b2) { b2.disabled = false; b2.style.opacity = ""; }
+                        } catch (_) {}
+                    });
                 }
             );
 

@@ -42,8 +42,8 @@
         </div>
         <button type="button" class="changePhotoBtn" id="changePhotoBtn">Change profile photo</button>
       </div>
-      <input type="file" id="avatarInput" accept="image/*" capture="environment" hidden>
-      <input type="file" id="bannerInput" accept="image/*" hidden>
+      <input type="file" id="avatarInput" accept="image/*" class="srFile">
+      <input type="file" id="bannerInput" accept="image/*" class="srFile">
     </div>
 
     <!-- Name / Username / Bio -->
@@ -135,5 +135,22 @@
   <script src="firebase.js"></script>
   <script src="theme.js"></script>
   <script src="edit-profile.js"></script>
+
+<!-- Crop modal -->
+<div id="cropModal" class="cropModal hidden" aria-hidden="true">
+  <div class="cropSheet">
+    <div class="cropHead">
+      <button type="button" id="cropCancel" class="cropTextBtn">Cancel</button>
+      <strong id="cropTitle">Crop</strong>
+      <button type="button" id="cropDone" class="cropTextBtn done">Done</button>
+    </div>
+    <div class="cropStage">
+      <canvas id="cropCanvas"></canvas>
+    </div>
+    <p class="cropHint" id="cropHint">Drag to position · pinch/scroll to zoom</p>
+    <input type="range" id="cropZoom" min="1" max="3" step="0.01" value="1">
+  </div>
+</div>
+
 </body>
 </html>

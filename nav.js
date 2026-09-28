@@ -221,6 +221,25 @@
 
                 if (targetPage === currentPage) {
                     e.preventDefault();
+                    // Triple-tap same tab → hard refresh feed (algorithm reshuffle)
+                    try {
+                        var key = "viewora_nav_tap_" + targetPage;
+                        var now = Date.now();
+                        var prev = JSON.parse(sessionStorage.getItem(key) || "[]");
+                        prev = prev.filter(function (t) { return now - t < 900; });
+                        prev.push(now);
+                        sessionStorage.setItem(key, JSON.stringify(prev));
+                        if (prev.length >= 3 && (targetPage === "shorts.html" || targetPage === "index.html")) {
+                            sessionStorage.removeItem(key);
+                            sessionStorage.setItem("viewora_feed_reshuffle", String(now));
+                            if (typeof window.VieworaRefreshFeed === "function") {
+                                window.VieworaRefreshFeed();
+                            } else {
+                                window.location.reload();
+                            }
+                            return;
+                        }
+                    } catch (_) {}
                     if (targetPage === "index.html" || targetPage === "shorts.html") {
                         window.scrollTo({ top: 0, behavior: "smooth" });
                     }

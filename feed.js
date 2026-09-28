@@ -1,3 +1,4 @@
+try{document.addEventListener("click",function(){try{sessionStorage.setItem("viewora_media_unlocked","1");window.__vieworaUserGesture=true;}catch(e){}},true);}catch(e){}
 /*==========================================================
         VIEWORA V12
         feed.js

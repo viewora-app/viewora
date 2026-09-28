@@ -328,3 +328,47 @@ html[data-theme="light"] .toast {
   animation: spin .7s linear infinite;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
+
+/* Crop */
+.cropModal {
+  position: fixed; inset: 0; z-index: 9999;
+  background: rgba(0,0,0,.72);
+  display: flex; align-items: flex-end; justify-content: center;
+}
+.cropModal.hidden { display: none !important; }
+.cropSheet {
+  width: 100%; max-width: 480px;
+  background: #121218;
+  border-radius: 18px 18px 0 0;
+  padding: 12px 16px calc(20px + env(safe-area-inset-bottom));
+}
+.cropHead {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 12px; color: #fff;
+}
+.cropTextBtn {
+  background: none; border: 0; color: #a78bfa; font-weight: 700; font-size: 15px;
+}
+.cropTextBtn.done { color: #22c55e; }
+.cropStage {
+  position: relative; width: 100%;
+  aspect-ratio: 1; background: #000;
+  border-radius: 12px; overflow: hidden;
+  touch-action: none;
+}
+.cropStage.banner { aspect-ratio: 3 / 1; }
+.cropStage canvas { width: 100%; height: 100%; display: block; }
+.cropHint { font-size: 12px; color: rgba(255,255,255,.45); margin: 10px 0 6px; text-align: center; }
+#cropZoom { width: 100%; }
+
+.srFile {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0,0,0,0) !important;
+  border: 0 !important;
+  opacity: 0 !important;
+}

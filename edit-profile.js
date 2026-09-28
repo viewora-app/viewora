@@ -293,11 +293,134 @@
     }, 450);
   }
 
+
+  /* ---- Simple crop (avatar 1:1, banner 3:1) ---- */
+  var cropKind = "avatar"; // avatar | banner
+  var cropImg = null;
+  var cropScale = 1;
+  var cropPanX = 0;
+  var cropPanY = 0;
+  var cropDragging = false;
+  var cropLastX = 0;
+  var cropLastY = 0;
+
+  function openCrop(file, kind) {
+    cropKind = kind === "banner" ? "banner" : "avatar";
+    var modal = $("cropModal");
+    var stage = document.querySelector(".cropStage");
+    if (stage) stage.classList.toggle("banner", cropKind === "banner");
+    $("cropTitle").textContent = cropKind === "banner" ? "Crop banner" : "Crop photo";
+    $("cropHint").textContent =
+      cropKind === "banner" ? "3:1 banner · drag & zoom" : "Square photo · drag & zoom";
+    cropScale = 1;
+    cropPanX = 0;
+    cropPanY = 0;
+    $("cropZoom").value = "1";
+    cropImg = new Image();
+    cropImg.onload = function () {
+      drawCrop();
+      modal.classList.remove("hidden");
+      modal.setAttribute("aria-hidden", "false");
+    };
+    cropImg.src = URL.createObjectURL(file);
+  }
+
+  function drawCrop() {
+    var canvas = $("cropCanvas");
+    if (!canvas || !cropImg) return;
+    var stage = canvas.parentElement;
+    var w = stage.clientWidth || 320;
+    var h = stage.clientHeight || (cropKind === "banner" ? Math.round(w / 3) : w);
+    canvas.width = w;
+    canvas.height = h;
+    var ctx = canvas.getContext("2d");
+    ctx.fillStyle = "#000";
+    ctx.fillRect(0, 0, w, h);
+    var iw = cropImg.naturalWidth;
+    var ih = cropImg.naturalHeight;
+    var base = Math.max(w / iw, h / ih) * cropScale;
+    var dw = iw * base;
+    var dh = ih * base;
+    var dx = (w - dw) / 2 + cropPanX;
+    var dy = (h - dh) / 2 + cropPanY;
+    ctx.drawImage(cropImg, dx, dy, dw, dh);
+  }
+
+  function finishCrop() {
+    var canvas = $("cropCanvas");
+    if (!canvas) return;
+    // Export at target resolution
+    var out = document.createElement("canvas");
+    if (cropKind === "banner") {
+      out.width = 1500;
+      out.height = 500;
+    } else {
+      out.width = 720;
+      out.height = 720;
+    }
+    var octx = out.getContext("2d");
+    // redraw scaled
+    var w = canvas.width;
+    var h = canvas.height;
+    var iw = cropImg.naturalWidth;
+    var ih = cropImg.naturalHeight;
+    var base = Math.max(w / iw, h / ih) * cropScale;
+    var dw = iw * base;
+    var dh = ih * base;
+    var dx = (w - dw) / 2 + cropPanX;
+    var dy = (h - dh) / 2 + cropPanY;
+    // map canvas coords to out
+    var sx = -dx / base;
+    var sy = -dy / base;
+    var sw = w / base;
+    var sh = h / base;
+    octx.drawImage(cropImg, sx, sy, sw, sh, 0, 0, out.width, out.height);
+    out.toBlob(function (blob) {
+      if (!blob) return;
+      var file = new File([blob], cropKind + "-crop.jpg", { type: "image/jpeg" });
+      if (cropKind === "banner") {
+        bannerFile = file;
+        if (bannerPreviewUrl) try { URL.revokeObjectURL(bannerPreviewUrl); } catch (_) {}
+        bannerPreviewUrl = URL.createObjectURL(file);
+        setBanner(bannerPreviewUrl);
+      } else {
+        avatarFile = file;
+        if (avatarPreviewUrl) try { URL.revokeObjectURL(avatarPreviewUrl); } catch (_) {}
+        avatarPreviewUrl = URL.createObjectURL(file);
+        setAvatar(avatarPreviewUrl);
+      }
+      closeCrop();
+    }, "image/jpeg", 0.92);
+  }
+
+  function closeCrop() {
+    var modal = $("cropModal");
+    if (modal) {
+      modal.classList.add("hidden");
+      modal.setAttribute("aria-hidden", "true");
+    }
+    if (cropImg && cropImg.src && cropImg.src.indexOf("blob:") === 0) {
+      try { URL.revokeObjectURL(cropImg.src); } catch (_) {}
+    }
+    cropImg = null;
+  }
+
+  // Replace onAvatarPicked / onBannerPicked to open crop
+
   function pickAvatar() {
-    $("avatarInput").click();
+    var inp = $("avatarInput");
+    if (!inp) return;
+    try { inp.value = ""; } catch (_) {}
+    inp.setAttribute("accept", "image/*");
+    // iOS/Android WebView: click must be sync in gesture
+    inp.click();
   }
   function pickBanner() {
-    $("bannerInput").click();
+    var inp = $("bannerInput");
+    if (!inp) return;
+    try { inp.value = ""; } catch (_) {}
+    inp.setAttribute("accept", "image/*");
+    inp.click();
   }
 
   function onAvatarPicked(e) {
@@ -311,14 +434,8 @@
       toast("Image must be under 10 MB");
       return;
     }
-    avatarFile = file;
-    if (avatarPreviewUrl) {
-      try {
-        URL.revokeObjectURL(avatarPreviewUrl);
-      } catch (_) {}
-    }
-    avatarPreviewUrl = URL.createObjectURL(file);
-    setAvatar(avatarPreviewUrl);
+    openCrop(file, "avatar");
+    try { e.target.value = ""; } catch (_) {}
   }
 
   function onBannerPicked(e) {
@@ -332,14 +449,8 @@
       toast("Banner must be under 12 MB");
       return;
     }
-    bannerFile = file;
-    if (bannerPreviewUrl) {
-      try {
-        URL.revokeObjectURL(bannerPreviewUrl);
-      } catch (_) {}
-    }
-    bannerPreviewUrl = URL.createObjectURL(file);
-    setBanner(bannerPreviewUrl);
+    openCrop(file, "banner");
+    try { e.target.value = ""; } catch (_) {}
   }
 
   function compressImage(file, maxSide, quality) {
@@ -506,6 +617,10 @@
 
       try {
         if (photoURL) localStorage.setItem("viewora_my_avatar", photoURL);
+        if (coverURL) {
+          localStorage.setItem("viewora_my_banner", coverURL);
+          localStorage.setItem("viewora_my_cover", coverURL);
+        }
         localStorage.setItem("viewora_my_name", name);
         localStorage.setItem("viewora_my_username", uname);
       } catch (_) {}
@@ -555,6 +670,33 @@
       toast("Firebase not available");
       return;
     }
+    try {
+      $("cropCancel") && $("cropCancel").addEventListener("click", closeCrop);
+      $("cropDone") && $("cropDone").addEventListener("click", finishCrop);
+      $("cropZoom") && $("cropZoom").addEventListener("input", function () {
+        cropScale = parseFloat($("cropZoom").value) || 1;
+        drawCrop();
+      });
+      var stage = document.querySelector(".cropStage");
+      if (stage) {
+        stage.addEventListener("pointerdown", function (e) {
+          cropDragging = true;
+          cropLastX = e.clientX;
+          cropLastY = e.clientY;
+          try { stage.setPointerCapture(e.pointerId); } catch (_) {}
+        });
+        stage.addEventListener("pointermove", function (e) {
+          if (!cropDragging) return;
+          cropPanX += e.clientX - cropLastX;
+          cropPanY += e.clientY - cropLastY;
+          cropLastX = e.clientX;
+          cropLastY = e.clientY;
+          drawCrop();
+        });
+        stage.addEventListener("pointerup", function () { cropDragging = false; });
+        stage.addEventListener("pointercancel", function () { cropDragging = false; });
+      }
+    } catch (_) {}
     auth.onAuthStateChanged(function (u) {
       if (!u) {
         toast("Login required");

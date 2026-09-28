@@ -62,6 +62,7 @@
         .mdBtn.primary {
             background: linear-gradient(135deg, #7c5cff, #4f8cff); color: #fff;
         }
+        .mdBtn.saved { color: #7c5cff; }
         .mdBtn.ghost {
             background: var(--card); color: #fff; border: 1px solid var(--border);
         }
@@ -556,6 +557,8 @@
         document.getElementById("playBtn").onclick = play;
         document.getElementById("useBtn").onclick = () => {
             if (!track) return;
+            const fromLong = params.get("fromLong") === "1" || !!track.fromLong || !!track.fromVideo;
+            const maxDur = fromLong ? 15 : (Number(params.get("maxDuration") || track.maxDuration || 0) || 0);
             const payload = {
                 id: track.id || track.musicId || "",
                 musicId: track.id || track.musicId || "",
@@ -576,7 +579,11 @@
                     "",
                 coverUrl: track.coverUrl || track.cover || "",
                 avatarUrl: track.avatarUrl || track.photoURL || "",
-                uid: track.uid || params.get("uid") || ""
+                uid: track.uid || params.get("uid") || "",
+                fromVideo: fromLong || !!track.fromVideo,
+                fromLong: fromLong,
+                maxDuration: maxDur || (fromLong ? 15 : 0),
+                at: Date.now()
             };
             const vurl = params.get("video") || track.videoUrl || "";
             if (!payload.audioUrl && vurl) {
@@ -585,22 +592,89 @@
                 payload.fromVideo = true;
             }
             try {
-                sessionStorage.setItem(
-                    "vieworaSelectedMusic",
-                    JSON.stringify(payload)
-                );
-                localStorage.setItem(
-                    "viewora_selected_music",
-                    JSON.stringify(payload)
-                );
+                sessionStorage.setItem("vieworaSelectedMusic", JSON.stringify(payload));
+                sessionStorage.setItem("viewora_selected_music", JSON.stringify(payload));
+                localStorage.setItem("viewora_selected_music", JSON.stringify(payload));
             } catch (_) {}
             stop();
-            // Pick / record a NEW video first, then editor — not short-edit details page
-            location.href =
-                "upload.html?type=shorts&useMusic=1";
+            var q = "upload.html?type=shorts&useMusic=1";
+            if (fromLong) q += "&fromLong=1&maxDuration=15&remix=1";
+            location.href = q;
         };
 
-        track = await loadTrack();
+        // Save to My songs (Instagram-style)
+        const saveBtnEl = document.getElementById("saveBtn");
+        if (saveBtnEl) {
+            function isSaved(id) {
+                try {
+                    const arr = JSON.parse(localStorage.getItem("viewora_saved_music") || "[]");
+                    return Array.isArray(arr) && arr.some(function (x) {
+                        return (typeof x === "string" ? x : (x && (x.id || x.musicId))) === id;
+                    });
+                } catch (_) { return false; }
+            }
+            function refreshSaveUI() {
+                const id = (track && (track.id || track.musicId)) || params.get("id") || "";
+                if (isSaved(id)) {
+                    saveBtnEl.innerHTML = '<i class="fa-solid fa-bookmark"></i> Saved';
+                    saveBtnEl.classList.add("saved");
+                } else {
+                    saveBtnEl.innerHTML = '<i class="fa-regular fa-bookmark"></i> Save';
+                    saveBtnEl.classList.remove("saved");
+                }
+            }
+            saveBtnEl.onclick = async function () {
+                if (!track) return;
+                const id = track.id || track.musicId || ("orig_" + Date.now());
+                const entry = {
+                    id: id,
+                    musicId: id,
+                    title: track.isOriginal ? "Original audio" : (track.title || track.name || "Sound"),
+                    name: track.isOriginal ? "Original audio" : (track.title || track.name || "Sound"),
+                    artist: track.artist || "",
+                    audioUrl: track.audioUrl || track.url || track.src || params.get("audio") || params.get("video") || "",
+                    url: track.audioUrl || track.url || track.src || params.get("audio") || params.get("video") || "",
+                    coverUrl: track.coverUrl || track.cover || "",
+                    isOriginal: !!track.isOriginal,
+                    fromLong: params.get("fromLong") === "1",
+                    maxDuration: params.get("fromLong") === "1" ? 15 : 0,
+                    savedAt: Date.now()
+                };
+                try {
+                    let arr = JSON.parse(localStorage.getItem("viewora_saved_music") || "[]");
+                    if (!Array.isArray(arr)) arr = [];
+                    const exists = arr.findIndex(function (x) {
+                        return (typeof x === "string" ? x : (x && (x.id || x.musicId))) === id;
+                    });
+                    if (exists >= 0) {
+                        arr.splice(exists, 1);
+                    } else {
+                        arr.unshift(entry);
+                        arr = arr.slice(0, 100);
+                    }
+                    localStorage.setItem("viewora_saved_music", JSON.stringify(arr));
+                    // also mirror to Firebase if logged in
+                    try {
+                        if (typeof firebase !== "undefined" && firebase.auth) {
+                            const u = firebase.auth().currentUser;
+                            if (u) {
+                                const ref = firebase.database().ref("users/" + u.uid + "/savedMusic/" + id);
+                                if (exists >= 0) await ref.remove();
+                                else await ref.set(entry);
+                            }
+                        }
+                    } catch (_) {}
+                    refreshSaveUI();
+                } catch (err) {
+                    console.warn("save music", err);
+                }
+            };
+            // refresh after track loads — call later too
+            window.__vieworaRefreshSave = refreshSaveUI;
+        }
+
+        
+track = await loadTrack();
         if (!track) {
             document.getElementById("title").textContent = "Song not found";
             document.getElementById("grid").innerHTML =
@@ -678,6 +752,8 @@
             coverUrl ||
             "assets/logo.png";
         document.getElementById("cover").src = coverUrl;
+        try { if (window.__vieworaRefreshSave) window.__vieworaRefreshSave(); } catch (_) {}
+
 
         const avatarEl = document.getElementById("avatar");
         const artistBtn = document.getElementById("artistBtn");

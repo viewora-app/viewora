@@ -1,3 +1,4 @@
+try{document.addEventListener("click",function(){try{sessionStorage.setItem("viewora_media_unlocked","1");window.__vieworaUserGesture=true;}catch(e){}},true);}catch(e){}
 "use strict";
 
 /*
@@ -137,29 +138,79 @@
     };
 
 
+
+    /* VIEWORA_AVATAR_FIX — resolve real DP everywhere */
+    var VIEWORA_FALLBACK_AVATAR = "data:image/svg+xml," + encodeURIComponent(
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">' +
+        '<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">' +
+        '<stop offset="0%" stop-color="#7c3aed"/><stop offset="100%" stop-color="#2563eb"/></linearGradient></defs>' +
+        '<circle cx="64" cy="64" r="64" fill="url(#g)"/>' +
+        '<circle cx="64" cy="48" r="24" fill="rgba(255,255,255,.92)"/>' +
+        '<ellipse cx="64" cy="106" rx="40" ry="28" fill="rgba(255,255,255,.92)"/></svg>'
+    );
+
+    function vieworaPickPhoto(obj) {
+        if (!obj || typeof obj !== "object") return "";
+        var keys = [
+            "profilePhoto","photoURL","photoUrl","avatar","profilePic","profilePicture",
+            "profile_image","profileImage","dp","userPhoto","ownerPhoto","creatorPhoto",
+            "authorPhoto","image","photo","picture","pic"
+        ];
+        for (var i = 0; i < keys.length; i++) {
+            var v = obj[keys[i]];
+            if (typeof v === "string") {
+                v = v.trim();
+                if (v.length > 8 && !/^[A-Za-z]$/.test(v) && v.indexOf("default-avatar") === -1) {
+                    return v;
+                }
+            }
+        }
+        // nested
+        try {
+            if (obj.profile && typeof obj.profile === "object") {
+                var nested = vieworaPickPhoto(obj.profile);
+                if (nested) return nested;
+            }
+        } catch (_) {}
+        return "";
+    }
+
+    function vieworaLetterAvatar(name) {
+        var n = encodeURIComponent(String(name || "V").replace(/^@/, "").slice(0, 24) || "V");
+        return "https://ui-avatars.com/api/?name=" + n + "&background=6d28d9&color=fff&size=128&bold=true";
+    }
+
+    function vieworaResolveAvatar(data, nameHint) {
+        var photo = vieworaPickPhoto(data);
+        if (photo) return photo;
+        var name = nameHint || (data && (data.displayName || data.username || data.name || data.fullName)) || "V";
+        return vieworaLetterAvatar(name);
+    }
+
+    function vieworaBindAvatarImg(img, url, nameHint) {
+        if (!img) return;
+        var src = url || vieworaLetterAvatar(nameHint || "V");
+        img.onerror = function () {
+            this.onerror = null;
+            this.src = vieworaLetterAvatar(nameHint || "V");
+            this.onerror = function () {
+                this.onerror = null;
+                this.src = VIEWORA_FALLBACK_AVATAR;
+            };
+        };
+        img.src = src;
+    }
+
     const getAvatar = (data) => {
         if (!data || typeof data !== "object") {
-            return "assets/default-avatar.png";
+            return vieworaLetterAvatar("V");
         }
-        let url =
-            data.userPhoto ||
-            data.profilePhoto ||
-            data.photoURL ||
-            data.avatar ||
-            data.profilePic ||
-            data.profile_image ||
-            data.profilePicture ||
-            data.dp ||
-            "";
-        if (typeof url !== "string") url = "";
-        url = url.trim();
-        if (!url || url.length < 6 || /^[A-Za-z]$/.test(url)) url = "";
-        const safe = safeURL(url);
-        if (safe && safe.indexOf("default-avatar") === -1) return safe;
-        const name = encodeURIComponent(
-            String(data.username || data.displayName || data.name || "V").slice(0, 20)
-        );
-        return "https://ui-avatars.com/api/?name=" + name + "&background=3b82f6&color=fff&size=128&bold=true";
+        var picked = vieworaPickPhoto(data);
+        if (picked) {
+            var s = (typeof safeURL === "function") ? safeURL(picked) : picked;
+            if (s) return s;
+        }
+        return vieworaResolveAvatar(data);
     };
 
     function cacheMyAvatar(photo, uid) {
@@ -687,7 +738,7 @@
                         width="36"
                         height="36"
                         decoding="async"
-                        onerror="this.onerror=null;this.src='assets/default-avatar.png'"
+                        onerror="this.onerror=null;this.src=typeof vieworaLetterAvatar==='function'?vieworaLetterAvatar(this.alt||'V'):'https://ui-avatars.com/api/?name=V&background=6d28d9&color=fff'"
                       >
                     </span>
 
@@ -965,15 +1016,7 @@
                 if (!user) return;
 
                 // ALWAYS prefer users/ for photo + name
-                const photo =
-                    user.profilePhoto ||
-                    user.photoURL ||
-                    user.photoUrl ||
-                    user.avatar ||
-                    user.profilePic ||
-                    user.profilePicture ||
-                    user.dp ||
-                    "";
+                const photo = vieworaPickPhoto(user) || "";
                 if (photo) {
                     post.data.profilePhoto = photo;
                     post.data.photoURL = photo;
@@ -1215,7 +1258,7 @@
                     alt="${username}"
                     class="videoAvatar"
                     loading="lazy"
-                    onerror="this.onerror=null;this.src='assets/default-avatar.png'"
+                    onerror="this.onerror=null;this.src=typeof vieworaLetterAvatar==='function'?vieworaLetterAvatar(this.alt||'V'):'https://ui-avatars.com/api/?name=V&background=6d28d9&color=fff'"
                 >
 
 
@@ -1371,15 +1414,7 @@
                 if (!user) return;
 
                 // ALWAYS prefer users/ node (video doc can have stale/wrong name/photo)
-                const photo =
-                    user.profilePhoto ||
-                    user.photoURL ||
-                    user.photoUrl ||
-                    user.avatar ||
-                    user.profilePic ||
-                    user.profilePicture ||
-                    user.dp ||
-                    "";
+                const photo = vieworaPickPhoto(user) || "";
                 if (photo) {
                     video.data.profilePhoto = photo;
                     video.data.photoURL = photo;
@@ -1518,18 +1553,18 @@
                 card.className = "longVideoCard liveVideoCard";
                 card.dataset.videoId = "live_" + uid;
                 card.dataset.liveUid = uid;
-                const photo = (d.hostPhoto || "assets/default-avatar.png").replace(/"/g, "");
+                const photo = (d.hostPhoto || VIEWORA_FALLBACK_AVATAR).replace(/"/g, "");
                 const name = String(d.hostName || "Live").replace(/</g, "");
                 const title = String(d.title || "Video Live").replace(/</g, "");
                 card.innerHTML =
                     '<div class="videoThumbnailWrap liveThumb" style="position:relative;aspect-ratio:16/9;background:#111;border-radius:14px;overflow:hidden">' +
-                    '<img src="' + photo + '" alt="" class="videoThumb" style="width:100%;height:100%;object-fit:cover" onerror="this.src=\'assets/default-avatar.png\">' +
+                    '<img src="' + photo + '" alt="" class="videoThumb" style="width:100%;height:100%;object-fit:cover" onerror="this.onerror=null;this.src=&quot;https://ui-avatars.com/api/?name=U&amp;background=6d28d9&amp;color=fff&quot;">' +
                     '<div style="position:absolute;inset:0;background:linear-gradient(transparent 40%,rgba(0,0,0,.75))"></div>' +
                     '<span class="liveBadgePill" style="position:absolute;top:10px;left:10px;background:#ef4444;color:#fff;font-size:11px;font-weight:800;padding:4px 8px;border-radius:6px;z-index:2"><i class="fa-solid fa-circle" style="font-size:7px"></i> LIVE</span>' +
                     '<span style="position:absolute;bottom:10px;left:12px;right:12px;color:#fff;z-index:2;font-weight:700;font-size:14px;text-shadow:0 1px 4px #000">' + title + '</span>' +
                     '</div>' +
                     '<div class="videoMeta" style="display:flex;align-items:center;gap:10px;padding:10px 4px 4px">' +
-                    '<img src="' + photo + '" alt="" style="width:36px;height:36px;border-radius:50%;object-fit:cover;border:2px solid #ef4444" onerror="this.src=\'assets/default-avatar.png\">' +
+                    '<img src="' + photo + '" alt="" style="width:36px;height:36px;border-radius:50%;object-fit:cover;border:2px solid #ef4444" onerror="this.onerror=null;this.src=&quot;https://ui-avatars.com/api/?name=U&amp;background=6d28d9&amp;color=fff&quot;">' +
                     '<div style="min-width:0;flex:1">' +
                     '<strong style="display:block;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + name + '</strong>' +
                     '<span style="font-size:12px;opacity:.65">Video Live · Tap to join</span>' +
@@ -1623,6 +1658,17 @@
                         return;
                     }
 
+                    // skip if same media URL already mapped under another id
+                    var mediaKey = String(data.videoUrl || data.videoURL || data.video || data.mediaUrl || data.media || "").split("?")[0];
+                    var already = false;
+                    if (mediaKey) {
+                        videoMap.forEach(function (ex) {
+                            var u = String(ex.videoUrl || ex.videoURL || ex.video || ex.mediaUrl || ex.media || "").split("?")[0];
+                            if (u && u === mediaKey) already = true;
+                        });
+                    }
+                    if (already) return;
+                    if (data.deleted === true || data.archived === true) return;
                     videoMap.set(
                         child.key,
                         data
@@ -1653,17 +1699,15 @@
             );
 
 
+        // VIEWORA_POSTS_NO_LONG — posts feed is for posts; long videos only from /videos
         db.ref("posts")
             .on(
                 "value",
-                ingest,
+                function (snapshot) {
+                    // intentionally not merging pure videos into longVideoContainer
+                },
                 (error) => {
-
-                    console.error(
-                        "Viewora /posts video merge error:",
-                        error
-                    );
-
+                    console.error("Viewora /posts video merge error:", error);
                 }
             );
 
@@ -1820,16 +1864,48 @@
                 await db.ref(path).update({ commentsDisabled: true });
                 showToast("Comments turned off");
             } else if (action === "delete") {
-                if (!confirm("Delete permanently?")) {
+                if (!confirm("Delete permanently? Ye video kahin nahi dikhegi.")) {
                     closeHomeMenu();
                     return;
                 }
-                await db.ref(path).update({
-                    deleted: true,
-                    deletedAt: Date.now()
-                });
+                var delId = id;
+                var delUid = uid || myUID || "";
+                // Soft-delete + hard remove from all known mirrors
+                var multi = {};
+                multi["videos/" + delId] = null;
+                multi["longVideos/" + delId] = null;
+                multi["posts/" + delId] = null;
+                multi["feedLive/videos/" + delId] = null;
+                if (delUid) {
+                    multi["userVideos/" + delUid + "/" + delId] = null;
+                    multi["users/" + delUid + "/videos/" + delId] = null;
+                }
+                try {
+                    await db.ref("videos/" + delId).update({
+                        deleted: true,
+                        deletedAt: Date.now(),
+                        archived: true,
+                        visibility: "private"
+                    });
+                } catch (_) {}
+                try {
+                    await db.ref().update(multi);
+                } catch (e) {
+                    console.warn("bulk delete", e);
+                    for (var p in multi) {
+                        try { await db.ref(p).remove(); } catch (_) {}
+                    }
+                }
+                try { await db.ref("comments/" + delId).remove(); } catch (_) {}
+                try { await db.ref("videoComments/" + delId).remove(); } catch (_) {}
+                // Remove all cards with this id from DOM
+                try {
+                    document.querySelectorAll('[data-id="' + delId + '"], [data-video-id="' + delId + '"]').forEach(function (el) {
+                        el.remove();
+                    });
+                } catch (_) {}
                 card?.remove();
-                showToast("Deleted");
+                showToast("Deleted permanently");
             } else if (action === "not_interested") {
                 if (myUID) {
                     await db
@@ -3131,7 +3207,7 @@
                 );
                 const text = escapeHTML(c.text || c.comment || "");
                 const avatar = escapeHTML(
-                    c.profilePhoto || c.photoURL || "assets/default-avatar.png"
+                    c.profilePhoto || c.photoURL || VIEWORA_FALLBACK_AVATAR
                 );
                 let tick = "";
                 try {
@@ -3149,7 +3225,7 @@
                 const item = document.createElement("div");
                 item.className = "hpcItem" + (c.parentId ? " reply" : "");
                 item.innerHTML =
-                    '<img src="' + avatar + '" alt="" onerror="this.src=\'assets/default-avatar.png\'">' +
+                    '<img src="' + avatar + '" alt="" onerror="this.src=(typeof vieworaLetterAvatar===\'function\'?vieworaLetterAvatar(\'U\'):\'\')">' +
                     "<div style=\"min-width:0;flex:1;\">" +
                     "<strong>" + name + (tick ? " " + tick : "") + "</strong>" +
                     replyLabel +
@@ -3914,14 +3990,8 @@
                             });
                             if (createdAt > g.latestAt) g.latestAt = createdAt;
 
-                            const av =
-                                data.userPhoto ||
-                                data.profilePhoto ||
-                                data.photoURL ||
-                                data.avatar ||
-                                data.profilePic ||
-                                "";
-                            if (av && (!g.avatar || g.avatar.indexOf("default") !== -1)) {
+                            const av = vieworaPickPhoto(data) || "";
+                            if (av && (!g.avatar || g.avatar.indexOf("default") !== -1 || g.avatar.indexOf("ui-avatars") !== -1)) {
                                 g.avatar = av;
                             }
                             const un =
@@ -3953,15 +4023,7 @@
                                         "User";
                                     g.name = u.displayName || u.name || g.username;
                                     const photo =
-                                        u.profilePhoto ||
-                                        u.photoURL ||
-                                        u.photoUrl ||
-                                        u.avatar ||
-                                        u.profilePic ||
-                                        u.profilePicture ||
-                                        u.profile_image ||
-                                        u.dp ||
-                                        "";
+                                        vieworaPickPhoto(u) || "";
                                     if (photo) g.avatar = photo;
                                     [
                                         "verified","isVerified","blueTick","redTick",
@@ -4174,8 +4236,8 @@
 
                             const avatar =
                                 safeURL(group.avatar) ||
-                                group.avatar ||
-                                "assets/default-avatar.png";
+                                vieworaResolveAvatar({ avatar: group.avatar, photoURL: group.photoURL, profilePhoto: group.profilePhoto, displayName: group.username || group.name }) ||
+                                vieworaLetterAvatar(group.username || group.name || "V");
 
                             const firstStoryId =
                                 group.stories[0]?.id || "";
@@ -4216,7 +4278,7 @@
                                         alt="${label}"
                                         class="storyImage"
                                         loading="lazy"
-                                        onerror="this.src='assets/default-avatar.png'"
+                                        onerror="this.src=VIEWORA_FALLBACK_AVATAR"
                                     >
                                     ${isLive ? '<span class="liveBadge liveBadge-' + liveFmt + '">' + liveBadgeText + '</span>' : ""}
                                 </div>
@@ -4376,7 +4438,7 @@
                                 }
                                 av.onerror = function () {
                                     this.onerror = null;
-                                    this.src = "assets/default-avatar.png";
+                                    this.src = VIEWORA_FALLBACK_AVATAR;
                                 };
                                 av.alt = "Your Story";
                             }
@@ -4998,7 +5060,7 @@
             av.src = safe;
             av.onerror = function () {
                 this.onerror = null;
-                this.src = "assets/default-avatar.png";
+                this.src = VIEWORA_FALLBACK_AVATAR;
             };
             cacheMyAvatar(safe);
         };

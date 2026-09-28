@@ -82,6 +82,14 @@ try {
             firebaseConfig
         );
 
+/* Auth persistence — stay logged in across reloads */
+try {
+    if (firebase.auth && firebase.auth.Auth && firebase.auth.Auth.Persistence) {
+        firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(function () {});
+    }
+} catch (_) {}
+
+
         console.log(
             "🔥 Firebase App Initialized"
         );
