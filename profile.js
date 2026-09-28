@@ -1,3 +1,66 @@
+
+    /* VIEWORA_AVATAR_FIX — resolve real DP everywhere */
+    var VIEWORA_FALLBACK_AVATAR = "data:image/svg+xml," + encodeURIComponent(
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">' +
+        '<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">' +
+        '<stop offset="0%" stop-color="#7c3aed"/><stop offset="100%" stop-color="#2563eb"/></linearGradient></defs>' +
+        '<circle cx="64" cy="64" r="64" fill="url(#g)"/>' +
+        '<circle cx="64" cy="48" r="24" fill="rgba(255,255,255,.92)"/>' +
+        '<ellipse cx="64" cy="106" rx="40" ry="28" fill="rgba(255,255,255,.92)"/></svg>'
+    );
+
+    function vieworaPickPhoto(obj) {
+        if (!obj || typeof obj !== "object") return "";
+        var keys = [
+            "profilePhoto","photoURL","photoUrl","avatar","profilePic","profilePicture",
+            "profile_image","profileImage","dp","userPhoto","ownerPhoto","creatorPhoto",
+            "authorPhoto","image","photo","picture","pic"
+        ];
+        for (var i = 0; i < keys.length; i++) {
+            var v = obj[keys[i]];
+            if (typeof v === "string") {
+                v = v.trim();
+                if (v.length > 8 && !/^[A-Za-z]$/.test(v) && v.indexOf("default-avatar") === -1) {
+                    return v;
+                }
+            }
+        }
+        // nested
+        try {
+            if (obj.profile && typeof obj.profile === "object") {
+                var nested = vieworaPickPhoto(obj.profile);
+                if (nested) return nested;
+            }
+        } catch (_) {}
+        return "";
+    }
+
+    function vieworaLetterAvatar(name) {
+        var n = encodeURIComponent(String(name || "V").replace(/^@/, "").slice(0, 24) || "V");
+        return "https://ui-avatars.com/api/?name=" + n + "&background=6d28d9&color=fff&size=128&bold=true";
+    }
+
+    function vieworaResolveAvatar(data, nameHint) {
+        var photo = vieworaPickPhoto(data);
+        if (photo) return photo;
+        var name = nameHint || (data && (data.displayName || data.username || data.name || data.fullName)) || "V";
+        return vieworaLetterAvatar(name);
+    }
+
+    function vieworaBindAvatarImg(img, url, nameHint) {
+        if (!img) return;
+        var src = url || vieworaLetterAvatar(nameHint || "V");
+        img.onerror = function () {
+            this.onerror = null;
+            this.src = vieworaLetterAvatar(nameHint || "V");
+            this.onerror = function () {
+                this.onerror = null;
+                this.src = VIEWORA_FALLBACK_AVATAR;
+            };
+        };
+        img.src = src;
+    }
+
 function escapeHtml(s){return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
 "use strict";
 
@@ -86,21 +149,13 @@ function escapeHtml(s){return String(s||"").replace(/&/g,"&amp;").replace(/</g,"
        DEFAULT ASSETS
     ===================================================== */
 
-    const DEFAULT_AVATAR =
-        "assets/default-avatar.png";
+    const DEFAULT_AVATAR = (typeof VIEWORA_FALLBACK_AVATAR !== "undefined" ? VIEWORA_FALLBACK_AVATAR : "data:image/svg+xml," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128"><circle cx="64" cy="64" r="64" fill="#6d28d9"/><circle cx="64" cy="48" r="24" fill="#fff"/><ellipse cx="64" cy="106" rx="40" ry="28" fill="#fff"/></svg>'));
 
     /* VIEWORA_PHOTO_HEAL — never lose profile picture on re-login */
     function healProfilePhoto(uid, data) {
         if (!uid || !data) return data || {};
         try {
-            var photo =
-                data.profilePhoto ||
-                data.photoURL ||
-                data.avatar ||
-                data.profilePicture ||
-                data.profile_image ||
-                data.dp ||
-                "";
+            var photo = vieworaPickPhoto(data) || "";
             var cached = "";
             try { cached = localStorage.getItem("viewora_my_avatar") || ""; } catch (_) {}
             var mine = false;
@@ -1076,7 +1131,7 @@ function escapeHtml(s){return String(s||"").replace(/&/g,"&amp;").replace(/</g,"
                 user.image ||
                 "";
 
-            profilePic.src = photo || DEFAULT_AVATAR;
+            vieworaBindAvatarImg(profilePic, photo || vieworaPickPhoto(user), user.displayName || user.username || user.name);
 
             profilePic.onerror = () => {
                 profilePic.onerror = null;
@@ -1114,6 +1169,9 @@ function escapeHtml(s){return String(s||"").replace(/&/g,"&amp;").replace(/</g,"
 
             coverPhoto.src =
                 user.coverPhoto ||
+                user.banner ||
+                user.cover ||
+                (isOwnProfile ? (localStorage.getItem("viewora_my_banner") || localStorage.getItem("viewora_my_cover") || "") : "") ||
                 DEFAULT_BANNER;
 
             coverPhoto.onerror =
@@ -3288,6 +3346,14 @@ function escapeHtml(s){return String(s||"").replace(/&/g,"&amp;").replace(/</g,"
                         // Drop if media is clearly a profile/default avatar path reused by bug
                         const low = media.toLowerCase();
                         if (low.indexOf("default-avatar") !== -1) return false;
+                        // Exclude long-form / pure videos from Posts tab
+                        var ty = String(item.type || item.mediaType || item.kind || "").toLowerCase();
+                        if (ty === "video" || ty === "long" || ty === "longvideo" || ty === "long-video") return false;
+                        if (item.kind === "long") return false;
+                        var hasImages = !!(item.images || item.imageUrl || item.imageURL || item.photoURL || item.thumbnail);
+                        var hasVideo = !!(item.videoUrl || item.videoURL || item.video || item.mediaUrl);
+                        if (hasVideo && !hasImages) return false;
+                        if (item.video === true && !hasImages) return false;
                         return true;
                     })
                     .sort(
@@ -3703,6 +3769,33 @@ function escapeHtml(s){return String(s||"").replace(/&/g,"&amp;").replace(/</g,"
                             })
                         );
 
+                // Also userVideos mirror + ownerId match without index
+                try {
+                    var uv = await db.ref("userVideos/" + profileUID).once("value");
+                    var uvVal = uv.val() || {};
+                    Object.keys(uvVal).forEach(function (id) {
+                        if (!items.some(function (x) { return String(x.id) === String(id); })) {
+                            items.push(Object.assign({ id: id }, uvVal[id] || {}));
+                        }
+                    });
+                } catch (_uv) {}
+                try {
+                    var allV = await db.ref("videos").limitToLast(80).once("value");
+                    var allVal = allV.val() || {};
+                    Object.keys(allVal).forEach(function (id) {
+                        var v = allVal[id] || {};
+                        var owner = String(v.uid || v.userId || v.ownerId || v.creatorId || "");
+                        if (owner && owner === String(profileUID)) {
+                            if (!items.some(function (x) { return String(x.id) === String(id); })) {
+                                items.push(Object.assign({ id: id }, v));
+                            }
+                        }
+                    });
+                } catch (_av) {}
+                items = items.filter(function (item) {
+                    return item && item.deleted !== true && item.archived !== true;
+                });
+
             } catch (error) {
 
                 console.warn(
@@ -3751,6 +3844,21 @@ function escapeHtml(s){return String(s||"").replace(/&/g,"&amp;").replace(/</g,"
 
             }
 
+
+            // Dedupe same video appearing from videos + posts + longVideos
+            {
+                var seenVideoIds = {};
+                var seenVideoUrls = {};
+                items = items.filter(function (item) {
+                    var id = String(item.id || item.videoId || "");
+                    var url = String(item.videoUrl || item.videoURL || item.video || item.mediaUrl || item.media || "").split("?")[0];
+                    if (id && seenVideoIds[id]) return false;
+                    if (url && seenVideoUrls[url]) return false;
+                    if (id) seenVideoIds[id] = true;
+                    if (url) seenVideoUrls[url] = true;
+                    return true;
+                });
+            }
 
             items =
                 items
@@ -4665,8 +4773,10 @@ function escapeHtml(s){return String(s||"").replace(/&/g,"&amp;").replace(/</g,"
                 "posts/" + id,
                 "shorts/" + id,
                 "videos/" + id,
+                "longVideos/" + id,
                 "live/" + id,
                 "lives/" + id,
+                "userVideos/" + (currentUser?.uid || profileUID || "") + "/" + id,
                 "users/" + (currentUser?.uid || profileUID || "") + "/posts/" + id,
                 "users/" + (currentUser?.uid || profileUID || "") + "/shorts/" + id,
                 "users/" + (currentUser?.uid || profileUID || "") + "/videos/" + id,

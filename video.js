@@ -1,3 +1,12 @@
+function isUglyFilenameTitle(s) {
+  s = String(s || "").trim();
+  if (!s) return true;
+  if (/\.(mp4|mov|webm|mkv|avi|m4v)(\?|$)/i.test(s)) return true;
+  if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i.test(s)) return true;
+  if (/_all_\d+/i.test(s)) return true;
+  if (s.length > 80 && !/\s/.test(s)) return true;
+  return false;
+}
 /* ==========================================================
    VIEWORA
    video.js
@@ -5,6 +14,21 @@
    ========================================================== */
 
 "use strict";
+
+    // Global media unlock — home→video navigation counts as gesture if recent
+    try {
+        if (!window.__vieworaGestureBound) {
+            window.__vieworaGestureBound = true;
+            ["pointerdown","touchstart","click","keydown"].forEach(function (ev) {
+                document.addEventListener(ev, function () {
+                    try { sessionStorage.setItem("viewora_media_unlocked", "1"); } catch (_) {}
+                    window.__vieworaMediaUnlocked = true;
+                    window.__vieworaUserGesture = true;
+                }, { capture: true, passive: true });
+            });
+        }
+    } catch (_) {}
+
 
 (() => {
 
@@ -255,7 +279,70 @@
         return auth.currentUser || null;
     }
 
-    function getCreatorId(video) {
+    
+    /* VIEWORA_AVATAR_FIX — resolve real DP everywhere */
+    var VIEWORA_FALLBACK_AVATAR = "data:image/svg+xml," + encodeURIComponent(
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">' +
+        '<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">' +
+        '<stop offset="0%" stop-color="#7c3aed"/><stop offset="100%" stop-color="#2563eb"/></linearGradient></defs>' +
+        '<circle cx="64" cy="64" r="64" fill="url(#g)"/>' +
+        '<circle cx="64" cy="48" r="24" fill="rgba(255,255,255,.92)"/>' +
+        '<ellipse cx="64" cy="106" rx="40" ry="28" fill="rgba(255,255,255,.92)"/></svg>'
+    );
+
+    function vieworaPickPhoto(obj) {
+        if (!obj || typeof obj !== "object") return "";
+        var keys = [
+            "profilePhoto","photoURL","photoUrl","avatar","profilePic","profilePicture",
+            "profile_image","profileImage","dp","userPhoto","ownerPhoto","creatorPhoto",
+            "authorPhoto","image","photo","picture","pic"
+        ];
+        for (var i = 0; i < keys.length; i++) {
+            var v = obj[keys[i]];
+            if (typeof v === "string") {
+                v = v.trim();
+                if (v.length > 8 && !/^[A-Za-z]$/.test(v) && v.indexOf("default-avatar") === -1) {
+                    return v;
+                }
+            }
+        }
+        // nested
+        try {
+            if (obj.profile && typeof obj.profile === "object") {
+                var nested = vieworaPickPhoto(obj.profile);
+                if (nested) return nested;
+            }
+        } catch (_) {}
+        return "";
+    }
+
+    function vieworaLetterAvatar(name) {
+        var n = encodeURIComponent(String(name || "V").replace(/^@/, "").slice(0, 24) || "V");
+        return "https://ui-avatars.com/api/?name=" + n + "&background=6d28d9&color=fff&size=128&bold=true";
+    }
+
+    function vieworaResolveAvatar(data, nameHint) {
+        var photo = vieworaPickPhoto(data);
+        if (photo) return photo;
+        var name = nameHint || (data && (data.displayName || data.username || data.name || data.fullName)) || "V";
+        return vieworaLetterAvatar(name);
+    }
+
+    function vieworaBindAvatarImg(img, url, nameHint) {
+        if (!img) return;
+        var src = url || vieworaLetterAvatar(nameHint || "V");
+        img.onerror = function () {
+            this.onerror = null;
+            this.src = vieworaLetterAvatar(nameHint || "V");
+            this.onerror = function () {
+                this.onerror = null;
+                this.src = VIEWORA_FALLBACK_AVATAR;
+            };
+        };
+        img.src = src;
+    }
+
+function getCreatorId(video) {
         return (
             video?.uid ||
             video?.userId ||
@@ -705,7 +792,7 @@
 
     function openDescSheet() {
         const v = state.video || {};
-        const title = v.title || v.name || "Video";
+        const title = (isUglyFilenameTitle(v.title) ? "" : v.title) || (isUglyFilenameTitle(v.name) ? "" : v.name) || "Video";
         const desc = v.description || v.caption || v.text || "No description added.";
         const likes = v.likesCount || v.likes || state.likeCount || 0;
         const views = v.views || v.viewCount || v.viewsCount || 0;
@@ -772,33 +859,65 @@
     function startRemixFromVideo() {
         const v = state.video || {};
         const audioUrl =
-            v.musicURL || v.audioURL || v.songURL ||
-            (v.music && (v.music.url || v.music.src)) ||
-            v.videoURL || v.mediaURL || v.url || "";
+            v.musicURL || v.audioURL || v.songURL || v.musicUrl || v.audioUrl ||
+            (v.music && (v.music.url || v.music.src || v.music.audioUrl)) ||
+            v.videoURL || v.videoUrl || v.mediaURL || v.mediaUrl || v.url || "";
         const payload = {
+            id: "orig_video_" + (state.videoId || v.id || Date.now()),
+            musicId: "orig_video_" + (state.videoId || v.id || Date.now()),
+            title: v.musicTitle || v.songName || "Original audio",
+            name: v.musicTitle || v.songName || "Original audio",
+            artist: v.musicArtist || (state.creator && (state.creator.name || state.creator.username)) || "Creator",
+            audioUrl: audioUrl,
+            url: audioUrl,
+            isOriginal: true,
+            fromVideo: true,
+            fromLong: true,
+            maxDuration: 15,
             source: "video_remix",
             videoId: state.videoId || v.id || "",
-            audioUrl: audioUrl,
-            musicTitle: v.musicTitle || v.songName || "Original audio",
-            musicArtist: v.musicArtist || state.creator?.name || "",
+            sourceShortId: "",
+            coverUrl: v.thumbnail || v.thumb || v.cover || "",
             thumbnail: v.thumbnail || v.thumb || "",
-            ownerId: v.uid || v.userId || "",
+            ownerId: v.uid || v.userId || v.ownerId || "",
+            uid: v.uid || v.userId || "",
             at: Date.now()
         };
         try {
+            sessionStorage.setItem("vieworaSelectedMusic", JSON.stringify(payload));
+            sessionStorage.setItem("viewora_selected_music", JSON.stringify(payload));
             sessionStorage.setItem("VIEWORA_REMIX_AUDIO", JSON.stringify(payload));
+            localStorage.setItem("viewora_selected_music", JSON.stringify(payload));
             localStorage.setItem("VIEWORA_REMIX_AUDIO", JSON.stringify(payload));
         } catch (_) {}
-        // Shorts create flow
-        location.href =
-            "upload.html?type=short&remix=1&audio=" +
-            encodeURIComponent(audioUrl || "") +
-            "&title=" + encodeURIComponent(payload.musicTitle);
+        location.href = "upload.html?type=shorts&useMusic=1&remix=1&fromLong=1&maxDuration=15";
+    }
+
+    function openVideoMusicDetail() {
+        const v = state.video || {};
+        const audioUrl =
+            v.musicURL || v.audioURL || v.songURL || v.musicUrl || v.audioUrl ||
+            (v.music && (v.music.url || v.music.src)) ||
+            v.videoURL || v.videoUrl || v.mediaURL || v.url || "";
+        const q = new URLSearchParams();
+        q.set("original", "1");
+        q.set("fromLong", "1");
+        q.set("maxDuration", "15");
+        if (state.videoId) q.set("videoId", state.videoId);
+        if (audioUrl) q.set("video", audioUrl);
+        if (audioUrl) q.set("audio", audioUrl);
+        q.set("name", v.musicTitle || v.songName || "Original audio");
+        const artist = v.musicArtist || (state.creator && (state.creator.name || state.creator.username)) || "Creator";
+        q.set("artist", artist);
+        const uid = v.uid || v.userId || "";
+        if (uid) q.set("uid", uid);
+        location.href = "music-detail.html?" + q.toString();
     }
 
 
     async function loadVideo() {
 
+        try { var __pl = $("mainVideo"); if (__pl) { __pl.__vieworaAutoplay = false; __pl.removeAttribute("src"); } } catch (_e) {}
         state.videoId = getVideoId();
 
         if (!state.videoId) {
@@ -1167,17 +1286,7 @@
         const username =
             getCreatorUsername(user, video);
 
-        const avatar =
-            user?.profilePhoto ||
-            user?.photoURL ||
-            user?.photoUrl ||
-            user?.avatar ||
-            user?.profilePic ||
-            user?.profileImage ||
-            user?.profilePicture ||
-            user?.dp ||
-            video?.creatorAvatar ||
-            "assets/default-avatar.png";
+        const avatar = vieworaResolveAvatar(user || video || {}, getCreatorName(user, video));
 
         const nameEl = $("creatorName");
         if (nameEl) {
@@ -1212,11 +1321,7 @@
 
         const user = getCurrentUser();
 
-        return (
-            user?.photoURL ||
-            user?.photoUrl ||
-            "assets/logo.png"
-        );
+        return vieworaResolveAvatar(user || {}, user && (user.displayName || user.email)) || VIEWORA_FALLBACK_AVATAR;
     }
 
     /* ========================================================
@@ -1349,12 +1454,44 @@
             player.setAttribute("playsinline", "");
             player.setAttribute("webkit-playsinline", "");
             player.playsInline = true;
-            if (!player.getAttribute("preload")) player.setAttribute("preload", "metadata");
+            player.setAttribute("preload", "auto"); try { player.preload = "auto"; } catch (_) {}
         } catch (_) {}
         player.addEventListener("play", function () { try { setPlayingUI(true); } catch (_) {} });
         player.addEventListener("pause", function () { try { setPlayingUI(false); } catch (_) {} });
         player.addEventListener("playing", function () { try { setPlayingUI(true); } catch (_) {} });
         player.addEventListener("waiting", function () { /* buffering */ });
+        if (!player.__smoothBound) {
+            player.__smoothBound = true;
+            var stallTimer = null;
+            function clearStall() { if (stallTimer) { clearTimeout(stallTimer); stallTimer = null; } }
+            player.addEventListener("playing", clearStall);
+            player.addEventListener("stalled", function () {
+                clearStall();
+                stallTimer = setTimeout(function () {
+                    try {
+                        if (player.paused) return;
+                        var t0 = player.currentTime;
+                        // micro-seek to force decoder unstick (common mobile lag fix)
+                        if (t0 > 0.3) {
+                            player.currentTime = t0 + 0.001;
+                        }
+                        player.play().catch(function () {});
+                    } catch (_) {}
+                }, 1800);
+            });
+            player.addEventListener("waiting", function () {
+                clearStall();
+                stallTimer = setTimeout(function () {
+                    try {
+                        if (!player.paused && player.readyState < 3) {
+                            player.load();
+                            // restore time after load is hard; just try play
+                            player.play().catch(function () {});
+                        }
+                    } catch (_) {}
+                }, 4000);
+            });
+        }
 
         function setPlayingUI(playing) {
             shell?.classList.toggle("isPlaying", !!playing);
@@ -1372,10 +1509,31 @@
         }
 
         function togglePlay() {
-            if (player.paused) {
-                player.play().catch(() => {});
+            if (!player) return;
+            try {
+                window.__vieworaUserGesture = true;
+                sessionStorage.setItem("viewora_media_unlocked", "1");
+            } catch (_) {}
+            if (player.paused || player.ended) {
+                player.muted = false;
+                try { player.volume = Math.min(1, Math.max(0.7, player.volume || 0.85)); } catch (_) {}
+                var pr = player.play();
+                if (pr && pr.then) {
+                    pr.then(function () {
+                        try { setPlayingUI(true); } catch (_) {}
+                    }).catch(function () {
+                        player.muted = true;
+                        player.play().then(function () {
+                            player.muted = false;
+                            try { setPlayingUI(true); } catch (_) {}
+                        }).catch(function () {});
+                    });
+                } else {
+                    try { setPlayingUI(true); } catch (_) {}
+                }
             } else {
                 player.pause();
+                try { setPlayingUI(false); } catch (_) {}
             }
         }
 
@@ -1429,9 +1587,13 @@
             shell.addEventListener("click", function (e) {
                 if (e.target.closest("button, input, a, .customControls, .playerChrome, .centerPlayBar, .seekBar, .progressWrap")) return;
                 try {
+                    window.__vieworaUserGesture = true;
                     if (player.paused || player.ended) {
+                        player.muted = false;
+                        player.volume = Math.min(1, Math.max(0.6, player.volume || 0.85));
                         var p = player.play();
                         if (p && p.catch) p.catch(function () {
+                            // last resort muted play then user can unmute
                             player.muted = true;
                             player.play().catch(function () {});
                         });
@@ -1444,7 +1606,31 @@
             });
         }
 
-        playBtn?.addEventListener("click", (e) => {
+        
+        // VIEWORA_PLAY_CAPTURE — reliable play/pause for mobile WebView
+        if (!player.__playCaptureBound) {
+            player.__playCaptureBound = true;
+            ["ccPlay", "ccBigPlay", "playBtn", "bigPlayBtn", "centerPlayBtn"].forEach(function (id) {
+                var el = document.getElementById(id);
+                if (!el || el.__vieworaPlayBound) return;
+                el.__vieworaPlayBound = true;
+                el.addEventListener("click", function (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    togglePlay();
+                }, true);
+            });
+            // Tap center of video (not on controls) toggles play
+            var shellEl = document.getElementById("playerShell") || document.querySelector(".playerShell, .videoShell");
+            if (shellEl && !shellEl.__vieworaTapPlay) {
+                shellEl.__vieworaTapPlay = true;
+                shellEl.addEventListener("click", function (e) {
+                    if (e.target.closest("button, a, input, .seek, .progress, .control, .ccBtn, .muteBtn, [data-seek]")) return;
+                    togglePlay();
+                });
+            }
+        }
+playBtn?.addEventListener("click", (e) => {
             e.stopPropagation();
             togglePlay();
         });
@@ -1470,6 +1656,13 @@
         muteBtn?.addEventListener("click", (e) => {
             e.stopPropagation();
             player.muted = !player.muted;
+            if (!player.muted) {
+                try {
+                    window.__vieworaUserGesture = true;
+                    sessionStorage.setItem("viewora_media_unlocked", "1");
+                    player.volume = Math.min(1, Math.max(0.7, player.volume || 0.85));
+                } catch (_) {}
+            }
             muteBtn.innerHTML = player.muted
                 ? '<i class="fa-solid fa-volume-xmark"></i>'
                 : '<i class="fa-solid fa-volume-high"></i>';
@@ -1520,6 +1713,24 @@
                 if (sh) sh.classList.add("videoReady");
             } catch (_) {}
         });
+        
+    // Any user interaction → allow unmuted playback
+    (function bindUserGesture() {
+        function mark() {
+            window.__vieworaUserGesture = true;
+            try {
+                var pl = $("mainVideo") || document.querySelector("video");
+                if (pl && pl.muted && !pl.paused) {
+                    pl.muted = false;
+                    pl.volume = Math.min(1, Math.max(0.6, pl.volume || 0.85));
+                }
+            } catch (_) {}
+        }
+        ["pointerdown", "touchstart", "click", "keydown"].forEach(function (ev) {
+            document.addEventListener(ev, mark, { capture: true, passive: true });
+        });
+    })();
+
         player.addEventListener("canplay", () => {
             hide($("playerLoading"));
             clearPlayerError();
@@ -1529,10 +1740,19 @@
             } catch (_) {}
             try { syncTime(); } catch (_) {}
             if (!player.__vieworaAutoplay) {
-                player.__vieworaAutoplay = true;
+                player.__vieworaAutoplay = true; // one-shot per source
                 try { hide($("playerLoading")); } catch (_) {}
                 try {
-                    player.muted = true; // mobile autoplay policy
+                    // Prefer unmuted if user already interacted (home → video)
+                    var unlocked = false;
+                    try {
+                        unlocked = !!(window.__vieworaUserGesture || window.__vieworaMediaUnlocked ||
+                            sessionStorage.getItem("viewora_media_unlocked") === "1");
+                    } catch (_) {}
+                    player.muted = !unlocked;
+                    if (unlocked) {
+                        try { player.volume = Math.min(1, Math.max(0.7, player.volume || 0.85)); } catch (_) {}
+                    }
                     var p = player.play();
                     if (p && p.then) {
                         p.then(function () {
@@ -1541,6 +1761,7 @@
                             try {
                                 if (window.__vieworaUserGesture) {
                                     player.muted = false;
+                                    player.volume = Math.min(1, Math.max(0.6, player.volume || 0.85));
                                 }
                             } catch (_) {}
                         }).catch(function () {
@@ -2785,7 +3006,7 @@ function renderComments() {
                 comment.avatar ||
                 comment.photoURL ||
                 comment.profilePhoto ||
-                "assets/default-avatar.png";
+                VIEWORA_FALLBACK_AVATAR;
 
             const username = String(
                 comment.username ||
@@ -2851,12 +3072,15 @@ function renderComments() {
                 const snap = await db.ref("users/" + uid).once("value");
                 const u = snap.val() || {};
                 const photo =
-                    u.profilePhoto || u.photoURL || u.avatar || "";
+                    vieworaPickPhoto(u) || "";
                 if (!photo) return;
                 const img = list.querySelector(
                     '.commentAvatarBtn[data-uid="' + uid + '"] img'
                 );
-                if (img) img.src = photo;
+                if (img) {
+                    if (typeof vieworaBindAvatarImg === "function") vieworaBindAvatarImg(img, photo, u.displayName || u.username);
+                    else img.src = photo;
+                }
                 const nameBtn = list.querySelector(
                     '.commentUserBtn[data-uid="' + uid + '"] strong'
                 );
@@ -2879,21 +3103,16 @@ function renderComments() {
                 try {
                     const snap = await db.ref("users/" + user.uid).once("value");
                     const u = snap.val() || {};
-                    photo =
-                        u.profilePhoto ||
-                        u.photoURL ||
-                        u.avatar ||
-                        photo ||
-                        "";
+                    photo = vieworaPickPhoto(u) || photo || "";
                 } catch (_) {}
             }
-            photo = photo || "assets/default-avatar.png";
+            photo = photo || VIEWORA_FALLBACK_AVATAR;
             const apply = function (el) {
                 if (!el) return;
                 el.src = photo;
                 el.onerror = function () {
                     this.onerror = null;
-                    this.src = "assets/default-avatar.png";
+                    this.src = VIEWORA_FALLBACK_AVATAR;
                 };
             };
             apply($("currentUserAvatar"));
@@ -2967,7 +3186,7 @@ function renderComments() {
                 profile.photoURL ||
                 profile.avatar ||
                 user.photoURL ||
-                "assets/default-avatar.png";
+                VIEWORA_FALLBACK_AVATAR;
 
             const key = db.ref(COMMENTS_ROOT + "/" + state.videoId).push().key;
             const parentId = opts.parentId || __replyToId || null;
@@ -3140,7 +3359,7 @@ function renderComments() {
 
         const db = getFirebaseDatabase();
 
-        if (!db) return;
+        if (!db || !state.videoId) return;
 
         const ref =
             db.ref(
@@ -3148,19 +3367,16 @@ function renderComments() {
             );
 
         try {
-
-            const snap =
-                await ref.once("value");
-
-            const count =
-                safeNumber(snap.val()) + 1;
-
+            const snap = await ref.once("value");
+            const count = Math.max(0, safeNumber(snap.val()) + delta);
             await ref.set(count);
-
-            state.video.commentCount = count;
-
+            // mirror comments field used by some UIs
+            try {
+                await db.ref(`${DB_ROOT}/${state.videoId}/comments`).set(count);
+            } catch (_) {}
+            if (state.video) state.video.commentCount = count;
             updateCommentCount();
-
+            setText("commentCount", formatNumber(count));
         } catch (error) {
             console.warn(
                 "Comment count update failed:",
@@ -3918,6 +4134,12 @@ function renderComments() {
 
             setText("analyticsShares", 
                 formatNumber(count));
+            setText("shareCount", formatNumber(count));
+            try {
+                document.querySelectorAll("[data-share-count], .shareCount").forEach(function (el) {
+                    el.textContent = formatNumber(count);
+                });
+            } catch (_) {}
 
         } catch (error) {
             console.warn(
@@ -4143,6 +4365,13 @@ function renderComments() {
     function setupPlayerSettings() {
         
         $("videoTitle")?.addEventListener("click", openDescSheet);
+        $("videoDescription")?.addEventListener("click", openDescSheet);
+        document.querySelectorAll(".videoTitleRow, .descriptionBox, #ytDescPreview").forEach(function (el) {
+            el.addEventListener("click", function (e) {
+                if (e.target.closest("a, button")) return;
+                openDescSheet();
+            });
+        });
         // description box removed — title / More opens sheet
         $("descriptionToggle")?.addEventListener("click", openDescSheet);
         $("descSeeMore")?.addEventListener("click", () => {
@@ -4297,7 +4526,7 @@ function renderComments() {
         if (avEl) {
             if (photo) {
                 avEl.src = photo;
-                avEl.onerror = function () { this.src = "assets/default-avatar.png"; };
+                avEl.onerror = function () { this.src = VIEWORA_FALLBACK_AVATAR; };
             }
         }
     }
@@ -5224,6 +5453,35 @@ function openShortDescriptionSheet(shortObj) {
     sheet.classList.add("open");
 }
 window.openShortDescriptionSheet = openShortDescriptionSheet;
+
+
+    // Wire description music actions
+    (function bindDescMusic() {
+        try {
+            var card = document.getElementById("descMusicCard");
+            var useBtn = document.getElementById("descUseAudio") || document.querySelector("[data-action='use-audio'], .descUseAudio, #useAudioBtn");
+            var openMusic = document.getElementById("descOpenMusic");
+            if (card) card.addEventListener("click", function (e) {
+                e.preventDefault();
+                openVideoMusicDetail();
+            });
+            document.querySelectorAll("[data-action='use-audio'], .descUseAudio, #descUseAudioBtn, #useAudioFromDesc").forEach(function (btn) {
+                btn.addEventListener("click", function (e) {
+                    e.preventDefault();
+                    startRemixFromVideo();
+                });
+            });
+            // bottom player "Use this audio" if present
+            document.querySelectorAll(".psLeft, [data-action='remix-audio']").forEach(function (el) {
+                if ((el.textContent || "").toLowerCase().indexOf("use this audio") >= 0 || el.getAttribute("data-action") === "remix-audio") {
+                    el.addEventListener("click", function (e) {
+                        e.preventDefault();
+                        startRemixFromVideo();
+                    });
+                }
+            });
+        } catch (err) { console.warn("desc music bind", err); }
+    })();
 
 /* VIEWORA_HIST_FORCE_BIND */
 (function () {

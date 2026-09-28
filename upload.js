@@ -1569,7 +1569,7 @@
 
                 closeAllOverlays();
 
-                await sleep(180);
+                await sleep(420);
 
                 window.location.href =
                     mode === "shorts"
@@ -1828,6 +1828,20 @@
                             "vieworaUploadMode",
                             mode
                         );
+                        // Prevent edit-video from loading a previous published video
+                        [
+                            "viewora_edit_video_id",
+                            "vieworaEditVideoId",
+                            "viewora_video_id",
+                            "vieworaVideoId",
+                            "editVideoId",
+                            "longVideoId",
+                            "viewora_long_video_id",
+                            "vieworaLongVideoId"
+                        ].forEach(function (k) {
+                            try { sessionStorage.removeItem(k); } catch (_) {}
+                            try { localStorage.removeItem(k); } catch (_) {}
+                        });
 
                         sessionStorage.setItem(
                             "vieworaUploadName",
@@ -3357,10 +3371,20 @@
 
     function selectMusic(id) {
 
-        const music =
+        let music =
             MUSIC_LIBRARY.find(
                 item => item.id === id
             );
+
+        if (!music) {
+            // fallback My songs objects
+            try {
+                const arr = JSON.parse(localStorage.getItem("viewora_saved_music") || "[]");
+                music = (arr || []).find(function (x) {
+                    return typeof x === "object" && x && (x.id === id || x.musicId === id);
+                });
+            } catch (_) {}
+        }
 
         if (!music) return;
 
@@ -3410,64 +3434,44 @@
 
 
     function isMusicSaved(id) {
-
         try {
-
-            const saved =
-                JSON.parse(
-                    localStorage.getItem(
-                        "viewora_saved_music"
-                    ) || "[]"
-                );
-
-            return Array.isArray(saved) &&
-                saved.includes(id);
-
+            const saved = JSON.parse(localStorage.getItem("viewora_saved_music") || "[]");
+            if (!Array.isArray(saved)) return false;
+            const sid = String(id || "");
+            return saved.some(function (x) {
+                if (typeof x === "string") return x === sid;
+                return String((x && (x.id || x.musicId)) || "") === sid;
+            });
         } catch (_) {
-
             return false;
         }
     }
 
 
     function toggleSavedMusic(id) {
-
         try {
-
-            let saved =
-                JSON.parse(
-                    localStorage.getItem(
-                        "viewora_saved_music"
-                    ) || "[]"
-                );
-
-            if (!Array.isArray(saved)) {
-                saved = [];
-            }
-
-            if (saved.includes(id)) {
-
-                saved =
-                    saved.filter(
-                        value => value !== id
-                    );
-
+            let saved = JSON.parse(localStorage.getItem("viewora_saved_music") || "[]");
+            if (!Array.isArray(saved)) saved = [];
+            const sid = String(id || "");
+            const idx = saved.findIndex(function (x) {
+                if (typeof x === "string") return x === sid;
+                return String((x && (x.id || x.musicId)) || "") === sid;
+            });
+            if (idx >= 0) {
+                saved.splice(idx, 1);
             } else {
-
-                saved.push(id);
+                // prefer full object from MUSIC_LIBRARY
+                let entry = null;
+                if (typeof MUSIC_LIBRARY !== "undefined") {
+                    entry = MUSIC_LIBRARY.find(function (m) { return m.id === sid; });
+                }
+                if (entry) saved.unshift(Object.assign({}, entry, { savedAt: Date.now() }));
+                else saved.unshift(sid);
+                saved = saved.slice(0, 100);
             }
-
-            localStorage.setItem(
-                "viewora_saved_music",
-                JSON.stringify(saved)
-            );
-
+            localStorage.setItem("viewora_saved_music", JSON.stringify(saved));
         } catch (error) {
-
-            console.warn(
-                "Music save failed:",
-                error
-            );
+            console.warn("toggleSavedMusic", error);
         }
     }
 
@@ -3918,51 +3922,118 @@
        RESTORE MUSIC
     ===================================================== */
 
+    
+    function getSelectedMusicForPublish() {
+        const m = selectedMusicData || null;
+        if (!m) return null;
+        const out = Object.assign({}, m);
+        if (out.maxDuration === 15 || out.fromLong || out.fromVideo) {
+            out.trimStart = 0;
+            out.trimEnd = 15;
+            out.maxDuration = 15;
+        }
+        return out;
+    }
+    window.getSelectedMusicForPublish = getSelectedMusicForPublish;
+
     function restoreSelectedMusic() {
 
         try {
 
             let raw = null;
             try { raw = sessionStorage.getItem("vieworaSelectedMusic"); } catch (_) {}
-            if (!raw) raw =
-                sessionStorage.getItem(
-                    "viewora_selected_music"
-                );
+            if (!raw) {
+                try { raw = sessionStorage.getItem("viewora_selected_music"); } catch (_) {}
+            }
+            if (!raw) {
+                try { raw = localStorage.getItem("viewora_selected_music"); } catch (_) {}
+            }
+            if (!raw) {
+                try { raw = sessionStorage.getItem("VIEWORA_REMIX_AUDIO"); } catch (_) {}
+            }
+            if (!raw) {
+                try { raw = localStorage.getItem("VIEWORA_REMIX_AUDIO"); } catch (_) {}
+            }
 
-            if (!raw) return;
+            if (!raw) {
+                // URL flags
+                try {
+                    const p = new URLSearchParams(location.search || "");
+                    if (p.get("fromLong") === "1" || p.get("remix") === "1") {
+                        // wait — may still load from storage next tick
+                    }
+                } catch (_) {}
+                return;
+            }
 
-            const music =
-                JSON.parse(raw);
+            const music = JSON.parse(raw);
+            if (!music) return;
+            if (!music.id && !music.audioUrl && !music.url) return;
+            if (!music.id) music.id = music.musicId || ("tmp_" + Date.now());
+            if (!music.title) music.title = music.name || "Original audio";
 
-            if (!music?.id) return;
+            // Long video remix → max 15s clip for shorts
+            try {
+                const p = new URLSearchParams(location.search || "");
+                if (p.get("fromLong") === "1" || music.fromLong || music.fromVideo) {
+                    music.maxDuration = 15;
+                    music.fromLong = true;
+                }
+            } catch (_) {}
 
-            selectedMusicData =
-                music;
+            selectedMusicData = music;
 
             if (selectedMusicName) {
-                selectedMusicName.textContent =
-                    music.title;
+                selectedMusicName.textContent = music.title || "Original audio";
             }
 
             if (selectedMusicArtist) {
-                selectedMusicArtist.textContent =
-                    music.artist;
+                let art = music.artist || "";
+                if (music.maxDuration === 15 || music.fromLong) {
+                    art = (art ? art + " · " : "") + "15s clip";
+                }
+                selectedMusicArtist.textContent = art;
             }
 
-            selectedMusic?.classList.remove(
-                "hidden"
-            );
+            selectedMusic?.classList.remove("hidden");
+            musicBtn?.classList.add("hidden");
 
-            musicBtn?.classList.add(
-                "hidden"
-            );
+            try {
+                window.__vieworaMusicMaxDuration = Number(music.maxDuration) || 0;
+            } catch (_) {}
 
         } catch (error) {
+            console.warn("Music restore failed:", error);
+        }
+    }
 
-            console.warn(
-                "Music restore failed:",
-                error
-            );
+    /** Load My songs (saved) into music library sheet */
+    function loadMySongsIntoLibrary() {
+        try {
+            let arr = JSON.parse(localStorage.getItem("viewora_saved_music") || "[]");
+            if (!Array.isArray(arr)) arr = [];
+            const mapped = arr.map(function (x) {
+                if (typeof x === "string") {
+                    return { id: x, title: "Saved sound", artist: "My songs", audioUrl: "", saved: true };
+                }
+                return Object.assign({}, x, {
+                    id: x.id || x.musicId || ("s_" + Date.now()),
+                    title: x.title || x.name || "Saved sound",
+                    artist: x.artist || "My songs",
+                    audioUrl: x.audioUrl || x.url || "",
+                    saved: true
+                });
+            });
+            // prepend to MUSIC_LIBRARY if exists
+            if (typeof MUSIC_LIBRARY !== "undefined" && Array.isArray(MUSIC_LIBRARY)) {
+                const ids = new Set(MUSIC_LIBRARY.map(function (m) { return m.id; }));
+                mapped.forEach(function (m) {
+                    if (!ids.has(m.id)) MUSIC_LIBRARY.unshift(m);
+                });
+            }
+            return mapped;
+        } catch (_) {
+            return [];
         }
     }
 

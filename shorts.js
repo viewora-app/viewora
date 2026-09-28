@@ -121,6 +121,15 @@
     try {
         preferUnmuted = localStorage.getItem("viewora_shorts_unmuted") === "1";
     } catch (_) {}
+    try {
+        Object.defineProperty(window, "__vieworaPreferUnmuted", {
+            get: function () { return preferUnmuted; },
+            set: function (v) { preferUnmuted = !!v; },
+            configurable: true
+        });
+    } catch (_) {
+        window.__vieworaPreferUnmuted = preferUnmuted;
+    }
 
 
     // Ensure Realtime Database handle (firebase.js may set window.db)
@@ -800,7 +809,7 @@
                     ? `<video
                             class="shortVideo"
                             src="${escapeHTML(media)}"
-                            ${thumbnail ? `poster="${escapeHTML(thumbnail)}"` : ""}
+                            ${thumbnail && !/play|placeholder|default-thumb|empty/i.test(String(thumbnail)) ? `poster="${escapeHTML(thumbnail)}"` : ""}
                             playsinline
                             loop
                             muted
@@ -980,79 +989,243 @@
         const playOverlay = card.querySelector(".playOverlay");
         const progressBar = card.querySelector(".shortProgress span");
 
-        // Tap to play/pause
-        card.addEventListener("click", (e) => {
-            const btn = e.target.closest("[data-action]");
+        // Single tap → play/pause (delayed so double-tap can like without pause)
+        let __tapTimer = null;
+        let __lastTapAt = 0;
+        function toggleShortPlay() {
+            if (!video) return;
+            if (video.paused) {
+                if (preferUnmuted) video.muted = false;
+                try {
+                    if (typeof currentShort !== "undefined") __recordShortWatch(currentShort);
+                    else if (typeof activeShort !== "undefined") __recordShortWatch(activeShort, 0.1);
+                } catch (_r) {}
+                video.play().catch(function () {
+                    video.muted = true;
+                    video.play().catch(function () {});
+                });
+                playOverlay && playOverlay.classList.remove("show");
+                try { syncVolumeIcon(card, video); } catch (_) {}
+            } else {
+                video.pause();
+                playOverlay && playOverlay.classList.add("show");
+            }
+        }
+        function likeThisShort(clientX, clientY) {
+            try {
+                // Ensure video keeps playing
+                if (video && video.paused) {
+                    video.play().catch(function () {});
+                    playOverlay && playOverlay.classList.remove("show");
+                }
+                // Heart burst at tap point
+                var heart = document.createElement("div");
+                heart.className = "shortDblHeart";
+                heart.innerHTML = '<i class="fa-solid fa-heart"></i>';
+                heart.style.cssText = "position:absolute;left:" + (clientX || 50) + "px;top:" + (clientY || 50) + "px;transform:translate(-50%,-50%) scale(0.4);color:#ff2d55;font-size:72px;pointer-events:none;z-index:50;opacity:0;transition:transform .45s ease,opacity .45s ease;";
+                card.style.position = card.style.position || "relative";
+                card.appendChild(heart);
+                requestAnimationFrame(function () {
+                    heart.style.opacity = "1";
+                    heart.style.transform = "translate(-50%,-50%) scale(1.15)";
+                });
+                setTimeout(function () {
+                    heart.style.opacity = "0";
+                    heart.style.transform = "translate(-50%,-50%) scale(1.4)";
+                }, 280);
+                setTimeout(function () { try { heart.remove(); } catch (_) {} }, 600);
+                var likeBtn = card.querySelector('[data-action="like"]');
+                if (likeBtn) handleAction("like", likeBtn, card, short);
+                else handleAction("like", null, card, short);
+            } catch (err) {
+                console.warn("dbl like", err);
+            }
+        }
+        card.addEventListener("click", function (e) {
+            var btn = e.target.closest("[data-action]");
             if (btn) {
                 e.stopPropagation();
                 handleAction(btn.dataset.action, btn, card, short);
                 return;
             }
-
-            if (video) {
-                if (video.paused) {
-                    if (preferUnmuted) video.muted = false;
-                    try { if (typeof currentShort !== "undefined") __recordShortWatch(currentShort); else if (typeof activeShort !== "undefined") __recordShortWatch(activeShort, 0.1); } catch(_r){}
-                        video.play().catch(() => {
-                        video.muted = true;
-                        video.play().catch(() => {});
-                    });
-                    playOverlay?.classList.remove("show");
-                    syncVolumeIcon(card, video);
-                } else {
-                    video.pause();
-                    playOverlay?.classList.add("show");
-                }
-            }
+            // Delay single-tap so double-tap can cancel it
+            if (__tapTimer) clearTimeout(__tapTimer);
+            __tapTimer = setTimeout(function () {
+                __tapTimer = null;
+                toggleShortPlay();
+            }, 280);
         });
-
-        // Double-tap → next short in feed (swipe alternative)
-        let lastTap = 0;
-        card.addEventListener("touchend", (e) => {
-            if (e.target.closest("[data-action], button, a, input, textarea")) return;
-            const now = Date.now();
-            if (now - lastTap < 300) {
-                e.preventDefault();
-                e.stopPropagation();
-                try {
-                    const container = document.getElementById("shortsContainer") || document.getElementById("shortsFeed") || document.querySelector(".shortsFeed");
-                    if (container) {
-                        const cards = Array.from(container.querySelectorAll(".shortCard, .short-item, [data-short-id]"));
-                        const idx = cards.indexOf(card);
-                        const next = cards[idx + 1];
-                        if (next) {
-                            next.scrollIntoView({ behavior: "smooth", block: "start" });
-                        } else if (typeof loadMoreShorts === "function") {
-                            loadMoreShorts();
-                        }
-                    }
-                } catch (_) {}
-                lastTap = 0;
-                return;
-            }
-            lastTap = now;
-        });
-        // Double-click (desktop) same
-        card.addEventListener("dblclick", (e) => {
+        card.addEventListener("dblclick", function (e) {
             if (e.target.closest("[data-action], button, a")) return;
             e.preventDefault();
-            try {
-                const container = document.getElementById("shortsContainer") || document.getElementById("shortsFeed") || document.querySelector(".shortsFeed");
-                if (container) {
-                    const cards = Array.from(container.querySelectorAll(".shortCard, .short-item, [data-short-id]"));
-                    const idx = cards.indexOf(card);
-                    const next = cards[idx + 1];
-                    if (next) next.scrollIntoView({ behavior: "smooth", block: "start" });
-                }
-            } catch (_) {}
+            e.stopPropagation();
+            if (__tapTimer) { clearTimeout(__tapTimer); __tapTimer = null; }
+            var rect = card.getBoundingClientRect();
+            likeThisShort(e.clientX - rect.left, e.clientY - rect.top);
+        });
+        card.addEventListener("touchend", function (e) {
+            if (e.target.closest("[data-action], button, a, input, textarea")) return;
+            var now = Date.now();
+            if (now - __lastTapAt < 300) {
+                e.preventDefault();
+                e.stopPropagation();
+                if (__tapTimer) { clearTimeout(__tapTimer); __tapTimer = null; }
+                var t = (e.changedTouches && e.changedTouches[0]) || null;
+                var rect = card.getBoundingClientRect();
+                var x = t ? t.clientX - rect.left : rect.width / 2;
+                var y = t ? t.clientY - rect.top : rect.height / 2;
+                likeThisShort(x, y);
+                __lastTapAt = 0;
+                return;
+            }
+            __lastTapAt = now;
         });
 
-        if (video) {
+                if (video) {
             video.addEventListener("timeupdate", () => {
                 if (!progressBar || !video.duration) return;
+                if (card.__scrubbing) return;
                 progressBar.style.width =
                     (video.currentTime / video.duration) * 100 + "%";
             });
+
+            // VIEWORA_SHORT_AUTO_POSTER — real frame instead of play-icon placeholder
+            (function autoPoster() {
+                if (!video) return;
+                function grab() {
+                    try {
+                        if (video.getAttribute("data-poster-set") === "1") return;
+                        var w = video.videoWidth || 0, h = video.videoHeight || 0;
+                        if (w < 2 || h < 2) return;
+                        var c = document.createElement("canvas");
+                        c.width = Math.min(w, 720);
+                        c.height = Math.round(c.width * (h / w));
+                        c.getContext("2d").drawImage(video, 0, 0, c.width, c.height);
+                        var url = c.toDataURL("image/jpeg", 0.7);
+                        if (url && url.length > 100) {
+                            video.setAttribute("poster", url);
+                            video.setAttribute("data-poster-set", "1");
+                        }
+                    } catch (_) {}
+                }
+                video.addEventListener("loadeddata", function () {
+                    try {
+                        if ((video.currentTime || 0) < 0.05) {
+                            video.currentTime = 0.12;
+                        }
+                    } catch (_) {}
+                    setTimeout(grab, 100);
+                });
+                video.addEventListener("seeked", grab, { once: true });
+            })();
+
+
+            // === Instagram-style: hold 2s to pause (no icons), release to play ===
+            (function bindHoldPause() {
+                if (!video) return;
+                var holdTimer = null;
+                var holding = false;
+                var holdPaused = false;
+                var startX = 0, startY = 0;
+                function clearHold() {
+                    if (holdTimer) { clearTimeout(holdTimer); holdTimer = null; }
+                }
+                function onDown(e) {
+                    if (e.target.closest("[data-action], .shortProgress, .shortActions, .shortContent, button, a")) return;
+                    if (card.__scrubbing) return;
+                    var pt = e.touches ? e.touches[0] : e;
+                    startX = pt.clientX; startY = pt.clientY;
+                    holding = true;
+                    holdPaused = false;
+                    clearHold();
+                    holdTimer = setTimeout(function () {
+                        if (!holding || card.__scrubbing) return;
+                        holdPaused = true;
+                        try {
+                            if (!video.paused) {
+                                video.pause();
+                                // NO play overlay / symbols on hold-pause
+                                if (playOverlay) playOverlay.classList.remove("show");
+                            }
+                        } catch (_) {}
+                    }, 2000);
+                }
+                function onMove(e) {
+                    if (!holding) return;
+                    var pt = e.touches ? e.touches[0] : e;
+                    if (Math.abs(pt.clientX - startX) > 12 || Math.abs(pt.clientY - startY) > 12) {
+                        // moved → cancel hold (user scrolling)
+                        holding = false;
+                        clearHold();
+                    }
+                }
+                function onUp() {
+                    if (!holding && !holdPaused) { clearHold(); return; }
+                    holding = false;
+                    clearHold();
+                    if (holdPaused) {
+                        holdPaused = false;
+                        try {
+                            if (preferUnmuted) { video.muted = false; try { video.volume = 1; } catch (_) {} }
+                            video.play().catch(function () {});
+                            if (playOverlay) playOverlay.classList.remove("show");
+                            try { syncVolumeIcon(card, video); } catch (_) {}
+                        } catch (_) {}
+                    }
+                }
+                card.addEventListener("touchstart", onDown, { passive: true });
+                card.addEventListener("touchmove", onMove, { passive: true });
+                card.addEventListener("touchend", onUp);
+                card.addEventListener("touchcancel", onUp);
+                card.addEventListener("mousedown", onDown);
+                card.addEventListener("mousemove", onMove);
+                card.addEventListener("mouseup", onUp);
+                card.addEventListener("mouseleave", onUp);
+            })();
+
+            // === Scrub timeline (drag bottom progress like IG Reels) ===
+            (function bindScrub() {
+                var bar = card.querySelector(".shortProgress");
+                if (!bar || !video) return;
+                function seekFromEvent(e) {
+                    var rect = bar.getBoundingClientRect();
+                    var pt = (e.touches && e.touches[0]) || (e.changedTouches && e.changedTouches[0]) || e;
+                    var x = (pt.clientX - rect.left) / Math.max(1, rect.width);
+                    x = Math.max(0, Math.min(1, x));
+                    if (video.duration && isFinite(video.duration)) {
+                        video.currentTime = x * video.duration;
+                        if (progressBar) progressBar.style.width = (x * 100) + "%";
+                    }
+                }
+                function startScrub(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    card.__scrubbing = true;
+                    bar.classList.add("scrubbing");
+                    seekFromEvent(e);
+                }
+                function moveScrub(e) {
+                    if (!card.__scrubbing) return;
+                    e.preventDefault();
+                    seekFromEvent(e);
+                }
+                function endScrub(e) {
+                    if (!card.__scrubbing) return;
+                    seekFromEvent(e);
+                    card.__scrubbing = false;
+                    bar.classList.remove("scrubbing");
+                    try {
+                        if (preferUnmuted) { video.muted = false; video.volume = 1; }
+                        if (video.paused) video.play().catch(function () {});
+                    } catch (_) {}
+                }
+                bar.addEventListener("touchstart", startScrub, { passive: false });
+                bar.addEventListener("touchmove", moveScrub, { passive: false });
+                bar.addEventListener("touchend", endScrub);
+                bar.addEventListener("mousedown", startScrub);
+                window.addEventListener("mousemove", moveScrub);
+                window.addEventListener("mouseup", endScrub);
+            })();
 
             video.addEventListener("play", () => {
                 playOverlay?.classList.remove("show");
@@ -1064,11 +1237,36 @@
         }
     }
 
-    function showHeart() {
-        if (!heartAnim) return;
-        heartAnim.classList.remove("heartPlay");
-        void heartAnim.offsetWidth;
-        heartAnim.classList.add("heartPlay");
+    function showHeart(x, y) {
+        try {
+            var card = document.querySelector(".shortCard.active, .shortCard[data-active='1']") ||
+                document.querySelector(".shortCard:hover") ||
+                document.querySelector(".shortCard");
+            if (!card) return;
+            var heart = document.createElement("div");
+            heart.className = "shortLikeBurst";
+            heart.innerHTML = '<i class="fa-solid fa-heart"></i>';
+            var left = (typeof x === "number") ? x : (card.clientWidth / 2);
+            var top = (typeof y === "number") ? y : (card.clientHeight / 2);
+            heart.style.cssText = "position:absolute;left:" + left + "px;top:" + top + "px;transform:translate(-50%,-50%) scale(.35);color:#ff2d55;font-size:78px;pointer-events:none;z-index:60;opacity:0;filter:drop-shadow(0 4px 12px rgba(255,45,85,.45));transition:transform .5s cubic-bezier(.2,.9,.3,1.2),opacity .5s ease;";
+            if (getComputedStyle(card).position === "static") card.style.position = "relative";
+            card.appendChild(heart);
+            requestAnimationFrame(function () {
+                heart.style.opacity = "1";
+                heart.style.transform = "translate(-50%,-50%) scale(1.2)";
+            });
+            setTimeout(function () {
+                heart.style.opacity = "0";
+                heart.style.transform = "translate(-50%,-120%) scale(1.35)";
+            }, 320);
+            setTimeout(function () { try { heart.remove(); } catch (_) {} }, 700);
+            // pulse like button
+            var lb = card.querySelector(".likeBtn");
+            if (lb) {
+                lb.classList.add("liked", "pop");
+                setTimeout(function () { lb.classList.remove("pop"); }, 400);
+            }
+        } catch (_) {}
     }
 
 
@@ -1111,18 +1309,28 @@
                 openMoreMenu(short, card);
                 break;
             case "caption":
-                // Open Viewora description sheet (title / desc / date / use audio)
+                // Open description sheet (same as long video)
                 try {
+                    var sid = short.id || short.shortId || (card && (card.dataset.id || card.dataset.shortId)) || "";
+                    var payload = Object.assign({}, short, {
+                        title: short.title || short.caption || short.text || "",
+                        description: short.description || short.caption || short.text || "",
+                        caption: short.caption || short.title || "",
+                        likes: short.likes || short.likeCount || card.__likes || 0,
+                        likeCount: short.likeCount || short.likes || card.__likes || 0,
+                        views: short.views || short.viewCount || short.plays || 0,
+                        id: sid,
+                        shortId: sid
+                    });
                     if (typeof openShortDescriptionSheet === "function") {
-                        openShortDescriptionSheet(Object.assign({}, short, {
-                            title: short.title || short.caption || "",
-                            description: short.description || short.caption || short.text || "",
-                            id: short.id || card.dataset.id
-                        }));
+                        openShortDescriptionSheet(payload);
+                    } else if (typeof window.openShortDescriptionSheet === "function") {
+                        window.openShortDescriptionSheet(payload);
                     } else {
                         toggleCaptionMeta(card);
                     }
-                } catch (_) {
+                } catch (err) {
+                    console.warn("caption desc", err);
                     toggleCaptionMeta(card);
                 }
                 break;
@@ -1566,89 +1774,72 @@
             if (icon) icon.className = "fa-regular fa-heart";
         }
 
-        // Background Firebase (non-blocking feel)
-        try {
-            const primaryRef = db.ref("shortLikes/" + id + "/" + currentUser.uid);
-            let wasLiked = false;
-            await primaryRef.transaction((cur) => {
-                if (cur === null) {
-                    wasLiked = false;
-                    return willLike ? { uid: currentUser.uid, at: Date.now() } : null;
-                }
-                wasLiked = true;
-                return willLike ? cur : null;
-            });
-
-            const afterSnap = await primaryRef.once("value");
-            const isLiked = afterSnap.exists();
-            let delta = 0;
-            if (isLiked && !wasLiked) delta = 1;
-            if (!isLiked && wasLiked) delta = -1;
-
-            let finalCount = optimisticCount;
-            if (delta !== 0) {
-                const countRef = db.ref("shorts/" + id + "/likes");
-                const tx = await countRef.transaction((cur) => {
-                    const n = safeNumber(cur);
-                    return Math.max(0, n + delta);
-                });
-                if (tx.committed && tx.snapshot) {
-                    finalCount = safeNumber(tx.snapshot.val());
-                }
-                try {
-                    db.ref("shorts/" + id + "/likeCount").set(finalCount);
-                } catch (_) {}
-            }
-
-            card.__likes = finalCount;
-            short.likes = finalCount;
-            short.likeCount = finalCount;
-            if (label) label.textContent = formatCount(finalCount);
-            if (isLiked) {
-                likeBtn?.classList.add("liked");
-                if (icon) icon.className = "fa-solid fa-heart";
-            } else {
-                likeBtn?.classList.remove("liked");
-                if (icon) icon.className = "fa-regular fa-heart";
-            }
-
-            // Non-critical mirrors (fire and forget)
+        // Background Firebase — fully async, UI already updated
+        (async function () {
             try {
-                if (isLiked) {
-                    const payload = { uid: currentUser.uid, at: Date.now() };
-                    db.ref("shorts/" + id + "/likedBy/" + currentUser.uid).set(payload);
-                    db.ref("users/" + currentUser.uid + "/likedShorts/" + id).set(payload);
-                } else {
-                    db.ref("shorts/" + id + "/likedBy/" + currentUser.uid).remove();
-                    db.ref("users/" + currentUser.uid + "/likedShorts/" + id).remove();
+                if (!db) return;
+                const primaryRef = db.ref("shortLikes/" + id + "/" + currentUser.uid);
+                let wasLiked = false;
+                await primaryRef.transaction(function (cur) {
+                    if (cur === null) {
+                        wasLiked = false;
+                        return willLike ? { uid: currentUser.uid, at: Date.now() } : null;
+                    }
+                    wasLiked = true;
+                    return willLike ? cur : null;
+                });
+                const afterSnap = await primaryRef.once("value");
+                const isLiked = afterSnap.exists();
+                let delta = 0;
+                if (isLiked && !wasLiked) delta = 1;
+                if (!isLiked && wasLiked) delta = -1;
+                let finalCount = optimisticCount;
+                if (delta !== 0) {
+                    try {
+                        const countRef = db.ref("shorts/" + id + "/likes");
+                        await countRef.transaction(function (c) {
+                            const n = (typeof c === "number" ? c : 0) + delta;
+                            finalCount = Math.max(0, n);
+                            return finalCount;
+                        });
+                    } catch (_) {}
+                    try { db.ref("shorts/" + id + "/likeCount").set(finalCount); } catch (_) {}
                 }
-            } catch (_) {}
-
-            const ownerId = getCreatorId(short);
-            if (delta === 1 && ownerId && ownerId !== currentUser.uid) {
-                db.ref("notifications/" + ownerId).push({
-                    type: "like",
-                    contentType: "short",
-                    contentId: id,
-                    senderUID: currentUser.uid,
-                    createdAt: firebase.database.ServerValue.TIMESTAMP,
-                    read: false
-                }).catch(function () {});
+                card.__likes = finalCount;
+                short.likes = finalCount;
+                short.likeCount = finalCount;
+                const lbl = card.querySelector(".likeBtn span");
+                if (lbl) lbl.textContent = formatCount(finalCount);
+                try {
+                    if (isLiked) {
+                        const payload = { uid: currentUser.uid, at: Date.now() };
+                        db.ref("shorts/" + id + "/likedBy/" + currentUser.uid).set(payload);
+                        db.ref("users/" + currentUser.uid + "/likedShorts/" + id).set(payload);
+                    } else {
+                        db.ref("shorts/" + id + "/likedBy/" + currentUser.uid).remove();
+                        db.ref("users/" + currentUser.uid + "/likedShorts/" + id).remove();
+                    }
+                } catch (_) {}
+                const ownerId = getCreatorId(short);
+                if (delta === 1 && ownerId && ownerId !== currentUser.uid) {
+                    db.ref("notifications/" + ownerId).push({
+                        type: "like",
+                        contentType: "short",
+                        contentId: id,
+                        senderUID: currentUser.uid,
+                        createdAt: firebase.database.ServerValue.TIMESTAMP,
+                        read: false
+                    }).catch(function () {});
+                }
+            } catch (err) {
+                console.error("Like sync failed:", err);
+            } finally {
+                likeInFlight.delete(lockKey);
             }
-        } catch (err) {
-            console.error("Like failed:", err);
-            // rollback UI
-            if (wasLikedUI) {
-                likeBtn?.classList.add("liked");
-                if (icon) icon.className = "fa-solid fa-heart";
-            } else {
-                likeBtn?.classList.remove("liked");
-                if (icon) icon.className = "fa-regular fa-heart";
-            }
-            showToast("Like failed");
-        } finally {
-            likeInFlight.delete(lockKey);
-        }
+        })();
+        // release lock quickly if network hangs (max 8s)
+        setTimeout(function () { likeInFlight.delete(lockKey); }, 8000);
+        return;
     }
 
     async function doSave(card, short) {
@@ -1799,15 +1990,18 @@
         try {
             if (!db) throw new Error("no db");
 
-            const snapA = await db.ref("comments/" + id).once("value");
-            let merged = snapA.val() || {};
-            // legacy path only if primary empty
-            if (!Object.keys(merged).length) {
-                try {
-                    const snapB = await db.ref("shorts/" + id + "/comments").once("value");
-                    merged = snapB.val() || {};
-                } catch (_) {}
-            }
+            const snaps = await Promise.all([
+                db.ref("comments/" + id).once("value").catch(function () { return null; }),
+                db.ref("shorts/" + id + "/comments").once("value").catch(function () { return null; }),
+                db.ref("shortComments/" + id).once("value").catch(function () { return null; })
+            ]);
+            let merged = {};
+            snaps.forEach(function (s) {
+                if (s && s.val) {
+                    var v = s.val();
+                    if (v && typeof v === "object") Object.assign(merged, v);
+                }
+            });
 
             let list = Object.entries(merged)
                 .map(function (pair) {
@@ -2201,11 +2395,50 @@
                     "_blank"
                 );
             }
+            // Count share (copy / native / social)
+            try {
+                await bumpShareCount(id);
+            } catch (_) {}
             closeShareModal();
         } catch (err) {
             if (err?.name !== "AbortError") {
                 showToast("Share failed");
             }
+        }
+    }
+
+    async function bumpShareCount(shortId) {
+        if (!shortId || !db) return;
+        try {
+            const shortRef = db.ref("shorts/" + shortId);
+            const snap = await shortRef.once("value");
+            const cur = snap.val() || {};
+            const next = (Number(cur.shares || cur.shareCount) || 0) + 1;
+            await shortRef.update({ shares: next, shareCount: next });
+            try {
+                document.querySelectorAll('.shortAction[data-action="share"] span, [data-share-count]').forEach(function (el) {
+                    var card = el.closest('.shortCard, .short-item, [data-id]');
+                    if (card && String(card.dataset.id || "") === String(shortId)) {
+                        el.textContent = formatCount ? formatCount(next) : String(next);
+                    }
+                });
+            } catch (_) {}
+            if (activeShort && String(activeShort.id || activeShort.shortId || activeShort.key) === String(shortId)) {
+                activeShort.shares = next;
+                activeShort.shareCount = next;
+            }
+            try {
+                const el = document.querySelector("[data-share-count], #shareCount, .shareCount");
+                if (el) el.textContent = next >= 1000 ? (next / 1000).toFixed(1).replace(/\.0$/, "") + "K" : String(next);
+            } catch (_) {}
+            // update side action label if present
+            try {
+                document.querySelectorAll(".shareCount, [data-count=share]").forEach(function (n) {
+                    n.textContent = String(next);
+                });
+            } catch (_) {}
+        } catch (e) {
+            console.warn("share count", e);
         }
     }
 
@@ -2699,29 +2932,44 @@
         $("hideShortBtn")?.addEventListener("click", hideActiveShort);
         
         $("descShortBtn")?.addEventListener("click", () => {
+            var s = menuShort;
             closeMoreMenu();
-            if (menuShort && typeof openShortDescriptionSheet === "function") {
-                openShortDescriptionSheet(menuShort);
+            if (s && typeof openShortDescriptionSheet === "function") {
+                openShortDescriptionSheet(s);
             }
         });
         $("descOwnShortBtn")?.addEventListener("click", () => {
+            var s = menuShort;
             closeMoreMenu();
-            if (menuShort && typeof openShortDescriptionSheet === "function") {
-                openShortDescriptionSheet(menuShort);
+            if (s && typeof openShortDescriptionSheet === "function") {
+                openShortDescriptionSheet(s);
             }
         });
         $("useAudioMenuBtn")?.addEventListener("click", () => {
+            var s = menuShort;
             closeMoreMenu();
-            if (!menuShort) return;
+            if (!s) return;
             try {
-                sessionStorage.setItem("vieworaUseAudio", JSON.stringify({
-                    musicId: menuShort.musicId || menuShort.audioId || "",
-                    musicUrl: menuShort.musicUrl || menuShort.audioUrl || "",
-                    title: menuShort.musicTitle || menuShort.caption || "Audio",
-                    fromShortId: menuShort.id || ""
-                }));
+                var uname = s.username || s.userName || s.name || "user";
+                var meta = (typeof getMusicMeta === "function") ? getMusicMeta(s, uname) : {};
+                var payload = {
+                    id: meta.id || s.musicId || s.audioId || ("orig_" + (s.id || "")),
+                    musicId: meta.id || s.musicId || s.audioId || "",
+                    title: meta.title || s.musicTitle || "Original audio",
+                    name: meta.title || s.musicTitle || "Original audio",
+                    artist: meta.artist || uname,
+                    audioUrl: meta.audioUrl || s.musicUrl || s.audioUrl || s.videoUrl || "",
+                    url: meta.audioUrl || s.musicUrl || s.audioUrl || s.videoUrl || "",
+                    isOriginal: true,
+                    sourceShortId: s.id || "",
+                    uid: s.uid || s.userId || "",
+                    at: Date.now()
+                };
+                sessionStorage.setItem("vieworaSelectedMusic", JSON.stringify(payload));
+                sessionStorage.setItem("viewora_selected_music", JSON.stringify(payload));
+                localStorage.setItem("viewora_selected_music", JSON.stringify(payload));
             } catch (_) {}
-            location.href = "upload.html?type=short&useAudio=1";
+            location.href = "upload.html?type=shorts&useMusic=1";
         });
         $("saveShortMenuBtn")?.addEventListener("click", async () => {
             closeMoreMenu();
@@ -2971,81 +3219,185 @@
     /* ---- Short title → description sheet (upload date + use this audio) ---- */
     function openShortDescriptionSheet(shortObj) {
         if (!shortObj) return;
-        let sheet = document.getElementById("vieworaShortDescSheet");
+        var likes = Number(shortObj.likes || shortObj.likeCount || 0) || 0;
+        var views = Number(shortObj.views || shortObj.viewCount || shortObj.plays || 0) || 0;
+        var title = String(shortObj.title || shortObj.caption || shortObj.text || "Short").trim();
+        var desc = String(shortObj.description || shortObj.caption || shortObj.text || "").trim();
+        if (!desc || desc === title) desc = "No description added.";
+        var dateStr = "—";
+        try {
+            var ts = shortObj.createdAt || shortObj.timestamp || shortObj.publishedAt || shortObj.time || 0;
+            if (typeof ts === "object" && ts !== null) ts = ts.seconds ? ts.seconds * 1000 : (ts.toMillis ? ts.toMillis() : 0);
+            if (ts) {
+                var d = new Date(Number(ts) < 1e12 ? Number(ts) * 1000 : Number(ts));
+                if (!isNaN(d.getTime())) {
+                    dateStr = d.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
+                }
+            }
+        } catch (_) {}
+        var uname = String(shortObj.username || shortObj.userName || shortObj.name || "user").replace(/^@/, "");
+        var musicMeta = (typeof getMusicMeta === "function") ? getMusicMeta(shortObj, uname) : { title: "Original audio", artist: uname, isOriginal: true, iconUrl: "", id: "", audioUrl: "" };
+        var musicTitle = (musicMeta && musicMeta.title) || "Original audio";
+        var musicArtist = (musicMeta && musicMeta.artist) || uname;
+        var musicIcon = (musicMeta && musicMeta.iconUrl) || shortObj.userPhoto || shortObj.avatar || "assets/logo.png";
+
+        function fmt(n) {
+            n = Number(n) || 0;
+            if (n >= 1e6) return (n / 1e6).toFixed(1).replace(/\.0$/, "") + "M";
+            if (n >= 1e3) return (n / 1e3).toFixed(1).replace(/\.0$/, "") + "K";
+            return String(n);
+        }
+
+        var sheet = document.getElementById("vieworaShortDescSheet");
         if (!sheet) {
             sheet = document.createElement("div");
             sheet.id = "vieworaShortDescSheet";
-            sheet.innerHTML = `
-              <div class="vsdBackdrop" data-close="1"></div>
-              <div class="vsdPanel">
-                <div class="vsdHandle"></div>
-                <div class="vsdTitle" id="vsdTitle"></div>
-                <div class="vsdMeta" id="vsdMeta"></div>
-                <div class="vsdDesc" id="vsdDesc"></div>
-                <button type="button" class="vsdAudioBtn" id="vsdUseAudio">
-                  <i class="fa-solid fa-music"></i> Use this audio
-                </button>
-                <button type="button" class="vsdClose" data-close="1">Close</button>
-              </div>`;
+            sheet.innerHTML =
+              '<div class="vsdBackdrop" data-close="1"></div>' +
+              '<div class="vsdPanel">' +
+                '<div class="vsdHandle"></div>' +
+                '<div class="vsdHead"><h2>Description</h2><button type="button" class="vsdX" data-close="1" aria-label="Close"><i class="fa-solid fa-xmark"></i></button></div>' +
+                '<div class="vsdTitle" id="vsdTitle"></div>' +
+                '<div class="vsdStats">' +
+                  '<div class="vsdStat"><strong id="vsdLikes">0</strong><span>Likes</span></div>' +
+                  '<div class="vsdStat"><strong id="vsdViews">0</strong><span>Views</span></div>' +
+                  '<div class="vsdStat"><strong id="vsdDate">—</strong><span>Date</span></div>' +
+                '</div>' +
+                '<div class="vsdDesc clamped" id="vsdDesc"></div>' +
+                '<button type="button" class="vsdMore hidden" id="vsdMore">...more</button>' +
+                '<div class="vsdMusicBlock">' +
+                  '<div class="vsdSection">Music</div>' +
+                  '<button type="button" class="vsdMusicCard" id="vsdMusicCard">' +
+                    '<img class="vsdMusicArt" id="vsdMusicArt" src="assets/logo.png" alt="">' +
+                    '<div class="vsdMusicMeta"><strong id="vsdMusicTitle">Original audio</strong><span id="vsdMusicArtist">Creator</span></div>' +
+                    '<i class="fa-solid fa-chevron-right"></i>' +
+                  '</button>' +
+                  '<button type="button" class="vsdAudioBtn" id="vsdUseAudio"><i class="fa-solid fa-music"></i> Use this audio · Remix Short</button>' +
+                '</div>' +
+                '<div class="vsdSection">Video details</div>' +
+                '<div class="vsdDetails">' +
+                  '<div class="vsdRow"><span><i class="fa-regular fa-calendar"></i> Date</span><span id="vsdDetailDate">—</span></div>' +
+                  '<div class="vsdRow"><span><i class="fa-regular fa-eye"></i> Views</span><span id="vsdDetailViews">0</span></div>' +
+                  '<div class="vsdRow"><span><i class="fa-regular fa-heart"></i> Likes</span><span id="vsdDetailLikes">0</span></div>' +
+                '</div>' +
+              '</div>';
             document.body.appendChild(sheet);
-            if (!document.getElementById("vsdCSS")) {
-                const st = document.createElement("style");
-                st.id = "vsdCSS";
-                st.textContent = `
-                  #vieworaShortDescSheet{position:fixed;inset:0;z-index:99999;display:none;align-items:flex-end;justify-content:center}
-                  #vieworaShortDescSheet.open{display:flex}
-                  .vsdBackdrop{position:absolute;inset:0;background:rgba(0,0,0,.55)}
-                  .vsdPanel{position:relative;width:100%;max-width:480px;background:#1a1b22;border-radius:16px 16px 0 0;padding:12px 16px 28px;color:#fff}
-                  .vsdHandle{width:40px;height:4px;border-radius:4px;background:rgba(255,255,255,.25);margin:0 auto 14px}
-                  .vsdTitle{font-size:16px;font-weight:700;margin-bottom:6px;line-height:1.3}
-                  .vsdMeta{font-size:12px;color:rgba(255,255,255,.55);margin-bottom:12px}
-                  .vsdDesc{font-size:14px;line-height:1.45;color:rgba(255,255,255,.85);max-height:160px;overflow:auto;margin-bottom:16px;white-space:pre-wrap}
-                  .vsdAudioBtn{width:100%;border:0;border-radius:24px;padding:12px;background:linear-gradient(135deg,#7c5cff,#4f8cff);color:#fff;font-weight:700;font-size:14px;margin-bottom:10px}
-                  .vsdClose{width:100%;border:0;border-radius:24px;padding:12px;background:rgba(255,255,255,.08);color:#fff;font-size:14px}
-                `;
+            if (!document.getElementById("vsdCSS_v10")) {
+                var st = document.createElement("style");
+                st.id = "vsdCSS_v10";
+                st.textContent =
+                  "#vieworaShortDescSheet{position:fixed;inset:0;z-index:99999;display:none;align-items:flex-end;justify-content:stretch;padding:0;margin:0}" +
+                  "#vieworaShortDescSheet.open{display:flex!important}" +
+                  ".vsdBackdrop{position:absolute;inset:0;background:rgba(0,0,0,.6)}" +
+                  ".vsdPanel{position:relative;width:100%;max-width:100%;max-height:88vh;overflow-y:auto;background:#0f0f0f;border-radius:18px 18px 0 0;padding:8px 18px calc(28px + env(safe-area-inset-bottom));color:#f1f1f1;-webkit-overflow-scrolling:touch}" +
+                  ".vsdHandle{width:40px;height:4px;border-radius:4px;background:rgba(255,255,255,.25);margin:6px auto 12px}" +
+                  ".vsdHead{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}" +
+                  ".vsdHead h2{margin:0;font-size:18px;font-weight:700}" +
+                  ".vsdX{border:0;background:rgba(255,255,255,.08);width:36px;height:36px;border-radius:50%;color:#fff;display:grid;place-items:center;font-size:16px}" +
+                  ".vsdTitle{font-size:16px;font-weight:700;line-height:1.35;margin:6px 0 14px;color:#f1f1f1}" +
+                  ".vsdStats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}" +
+                  ".vsdStat{background:#272727;border-radius:12px;padding:14px 10px;text-align:center;display:flex;flex-direction:column;gap:4px}" +
+                  ".vsdStat strong{font-size:16px;font-weight:700;color:#fff}" +
+                  ".vsdStat span{font-size:12px;color:#aaa;font-weight:500}" +
+                  ".vsdDesc{font-size:15px;line-height:1.55;color:#f1f1f1;white-space:pre-wrap;background:#272727;border-radius:12px;padding:14px 16px;margin-bottom:6px}" +
+                  ".vsdDesc.clamped{-webkit-line-clamp:5;display:-webkit-box;-webkit-box-orient:vertical;overflow:hidden;max-height:7.75em}" +
+                  ".vsdMore{border:0;background:transparent;color:#3ea6ff;font-size:14px;font-weight:600;padding:4px 0 14px;cursor:pointer;text-align:left}" +
+                  ".vsdMore.hidden{display:none}" +
+                  ".vsdSection{font-size:15px;font-weight:700;margin:10px 0 12px;color:#fff}" +
+                  ".vsdMusicCard{width:100%;display:flex;align-items:center;gap:12px;background:transparent;border:0;color:#fff;text-align:left;padding:4px 0 10px}" +
+                  ".vsdMusicArt{width:52px;height:52px;border-radius:8px;object-fit:cover;background:#272727;flex-shrink:0}" +
+                  ".vsdMusicMeta{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}" +
+                  ".vsdMusicMeta strong{font-size:14px;font-weight:600}" +
+                  ".vsdMusicMeta span{font-size:12px;color:#aaa}" +
+                  ".vsdAudioBtn{width:100%;border:0;background:transparent;color:#aaa;font-size:13px;font-weight:500;padding:8px 0 14px;text-align:center}" +
+                  ".vsdDetails{display:flex;flex-direction:column}" +
+                  ".vsdRow{display:flex;justify-content:space-between;align-items:center;padding:14px 0;border-bottom:1px solid rgba(255,255,255,.06);font-size:14px;color:#f1f1f1}" +
+                  ".vsdRow span:first-child{color:#aaa;display:inline-flex;align-items:center;gap:8px}";
+
                 document.head.appendChild(st);
             }
-            sheet.addEventListener("click", function(e) {
+            sheet.addEventListener("click", function (e) {
                 if (e.target.closest("[data-close]")) {
                     sheet.classList.remove("open");
+                    document.body.classList.remove("modalOpen");
+                    return;
+                }
+                if (e.target.closest("#vsdUseAudio") || e.target.closest("#vsdMusicCard")) {
+                    try {
+                        var so = sheet.__shortObj || {};
+                        var un = String(so.username || so.userName || so.name || "user").replace(/^@/, "");
+                        var meta = (typeof getMusicMeta === "function") ? getMusicMeta(so, un) : {};
+                        var q = new URLSearchParams();
+                        if (meta.id) q.set("id", meta.id);
+                        if (meta.title) q.set("name", meta.title);
+                        if (meta.artist) q.set("artist", meta.artist);
+                        if (meta.audioUrl) q.set("audio", meta.audioUrl);
+                        if (meta.isOriginal) q.set("original", "1");
+                        var sid = so.id || so.shortId || "";
+                        if (sid) q.set("shortId", sid);
+                        var uid = so.uid || so.userId || so.ownerId || "";
+                        if (uid) q.set("uid", uid);
+                        var vurl = so.videoUrl || so.videoURL || so.mediaUrl || "";
+                        if (vurl && !meta.audioUrl) q.set("video", vurl);
+                        location.href = "music-detail.html?" + q.toString();
+                    } catch (err) {
+                        console.warn("music open", err);
+                    }
                 }
             });
         }
-        const title = shortObj.title || shortObj.caption || "Short";
-        const desc = shortObj.description || shortObj.caption || shortObj.title || "No description.";
-        const when = shortObj.createdAt || shortObj.timestamp || shortObj.uploadedAt || shortObj.date;
-        let dateStr = "";
-        try {
-            const d = typeof when === "number" ? new Date(when) : new Date(when);
-            if (!isNaN(d.getTime())) dateStr = d.toLocaleDateString(undefined, { day:"numeric", month:"short", year:"numeric" });
-        } catch(_) {}
-        const views = shortObj.views != null ? Number(shortObj.views) : 0;
-        sheet.querySelector("#vsdTitle").textContent = title;
-        var likes = shortObj.likes != null ? Number(shortObj.likes) : (shortObj.likeCount || 0);
-        sheet.querySelector("#vsdMeta").innerHTML =
-            '<div class="vsdStats">' +
-            '<span><b>' + (likes >= 1000 ? (likes/1000).toFixed(1)+"K" : likes) + '</b><small>Likes</small></span>' +
-            '<span><b>' + (views >= 1000 ? (views/1000).toFixed(1)+"K" : views) + '</b><small>Views</small></span>' +
-            '<span><b>' + (dateStr || "—") + '</b><small>Uploaded</small></span>' +
-            '</div>';
-        sheet.querySelector("#vsdDesc").textContent = desc;
-        const audioBtn = sheet.querySelector("#vsdUseAudio");
-        const musicId = shortObj.musicId || shortObj.audioId || shortObj.originalAudioId || "";
-        const musicUrl = shortObj.musicUrl || shortObj.audioUrl || shortObj.soundUrl || "";
-        audioBtn.onclick = function() {
-            try {
-                const payload = {
-                    musicId: musicId,
-                    musicUrl: musicUrl,
-                    title: shortObj.musicTitle || shortObj.musicName || title,
-                    fromShortId: shortObj.id || shortObj.shortId || ""
-                };
-                sessionStorage.setItem("vieworaUseAudio", JSON.stringify(payload));
-            } catch(_) {}
-            window.location.href = "upload.html?type=short&useAudio=1";
+        // fill
+        var set = function (id, val) {
+            var el = document.getElementById(id);
+            if (el) el.textContent = val;
         };
+        set("vsdTitle", title);
+        set("vsdLikes", fmt(likes));
+        set("vsdViews", fmt(views));
+        set("vsdDate", dateStr);
+        set("vsdDesc", desc);
+        var descEl = document.getElementById("vsdDesc");
+        var moreBtn = document.getElementById("vsdMore");
+        if (descEl) {
+            descEl.classList.add("clamped");
+            descEl.textContent = desc;
+            // show more if longer than ~5 lines (~280 chars or height)
+            var needMore = String(desc).length > 180 || String(desc).split("\n").length > 4;
+            if (moreBtn) {
+                if (needMore && desc !== "No description added.") {
+                    moreBtn.classList.remove("hidden");
+                    moreBtn.textContent = "...more";
+                    moreBtn.onclick = function () {
+                        if (descEl.classList.contains("clamped")) {
+                            descEl.classList.remove("clamped");
+                            moreBtn.textContent = "Show less";
+                        } else {
+                            descEl.classList.add("clamped");
+                            moreBtn.textContent = "...more";
+                        }
+                    };
+                } else {
+                    moreBtn.classList.add("hidden");
+                    descEl.classList.remove("clamped");
+                }
+            }
+        }
+        set("vsdMusicTitle", musicTitle);
+        set("vsdMusicArtist", musicArtist);
+        set("vsdDetailDate", dateStr);
+        set("vsdDetailViews", fmt(views));
+        set("vsdDetailLikes", fmt(likes));
+        var art = document.getElementById("vsdMusicArt");
+        if (art) {
+            art.src = musicIcon || "assets/logo.png";
+            art.onerror = function () { this.src = "assets/logo.png"; };
+        }
+        // store shortObj for music click
+        sheet.__shortObj = shortObj;
         sheet.classList.add("open");
+        document.body.classList.add("modalOpen");
     }
+
     window.openShortDescriptionSheet = openShortDescriptionSheet;
 
 
@@ -3117,4 +3469,99 @@
   document.addEventListener("visibilitychange", function () {
     if (document.hidden) forceRecord();
   });
+})();
+
+/* Triple-tap nav refresh */
+window.VieworaRefreshFeed = function () {
+  try {
+    sessionStorage.setItem("viewora_shorts_shuffle", String(Date.now()));
+  } catch (_) {}
+  try {
+    if (typeof loadFeed === "function") { loadFeed(true); return; }
+    if (typeof refreshFeed === "function") { refreshFeed(); return; }
+    if (typeof loadShorts === "function") { loadShorts(true); return; }
+  } catch (_) {}
+  location.reload();
+};
+
+
+/* VIEWORA_SHORT_DESC_OPEN — title / caption / 3-dot Description */
+(function () {
+  function getActiveShortData(card) {
+    try {
+      if (!card) return null;
+      var id = card.getAttribute("data-short-id") || card.getAttribute("data-id") || card.dataset.shortId || card.dataset.id || "";
+      var map = window.__shortsMap || window.shortsMap || null;
+      if (map && id && map[id]) return map[id];
+      if (card.__shortData) return card.__shortData;
+      return {
+        id: id,
+        title: (card.querySelector(".shortCaption, .shortTitle") || {}).textContent || "Short",
+        caption: (card.querySelector(".shortCaption") || {}).textContent || "",
+        description: card.getAttribute("data-desc") || "",
+        likes: card.__likes || 0,
+        views: card.getAttribute("data-views") || 0,
+        username: card.getAttribute("data-username") || "",
+        videoUrl: (card.querySelector("video") || {}).src || ""
+      };
+    } catch (_) { return null; }
+  }
+  document.addEventListener("click", function (e) {
+    var cap = e.target.closest(".shortCaption, .shortTitle, [data-action='caption']");
+    if (!cap) return;
+    // let internal handleAction run first; fallback if sheet not open after 50ms
+    var card = cap.closest(".shortCard");
+    setTimeout(function () {
+      var sheet = document.getElementById("vieworaShortDescSheet");
+      if (sheet && sheet.classList.contains("open")) return;
+      var shortObj = getActiveShortData(card);
+      if (shortObj && typeof window.openShortDescriptionSheet === "function") {
+        window.openShortDescriptionSheet(shortObj);
+      }
+    }, 60);
+  }, false);
+})();
+
+
+/* VIEWORA_SHORTS_AUDIO_UNLOCK — first tap unlocks sound (no extra speaker click needed after) */
+(function () {
+  var unlocked = false;
+  function unlock() {
+    if (unlocked) return;
+    unlocked = true;
+    try {
+      window.__vieworaPreferUnmuted = true;
+      localStorage.setItem("viewora_shorts_unmuted", "1");
+    } catch (_) {}
+    try {
+      document.querySelectorAll("video.shortVideo").forEach(function (v) {
+        try {
+          v.muted = false;
+          v.volume = 1;
+          v.removeAttribute("muted");
+        } catch (_) {}
+      });
+      var active = document.querySelector(".shortCard.active video.shortVideo, .shortCard[data-active='1'] video.shortVideo") ||
+        document.querySelector("video.shortVideo:not([paused])");
+      if (active) {
+        active.muted = false;
+        active.play().catch(function () {});
+      }
+    } catch (_) {}
+  }
+  // Any intentional interaction unlocks (volume btn still works)
+  ["pointerdown", "touchstart", "click"].forEach(function (ev) {
+    document.addEventListener(ev, function (e) {
+      // Don't unlock on pure scroll; unlock on card / controls
+      if (e.target.closest && e.target.closest(".shortCard, .volumeBtn, .shortActions")) {
+        unlock();
+      }
+    }, { passive: true, once: false });
+  });
+  // If already preferred unmuted from previous session
+  try {
+    if (localStorage.getItem("viewora_shorts_unmuted") === "1") {
+      window.__vieworaPreferUnmuted = true;
+    }
+  } catch (_) {}
 })();

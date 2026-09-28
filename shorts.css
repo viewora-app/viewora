@@ -750,33 +750,60 @@ img {
 
 .shortProgress {
     position: absolute;
-
-    z-index: 40;
-
+    z-index: 45;
     left: 0;
     right: 0;
-
-    bottom:
-        calc(
-            var(--nav-height) +
-            var(--safe-bottom)
-        );
-
-    height: 2px;
-
-    background: rgba(255, 255, 255, .16);
+    bottom: calc(var(--nav-height, 56px) + var(--safe-bottom, 0px));
+    height: 28px; /* big hit area for scrub */
+    display: flex;
+    align-items: flex-end;
+    padding-bottom: 0;
+    background: transparent;
+    touch-action: none;
+    cursor: pointer;
 }
-
+.shortProgress::before {
+    content: "";
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    height: 3px;
+    background: rgba(255, 255, 255, .22);
+    border-radius: 2px;
+}
 .shortProgress span {
     display: block;
-
+    position: relative;
     width: 0;
-    height: 100%;
-
+    height: 3px;
     background: #fff;
-
+    border-radius: 2px;
     transition: width .05s linear;
+    pointer-events: none;
+    z-index: 1;
 }
+.shortProgress.scrubbing::before,
+.shortProgress:active::before {
+    height: 5px;
+    background: rgba(255, 255, 255, .35);
+}
+.shortProgress.scrubbing span,
+.shortProgress:active span {
+    height: 5px;
+    transition: none;
+}
+.shortProgress.scrubbing span::after {
+    content: "";
+    position: absolute;
+    right: -6px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 1px 4px rgba(0,0,0,.4);
+}
+
 
 /* =========================================================
    HEART ANIMATION
@@ -2535,4 +2562,160 @@ body.modalOpen nav.bottomNav {
   font-size: 11px;
   color: rgba(255,255,255,.45);
   margin-bottom: 2px;
+}
+
+.likeBtn.pop i { animation: shortLikePop .35s ease; }
+@keyframes shortLikePop {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.35); }
+  100% { transform: scale(1); }
+}
+.shortLikeBurst { will-change: transform, opacity; }
+.shortCaption, .shortTitle, [data-action="caption"] { cursor: pointer; }
+
+.shortCaption, .shortTitle, p.shortCaption {
+  position: relative;
+  z-index: 6;
+  pointer-events: auto !important;
+  cursor: pointer;
+}
+#vieworaShortDescSheet.open { display: flex !important; }
+
+
+/* VIEWORA_SHORTS_LAYOUT_FIX_V10 */
+
+/* Progress / scrub — thin line, tall invisible hit area, no layout shift */
+.shortProgress {
+    position: absolute !important;
+    z-index: 45 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: calc(var(--nav-height, 72px) + var(--safe-bottom, 0px)) !important;
+    height: 20px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    display: flex !important;
+    align-items: flex-end !important;
+    background: transparent !important;
+    touch-action: none !important;
+    cursor: pointer !important;
+    pointer-events: auto !important;
+    transform: none !important;
+}
+.shortProgress::before {
+    content: "";
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    height: 2px;
+    background: rgba(255, 255, 255, .25);
+    border-radius: 0;
+}
+.shortProgress span {
+    display: block;
+    position: relative;
+    width: 0;
+    height: 2px;
+    background: #fff;
+    border-radius: 0;
+    transition: width .05s linear;
+    pointer-events: none;
+    z-index: 1;
+}
+.shortProgress.scrubbing::before,
+.shortProgress:active::before {
+    height: 4px;
+    background: rgba(255, 255, 255, .4);
+}
+.shortProgress.scrubbing span,
+.shortProgress:active span {
+    height: 4px;
+    transition: none;
+}
+.shortProgress.scrubbing span::after {
+    content: "";
+    position: absolute;
+    right: -7px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 1px 4px rgba(0,0,0,.45);
+}
+body.has-bottom-nav .shortProgress {
+    bottom: calc(72px + env(safe-area-inset-bottom, 0px)) !important;
+}
+
+/* Shorts card full screen — no upward shift */
+.shortCard {
+    position: relative;
+    width: 100%;
+    height: 100dvh !important;
+    min-height: 100dvh !important;
+    flex: 0 0 100dvh !important;
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
+    overflow: hidden;
+    background: #050505;
+    top: 0 !important;
+    transform: none !important;
+}
+.shortsFeed, #shortsFeed, .feed {
+    top: 0 !important;
+}
+.shortVideo {
+    inset: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+}
+
+/* Description sheet full-bleed (both edges touchable) */
+#vieworaShortDescSheet {
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: 99999 !important;
+    display: none;
+    align-items: flex-end !important;
+    justify-content: stretch !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+#vieworaShortDescSheet.open {
+    display: flex !important;
+}
+#vieworaShortDescSheet .vsdBackdrop {
+    position: absolute !important;
+    inset: 0 !important;
+}
+#vieworaShortDescSheet .vsdPanel {
+    position: relative !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    left: 0 !important;
+    right: 0 !important;
+    margin: 0 !important;
+    border-radius: 16px 16px 0 0 !important;
+    max-height: 88vh !important;
+    box-sizing: border-box !important;
+}
+
+/* VIEWORA_NO_PLAY_PLACEHOLDER */
+.shortVideo:not([src]),
+.shortVideo[src=""] {
+  background: #0a0a0f !important;
+}
+.playOverlay {
+  width: 64px !important;
+  height: 64px !important;
+  max-width: 20vw !important;
+  max-height: 20vw !important;
+}
+.playOverlay i {
+  font-size: 22px !important;
+}
+/* never show a full-screen play graphic as content */
+.shortCard::after {
+  content: none !important;
 }

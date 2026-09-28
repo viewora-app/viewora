@@ -4539,3 +4539,192 @@ input.ccSeek {
 input.ccSeek::-webkit-slider-runnable-track {
   background: linear-gradient(to right, #ff0033 var(--seek-pct, 0%), rgba(255,255,255,.25) var(--seek-pct, 0%));
 }
+
+
+/* COMMENT ACTIONS PREMIUM */
+.csActions, .cActions, .csRowActions {
+  display: flex !important;
+  align-items: center;
+  gap: 14px;
+  margin-top: 6px;
+  flex-wrap: wrap;
+}
+.csLike, .csReply, .cLike, .cReply, button.csLike, button.csReply {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 6px;
+  visibility: visible !important;
+  opacity: 1 !important;
+  border: 0;
+  background: transparent;
+  color: rgba(255,255,255,.7) !important;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 2px;
+  cursor: pointer;
+  min-height: 28px;
+}
+.csLike i, .csReply i, .cLike i, .cReply i {
+  font-size: 14px;
+}
+.csLike.is-liked, .cLike.is-liked, .csLike.active, .cLike.active {
+  color: #ff304f !important;
+}
+.csLike.is-liked i, .cLike.is-liked i {
+  font-weight: 900;
+}
+.csReply:active, .cReply:active {
+  color: #8ab4ff !important;
+}
+
+
+/* YT DESC SHEET V2 */
+.descSheetPanel {
+  max-height: min(88vh, 720px) !important;
+  border-radius: 18px 18px 0 0 !important;
+  background: #0f0f0f !important;
+  padding: 8px 16px calc(20px + env(safe-area-inset-bottom)) !important;
+  overflow-y: auto !important;
+}
+.descSheetHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.descSheetHead h2 {
+  font-size: 16px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.01em;
+}
+.descSheetTitle {
+  font-size: 15px !important;
+  font-weight: 600 !important;
+  line-height: 1.35 !important;
+  margin: 4px 0 14px !important;
+  color: #f1f1f1 !important;
+}
+.descStatRow {
+  display: grid !important;
+  grid-template-columns: repeat(3, 1fr) !important;
+  gap: 8px !important;
+  margin-bottom: 14px !important;
+}
+.descStat {
+  background: #272727 !important;
+  border-radius: 12px !important;
+  padding: 12px 8px !important;
+  text-align: center !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 4px !important;
+}
+.descStat strong {
+  font-size: 16px !important;
+  font-weight: 700 !important;
+  color: #fff !important;
+}
+.descStat span {
+  font-size: 11px !important;
+  color: #aaa !important;
+  font-weight: 500 !important;
+}
+.descBody {
+  font-size: 14px !important;
+  line-height: 1.5 !important;
+  color: #f1f1f1 !important;
+  white-space: pre-wrap !important;
+  background: #272727 !important;
+  border-radius: 12px !important;
+  padding: 12px 14px !important;
+  margin-bottom: 12px !important;
+  min-height: 44px;
+}
+.descMusicBlock {
+  margin: 16px 0 12px !important;
+}
+.descSectionLabel {
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  margin-bottom: 10px !important;
+  color: #fff !important;
+}
+.descMusicCard {
+  width: 100%;
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  background: transparent !important;
+  border: 0 !important;
+  color: #fff !important;
+  text-align: left !important;
+  padding: 4px 0 10px !important;
+}
+.descMusicArt {
+  width: 48px !important;
+  height: 48px !important;
+  border-radius: 8px !important;
+  background: #272727 !important;
+  display: grid !important;
+  place-items: center !important;
+  overflow: hidden !important;
+  flex-shrink: 0;
+}
+.descMusicArt img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.descMusicMeta {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.descMusicMeta strong {
+  font-size: 14px;
+  font-weight: 600;
+}
+.descMusicMeta span {
+  font-size: 12px;
+  color: #aaa;
+}
+.descRemixBtn {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: #aaa;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 8px 0 4px;
+  text-align: center;
+  cursor: pointer;
+}
+.descDetailsList {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.descDetailRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(255,255,255,.06);
+  font-size: 13px;
+  color: #f1f1f1;
+}
+.descDetailRow span:first-child {
+  color: #aaa;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.videoTitleRow h1,
+#videoTitle {
+  cursor: pointer !important;
+}
+#videoTitle:active {
+  opacity: 0.75;
+}

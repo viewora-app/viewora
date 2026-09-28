@@ -1325,6 +1325,12 @@
         if (!confirm("Log out of all devices?")) return;
         try {
           if (auth) await auth.signOut();
+
+try {
+  ["viewora_my_avatar","viewora_my_banner","viewora_my_cover","viewora_my_name","viewora_my_username"].forEach(function(k){ localStorage.removeItem(k); });
+  sessionStorage.removeItem("viewora_media_unlocked");
+} catch(e) {}
+;
         } catch (_) {}
         try {
           if (db && user)
