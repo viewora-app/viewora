@@ -995,6 +995,23 @@ function getCreatorId(video) {
                 keys: Object.keys(state.video || {}).slice(0, 20)
             });
 
+            // Private / deleted gate
+            try {
+                var __gate = (typeof window.__vieworaGateVideoAccess === "function")
+                    ? window.__vieworaGateVideoAccess(state.video)
+                    : "ok";
+                if (__gate === "deleted") {
+                    showPlayerError("This video was deleted.");
+                    hidePageLoader();
+                    return;
+                }
+                if (__gate === "private") {
+                    showPlayerError("This video is private.");
+                    hidePageLoader();
+                    return;
+                }
+            } catch (_) {}
+
             /*
              * Normalize like/dislike counts from maps when present
              */
@@ -1347,11 +1364,15 @@ function getCreatorId(video) {
             show($("ownerTools"));
             show($("sheetEditBtn"));
             show($("sheetAnalyticsBtn"));
+            show($("sheetDeleteBtn"));
             show($("videoVisibility"));
+            show($("deleteVideoBtn"));
         } else {
             hide($("ownerTools"));
             hide($("sheetEditBtn"));
             hide($("sheetAnalyticsBtn"));
+            hide($("sheetDeleteBtn"));
+            hide($("deleteVideoBtn"));
         }
     }
 
@@ -2922,11 +2943,40 @@ function updateLikeCount() {
                     ? "Unlisted"
                     : "Public";
 
-        setText("videoVisibility", label);
+        const icon =
+            normalized === "private"
+                ? "🔒 "
+                : normalized === "unlisted"
+                    ? "🔗 "
+                    : "";
 
-        setText("summaryVisibility", label);
+        setText("videoVisibility", icon + label);
+        setText("summaryVisibility", icon + label);
+        setText("analyticsVisibility", icon + label);
 
-        setText("analyticsVisibility", label);
+        // badge on player if present
+        try {
+            var badge = document.getElementById("visBadge");
+            if (!badge) {
+                badge = document.createElement("span");
+                badge.id = "visBadge";
+                badge.className = "visBadge";
+                var row = document.querySelector(".videoTitleRow, .videoMetaRow, #videoTitle");
+                if (row && row.parentNode) row.parentNode.insertBefore(badge, row.nextSibling);
+            }
+            if (badge) {
+                if (normalized === "public") {
+                    badge.style.display = "none";
+                    badge.textContent = "";
+                } else {
+                    badge.style.display = "inline-flex";
+                    badge.className = "visBadge " + normalized;
+                    badge.innerHTML = normalized === "private"
+                        ? '<i class="fa-solid fa-lock"></i> Private'
+                        : '<i class="fa-solid fa-link"></i> Unlisted';
+                }
+            }
+        } catch (_) {}
     }
 
     /* ========================================================
@@ -4212,6 +4262,67 @@ function renderComments() {
        EDIT
     ======================================================== */
 
+
+    /* ========================================================
+       PERMANENT DELETE (multi-path)
+    ======================================================== */
+    async function deleteCurrentVideoPermanently() {
+        if (!state.videoId) return;
+        if (!isOwner()) {
+            toast("Not allowed", "Only the creator can delete this video.");
+            return;
+        }
+        if (!confirm("Delete permanently? Ye video kahin nahi dikhegi — feed, profile, search, history se gayab.")) {
+            return;
+        }
+        const db = getFirebaseDatabase();
+        if (!db) {
+            toast("Error", "Database not ready.");
+            return;
+        }
+        const delId = state.videoId;
+        const delUid = getCreatorId(state.video) || (state.user && state.user.uid) || "";
+        const ts = Date.now();
+        try {
+            // Soft flags first
+            await db.ref("videos/" + delId).update({
+                deleted: true,
+                deletedAt: ts,
+                archived: true,
+                visibility: "private",
+                hidden: true
+            }).catch(function () {});
+            // Hard remove mirrors
+            var multi = {};
+            multi["videos/" + delId] = null;
+            multi["longVideos/" + delId] = null;
+            multi["posts/" + delId] = null;
+            multi["feedLive/videos/" + delId] = null;
+            multi["homeFeed/" + delId] = null;
+            multi["comments/" + delId] = null;
+            multi["videoComments/" + delId] = null;
+            if (delUid) {
+                multi["userVideos/" + delUid + "/" + delId] = null;
+                multi["users/" + delUid + "/videos/" + delId] = null;
+                multi["users/" + delUid + "/longVideos/" + delId] = null;
+            }
+            try {
+                await db.ref().update(multi);
+            } catch (e) {
+                for (var path in multi) {
+                    try { await db.ref(path).remove(); } catch (_) {}
+                }
+            }
+            toast("Deleted", "Video permanently removed.");
+            setTimeout(function () {
+                location.href = "index.html";
+            }, 600);
+        } catch (err) {
+            console.error("delete video", err);
+            toast("Failed", "Could not delete video.");
+        }
+    }
+
     function openEditor() {
 
         if (!state.videoId) return;
@@ -5188,6 +5299,21 @@ function renderComments() {
             openEditor
         );
 
+        $("deleteVideoBtn")?.addEventListener(
+            "click",
+            deleteCurrentVideoPermanently
+        );
+
+        $("sheetDeleteBtn")?.addEventListener(
+            "click",
+            () => {
+                closeMore();
+                deleteCurrentVideoPermanently();
+            }
+        );
+
+
+
         $("analyticsBtn")?.addEventListener(
             "click",
             openAnalytics
@@ -5576,4 +5702,24 @@ window.openShortDescriptionSheet = openShortDescriptionSheet;
     return "ok";
   }
   window.__vieworaGateVisibility = gateVisibility;
+})();
+
+
+/* VIEWORA_VIDEO_PRIVATE_GATE — private only for owner; unlisted needs ?id= */
+(function () {
+  function gateVideoAccess(video) {
+    if (!video) return "missing";
+    if (video.deleted === true || video.archived === true && video.deleted === true) return "deleted";
+    var vis = String(video.visibility || video.privacy || "public").toLowerCase();
+    var uid = null;
+    try {
+      uid = (firebase.auth && firebase.auth().currentUser && firebase.auth().currentUser.uid) || null;
+    } catch (_) {}
+    var owner = String(video.uid || video.userId || video.ownerId || video.creatorId || "");
+    if (vis === "private") {
+      if (!uid || uid !== owner) return "private";
+    }
+    return "ok";
+  }
+  window.__vieworaGateVideoAccess = gateVideoAccess;
 })();

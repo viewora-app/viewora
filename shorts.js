@@ -684,16 +684,21 @@
         if (!displayName) displayName = "Viewora User";
         if (!username) username = "user";
 
-        const avatar =
+        let avatar =
             short.profilePhoto ||
             short.photoURL ||
             short.avatar ||
             creator?.profilePhoto ||
             creator?.photoURL ||
+            creator?.avatar ||
             (currentUser && creatorId === currentUser.uid
-                ? currentUser.photoURL
+                ? (currentUser.photoURL || "")
                 : "") ||
-            "assets/default-avatar.png";
+            "";
+        if (!avatar || /default-avatar|placeholder|null|undefined/i.test(String(avatar))) {
+            var _n = encodeURIComponent((displayName || username || "U").charAt(0).toUpperCase());
+            avatar = "https://ui-avatars.com/api/?name=" + _n + "&background=7c3aed&color=fff&size=128&bold=true";
+        }
 
         const caption = safeText(
             short.caption || short.description || short.text || short.title,
@@ -824,10 +829,6 @@
 
             <div class="shortVideoShade"></div>
 
-            <div class="playOverlay">
-                <i class="fa-solid fa-play"></i>
-            </div>
-
             <button type="button" class="volumeBtn" data-action="mute" aria-label="Mute">
                 <i class="fa-solid fa-volume-xmark"></i>
             </button>
@@ -843,7 +844,7 @@
                             class="creatorAvatar"
                             src="${escapeHTML(avatar)}"
                             alt=""
-                            onerror="this.src='assets/default-avatar.png'"
+                            onerror="this.onerror=null;this.src='https://ui-avatars.com/api/?name=U&background=7c3aed&color=fff&size=128'"
                         >
                         <span class="shortUsername">
                             ${escapeHTML(displayName)}
@@ -1519,16 +1520,33 @@
         if (!confirmed) return;
 
         try {
-            await db.ref("shorts/" + id).update({
+            var ts = firebase.database.ServerValue.TIMESTAMP;
+            var patch = {
                 deleted: true,
-                deletedAt: firebase.database.ServerValue.TIMESTAMP
-            });
+                deletedAt: ts,
+                archived: true,
+                visibility: "private",
+                hidden: true
+            };
+            var paths = [
+                "shorts/" + id,
+                "videos/" + id,
+                "posts/" + id,
+                "userVideos/" + (currentUser.uid) + "/" + id,
+                "users/" + currentUser.uid + "/videos/" + id,
+                "users/" + currentUser.uid + "/shorts/" + id
+            ];
+            await Promise.all(paths.map(function (path) {
+                return db.ref(path).update(patch).catch(function () {
+                    return db.ref(path).remove().catch(function () {});
+                });
+            }));
+            // also remove from any feed mirrors
+            try { await db.ref("feed/" + id).remove(); } catch (_) {}
+            try { await db.ref("homeFeed/" + id).remove(); } catch (_) {}
 
-            if (menuCard) {
-                menuCard.remove();
-            }
-
-            showToast("Short deleted");
+            if (menuCard) menuCard.remove();
+            showToast("Deleted permanently");
             closeMoreMenu();
         } catch (err) {
             console.error("Delete failed:", err);
@@ -1962,7 +1980,7 @@
                         const u = us.val() || {};
                         photo = u.profilePhoto || u.photoURL || photo;
                     }
-                    commentUserAvatar.src = photo || "assets/default-avatar.png";
+                    commentUserAvatar.src = photo || ("https://ui-avatars.com/api/?name=U&background=7c3aed&color=fff&size=128");
                 }
             } catch (_) {}
         })();
@@ -2073,7 +2091,7 @@
                     c.avatar ||
                     user.profilePhoto ||
                     user.photoURL ||
-                    "assets/default-avatar.png";
+                    "https://ui-avatars.com/api/?name=U&background=7c3aed&color=fff&size=128";
                 const text = safeText(c.text || c.comment || c.message, "");
                 const when = timeAgo(c.createdAt || c.timestamp);
                 const likes = safeNumber(c.likesCount || c.likes || 0);
@@ -2093,7 +2111,7 @@
                 row.innerHTML =
                     '<img src="' +
                     escapeHTML(avatar) +
-                    '" alt="" onerror="this.src=\'assets/default-avatar.png\'">' +
+                    '" alt="" onerror="this.onerror=null;this.src=\'https://ui-avatars.com/api/?name=U&background=7c3aed&color=fff&size=128\'">' +
                     '<div class="commentBody">' +
                     "<strong>" +
                     escapeHTML(name) +
@@ -2236,7 +2254,7 @@
                 me.profilePhoto ||
                 me.photoURL ||
                 currentUser.photoURL ||
-                "assets/default-avatar.png";
+                "https://ui-avatars.com/api/?name=U&background=7c3aed&color=fff&size=128";
 
             const pushRef = db.ref("comments/" + id).push();
             let finalText = text;
@@ -3174,7 +3192,7 @@
         el.className = "shortCard shortLiveCard";
         el.dataset.liveUid = uid;
         el.dataset.shortId = "live_" + uid;
-        var photo = d.hostPhoto || "assets/default-avatar.png";
+        var photo = d.hostPhoto || "https://ui-avatars.com/api/?name=U&background=7c3aed&color=fff&size=128";
         var name = d.hostName || "Live";
         var title = d.title || "Shorts Live";
         el.innerHTML =
@@ -3182,7 +3200,7 @@
           '<span style="position:absolute;top:16px;left:16px;background:#ef4444;padding:4px 10px;border-radius:99px;font-size:12px;font-weight:800;letter-spacing:.04em">LIVE</span>' +
           '<img src="' +
           String(photo).replace(/"/g, "") +
-          '" alt="" style="width:96px;height:96px;border-radius:50%;object-fit:cover;border:3px solid #ef4444" onerror="this.src=\'assets/default-avatar.png\'">' +
+          '" alt="" style="width:96px;height:96px;border-radius:50%;object-fit:cover;border:3px solid #ef4444" onerror="this.onerror=null;this.src=\'https://ui-avatars.com/api/?name=U&background=7c3aed&color=fff&size=128\'">' +
           '<strong style="margin-top:14px;font-size:16px">' +
           String(name).replace(/</g, "") +
           "</strong>" +

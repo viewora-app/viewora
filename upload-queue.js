@@ -661,10 +661,12 @@
         deleted: false
       };
       await ref.set(payload);
+      // Long videos only in videos/ + longVideos/ — NOT posts (posts tab is images/carousels)
       try {
-        await db.ref("posts/" + ref.key).set(
-          Object.assign({}, payload, { type: "video" })
-        );
+        await db.ref("longVideos/" + ref.key).set(payload);
+      } catch (_) {}
+      try {
+        await db.ref("userVideos/" + user.uid + "/" + ref.key).set(payload);
       } catch (_) {}
       return { path: "videos/" + ref.key };
     }

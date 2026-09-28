@@ -2719,3 +2719,52 @@ body.has-bottom-nav .shortProgress {
 .shortCard::after {
   content: none !important;
 }
+
+
+/* VIEWORA_SHORTS_100 — no play circle / icon ever */
+.playOverlay,
+.playOverlay.show,
+.shortCard .playOverlay {
+  display: none !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  visibility: hidden !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+/* Full-width description sheet */
+#vieworaShortDescSheet .vsdPanel {
+  width: 100% !important;
+  max-width: 100% !important;
+  left: 0 !important;
+  right: 0 !important;
+  margin: 0 !important;
+  box-sizing: border-box !important;
+}
+
+/* Scrub bar hit area without layout shift */
+.shortProgress {
+  z-index: 40;
+}
+.shortProgress.scrubbing span,
+.shortProgress:active span {
+  height: 6px !important;
+}
+
+/* Smooth like burst */
+.shortLikeBurst {
+  position: absolute;
+  z-index: 50;
+  pointer-events: none;
+  color: #ff2d55;
+  font-size: 72px;
+  transform: translate(-50%, -50%) scale(0.4);
+  animation: shortLikePop 0.7s ease forwards;
+  text-shadow: 0 4px 20px rgba(255,45,85,0.5);
+}
+@keyframes shortLikePop {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.3); }
+  25% { opacity: 1; transform: translate(-50%, -50%) scale(1.15); }
+  100% { opacity: 0; transform: translate(-50%, -60%) scale(1); }
+}

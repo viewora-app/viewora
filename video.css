@@ -4728,3 +4728,45 @@ input.ccSeek::-webkit-slider-runnable-track {
 #videoTitle:active {
   opacity: 0.75;
 }
+
+
+/* VIEWORA_LONG_VIDEO_100 */
+.ownerAction.danger,
+button.danger#deleteVideoBtn,
+#sheetDeleteBtn.danger {
+  color: #ff4d6d !important;
+}
+#sheetDeleteBtn {
+  color: #ff4d6d;
+}
+.visBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 6px 0 0;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  background: rgba(255,255,255,0.08);
+  color: #e5e7eb;
+}
+.visBadge.private {
+  background: rgba(239, 68, 68, 0.18);
+  color: #fecaca;
+}
+.visBadge.unlisted {
+  background: rgba(59, 130, 246, 0.18);
+  color: #bfdbfe;
+}
+/* Center play only when paused — clean, no giant placeholder art */
+.centerPlayBtn {
+  background: rgba(0,0,0,0.45) !important;
+  backdrop-filter: blur(8px);
+  border: 0 !important;
+  box-shadow: 0 8px 28px rgba(0,0,0,0.35);
+}
+.playerShell.playing .centerPlayBtn {
+  opacity: 0;
+  pointer-events: none;
+}
