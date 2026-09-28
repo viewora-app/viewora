@@ -672,6 +672,7 @@
         website: website || null,
         link: website || null,
         socials: socials,
+        socialLinks: socials,
         country: detectedCountry || profile.country || null,
         countryCode: detectedCountryCode || profile.countryCode || null,
         location: detectedCountry || profile.location || null,
@@ -719,10 +720,18 @@
       avatarFile = null;
       bannerFile = null;
       toast("Profile updated");
+      try {
+        // notify other tabs / profile page
+        localStorage.setItem("viewora_profile_updated", String(Date.now()));
+        if (photoURL) localStorage.setItem("viewora_my_avatar", photoURL);
+        if (coverURL) {
+          localStorage.setItem("viewora_my_banner", coverURL);
+          localStorage.setItem("viewora_my_cover", coverURL);
+        }
+      } catch (_) {}
       setTimeout(function () {
-        if (history.length > 1) history.back();
-        else location.href = "profile.html";
-      }, 600);
+        location.href = "profile.html?uid=" + encodeURIComponent(user.uid) + "&t=" + Date.now();
+      }, 500);
     } catch (e) {
       console.error(e);
       toast(e.message || "Could not save");

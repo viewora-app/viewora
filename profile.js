@@ -194,7 +194,18 @@ function escapeHtml(s){return String(s||"").replace(/&/g,"&amp;").replace(/</g,"
        SAFE NUMBER
     ===================================================== */
 
-    function safeNumber(value) {
+    
+/* VIEWORA_PROFILE_VIS_FILTER */
+function __vieworaProfileHideItem(item, isOwn) {
+  if (!item) return true;
+  if (item.deleted === true || item.archived === true || item.hidden === true) return true;
+  var v = String(item.visibility || item.privacy || "public").toLowerCase();
+  if (v === "private" && !isOwn) return true;
+  if (v === "unlisted" && !isOwn) return true; // only owner sees unlisted on profile grid
+  return false;
+}
+
+function safeNumber(value) {
 
         const n = Number(value);
 
@@ -3337,7 +3348,8 @@ function escapeHtml(s){return String(s||"").replace(/&/g,"&amp;").replace(/</g,"
                         item =>
                             item.archived !== true &&
                             item.deleted !== true &&
-                            item.hidden !== true
+                            item.hidden !== true &&
+                            !__vieworaProfileHideItem(item, typeof isOwnProfile !== "undefined" && isOwnProfile)
                     )
                     .filter(function (item) {
                         // Must have real post media — never count avatar-only junk rows
@@ -3793,7 +3805,7 @@ function escapeHtml(s){return String(s||"").replace(/&/g,"&amp;").replace(/</g,"
                     });
                 } catch (_av) {}
                 items = items.filter(function (item) {
-                    return item && item.deleted !== true && item.archived !== true;
+                    return item && item.deleted !== true && item.archived !== true && !__vieworaProfileHideItem(item, typeof isOwnProfile !== "undefined" && isOwnProfile);
                 });
 
             } catch (error) {
