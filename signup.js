@@ -21,13 +21,17 @@ if (typeof firebase === "undefined") {
     throw new Error("Firebase SDK Missing");
 }
 
-if (typeof auth === "undefined") {
-    throw new Error("Firebase Auth Missing");
-}
-
-if (typeof db === "undefined") {
-    throw new Error("Realtime Database Missing");
-}
+var auth = (typeof auth !== "undefined" && auth) ? auth : (window.auth || firebase.auth());
+var db = (typeof db !== "undefined" && db) ? db : (window.db || firebase.database());
+if (!auth) throw new Error("Firebase Auth Missing");
+if (!db) throw new Error("Realtime Database Missing");
+var googleProvider = (typeof googleProvider !== "undefined" && googleProvider) ? googleProvider : (window.googleProvider || null);
+var facebookProvider = (typeof facebookProvider !== "undefined" && facebookProvider) ? facebookProvider : (window.facebookProvider || null);
+var twitterProvider = (typeof twitterProvider !== "undefined" && twitterProvider) ? twitterProvider : (window.twitterProvider || window.xProvider || null);
+var usernamesRef = (typeof usernamesRef === "function") ? usernamesRef : (window.usernamesRef || function (u) { return db.ref("usernames/" + String(u||"").toLowerCase()); });
+var safeWrite = (typeof safeWrite === "function") ? safeWrite : (window.safeWrite || async function (path, data) { await db.ref(path).set(data); });
+var safeUpdate = (typeof safeUpdate === "function") ? safeUpdate : (window.safeUpdate || async function (path, data) { await db.ref(path).update(data); });
+var SERVER_TIME = (typeof SERVER_TIME !== "undefined" && SERVER_TIME) ? SERVER_TIME : (window.SERVER_TIME || firebase.database.ServerValue.TIMESTAMP);
 
 if (typeof googleProvider === "undefined") {
     console.warn(
@@ -852,9 +856,13 @@ async function createAccount(event) {
         await createdUser
             .sendEmailVerification();
 
+        try {
+            if (window.VieworaAccounts && typeof VieworaAccounts.saveCredentials === "function") {
+                VieworaAccounts.saveCredentials(data.email, data.password, createdUser.uid);
+            }
+        } catch (_) {}
 
         hideLoading();
-
 
         showToast(
             "Account created successfully"
@@ -1835,6 +1843,90 @@ window.resetSignupForm =
     };
 
 
-console.log(
-    "✅ Viewora signup.js loaded successfully"
-);
+
+
+/*==========================================================
+  SOCIAL: Facebook + X (same flow as Google)
+==========================================================*/
+async function socialSignupProvider(provider, name) {
+    if (loading) return;
+    if (!provider) {
+        showToast(name + " login is not configured", "error");
+        return;
+    }
+    showLoading("Connecting to " + name + "...");
+    try {
+        const result = await auth.signInWithPopup(provider);
+        const user = result.user;
+        const userRef = db.ref("users/" + user.uid);
+        const snapshot = await userRef.once("value");
+        if (!snapshot.exists()) {
+            let baseUsername = (user.displayName || "user")
+                .toLowerCase().replace(/[^a-z0-9]/g, "").substring(0, 15) || "user";
+            let finalUsername = baseUsername;
+            let counter = 1;
+            while ((await usernamesRef(finalUsername).once("value")).exists()) {
+                finalUsername = baseUsername + counter;
+                counter++;
+            }
+            await safeWrite("usernames/" + finalUsername, user.uid);
+            await safeWrite("users/" + user.uid, {
+                uid: user.uid,
+                name: user.displayName || "Viewora User",
+                fullName: user.displayName || "Viewora User",
+                username: finalUsername,
+                email: user.email || "",
+                profilePhoto: user.photoURL || "assets/default-avatar.png",
+                coverPhoto: "assets/default-banner.jpg",
+                bio: "Welcome to Viewora 🚀",
+                verified: false,
+                emailVerified: true,
+                accountType: "creator",
+                provider: name.toLowerCase(),
+                followers: 0, following: 0, posts: 0, videos: 0, shorts: 0,
+                likes: 0, views: 0, subscribers: 0,
+                online: true,
+                createdAt: SERVER_TIME,
+                lastLogin: SERVER_TIME,
+                lastSeen: SERVER_TIME
+            });
+            await safeWrite("settings/" + user.uid, {
+                theme: "dark", language: "en", autoplay: true,
+                notifications: true, privateAccount: false,
+                showEmail: false, showOnlineStatus: true,
+                showFollowers: true, allowMessages: true, downloadQuality: "HD"
+            });
+        } else {
+            await safeUpdate("users/" + user.uid, {
+                online: true, emailVerified: true,
+                lastLogin: SERVER_TIME, lastSeen: SERVER_TIME
+            });
+        }
+        hideLoading();
+        showToast(name + " signup successful");
+        setTimeout(function () { location.replace("index.html"); }, 900);
+    } catch (error) {
+        hideLoading();
+        if (error.code === "auth/popup-closed-by-user") {
+            showToast(name + " sign-in cancelled", "error");
+            return;
+        }
+        if (error.code === "auth/account-exists-with-different-credential") {
+            showToast("An account already exists with this email", "error");
+            return;
+        }
+        showToast(error.message || (name + " signup failed"), "error");
+    }
+}
+
+document.getElementById("facebookSignup")?.addEventListener("click", function () {
+    var p = typeof facebookProvider !== "undefined" ? facebookProvider : null;
+    socialSignupProvider(p, "Facebook");
+});
+document.getElementById("xSignup")?.addEventListener("click", function () {
+    var p = typeof twitterProvider !== "undefined" ? twitterProvider : (typeof xProvider !== "undefined" ? xProvider : null);
+    socialSignupProvider(p, "X");
+});
+
+
+console.log("✅ Viewora signup.js loaded successfully");

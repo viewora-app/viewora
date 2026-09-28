@@ -35,6 +35,12 @@
        They are already created by firebase.js.
     */
 
+    try {
+        if (firebase.auth && firebase.auth.Auth && firebase.auth.Auth.Persistence) {
+            firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(function () {});
+        }
+    } catch (_) {}
+
     const loginAuth =
         typeof auth !== "undefined"
             ? auth
@@ -709,6 +715,12 @@
                 "email"
             );
 
+            try {
+                if (window.VieworaAccounts && typeof VieworaAccounts.saveCredentials === "function") {
+                    VieworaAccounts.saveCredentials(data.email, data.password, user.uid);
+                }
+            } catch (_) {}
+
             showToast(
                 "Welcome back to Viewora!"
             );
@@ -1348,7 +1360,7 @@
                     user.emailVerified ||
                     user.providerData?.some(
                         provider =>
-                            provider.provider !==
+                            (provider.providerId || provider.provider || "") !==
                             "password"
                     )
                 ) {
