@@ -1822,14 +1822,22 @@
                 } catch (_) {}
                 const ownerId = getCreatorId(short);
                 if (delta === 1 && ownerId && ownerId !== currentUser.uid) {
-                    db.ref("notifications/" + ownerId).push({
+                    // Deterministic key → 1 like = 1 notification (no spam)
+                    var notifKey = "like_short_" + id + "_" + currentUser.uid;
+                    db.ref("notifications/" + ownerId + "/" + notifKey).set({
                         type: "like",
                         contentType: "short",
                         contentId: id,
                         senderUID: currentUser.uid,
+                        fromUID: currentUser.uid,
                         createdAt: firebase.database.ServerValue.TIMESTAMP,
                         read: false
                     }).catch(function () {});
+                } else if (delta === -1 && ownerId) {
+                    try {
+                        var nk = "like_short_" + id + "_" + currentUser.uid;
+                        db.ref("notifications/" + ownerId + "/" + nk).remove();
+                    } catch (_) {}
                 }
             } catch (err) {
                 console.error("Like sync failed:", err);
@@ -3564,4 +3572,27 @@ window.VieworaRefreshFeed = function () {
       window.__vieworaPreferUnmuted = true;
     }
   } catch (_) {}
+})();
+
+
+/* VIEWORA_VIS_FILTER — private / unlisted / deleted */
+(function () {
+  function isHiddenContent(d) {
+    if (!d) return true;
+    if (d.deleted === true || d.archived === true) return true;
+    var v = String(d.visibility || d.privacy || "public").toLowerCase();
+    if (v === "private") return true;
+    // unlisted: only show if URL has matching id
+    if (v === "unlisted") {
+      try {
+        var q = new URLSearchParams(location.search);
+        var id = q.get("id") || q.get("short") || q.get("v") || "";
+        var sid = String(d.id || d.shortId || "");
+        if (id && sid && id === sid) return false;
+        return true;
+      } catch (_) { return true; }
+    }
+    return false;
+  }
+  window.__vieworaIsHiddenContent = isHiddenContent;
 })();

@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<title>Viewora · Saved</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"/>
+<style>
+body{margin:0;background:#0a0a0f;color:#fff;font-family:system-ui,sans-serif}
+.top{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid rgba(255,255,255,.08);position:sticky;top:0;background:#0a0a0f;z-index:5}
+.top h1{font-size:18px;margin:0;flex:1}
+.back{border:0;background:rgba(255,255,255,.08);width:40px;height:40px;border-radius:50%;color:#fff}
+.tabs{display:flex;gap:8px;padding:10px 12px}
+.tabs button{border:0;background:rgba(255,255,255,.08);color:#ccc;padding:8px 14px;border-radius:999px;font-weight:600}
+.tabs button.active{background:#7c3aed;color:#fff}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;padding:4px}
+.cell{aspect-ratio:9/16;background:#1a1a1f;position:relative;overflow:hidden}
+.cell img,.cell video{width:100%;height:100%;object-fit:cover}
+.cell.long{aspect-ratio:1/1}
+.empty{text-align:center;padding:48px 16px;color:#9ca3af;grid-column:1/-1}
+</style>
+</head>
+<body>
+<div class="top">
+  <button class="back" id="backBtn" type="button"><i class="fa-solid fa-arrow-left"></i></button>
+  <h1>Saved</h1>
+</div>
+<div class="tabs">
+  <button type="button" class="active" data-tab="all">All</button>
+  <button type="button" data-tab="shorts">Shorts</button>
+  <button type="button" data-tab="videos">Videos</button>
+</div>
+<div class="grid" id="grid"><div class="empty">Loading…</div></div>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script src="firebase.js"></script>
+<script>
+(function(){
+  var tab="all"; var cache={shorts:[],videos:[]};
+  document.getElementById("backBtn").onclick=function(){ history.length>1?history.back():location.href="profile.html"; };
+  document.querySelectorAll(".tabs button").forEach(function(b){
+    b.onclick=function(){ document.querySelectorAll(".tabs button").forEach(function(x){x.classList.remove("active")}); b.classList.add("active"); tab=b.dataset.tab; render(); };
+  });
+  function render(){
+    var grid=document.getElementById("grid");
+    var items=[];
+    if(tab==="all"||tab==="shorts") items=items.concat(cache.shorts.map(function(x){return Object.assign({_t:"short"},x)}));
+    if(tab==="all"||tab==="videos") items=items.concat(cache.videos.map(function(x){return Object.assign({_t:"video"},x)}));
+    if(!items.length){ grid.innerHTML='<div class="empty"><i class="fa-regular fa-bookmark" style="font-size:36px;opacity:.4"></i><p>No saved items</p></div>'; return; }
+    grid.innerHTML=items.map(function(it){
+      var thumb=it.thumbnail||it.thumbnailUrl||it.cover||it.thumb||"";
+      var href=it._t==="short"?("shorts.html?id="+encodeURIComponent(it.id)):("video.html?id="+encodeURIComponent(it.id));
+      return '<a class="cell '+(it._t==="video"?"long":"")+'" href="'+href+'">'+(thumb?'<img src="'+thumb+'" alt="">':'')+'</a>';
+    }).join("");
+  }
+  function ready(cb){ if(window.firebase&&firebase.apps.length) cb(); else setTimeout(function(){ready(cb)},50); }
+  ready(function(){
+    firebase.auth().onAuthStateChanged(async function(u){
+      if(!u){ document.getElementById("grid").innerHTML='<div class="empty">Login required</div>'; return; }
+      var db=firebase.database();
+      try{
+        var s=await db.ref("savedShorts/"+u.uid).once("value");
+        var sv=s.val()||{};
+        cache.shorts=Object.keys(sv).map(function(id){ return Object.assign({id:id}, sv[id]||{}); });
+      }catch(_){}
+      try{
+        var v=await db.ref("savedVideos/"+u.uid).once("value");
+        var vv=v.val()||{};
+        cache.videos=Object.keys(vv).map(function(id){ return Object.assign({id:id}, vv[id]||{}); });
+      }catch(_){}
+      // also users/uid/saved
+      try{
+        var u2=await db.ref("users/"+u.uid+"/saved").once("value");
+        var uv=u2.val()||{};
+        Object.keys(uv).forEach(function(id){
+          var d=uv[id]||{};
+          if((d.type||"")==="short"||d.short) cache.shorts.push(Object.assign({id:id},d));
+          else cache.videos.push(Object.assign({id:id},d));
+        });
+      }catch(_){}
+      render();
+    });
+  });
+})();
+</script>
+</body>
+</html>

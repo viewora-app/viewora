@@ -1247,6 +1247,14 @@ try{document.addEventListener("click",function(){try{sessionStorage.setItem("vie
                 </span>
 
                 <span class="videoDurationBadge">${durLabel || ""}</span>
+                ${
+                    (function(){
+                        var vv = String(data.visibility || data.privacy || "public").toLowerCase();
+                        if (vv === "unlisted") return '<span class="visBadge unlisted" title="Unlisted"><i class="fa-solid fa-link"></i> Unlisted</span>';
+                        if (vv === "private") return '<span class="visBadge private" title="Private"><i class="fa-solid fa-lock"></i> Private</span>';
+                        return "";
+                    })()
+                }
 
             </div>
 
@@ -1494,6 +1502,23 @@ try{document.addEventListener("click",function(){try{sessionStorage.setItem("vie
             });
 
             longVideoContainer.appendChild(fragment);
+            // VIEWORA_DP_DOM_REFRESH
+            longVideoContainer.querySelectorAll(".longVideoCard").forEach(function (card) {
+                var uid = card.dataset.uid || "";
+                var img = card.querySelector(".videoAvatar");
+                if (!img || !uid) return;
+                fetchUserNode(uid).then(function (u) {
+                    if (!u) return;
+                    var ph = vieworaPickPhoto(u);
+                    if (ph) {
+                        img.onerror = function () {
+                            this.onerror = null;
+                            this.src = vieworaLetterAvatar(u.displayName || u.username || "U");
+                        };
+                        img.src = ph;
+                    }
+                }).catch(function () {});
+            });
             // Auto-fill duration badge when missing
             longVideoContainer.querySelectorAll(".longVideoCard").forEach((card) => {
                 const badge = card.querySelector(".videoDurationBadge");
@@ -1657,6 +1682,8 @@ try{document.addEventListener("click",function(){try{sessionStorage.setItem("vie
                     ) {
                         return;
                     }
+                    // unlisted: never on home feed
+                    if (vis === "unlisted") return;
 
                     // skip if same media URL already mapped under another id
                     var mediaKey = String(data.videoUrl || data.videoURL || data.video || data.mediaUrl || data.media || "").split("?")[0];

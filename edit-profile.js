@@ -319,9 +319,14 @@
     cropImg = new Image();
     cropImg.onload = function () {
       drawCrop();
-      modal.classList.remove("hidden");
-      modal.setAttribute("aria-hidden", "false");
+      if (modal) {
+        modal.classList.remove("hidden");
+        modal.style.display = "flex";
+        modal.setAttribute("aria-hidden", "false");
+      }
+      try { wireCropHandles(); } catch (_) {}
     };
+    cropImg.onerror = function () { toast("Could not load image"); };
     cropImg.src = URL.createObjectURL(file);
   }
 
@@ -393,10 +398,61 @@
     }, "image/jpeg", 0.92);
   }
 
+
+  function wireCropHandles() {
+    var stage = document.querySelector(".cropStage");
+    var canvas = $("cropCanvas");
+    if (!stage || !canvas) return;
+    // 4 corner handles for resize feel
+    var old = stage.querySelectorAll(".cropHandle");
+    old.forEach(function (h) { try { h.remove(); } catch (_) {} });
+    ["tl","tr","bl","br"].forEach(function (pos) {
+      var h = document.createElement("div");
+      h.className = "cropHandle cropHandle-" + pos;
+      h.setAttribute("data-pos", pos);
+      stage.appendChild(h);
+      var startScale = 1;
+      function onStart(e) {
+        e.preventDefault(); e.stopPropagation();
+        startScale = cropScale;
+        var pt = e.touches ? e.touches[0] : e;
+        var sx = pt.clientX, sy = pt.clientY;
+        function onMove(ev) {
+          var p = ev.touches ? ev.touches[0] : ev;
+          var dx = p.clientX - sx;
+          var dy = p.clientY - sy;
+          var delta = (Math.abs(dx) + Math.abs(dy)) / 120;
+          var sign = (pos === "tl" || pos === "tr") ? (dy < 0 ? 1 : -1) : (dy > 0 ? 1 : -1);
+          // drag out = zoom in
+          var dist = Math.sqrt(dx*dx + dy*dy) / 100;
+          cropScale = Math.max(1, Math.min(3, startScale + dist * ((dx + dy) > 0 ? 1 : -1) * 0.5 + dist));
+          // simpler: distance from start increases scale
+          cropScale = Math.max(1, Math.min(3, startScale + Math.sqrt(dx*dx+dy*dy)/150));
+          var z = $("cropZoom");
+          if (z) z.value = String(cropScale);
+          drawCrop();
+        }
+        function onEnd() {
+          document.removeEventListener("mousemove", onMove);
+          document.removeEventListener("mouseup", onEnd);
+          document.removeEventListener("touchmove", onMove);
+          document.removeEventListener("touchend", onEnd);
+        }
+        document.addEventListener("mousemove", onMove);
+        document.addEventListener("mouseup", onEnd);
+        document.addEventListener("touchmove", onMove, { passive: false });
+        document.addEventListener("touchend", onEnd);
+      }
+      h.addEventListener("mousedown", onStart);
+      h.addEventListener("touchstart", onStart, { passive: false });
+    });
+  }
+
   function closeCrop() {
     var modal = $("cropModal");
     if (modal) {
       modal.classList.add("hidden");
+      modal.style.display = "none";
       modal.setAttribute("aria-hidden", "true");
     }
     if (cropImg && cropImg.src && cropImg.src.indexOf("blob:") === 0) {
@@ -491,12 +547,46 @@
   }
 
   async function uploadImage(file, folder, uid, maxSide) {
-    if (!file || !storage) return null;
+    if (!file) return null;
     var blob = await compressImage(file, maxSide || 720, 0.82);
-    var path = folder + "/" + uid + "/" + Date.now() + ".jpg";
-    var ref = storage.ref(path);
-    await ref.put(blob, { contentType: "image/jpeg" });
-    return await ref.getDownloadURL();
+    // 1) Cloudinary (same as video upload — works without Storage rules)
+    try {
+      var cloudName = (window.VIEWORA_CLOUDINARY_CLOUD || window.CLOUDINARY_CLOUD_NAME || "").trim();
+      var preset = (window.VIEWORA_CLOUDINARY_PRESET || window.CLOUDINARY_UPLOAD_PRESET || "").trim();
+      // Try read from firebase.js globals / meta
+      try {
+        if (!cloudName && window.VIEWORA_CONFIG) {
+          cloudName = window.VIEWORA_CONFIG.cloudinaryCloud || window.VIEWORA_CONFIG.CLOUDINARY_CLOUD_NAME || "";
+          preset = preset || window.VIEWORA_CONFIG.cloudinaryPreset || window.VIEWORA_CONFIG.CLOUDINARY_UPLOAD_PRESET || "";
+        }
+      } catch (_) {}
+      if (cloudName && preset) {
+        var fd = new FormData();
+        fd.append("file", blob, (folder || "img") + ".jpg");
+        fd.append("upload_preset", preset);
+        fd.append("folder", "viewora/" + (folder || "avatars") + "/" + (uid || "user"));
+        var res = await fetch("https://api.cloudinary.com/v1_1/" + cloudName + "/image/upload", { method: "POST", body: fd });
+        if (res.ok) {
+          var j = await res.json();
+          if (j.secure_url || j.url) return j.secure_url || j.url;
+        }
+      }
+    } catch (ce) {
+      console.warn("Cloudinary avatar failed", ce);
+    }
+    // 2) Firebase Storage
+    if (storage) {
+      try {
+        var path = folder + "/" + uid + "/" + Date.now() + ".jpg";
+        var ref = storage.ref(path);
+        await ref.put(blob, { contentType: "image/jpeg" });
+        return await ref.getDownloadURL();
+      } catch (se) {
+        console.warn("Storage avatar failed", se);
+      }
+    }
+    // 3) Data URL last resort (store in RTDB if small) — avoid for large
+    throw new Error("Image upload failed. Check Cloudinary/Storage config.");
   }
 
   async function save() {

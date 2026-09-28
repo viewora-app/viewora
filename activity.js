@@ -1433,6 +1433,7 @@ function isFollow(notification) {
         const notifications =
             getFilteredNotifications();
 
+        if (window.__vieworaDedupeNotifs) notifications = window.__vieworaDedupeNotifs(notifications);
         if (!notifications.length) {
 
             showEmpty(
@@ -3020,4 +3021,23 @@ function isFollow(notification) {
 
     init();
 
+})();
+
+/* VIEWORA_NOTIF_DEDUPE — collapse spam likes */
+(function () {
+  window.__vieworaDedupeNotifs = function (list) {
+    var seen = {};
+    var out = [];
+    (list || []).forEach(function (n) {
+      var d = n.data || n || {};
+      var type = String(d.type || "").toLowerCase();
+      var key = type + "|" + (d.contentId || d.postId || d.videoId || d.shortId || "") + "|" + (d.senderUID || d.fromUID || d.uid || "");
+      if (type.indexOf("like") !== -1) {
+        if (seen[key]) return;
+        seen[key] = true;
+      }
+      out.push(n);
+    });
+    return out;
+  };
 })();

@@ -2427,3 +2427,54 @@ console.log(
     "/",
     window.VIEWORA_CLOUDINARY_PRESET
 );
+
+
+/* VIEWORA_LOGIN_DEVICE_NOTIF */
+(function () {
+  function deviceLabel() {
+    var ua = navigator.userAgent || "";
+    var name = "Device";
+    if (/android/i.test(ua)) name = "Android";
+    else if (/iphone|ipad|ipod/i.test(ua)) name = "iPhone";
+    else if (/windows/i.test(ua)) name = "Windows";
+    else if (/mac os/i.test(ua)) name = "Mac";
+    else if (/linux/i.test(ua)) name = "Linux";
+    var browser = "Browser";
+    if (/edg\//i.test(ua)) browser = "Edge";
+    else if (/chrome\//i.test(ua)) browser = "Chrome";
+    else if (/safari\//i.test(ua) && !/chrome/i.test(ua)) browser = "Safari";
+    else if (/firefox\//i.test(ua)) browser = "Firefox";
+    return name + " · " + browser;
+  }
+  function writeLoginAlert(uid) {
+    try {
+      if (!uid || !window.firebase || !firebase.database) return;
+      var key = "login_" + Date.now();
+      firebase.database().ref("notifications/" + uid + "/" + key).set({
+        type: "security",
+        notificationType: "login",
+        title: "New login",
+        message: "Your account was opened on " + deviceLabel(),
+        device: deviceLabel(),
+        createdAt: firebase.database.ServerValue.TIMESTAMP,
+        read: false
+      });
+    } catch (_) {}
+  }
+  try {
+    if (window.firebase && firebase.auth) {
+      var last = "";
+      firebase.auth().onAuthStateChanged(function (u) {
+        if (u && u.uid && u.uid !== last) {
+          // only once per session
+          try {
+            if (sessionStorage.getItem("viewora_login_alert_" + u.uid)) return;
+            sessionStorage.setItem("viewora_login_alert_" + u.uid, "1");
+          } catch (_) {}
+          last = u.uid;
+          writeLoginAlert(u.uid);
+        }
+      });
+    }
+  } catch (_) {}
+})();

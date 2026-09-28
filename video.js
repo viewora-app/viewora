@@ -2313,6 +2313,26 @@ playBtn?.addEventListener("click", (e) => {
             updateLikeCount();
             renderActionStates();
 
+            // Activity notification (1 per user per video)
+            try {
+                var ownerId = getCreatorId(state.video);
+                if (isLiked && !wasLiked && ownerId && ownerId !== uid) {
+                    var nk = "like_video_" + state.videoId + "_" + uid;
+                    db.ref("notifications/" + ownerId + "/" + nk).set({
+                        type: "like",
+                        contentType: "video",
+                        contentId: state.videoId,
+                        senderUID: uid,
+                        fromUID: uid,
+                        createdAt: firebase.database.ServerValue.TIMESTAMP,
+                        read: false
+                    }).catch(function () {});
+                } else if (!isLiked && wasLiked && ownerId) {
+                    db.ref("notifications/" + ownerId + "/like_video_" + state.videoId + "_" + uid).remove().catch(function () {});
+                }
+            } catch (_n) {}
+
+
         } catch (error) {
             console.error("Like failed:", error);
             toast("Like failed", "Please try again.", "error");
@@ -5540,4 +5560,20 @@ window.openShortDescriptionSheet = openShortDescriptionSheet;
     }
   }
   setInterval(forceVideoHist, 2500);
+})();
+
+
+/* VIEWORA_PRIVATE_GATE */
+(function () {
+  var _orig = window.renderVideoPage || null;
+  async function gateVisibility(video, myUid) {
+    if (!video) return "missing";
+    if (video.deleted === true) return "deleted";
+    var vis = String(video.visibility || video.privacy || "public").toLowerCase();
+    var owner = String(video.uid || video.userId || video.ownerId || video.creatorId || "");
+    if (vis === "private" && myUid && owner && myUid !== owner) return "private";
+    if (vis === "private" && !myUid) return "private";
+    return "ok";
+  }
+  window.__vieworaGateVisibility = gateVisibility;
 })();
