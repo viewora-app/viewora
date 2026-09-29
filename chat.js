@@ -428,7 +428,7 @@
     ====================================================== */
 
     const DEFAULT_AVATAR =
-        "assets/default-avatar.png";
+        "https://ui-avatars.com/api/?name=U&background=7c3aed&color=fff&size=128";
 
     const MAX_MESSAGE_LENGTH =
         5000;

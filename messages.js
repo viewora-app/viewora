@@ -1172,7 +1172,7 @@ function messagesCreateCard(chat) {
     const photo =
         chat.photoURL ||
         chat.profilePhoto ||
-        "assets/default-avatar.png";
+        "https://ui-avatars.com/api/?name=U&background=7c3aed&color=fff&size=128";
 
     const preview =
         messagesEscape(
@@ -1250,7 +1250,7 @@ function messagesCreateCard(chat) {
                 src="${messagesEscape(photo)}"
                 alt="${name}"
                 loading="lazy"
-                onerror="this.src='assets/default-avatar.png'"
+                onerror="this.onerror=null;this.src='https://ui-avatars.com/api/?name=U&background=7c3aed&color=fff&size=128'"
             >
 
             ${onlineHTML}
@@ -1654,7 +1654,7 @@ function messagesCreateActionSheet() {
                 <div class="messageActionAvatar">
                     <img
                         id="actionUserPhoto"
-                        src="assets/default-avatar.png"
+                        src="https://ui-avatars.com/api/?name=U&background=7c3aed&color=fff&size=128"
                         alt=""
                     >
                 </div>
@@ -1855,7 +1855,7 @@ function messagesOpenActionSheet(chat) {
     const photo =
         chat.photoURL ||
         chat.profilePhoto ||
-        "assets/default-avatar.png";
+        "https://ui-avatars.com/api/?name=U&background=7c3aed&color=fff&size=128";
 
     const name =
         document.getElementById(
@@ -1910,7 +1910,7 @@ function messagesOpenActionSheet(chat) {
         photoElement.onerror =
             function() {
                 this.src =
-                    "assets/default-avatar.png";
+                    "https://ui-avatars.com/api/?name=U&background=7c3aed&color=fff&size=128";
             };
     }
 
@@ -2818,7 +2818,7 @@ function messagesCreateUserCard(uid, user) {
     const photo =
         user.photoURL ||
         user.profilePhoto ||
-        "assets/default-avatar.png";
+        "https://ui-avatars.com/api/?name=U&background=7c3aed&color=fff&size=128";
 
     card.innerHTML = `
 
@@ -2828,7 +2828,7 @@ function messagesCreateUserCard(uid, user) {
                 src="${messagesEscape(photo)}"
                 alt="User"
                 loading="lazy"
-                onerror="this.src='assets/default-avatar.png'"
+                onerror="this.onerror=null;this.src='https://ui-avatars.com/api/?name=U&background=7c3aed&color=fff&size=128'"
             >
 
             ${
@@ -3253,7 +3253,7 @@ console.log(
               u.profilePhoto ||
               u.photoURL ||
               u.avatar ||
-              "assets/default-avatar.png";
+              "https://ui-avatars.com/api/?name=U&background=7c3aed&color=fff&size=128";
             peopleCache.push({
               uid,
               username: name,
@@ -3555,7 +3555,7 @@ console.log(
       wrap.className = "noteEditor";
       wrap.innerHTML =
         '<div class="noteEditorCard">' +
-        '<div class="noteEditorHead"><img id="noteEditorAvatar" src="assets/default-avatar.png" alt=""><h3>Your note</h3></div>' +
+        '<div class="noteEditorHead"><img id="noteEditorAvatar" src="https://ui-avatars.com/api/?name=U&background=7c3aed&color=fff&size=128" alt=""><h3>Your note</h3></div>' +
         '<textarea id="noteTextInput" maxlength="60" placeholder="Share a thought…"></textarea>' +
         '<div class="noteEditorActions">' +
         '<button type="button" id="noteSaveBtn">Share</button>' +
@@ -3708,7 +3708,7 @@ console.log(
         if (ph) av.src = ph;
         av.style.display = "block";
         av.onerror = function () {
-          this.src = "assets/default-avatar.png";
+          this.src = "https://ui-avatars.com/api/?name=U&background=7c3aed&color=fff&size=128";
         };
       }
     } catch (e) {
@@ -3771,7 +3771,7 @@ console.log(
             u.photoURL ||
             u.avatar ||
             n.photo ||
-            "assets/default-avatar.png",
+            "https://ui-avatars.com/api/?name=U&background=7c3aed&color=fff&size=128",
           name: u.displayName || u.name || u.username || n.name || "User",
           username: u.username || "",
           at: Number(n.updatedAt || 0),

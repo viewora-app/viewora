@@ -3897,3 +3897,23 @@ audio {
 .messageRow.mine .messageBubble {
   /* own messages also swipeable */
 }
+
+
+/* Viewora ticks — red / blue / white */
+.vieworaTick.redTick,
+.redTick.vieworaTick,
+i.redTick {
+  color: #ff3b5c !important;
+}
+.vieworaTick.blueTick,
+.blueTick.vieworaTick,
+i.blueTick,
+.verifiedTick {
+  color: #1d9bf0 !important;
+}
+.vieworaTick.whiteTick,
+.whiteTick.vieworaTick,
+i.whiteTick {
+  color: #e8eef7 !important;
+  filter: drop-shadow(0 0 1px rgba(0,0,0,.45));
+}
