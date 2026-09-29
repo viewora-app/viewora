@@ -1051,7 +1051,7 @@
                     clearRingTimeout();
                     accepted = true;
                     setConnecting(false);
-                    setStatus("Connected");
+                    setStatus("Connected"); try { if (window.__vieworaArmCallBackGuard) window.__vieworaArmCallBackGuard(); } catch (_) {}
                     try {
                         if (db && currentUser) {
                             db.ref("users/" + currentUser.uid + "/callStatus").set({
@@ -2753,6 +2753,7 @@
         if (!window.VieworaMesh || !db || !callId || !currentUser) return;
         if (!localStream) return;
         try {
+            if (window.__vieworaArmCallBackGuard) window.__vieworaArmCallBackGuard();
             VieworaMesh.init({
                 db: db,
                 callId: callId,
@@ -3054,23 +3055,19 @@
             toast("Camera switch only on video calls.");
             return;
         }
-
         if (!localStream) {
             toast("Camera not ready.");
             return;
         }
-
         const oldTrack = localStream.getVideoTracks()[0];
         if (!oldTrack) {
             toast("No camera track.");
             return;
         }
 
-        usingFrontCamera = !usingFrontCamera;
-        const facing = usingFrontCamera ? "user" : "environment";
-
         async function applyNewTrack(newTrack, leftoverStream) {
             if (!newTrack) throw new Error("No new video track");
+            // Replace on 1:1 peer
             if (peerConnection) {
                 const sender = peerConnection
                     .getSenders()
@@ -3086,97 +3083,113 @@
                 localVideo.playsInline = true;
                 localVideo.muted = true;
                 localVideo.setAttribute("playsinline", "");
+                localVideo.style.transform = usingFrontCamera ? "scaleX(-1)" : "none";
                 await localVideo.play().catch(() => {});
             }
-            if (typeof remoteVideo !== "undefined" && remoteVideo) {
-                remoteVideo.play().catch(() => {});
-            }
             if (leftoverStream) {
-                leftoverStream.getTracks().forEach(t => {
-                    if (t.id !== newTrack.id) {
-                        try { t.stop(); } catch (_) {}
+                leftoverStream.getTracks().forEach(tr => {
+                    if (tr.id !== newTrack.id) {
+                        try { tr.stop(); } catch (_) {}
                     }
                 });
             }
-            toast(usingFrontCamera ? "Front camera" : "Back camera");
             try {
                 if (window.VieworaMesh && newTrack) {
                     VieworaMesh.replaceTrack("video", newTrack);
                 }
             } catch (_) {}
+            toast(usingFrontCamera ? "Front camera" : "Back camera");
         }
 
-        // 1) Prefer deviceId from enumerateDevices (works on Android WebView where facingMode:exact fails)
+        // Enumerate & cycle to next camera (front ↔ back)
+        let devices = [];
         try {
-            const devices = await navigator.mediaDevices.enumerateDevices();
-            const cams = devices.filter(d => d.kind === "videoinput");
-            let targetId = null;
-            if (cams.length >= 2) {
-                // Heuristic: environment/back often has "back"/"rear"/"environment" in label
-                const back = cams.find(d => /back|rear|environment|world/i.test(d.label || ""));
-                const front = cams.find(d => /front|user|face/i.test(d.label || ""));
-                if (!usingFrontCamera && back) targetId = back.deviceId;
-                else if (usingFrontCamera && front) targetId = front.deviceId;
-                else {
-                    // Toggle between first two cameras by index
-                    const curId = oldTrack.getSettings && oldTrack.getSettings().deviceId;
-                    const idx = Math.max(0, cams.findIndex(c => c.deviceId === curId));
-                    const next = cams[(idx + 1) % cams.length];
-                    targetId = next && next.deviceId;
-                }
-            }
-            if (targetId) {
-                const s = await navigator.mediaDevices.getUserMedia({
+            devices = await navigator.mediaDevices.enumerateDevices();
+        } catch (_) {}
+        let cams = devices.filter(d => d.kind === "videoinput");
+        // If labels empty, need a live track first — already have permission
+        if (cams.length < 2) {
+            try {
+                // trigger label population
+                await navigator.mediaDevices.getUserMedia({ video: true, audio: false })
+                    .then(s => s.getTracks().forEach(tr => tr.stop()));
+                devices = await navigator.mediaDevices.enumerateDevices();
+                cams = devices.filter(d => d.kind === "videoinput");
+            } catch (_) {}
+        }
+
+        let newStream = null;
+        let newTrack = null;
+
+        if (cams.length >= 2) {
+            const currentId = oldTrack.getSettings ? (oldTrack.getSettings().deviceId || "") : "";
+            let idxCam = cams.findIndex(d => d.deviceId === currentId);
+            if (idxCam < 0) idxCam = 0;
+            const next = cams[(idxCam + 1) % cams.length];
+            // Infer front/back from label
+            const lab = String(next.label || "").toLowerCase();
+            usingFrontCamera = !( /back|rear|environment|world/i.test(lab) );
+            try {
+                newStream = await navigator.mediaDevices.getUserMedia({
                     audio: false,
                     video: {
-                        deviceId: { exact: targetId },
+                        deviceId: { exact: next.deviceId },
                         width: { ideal: 1280 },
-                        height: { ideal: 720 },
-                        frameRate: { ideal: 30 }
+                        height: { ideal: 720 }
                     }
                 });
-                await applyNewTrack(s.getVideoTracks()[0], s);
+                newTrack = newStream.getVideoTracks()[0];
+                await applyNewTrack(newTrack, newStream);
                 return;
+            } catch (e1) {
+                logError("deviceId switch failed", e1);
+                try {
+                    newStream = await navigator.mediaDevices.getUserMedia({
+                        audio: false,
+                        video: { deviceId: next.deviceId }
+                    });
+                    newTrack = newStream.getVideoTracks()[0];
+                    await applyNewTrack(newTrack, newStream);
+                    return;
+                } catch (e1b) {
+                    logError("deviceId soft failed", e1b);
+                }
             }
-        } catch (e1) {
-            logError("Camera deviceId switch:", e1);
         }
 
-        // 2) facingMode ideal (not exact) — better Android support
+        // Fallback: facingMode ideal
+        usingFrontCamera = !usingFrontCamera;
+        const facing = usingFrontCamera ? "user" : "environment";
         try {
-            const newStream = await navigator.mediaDevices.getUserMedia({
+            newStream = await navigator.mediaDevices.getUserMedia({
                 audio: false,
                 video: {
                     facingMode: { ideal: facing },
                     width: { ideal: 1280 },
-                    height: { ideal: 720 },
-                    frameRate: { ideal: 24 }
+                    height: { ideal: 720 }
                 }
             });
-            await applyNewTrack(newStream.getVideoTracks()[0], newStream);
+            newTrack = newStream.getVideoTracks()[0];
+            await applyNewTrack(newTrack, newStream);
             return;
         } catch (e2) {
-            logError("Camera facingMode switch:", e2);
+            logError("facingMode switch", e2);
         }
-
-        // 3) Last resort: plain facingMode string
         try {
-            const s3 = await navigator.mediaDevices.getUserMedia({
+            newStream = await navigator.mediaDevices.getUserMedia({
                 audio: false,
                 video: { facingMode: facing }
             });
-            await applyNewTrack(s3.getVideoTracks()[0], s3);
+            newTrack = newStream.getVideoTracks()[0];
+            await applyNewTrack(newTrack, newStream);
             return;
-        } catch (error) {
-            logError("Camera switch:", error);
-            usingFrontCamera = !usingFrontCamera;
-            toast("Unable to switch camera. Allow camera permission.");
+        } catch (e3) {
+            logError("facingMode plain", e3);
+            usingFrontCamera = !usingFrontCamera; // revert
+            toast("Could not switch camera. Check permissions.");
         }
     }
 
-/* ======================================================
-       MUTE
-    ====================================================== */
 
     function toggleMute() {
 
@@ -3996,4 +4009,81 @@
         "======================================"
     );
 
+})();
+
+/* VIEWORA_CAM_OFF_DP — when local camera off, show avatar instead of black */
+(function () {
+  function ensureLocalAvatarOverlay() {
+    var wrap = document.getElementById("localVideoWrap") || document.querySelector(".local-video-wrap, .pip-wrap");
+    var lv = document.getElementById("localVideo");
+    if (!lv) return;
+    var parent = wrap || lv.parentElement;
+    if (!parent) return;
+    var ov = document.getElementById("localCamOffAvatar");
+    if (!ov) {
+      ov = document.createElement("div");
+      ov.id = "localCamOffAvatar";
+      ov.className = "local-cam-off-avatar";
+      ov.innerHTML = '<img id="localCamOffImg" alt="" /><span>Camera off</span>';
+      parent.style.position = parent.style.position || "relative";
+      parent.appendChild(ov);
+    }
+    return ov;
+  }
+  window.__vieworaSetLocalCameraOff = function (off) {
+    try {
+      var ov = ensureLocalAvatarOverlay();
+      if (!ov) return;
+      var img = document.getElementById("localCamOffImg");
+      var src =
+        (window.currentUser && (currentUser.photoURL || "")) ||
+        localStorage.getItem("viewora_my_avatar") ||
+        "https://ui-avatars.com/api/?name=Me&background=7c3aed&color=fff&size=128";
+      if (img) {
+        img.src = src;
+        img.onerror = function () {
+          this.onerror = null;
+          this.src = "https://ui-avatars.com/api/?name=Me&background=7c3aed&color=fff&size=128";
+        };
+      }
+      ov.classList.toggle("show", !!off);
+      var lv = document.getElementById("localVideo");
+      if (lv) lv.style.opacity = off ? "0" : "1";
+    } catch (_) {}
+  };
+})();
+
+
+
+/* VIEWORA_CALL_BACK_GUARD — back during active call asks before ending */
+(function () {
+  var armed = false;
+  function isInCall() {
+    try {
+      return sessionStorage.getItem("viewora_call_busy") === "1" ||
+        document.body.classList.contains("in-call") ||
+        !!(window.localStream);
+    } catch (_) { return !!window.localStream; }
+  }
+  window.addEventListener("popstate", function (e) {
+    if (!isInCall()) return;
+    // push state back so user stays on call page
+    try { history.pushState({ vieworaCall: 1 }, "", location.href); } catch (_) {}
+    var ok = confirm("Leave call? Call will end.");
+    if (ok) {
+      try {
+        if (window.VieworaCall && typeof window.VieworaCall.endCall === "function") {
+          window.VieworaCall.endCall();
+        } else if (typeof endCall === "function") {
+          endCall();
+        }
+      } catch (_) {}
+    }
+  });
+  // arm history once call starts
+  window.__vieworaArmCallBackGuard = function () {
+    if (armed) return;
+    armed = true;
+    try { history.pushState({ vieworaCall: 1 }, "", location.href); } catch (_) {}
+  };
 })();

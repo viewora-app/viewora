@@ -800,6 +800,12 @@
 
                 }
 
+                try {
+                    if (typeof window.__vieworaSetLocalCameraOff === "function") {
+                        window.__vieworaSetLocalCameraOff(cameraOff);
+                    }
+                } catch (_) {}
+
             }
         );
 
@@ -816,65 +822,70 @@
     ];
 
 
+    /* Speaker ON = hear remote (unmuted). OFF = mute remote output. */
     let speakerOn = true;
 
-
-    speakerButtons.forEach(
-        button => {
-
-            if (!button) {
-                return;
-            }
-
-
-            button.addEventListener(
-                "click",
-                () => {
-
-                    speakerOn =
-                        !speakerOn;
-
-
-                    const audio =
-                        $("remoteAudio");
-
-                    const video =
-                        $("remoteVideo");
-
-
-                    if (audio) {
-
-                        audio.muted =
-                            !speakerOn;
-
-                    }
-
-
-                    if (video) {
-
-                        video.muted =
-                            !speakerOn;
-
-                    }
-
-
-                    speakerButtons
-                        .forEach(
-                            btn => {
-
-                                btn.classList.toggle(
-                                    "active",
-                                    !speakerOn
-                                );
-
-                            }
-                        );
-
-                }
-            );
-
+    function applySpeakerState() {
+        const audio = $("remoteAudio");
+        const video = $("remoteVideo");
+        // Never mute video element for speaker toggle on video calls —
+        // only control remoteAudio; keep video element audible via its own tracks
+        if (audio) {
+            audio.muted = !speakerOn;
+            try { audio.volume = speakerOn ? 1 : 0; } catch (_) {}
         }
-    );
+        // For pure voice, remote may be on video element too
+        if (video) {
+            try {
+                // Only mute video's audio if it's a voice-only layout
+                var isVideoCall = (document.body.dataset.callType || "").indexOf("video") >= 0
+                    || location.search.indexOf("type=video") >= 0;
+                if (!isVideoCall) {
+                    video.muted = !speakerOn;
+                    video.volume = speakerOn ? 1 : 0;
+                } else {
+                    // video call: keep element unmuted so picture+sound play; route via audio if separate
+                    video.muted = false;
+                    video.volume = 1;
+                }
+            } catch (_) {}
+        }
+        speakerButtons.forEach(function (btn) {
+            if (!btn) return;
+            btn.classList.toggle("active", speakerOn);
+            btn.setAttribute("aria-pressed", speakerOn ? "true" : "false");
+            var icon = btn.querySelector("i");
+            if (icon) {
+                icon.className = speakerOn
+                    ? "fa-solid fa-volume-high"
+                    : "fa-solid fa-volume-xmark";
+            }
+        });
+        // Mobile: prefer speakerphone sink when on
+        try {
+            var els = [audio, video].filter(Boolean);
+            els.forEach(function (el) {
+                if (el && typeof el.setSinkId === "function") {
+                    el.setSinkId(speakerOn ? "default" : "default").catch(function () {});
+                }
+            });
+        } catch (_) {}
+    }
+
+    speakerButtons.forEach(function (button) {
+        if (!button) return;
+        button.addEventListener("click", function () {
+            speakerOn = !speakerOn;
+            applySpeakerState();
+            try {
+                if (window.showCallToast) {
+                    showCallToast(speakerOn ? "Speaker on" : "Speaker off");
+                }
+            } catch (_) {}
+        });
+    });
+    // init once DOM ready
+    try { applySpeakerState(); } catch (_) {}
 
 
     /* =====================================================
@@ -1004,28 +1015,10 @@
 
 
     /* =====================================================
-       MOBILE BACK PROTECTION
+       MOBILE BACK PROTECTION — confirm, do not auto-end
+       (handled primarily by call.js VIEWORA_CALL_BACK_GUARD)
     ===================================================== */
-
-    window.addEventListener(
-        "popstate",
-        event => {
-
-            if (
-                window.VieworaCall &&
-                typeof window.VieworaCall.endCall ===
-                "function"
-            ) {
-
-                window.VieworaCall.endCall()
-                    .catch(
-                        () => {}
-                    );
-
-            }
-
-        }
-    );
+    // Intentionally no auto endCall on popstate here.
 
 
 })();
