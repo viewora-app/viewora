@@ -68,20 +68,35 @@
     size = size === "large" || size === "xlarge" ? size : "default";
     try {
       localStorage.setItem(FONT_KEY, size);
+      var prefs = {};
+      try { prefs = JSON.parse(localStorage.getItem(PREF_KEY) || "{}") || {}; } catch (_) {}
+      prefs.font = size;
+      localStorage.setItem(PREF_KEY, JSON.stringify(prefs));
     } catch (_) {}
+    var scale = FONT_SCALE[size] || "1";
+    var px = size === "xlarge" ? "19px" : size === "large" ? "17px" : "16px";
     var root = document.documentElement;
     root.setAttribute("data-font", size);
-    root.style.setProperty("--v-font-scale", FONT_SCALE[size] || "1");
-    var px = FONT_PX[size] || "";
-    root.style.fontSize = px || "16px";
+    root.style.setProperty("--v-font-scale", scale);
+    root.style.fontSize = px;
     if (document.body) {
-      document.body.style.fontSize = px || "";
       document.body.setAttribute("data-font", size);
+      document.body.style.fontSize = "";
     }
     try {
-      window.dispatchEvent(
-        new CustomEvent("viewora:font", { detail: { font: size } })
-      );
+      var sid = "viewora-font-style";
+      var st = document.getElementById(sid);
+      if (!st) {
+        st = document.createElement("style");
+        st.id = sid;
+        (document.head || document.documentElement).appendChild(st);
+      }
+      st.textContent =
+        "html{font-size:" + px + " !important;}" +
+        "body{--v-font-scale:" + scale + ";}";
+    } catch (_) {}
+    try {
+      window.dispatchEvent(new CustomEvent("viewora:font", { detail: { font: size } }));
     } catch (_) {}
   }
 
@@ -162,6 +177,40 @@
     }
   };
 
+
+  // Language aliases for codes without full dictionaries
+  try {
+    if (!I18N.ur) I18N.ur = I18N.hi || I18N.en;
+    if (!I18N.bn) I18N.bn = I18N.hi || I18N.en;
+    if (!I18N.fr) I18N.fr = Object.assign({}, I18N.en, {
+      Settings: "Paramètres", Home: "Accueil", Search: "Recherche", Profile: "Profil",
+      Messages: "Messages", Save: "Enregistrer", Cancel: "Annuler", Language: "Langue",
+      Appearance: "Apparence", "Log Out": "Déconnexion", "Font Size": "Taille de police"
+    });
+    if (!I18N.es) I18N.es = Object.assign({}, I18N.en, {
+      Settings: "Ajustes", Home: "Inicio", Search: "Buscar", Profile: "Perfil",
+      Messages: "Mensajes", Save: "Guardar", Cancel: "Cancelar", Language: "Idioma",
+      Appearance: "Apariencia", "Log Out": "Cerrar sesión", "Font Size": "Tamaño de fuente"
+    });
+    if (!I18N.ar) I18N.ar = Object.assign({}, I18N.en, {
+      Settings: "الإعدادات", Home: "الرئيسية", Search: "بحث", Profile: "الملف",
+      Messages: "الرسائل", Save: "حفظ", Cancel: "إلغاء", Language: "اللغة",
+      Appearance: "المظهر", "Log Out": "تسجيل الخروج"
+    });
+    if (!I18N.ko) I18N.ko = Object.assign({}, I18N.en, {
+      Settings: "설정", Home: "홈", Search: "검색", Profile: "프로필",
+      Messages: "메시지", Save: "저장", Cancel: "취소", Language: "언어"
+    });
+    if (!I18N.pt) I18N.pt = Object.assign({}, I18N.en, {
+      Settings: "Configurações", Home: "Início", Search: "Pesquisar", Profile: "Perfil",
+      Save: "Salvar", Cancel: "Cancelar", Language: "Idioma"
+    });
+    if (!I18N.ru) I18N.ru = Object.assign({}, I18N.en, {
+      Settings: "Настройки", Home: "Главная", Search: "Поиск", Profile: "Профиль",
+      Messages: "Сообщения", Save: "Сохранить", Cancel: "Отмена", Language: "Язык"
+    });
+  } catch (_) {}
+
   function t(key, lang) {
     lang = lang || getLang();
     var dict = I18N[lang] || I18N.en;
@@ -170,6 +219,8 @@
 
   function applyI18n(lang) {
     lang = lang || getLang();
+    if (!I18N[lang]) lang = "en";
+
     document.querySelectorAll("[data-i18n]").forEach(function (el) {
       var key = el.getAttribute("data-i18n");
       if (!key) return;
@@ -184,22 +235,85 @@
       var key = el.getAttribute("data-i18n-placeholder");
       if (key) el.setAttribute("placeholder", t(key, lang));
     });
+
+    // Auto-translate common English UI phrases
+    var en = I18N.en || {};
+    var dict = I18N[lang] || en;
+    var reverse = {};
+    Object.keys(en).forEach(function (k) {
+      reverse[String(en[k]).toLowerCase()] = k;
+      reverse[String(k).toLowerCase()] = k;
+    });
+
+    var nodes = document.querySelectorAll(
+      "a, button, span, h1, h2, h3, label, p, strong, small, li, " +
+      ".rowTitle, .rowDesc, .navLabel, .groupTitle, .tabLabel, .choiceDesc"
+    );
+    for (var i = 0; i < nodes.length; i++) {
+      var el = nodes[i];
+      if (!el || el.closest("script,style,code,pre,textarea,input,[contenteditable]")) continue;
+      if (el.querySelector && el.querySelector("input,textarea,select,img,video,svg,i.fa-solid,i.fa-regular,i.fa-brands")) {
+        // may still have text siblings — handle text-only children below
+      }
+      var src = el.getAttribute("data-i18n-src");
+      if (!src) {
+        // only pure text nodes or single text
+        if (el.children.length > 0) {
+          // try .rowTitle style: first text-ish
+          var onlyText = true;
+          for (var c = 0; c < el.children.length; c++) {
+            var tg = el.children[c].tagName;
+            if (tg !== "I" && tg !== "SPAN" && tg !== "EM" && tg !== "STRONG") {
+              onlyText = false;
+              break;
+            }
+          }
+          if (!onlyText && el.children.length > 1) continue;
+        }
+        src = String(el.textContent || "").replace(/\s+/g, " ").trim();
+        if (!src || src.length > 40) continue;
+        el.setAttribute("data-i18n-src", src);
+      }
+      var key = reverse[src.toLowerCase()];
+      if (!key) continue;
+      var val = dict[key] || en[key] || src;
+      if (el.children.length === 0) {
+        el.textContent = val;
+      } else {
+        // update last text node
+        var updated = false;
+        for (var n = el.childNodes.length - 1; n >= 0; n--) {
+          if (el.childNodes[n].nodeType === 3 && el.childNodes[n].textContent.trim()) {
+            el.childNodes[n].textContent = " " + val + " ";
+            updated = true;
+            break;
+          }
+        }
+        if (!updated) {
+          // span.rowTitle etc
+          var rt = el.querySelector(".rowTitle, .lab, .navLabel");
+          if (rt && rt.children.length === 0) rt.textContent = val;
+        }
+      }
+    }
   }
 
   function applyLang(lang) {
-    lang = String(lang || "en").toLowerCase();
-    if (!I18N[lang]) lang = "en";
+    lang = String(lang || "en").toLowerCase().trim();
     try {
       localStorage.setItem(LANG_KEY, lang);
+      var prefs = {};
+      try { prefs = JSON.parse(localStorage.getItem(PREF_KEY) || "{}") || {}; } catch (_) {}
+      prefs.lang = lang;
+      localStorage.setItem(PREF_KEY, JSON.stringify(prefs));
     } catch (_) {}
+    var applyCode = I18N[lang] ? lang : "en";
     var root = document.documentElement;
-    root.setAttribute("lang", lang === "sa" ? "sa" : lang);
+    root.setAttribute("lang", applyCode);
     root.setAttribute("data-lang", lang);
-    applyI18n(lang);
+    applyI18n(applyCode);
     try {
-      window.dispatchEvent(
-        new CustomEvent("viewora:lang", { detail: { lang: lang } })
-      );
+      window.dispatchEvent(new CustomEvent("viewora:lang", { detail: { lang: lang } }));
     } catch (_) {}
   }
 
@@ -245,6 +359,25 @@
   }
   onReady(function () {
     applyFont(getFont());
+    applyLang(getLang());
     applyI18n(getLang());
   });
+
+  // Re-apply i18n when DOM grows (nav, lists)
+  try {
+    var __i18nTimer = null;
+    var vieworaI18nObserver = new MutationObserver(function () {
+      clearTimeout(__i18nTimer);
+      __i18nTimer = setTimeout(function () {
+        try { applyI18n(getLang()); } catch (_) {}
+      }, 120);
+    });
+    function startI18nObserver() {
+      if (!document.body) return;
+      vieworaI18nObserver.observe(document.body, { childList: true, subtree: true });
+    }
+    if (document.body) startI18nObserver();
+    else document.addEventListener("DOMContentLoaded", startI18nObserver);
+  } catch (_) {}
+
 })();

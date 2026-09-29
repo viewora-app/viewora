@@ -50,8 +50,12 @@
   }
 
   function applyFontGlobal(size) {
-    size = size || getPref("font", "default");
-    try { localStorage.setItem(FONT_KEY, size); } catch (_) {}
+    size = size || getPref("font", "default") || "default";
+    try {
+      localStorage.setItem(FONT_KEY, size);
+      prefs.font = size;
+      localStorage.setItem(PREF_KEY, JSON.stringify(prefs));
+    } catch (_) {}
     try {
       if (window.VieworaTheme && VieworaTheme.setFont) {
         VieworaTheme.setFont(size);
@@ -62,22 +66,26 @@
     document.documentElement.style.fontSize = px;
     document.documentElement.setAttribute("data-font", size);
     if (document.body) {
-      document.body.style.fontSize = size === "default" ? "" : px;
       document.body.setAttribute("data-font", size);
     }
   }
   function applyLangGlobal(lang) {
-    lang = lang || getPref("lang", "en");
-    try { localStorage.setItem(LANG_KEY, lang); } catch (_) {}
+    lang = lang || getPref("lang", "en") || "en";
+    try {
+      localStorage.setItem(LANG_KEY, lang);
+      prefs.lang = lang;
+      localStorage.setItem(PREF_KEY, JSON.stringify(prefs));
+    } catch (_) {}
     try {
       if (window.VieworaTheme && VieworaTheme.setLang) {
         VieworaTheme.setLang(lang);
         return;
       }
     } catch (_) {}
-    document.documentElement.setAttribute("lang", lang);
     document.documentElement.setAttribute("data-lang", lang);
+    document.documentElement.setAttribute("lang", lang);
   }
+
   function genOtp() {
     return String(Math.floor(100000 + Math.random() * 900000));
   }
@@ -288,6 +296,8 @@
     prefs[key] = val;
     try {
       localStorage.setItem(PREF_KEY, JSON.stringify(prefs));
+      if (key === "font") localStorage.setItem(FONT_KEY, val);
+      if (key === "lang") localStorage.setItem(LANG_KEY, val);
     } catch (_) {}
     syncPrefToFirebase(key, val);
   }
