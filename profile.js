@@ -3347,6 +3347,16 @@ function safeNumber(value) {
             } catch (e2) {
                 console.warn("posts by userId", e2);
             }
+            // 2b) posts by ownerId
+            try {
+                const snapO = await postsRef()
+                    .orderByChild("ownerId")
+                    .equalTo(profileUID)
+                    .once("value");
+                mergePosts(snapO.val());
+            } catch (eO) {
+                console.warn("posts by ownerId", eO);
+            }
             // 3) users/{uid}/posts mirror
             try {
                 const snapU = await db.ref("users/" + profileUID + "/posts").once("value");
@@ -3361,7 +3371,7 @@ function safeNumber(value) {
             } catch (_) {}
             // 5) wide scan posts (no index) — always merge owner matches
             try {
-                const snap3 = await postsRef().limitToLast(200).once("value");
+                const snap3 = await postsRef().limitToLast(500).once("value");
                 const all = snap3.val() || {};
                 const filtered = {};
                 Object.keys(all).forEach(function (id) {
@@ -3379,47 +3389,55 @@ function safeNumber(value) {
                 } catch (_) {}
             }
 
-            const items =
-                Object.entries(data)
-                    .map(
-                        ([id, value]) => ({
-                            id,
-                            ...(value || {})
-                        })
-                    )
-                    .filter(
-                        item =>
-                            item.archived !== true &&
+            function baseList() {
+                return Object.entries(data)
+                    .map(function ([id, value]) {
+                        return Object.assign({ id: id }, value || {});
+                    })
+                    .filter(function (item) {
+                        return item.archived !== true &&
                             item.deleted !== true &&
                             item.hidden !== true &&
-                            !__vieworaProfileHideItem(item, typeof isOwnProfile !== "undefined" && isOwnProfile)
-                    )
-                    .filter(function (item) {
-                        // Must have real post media — never count avatar-only junk rows
-                        const media = getMediaURL(item);
-                        if (!media) return false;
-                        // Drop if media is clearly a profile/default avatar path reused by bug
-                        const low = media.toLowerCase();
-                        if (low.indexOf("default-avatar") !== -1) return false;
-                        // Exclude long-form / pure videos from Posts tab
-                        var ty = String(item.type || item.mediaType || item.kind || "").toLowerCase();
-                        if (ty === "video" || ty === "long" || ty === "longvideo" || ty === "long-video") return false;
-                        if (item.kind === "long") return false;
-                        var hasImages = !!(item.images || item.imageUrl || item.imageURL || item.photoURL || item.thumbnail);
-                        var hasVideo = !!(item.videoUrl || item.videoURL || item.video || item.mediaUrl);
-                        if (hasVideo && !hasImages) return false;
-                        if (item.video === true && !hasImages) return false;
-                        return true;
-                    })
-                    .sort(
-                        (a, b) =>
-                            safeNumber(
-                                b.createdAt
-                            ) -
-                            safeNumber(
-                                a.createdAt
-                            )
-                    );
+                            !__vieworaProfileHideItem(item, typeof isOwnProfile !== "undefined" && isOwnProfile);
+                    });
+            }
+            function isPostsTabItem(item, loose) {
+                var ty = String(item.type || item.mediaType || item.kind || "").toLowerCase();
+                if (ty === "video" || ty === "long" || ty === "longvideo" || ty === "long-video" || ty === "short" || ty === "shorts") return false;
+                if (item.kind === "long" || item.kind === "short") return false;
+                if (item.isShort === true || item.shorts === true) return false;
+                var media = getMediaURL(item);
+                if (media) {
+                    var low = String(media).toLowerCase();
+                    if (low.indexOf("default-avatar") !== -1) return false;
+                    if (!loose) {
+                        var hasImgField = !!(item.images || item.imageUrl || item.imageURL || item.thumbnail || item.thumbnailUrl || (Array.isArray(item.mediaUrls) && item.mediaUrls.length) || (Array.isArray(item.media) && item.media.length));
+                        var looksVideo = /\.(mp4|webm|mov|m3u8)(\?|$)/i.test(media) || ty === "video";
+                        if (looksVideo && !hasImgField) return false;
+                    }
+                    return true;
+                }
+                if (ty === "post" || ty === "image" || ty === "photo" || ty === "carousel" || !ty) {
+                    var cap = String(item.caption || item.description || item.title || item.text || "").trim();
+                    if (cap) return true;
+                }
+                // loose: any owner row that isn't explicitly a short/video
+                if (loose && (ty === "post" || ty === "image" || !ty)) return true;
+                return false;
+            }
+            var items = baseList()
+                .filter(function (item) { return isPostsTabItem(item, false); })
+                .sort(function (a, b) {
+                    return safeNumber(b.createdAt) - safeNumber(a.createdAt);
+                });
+            // Fallback: if strict filter emptied the grid but we did find owner rows, show them
+            if (!items.length) {
+                items = baseList()
+                    .filter(function (item) { return isPostsTabItem(item, true); })
+                    .sort(function (a, b) {
+                        return safeNumber(b.createdAt) - safeNumber(a.createdAt);
+                    });
+            }
 
 
             /*

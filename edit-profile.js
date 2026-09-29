@@ -326,7 +326,7 @@
     if (hint) {
       hint.textContent = cropKind === "banner"
         ? "Banner looks different on TV, Desktop & phones. Drag to fit safe area."
-        : "Move and zoom · circular crop like YouTube";
+        : "Drag to move · pinch or slider to zoom";
     }
     cropScale = 1;
     cropPanX = 0;

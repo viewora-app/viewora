@@ -393,7 +393,7 @@ html[data-theme="light"] .toast {
 .cropSheet { width: 100%; max-width: 520px; background: #121212; border-radius: 16px 16px 0 0; padding: 12px 16px calc(16px + env(safe-area-inset-bottom)); }
 
 
-/* VIEWORA_YT_CROP — YouTube-style avatar circle + banner guides */
+/* VIEWORA_CROP — modern circular avatar + banner safe guides */
 .cropStage {
   position: relative !important;
   overflow: hidden !important;
@@ -404,7 +404,7 @@ html[data-theme="light"] .toast {
 }
 .cropStage:not(.banner) {
   aspect-ratio: 1 / 1 !important;
-  width: min(92vw, 360px);
+  width: min(94vw, 400px);
   margin: 0 auto;
 }
 .cropStage.banner {
@@ -417,7 +417,7 @@ html[data-theme="light"] .toast {
   height: 100% !important;
   display: block;
 }
-/* Circular mask for DP (YouTube style) */
+/* Circular mask for profile photo */
 .cropStage:not(.banner) .cropMask {
   position: absolute;
   inset: 0;
@@ -431,15 +431,20 @@ html[data-theme="light"] .toast {
   content: "";
   position: absolute;
   left: 50%; top: 50%;
-  width: 70%; height: 70%;
+  /* Full crop circle — same as mask transparent area (closest-side) */
+  width: min(100%, 100%);
+  height: min(100%, 100%);
+  width: 100%;
+  height: 100%;
   transform: translate(-50%, -50%);
   border-radius: 50%;
-  border: 2px solid rgba(255,255,255,0.85);
-  box-shadow: 0 0 0 1px rgba(0,0,0,0.3);
+  border: 2.5px solid rgba(255,255,255,0.92);
+  box-shadow: 0 0 0 1px rgba(0,0,0,0.35), inset 0 0 0 1px rgba(255,255,255,0.15);
+  box-sizing: border-box;
 }
 .cropStage.banner .cropMask { display: none; }
 
-/* Banner multi-device guides (YouTube channel art) */
+/* Banner multi-device safe-area guides */
 .cropGuides {
   position: absolute;
   inset: 0;
