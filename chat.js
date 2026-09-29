@@ -5,11 +5,12 @@
     var path = (location.pathname || "").toLowerCase();
     var file = path.split("/").pop() || "";
     var isChatPage =
-      file.indexOf("chat") === 0 ||
       file === "chat.html" ||
+      file.indexOf("chat.html") !== -1 ||
       file === "message.html" ||
-      file === "dm.html" ||
-      /[?&](uid|userId|user|peer|to|id)=/.test(location.search || "");
+      file === "dm.html";
+    // Only treat as chat if filename is chat* OR explicit force
+    if (!isChatPage && (file.indexOf("chat") === 0)) isChatPage = true;
     // Allow explicit force
     if (window.__VIEWORA_FORCE_CHAT__) isChatPage = true;
     if (!isChatPage) {

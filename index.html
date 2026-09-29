@@ -66,7 +66,7 @@
      PAGE LOADER
 ===================================================== -->
 
-<div id="pageLoader">
+<div id="pageLoader" class="pageLoader">
 
     <div class="loader">
 
@@ -92,20 +92,20 @@
          HEADER
     ================================================== -->
 
-    <header class="header glass">
+    <header class="header topHeader glass">
 
         <!-- LOGO -->
 
-        <div class="logoArea">
+        <div class="logoArea brand">
 
             <img
                 src="viewora2.jpg"
-                class="logo"
+                class="logo brandLogo"
                 alt="Viewora"
                 onerror="this.src='assets/default-avatar.png'"
             >
 
-            <div class="logoText">
+            <div class="logoText brandInfo">
 
                 <h2>Viewora</h2>
 
@@ -118,14 +118,14 @@
 
         <!-- HEADER ACTIONS -->
 
-        <div class="headerRight">
+        <div class="headerRight headerActions">
 
 
             <!-- SEARCH -->
 
             <button
                 id="searchBtn"
-                class="iconBtn"
+                class="iconBtn headerIcon"
                 type="button"
                 aria-label="Search"
             >
@@ -139,7 +139,7 @@
 
             <button
                 id="notificationBtn"
-                class="iconBtn notificationButton"
+                class="iconBtn headerIcon notificationButton"
                 type="button"
                 aria-label="Notifications"
                 onclick="location.href='notifications.html'"
@@ -162,7 +162,7 @@
 
             <button
                 id="messageBtn"
-                class="iconBtn messageButton"
+                class="iconBtn headerIcon messageButton"
                 type="button"
                 aria-label="Messages"
                 onclick="location.href='messages.html'"

@@ -97,11 +97,10 @@
         st.id = sid;
         (document.head || document.documentElement).appendChild(st);
       }
-      var zoom = size === "xlarge" ? "1.12" : size === "large" ? "1.06" : "1";
       st.textContent =
         "html{font-size:" + (size === "xlarge" ? "19px" : size === "large" ? "17px" : "16px") + " !important;}" +
         "body{--v-font-scale:" + scale + ";--v-font-size:" +
-          (size === "xlarge" ? "19px" : size === "large" ? "17px" : "16px") + ";zoom:" + zoom + ";}" +
+          (size === "xlarge" ? "19px" : size === "large" ? "17px" : "16px") + ";}" +
         "body input,body textarea,body select,body button{font:inherit;}";
       if (document.body) {
         document.body.setAttribute("data-font", size);
