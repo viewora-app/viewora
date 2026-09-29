@@ -59,6 +59,11 @@
     try {
       if (window.VieworaTheme && VieworaTheme.setFont) {
         VieworaTheme.setFont(size);
+        try {
+          requestAnimationFrame(function () {
+            if (VieworaTheme.applyI18n) VieworaTheme.applyI18n(VieworaTheme.getLang());
+          });
+        } catch (_) {}
         return;
       }
     } catch (_) {}
@@ -79,11 +84,11 @@
     try {
       if (window.VieworaTheme && VieworaTheme.setLang) {
         VieworaTheme.setLang(lang);
-        if (VieworaTheme.applyI18n) {
-          setTimeout(function () {
-            try { VieworaTheme.applyI18n(lang); } catch (_) {}
-          }, 0);
-        }
+        try {
+          requestAnimationFrame(function () {
+            if (VieworaTheme.applyI18n) VieworaTheme.applyI18n(lang);
+          });
+        } catch (_) {}
         return;
       }
     } catch (_) {}
@@ -367,11 +372,6 @@
     $("catBody").setAttribute("data-cat-id", id);
     wireCategoryBody(id);
     showView("Category");
-    try {
-      if (window.VieworaTheme && VieworaTheme.applyI18n) {
-        VieworaTheme.applyI18n(getPref("lang", localStorage.getItem(LANG_KEY) || "en"));
-      }
-    } catch (_) {}
   }
 
   /* Theme */
@@ -1263,11 +1263,6 @@
       });
     });
     showView("Choice");
-    try {
-      if (window.VieworaTheme && VieworaTheme.applyI18n) {
-        VieworaTheme.applyI18n(getPref("lang", localStorage.getItem(LANG_KEY) || "en"));
-      }
-    } catch (_) {}
   }
 
   $("choiceSave").addEventListener("click", function () {
@@ -1286,11 +1281,6 @@
       $("catBody").setAttribute("data-cat-id", openId);
       wireCategoryBody(openId);
       showView("Category");
-      try {
-        if (window.VieworaTheme && VieworaTheme.applyI18n) {
-          VieworaTheme.applyI18n(getPref("lang", localStorage.getItem(LANG_KEY) || "en"));
-        }
-      } catch (_) {}
     } else {
       showMain();
     }
@@ -2222,4 +2212,20 @@ if (window.firebase && firebase.apps && firebase.apps.length) boot();
       if (typeof savePaymentMethod === "function") savePaymentMethod();
     }
   });
+  // Re-render dynamic Settings rows after a global language change.
+  window.addEventListener("viewora:lang", function (ev) {
+    try {
+      var id = $("catBody") && $("catBody").getAttribute("data-cat-id");
+      if (id) {
+        $("catBody").innerHTML = buildCategory(id);
+        $("catBody").setAttribute("data-cat-id", id);
+        wireCategoryBody(id);
+        showView("Category");
+      }
+      if (window.VieworaTheme && VieworaTheme.applyI18n) {
+        VieworaTheme.applyI18n((ev && ev.detail && ev.detail.lang) || "en");
+      }
+    } catch (_) {}
+  });
+
 })();

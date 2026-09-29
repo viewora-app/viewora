@@ -82,14 +82,6 @@ try {
             firebaseConfig
         );
 
-/* Auth persistence — stay logged in across reloads */
-try {
-    if (firebase.auth && firebase.auth.Auth && firebase.auth.Auth.Persistence) {
-        firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(function () {});
-    }
-} catch (_) {}
-
-
         console.log(
             "🔥 Firebase App Initialized"
         );
@@ -1079,36 +1071,23 @@ async function createNotification(
 
 
         /*------------------------------------------
-          DETERMINISTIC KEY for likes/follows (no spam)
-          else push key for comments / unique events
+          CREATE UNIQUE ID
         ------------------------------------------*/
 
-        var notificationKey = null;
-        var tLow = String(type || "").toLowerCase();
-        var contentId = postId || storyId || (extra && (extra.contentId || extra.videoId || extra.shortId)) || "";
-        // like / unlike style → one notif per actor+content
-        if (
-            (tLow.indexOf("like") >= 0 || tLow === "liked" || tLow.indexOf("reaction") >= 0) &&
-            fromUid && contentId
-        ) {
-            notificationKey = String(fromUid) + "_like_" + String(contentId);
-        } else if (
-            (tLow === "follow" || tLow === "followed") &&
-            fromUid
-        ) {
-            notificationKey = String(fromUid) + "_follow";
-        } else if (
-            (tLow.indexOf("follow_request") >= 0) &&
-            fromUid
-        ) {
-            notificationKey = String(fromUid) + "_follow_request";
-        } else {
-            notificationKey = notificationsRef(toUid).push().key;
-        }
+        const notificationKey =
+            notificationsRef(toUid)
+                .push()
+                .key;
+
 
         if (!notificationKey) {
-            console.error("❌ Could not create notification key");
+
+            console.error(
+                "❌ Could not create notification key"
+            );
+
             return false;
+
         }
 
 
@@ -2442,52 +2421,30 @@ console.log(
 );
 
 
-/* VIEWORA_LOGIN_DEVICE_NOTIF */
-(function () {
-  function deviceLabel() {
-    var ua = navigator.userAgent || "";
-    var name = "Device";
-    if (/android/i.test(ua)) name = "Android";
-    else if (/iphone|ipad|ipod/i.test(ua)) name = "iPhone";
-    else if (/windows/i.test(ua)) name = "Windows";
-    else if (/mac os/i.test(ua)) name = "Mac";
-    else if (/linux/i.test(ua)) name = "Linux";
-    var browser = "Browser";
-    if (/edg\//i.test(ua)) browser = "Edge";
-    else if (/chrome\//i.test(ua)) browser = "Chrome";
-    else if (/safari\//i.test(ua) && !/chrome/i.test(ua)) browser = "Safari";
-    else if (/firefox\//i.test(ua)) browser = "Firefox";
-    return name + " · " + browser;
-  }
-  function writeLoginAlert(uid) {
+/* ==========================================================
+   VIEWORA GLOBAL THEME BOOTSTRAP
+   Makes Language + Font Size available on every page that
+   already loads firebase.js. Pages may also include theme.js
+   explicitly; theme.js contains a duplicate-execution guard.
+========================================================== */
+(function ensureVieworaTheme() {
     try {
-      if (!uid || !window.firebase || !firebase.database) return;
-      var key = "login_" + Date.now();
-      firebase.database().ref("notifications/" + uid + "/" + key).set({
-        type: "security",
-        notificationType: "login",
-        title: "New login",
-        message: "Your account was opened on " + deviceLabel(),
-        device: deviceLabel(),
-        createdAt: firebase.database.ServerValue.TIMESTAMP,
-        read: false
-      });
-    } catch (_) {}
-  }
-  try {
-    if (window.firebase && firebase.auth) {
-      var last = "";
-      firebase.auth().onAuthStateChanged(function (u) {
-        if (u && u.uid && u.uid !== last) {
-          // only once per session
-          try {
-            if (sessionStorage.getItem("viewora_login_alert_" + u.uid)) return;
-            sessionStorage.setItem("viewora_login_alert_" + u.uid, "1");
-          } catch (_) {}
-          last = u.uid;
-          writeLoginAlert(u.uid);
+        if (window.VieworaTheme || window.__VIEWORA_THEME_V3__ || window.__VIEWORA_THEME_LOADING__) {
+            return;
         }
-      });
+        window.__VIEWORA_THEME_LOADING__ = true;
+        var script = document.createElement("script");
+        script.src = "theme.js";
+        script.async = false;
+        script.onload = function () {
+            window.__VIEWORA_THEME_LOADING__ = false;
+        };
+        script.onerror = function () {
+            window.__VIEWORA_THEME_LOADING__ = false;
+            console.warn("Viewora theme.js could not be loaded.");
+        };
+        (document.head || document.documentElement).appendChild(script);
+    } catch (e) {
+        console.warn("Viewora theme bootstrap failed.", e);
     }
-  } catch (_) {}
 })();
