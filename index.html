@@ -47,6 +47,7 @@
     ========================== -->
 
     <link rel="stylesheet" href="index.css">
+    <link rel="stylesheet" href="theme.css">
     <link rel="stylesheet" href="nav.css">
     <link rel="stylesheet" href="viewora-loader.css">
 
@@ -235,7 +236,7 @@
                     24 HOURS
                 </span>
 
-                <h3>Stories</h3>
+                <h3 data-i18n="Stories">Stories</h3>
 
             </div>
 
@@ -276,7 +277,7 @@
 
                 </div>
 
-                <p>Your Story</p>
+                <p data-i18n="Your Story">Your Story</p>
 
             </div>
 
@@ -1259,7 +1260,7 @@
 
             <i class="fa-solid fa-house"></i>
 
-            <span>Home</span>
+            <span data-i18n="Home">Home</span>
 
         </a>
 
@@ -1272,7 +1273,7 @@
 
             <i class="fa-solid fa-play"></i>
 
-            <span>Shorts</span>
+            <span data-i18n="Shorts">Shorts</span>
 
         </a>
 
@@ -1298,7 +1299,7 @@
 
             <i class="fa-solid fa-users"></i>
 
-            <span>Users</span>
+            <span data-i18n="Users">Users</span>
 
         </a>
 
@@ -1311,7 +1312,7 @@
 
             <i class="fa-solid fa-user"></i>
 
-            <span>Profile</span>
+            <span data-i18n="Profile">Profile</span>
 
         </a>
 
@@ -1339,14 +1340,25 @@
 
 <script src="firebase.js"></script>
 <script src="theme.js"></script>
+<script>
+(function(){
+  function re(){
+    try{
+      if(!window.VieworaTheme) return;
+      VieworaTheme.setFont(VieworaTheme.getFont());
+      VieworaTheme.setLang(VieworaTheme.getLang());
+    }catch(e){}
+  }
+  if(document.readyState==="loading") document.addEventListener("DOMContentLoaded", function(){ setTimeout(re,200); setTimeout(re,900); });
+  else { setTimeout(re,200); setTimeout(re,900); }
+})();
+</script>
 
 <script src="index.js"></script>
 
 <script src="notifications.js"></script>
 
-<script src="chat.js"></script>
 
-<script src="profile.js"></script>
 
 <script src="nav.js"></script>
 

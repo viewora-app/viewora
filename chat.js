@@ -1,3 +1,26 @@
+
+/* VIEWORA_CHAT_PAGE_GUARD — do not run chat room logic on Home/Profile/etc */
+(function vieworaChatPageGuard() {
+  try {
+    var path = (location.pathname || "").toLowerCase();
+    var file = path.split("/").pop() || "";
+    var isChatPage =
+      file.indexOf("chat") === 0 ||
+      file === "chat.html" ||
+      file === "message.html" ||
+      file === "dm.html" ||
+      /[?&](uid|userId|user|peer|to|id)=/.test(location.search || "");
+    // Allow explicit force
+    if (window.__VIEWORA_FORCE_CHAT__) isChatPage = true;
+    if (!isChatPage) {
+      console.log("[VIEWORA CHAT] skipped on non-chat page:", file || path);
+      window.__VIEWORA_CHAT_SKIPPED__ = true;
+      // Abort rest of this script by throwing into outer IIFE or setting flag
+      window.__VIEWORA_CHAT_ABORT__ = true;
+    }
+  } catch (_) {}
+})();
+
 "use strict";
 
 /*
@@ -65,6 +88,11 @@
 
     window.__VIEWORA_CHAT_INITIALIZED__ = true;
 
+    // Abort entire chat engine on non-chat pages (Home/Profile/etc.)
+    if (window.__VIEWORA_CHAT_ABORT__) {
+        console.log("[VIEWORA CHAT] abort init on non-chat page");
+        return;
+    }
 
     /* ======================================================
        FIREBASE CHECK
@@ -580,6 +608,14 @@
     ====================================================== */
 
     if (!targetUid) {
+        // Not on a dedicated chat page (e.g. Home included chat.js by mistake)
+        var _path = (location.pathname || "").toLowerCase();
+        var _file = _path.split("/").pop() || "";
+        var _onChat = _file.indexOf("chat") === 0 || /[?&](uid|userId|peer|to)=/.test(location.search || "");
+        if (!_onChat) {
+            console.log("[VIEWORA CHAT] no peer uid — silent skip on", _file);
+            return;
+        }
 
         hideLoading();
 

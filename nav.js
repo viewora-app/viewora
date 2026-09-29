@@ -95,13 +95,13 @@
             <a href="${ROUTES.home}" class="navItem ${active === "home" ? "active" : ""}" data-nav="home">
                 <div class="activeIndicator"></div>
                 <i class="fa-solid fa-house"></i>
-                <span>Home</span>
+                <span data-i18n="Home">Home</span>
             </a>
 
             <a href="${ROUTES.shorts}" class="navItem ${active === "shorts" ? "active" : ""}" data-nav="shorts">
                 <div class="activeIndicator"></div>
                 <i class="fa-solid fa-clapperboard"></i>
-                <span>Shorts</span>
+                <span data-i18n="Shorts">Shorts</span>
             </a>
 
             <a href="${ROUTES.create}" class="navItem uploadNav ${active === "create" ? "active" : ""}" data-nav="create" aria-label="Create">
@@ -113,14 +113,14 @@
             <a href="${ROUTES.activity}" class="navItem ${active === "activity" ? "active" : ""}" data-nav="activity">
                 <div class="activeIndicator"></div>
                 <i class="fa-regular fa-heart"></i>
-                <span>Activity</span>
+                <span data-i18n="Activity">Activity</span>
                 <span class="navBadge hidden" id="navActivityBadge">0</span>
             </a>
 
             <a href="${ROUTES.profile}" class="navItem ${active === "profile" ? "active" : ""}" data-nav="profile">
                 <div class="activeIndicator"></div>
                 <i class="fa-regular fa-user"></i>
-                <span>Profile</span>
+                <span data-i18n="Profile">Profile</span>
             </a>
         `;
 
