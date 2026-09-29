@@ -152,6 +152,21 @@
       arr.unshift(row);
       var n = persist(arr);
       saveFirebase(row);
+      try {
+        var pm = {};
+        try { pm = JSON.parse(localStorage.getItem("viewora_watch_progress") || "{}") || {}; } catch (_) {}
+        var pk = String(row.type || "video") + ":" + String(row.videoId);
+        var prevP = pm[pk] || {};
+        pm[pk] = {
+          videoId: String(row.videoId),
+          type: String(row.type || "video"),
+          progress: Math.max(Number(prevP.progress) || 0, Number(row.progress) || 0),
+          title: row.title || prevP.title || "",
+          thumb: row.thumb || prevP.thumb || "",
+          at: Date.now()
+        };
+        localStorage.setItem("viewora_watch_progress", JSON.stringify(pm));
+      } catch (_) {}
       console.log(
         "[VieworaRecordWatch] OK",
         row.type,

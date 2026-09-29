@@ -1,4 +1,3 @@
-try{document.addEventListener("click",function(){try{sessionStorage.setItem("viewora_media_unlocked","1");window.__vieworaUserGesture=true;}catch(e){}},true);}catch(e){}
 "use strict";
 
 /*
@@ -138,79 +137,29 @@ try{document.addEventListener("click",function(){try{sessionStorage.setItem("vie
     };
 
 
-
-    /* VIEWORA_AVATAR_FIX — resolve real DP everywhere */
-    var VIEWORA_FALLBACK_AVATAR = "data:image/svg+xml," + encodeURIComponent(
-        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">' +
-        '<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">' +
-        '<stop offset="0%" stop-color="#7c3aed"/><stop offset="100%" stop-color="#2563eb"/></linearGradient></defs>' +
-        '<circle cx="64" cy="64" r="64" fill="url(#g)"/>' +
-        '<circle cx="64" cy="48" r="24" fill="rgba(255,255,255,.92)"/>' +
-        '<ellipse cx="64" cy="106" rx="40" ry="28" fill="rgba(255,255,255,.92)"/></svg>'
-    );
-
-    function vieworaPickPhoto(obj) {
-        if (!obj || typeof obj !== "object") return "";
-        var keys = [
-            "profilePhoto","photoURL","photoUrl","avatar","profilePic","profilePicture",
-            "profile_image","profileImage","dp","userPhoto","ownerPhoto","creatorPhoto",
-            "authorPhoto","image","photo","picture","pic"
-        ];
-        for (var i = 0; i < keys.length; i++) {
-            var v = obj[keys[i]];
-            if (typeof v === "string") {
-                v = v.trim();
-                if (v.length > 8 && !/^[A-Za-z]$/.test(v) && v.indexOf("default-avatar") === -1) {
-                    return v;
-                }
-            }
-        }
-        // nested
-        try {
-            if (obj.profile && typeof obj.profile === "object") {
-                var nested = vieworaPickPhoto(obj.profile);
-                if (nested) return nested;
-            }
-        } catch (_) {}
-        return "";
-    }
-
-    function vieworaLetterAvatar(name) {
-        var n = encodeURIComponent(String(name || "V").replace(/^@/, "").slice(0, 24) || "V");
-        return "https://ui-avatars.com/api/?name=" + n + "&background=6d28d9&color=fff&size=128&bold=true";
-    }
-
-    function vieworaResolveAvatar(data, nameHint) {
-        var photo = vieworaPickPhoto(data);
-        if (photo) return photo;
-        var name = nameHint || (data && (data.displayName || data.username || data.name || data.fullName)) || "V";
-        return vieworaLetterAvatar(name);
-    }
-
-    function vieworaBindAvatarImg(img, url, nameHint) {
-        if (!img) return;
-        var src = url || vieworaLetterAvatar(nameHint || "V");
-        img.onerror = function () {
-            this.onerror = null;
-            this.src = vieworaLetterAvatar(nameHint || "V");
-            this.onerror = function () {
-                this.onerror = null;
-                this.src = VIEWORA_FALLBACK_AVATAR;
-            };
-        };
-        img.src = src;
-    }
-
     const getAvatar = (data) => {
         if (!data || typeof data !== "object") {
-            return vieworaLetterAvatar("V");
+            return "assets/default-avatar.png";
         }
-        var picked = vieworaPickPhoto(data);
-        if (picked) {
-            var s = (typeof safeURL === "function") ? safeURL(picked) : picked;
-            if (s) return s;
-        }
-        return vieworaResolveAvatar(data);
+        let url =
+            data.userPhoto ||
+            data.profilePhoto ||
+            data.photoURL ||
+            data.avatar ||
+            data.profilePic ||
+            data.profile_image ||
+            data.profilePicture ||
+            data.dp ||
+            "";
+        if (typeof url !== "string") url = "";
+        url = url.trim();
+        if (!url || url.length < 6 || /^[A-Za-z]$/.test(url)) url = "";
+        const safe = safeURL(url);
+        if (safe && safe.indexOf("default-avatar") === -1) return safe;
+        const name = encodeURIComponent(
+            String(data.username || data.displayName || data.name || "V").slice(0, 20)
+        );
+        return "https://ui-avatars.com/api/?name=" + name + "&background=3b82f6&color=fff&size=128&bold=true";
     };
 
     function cacheMyAvatar(photo, uid) {
@@ -738,7 +687,7 @@ try{document.addEventListener("click",function(){try{sessionStorage.setItem("vie
                         width="36"
                         height="36"
                         decoding="async"
-                        onerror="this.onerror=null;this.src=typeof vieworaLetterAvatar==='function'?vieworaLetterAvatar(this.alt||'V'):'https://ui-avatars.com/api/?name=V&background=6d28d9&color=fff'"
+                        onerror="this.onerror=null;this.src='assets/default-avatar.png'"
                       >
                     </span>
 
@@ -1016,7 +965,15 @@ try{document.addEventListener("click",function(){try{sessionStorage.setItem("vie
                 if (!user) return;
 
                 // ALWAYS prefer users/ for photo + name
-                const photo = vieworaPickPhoto(user) || "";
+                const photo =
+                    user.profilePhoto ||
+                    user.photoURL ||
+                    user.photoUrl ||
+                    user.avatar ||
+                    user.profilePic ||
+                    user.profilePicture ||
+                    user.dp ||
+                    "";
                 if (photo) {
                     post.data.profilePhoto = photo;
                     post.data.photoURL = photo;
@@ -1247,14 +1204,7 @@ try{document.addEventListener("click",function(){try{sessionStorage.setItem("vie
                 </span>
 
                 <span class="videoDurationBadge">${durLabel || ""}</span>
-                ${
-                    (function(){
-                        var vv = String(data.visibility || data.privacy || "public").toLowerCase();
-                        if (vv === "unlisted") return '<span class="visBadge unlisted" title="Unlisted"><i class="fa-solid fa-link"></i> Unlisted</span>';
-                        if (vv === "private") return '<span class="visBadge private" title="Private"><i class="fa-solid fa-lock"></i> Private</span>';
-                        return "";
-                    })()
-                }
+                <div class="watchProgressBar" hidden><div class="watchProgressFill"></div></div>
 
             </div>
 
@@ -1266,7 +1216,7 @@ try{document.addEventListener("click",function(){try{sessionStorage.setItem("vie
                     alt="${username}"
                     class="videoAvatar"
                     loading="lazy"
-                    onerror="this.onerror=null;this.src=typeof vieworaLetterAvatar==='function'?vieworaLetterAvatar(this.alt||'V'):'https://ui-avatars.com/api/?name=V&background=6d28d9&color=fff'"
+                    onerror="this.onerror=null;this.src='assets/default-avatar.png'"
                 >
 
 
@@ -1316,6 +1266,92 @@ try{document.addEventListener("click",function(){try{sessionStorage.setItem("vie
 
         return card;
     }
+
+
+
+
+    /* ======================================================
+       YOUTUBE-STYLE WATCH PROGRESS (red line)
+    ====================================================== */
+    function getWatchProgressForId(videoId) {
+        if (!videoId) return 0;
+        try {
+            // Prefer dedicated progress map
+            var map = JSON.parse(localStorage.getItem("viewora_watch_progress") || "{}") || {};
+            var row = map["video:" + videoId] || map["video_" + videoId] || map[videoId];
+            if (row && Number(row.progress) > 0) return Math.min(1, Number(row.progress));
+        } catch (_) {}
+        try {
+            var keys = ["viewora_watch_history"];
+            try {
+                var u = firebase.auth && firebase.auth().currentUser;
+                if (u) keys.unshift("viewora_watch_history_" + u.uid);
+            } catch (_) {}
+            for (var k = 0; k < keys.length; k++) {
+                var arr = JSON.parse(localStorage.getItem(keys[k]) || "[]") || [];
+                for (var i = 0; i < arr.length; i++) {
+                    if (String(arr[i].videoId) === String(videoId)) {
+                        var p = Number(arr[i].progress);
+                        if (p > 0) return Math.min(1, p);
+                        return 0.05; // seen once
+                    }
+                }
+            }
+        } catch (_) {}
+        if (window.VieworaGetWatchHistory) {
+            try {
+                var list = window.VieworaGetWatchHistory() || [];
+                for (var j = 0; j < list.length; j++) {
+                    if (String(list[j].videoId) === String(videoId)) {
+                        var p2 = Number(list[j].progress);
+                        if (p2 > 0) return Math.min(1, p2);
+                        return 0.05;
+                    }
+                }
+            } catch (_) {}
+        }
+        return 0;
+    }
+
+    function paintWatchProgressOnCard(card) {
+        if (!card) return;
+        var id = card.dataset.videoId || "";
+        if (!id) return;
+        var wrap = card.querySelector(".videoThumbnailWrap");
+        if (!wrap) return;
+        var bar = wrap.querySelector(".watchProgressBar");
+        if (!bar) {
+            bar = document.createElement("div");
+            bar.className = "watchProgressBar";
+            bar.innerHTML = '<div class="watchProgressFill"></div>';
+            wrap.appendChild(bar);
+        }
+        var fill = bar.querySelector(".watchProgressFill");
+        var p = getWatchProgressForId(id);
+        if (p > 0) {
+            bar.hidden = false;
+            bar.style.display = "block";
+            if (fill) fill.style.width = (Math.round(p * 1000) / 10) + "%";
+            bar.classList.toggle("watchedFull", p >= 0.95);
+        } else {
+            bar.hidden = true;
+            bar.style.display = "none";
+        }
+    }
+
+    function paintAllWatchProgress() {
+        document.querySelectorAll(".longVideoCard[data-video-id]").forEach(paintWatchProgressOnCard);
+    }
+
+    window.VieworaPaintWatchProgress = paintAllWatchProgress;
+    window.addEventListener("viewora-history-updated", function () {
+        try { paintAllWatchProgress(); } catch (_) {}
+    });
+    window.addEventListener("storage", function (e) {
+        if (e && e.key && String(e.key).indexOf("viewora_watch") !== -1) {
+            try { paintAllWatchProgress(); } catch (_) {}
+        }
+    });
 
 
     /* ======================================================
@@ -1422,7 +1458,15 @@ try{document.addEventListener("click",function(){try{sessionStorage.setItem("vie
                 if (!user) return;
 
                 // ALWAYS prefer users/ node (video doc can have stale/wrong name/photo)
-                const photo = vieworaPickPhoto(user) || "";
+                const photo =
+                    user.profilePhoto ||
+                    user.photoURL ||
+                    user.photoUrl ||
+                    user.avatar ||
+                    user.profilePic ||
+                    user.profilePicture ||
+                    user.dp ||
+                    "";
                 if (photo) {
                     video.data.profilePhoto = photo;
                     video.data.photoURL = photo;
@@ -1502,23 +1546,9 @@ try{document.addEventListener("click",function(){try{sessionStorage.setItem("vie
             });
 
             longVideoContainer.appendChild(fragment);
-            // VIEWORA_DP_DOM_REFRESH
-            longVideoContainer.querySelectorAll(".longVideoCard").forEach(function (card) {
-                var uid = card.dataset.uid || "";
-                var img = card.querySelector(".videoAvatar");
-                if (!img || !uid) return;
-                fetchUserNode(uid).then(function (u) {
-                    if (!u) return;
-                    var ph = vieworaPickPhoto(u);
-                    if (ph) {
-                        img.onerror = function () {
-                            this.onerror = null;
-                            this.src = vieworaLetterAvatar(u.displayName || u.username || "U");
-                        };
-                        img.src = ph;
-                    }
-                }).catch(function () {});
-            });
+            try { paintAllWatchProgress(); } catch (_) {}
+            setTimeout(function () { try { paintAllWatchProgress(); } catch (_) {} }, 400);
+
             // Auto-fill duration badge when missing
             longVideoContainer.querySelectorAll(".longVideoCard").forEach((card) => {
                 const badge = card.querySelector(".videoDurationBadge");
@@ -1578,18 +1608,18 @@ try{document.addEventListener("click",function(){try{sessionStorage.setItem("vie
                 card.className = "longVideoCard liveVideoCard";
                 card.dataset.videoId = "live_" + uid;
                 card.dataset.liveUid = uid;
-                const photo = (d.hostPhoto || VIEWORA_FALLBACK_AVATAR).replace(/"/g, "");
+                const photo = (d.hostPhoto || "assets/default-avatar.png").replace(/"/g, "");
                 const name = String(d.hostName || "Live").replace(/</g, "");
                 const title = String(d.title || "Video Live").replace(/</g, "");
                 card.innerHTML =
                     '<div class="videoThumbnailWrap liveThumb" style="position:relative;aspect-ratio:16/9;background:#111;border-radius:14px;overflow:hidden">' +
-                    '<img src="' + photo + '" alt="" class="videoThumb" style="width:100%;height:100%;object-fit:cover" onerror="this.onerror=null;this.src=&quot;https://ui-avatars.com/api/?name=U&amp;background=6d28d9&amp;color=fff&quot;">' +
+                    '<img src="' + photo + '" alt="" class="videoThumb" style="width:100%;height:100%;object-fit:cover" onerror="this.src=\'assets/default-avatar.png\">' +
                     '<div style="position:absolute;inset:0;background:linear-gradient(transparent 40%,rgba(0,0,0,.75))"></div>' +
                     '<span class="liveBadgePill" style="position:absolute;top:10px;left:10px;background:#ef4444;color:#fff;font-size:11px;font-weight:800;padding:4px 8px;border-radius:6px;z-index:2"><i class="fa-solid fa-circle" style="font-size:7px"></i> LIVE</span>' +
                     '<span style="position:absolute;bottom:10px;left:12px;right:12px;color:#fff;z-index:2;font-weight:700;font-size:14px;text-shadow:0 1px 4px #000">' + title + '</span>' +
                     '</div>' +
                     '<div class="videoMeta" style="display:flex;align-items:center;gap:10px;padding:10px 4px 4px">' +
-                    '<img src="' + photo + '" alt="" style="width:36px;height:36px;border-radius:50%;object-fit:cover;border:2px solid #ef4444" onerror="this.onerror=null;this.src=&quot;https://ui-avatars.com/api/?name=U&amp;background=6d28d9&amp;color=fff&quot;">' +
+                    '<img src="' + photo + '" alt="" style="width:36px;height:36px;border-radius:50%;object-fit:cover;border:2px solid #ef4444" onerror="this.src=\'assets/default-avatar.png\">' +
                     '<div style="min-width:0;flex:1">' +
                     '<strong style="display:block;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + name + '</strong>' +
                     '<span style="font-size:12px;opacity:.65">Video Live · Tap to join</span>' +
@@ -1682,20 +1712,7 @@ try{document.addEventListener("click",function(){try{sessionStorage.setItem("vie
                     ) {
                         return;
                     }
-                    // unlisted: never on home feed
-                    if (vis === "unlisted") return;
 
-                    // skip if same media URL already mapped under another id
-                    var mediaKey = String(data.videoUrl || data.videoURL || data.video || data.mediaUrl || data.media || "").split("?")[0];
-                    var already = false;
-                    if (mediaKey) {
-                        videoMap.forEach(function (ex) {
-                            var u = String(ex.videoUrl || ex.videoURL || ex.video || ex.mediaUrl || ex.media || "").split("?")[0];
-                            if (u && u === mediaKey) already = true;
-                        });
-                    }
-                    if (already) return;
-                    if (data.deleted === true || data.archived === true) return;
                     videoMap.set(
                         child.key,
                         data
@@ -1726,15 +1743,17 @@ try{document.addEventListener("click",function(){try{sessionStorage.setItem("vie
             );
 
 
-        // VIEWORA_POSTS_NO_LONG — posts feed is for posts; long videos only from /videos
         db.ref("posts")
             .on(
                 "value",
-                function (snapshot) {
-                    // intentionally not merging pure videos into longVideoContainer
-                },
+                ingest,
                 (error) => {
-                    console.error("Viewora /posts video merge error:", error);
+
+                    console.error(
+                        "Viewora /posts video merge error:",
+                        error
+                    );
+
                 }
             );
 
@@ -1891,48 +1910,16 @@ try{document.addEventListener("click",function(){try{sessionStorage.setItem("vie
                 await db.ref(path).update({ commentsDisabled: true });
                 showToast("Comments turned off");
             } else if (action === "delete") {
-                if (!confirm("Delete permanently? Ye video kahin nahi dikhegi.")) {
+                if (!confirm("Delete permanently?")) {
                     closeHomeMenu();
                     return;
                 }
-                var delId = id;
-                var delUid = uid || myUID || "";
-                // Soft-delete + hard remove from all known mirrors
-                var multi = {};
-                multi["videos/" + delId] = null;
-                multi["longVideos/" + delId] = null;
-                multi["posts/" + delId] = null;
-                multi["feedLive/videos/" + delId] = null;
-                if (delUid) {
-                    multi["userVideos/" + delUid + "/" + delId] = null;
-                    multi["users/" + delUid + "/videos/" + delId] = null;
-                }
-                try {
-                    await db.ref("videos/" + delId).update({
-                        deleted: true,
-                        deletedAt: Date.now(),
-                        archived: true,
-                        visibility: "private"
-                    });
-                } catch (_) {}
-                try {
-                    await db.ref().update(multi);
-                } catch (e) {
-                    console.warn("bulk delete", e);
-                    for (var p in multi) {
-                        try { await db.ref(p).remove(); } catch (_) {}
-                    }
-                }
-                try { await db.ref("comments/" + delId).remove(); } catch (_) {}
-                try { await db.ref("videoComments/" + delId).remove(); } catch (_) {}
-                // Remove all cards with this id from DOM
-                try {
-                    document.querySelectorAll('[data-id="' + delId + '"], [data-video-id="' + delId + '"]').forEach(function (el) {
-                        el.remove();
-                    });
-                } catch (_) {}
+                await db.ref(path).update({
+                    deleted: true,
+                    deletedAt: Date.now()
+                });
                 card?.remove();
-                showToast("Deleted permanently");
+                showToast("Deleted");
             } else if (action === "not_interested") {
                 if (myUID) {
                     await db
@@ -3234,7 +3221,7 @@ try{document.addEventListener("click",function(){try{sessionStorage.setItem("vie
                 );
                 const text = escapeHTML(c.text || c.comment || "");
                 const avatar = escapeHTML(
-                    c.profilePhoto || c.photoURL || VIEWORA_FALLBACK_AVATAR
+                    c.profilePhoto || c.photoURL || "assets/default-avatar.png"
                 );
                 let tick = "";
                 try {
@@ -3252,7 +3239,7 @@ try{document.addEventListener("click",function(){try{sessionStorage.setItem("vie
                 const item = document.createElement("div");
                 item.className = "hpcItem" + (c.parentId ? " reply" : "");
                 item.innerHTML =
-                    '<img src="' + avatar + '" alt="" onerror="this.src=(typeof vieworaLetterAvatar===\'function\'?vieworaLetterAvatar(\'U\'):\'\')">' +
+                    '<img src="' + avatar + '" alt="" onerror="this.src=\'assets/default-avatar.png\'">' +
                     "<div style=\"min-width:0;flex:1;\">" +
                     "<strong>" + name + (tick ? " " + tick : "") + "</strong>" +
                     replyLabel +
@@ -4017,8 +4004,14 @@ try{document.addEventListener("click",function(){try{sessionStorage.setItem("vie
                             });
                             if (createdAt > g.latestAt) g.latestAt = createdAt;
 
-                            const av = vieworaPickPhoto(data) || "";
-                            if (av && (!g.avatar || g.avatar.indexOf("default") !== -1 || g.avatar.indexOf("ui-avatars") !== -1)) {
+                            const av =
+                                data.userPhoto ||
+                                data.profilePhoto ||
+                                data.photoURL ||
+                                data.avatar ||
+                                data.profilePic ||
+                                "";
+                            if (av && (!g.avatar || g.avatar.indexOf("default") !== -1)) {
                                 g.avatar = av;
                             }
                             const un =
@@ -4050,7 +4043,15 @@ try{document.addEventListener("click",function(){try{sessionStorage.setItem("vie
                                         "User";
                                     g.name = u.displayName || u.name || g.username;
                                     const photo =
-                                        vieworaPickPhoto(u) || "";
+                                        u.profilePhoto ||
+                                        u.photoURL ||
+                                        u.photoUrl ||
+                                        u.avatar ||
+                                        u.profilePic ||
+                                        u.profilePicture ||
+                                        u.profile_image ||
+                                        u.dp ||
+                                        "";
                                     if (photo) g.avatar = photo;
                                     [
                                         "verified","isVerified","blueTick","redTick",
@@ -4263,8 +4264,8 @@ try{document.addEventListener("click",function(){try{sessionStorage.setItem("vie
 
                             const avatar =
                                 safeURL(group.avatar) ||
-                                vieworaResolveAvatar({ avatar: group.avatar, photoURL: group.photoURL, profilePhoto: group.profilePhoto, displayName: group.username || group.name }) ||
-                                vieworaLetterAvatar(group.username || group.name || "V");
+                                group.avatar ||
+                                "assets/default-avatar.png";
 
                             const firstStoryId =
                                 group.stories[0]?.id || "";
@@ -4305,7 +4306,7 @@ try{document.addEventListener("click",function(){try{sessionStorage.setItem("vie
                                         alt="${label}"
                                         class="storyImage"
                                         loading="lazy"
-                                        onerror="this.src=VIEWORA_FALLBACK_AVATAR"
+                                        onerror="this.src='assets/default-avatar.png'"
                                     >
                                     ${isLive ? '<span class="liveBadge liveBadge-' + liveFmt + '">' + liveBadgeText + '</span>' : ""}
                                 </div>
@@ -4465,7 +4466,7 @@ try{document.addEventListener("click",function(){try{sessionStorage.setItem("vie
                                 }
                                 av.onerror = function () {
                                     this.onerror = null;
-                                    this.src = VIEWORA_FALLBACK_AVATAR;
+                                    this.src = "assets/default-avatar.png";
                                 };
                                 av.alt = "Your Story";
                             }
@@ -5087,7 +5088,7 @@ try{document.addEventListener("click",function(){try{sessionStorage.setItem("vie
             av.src = safe;
             av.onerror = function () {
                 this.onerror = null;
-                this.src = VIEWORA_FALLBACK_AVATAR;
+                this.src = "assets/default-avatar.png";
             };
             cacheMyAvatar(safe);
         };
