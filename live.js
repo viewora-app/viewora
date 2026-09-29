@@ -405,6 +405,7 @@
         await db.ref("shortsLive/" + uid).remove();
         await db.ref("videosLive/" + uid).remove();
         await db.ref("live/" + uid + "/viewers").remove();
+        await db.ref("live/" + uid + "/signal").remove();
       } catch (_) {}
 
       console.log("[LIVE] Replay saved", replayId, format);
@@ -443,12 +444,12 @@
     const u = await loadUser(uid);
     const name = u.displayName || u.name || u.username || "Host";
     const photo =
-      u.photoURL || u.avatar || u.profilePhoto || "assets/default-avatar.png";
+      u.photoURL || u.avatar || u.profilePhoto || "https://ui-avatars.com/api/?name=H&background=7c3aed&color=fff&size=128";
     if ($("hostName")) $("hostName").textContent = name;
     if ($("hostAvatar")) {
       $("hostAvatar").src = photo;
       $("hostAvatar").onerror = function () {
-        this.src = "assets/default-avatar.png";
+        this.src = "https://ui-avatars.com/api/?name=H&background=7c3aed&color=fff&size=128";
       };
     }
   }
@@ -528,6 +529,16 @@
       await fillHostChrome(me.uid);
       $("endLiveBtn")?.classList.remove("hidden");
       attachLiveListeners(me.uid);
+      try { wireHostControls(); } catch (_) {}
+      try { hostWatchViewersForWebrtc(me.uid); } catch (e) { console.warn("host webrtc watch", e); }
+      try {
+        var mainV = $("liveVideo");
+        if (mainV && localStream) {
+          mainV.srcObject = localStream;
+          mainV.muted = true;
+          mainV.play().catch(function () {});
+        }
+      } catch (_) {}
     } catch (e) {
       console.error(e);
       toast("Could not start live. Try again.");
@@ -552,7 +563,7 @@
     if ($("liveTitleLabel")) $("liveTitleLabel").textContent = data.title || "Live";
     if ($("hostName")) $("hostName").textContent = data.hostName || "Host";
     if ($("hostAvatar")) {
-      $("hostAvatar").src = data.hostPhoto || "assets/default-avatar.png";
+      $("hostAvatar").src = data.hostPhoto || "https://ui-avatars.com/api/?name=H&background=7c3aed&color=fff&size=128";
     }
     await fillHostChrome(uid);
 
@@ -566,6 +577,7 @@
 
     attachLiveListeners(uid);
     $("liveWaiting")?.classList.add("hidden");
+    try { await viewerJoinWebrtc(uid); } catch (e) { console.warn("viewer webrtc", e); }
   }
 
   
@@ -643,7 +655,7 @@
       ph.className = "viewer-live-placeholder";
       stage.insertBefore(ph, stage.firstChild);
     }
-    const photo = (host && (host.hostPhoto || host.photoURL || host.avatar)) || "assets/default-avatar.png";
+    const photo = (host && (host.hostPhoto || host.photoURL || host.avatar)) || "https://ui-avatars.com/api/?name=H&background=7c3aed&color=fff&size=128";
     const name = (host && (host.hostName || host.name)) || "Host";
     const title = (host && host.title) || "Live";
     ph.innerHTML =
@@ -653,7 +665,7 @@
       '<strong>' + String(name).replace(/</g, "") + '</strong>' +
       '<span class="vlp-live"><i class="fa-solid fa-circle"></i> LIVE</span>' +
       '<p>' + String(title).replace(/</g, "") + '</p>' +
-      '<small>Stream preview · full WebRTC coming soon</small>' +
+      '<small>Connecting to stream…</small>' +
       '</div>';
   }
 
@@ -743,7 +755,7 @@
         await db.ref("live/" + hostUid + "/viewers/" + me.uid).remove();
       } catch (_) {}
     }
-    stopCam();
+    closeAllWebrtc(); stopCam();
     if (liveRef) liveRef.off();
     if (commentsRef) commentsRef.off();
     if (reactionsRef) try { reactionsRef.off(); } catch (_) {}
@@ -765,6 +777,7 @@
       history.back();
     });
     $("startLiveBtn")?.addEventListener("click", startLive);
+    try { /* host controls wired after go-live */ } catch (_) {}
     $("endLiveBtn")?.addEventListener("click", leave);
     $("closeLiveBtn")?.addEventListener("click", leave);
     $("sendCommentBtn")?.addEventListener("click", sendComment);
@@ -803,6 +816,280 @@
       await prepareSetup();
     }
   }
+
+
+
+  /* ============================================================
+     WEBRTC BROADCAST (host → each viewer, 1-way)
+     No SFU required. Host holds N peer connections (practical ~8–12).
+     ============================================================ */
+  var hostPeers = {}; // viewerUid -> { pc }
+  var viewerPc = null;
+  var usingFront = true;
+  var micMuted = false;
+  var MAX_LIVE_VIEWER_PEERS = 12;
+
+  function liveIceServers() {
+    var servers = [
+      { urls: ["stun:stun.l.google.com:19302", "stun:stun1.l.google.com:19302", "stun:stun.cloudflare.com:3478"] }
+    ];
+    try {
+      var custom = window.VieworaTurnConfig;
+      if (!custom) {
+        var raw = localStorage.getItem("viewora_turn_config");
+        if (raw) custom = JSON.parse(raw);
+      }
+      if (custom && custom.urls) {
+        servers.push({
+          urls: Array.isArray(custom.urls) ? custom.urls : [custom.urls],
+          username: custom.username || "",
+          credential: custom.credential || ""
+        });
+      } else {
+        servers.push({
+          urls: ["turn:openrelay.metered.ca:80", "turn:openrelay.metered.ca:443"],
+          username: "openrelayproject",
+          credential: "openrelayproject"
+        });
+      }
+    } catch (_) {}
+    return { iceServers: servers, iceCandidatePoolSize: 8, bundlePolicy: "max-bundle" };
+  }
+
+  function signalRef(hostId, viewerId) {
+    return db.ref("live/" + hostId + "/signal/" + viewerId);
+  }
+
+  async function hostCreatePeerForViewer(viewerUid) {
+    if (!isHost || !localStream || !viewerUid || viewerUid === me.uid) return;
+    if (hostPeers[viewerUid]) return;
+    if (Object.keys(hostPeers).length >= MAX_LIVE_VIEWER_PEERS) {
+      console.warn("[Live] max viewer peers reached");
+      return;
+    }
+    var pc = new RTCPeerConnection(liveIceServers());
+    hostPeers[viewerUid] = { pc: pc };
+    localStream.getTracks().forEach(function (track) {
+      try { pc.addTrack(track, localStream); } catch (e) { console.warn(e); }
+    });
+    var sref = signalRef(hostUid || me.uid, viewerUid);
+    pc.onicecandidate = function (ev) {
+      if (ev.candidate) {
+        sref.child("hostCandidates").push(ev.candidate.toJSON()).catch(function () {});
+      }
+    };
+    pc.onconnectionstatechange = function () {
+      var st = pc.connectionState;
+      if (st === "failed" || st === "closed" || st === "disconnected") {
+        try { pc.close(); } catch (_) {}
+        delete hostPeers[viewerUid];
+      }
+    };
+    try {
+      var offer = await pc.createOffer({ offerToReceiveAudio: false, offerToReceiveVideo: false });
+      await pc.setLocalDescription(offer);
+      await sref.update({
+        offer: { type: offer.type, sdp: offer.sdp },
+        hostUid: me.uid,
+        at: Date.now()
+      });
+      // listen answer once
+      sref.child("answer").on("value", async function (snap) {
+        var ans = snap.val();
+        if (!ans || !ans.sdp) return;
+        try {
+          if (!pc.currentRemoteDescription) {
+            await pc.setRemoteDescription(new RTCSessionDescription(ans));
+          }
+        } catch (e) { console.warn("setRemote answer", e); }
+      });
+      sref.child("viewerCandidates").on("child_added", async function (snap) {
+        var c = snap.val();
+        if (!c) return;
+        try { await pc.addIceCandidate(new RTCIceCandidate(c)); } catch (_) {}
+      });
+    } catch (e) {
+      console.error("[Live] host peer", e);
+      try { pc.close(); } catch (_) {}
+      delete hostPeers[viewerUid];
+    }
+  }
+
+  function hostWatchViewersForWebrtc(uid) {
+    db.ref("live/" + uid + "/viewers").on("child_added", function (snap) {
+      var vid = snap.key;
+      if (vid && vid !== me.uid) hostCreatePeerForViewer(vid);
+    });
+    db.ref("live/" + uid + "/viewers").on("child_removed", function (snap) {
+      var vid = snap.key;
+      var entry = hostPeers[vid];
+      if (entry && entry.pc) {
+        try { entry.pc.close(); } catch (_) {}
+      }
+      delete hostPeers[vid];
+      try { signalRef(uid, vid).remove(); } catch (_) {}
+    });
+  }
+
+  async function viewerJoinWebrtc(hostId) {
+    if (!me || !hostId) return;
+    try {
+      viewerPc = new RTCPeerConnection(liveIceServers());
+      var sref = signalRef(hostId, me.uid);
+      viewerPc.ontrack = function (ev) {
+        var stream = ev.streams && ev.streams[0];
+        if (!stream) {
+          stream = new MediaStream([ev.track]);
+        }
+        var v = $("liveVideo");
+        if (v) {
+          v.srcObject = stream;
+          v.muted = false;
+          v.playsInline = true;
+          v.setAttribute("playsinline", "true");
+          v.play().catch(function () {});
+        }
+        document.body.classList.add("live-streaming");
+        var ph = document.querySelector(".viewer-live-placeholder");
+        if (ph) ph.style.display = "none";
+        var wait = $("liveWaiting");
+        if (wait) wait.classList.add("hidden");
+      };
+      viewerPc.onicecandidate = function (ev) {
+        if (ev.candidate) {
+          sref.child("viewerCandidates").push(ev.candidate.toJSON()).catch(function () {});
+        }
+      };
+      // wait for host offer
+      sref.child("offer").on("value", async function (snap) {
+        var off = snap.val();
+        if (!off || !off.sdp || !viewerPc) return;
+        try {
+          if (viewerPc.currentRemoteDescription) return;
+          await viewerPc.setRemoteDescription(new RTCSessionDescription(off));
+          var answer = await viewerPc.createAnswer();
+          await viewerPc.setLocalDescription(answer);
+          await sref.update({
+            answer: { type: answer.type, sdp: answer.sdp },
+            answeredAt: Date.now()
+          });
+        } catch (e) {
+          console.warn("viewer answer", e);
+        }
+      });
+      sref.child("hostCandidates").on("child_added", async function (snap) {
+        var c = snap.val();
+        if (!c || !viewerPc) return;
+        try { await viewerPc.addIceCandidate(new RTCIceCandidate(c)); } catch (_) {}
+      });
+      // ensure viewer entry exists (triggers host peer)
+      await db.ref("live/" + hostId + "/viewers/" + me.uid).set({
+        uid: me.uid,
+        name: me.displayName || "Viewer",
+        photo: me.photoURL || "",
+        at: Date.now()
+      });
+      try {
+        db.ref("live/" + hostId + "/viewers/" + me.uid).onDisconnect().remove();
+      } catch (_) {}
+    } catch (e) {
+      console.error("[Live] viewer webrtc", e);
+    }
+  }
+
+  function closeAllWebrtc() {
+    Object.keys(hostPeers).forEach(function (id) {
+      try { hostPeers[id].pc.close(); } catch (_) {}
+    });
+    hostPeers = {};
+    if (viewerPc) {
+      try { viewerPc.close(); } catch (_) {}
+      viewerPc = null;
+    }
+  }
+
+  /* Host controls */
+  function wireHostControls() {
+    var bar = $("liveHostControls");
+    if (isHost && bar) bar.classList.remove("hidden");
+    $("liveMuteBtn")?.addEventListener("click", function () {
+      if (!localStream) return;
+      micMuted = !micMuted;
+      localStream.getAudioTracks().forEach(function (tr) { tr.enabled = !micMuted; });
+      var btn = $("liveMuteBtn");
+      if (btn) {
+        btn.classList.toggle("active", micMuted);
+        btn.innerHTML = micMuted
+          ? '<i class="fa-solid fa-microphone-slash"></i>'
+          : '<i class="fa-solid fa-microphone"></i>';
+      }
+      toast(micMuted ? "Mic muted" : "Mic on");
+    });
+    $("liveFlipBtn")?.addEventListener("click", async function () {
+      if (!localStream || !isHost) return;
+      try {
+        var old = localStream.getVideoTracks()[0];
+        if (!old) return;
+        usingFront = !usingFront;
+        var facing = usingFront ? "user" : "environment";
+        var devices = await navigator.mediaDevices.enumerateDevices();
+        var cams = devices.filter(function (d) { return d.kind === "videoinput"; });
+        var constraints = { audio: false, video: { facingMode: { ideal: facing } } };
+        if (cams.length >= 2) {
+          var curId = old.getSettings ? (old.getSettings().deviceId || "") : "";
+          var idx = cams.findIndex(function (d) { return d.deviceId === curId; });
+          if (idx < 0) idx = 0;
+          var next = cams[(idx + 1) % cams.length];
+          constraints.video = { deviceId: { exact: next.deviceId } };
+          var lab = String(next.label || "").toLowerCase();
+          usingFront = !(/back|rear|environment/.test(lab));
+        }
+        var ns = await navigator.mediaDevices.getUserMedia(constraints);
+        var nt = ns.getVideoTracks()[0];
+        if (!nt) return;
+        // replace on all host peers
+        Object.keys(hostPeers).forEach(function (id) {
+          var pc = hostPeers[id].pc;
+          var sender = pc.getSenders().find(function (s) { return s.track && s.track.kind === "video"; });
+          if (sender) sender.replaceTrack(nt).catch(function () {});
+        });
+        try { localStream.removeTrack(old); old.stop(); } catch (_) {}
+        localStream.addTrack(nt);
+        ns.getTracks().forEach(function (tr) {
+          if (tr.id !== nt.id) try { tr.stop(); } catch (_) {}
+        });
+        var prev = $("livePreview") || $("liveVideo");
+        if (prev && isHost) {
+          prev.srcObject = localStream;
+          prev.play().catch(function () {});
+        }
+        toast(usingFront ? "Front camera" : "Back camera");
+      } catch (e) {
+        console.warn("flip", e);
+        usingFront = !usingFront;
+        toast("Could not flip camera");
+      }
+    });
+    $("liveShareBtn")?.addEventListener("click", async function () {
+      var url = location.origin + location.pathname + "?uid=" + encodeURIComponent(hostUid || me.uid);
+      try {
+        if (navigator.share) {
+          await navigator.share({ title: "Viewora Live", url: url });
+        } else {
+          await navigator.clipboard.writeText(url);
+          toast("Live link copied");
+        }
+      } catch (_) {
+        try {
+          await navigator.clipboard.writeText(url);
+          toast("Live link copied");
+        } catch (__) {
+          toast(url);
+        }
+      }
+    });
+  }
+
 
   /* Public helper: is user live? */
   window.VieworaLive = {

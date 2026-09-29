@@ -3,7 +3,7 @@
 /*
 ============================================================
  VIEWORA — SUBSCRIPTION.JS
- REAL RAZORPAY TEST CHECKOUT
+ RAZORPAY LIVE CHECKOUT + CANCEL
  Firebase Auth + Cloud Functions
 ============================================================
 
@@ -1239,6 +1239,10 @@
         const plan =
             subscription?.plan;
 
+        const active =
+            status === "active" ||
+            subscription?.active === true;
+
         document
             .querySelectorAll(
                 "[data-subscription-status]"
@@ -1246,9 +1250,9 @@
             .forEach(element => {
 
                 element.textContent =
-                    status === "active"
+                    active
                         ? "Premium Active"
-                        : "Not Active";
+                        : (status === "cancelled" ? "Cancelled" : "Not Active");
             });
 
 
@@ -1259,10 +1263,21 @@
             .forEach(element => {
 
                 element.textContent =
-                    PLAN_LABEL[plan] ||
-                    "Free";
+                    active
+                        ? (PLAN_LABEL[plan] || plan || "Premium")
+                        : "Free";
             });
 
+        try {
+            var chip = document.getElementById("planChip");
+            if (chip) {
+                chip.textContent = active
+                    ? (PLAN_LABEL[plan] || "Active")
+                    : (status === "cancelled" ? "Cancelled" : "Free");
+            }
+            var row = document.getElementById("managePlanRow");
+            if (row) row.classList.toggle("hidden", !active);
+        } catch (_) {}
 
         document.body.dataset.subscriptionStatus =
             status || "inactive";
@@ -1272,6 +1287,52 @@
     /* ======================================================
        LOAD CURRENT SUBSCRIPTION
     ====================================================== */
+
+
+    async function cancelSubscription() {
+        const auth = getAuth();
+        const user = auth && auth.currentUser;
+        if (!user) {
+            toast("Please login first.");
+            return;
+        }
+        if (!confirm("Cancel your Viewora subscription? Premium benefits will stop.")) {
+            return;
+        }
+        setLoading(true, "Cancelling...");
+        try {
+            const db = firebase.database();
+            const now = Date.now();
+            const payload = {
+                status: "cancelled",
+                active: false,
+                cancelledAt: now,
+                updatedAt: now
+            };
+            await db.ref("subscriptions/" + user.uid).update(payload);
+            await db.ref("users/" + user.uid + "/subscription").update(payload);
+            await db.ref("users/" + user.uid).update({
+                premium: false,
+                subscriptionActive: false,
+                subscriptionStatus: "cancelled",
+                // keep identity ticks unless only from plan — soft remove blue from paid path
+                blueTick: false,
+                plan: "free",
+                planId: "free"
+            });
+            toast("Subscription cancelled");
+            await loadCurrentSubscription();
+            try {
+                var row = document.getElementById("managePlanRow");
+                if (row) row.classList.add("hidden");
+            } catch (_) {}
+        } catch (e) {
+            console.error(e);
+            toast(e.message || "Could not cancel");
+        } finally {
+            setLoading(false);
+        }
+    }
 
     async function loadCurrentSubscription() {
 
@@ -1555,6 +1616,13 @@
         updateSelectedPlanUI();
 
         initializeAuth();
+        try {
+            var cbtn = document.getElementById("cancelPlanBtn");
+            if (cbtn && !cbtn.__bound) {
+                cbtn.__bound = true;
+                cbtn.addEventListener("click", function () { cancelSubscription(); });
+            }
+        } catch (_) {}
 
         const razorpayReady =
             await waitForRazorpay();

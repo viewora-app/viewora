@@ -117,10 +117,15 @@
         <button type="button" data-sticker="👑">👑</button>
         <button type="button" data-sticker="💥">💥</button>
       </div>
+      <div id="liveHostControls" class="live-host-controls hidden">
+        <button type="button" id="liveMuteBtn" class="live-ctrl" aria-label="Mute"><i class="fa-solid fa-microphone"></i></button>
+        <button type="button" id="liveFlipBtn" class="live-ctrl" aria-label="Flip camera"><i class="fa-solid fa-camera-rotate"></i></button>
+        <button type="button" id="liveShareBtn" class="live-ctrl" aria-label="Share"><i class="fa-solid fa-share-nodes"></i></button>
+        <button type="button" id="endLiveBtn" class="live-ctrl live-ctrl-end" aria-label="End live"><i class="fa-solid fa-phone-slash"></i></button>
+      </div>
       <div class="live-compose">
         <input id="liveCommentInput" type="text" maxlength="200" placeholder="Say something…">
         <button type="button" class="live-send" id="sendCommentBtn"><i class="fa-solid fa-paper-plane"></i></button>
-        <button type="button" class="live-end hidden" id="endLiveBtn">End</button>
       </div>
     </div>
   </div>

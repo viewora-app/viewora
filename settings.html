@@ -70,6 +70,11 @@
           <span class="rowBody"><span class="rowTitle">Safety</span><span class="rowDesc">Guidelines, report, blocked</span></span>
           <span class="rowRight"><i class="fa-solid fa-chevron-right"></i></span>
         </button>
+        <button type="button" class="row catRow" data-open="payments">
+          <span class="rowIcon gold"><i class="fa-solid fa-wallet"></i></span>
+          <span class="rowBody"><span class="rowTitle">Payments</span><span class="rowDesc">Payout methods, subscription, billing</span></span>
+          <span class="rowRight"><i class="fa-solid fa-chevron-right"></i></span>
+        </button>
         <button type="button" class="row catRow" data-open="appearance">
           <span class="rowIcon"><i class="fa-solid fa-palette"></i></span>
           <span class="rowBody"><span class="rowTitle">Appearance</span><span class="rowDesc">Theme, font, language</span></span>
@@ -279,5 +284,35 @@
   <script src="firebase.js"></script>
   <script src="theme.js"></script>
   <script src="settings.js"></script>
+
+<!-- Payment / Payout method sheet -->
+<div id="paymentMethodSheet" class="sheet hidden" aria-hidden="true">
+  <div class="sheetBackdrop" data-close-payment="1"></div>
+  <div class="sheetCard">
+    <div class="sheetHandle"></div>
+    <h2 id="paymentSheetTitle">Payout method</h2>
+    <p class="desc">Used for monetization withdrawals. Secure — only you and Viewora admin see this.</p>
+    <label class="fieldLabel">Method type</label>
+    <select id="payMethodType" class="fieldSelect">
+      <option value="upi">UPI (India)</option>
+      <option value="bank">Bank transfer</option>
+      <option value="paypal">PayPal</option>
+      <option value="card">Card (for subscription notes)</option>
+    </select>
+    <label class="fieldLabel">Account / UPI ID / Email / last 4 digits</label>
+    <input type="text" id="payMethodValue" maxlength="120" placeholder="name@upi or details" autocomplete="off">
+    <label class="fieldLabel">Full name on account</label>
+    <input type="text" id="payMethodName" maxlength="80" placeholder="As on bank / PayPal" autocomplete="name">
+    <div id="payIfscWrap" class="hidden">
+      <label class="fieldLabel">IFSC (bank)</label>
+      <input type="text" id="payMethodIfsc" maxlength="11" placeholder="HDFC0001234" style="text-transform:uppercase">
+    </div>
+    <div class="sheetActions">
+      <button type="button" class="btnGhost" data-close-payment="1">Cancel</button>
+      <button type="button" class="btnPrimary" id="payMethodSave">Save method</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>

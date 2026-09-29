@@ -1,5 +1,5 @@
 /* =========================================================
-   VIEWORA — Monetization + Withdrawal (95%)
+   VIEWORA — Monetization + Withdrawal (100%)
    Eligibility · Apply · Balance · Payout methods · History
 ========================================================= */
 "use strict";

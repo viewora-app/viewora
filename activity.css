@@ -1457,3 +1457,35 @@ body.has-bottom-nav .toast {
 .vieworaTick.redTick { color: #ff3b5c !important; }
 .vieworaTick.blueTick { color: #1d9bf0 !important; }
 .vieworaTick.whiteTick { color: #e8eef7 !important; }
+
+
+/* VIEWORA_ACTIVITY_100 */
+.notificationItem.unread {
+  background: rgba(124, 58, 237, 0.08);
+  border-left: 3px solid #7c3aed;
+}
+.notificationItem {
+  transition: background .2s ease, transform .15s ease;
+}
+.notificationItem:active {
+  transform: scale(0.99);
+}
+.unreadDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #7c3aed;
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.25);
+}
+.notificationAcceptBtn {
+  background: linear-gradient(135deg, #7c3aed, #a78bfa) !important;
+  color: #fff !important;
+  border: 0 !important;
+  border-radius: 999px !important;
+  font-weight: 600 !important;
+}
+.notificationDeclineBtn {
+  background: rgba(255,255,255,0.08) !important;
+  color: #e5e7eb !important;
+  border-radius: 999px !important;
+}

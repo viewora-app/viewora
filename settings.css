@@ -662,3 +662,85 @@ button { font: inherit; border: 0; background: none; color: inherit; cursor: poi
   font-size: 11px;
   color: var(--muted);
 }
+
+
+/* VIEWORA_SETTINGS_100 — payment sheet */
+.sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 99990;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+.sheet.hidden { display: none !important; }
+.sheetBackdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.55);
+}
+.sheetCard {
+  position: relative;
+  width: 100%;
+  max-width: 480px;
+  background: #12121a;
+  border-radius: 20px 20px 0 0;
+  padding: 12px 18px calc(20px + env(safe-area-inset-bottom));
+  border-top: 1px solid rgba(255,255,255,0.08);
+  max-height: 88vh;
+  overflow-y: auto;
+  z-index: 1;
+}
+.sheetHandle {
+  width: 40px;
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.2);
+  margin: 4px auto 14px;
+}
+.sheetCard h2 {
+  margin: 0 0 6px;
+  font-size: 18px;
+}
+.sheetCard .desc {
+  color: #9ca3af;
+  font-size: 13px;
+  margin: 0 0 14px;
+  line-height: 1.4;
+}
+.fieldSelect {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.06);
+  color: #fff;
+  font-size: 15px;
+  margin-bottom: 12px;
+}
+.sheetActions {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+}
+.sheetActions .btnPrimary,
+.sheetActions .btnGhost {
+  flex: 1;
+  padding: 12px;
+  border-radius: 12px;
+  font-weight: 600;
+  border: 0;
+  font-size: 14px;
+}
+.sheetActions .btnPrimary {
+  background: linear-gradient(135deg, #7c3aed, #a78bfa);
+  color: #fff;
+}
+.sheetActions .btnGhost {
+  background: rgba(255,255,255,0.08);
+  color: #e5e7eb;
+}
+.rowIcon.gold {
+  background: rgba(251, 191, 36, 0.15);
+  color: #fbbf24;
+}

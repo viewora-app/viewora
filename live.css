@@ -763,3 +763,103 @@ body.live-format-video #livePreview:not(.hidden) {
   border: 2px solid rgba(255,255,255,.3);
   z-index: 15;
 }
+
+
+/* VIEWORA_LIVE_100 */
+.live-host-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 8px 12px 4px;
+  z-index: 20;
+}
+.live-host-controls.hidden { display: none !important; }
+.live-ctrl {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 0;
+  background: rgba(255,255,255,0.14);
+  color: #fff;
+  font-size: 16px;
+  display: grid;
+  place-items: center;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition: transform .15s ease, background .2s;
+}
+.live-ctrl:active { transform: scale(0.92); }
+.live-ctrl.active {
+  background: rgba(255,255,255,0.92);
+  color: #111;
+}
+.live-ctrl-end {
+  background: #ff3b5c !important;
+  width: 54px;
+  height: 54px;
+}
+.viewer-live-placeholder {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  overflow: hidden;
+  background: #0a0a10;
+}
+.viewer-live-placeholder .vlp-bg {
+  position: absolute;
+  inset: -20px;
+  width: calc(100% + 40px);
+  height: calc(100% + 40px);
+  object-fit: cover;
+  filter: blur(28px) brightness(0.45);
+  transform: scale(1.1);
+}
+.viewer-live-placeholder .vlp-center {
+  position: relative;
+  z-index: 2;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: #fff;
+  text-align: center;
+  padding: 24px;
+}
+.viewer-live-placeholder .vlp-avatar {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid rgba(255,255,255,0.35);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+}
+.vlp-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #ff3b5c;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  padding: 4px 10px;
+  border-radius: 999px;
+}
+.vlp-live i { font-size: 8px; animation: livePulse 1.2s ease infinite; }
+@keyframes livePulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+body.live-streaming #liveVideo {
+  z-index: 3;
+}
+body.live-streaming .viewer-live-placeholder {
+  display: none !important;
+}
+.live-badge {
+  background: #ff3b5c !important;
+  animation: livePulse 1.4s ease infinite;
+}

@@ -1383,6 +1383,31 @@ function isFollow(notification) {
 
     }
 
+
+    function dedupeAllNotifications(list) {
+        if (!Array.isArray(list)) return [];
+        // 1) follow-family dedupe
+        list = dedupeFollowNotifications(list);
+        // 2) like: one per senderUID + contentId
+        const seenLike = new Set();
+        const out = [];
+        for (let i = 0; i < list.length; i++) {
+            const n = list[i];
+            if (!n) continue;
+            if (isLike(n)) {
+                const sid = safeString(n.senderUID || n.fromUid || n.uid);
+                const cid = safeString(
+                    n.postId || n.contentId || n.videoId || n.shortId || n.storyId || n.targetId || ""
+                );
+                const key = sid + "|like|" + cid;
+                if (seenLike.has(key)) continue;
+                seenLike.add(key);
+            }
+            out.push(n);
+        }
+        return out;
+    }
+
     function dedupeFollowNotifications(list) {
         /* One follow-related item per senderUID (request > accepted > follow) */
         const seenFollowKey = new Set();
@@ -1430,10 +1455,13 @@ function isFollow(notification) {
             return;
         }
 
-        const notifications =
+        let notifications =
             getFilteredNotifications();
 
-        if (window.__vieworaDedupeNotifs) notifications = window.__vieworaDedupeNotifs(notifications);
+        notifications = dedupeAllNotifications(notifications);
+        if (window.__vieworaDedupeNotifs) {
+            try { notifications = window.__vieworaDedupeNotifs(notifications); } catch (_) {}
+        }
         if (!notifications.length) {
 
             showEmpty(
@@ -1512,10 +1540,12 @@ function isFollow(notification) {
         item.className =
             "notificationItem";
 
-        if (!notification.read) {
-            item.classList.add(
-                "unread"
-            );
+        var isUnread = !(
+            notification.read === true ||
+            notification.isRead === true
+        );
+        if (isUnread) {
+            item.classList.add("unread");
         }
 
         item.style.setProperty(

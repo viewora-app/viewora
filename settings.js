@@ -930,6 +930,63 @@
       );
     }
 
+
+    /* Payments & billing */
+    if (id === "payments") {
+      html += linkRow(
+        "subscription.html",
+        "crown",
+        "gold",
+        "Viewora Premium",
+        "Plans, billing cycle, cancel anytime"
+      );
+      html += linkRow(
+        "monetization.html",
+        "coins",
+        "green",
+        "Creator Monetization",
+        "Earnings, withdraw, eligibility"
+      );
+      html += actionRow(
+        "btnPayoutMethod",
+        "building-columns",
+        "blue",
+        "Payout method",
+        "UPI / Bank / PayPal for withdrawals",
+        valChev(
+          (function () {
+            try {
+              var pm = profile.payoutMethod || profile.paymentMethod || null;
+              if (typeof pm === "string") {
+                try { pm = JSON.parse(pm); } catch (_) {}
+              }
+              if (pm && (pm.value || pm.account || pm.upi)) {
+                var t = String(pm.type || pm.method || "method").toUpperCase();
+                var v = String(pm.value || pm.account || pm.upi || "");
+                if (v.length > 6) v = v.slice(0, 3) + "•••" + v.slice(-3);
+                return t + " · " + v;
+              }
+            } catch (_) {}
+            return "Not set";
+          })()
+        )
+      );
+      html += plainRow(
+        "shield-halved",
+        "gray",
+        "Secure payments",
+        "Razorpay for subscriptions · payouts reviewed by admin"
+      );
+      html +=
+        '</div></div><div class="group"><div class="groupTitle">Billing notes</div><div class="groupCard">';
+      html += plainRow(
+        "circle-info",
+        "",
+        "Cards & UPI at checkout",
+        "Saved cards managed securely by Razorpay — not stored on Viewora servers"
+      );
+    }
+
     /* 22–23 Appearance + Language */
     if (id === "appearance") {
       html +=
@@ -1137,10 +1194,18 @@
       options: [
         { value: "en", label: "English" },
         { value: "hi", label: "हिन्दी (Hindi)" },
+        { value: "ur", label: "اردو (Urdu)" },
+        { value: "bn", label: "বাংলা (Bengali)" },
         { value: "de", label: "Deutsch (German)" },
+        { value: "fr", label: "Français (French)" },
+        { value: "es", label: "Español (Spanish)" },
+        { value: "ar", label: "العربية (Arabic)" },
         { value: "sa", label: "संस्कृतम् (Sanskrit)" },
         { value: "ja", label: "日本語 (Japanese)" },
-        { value: "zh", label: "中文 (Chinese)" }
+        { value: "zh", label: "中文 (Chinese)" },
+        { value: "ko", label: "한국어 (Korean)" },
+        { value: "pt", label: "Português (Portuguese)" },
+        { value: "ru", label: "Русский (Russian)" }
       ],
       def: "en"
     }
@@ -1826,6 +1891,7 @@ try {
     messages: "Messages & Calls",
     content: "Content & Media",
     safety: "Safety",
+    payments: "Payments",
     appearance: "Appearance",
     app: "Data & Storage",
     about: "About Viewora"
@@ -1869,6 +1935,7 @@ try {
     { q: "messages calls voice video requests privacy", open: "messages", label: "Messages & Calls" },
     { q: "upload quality video autoplay data saver content media", open: "content", label: "Content & Media" },
     { q: "community guidelines report safety blocked", open: "safety", label: "Safety" },
+    { q: "payment payout upi bank paypal wallet billing subscription razorpay", open: "payments", label: "Payments" },
     { q: "theme dark light appearance font language", open: "appearance", label: "Appearance" },
     { q: "cache storage data accessibility", open: "app", label: "Data & Storage" },
     { q: "about terms privacy copyright support version help", open: "about", label: "About Viewora" },
@@ -2014,6 +2081,115 @@ try {
     applyLangGlobal(getPref("lang", localStorage.getItem(LANG_KEY) || "en"));
   } catch (_) {}
 
-  if (window.firebase && firebase.apps && firebase.apps.length) boot();
+  
+  /* ---- Payment / payout method ---- */
+  function openPaymentMethodSheet() {
+    var sheet = $("paymentMethodSheet");
+    if (!sheet) return;
+    var pm = profile.payoutMethod || profile.paymentMethod || {};
+    if (typeof pm === "string") {
+      try { pm = JSON.parse(pm); } catch (_) { pm = {}; }
+    }
+    if ($("payMethodType")) $("payMethodType").value = pm.type || pm.method || "upi";
+    if ($("payMethodValue")) $("payMethodValue").value = pm.value || pm.account || pm.upi || "";
+    if ($("payMethodName")) $("payMethodName").value = pm.name || pm.fullName || "";
+    if ($("payMethodIfsc")) $("payMethodIfsc").value = pm.ifsc || "";
+    toggleIfsc();
+    sheet.classList.remove("hidden");
+    sheet.setAttribute("aria-hidden", "false");
+  }
+  function closePaymentMethodSheet() {
+    var sheet = $("paymentMethodSheet");
+    if (!sheet) return;
+    sheet.classList.add("hidden");
+    sheet.setAttribute("aria-hidden", "true");
+  }
+  function toggleIfsc() {
+    var ty = ($("payMethodType") && $("payMethodType").value) || "upi";
+    var w = $("payIfscWrap");
+    if (w) w.classList.toggle("hidden", ty !== "bank");
+  }
+  async function savePaymentMethod() {
+    if (!user || !db) {
+      toast("Login required");
+      return;
+    }
+    var type = ($("payMethodType") && $("payMethodType").value) || "upi";
+    var value = (($("payMethodValue") && $("payMethodValue").value) || "").trim();
+    var name = (($("payMethodName") && $("payMethodName").value) || "").trim();
+    var ifsc = (($("payMethodIfsc") && $("payMethodIfsc").value) || "").trim().toUpperCase();
+    if (!value || value.length < 4) {
+      toast("Enter account / UPI / details");
+      return;
+    }
+    if (!name) {
+      toast("Enter full name on account");
+      return;
+    }
+    if (type === "bank" && ifsc && !/^[A-Z]{4}0[A-Z0-9]{6}$/.test(ifsc)) {
+      toast("Invalid IFSC");
+      return;
+    }
+    var payload = {
+      type: type,
+      method: type,
+      value: value,
+      account: value,
+      name: name,
+      fullName: name,
+      ifsc: type === "bank" ? ifsc : null,
+      updatedAt: Date.now()
+    };
+    try {
+      await db.ref("users/" + user.uid).update({
+        payoutMethod: payload,
+        paymentMethod: payload
+      });
+      // also mirror for monetization page
+      await db.ref("earnings/" + user.uid + "/payoutMethod").set(payload).catch(function () {});
+      profile.payoutMethod = payload;
+      profile.paymentMethod = payload;
+      try { localStorage.setItem("viewora_payout_method", JSON.stringify(payload)); } catch (_) {}
+      toast("Payment method saved");
+      closePaymentMethodSheet();
+      var openId = $("catBody") && $("catBody").getAttribute("data-cat-id");
+      if (openId === "payments") {
+        $("catBody").innerHTML = buildCategory("payments");
+        $("catBody").setAttribute("data-cat-id", "payments");
+        wireCategoryBody("payments");
+      }
+    } catch (e) {
+      console.error(e);
+      toast(e.message || "Could not save");
+    }
+  }
+
+if (window.firebase && firebase.apps && firebase.apps.length) boot();
   else setTimeout(boot, 120);
+})();
+
+/* VIEWORA_PAY_DELEGATE */
+(function () {
+  document.addEventListener("click", function (e) {
+    var t = e.target.closest("#btnPayoutMethod, [data-close-payment]");
+    if (!t) return;
+    if (t.id === "btnPayoutMethod") {
+      e.preventDefault();
+      if (typeof openPaymentMethodSheet === "function") openPaymentMethodSheet();
+    }
+    if (t.getAttribute("data-close-payment")) {
+      if (typeof closePaymentMethodSheet === "function") closePaymentMethodSheet();
+    }
+  });
+  document.addEventListener("change", function (e) {
+    if (e.target && e.target.id === "payMethodType") {
+      if (typeof toggleIfsc === "function") toggleIfsc();
+    }
+  });
+  document.addEventListener("click", function (e) {
+    if (e.target && (e.target.id === "payMethodSave" || e.target.closest("#payMethodSave"))) {
+      e.preventDefault();
+      if (typeof savePaymentMethod === "function") savePaymentMethod();
+    }
+  });
 })();

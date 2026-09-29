@@ -1079,23 +1079,36 @@ async function createNotification(
 
 
         /*------------------------------------------
-          CREATE UNIQUE ID
+          DETERMINISTIC KEY for likes/follows (no spam)
+          else push key for comments / unique events
         ------------------------------------------*/
 
-        const notificationKey =
-            notificationsRef(toUid)
-                .push()
-                .key;
-
+        var notificationKey = null;
+        var tLow = String(type || "").toLowerCase();
+        var contentId = postId || storyId || (extra && (extra.contentId || extra.videoId || extra.shortId)) || "";
+        // like / unlike style → one notif per actor+content
+        if (
+            (tLow.indexOf("like") >= 0 || tLow === "liked" || tLow.indexOf("reaction") >= 0) &&
+            fromUid && contentId
+        ) {
+            notificationKey = String(fromUid) + "_like_" + String(contentId);
+        } else if (
+            (tLow === "follow" || tLow === "followed") &&
+            fromUid
+        ) {
+            notificationKey = String(fromUid) + "_follow";
+        } else if (
+            (tLow.indexOf("follow_request") >= 0) &&
+            fromUid
+        ) {
+            notificationKey = String(fromUid) + "_follow_request";
+        } else {
+            notificationKey = notificationsRef(toUid).push().key;
+        }
 
         if (!notificationKey) {
-
-            console.error(
-                "❌ Could not create notification key"
-            );
-
+            console.error("❌ Could not create notification key");
             return false;
-
         }
 
 
