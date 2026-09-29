@@ -2624,8 +2624,24 @@ function safeNumber(value) {
                     title: entry.title || "Video",
                     thumb: entry.thumb || "",
                     ownerName: entry.ownerName || "",
+                    progress: Math.min(1, Math.max(0, Number(entry.progress) || 0.05)),
                     at: Date.now()
                 };
+                // also write progress map for home red line
+                try {
+                  if (window.VieworaRecordWatch && window.VieworaRecordWatch !== arguments.callee) {
+                    /* may be replaced by index helper */
+                  }
+                  var KEY = "viewora_watch_progress";
+                  var map = {};
+                  try { map = JSON.parse(localStorage.getItem(KEY) || "{}") || {}; } catch (_) {}
+                  var k = row.type + ":" + row.videoId;
+                  var prev = map[k] || {};
+                  map[k] = Object.assign({}, prev, row, {
+                    progress: Math.max(Number(prev.progress) || 0, row.progress)
+                  });
+                  localStorage.setItem(KEY, JSON.stringify(map));
+                } catch (_) {}
                 // local
                 let arr = [];
                 try {
@@ -3298,42 +3314,69 @@ function safeNumber(value) {
         try {
 
             let data = {};
+            function mergePosts(src) {
+                if (!src || typeof src !== "object") return;
+                Object.keys(src).forEach(function (id) {
+                    if (!data[id]) data[id] = src[id];
+                });
+            }
+            function ownerMatch(p) {
+                if (!p || typeof p !== "object") return false;
+                var owner = String(
+                    p.uid || p.userId || p.ownerId || p.authorId || p.creatorId || p.by || ""
+                );
+                return owner === String(profileUID);
+            }
+            // 1) posts ordered by uid
             try {
                 const snapshot = await postsRef()
                     .orderByChild("uid")
                     .equalTo(profileUID)
                     .once("value");
-                data = snapshot.val() || {};
+                mergePosts(snapshot.val());
             } catch (e1) {
                 console.warn("posts by uid", e1);
             }
-            // Fallback: userId field
-            if (!data || !Object.keys(data).length) {
-                try {
-                    const snap2 = await postsRef()
-                        .orderByChild("userId")
-                        .equalTo(profileUID)
-                        .once("value");
-                    data = snap2.val() || {};
-                } catch (e2) {
-                    console.warn("posts by userId", e2);
-                }
+            // 2) posts by userId
+            try {
+                const snap2 = await postsRef()
+                    .orderByChild("userId")
+                    .equalTo(profileUID)
+                    .once("value");
+                mergePosts(snap2.val());
+            } catch (e2) {
+                console.warn("posts by userId", e2);
             }
-            // Fallback: scan last posts (no index)
-            if (!data || !Object.keys(data).length) {
+            // 3) users/{uid}/posts mirror
+            try {
+                const snapU = await db.ref("users/" + profileUID + "/posts").once("value");
+                mergePosts(snapU.val());
+            } catch (eU) {
+                console.warn("users posts", eU);
+            }
+            // 4) users/{uid}/userPosts
+            try {
+                const snapUP = await db.ref("users/" + profileUID + "/userPosts").once("value");
+                mergePosts(snapUP.val());
+            } catch (_) {}
+            // 5) wide scan posts (no index) — always merge owner matches
+            try {
+                const snap3 = await postsRef().limitToLast(200).once("value");
+                const all = snap3.val() || {};
+                const filtered = {};
+                Object.keys(all).forEach(function (id) {
+                    if (ownerMatch(all[id])) filtered[id] = all[id];
+                });
+                mergePosts(filtered);
+            } catch (e3) {
+                console.warn("posts scan", e3);
+            }
+            // 6) If still empty, scan once more without limit via child keys of user feed
+            if (!Object.keys(data).length) {
                 try {
-                    const snap3 = await postsRef().limitToLast(80).once("value");
-                    const all = snap3.val() || {};
-                    const filtered = {};
-                    Object.keys(all).forEach(function (id) {
-                        const p = all[id] || {};
-                        const owner = p.uid || p.userId || p.ownerId || p.authorId || "";
-                        if (owner === profileUID) filtered[id] = p;
-                    });
-                    data = filtered;
-                } catch (e3) {
-                    console.warn("posts scan", e3);
-                }
+                    const feed = await db.ref("userFeeds/" + profileUID + "/posts").limitToLast(50).once("value");
+                    mergePosts(feed.val());
+                } catch (_) {}
             }
 
             const items =
@@ -6455,3 +6498,13 @@ function safeNumber(value) {
 
 
 })();
+
+/* Refresh DP/banner when edit-profile saves */
+window.addEventListener("storage", function (e) {
+  try {
+    if (!e || !e.key) return;
+    if (e.key === "viewora_profile_updated" || e.key === "viewora_my_avatar" || e.key === "viewora_my_banner") {
+      setTimeout(function () { location.reload(); }, 200);
+    }
+  } catch (_) {}
+});

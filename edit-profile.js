@@ -307,15 +307,32 @@
   function openCrop(file, kind) {
     cropKind = kind === "banner" ? "banner" : "avatar";
     var modal = $("cropModal");
-    var stage = document.querySelector(".cropStage");
+    var stage = document.querySelector(".cropStage") || $("cropStage");
     if (stage) stage.classList.toggle("banner", cropKind === "banner");
-    $("cropTitle").textContent = cropKind === "banner" ? "Crop banner" : "Crop photo";
-    $("cropHint").textContent =
-      cropKind === "banner" ? "3:1 banner · drag & zoom" : "Square photo · drag & zoom";
+    var guides = $("cropGuides");
+    if (guides) {
+      if (cropKind === "banner") {
+        guides.hidden = false;
+        guides.removeAttribute("hidden");
+        guides.style.display = "block";
+      } else {
+        guides.hidden = true;
+        guides.style.display = "none";
+      }
+    }
+    var title = $("cropTitle");
+    if (title) title.textContent = cropKind === "banner" ? "Crop banner" : "Crop photo";
+    var hint = $("cropHint");
+    if (hint) {
+      hint.textContent = cropKind === "banner"
+        ? "Banner looks different on TV, Desktop & phones. Drag to fit safe area."
+        : "Move and zoom · circular crop like YouTube";
+    }
     cropScale = 1;
     cropPanX = 0;
     cropPanY = 0;
-    $("cropZoom").value = "1";
+    var zoom = $("cropZoom");
+    if (zoom) zoom.value = "1";
     cropImg = new Image();
     cropImg.onload = function () {
       drawCrop();

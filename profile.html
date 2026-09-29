@@ -2884,7 +2884,7 @@ html[data-theme="light"] .historyOpenBtn { color: rgba(0,0,0,.45); }
 
             <!-- Name -->
 
-            <h1 id="profileName">
+            <h1 id="profileName" data-no-i18n="1">
 
                 Loading...
 
@@ -2906,7 +2906,7 @@ html[data-theme="light"] .historyOpenBtn { color: rgba(0,0,0,.45); }
             <!-- Username -->
 
             <p
-                id="profileUsername"
+                id="profileUsername" data-no-i18n="1"
                 class="username"
             >
                 @loading
@@ -2916,7 +2916,7 @@ html[data-theme="light"] .historyOpenBtn { color: rgba(0,0,0,.45); }
             <!-- Bio -->
 
             <p
-                id="profileBio"
+                id="profileBio" data-no-i18n="1"
                 class="bio"
             >
                 Welcome to Viewora 🚀
@@ -2970,9 +2970,7 @@ html[data-theme="light"] .historyOpenBtn { color: rgba(0,0,0,.45); }
                         0
                     </h2>
 
-                    <span>
-                        Posts
-                    </span>
+                    <span data-i18n="Posts">Posts</span>
 
                 </button>
 
@@ -2988,9 +2986,7 @@ html[data-theme="light"] .historyOpenBtn { color: rgba(0,0,0,.45); }
                         0
                     </h2>
 
-                    <span>
-                        Followers
-                    </span>
+                    <span data-i18n="Followers">Followers</span>
 
                 </button>
 
@@ -3006,9 +3002,7 @@ html[data-theme="light"] .historyOpenBtn { color: rgba(0,0,0,.45); }
                         0
                     </h2>
 
-                    <span>
-                        Following
-                    </span>
+                    <span data-i18n="Following">Following</span>
 
                 </button>
 
@@ -3024,9 +3018,7 @@ html[data-theme="light"] .historyOpenBtn { color: rgba(0,0,0,.45); }
                         0
                     </h2>
 
-                    <span>
-                        Videos
-                    </span>
+                    <span data-i18n="Videos">Videos</span>
 
                 </button>
 
@@ -3071,9 +3063,7 @@ html[data-theme="light"] .historyOpenBtn { color: rgba(0,0,0,.45); }
 
                     <i class="fa-solid fa-pen"></i>
 
-                    <span>
-                        Edit Profile
-                    </span>
+                    <span data-i18n="Edit Profile">Edit Profile</span>
 
                 </a>
 
@@ -3193,7 +3183,7 @@ html[data-theme="light"] .historyOpenBtn { color: rgba(0,0,0,.45); }
             <div id="storiesWrapper" class="storiesWrapper">
                 <div id="newStoryItem" class="storyItem ownerOnly">
                     <div class="storyCircle addStory"><i class="fa-solid fa-plus"></i></div>
-                    <p>New</p>
+                    <p data-i18n="New">New</p>
                 </div>
             </div>
         </section>
@@ -3207,10 +3197,10 @@ html[data-theme="light"] .historyOpenBtn { color: rgba(0,0,0,.45); }
 
             <div class="sectionHeader highlightsHeaderRow hlHistTabs">
                 <div class="hlHistTabBar ownerOnly" id="hlHistTabBar" hidden>
-                    <button type="button" class="hlHistTab active" data-pane="highlights" id="tabHighlights">Highlights</button>
-                    <button type="button" class="hlHistTab" data-pane="history" id="tabHistory">History</button>
+                    <button type="button" class="hlHistTab active" data-pane="highlights" id="tabHighlights" data-i18n="Highlights">Highlights</button>
+                    <button type="button" class="hlHistTab" data-pane="history" id="tabHistory" data-i18n="History">History</button>
                 </div>
-                <h3 class="hlOnlyTitle" id="hlOnlyTitle">Highlights</h3>
+                <h3 class="hlOnlyTitle" id="hlOnlyTitle" data-i18n="Highlights">Highlights</h3>
                 <a class="historyOpenBtn ownerOnly" href="history.html" id="openWatchHistoryBtn" hidden title="View all history">
                     <span>View all</span>
                     <i class="fa-solid fa-chevron-right"></i>
@@ -3249,9 +3239,7 @@ html[data-theme="light"] .historyOpenBtn { color: rgba(0,0,0,.45); }
 
                 <i class="fa-solid fa-table-cells-large"></i>
 
-                <span>
-                    Posts
-                </span>
+                <span data-i18n="Posts">Posts</span>
 
             </button>
 
@@ -3264,9 +3252,7 @@ html[data-theme="light"] .historyOpenBtn { color: rgba(0,0,0,.45); }
 
                 <i class="fa-solid fa-clapperboard"></i>
 
-                <span>
-                    Shorts
-                </span>
+                <span data-i18n="Shorts">Shorts</span>
 
             </button>
 
@@ -3279,9 +3265,7 @@ html[data-theme="light"] .historyOpenBtn { color: rgba(0,0,0,.45); }
 
                 <i class="fa-solid fa-video"></i>
 
-                <span>
-                    Videos
-                </span>
+                <span data-i18n="Videos">Videos</span>
 
             </button>
 
@@ -3294,9 +3278,7 @@ html[data-theme="light"] .historyOpenBtn { color: rgba(0,0,0,.45); }
 
                 <i class="fa-solid fa-tower-broadcast"></i>
 
-                <span>
-                    Live
-                </span>
+                <span data-i18n="Live">Live</span>
 
             </button>
 
@@ -3309,9 +3291,7 @@ html[data-theme="light"] .historyOpenBtn { color: rgba(0,0,0,.45); }
 
                 <i class="fa-solid fa-bookmark"></i>
 
-                <span>
-                    Saved
-                </span>
+                <span data-i18n="Saved">Saved</span>
 
             </button>
 
@@ -3347,13 +3327,9 @@ html[data-theme="light"] .historyOpenBtn { color: rgba(0,0,0,.45); }
 
                         <i class="fa-regular fa-images"></i>
 
-                        <strong>
-                            No posts yet
-                        </strong>
+                        <strong data-i18n="No posts yet">No posts yet</strong>
 
-                        <span>
-                            Posts will appear here.
-                        </span>
+                        <span data-i18n="Posts will appear here.">Posts will appear here.</span>
 
                     </div>
 
@@ -3550,9 +3526,7 @@ html[data-theme="light"] .historyOpenBtn { color: rgba(0,0,0,.45); }
 
                 <i class="fa-solid fa-clapperboard"></i>
 
-                <span>
-                    Shorts
-                </span>
+                <span data-i18n="Shorts">Shorts</span>
 
             </a>
 
@@ -4671,6 +4645,13 @@ if (window.auth) {
     </script>
 
   <script src="theme.js"></script>
+<script>
+(function(){
+  function re(){ try{ if(window.VieworaTheme){ VieworaTheme.setLang(VieworaTheme.getLang()); VieworaTheme.setFont(VieworaTheme.getFont()); } }catch(e){} }
+  if(document.readyState==="loading") document.addEventListener("DOMContentLoaded", function(){ setTimeout(re, 300); setTimeout(re, 1200); });
+  else { setTimeout(re, 300); setTimeout(re, 1200); }
+})();
+</script>
 </body>
 
 </html>

@@ -391,3 +391,134 @@ html[data-theme="light"] .toast {
 .cropModal { display: none; position: fixed; inset: 0; z-index: 99999; background: rgba(0,0,0,.85); align-items: flex-end; justify-content: center; }
 .cropModal:not(.hidden) { display: flex !important; }
 .cropSheet { width: 100%; max-width: 520px; background: #121212; border-radius: 16px 16px 0 0; padding: 12px 16px calc(16px + env(safe-area-inset-bottom)); }
+
+
+/* VIEWORA_YT_CROP — YouTube-style avatar circle + banner guides */
+.cropStage {
+  position: relative !important;
+  overflow: hidden !important;
+  background: #0a0a0a !important;
+  border-radius: 12px;
+  touch-action: none;
+  max-height: 62vh;
+}
+.cropStage:not(.banner) {
+  aspect-ratio: 1 / 1 !important;
+  width: min(92vw, 360px);
+  margin: 0 auto;
+}
+.cropStage.banner {
+  aspect-ratio: 16 / 9 !important;
+  width: 100%;
+  max-width: 100%;
+}
+.cropStage canvas {
+  width: 100% !important;
+  height: 100% !important;
+  display: block;
+}
+/* Circular mask for DP (YouTube style) */
+.cropStage:not(.banner) .cropMask {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 4;
+  background: rgba(0,0,0,0.55);
+  -webkit-mask-image: radial-gradient(circle closest-side at center, transparent 49.5%, #000 50.5%);
+  mask-image: radial-gradient(circle closest-side at center, transparent 49.5%, #000 50.5%);
+}
+.cropStage:not(.banner) .cropMask::after {
+  content: "";
+  position: absolute;
+  left: 50%; top: 50%;
+  width: 70%; height: 70%;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  border: 2px solid rgba(255,255,255,0.85);
+  box-shadow: 0 0 0 1px rgba(0,0,0,0.3);
+}
+.cropStage.banner .cropMask { display: none; }
+
+/* Banner multi-device guides (YouTube channel art) */
+.cropGuides {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+}
+.cropGuides .guide {
+  position: absolute;
+  border: 1px solid rgba(255,255,255,0.35);
+  box-sizing: border-box;
+}
+.cropGuides .guide span {
+  position: absolute;
+  left: 6px; top: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  color: #fff;
+  background: rgba(0,0,0,0.55);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+/* TV = full frame */
+.guide-tv { inset: 0; border-color: rgba(255,255,255,0.25); }
+/* Desktop = center ~68% height band */
+.guide-desktop {
+  left: 0; right: 0;
+  top: 16%;
+  height: 68%;
+  border-color: rgba(255,255,255,0.55);
+}
+/* All devices = safer center ~42% */
+.guide-all {
+  left: 18%; right: 18%;
+  top: 28%;
+  height: 44%;
+  border-color: rgba(66, 133, 244, 0.9);
+  background: rgba(66, 133, 244, 0.06);
+}
+.cropSheet {
+  width: 100%;
+  max-width: 480px;
+  background: #121218;
+  border-radius: 18px 18px 0 0;
+  padding: 12px 14px calc(18px + env(safe-area-inset-bottom));
+}
+.cropHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.cropTextBtn {
+  border: 0;
+  background: transparent;
+  color: #9aa0b0;
+  font-weight: 600;
+  font-size: 14px;
+  padding: 8px 10px;
+}
+.cropTextBtn.done {
+  color: #7c5cff;
+  font-weight: 800;
+}
+.cropHint {
+  text-align: center;
+  font-size: 12px;
+  color: rgba(255,255,255,0.55);
+  margin: 10px 0 6px;
+}
+#cropZoom {
+  width: 100%;
+  accent-color: #7c5cff;
+}
+.cropHandle {
+  width: 18px !important;
+  height: 18px !important;
+  border-radius: 50%;
+  background: #fff !important;
+  border: 2px solid #7c5cff !important;
+  z-index: 8;
+  position: absolute;
+}

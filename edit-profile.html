@@ -144,8 +144,14 @@
       <strong id="cropTitle">Crop</strong>
       <button type="button" id="cropDone" class="cropTextBtn done">Done</button>
     </div>
-    <div class="cropStage">
+    <div class="cropStage" id="cropStage">
       <canvas id="cropCanvas"></canvas>
+      <div class="cropMask" id="cropMask"></div>
+      <div class="cropGuides" id="cropGuides" hidden>
+        <div class="guide guide-tv"><span>TV</span></div>
+        <div class="guide guide-desktop"><span>Desktop</span></div>
+        <div class="guide guide-all"><span>All devices</span></div>
+      </div>
     </div>
     <p class="cropHint" id="cropHint">Drag to position · pinch/scroll to zoom</p>
     <input type="range" id="cropZoom" min="1" max="3" step="0.01" value="1">
