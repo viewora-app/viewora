@@ -678,6 +678,10 @@ function switchSection(section) {
         loadDeletions();
     }
 
+    if (section === "settings") {
+        loadSettings();
+    }
+
     if (window.innerWidth <= 850) {
         closeSidebar();
     }
@@ -3283,14 +3287,21 @@ async function loadAnalytics() {
 
     try {
 
-        const usersSnapshot =
-            await db.ref("users").once("value");
-
-        const postsSnapshot =
-            await db.ref("posts").once("value");
-
-        const reportsSnapshot =
-            await db.ref("reports").once("value");
+        const [
+            usersSnapshot,
+            postsSnapshot,
+            reportsSnapshot,
+            shortsSnapshot,
+            videosSnapshot,
+            storiesSnapshot
+        ] = await Promise.all([
+            db.ref("users").once("value"),
+            db.ref("posts").once("value"),
+            db.ref("reports").once("value"),
+            db.ref("shorts").once("value").catch(function () { return { val: function () { return {}; } }; }),
+            db.ref("videos").once("value").catch(function () { return { val: function () { return {}; } }; }),
+            db.ref("stories").once("value").catch(function () { return { val: function () { return {}; } }; })
+        ]);
 
         const users =
             usersSnapshot.val() || {};
@@ -3300,6 +3311,15 @@ async function loadAnalytics() {
 
         const reports =
             reportsSnapshot.val() || {};
+
+        const shorts =
+            (shortsSnapshot && shortsSnapshot.val && shortsSnapshot.val()) || {};
+
+        const videos =
+            (videosSnapshot && videosSnapshot.val && videosSnapshot.val()) || {};
+
+        const stories =
+            (storiesSnapshot && storiesSnapshot.val && storiesSnapshot.val()) || {};
 
         const period =
             Number(
@@ -3576,7 +3596,7 @@ qsa(
                 button.dataset.setting;
 
             showToast(
-                `${setting} settings will be available here.`
+                `Opened ${setting} settings.`
             );
         }
     );
@@ -5536,6 +5556,392 @@ window.VieworaAdmin = {
         }
     }
 };
+
+
+
+/* =========================================================
+   SETTINGS — FULL (appConfig + audit + export)
+========================================================= */
+
+const APP_CONFIG_PATH = "appConfig";
+const ADMIN_AUDIT_PATH = "adminAudit";
+
+async function logAdminAction(action, detail) {
+    try {
+        if (!currentAdmin) return;
+        await db.ref(ADMIN_AUDIT_PATH).push({
+            action: String(action || ""),
+            detail: String(detail || "").slice(0, 300),
+            adminUid: currentAdmin.uid,
+            adminEmail: currentAdmin.email || "",
+            createdAt: Date.now()
+        });
+    } catch (e) {
+        console.warn("audit log failed", e);
+    }
+}
+
+function setChecked(id, val) {
+    const el = $(id);
+    if (el) el.checked = !!val;
+}
+function setVal(id, val) {
+    const el = $(id);
+    if (el) el.value = val == null ? "" : String(val);
+}
+function getChecked(id) {
+    const el = $(id);
+    return el ? !!el.checked : false;
+}
+function getVal(id) {
+    const el = $(id);
+    return el ? String(el.value || "").trim() : "";
+}
+
+async function loadSettings() {
+    // Database ping
+    const dbStatus = $("databaseStatus");
+    try {
+        await db.ref(".info/connected").once("value");
+        if (dbStatus) {
+            dbStatus.textContent = "Connected";
+            dbStatus.className = "systemStatus online";
+        }
+    } catch (e) {
+        if (dbStatus) {
+            dbStatus.textContent = "Error";
+            dbStatus.className = "systemStatus offline";
+        }
+    }
+
+    const plat = $("platformStatusBadge");
+    const sess = $("adminSessionBadge");
+    if (sess) {
+        sess.textContent = currentAdmin ? "Active" : "None";
+        sess.className = "systemStatus " + (currentAdmin ? "online" : "offline");
+    }
+
+    try {
+        const snap = await db.ref(APP_CONFIG_PATH).once("value");
+        const c = snap.val() || {};
+        const ff = c.features || {};
+        const mono = c.monetization || {};
+        const mod = c.moderation || {};
+        const maint = c.maintenance || {};
+
+        setChecked("setMaintenance", maint.enabled === true);
+        setChecked("setMaintenanceHard", maint.hardLock === true);
+        setVal("setMaintenanceMsg", maint.message || "");
+
+        setChecked("ffPosts", ff.posts !== false);
+        setChecked("ffShorts", ff.shorts !== false);
+        setChecked("ffVideos", ff.videos !== false);
+        setChecked("ffLive", ff.live !== false);
+        setChecked("ffStories", ff.stories !== false);
+        setChecked("ffMonetization", ff.monetization !== false);
+        setChecked("ffSignups", ff.signups !== false);
+
+        setVal("setBannedWords", Array.isArray(mod.bannedWords) ? mod.bannedWords.join(", ") : (mod.bannedWords || ""));
+        setChecked("setAutoHideBanned", mod.autoHide === true);
+        setChecked("setRequireEmail", mod.requireEmail === true);
+
+        setVal("setMinViews", mono.minViews != null ? mono.minViews : 300000);
+        setVal("setMinFollowers", mono.minFollowers != null ? mono.minFollowers : 600);
+        setVal("setMinStories", mono.minStories != null ? mono.minStories : 100);
+
+        setVal("setMinAppVersion", c.minAppVersion || "");
+
+        if (plat) {
+            if (maint.enabled) {
+                plat.textContent = "Maintenance";
+                plat.className = "systemStatus offline";
+            } else {
+                plat.textContent = "Operational";
+                plat.className = "systemStatus online";
+            }
+        }
+
+        const bc = c.broadcast || {};
+        const bst = $("broadcastStatus");
+        if (bst) {
+            if (bc.title || bc.body) {
+                bst.textContent = "Active: " + (bc.title || "Announcement") + " · " + formatDate(bc.sentAt || Date.now());
+            } else {
+                bst.textContent = "No active broadcast";
+            }
+        }
+        if (bc.title) setVal("broadcastTitle", bc.title);
+        if (bc.body) setVal("broadcastBody", bc.body);
+
+    } catch (e) {
+        console.error("loadSettings", e);
+        showToast("Could not load settings", "error");
+    }
+
+    loadAdminAudit();
+}
+
+async function saveAllSettings() {
+    if (!currentAdmin) {
+        showToast("Not signed in as admin", "error");
+        return;
+    }
+    const bannedRaw = getVal("setBannedWords");
+    const bannedWords = bannedRaw
+        .split(/[\n,]+/)
+        .map((s) => s.trim())
+        .filter(Boolean);
+
+    const payload = {
+        updatedAt: Date.now(),
+        updatedBy: currentAdmin.uid,
+        minAppVersion: getVal("setMinAppVersion"),
+        maintenance: {
+            enabled: getChecked("setMaintenance"),
+            hardLock: getChecked("setMaintenanceHard"),
+            message: getVal("setMaintenanceMsg") || "Viewora is under maintenance. Please check back soon."
+        },
+        features: {
+            posts: getChecked("ffPosts"),
+            shorts: getChecked("ffShorts"),
+            videos: getChecked("ffVideos"),
+            live: getChecked("ffLive"),
+            stories: getChecked("ffStories"),
+            monetization: getChecked("ffMonetization"),
+            signups: getChecked("ffSignups")
+        },
+        moderation: {
+            bannedWords: bannedWords,
+            autoHide: getChecked("setAutoHideBanned"),
+            requireEmail: getChecked("setRequireEmail")
+        },
+        monetization: {
+            minViews: Number(getVal("setMinViews") || 300000),
+            minFollowers: Number(getVal("setMinFollowers") || 600),
+            minStories: Number(getVal("setMinStories") || 100)
+        }
+    };
+
+    try {
+        // merge broadcast if exists
+        const existing = (await db.ref(APP_CONFIG_PATH).once("value")).val() || {};
+        if (existing.broadcast) payload.broadcast = existing.broadcast;
+
+        await db.ref(APP_CONFIG_PATH).update(payload);
+        await logAdminAction("settings_save", "Updated appConfig");
+        showToast("Settings saved");
+        const plat = $("platformStatusBadge");
+        if (plat) {
+            if (payload.maintenance.enabled) {
+                plat.textContent = "Maintenance";
+                plat.className = "systemStatus offline";
+            } else {
+                plat.textContent = "Operational";
+                plat.className = "systemStatus online";
+            }
+        }
+    } catch (e) {
+        console.error(e);
+        showToast("Save failed: " + (e.message || e), "error");
+    }
+}
+
+async function sendBroadcast() {
+    const title = getVal("broadcastTitle");
+    const body = getVal("broadcastBody");
+    if (!title && !body) {
+        showToast("Add a title or message first", "warning");
+        return;
+    }
+    try {
+        const broadcast = {
+            title: title || "Viewora",
+            body: body || "",
+            sentAt: Date.now(),
+            sentBy: currentAdmin ? currentAdmin.uid : null
+        };
+        await db.ref(APP_CONFIG_PATH + "/broadcast").set(broadcast);
+        // Also push a system notification node for clients that listen
+        await db.ref("systemAnnouncements").push({
+            ...broadcast,
+            type: "broadcast"
+        });
+        await logAdminAction("broadcast", title || body);
+        const bst = $("broadcastStatus");
+        if (bst) bst.textContent = "Active: " + broadcast.title + " · just now";
+        showToast("Broadcast sent");
+    } catch (e) {
+        showToast("Broadcast failed: " + (e.message || e), "error");
+    }
+}
+
+async function clearBroadcast() {
+    try {
+        await db.ref(APP_CONFIG_PATH + "/broadcast").remove();
+        setVal("broadcastTitle", "");
+        setVal("broadcastBody", "");
+        const bst = $("broadcastStatus");
+        if (bst) bst.textContent = "No active broadcast";
+        await logAdminAction("broadcast_clear", "");
+        showToast("Broadcast cleared");
+    } catch (e) {
+        showToast("Clear failed", "error");
+    }
+}
+
+async function loadAdminAudit() {
+    const list = $("adminAuditList");
+    if (!list) return;
+    try {
+        const snap = await db.ref(ADMIN_AUDIT_PATH).limitToLast(40).once("value");
+        const val = snap.val() || {};
+        const rows = Object.entries(val)
+            .map(([id, v]) => ({ id, ...v }))
+            .sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0));
+        if (!rows.length) {
+            list.innerHTML = '<div class="emptyState"><span>No audit entries yet</span></div>';
+            return;
+        }
+        list.innerHTML = rows.map((r) => `
+            <div class="adminAuditItem">
+                <div>
+                    <strong>${escapeHTML(r.action || "action")}</strong>
+                    <span>${escapeHTML(r.detail || "")} · ${escapeHTML(r.adminEmail || r.adminUid || "")}</span>
+                </div>
+                <time>${escapeHTML(formatDate(r.createdAt))}</time>
+            </div>
+        `).join("");
+    } catch (e) {
+        list.innerHTML = '<div class="emptyState"><span>Unable to load audit log</span></div>';
+    }
+}
+
+function downloadCSV(filename, headers, rows) {
+    const esc = (v) => {
+        const s = String(v ?? "");
+        if (/[",\n]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
+        return s;
+    };
+    const lines = [headers.map(esc).join(",")].concat(
+        rows.map((r) => headers.map((h) => esc(r[h])).join(","))
+    );
+    const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+}
+
+async function exportUsersCSV() {
+    try {
+        showToast("Exporting users…");
+        const snap = await db.ref("users").once("value");
+        const data = snap.val() || {};
+        const rows = Object.entries(data).map(([uid, u]) => ({
+            uid,
+            username: u.username || u.displayName || "",
+            email: u.email || "",
+            role: u.role || "user",
+            followers: u.followersCount || u.followers || 0,
+            blocked: u.blocked === true || u.isBlocked === true ? "yes" : "no",
+            createdAt: u.createdAt || u.joinedAt || ""
+        }));
+        downloadCSV("viewora-users.csv", ["uid", "username", "email", "role", "followers", "blocked", "createdAt"], rows);
+        await logAdminAction("export_users", rows.length + " rows");
+        showToast("Users exported (" + rows.length + ")");
+    } catch (e) {
+        showToast("Export failed", "error");
+    }
+}
+
+async function exportPostsCSV() {
+    try {
+        showToast("Exporting posts…");
+        const snap = await db.ref("posts").once("value");
+        const data = snap.val() || {};
+        const rows = Object.entries(data).map(([id, p]) => ({
+            id,
+            uid: p.uid || p.userId || "",
+            type: p.type || "post",
+            caption: String(p.caption || p.title || "").slice(0, 120),
+            views: p.views || p.viewCount || 0,
+            likes: p.likesCount || p.likes || 0,
+            createdAt: p.createdAt || ""
+        }));
+        downloadCSV("viewora-posts.csv", ["id", "uid", "type", "caption", "views", "likes", "createdAt"], rows);
+        await logAdminAction("export_posts", rows.length + " rows");
+        showToast("Posts exported (" + rows.length + ")");
+    } catch (e) {
+        showToast("Export failed", "error");
+    }
+}
+
+async function exportReportsCSV() {
+    try {
+        showToast("Exporting reports…");
+        const snap = await db.ref("reports").once("value");
+        const data = snap.val() || {};
+        const rows = Object.entries(data).map(([id, r]) => ({
+            id,
+            targetId: r.targetId || r.postId || r.contentId || "",
+            reason: r.reason || r.type || "",
+            status: r.status || "pending",
+            reporterUid: r.reporterUid || r.uid || "",
+            createdAt: r.createdAt || ""
+        }));
+        downloadCSV("viewora-reports.csv", ["id", "targetId", "reason", "status", "reporterUid", "createdAt"], rows);
+        await logAdminAction("export_reports", rows.length + " rows");
+        showToast("Reports exported (" + rows.length + ")");
+    } catch (e) {
+        showToast("Export failed", "error");
+    }
+}
+
+// Wire settings buttons once DOM ready
+function bindSettingsControls() {
+    const saveBtn = $("saveAllSettingsBtn");
+    if (saveBtn && !saveBtn.__bound) {
+        saveBtn.__bound = true;
+        saveBtn.addEventListener("click", saveAllSettings);
+    }
+    const sendBc = $("sendBroadcastBtn");
+    if (sendBc && !sendBc.__bound) {
+        sendBc.__bound = true;
+        sendBc.addEventListener("click", sendBroadcast);
+    }
+    const clearBc = $("clearBroadcastBtn");
+    if (clearBc && !clearBc.__bound) {
+        clearBc.__bound = true;
+        clearBc.addEventListener("click", clearBroadcast);
+    }
+    const expU = $("exportUsersBtn");
+    if (expU && !expU.__bound) {
+        expU.__bound = true;
+        expU.addEventListener("click", exportUsersCSV);
+    }
+    const expP = $("exportPostsBtn");
+    if (expP && !expP.__bound) {
+        expP.__bound = true;
+        expP.addEventListener("click", exportPostsCSV);
+    }
+    const expR = $("exportReportsBtn");
+    if (expR && !expR.__bound) {
+        expR.__bound = true;
+        expR.addEventListener("click", exportReportsCSV);
+    }
+    const aud = $("refreshAuditBtn");
+    if (aud && !aud.__bound) {
+        aud.__bound = true;
+        aud.addEventListener("click", loadAdminAudit);
+    }
+}
+
+document.addEventListener("DOMContentLoaded", bindSettingsControls);
+if (document.readyState !== "loading") {
+    try { bindSettingsControls(); } catch (_) {}
+}
+
 
 /* =========================================================
    END

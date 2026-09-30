@@ -1739,154 +1739,194 @@
     class="adminSection"
 >
 
-
     <div class="sectionHeader">
-
         <div>
+            <h2>Admin Settings</h2>
+            <p>Platform controls, features, announcements &amp; data tools.</p>
+        </div>
+        <button type="button" id="saveAllSettingsBtn" class="secondaryBtn">
+            <i class="fa-solid fa-floppy-disk"></i>
+            Save all
+        </button>
+    </div>
 
-            <h2>
-                Admin Settings
-            </h2>
+    <div class="settingsFullGrid">
 
-            <p>
-                Configure your Viewora administration environment.
-            </p>
+        <!-- Maintenance -->
+        <div class="settingsPanelCard">
+            <div class="settingsPanelHead">
+                <div class="settingsCardIcon"><i class="fa-solid fa-screwdriver-wrench"></i></div>
+                <div>
+                    <h3>Maintenance mode</h3>
+                    <p>Show a banner or lock the app for users.</p>
+                </div>
+            </div>
+            <label class="settingsToggleRow">
+                <span>Enable maintenance mode</span>
+                <input type="checkbox" id="setMaintenance" />
+            </label>
+            <label class="settingsField">
+                <span>Message shown to users</span>
+                <textarea id="setMaintenanceMsg" rows="2" placeholder="We're upgrading Viewora. Back soon."></textarea>
+            </label>
+            <label class="settingsToggleRow">
+                <span>Hard lock (block all non-admin pages)</span>
+                <input type="checkbox" id="setMaintenanceHard" />
+            </label>
+        </div>
 
+        <!-- Feature flags -->
+        <div class="settingsPanelCard">
+            <div class="settingsPanelHead">
+                <div class="settingsCardIcon"><i class="fa-solid fa-toggle-on"></i></div>
+                <div>
+                    <h3>Feature flags</h3>
+                    <p>Turn major features on or off instantly.</p>
+                </div>
+            </div>
+            <label class="settingsToggleRow"><span>Posts</span><input type="checkbox" id="ffPosts" checked /></label>
+            <label class="settingsToggleRow"><span>Shorts</span><input type="checkbox" id="ffShorts" checked /></label>
+            <label class="settingsToggleRow"><span>Long videos</span><input type="checkbox" id="ffVideos" checked /></label>
+            <label class="settingsToggleRow"><span>Live streaming</span><input type="checkbox" id="ffLive" checked /></label>
+            <label class="settingsToggleRow"><span>Stories</span><input type="checkbox" id="ffStories" checked /></label>
+            <label class="settingsToggleRow"><span>Monetization</span><input type="checkbox" id="ffMonetization" checked /></label>
+            <label class="settingsToggleRow"><span>New signups open</span><input type="checkbox" id="ffSignups" checked /></label>
+        </div>
+
+        <!-- Broadcast -->
+        <div class="settingsPanelCard">
+            <div class="settingsPanelHead">
+                <div class="settingsCardIcon"><i class="fa-solid fa-bullhorn"></i></div>
+                <div>
+                    <h3>Broadcast announcement</h3>
+                    <p>Push a global notice to all logged-in users.</p>
+                </div>
+            </div>
+            <label class="settingsField">
+                <span>Title</span>
+                <input type="text" id="broadcastTitle" maxlength="80" placeholder="Viewora update" />
+            </label>
+            <label class="settingsField">
+                <span>Message</span>
+                <textarea id="broadcastBody" rows="3" maxlength="500" placeholder="Tell creators about a new feature…"></textarea>
+            </label>
+            <div class="settingsActionsRow">
+                <button type="button" id="sendBroadcastBtn" class="primaryBtn">
+                    <i class="fa-solid fa-paper-plane"></i> Send now
+                </button>
+                <button type="button" id="clearBroadcastBtn" class="ghostBtn">Clear active</button>
+            </div>
+            <p class="settingsHint" id="broadcastStatus">No active broadcast</p>
+        </div>
+
+        <!-- Moderation -->
+        <div class="settingsPanelCard">
+            <div class="settingsPanelHead">
+                <div class="settingsCardIcon"><i class="fa-solid fa-ban"></i></div>
+                <div>
+                    <h3>Content moderation</h3>
+                    <p>Blocked words (comma or new-line separated).</p>
+                </div>
+            </div>
+            <label class="settingsField">
+                <span>Banned words / phrases</span>
+                <textarea id="setBannedWords" rows="4" placeholder="spam, scam, …"></textarea>
+            </label>
+            <label class="settingsToggleRow">
+                <span>Auto-hide posts matching banned words</span>
+                <input type="checkbox" id="setAutoHideBanned" />
+            </label>
+            <label class="settingsToggleRow">
+                <span>Require email verification for posting</span>
+                <input type="checkbox" id="setRequireEmail" />
+            </label>
+        </div>
+
+        <!-- Monetization policy -->
+        <div class="settingsPanelCard">
+            <div class="settingsPanelHead">
+                <div class="settingsCardIcon"><i class="fa-solid fa-coins"></i></div>
+                <div>
+                    <h3>Monetization policy</h3>
+                    <p>Eligibility thresholds (editable).</p>
+                </div>
+            </div>
+            <div class="settingsInline3">
+                <label class="settingsField">
+                    <span>Min views</span>
+                    <input type="number" id="setMinViews" min="0" step="1000" value="300000" />
+                </label>
+                <label class="settingsField">
+                    <span>Min followers</span>
+                    <input type="number" id="setMinFollowers" min="0" value="600" />
+                </label>
+                <label class="settingsField">
+                    <span>Min stories</span>
+                    <input type="number" id="setMinStories" min="0" value="100" />
+                </label>
+            </div>
+        </div>
+
+        <!-- System -->
+        <div class="settingsPanelCard">
+            <div class="settingsPanelHead">
+                <div class="settingsCardIcon"><i class="fa-solid fa-database"></i></div>
+                <div>
+                    <h3>System status</h3>
+                    <p>Firebase &amp; platform health.</p>
+                </div>
+            </div>
+            <div class="settingsStatusRow">
+                <span>Database</span>
+                <span id="databaseStatus" class="systemStatus">Checking…</span>
+            </div>
+            <div class="settingsStatusRow">
+                <span>Platform</span>
+                <span id="platformStatusBadge" class="systemStatus online">Operational</span>
+            </div>
+            <div class="settingsStatusRow">
+                <span>Admin session</span>
+                <span id="adminSessionBadge" class="systemStatus online">Active</span>
+            </div>
+            <label class="settingsField">
+                <span>Min app version message (optional)</span>
+                <input type="text" id="setMinAppVersion" placeholder="e.g. 1.2.0 — force update text" />
+            </label>
+        </div>
+
+        <!-- Data tools -->
+        <div class="settingsPanelCard">
+            <div class="settingsPanelHead">
+                <div class="settingsCardIcon"><i class="fa-solid fa-file-export"></i></div>
+                <div>
+                    <h3>Data tools</h3>
+                    <p>Export snapshots for backup or analysis.</p>
+                </div>
+            </div>
+            <div class="settingsActionsRow">
+                <button type="button" id="exportUsersBtn" class="secondaryBtn"><i class="fa-solid fa-users"></i> Export users CSV</button>
+                <button type="button" id="exportPostsBtn" class="secondaryBtn"><i class="fa-solid fa-images"></i> Export posts CSV</button>
+                <button type="button" id="exportReportsBtn" class="secondaryBtn"><i class="fa-solid fa-flag"></i> Export reports CSV</button>
+            </div>
+            <p class="settingsHint">Exports run in your browser from live Firebase data.</p>
+        </div>
+
+        <!-- Audit -->
+        <div class="settingsPanelCard settingsPanelWide">
+            <div class="settingsPanelHead">
+                <div class="settingsCardIcon"><i class="fa-solid fa-clock-rotate-left"></i></div>
+                <div>
+                    <h3>Recent admin actions</h3>
+                    <p>Last actions from this panel (stored in Firebase).</p>
+                </div>
+                <button type="button" id="refreshAuditBtn" class="ghostBtn"><i class="fa-solid fa-rotate"></i></button>
+            </div>
+            <div id="adminAuditList" class="adminAuditList">
+                <div class="emptyState"><span>No audit entries yet</span></div>
+            </div>
         </div>
 
     </div>
-
-
-    <div class="settingsGrid">
-
-
-        <div class="settingsCard">
-
-            <div class="settingsCardIcon">
-
-                <i class="fa-solid fa-shield-halved"></i>
-
-            </div>
-
-            <div>
-
-                <h3>
-                    Security
-                </h3>
-
-                <p>
-                    Admin authentication and access controls.
-                </p>
-
-            </div>
-
-            <button
-                class="settingsArrow"
-                data-setting="security"
-            >
-
-                <i class="fa-solid fa-chevron-right"></i>
-
-            </button>
-
-        </div>
-
-
-        <div class="settingsCard">
-
-            <div class="settingsCardIcon">
-
-                <i class="fa-solid fa-bell"></i>
-
-            </div>
-
-            <div>
-
-                <h3>
-                    Notifications
-                </h3>
-
-                <p>
-                    Configure admin alerts and notifications.
-                </p>
-
-            </div>
-
-            <button
-                class="settingsArrow"
-                data-setting="notifications"
-            >
-
-                <i class="fa-solid fa-chevron-right"></i>
-
-            </button>
-
-        </div>
-
-
-        <div class="settingsCard">
-
-            <div class="settingsCardIcon">
-
-                <i class="fa-solid fa-database"></i>
-
-            </div>
-
-            <div>
-
-                <h3>
-                    Database
-                </h3>
-
-                <p>
-                    View your Firebase connection status.
-                </p>
-
-            </div>
-
-            <span
-                id="databaseStatus"
-                class="systemStatus"
-            >
-
-                Checking...
-
-            </span>
-
-        </div>
-
-
-        <div class="settingsCard">
-
-            <div class="settingsCardIcon">
-
-                <i class="fa-solid fa-server"></i>
-
-            </div>
-
-            <div>
-
-                <h3>
-                    Platform Status
-                </h3>
-
-                <p>
-                    Current Viewora system status.
-                </p>
-
-            </div>
-
-            <span class="systemStatus online">
-
-                Operational
-
-            </span>
-
-        </div>
-
-
-    </div>
-
 
 </section>
 
