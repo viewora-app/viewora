@@ -275,6 +275,84 @@
     processing = false;
   }
 
+  function uploadFirebaseStorage(file, onProgress) {
+    return new Promise((resolve, reject) => {
+      try {
+        if (typeof firebase === "undefined" || typeof firebase.storage !== "function") {
+          reject(new Error("Firebase Storage SDK missing. Check firebase.js includes storage."));
+          return;
+        }
+        var authUser = null;
+        try { authUser = firebase.auth() && firebase.auth().currentUser; } catch (_) {}
+        if (!authUser) {
+          reject(new Error("Login required to upload"));
+          return;
+        }
+        var storage = firebase.storage();
+        var safeName = String((file && file.name) || "file")
+          .replace(/[^a-zA-Z0-9._-]/g, "_")
+          .slice(0, 80);
+        var path =
+          "viewora/" +
+          authUser.uid +
+          "/" +
+          Date.now() +
+          "_" +
+          Math.random().toString(36).slice(2, 8) +
+          "_" +
+          safeName;
+        var ref = storage.ref(path);
+        var metadata = {
+          contentType: (file && file.type) || "application/octet-stream",
+          customMetadata: { app: "viewora" }
+        };
+        var task = ref.put(file, metadata);
+        activeXhr = {
+          abort: function () {
+            try { task.cancel(); } catch (_) {}
+          }
+        };
+        task.on(
+          "state_changed",
+          function (snap) {
+            if (onProgress && snap.totalBytes) {
+              onProgress(Math.round((snap.bytesTransferred / snap.totalBytes) * 100));
+            }
+          },
+          function (err) {
+            activeXhr = null;
+            var code = (err && err.code) || "";
+            var msg = (err && err.message) || "Storage upload failed";
+            if (code.indexOf("unauthorized") !== -1 || code.indexOf("permission") !== -1) {
+              msg = "Storage permission denied — set Firebase Storage rules for viewora/**";
+            }
+            reject(new Error(msg));
+          },
+          function () {
+            activeXhr = null;
+            task.snapshot.ref
+              .getDownloadURL()
+              .then(function (url) {
+                resolve({
+                  secure_url: url,
+                  url: url,
+                  public_id: path,
+                  bytes: (file && file.size) || 0,
+                  resource_type: String((file && file.type) || "").indexOf("video") === 0 ? "video" : "image",
+                  _provider: "firebase"
+                });
+              })
+              .catch(function (e) {
+                reject(e || new Error("Could not get download URL"));
+              });
+          }
+        );
+      } catch (e) {
+        reject(e);
+      }
+    });
+  }
+
   function uploadCloudinary(file, onProgress) {
     return new Promise((resolve, reject) => {
       const url = "https://api.cloudinary.com/v1_1/" + CLOUD + "/auto/upload";
@@ -313,6 +391,22 @@
       xhr.send(fd);
     });
   }
+
+  /** ALWAYS use Firebase Storage first — Cloudinary cloud is disabled */
+  async function uploadMedia(file, onProgress) {
+    try {
+      return await uploadFirebaseStorage(file, onProgress);
+    } catch (err) {
+      console.warn("[VIEWORA] Storage failed:", err && err.message);
+      // Only try Cloudinary if explicitly forced (account must be active)
+      if (window.VIEWORA_FORCE_CLOUDINARY === true || window.VIEWORA_FORCE_CLOUDINARY === "1") {
+        if (onProgress) onProgress(0);
+        return await uploadCloudinary(file, onProgress);
+      }
+      throw err;
+    }
+  }
+
 
   /** Capture frame at ~1.5–2s for thumbnail */
   function captureVideoThumb(blob, atSec) {
@@ -728,7 +822,7 @@
       try {
         const thumbBlob = await captureVideoThumb(file, 1.5);
         if (thumbBlob && !cancelRequested) {
-          const thumbMedia = await uploadCloudinary(thumbBlob, () => {});
+          const thumbMedia = await uploadMedia(thumbBlob, () => {});
           thumbUrl = thumbMedia.secure_url || "";
         }
       } catch (e) {
@@ -745,7 +839,7 @@
       for (let i = 0; i < job.blobs.length; i++) {
         if (cancelRequested) throw new Error("cancelled");
         const b = job.blobs[i];
-        const m = await uploadCloudinary(b, (p) => {
+        const m = await uploadMedia(b, (p) => {
           const base = (i / job.blobs.length) * 90;
           const pct = Math.round(base + p * (90 / job.blobs.length));
           setBanner({
@@ -761,7 +855,7 @@
       job.meta = job.meta || {};
       job.meta.mediaUrls = urls;
     } else {
-      media = await uploadCloudinary(file, (p) => {
+      media = await uploadMedia(file, (p) => {
         // p is 0–100 from XHR; map to 5–90 so Firebase write can finish 90→100
         const raw = Math.max(0, Math.min(100, Number(p) || 0));
         const pct2 = Math.min(90, Math.max(5, Math.round(raw * 0.9)));

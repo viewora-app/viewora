@@ -156,7 +156,8 @@
             try { db = firebase.database(); } catch (_) {}
         }
         if (!auth) {
-            return Promise.reject(new Error("Auth unavailable"));
+            // Soft: no auth SDK yet — resolve null (guest / boot race)
+            return Promise.resolve(null);
         }
 
         if (auth.currentUser) {
@@ -164,33 +165,25 @@
             return Promise.resolve(currentUser);
         }
 
-        return new Promise((resolve, reject) => {
+        return new Promise((resolve) => {
             let finished = false;
             const timer = setTimeout(() => {
                 if (finished) return;
                 finished = true;
                 try { unsubscribe(); } catch (_) {}
-                reject(new Error("Auth timeout"));
-            }, 12000);
+                // Guest or slow auth — no hard error
+                resolve(auth.currentUser || null);
+            }, 8000);
 
             const unsubscribe = auth.onAuthStateChanged((user) => {
                 if (finished) return;
                 finished = true;
                 clearTimeout(timer);
                 try { unsubscribe(); } catch (_) {}
-
-                if (!user) {
-                    reject(new Error("User not authenticated."));
-                    return;
-                }
-
-                currentUser = user;
-
-                            resolve(user);
-                        }
-                    );
-            }
-        );
+                currentUser = user || null;
+                resolve(currentUser);
+            });
+        });
     }
 
 
@@ -1572,10 +1565,11 @@
 
     function listenIncomingCalls() {
 
-        if (
-            !currentUser ||
-            initialized
-        ) {
+        if (!currentUser) {
+            log("Skip incoming listener — no user");
+            return;
+        }
+        if (initialized) {
             return;
         }
 
@@ -1835,43 +1829,40 @@
             window.auth = auth;
             window.db = db;
 
-            await waitForUser();
+            const user = await waitForUser();
+            if (!user) {
+                log("Call listener waiting for sign-in");
+                return;
+            }
 
             listenIncomingCalls();
 
-            log(
-                "================================"
-            );
-
-            log(
-                "VIEWORA GLOBAL CALL LISTENER"
-            );
-
-            log(
-                "Incoming calls: READY"
-            );
-
-            log(
-                "Ringtone: READY"
-            );
-
-            log(
-                "Accept / Decline: READY"
-            );
-
-            log(
-                "================================"
-            );
+            log("VIEWORA GLOBAL CALL LISTENER ready for", user.uid);
 
         } catch (e) {
-
-            error(
-                "Listener initialization:",
-                e
-            );
+            var msg = (e && e.message) || String(e || "");
+            // Guests / no-auth are expected — quiet warn only
+            if (/not authenticated|Auth timeout|Auth unavailable|unavailable/i.test(msg)) {
+                log("Call listener idle (not signed in)");
+            } else {
+                error("Listener initialization:", e);
+            }
         }
     }
 
+    // Re-bind when user logs in later (SPA / late auth)
+    try {
+        var _a = window.auth || (typeof firebase !== "undefined" && firebase.auth && firebase.auth());
+        if (_a && !_a.__vieworaCallAuthBound) {
+            _a.__vieworaCallAuthBound = true;
+            _a.onAuthStateChanged(function (user) {
+                if (user && !initialized) {
+                    currentUser = user;
+                    try { init(); } catch (_) {}
+                }
+            });
+        }
+    } catch (_) {}
 
     init();
 

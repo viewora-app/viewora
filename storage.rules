@@ -1,0 +1,50 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    function signedIn() {
+      return request.auth != null;
+    }
+    function ownerPath(uid) {
+      return signedIn() && request.auth.uid == uid;
+    }
+    function mediaType() {
+      return request.resource.contentType.matches('image/.*|video/.*|audio/.*|application/octet-stream');
+    }
+    function underLimit(mb) {
+      return request.resource.size < mb * 1024 * 1024;
+    }
+
+    // Primary upload tree used by Viewora clients
+    match /viewora/{uid}/{allPaths=**} {
+      allow read: if true;
+      allow create, update: if ownerPath(uid) && underLimit(120) && mediaType();
+      allow delete: if ownerPath(uid);
+    }
+
+    // Legacy / alternate folders
+    match /stories/{uid}/{allPaths=**} {
+      allow read: if true;
+      allow write: if ownerPath(uid) && underLimit(80) && mediaType();
+    }
+    match /shorts/{uid}/{allPaths=**} {
+      allow read: if true;
+      allow write: if ownerPath(uid) && underLimit(120) && mediaType();
+    }
+    match /videos/{uid}/{allPaths=**} {
+      allow read: if true;
+      allow write: if ownerPath(uid) && underLimit(120) && mediaType();
+    }
+    match /posts/{uid}/{allPaths=**} {
+      allow read: if true;
+      allow write: if ownerPath(uid) && underLimit(40) && mediaType();
+    }
+    match /avatars/{uid}/{allPaths=**} {
+      allow read: if true;
+      allow write: if ownerPath(uid) && underLimit(8) && request.resource.contentType.matches('image/.*');
+    }
+
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

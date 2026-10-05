@@ -385,15 +385,33 @@
 
 
     const getThumbnailURL = (data) => {
-
-        return safeURL(
-            data?.thumbnailUrl ||
-            data?.thumbnailURL ||
-            data?.thumbnail ||
-            data?.coverUrl ||
-            data?.imageUrl ||
-            ""
+        if (!data) return "";
+        const candidates = [
+            data.thumbnailUrl,
+            data.thumbnailURL,
+            data.thumbnail,
+            data.thumbUrl,
+            data.thumb,
+            data.coverUrl,
+            data.coverURL,
+            data.imageUrl,
+            data.imageURL,
+            data.poster,
+            data.posterUrl,
+            // sometimes first frame stored as media
+            data.previewUrl,
+            data.preview
+        ];
+        for (let i = 0; i < candidates.length; i++) {
+            const u = safeURL(candidates[i]);
+            if (u) return u;
+        }
+        // last resort: if media is an image URL, use it
+        const media = safeURL(
+            data.mediaUrl || data.mediaURL || data.videoUrl || data.videoURL || ""
         );
+        if (media && /\.(png|jpe?g|webp|gif)(\?|$)/i.test(media)) return media;
+        return "";
     };
 
 
@@ -469,6 +487,33 @@
     }
 
 
+    
+    /* Global broken-image fallback (avatars, thumbs, posts) */
+    (function wireImgFallback() {
+        if (window.__vieworaImgFallback) return;
+        window.__vieworaImgFallback = true;
+        var AVATAR = "assets/default-avatar.png";
+        var THUMB = "data:image/svg+xml," + encodeURIComponent(
+            '<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360"><rect fill="#121218" width="100%" height="100%"/><text x="50%" y="50%" fill="#555" font-size="18" text-anchor="middle" dy=".3em">No image</text></svg>'
+        );
+        function isAvatar(img) {
+            var c = (img.className || "") + " " + (img.parentElement && img.parentElement.className || "");
+            return /avatar|story|profile|userPhoto|dp/i.test(c) || /avatar|profile|story/i.test(img.id || "");
+        }
+        document.addEventListener(
+            "error",
+            function (e) {
+                var t = e.target;
+                if (!t || t.tagName !== "IMG") return;
+                if (t.dataset.fallbackApplied === "1") return;
+                t.dataset.fallbackApplied = "1";
+                t.onerror = null;
+                t.src = isAvatar(t) ? AVATAR : THUMB;
+            },
+            true
+        );
+    })();
+
     function showEmpty(container, icon, title, text) {
 
         if (!container) return;
@@ -490,6 +535,45 @@
             </div>
 
         `;
+    }
+
+    function showErrorWithRetry(container, title, text, retryFn) {
+        if (!container) return;
+        container.innerHTML =
+            '<div class="emptyState feedErrorState">' +
+            '<i class="fa-solid fa-triangle-exclamation"></i>' +
+            "<h3>" +
+            escapeHTML(title || "Something went wrong") +
+            "</h3>" +
+            "<p>" +
+            escapeHTML(text || "Please try again.") +
+            "</p>" +
+            '<button type="button" class="feedRetryBtn" id="feedRetryBtn">' +
+            '<i class="fa-solid fa-rotate-right"></i> Retry' +
+            "</button></div>";
+        var btn = container.querySelector("#feedRetryBtn");
+        if (btn && typeof retryFn === "function") {
+            btn.addEventListener("click", function () {
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Loading…';
+                try {
+                    retryFn();
+                } catch (e) {
+                    console.error(e);
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fa-solid fa-rotate-right"></i> Retry';
+                }
+            });
+        }
+    }
+
+    function isBannedOrDeletedPost(data) {
+        if (!data) return true;
+        if (data.deleted === true || data.isDeleted === true) return true;
+        if (data.banned === true || data.hidden === true || data.removed === true) return true;
+        if (data.status === "deleted" || data.status === "banned" || data.status === "removed")
+            return true;
+        return false;
     }
 
 
@@ -939,6 +1023,21 @@
             posts.push(...visible);
         }
 
+        // Drop deleted / banned / hidden posts
+        posts = posts.filter(function (p) {
+            return p && p.data && !isBannedOrDeletedPost(p.data);
+        });
+
+        // Dedupe by id
+        (function () {
+            var seen = {};
+            posts = posts.filter(function (p) {
+                if (!p || !p.id || seen[p.id]) return false;
+                seen[p.id] = true;
+                return true;
+            });
+        })();
+
         hideSkeleton(feedSkeleton);
 
         if (!posts.length) {
@@ -1081,11 +1180,14 @@
 
                     hideSkeleton(feedSkeleton);
 
-                    showEmpty(
+                    showErrorWithRetry(
                         feedContainer,
-                        "fa-solid fa-triangle-exclamation",
                         "Unable to load posts",
-                        "Please check your Firebase connection."
+                        "Check your connection and try again.",
+                        function () {
+                            if (feedSkeleton) feedSkeleton.style.display = "";
+                            loadPosts();
+                        }
                     );
 
                 }
@@ -1187,7 +1289,11 @@
                                 class="videoThumbnail"
                                 alt="${title}"
                                 loading="lazy"
+                                onerror="this.onerror=null;this.style.display='none';var f=this.nextElementSibling;if(f)f.style.display='flex';"
                             >
+                            <div class="videoThumbnailFallback" style="display:none">
+                                <i class="fa-solid fa-play"></i>
+                            </div>
                           `
                         : `
                             <div class="videoThumbnailFallback">
@@ -3917,16 +4023,25 @@
                 if (!window.__vieworaLiveStoriesBound) {
                     window.__vieworaLiveStoriesBound = true;
                     try {
-                        db.ref("live").on("value", () => {
-                            // Force stories value handler by touching a local flag via once + rebuild
-                            db.ref("stories").once("value").then((snap) => {
-                                // dispatch fake by re-assigning - the on("value") already will not re-fire
-                                // so manually trigger rebuild through shared function if set
-                                if (window.__vieworaStoriesHandler) {
-                                    window.__vieworaStoriesHandler(snap);
-                                }
-                            }).catch(() => {});
-                        });
+                        db.ref("live").on(
+                            "value",
+                            function () {
+                                db.ref("stories")
+                                    .once("value")
+                                    .then(function (snap) {
+                                        if (window.__vieworaStoriesHandler) {
+                                            window.__vieworaStoriesHandler(snap);
+                                        }
+                                    })
+                                    .catch(function () {});
+                            },
+                            function (err) {
+                                // permission_denied or offline — ignore, stories still load
+                                try {
+                                    console.warn("[Viewora] live listener:", err && err.message);
+                                } catch (_) {}
+                            }
+                        );
                     } catch (_) {}
                 }
 
@@ -3981,8 +4096,14 @@
                                     (f) => String(f).toLowerCase() === uidKey
                                 );
 
-                            if (!currentUserUID) return;
-                            if (!isOwn && !isFollowed) return;
+                            // Collect all active stories; ranking happens after group
+                            // (own + following first, then discover public)
+                            var includeStory = true;
+                            if (currentUserUID && !isOwn && !isFollowed) {
+                                // mark as discover for ranking, still include
+                                data.__discover = true;
+                            }
+                            if (!includeStory) return;
 
                             if (!byUser[uidKey]) {
                                 byUser[uidKey] = {
@@ -4560,10 +4681,12 @@
                     "value",
                     storiesHandler,
                     (error) => {
-                        console.error(
-                            "Viewora Stories error:",
-                            error
-                        );
+                        try {
+                            console.warn(
+                                "[Viewora] Stories listener:",
+                                error && (error.message || error.code || error)
+                            );
+                        } catch (_) {}
                     }
                 );
             })

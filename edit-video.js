@@ -5730,263 +5730,56 @@
     }
 
 
-    function uploadToCloudinary(
-        file,
-        progressCallback
-    ) {
-
-        return new Promise(
-            (resolve, reject) => {
-
-                if (!file) {
-
-                    reject(
-                        new Error(
-                            "No file selected for upload."
-                        )
-                    );
-
+    function uploadToFirebaseStorageEV(file, progressCallback) {
+        return new Promise(function (resolve, reject) {
+            try {
+                if (typeof firebase === "undefined" || typeof firebase.storage !== "function") {
+                    reject(new Error("Firebase Storage missing"));
                     return;
-
                 }
-
-
-                const cfg =
-                    getCloudinaryConfig();
-
-
-                const url =
-                    "https://api.cloudinary.com/v1_1/" +
-                    encodeURIComponent(
-                        cfg.cloud
-                    ) +
-                    "/auto/upload";
-
-
-                const form =
-                    new FormData();
-
-
-                form.append(
-                    "file",
-                    file
-                );
-
-
-                form.append(
-                    "upload_preset",
-                    cfg.preset
-                );
-
-
-                const xhr =
-                    new XMLHttpRequest();
-
-
-                let finished =
-                    false;
-
-
-                const timer =
-                    setTimeout(
-                        () => {
-
-                            if (finished) {
-                                return;
-                            }
-
-                            finished =
-                                true;
-
-                            try {
-                                xhr.abort();
-                            } catch (_) {}
-
-
-                            reject(
-                                new Error(
-                                    "Cloudinary upload timed out."
-                                )
-                            );
-
-                        },
-                        300000
-                    );
-
-
-                const done = (
-                    cb,
-                    value
-                ) => {
-
-                    if (finished) {
-                        return;
-                    }
-
-                    finished =
-                        true;
-
-                    clearTimeout(
-                        timer
-                    );
-
-                    cb(value);
-
-                };
-
-
-                xhr.upload.addEventListener(
-                    "progress",
-                    event => {
-
-                        if (
-                            !event.lengthComputable ||
-                            typeof progressCallback !==
-                            "function"
-                        ) {
-                            return;
+                var user = null;
+                try { user = firebase.auth().currentUser; } catch (_) {}
+                if (!user) {
+                    reject(new Error("Login required to upload"));
+                    return;
+                }
+                var safe = String((file && file.name) || "video").replace(/[^a-zA-Z0-9._-]/g, "_").slice(0, 80);
+                var path = "viewora/videos/" + user.uid + "/" + Date.now() + "_" + safe;
+                var task = firebase.storage().ref(path).put(file, {
+                    contentType: (file && file.type) || "video/mp4"
+                });
+                task.on(
+                    "state_changed",
+                    function (snap) {
+                        if (typeof progressCallback === "function" && snap.totalBytes) {
+                            progressCallback(Math.round((snap.bytesTransferred / snap.totalBytes) * 100));
                         }
-
-
-                        const percent =
-                            (
-                                event.loaded /
-                                event.total
-                            ) * 100;
-
-
-                        progressCallback(
-                            percent
-                        );
-
+                    },
+                    function (err) {
+                        reject(new Error((err && err.message) || "Storage upload failed"));
+                    },
+                    function () {
+                        task.snapshot.ref.getDownloadURL().then(function (url) {
+                            resolve({
+                                secure_url: url,
+                                url: url,
+                                public_id: path
+                            });
+                        }).catch(reject);
                     }
                 );
-
-
-                xhr.addEventListener(
-                    "load",
-                    () => {
-
-                        if (
-                            xhr.status < 200 ||
-                            xhr.status >= 300
-                        ) {
-
-                            let message =
-                                "Cloudinary upload failed (" +
-                                xhr.status +
-                                ").";
-
-
-                            try {
-
-                                const json =
-                                    JSON.parse(
-                                        xhr.responseText
-                                    );
-
-
-                                if (
-                                    json?.error?.message
-                                ) {
-
-                                    message =
-                                        json.error.message;
-                                }
-
-                            } catch (_) {}
-
-
-                            done(
-                                reject,
-                                new Error(
-                                    message
-                                )
-                            );
-
-                            return;
-
-                        }
-
-
-                        try {
-
-                            const json =
-                                JSON.parse(
-                                    xhr.responseText
-                                );
-
-
-                            const secure =
-                                json.secure_url ||
-                                json.url ||
-                                "";
-
-
-                            if (!secure) {
-
-                                done(
-                                    reject,
-                                    new Error(
-                                        "Cloudinary did not return a URL."
-                                    )
-                                );
-
-                                return;
-
-                            }
-
-
-                            done(
-                                resolve,
-                                secure
-                            );
-
-                        } catch (error) {
-
-                            done(
-                                reject,
-                                error
-                            );
-
-                        }
-
-                    }
-                );
-
-
-                xhr.addEventListener(
-                    "error",
-                    () => {
-
-                        done(
-                            reject,
-                            new Error(
-                                "Cloudinary network error."
-                            )
-                        );
-
-                    }
-                );
-
-
-                xhr.open(
-                    "POST",
-                    url
-                );
-
-
-                xhr.send(
-                    form
-                );
-
+            } catch (e) {
+                reject(e);
             }
-        );
-
+        });
     }
 
+    function uploadToCloudinary(file, progressCallback) {
+        // Cloudinary cloud disabled — Firebase Storage only
+        return uploadToFirebaseStorageEV(file, progressCallback);
+    }
 
-    async function uploadFileToStorage(
+        async function uploadFileToStorage(
         file,
         path,
         progressCallback
@@ -6002,12 +5795,12 @@
 
 
         /*
-         * Prefer Cloudinary (same as Shorts).
+         * Firebase Storage (Cloudinary disabled).
          */
         try {
 
             console.log(
-                "VIEWORA: Uploading via Cloudinary...",
+                "VIEWORA: Uploading via Firebase Storage...",
                 {
                     name:
                         file.name,

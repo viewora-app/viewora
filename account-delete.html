@@ -1,39 +1,79 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <script>(function(){try{var t=localStorage.getItem("viewora_theme")||"dark";document.documentElement.setAttribute("data-theme",t);}catch(e){document.documentElement.setAttribute("data-theme","dark");}})();</script>
+<script>(function(){try{var t=localStorage.getItem("viewora_theme")||"dark";document.documentElement.setAttribute("data-theme",t);}catch(e){document.documentElement.setAttribute("data-theme","dark");}})();</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#050507">
-<title>Viewora • Delete Account</title>
-    <link rel="icon" href="assets/logo.png">
-    <link rel="apple-touch-icon" href="assets/logo.png">
-<link rel="preconnect" href="https://fonts.googleapis.com">
+<title>Viewora • Deactivation or deletion</title>
+<link rel="icon" href="assets/logo.png">
+<link rel="apple-touch-icon" href="assets/logo.png">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-    <link rel="stylesheet" href="theme.css">
+<link rel="stylesheet" href="theme.css">
 <style>
-:root {
-  --bg:#050507; --card:#121216; --border:rgba(255,255,255,.1);
-  --text:#fff; --muted:rgba(255,255,255,.55); --danger:#ef4444; --accent:#3b82f6;
-  --safe-bottom:env(safe-area-inset-bottom);
+:root, html[data-theme="dark"] {
+  --bg:#050507; --card:#121216; --card2:#1a1a20; --border:rgba(255,255,255,.1);
+  --text:#fff; --muted:rgba(255,255,255,.55); --danger:#ef4444; --accent:#7c5cff;
+  --warn:#f59e0b; --ok:#22c55e; --safe-bottom:env(safe-area-inset-bottom,0px);
+}
+html[data-theme="light"] {
+  --bg:#f5f5f7; --card:#fff; --card2:#f0f0f3; --border:rgba(0,0,0,.08);
+  --text:#111; --muted:rgba(0,0,0,.5); --danger:#dc2626; --accent:#6d28d9;
 }
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 body{
   min-height:100vh;background:var(--bg);color:var(--text);
-  font-family:Inter,system-ui,sans-serif;
-  padding:16px 16px calc(24px + var(--safe-bottom));
+  font-family:Inter,system-ui,-apple-system,sans-serif;
+  padding:0 0 calc(24px + var(--safe-bottom));
 }
-.wrap{max-width:480px;margin:0 auto}
+.wrap{max-width:480px;margin:0 auto;padding:16px}
 .top{
-  display:flex;align-items:center;gap:12px;margin-bottom:22px;
+  display:flex;align-items:center;gap:12px;margin-bottom:8px;
+  position:sticky;top:0;z-index:10;background:var(--bg);padding:8px 0 12px;
 }
 .back{
   width:40px;height:40px;border-radius:12px;border:1px solid var(--border);
-  background:rgba(255,255,255,.04);color:#fff;display:flex;align-items:center;justify-content:center;
+  background:rgba(255,255,255,.04);color:var(--text);display:flex;align-items:center;justify-content:center;
+  cursor:pointer;
 }
-h1{font-size:20px;font-weight:800}
-.sub{font-size:13px;color:var(--muted);margin-top:4px;line-height:1.5}
+html[data-theme="light"] .back{background:rgba(0,0,0,.04)}
+h1{font-size:20px;font-weight:800;letter-spacing:-.02em}
+.sub{font-size:13px;color:var(--muted);margin:2px 0 18px;line-height:1.5}
+
+.accountPill{
+  display:flex;align-items:center;gap:12px;padding:14px 16px;
+  background:var(--card);border:1px solid var(--border);border-radius:16px;margin-bottom:18px;
+}
+.accountPill img,.accountPill .avFallback{
+  width:48px;height:48px;border-radius:50%;object-fit:cover;flex-shrink:0;
+}
+.accountPill .avFallback{
+  display:grid;place-items:center;background:linear-gradient(135deg,#7c5cff,#3b82f6);
+  color:#fff;font-weight:800;font-size:18px;
+}
+.accountPill .meta{flex:1;min-width:0}
+.accountPill .name{font-weight:700;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.accountPill .handle{font-size:13px;color:var(--muted);margin-top:2px}
+
+.optionCard{
+  display:flex;align-items:flex-start;gap:14px;width:100%;text-align:left;
+  padding:16px;margin-bottom:12px;border-radius:18px;border:1px solid var(--border);
+  background:var(--card);color:inherit;cursor:pointer;transition:.15s ease;
+}
+.optionCard:active{transform:scale(.98)}
+.optionCard:hover{border-color:rgba(124,92,255,.45)}
+.optionCard .ico{
+  width:44px;height:44px;border-radius:14px;display:grid;place-items:center;flex-shrink:0;
+  font-size:18px;
+}
+.optionCard .ico.pause{background:rgba(245,158,11,.12);color:var(--warn)}
+.optionCard .ico.trash{background:rgba(239,68,68,.12);color:var(--danger)}
+.optionCard .body{flex:1;min-width:0}
+.optionCard .title{font-size:15px;font-weight:700;margin-bottom:4px}
+.optionCard .desc{font-size:12.5px;color:var(--muted);line-height:1.5}
+.optionCard .chev{color:var(--muted);margin-top:4px;font-size:12px}
+
 .card{
   background:var(--card);border:1px solid var(--border);border-radius:18px;
   padding:18px;margin-bottom:14px;
@@ -43,9 +83,16 @@ h1{font-size:20px;font-weight:800}
   background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.25);
   border-radius:16px;padding:14px;margin-bottom:16px;
 }
-.warn i{color:var(--danger);margin-top:2px}
+.warn.info{
+  background:rgba(245,158,11,.08);border-color:rgba(245,158,11,.3);
+}
+.warn i{margin-top:2px;flex-shrink:0}
+.warn.pause i{color:var(--warn)}
+.warn.delete i{color:var(--danger)}
 .warn strong{display:block;font-size:14px;margin-bottom:4px}
 .warn p{font-size:12px;color:var(--muted);line-height:1.5}
+.warn ul{margin:8px 0 0 16px;font-size:12px;color:var(--muted);line-height:1.7}
+
 .label{font-size:12px;font-weight:700;color:var(--muted);margin-bottom:10px;text-transform:uppercase;letter-spacing:.04em}
 .reasons{display:flex;flex-direction:column;gap:8px}
 .reason{
@@ -53,47 +100,62 @@ h1{font-size:20px;font-weight:800}
   border-radius:14px;border:1px solid var(--border);background:rgba(255,255,255,.03);
   cursor:pointer;text-align:left;width:100%;color:inherit;
 }
-.reason.active{border-color:rgba(239,68,68,.5);background:rgba(239,68,68,.08)}
-.reason input{accent-color:var(--danger)}
+html[data-theme="light"] .reason{background:rgba(0,0,0,.02)}
+.reason.active{border-color:rgba(124,92,255,.5);background:rgba(124,92,255,.1)}
+.reason.danger.active{border-color:rgba(239,68,68,.5);background:rgba(239,68,68,.08)}
+.reason input{accent-color:var(--accent)}
+.reason.danger input{accent-color:var(--danger)}
 .reason span{font-size:13px;font-weight:600}
+
 textarea{
-  width:100%;min-height:100px;margin-top:12px;padding:12px 14px;
-  border-radius:14px;border:1px solid var(--border);background:rgba(0,0,0,.35);
-  color:#fff;font:inherit;resize:vertical;outline:none;
+  width:100%;min-height:90px;margin-top:12px;padding:12px 14px;
+  border-radius:14px;border:1px solid var(--border);background:rgba(0,0,0,.25);
+  color:var(--text);font:inherit;resize:vertical;outline:none;
 }
-textarea:focus{border-color:rgba(255,255,255,.25)}
+html[data-theme="light"] textarea{background:#f5f5f7}
+textarea:focus{border-color:rgba(124,92,255,.5)}
+
 .confirmBox{
   margin-top:12px;padding:12px;border-radius:14px;border:1px dashed rgba(239,68,68,.4);
   background:rgba(239,68,68,.05);
 }
-.confirmBox label{font-size:12px;color:var(--muted);display:flex;gap:10px;align-items:flex-start}
-.confirmBox input{margin-top:2px;accent-color:var(--danger)}
+.confirmBox.soft{border-color:rgba(245,158,11,.4);background:rgba(245,158,11,.05)}
+.confirmBox label{font-size:12px;color:var(--muted);display:flex;gap:10px;align-items:flex-start;cursor:pointer}
+.confirmBox input{margin-top:2px;accent-color:var(--danger);flex-shrink:0}
+.confirmBox.soft input{accent-color:var(--warn)}
+
 .btn{
   width:100%;height:48px;border:0;border-radius:14px;font-weight:700;font-size:14px;
-  cursor:pointer;margin-top:12px;
+  cursor:pointer;margin-top:12px;font-family:inherit;
 }
 .btn-danger{background:var(--danger);color:#fff}
-.btn-danger:disabled{opacity:.45;cursor:not-allowed}
+.btn-warn{background:var(--warn);color:#111}
+.btn-danger:disabled,.btn-warn:disabled{opacity:.45;cursor:not-allowed}
 .btn-ghost{
-  background:rgba(255,255,255,.06);color:#fff;border:1px solid var(--border);
+  background:rgba(255,255,255,.06);color:var(--text);border:1px solid var(--border);
 }
-.status{
-  text-align:center;padding:28px 16px;
-}
+html[data-theme="light"] .btn-ghost{background:rgba(0,0,0,.04)}
+.btn-accent{background:var(--accent);color:#fff}
+
+.status{text-align:center;padding:28px 16px}
 .status i{font-size:36px;margin-bottom:12px}
 .status h2{font-size:18px;margin-bottom:8px}
 .status p{font-size:13px;color:var(--muted);line-height:1.6}
+
 .hidden{display:none !important}
 .userLine{font-size:12px;color:var(--muted);margin-bottom:14px}
-.userLine b{color:#fff}
+.userLine b{color:var(--text)}
+
 .toast{
   position:fixed;left:50%;bottom:calc(24px + var(--safe-bottom));
   transform:translateX(-50%) translateY(20px);opacity:0;
-  background:#1a1a1f;border:1px solid var(--border);color:#fff;
+  background:var(--card2);border:1px solid var(--border);color:var(--text);
   padding:10px 16px;border-radius:12px;font-size:13px;font-weight:600;
-  transition:.25s ease;z-index:50;pointer-events:none;
+  transition:.25s ease;z-index:50;pointer-events:none;max-width:90vw;
 }
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+.stepHint{font-size:12px;color:var(--muted);margin-bottom:12px}
 </style>
 </head>
 <body>
@@ -103,60 +165,139 @@ textarea:focus{border-color:rgba(255,255,255,.25)}
       <i class="fa-solid fa-arrow-left"></i>
     </button>
     <div>
-      <h1>Delete account</h1>
-      <div class="sub">Permanent request • reviewed by admin</div>
+      <h1 id="pageTitle">Deactivation or deletion</h1>
     </div>
   </div>
+  <p class="sub" id="pageSub">Choose what you want to do with your Viewora account.</p>
 
+  <!-- Loading -->
   <div id="authGate" class="card status">
     <i class="fa-solid fa-spinner fa-spin" style="color:var(--muted)"></i>
     <h2>Checking account…</h2>
     <p>Please wait.</p>
   </div>
 
-  <div id="formView" class="hidden">
-    <div class="warn">
-      <i class="fa-solid fa-triangle-exclamation"></i>
+  <!-- Account chip -->
+  <div id="accountChip" class="accountPill hidden">
+    <img id="chipAvatar" src="assets/default-avatar.png" alt=""
+         onerror="this.style.display='none';this.nextElementSibling.style.display='grid'">
+    <div class="avFallback" id="chipFallback" style="display:none">V</div>
+    <div class="meta">
+      <div class="name" id="chipName">—</div>
+      <div class="handle" id="chipHandle">@user</div>
+    </div>
+  </div>
+
+  <!-- HUB: pick path -->
+  <div id="hubView" class="hidden">
+    <button type="button" class="optionCard" id="pickDeactivate">
+      <span class="ico pause"><i class="fa-solid fa-pause"></i></span>
+      <span class="body">
+        <span class="title">Deactivate account</span>
+        <span class="desc">Hide your profile temporarily. Your content stays saved. You can reactivate anytime by logging in again.</span>
+      </span>
+      <i class="fa-solid fa-chevron-right chev"></i>
+    </button>
+    <button type="button" class="optionCard" id="pickDelete">
+      <span class="ico trash"><i class="fa-solid fa-trash-can"></i></span>
+      <span class="body">
+        <span class="title">Delete account</span>
+        <span class="desc">Permanently remove your profile, posts, shorts, stories and data after admin approval. This cannot be undone.</span>
+      </span>
+      <i class="fa-solid fa-chevron-right chev"></i>
+    </button>
+  </div>
+
+  <!-- DEACTIVATE form -->
+  <div id="deactivateView" class="hidden">
+    <div class="warn info pause">
+      <i class="fa-solid fa-circle-pause"></i>
       <div>
-        <strong>This cannot be undone after approval</strong>
-        <p>Your profile, posts, shorts, stories, messages and followers will be permanently removed once an admin approves your request.</p>
+        <strong>What happens when you deactivate</strong>
+        <ul>
+          <li>Your profile, posts and stories are hidden</li>
+          <li>People can’t search for your account</li>
+          <li>Messages stay in other users’ inboxes</li>
+          <li>Log in anytime to reactivate</li>
+        </ul>
       </div>
     </div>
-
     <div class="card">
-      <div class="userLine">Signed in as <b id="userLabel">—</b></div>
-      <div class="label">Why are you leaving?</div>
-      <div class="reasons" id="reasons">
-        <label class="reason"><input type="radio" name="reason" value="privacy"><span>Privacy concerns</span></label>
-        <label class="reason"><input type="radio" name="reason" value="too_many_notifications"><span>Too many notifications</span></label>
-        <label class="reason"><input type="radio" name="reason" value="not_useful"><span>Not useful / switching apps</span></label>
-        <label class="reason"><input type="radio" name="reason" value="safety"><span>Safety or harassment</span></label>
-        <label class="reason"><input type="radio" name="reason" value="duplicate"><span>Duplicate / second account</span></label>
-        <label class="reason"><input type="radio" name="reason" value="other"><span>Other</span></label>
+      <div class="userLine">Signed in as <b id="deactUserLabel">—</b></div>
+      <div class="label">Why are you deactivating?</div>
+      <div class="reasons" id="deactReasons">
+        <label class="reason"><input type="radio" name="deactReason" value="break"><span>Taking a break</span></label>
+        <label class="reason"><input type="radio" name="deactReason" value="privacy"><span>Privacy concerns</span></label>
+        <label class="reason"><input type="radio" name="deactReason" value="notifications"><span>Too many notifications</span></label>
+        <label class="reason"><input type="radio" name="deactReason" value="not_useful"><span>Not useful right now</span></label>
+        <label class="reason"><input type="radio" name="deactReason" value="other"><span>Other</span></label>
       </div>
-      <textarea id="details" placeholder="Tell us more (optional, required if Other)…" maxlength="500"></textarea>
-      <div class="confirmBox">
+      <textarea id="deactDetails" placeholder="Optional note…" maxlength="400"></textarea>
+      <div class="confirmBox soft">
         <label>
-          <input type="checkbox" id="confirmCheck">
-          <span>I understand my account will be permanently deleted after admin approval. I may lose all content and data.</span>
+          <input type="checkbox" id="deactCheck">
+          <span>I understand my profile will be hidden until I log in again.</span>
         </label>
       </div>
-      <button class="btn btn-danger" id="submitBtn" type="button" disabled>Send delete request</button>
-      <button class="btn btn-ghost" id="cancelBtn" type="button">Cancel</button>
+      <button class="btn btn-warn" id="deactSubmit" type="button" disabled>Deactivate account</button>
+      <button class="btn btn-ghost" id="deactCancel" type="button">Back</button>
     </div>
   </div>
 
-  <div id="pendingView" class="card status hidden">
-    <i class="fa-solid fa-hourglass-half" style="color:#f59e0b"></i>
-    <h2>Request pending</h2>
-    <p id="pendingText">Your deletion request is waiting for admin review. You can still use the app until it is approved.</p>
-    <button class="btn btn-ghost" id="pendingBack" type="button">Back to profile</button>
+  <!-- DELETE form -->
+  <div id="deleteView" class="hidden">
+    <div class="warn delete">
+      <i class="fa-solid fa-triangle-exclamation"></i>
+      <div>
+        <strong>Permanent after admin approval</strong>
+        <p>Your profile, posts, shorts, stories, messages and followers will be removed once an admin approves. You can keep using the app until then.</p>
+      </div>
+    </div>
+    <div class="card">
+      <div class="userLine">Signed in as <b id="delUserLabel">—</b></div>
+      <div class="label">Why are you leaving?</div>
+      <div class="reasons" id="delReasons">
+        <label class="reason danger"><input type="radio" name="delReason" value="privacy"><span>Privacy concerns</span></label>
+        <label class="reason danger"><input type="radio" name="delReason" value="too_many_notifications"><span>Too many notifications</span></label>
+        <label class="reason danger"><input type="radio" name="delReason" value="not_useful"><span>Not useful / switching apps</span></label>
+        <label class="reason danger"><input type="radio" name="delReason" value="safety"><span>Safety or harassment</span></label>
+        <label class="reason danger"><input type="radio" name="delReason" value="duplicate"><span>Duplicate / second account</span></label>
+        <label class="reason danger"><input type="radio" name="delReason" value="other"><span>Other</span></label>
+      </div>
+      <textarea id="delDetails" placeholder="Tell us more (optional, required if Other)…" maxlength="500"></textarea>
+      <div class="confirmBox">
+        <label>
+          <input type="checkbox" id="delCheck">
+          <span>I understand my account will be permanently deleted after admin approval.</span>
+        </label>
+      </div>
+      <button class="btn btn-danger" id="delSubmit" type="button" disabled>Send delete request</button>
+      <button class="btn btn-ghost" id="delCancel" type="button">Back</button>
+    </div>
   </div>
 
+  <!-- Pending delete -->
+  <div id="pendingView" class="card status hidden">
+    <i class="fa-solid fa-hourglass-half" style="color:#f59e0b"></i>
+    <h2>Delete request pending</h2>
+    <p id="pendingText">Admin has not approved yet. You can keep using the app until then.</p>
+    <button class="btn btn-ghost" id="pendingBack" type="button" style="margin-top:16px">Back to settings</button>
+  </div>
+
+  <!-- Already deactivated -->
+  <div id="deactivatedView" class="card status hidden">
+    <i class="fa-solid fa-circle-pause" style="color:#f59e0b"></i>
+    <h2>Account deactivated</h2>
+    <p>Your profile is hidden. Log in again anytime to reactivate.</p>
+    <button class="btn btn-accent" id="reactivateBtn" type="button" style="margin-top:16px">Reactivate now</button>
+    <button class="btn btn-ghost" id="deactDoneBack" type="button">Sign out</button>
+  </div>
+
+  <!-- Done delete request -->
   <div id="doneView" class="card status hidden">
-    <i class="fa-solid fa-circle-check" style="color:#22c55e"></i>
-    <h2>Request submitted</h2>
-    <p>Admin will review your reason. After approval your account is permanently deleted.</p>
+    <i class="fa-solid fa-paper-plane" style="color:var(--ok)"></i>
+    <h2>Request sent</h2>
+    <p>An admin will review your delete request. You’ll stay signed in until it’s approved.</p>
     <button class="btn btn-ghost" id="doneBack" type="button">Back to profile</button>
   </div>
 </div>
@@ -172,132 +313,249 @@ textarea:focus{border-color:rgba(255,255,255,.25)}
   "use strict";
 
   var authGate = document.getElementById("authGate");
-  var formView = document.getElementById("formView");
+  var accountChip = document.getElementById("accountChip");
+  var hubView = document.getElementById("hubView");
+  var deactivateView = document.getElementById("deactivateView");
+  var deleteView = document.getElementById("deleteView");
   var pendingView = document.getElementById("pendingView");
+  var deactivatedView = document.getElementById("deactivatedView");
   var doneView = document.getElementById("doneView");
-  var userLabel = document.getElementById("userLabel");
-  var submitBtn = document.getElementById("submitBtn");
-  var confirmCheck = document.getElementById("confirmCheck");
-  var details = document.getElementById("details");
   var toastEl = document.getElementById("toast");
+  var pageTitle = document.getElementById("pageTitle");
+  var pageSub = document.getElementById("pageSub");
 
   var db = null;
   var user = null;
   var profile = null;
   var existingRequestId = null;
+  var currentStep = "hub"; // hub | deactivate | delete
 
   function toast(msg) {
     toastEl.textContent = msg;
     toastEl.classList.add("show");
-    setTimeout(function () { toastEl.classList.remove("show"); }, 2600);
+    setTimeout(function () { toastEl.classList.remove("show"); }, 2800);
+  }
+
+  function hideAll() {
+    [authGate, hubView, deactivateView, deleteView, pendingView, deactivatedView, doneView]
+      .forEach(function (el) { el.classList.add("hidden"); });
+  }
+
+  function show(el) {
+    hideAll();
+    el.classList.remove("hidden");
+  }
+
+  function setHeader(title, sub) {
+    pageTitle.textContent = title;
+    pageSub.textContent = sub || "";
   }
 
   function goBack() {
+    if (currentStep === "deactivate" || currentStep === "delete") {
+      openHub();
+      return;
+    }
     if (history.length > 1) history.back();
-    else location.href = "profile.html";
+    else location.href = "settings.html";
   }
 
   document.getElementById("backBtn").onclick = goBack;
-  document.getElementById("cancelBtn").onclick = goBack;
-  document.getElementById("pendingBack").onclick = goBack;
-  document.getElementById("doneBack").onclick = goBack;
+  document.getElementById("pendingBack").onclick = function () {
+    location.href = "settings.html";
+  };
+  document.getElementById("doneBack").onclick = function () {
+    location.href = "profile.html";
+  };
+  document.getElementById("deactDoneBack").onclick = async function () {
+    try { await firebase.auth().signOut(); } catch (_) {}
+    location.href = "index.html";
+  };
+  document.getElementById("deactCancel").onclick = openHub;
+  document.getElementById("delCancel").onclick = openHub;
 
-  document.querySelectorAll("#reasons .reason").forEach(function (el) {
-    el.addEventListener("click", function () {
-      document.querySelectorAll("#reasons .reason").forEach(function (r) {
-        r.classList.remove("active");
+  function openHub() {
+    currentStep = "hub";
+    setHeader("Deactivation or deletion", "Choose what you want to do with your Viewora account.");
+    show(hubView);
+    accountChip.classList.remove("hidden");
+  }
+
+  function openDeactivate() {
+    currentStep = "deactivate";
+    setHeader("Deactivate account", "Your profile will be hidden until you log in again.");
+    show(deactivateView);
+    accountChip.classList.remove("hidden");
+  }
+
+  function openDelete() {
+    currentStep = "delete";
+    setHeader("Delete account", "Permanent request • reviewed by admin");
+    show(deleteView);
+    accountChip.classList.remove("hidden");
+  }
+
+  document.getElementById("pickDeactivate").onclick = openDeactivate;
+  document.getElementById("pickDelete").onclick = openDelete;
+
+  /* —— reasons UI —— */
+  function wireReasons(containerId, name, isDanger) {
+    var box = document.getElementById(containerId);
+    box.addEventListener("change", function () {
+      box.querySelectorAll(".reason").forEach(function (lab) {
+        lab.classList.toggle("active", lab.querySelector("input").checked);
       });
-      el.classList.add("active");
-      el.querySelector("input").checked = true;
-      updateSubmit();
+      updateButtons();
     });
-  });
+  }
+  wireReasons("deactReasons", "deactReason");
+  wireReasons("delReasons", "delReason");
 
-  confirmCheck.addEventListener("change", updateSubmit);
-  details.addEventListener("input", updateSubmit);
+  document.getElementById("deactCheck").addEventListener("change", updateButtons);
+  document.getElementById("delCheck").addEventListener("change", updateButtons);
+  document.getElementById("delDetails").addEventListener("input", updateButtons);
 
-  function selectedReason() {
-    var el = document.querySelector('input[name="reason"]:checked');
+  function selectedReason(name) {
+    var el = document.querySelector('input[name="' + name + '"]:checked');
     return el ? el.value : "";
   }
 
-  function updateSubmit() {
-    var reason = selectedReason();
-    var ok = !!reason && confirmCheck.checked;
-    if (reason === "other" && !details.value.trim()) ok = false;
-    submitBtn.disabled = !ok;
+  function updateButtons() {
+    var dr = selectedReason("deactReason");
+    var dc = document.getElementById("deactCheck").checked;
+    document.getElementById("deactSubmit").disabled = !(dr && dc);
+
+    var lr = selectedReason("delReason");
+    var lc = document.getElementById("delCheck").checked;
+    var details = (document.getElementById("delDetails").value || "").trim();
+    var delOk = lr && lc && (lr !== "other" || details.length >= 3);
+    document.getElementById("delSubmit").disabled = !delOk;
   }
 
-  function show(view) {
-    authGate.classList.add("hidden");
-    formView.classList.add("hidden");
-    pendingView.classList.add("hidden");
-    doneView.classList.add("hidden");
-    view.classList.remove("hidden");
+  function fillChip(u, p) {
+    p = p || {};
+    var name = p.name || p.fullName || p.displayName || (u && u.displayName) || "User";
+    var un = p.username || p.userName || "";
+    var photo = p.photoURL || p.profilePic || p.avatar || (u && u.photoURL) || "";
+    document.getElementById("chipName").textContent = name;
+    document.getElementById("chipHandle").textContent = un ? "@" + un : (u && u.email) || "";
+    document.getElementById("deactUserLabel").textContent = un ? "@" + un : (u && u.email) || name;
+    document.getElementById("delUserLabel").textContent = un ? "@" + un : (u && u.email) || name;
+    var img = document.getElementById("chipAvatar");
+    var fb = document.getElementById("chipFallback");
+    if (photo) {
+      img.style.display = "";
+      img.src = photo;
+      fb.style.display = "none";
+    } else {
+      img.style.display = "none";
+      fb.style.display = "grid";
+      fb.textContent = (name.charAt(0) || "V").toUpperCase();
+    }
   }
 
   async function loadProfile(uid) {
     var snap = await db.ref("users/" + uid).once("value");
     profile = snap.val() || {};
-    var name =
-      profile.displayName ||
-      profile.name ||
-      profile.username ||
-      user.email ||
-      uid;
-    userLabel.textContent = name;
+    fillChip(user, profile);
   }
 
   async function checkExisting(uid) {
     var snap = await db
-      .ref("deletionRequests")
+      .ref("deleteRequests")
       .orderByChild("uid")
       .equalTo(uid)
+      .limitToLast(5)
       .once("value");
     var val = snap.val() || {};
-    var pending = null;
-    Object.keys(val).forEach(function (id) {
-      var r = val[id];
-      if (r && (r.status === "pending" || !r.status)) {
-        pending = { id: id, data: r };
+    var keys = Object.keys(val);
+    for (var i = keys.length - 1; i >= 0; i--) {
+      var row = val[keys[i]];
+      if (row && (row.status === "pending" || row.status === "approved")) {
+        return { id: keys[i], data: row };
       }
-    });
-    return pending;
+    }
+    return null;
   }
 
-  async function submitRequest() {
-    if (!user || !db) return;
-    var reason = selectedReason();
-    var text = (details.value || "").trim();
-    if (!reason || !confirmCheck.checked) return;
-    if (reason === "other" && !text) {
-      toast("Please add a reason");
+  /* —— DEACTIVATE —— */
+  document.getElementById("deactSubmit").addEventListener("click", async function () {
+    var btn = document.getElementById("deactSubmit");
+    var reason = selectedReason("deactReason");
+    if (!reason || !user) return;
+    btn.disabled = true;
+    btn.textContent = "Deactivating…";
+    try {
+      var note = (document.getElementById("deactDetails").value || "").trim();
+      await db.ref("users/" + user.uid).update({
+        deactivated: true,
+        deactivatedAt: Date.now(),
+        deactivateReason: reason,
+        deactivateNote: note || null,
+        updatedAt: Date.now()
+      });
+      try {
+        await db.ref("deactivations/" + user.uid).set({
+          uid: user.uid,
+          reason: reason,
+          note: note || null,
+          at: Date.now(),
+          email: user.email || null
+        });
+      } catch (_) {}
+      toast("Account deactivated");
+      show(deactivatedView);
+      accountChip.classList.add("hidden");
+      setHeader("Account deactivated", "");
+      currentStep = "done";
+      setTimeout(async function () {
+        try { await firebase.auth().signOut(); } catch (_) {}
+        location.href = "index.html";
+      }, 2200);
+    } catch (err) {
+      console.error(err);
+      toast("Could not deactivate — try again");
+      btn.disabled = false;
+      btn.textContent = "Deactivate account";
+      updateButtons();
+    }
+  });
+
+  document.getElementById("reactivateBtn").addEventListener("click", async function () {
+    if (!user) return;
+    try {
+      await db.ref("users/" + user.uid).update({
+        deactivated: false,
+        reactivatedAt: Date.now(),
+        updatedAt: Date.now()
+      });
+      toast("Account reactivated");
+      location.href = "profile.html";
+    } catch (e) {
+      toast("Could not reactivate");
+    }
+  });
+
+  /* —— DELETE REQUEST —— */
+  document.getElementById("delSubmit").addEventListener("click", async function () {
+    var btn = document.getElementById("delSubmit");
+    var reason = selectedReason("delReason");
+    var text = (document.getElementById("delDetails").value || "").trim();
+    if (!reason || !user) return;
+    if (reason === "other" && text.length < 3) {
+      toast("Please add a short reason");
       return;
     }
-
-    submitBtn.disabled = true;
-    submitBtn.textContent = "Sending…";
-
+    btn.disabled = true;
+    btn.textContent = "Sending…";
     try {
-      var ref = db.ref("deletionRequests").push();
+      var ref = db.ref("deleteRequests").push();
       var payload = {
         uid: user.uid,
         email: user.email || "",
-        username:
-          profile.username ||
-          profile.userName ||
-          profile.handle ||
-          "",
-        displayName:
-          profile.displayName ||
-          profile.name ||
-          profile.fullName ||
-          "",
-        photoURL:
-          profile.photoURL ||
-          profile.profilePic ||
-          profile.avatar ||
-          "",
+        username: profile.username || profile.userName || "",
+        name: profile.name || profile.fullName || user.displayName || "",
+        photoURL: profile.photoURL || profile.profilePic || profile.avatar || "",
         reason: reason,
         details: text,
         status: "pending",
@@ -312,24 +570,24 @@ textarea:focus{border-color:rgba(255,255,255,.25)}
       });
       existingRequestId = ref.key;
       show(doneView);
+      accountChip.classList.add("hidden");
+      setHeader("Request sent", "");
+      currentStep = "done";
       toast("Request sent to admin");
     } catch (err) {
       console.error(err);
       toast("Failed to send request");
-      submitBtn.disabled = false;
-      submitBtn.textContent = "Send delete request";
-      updateSubmit();
+      btn.disabled = false;
+      btn.textContent = "Send delete request";
+      updateButtons();
     }
-  }
-
-  submitBtn.addEventListener("click", submitRequest);
+  });
 
   function boot() {
     try {
       db = firebase.database();
     } catch (e) {
-      authGate.innerHTML =
-        '<h2>Unavailable</h2><p>Firebase not connected.</p>';
+      authGate.innerHTML = "<h2>Unavailable</h2><p>Firebase not connected.</p>";
       return;
     }
 
@@ -341,30 +599,37 @@ textarea:focus{border-color:rgba(255,255,255,.25)}
       user = u;
       try {
         await loadProfile(u.uid);
+
+        if (profile.deactivated) {
+          show(deactivatedView);
+          accountChip.classList.add("hidden");
+          setHeader("Account deactivated", "");
+          return;
+        }
+
         var existing = await checkExisting(u.uid);
         if (existing) {
           existingRequestId = existing.id;
           var reason = existing.data.reason || "—";
           document.getElementById("pendingText").textContent =
-            "Reason: " +
-            reason +
-            ". Admin has not approved yet. You can keep using the app until then.";
+            "Reason: " + reason + ". Admin has not approved yet. You can keep using the app until then.";
           show(pendingView);
-        } else {
-          show(formView);
+          accountChip.classList.add("hidden");
+          setHeader("Delete request pending", "");
+          return;
         }
+
+        openHub();
       } catch (e) {
         console.error(e);
-        authGate.innerHTML =
-          "<h2>Error</h2><p>Could not load account.</p>";
+        authGate.innerHTML = "<h2>Error</h2><p>Could not load account.</p>";
       }
     });
   }
 
   if (typeof firebase !== "undefined") boot();
   else {
-    authGate.innerHTML =
-      "<h2>Unavailable</h2><p>Firebase scripts missing.</p>";
+    authGate.innerHTML = "<h2>Unavailable</h2><p>Firebase scripts missing.</p>";
   }
 })();
 </script>

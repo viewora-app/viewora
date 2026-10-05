@@ -857,48 +857,62 @@
     }
 
 
-    function uploadToCloudinary(file, onProgress) {
+    function uploadToFirebaseStorage(file, onProgress) {
         return new Promise((resolve, reject) => {
-            if (!file) {
-                reject(new Error("No file selected"));
-                return;
-            }
-
-            const url = `https://api.cloudinary.com/v1_1/${CONFIG.CLOUD_NAME}/auto/upload`;
-            const fd = new FormData();
-            fd.append("file", file);
-            fd.append("upload_preset", CONFIG.UPLOAD_PRESET);
-            fd.append("folder", "viewora/stories");
-
-            const xhr = new XMLHttpRequest();
-            xhr.open("POST", url);
-
-            xhr.upload.onprogress = (e) => {
-                if (e.lengthComputable && typeof onProgress === "function") {
-                    onProgress((e.loaded / e.total) * 90);
+            try {
+                if (typeof firebase === "undefined" || typeof firebase.storage !== "function") {
+                    reject(new Error("Firebase Storage missing"));
+                    return;
                 }
-            };
-
-            xhr.onload = () => {
-                try {
-                    const data = JSON.parse(xhr.responseText || "{}");
-                    if (xhr.status >= 200 && xhr.status < 300 && data.secure_url) {
-                        resolve(data);
-                    } else {
-                        reject(new Error(data.error?.message || "Upload failed"));
+                var user = null;
+                try { user = firebase.auth().currentUser; } catch (_) {}
+                if (!user) {
+                    reject(new Error("Login required to upload story"));
+                    return;
+                }
+                var safe = String((file && file.name) || "story")
+                    .replace(/[^a-zA-Z0-9._-]/g, "_")
+                    .slice(0, 80);
+                var path = "viewora/stories/" + user.uid + "/" + Date.now() + "_" + safe;
+                var ref = firebase.storage().ref(path);
+                var task = ref.put(file, {
+                    contentType: (file && file.type) || "application/octet-stream"
+                });
+                task.on(
+                    "state_changed",
+                    function (snap) {
+                        if (typeof onProgress === "function" && snap.totalBytes) {
+                            onProgress((snap.bytesTransferred / snap.totalBytes) * 90);
+                        }
+                    },
+                    function (err) {
+                        var msg = (err && err.message) || "Storage upload failed";
+                        if (String(err && err.code || "").indexOf("unauthorized") !== -1) {
+                            msg = "Storage permission denied — fix Firebase Storage rules";
+                        }
+                        reject(new Error(msg));
+                    },
+                    function () {
+                        task.snapshot.ref.getDownloadURL().then(function (url) {
+                            resolve({
+                                secure_url: url,
+                                url: url,
+                                public_id: path,
+                                resource_type: String((file && file.type) || "").indexOf("video") === 0 ? "video" : "image"
+                            });
+                        }).catch(reject);
                     }
-                } catch (err) {
-                    reject(err);
-                }
-            };
-
-            xhr.onerror = () => reject(new Error("Network error during upload"));
-            xhr.ontimeout = () => reject(new Error("Upload timed out"));
-            xhr.timeout = 120000;
-            xhr.send(fd);
+                );
+            } catch (e) {
+                reject(e);
+            }
         });
     }
 
+    function uploadToCloudinary(file, onProgress) {
+        // Cloudinary disabled — always Firebase Storage
+        return uploadToFirebaseStorage(file, onProgress);
+    }
 
     function collectOverlays() {
         const texts = [];

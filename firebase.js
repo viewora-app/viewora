@@ -2401,6 +2401,11 @@ console.log(
   CLOUDINARY (Shorts / media upload)
 ==========================================================*/
 
+window.VIEWORA_SKIP_CLOUDINARY =
+    window.VIEWORA_SKIP_CLOUDINARY != null
+        ? window.VIEWORA_SKIP_CLOUDINARY
+        : true; /* Cloudinary cloud disabled — use Firebase Storage */
+
 window.VIEWORA_CLOUDINARY_CLOUD =
     window.VIEWORA_CLOUDINARY_CLOUD ||
     "z5m6wjdf";

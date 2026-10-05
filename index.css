@@ -2346,10 +2346,7 @@ html.viewer-open {
         top: 78px;
     }
 
-    .longVideoContainer {
-        grid-template-columns:
-            repeat(4, minmax(0, 1fr));
-    }
+    .longVideoContainer { grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)) !important; }
 
     .homeContent {
         padding-top: 26px;
@@ -2463,10 +2460,139 @@ html.viewer-open {
 
 /* ---------- LONG VIDEOS GRID (Premium) ---------- */
 .longVideoContainer {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-    padding: 8px 16px 0;
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+    padding: 8px 0 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+}
+
+/* ≥600px: 2 columns, cards stay readable */
+@media (min-width: 600px) {
+  .longVideoContainer {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 14px !important;
+  }
+}
+
+/* iPad / tablet */
+@media (min-width: 768px) {
+  .longVideoContainer {
+    grid-template-columns: repeat(2, minmax(280px, 1fr)) !important;
+    gap: 18px !important;
+  }
+  .homeContent {
+    width: 100% !important;
+    max-width: 960px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    padding: 16px 24px 40px !important;
+  }
+  .topHeader {
+    max-width: 960px;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: 24px !important;
+    padding-right: 24px !important;
+  }
+  .categoryChip {
+    font-size: 13px !important;
+    padding: 10px 14px !important;
+  }
+  .feedTab {
+    font-size: 14px !important;
+    padding: 12px 18px !important;
+    min-height: 44px;
+  }
+  .storyCard { flex: 0 0 90px !important; width: 90px !important; }
+  .storyImageWrap { width: 86px !important; height: 86px !important; }
+  .storyName { width: 90px !important; font-size: 12px !important; }
+  .brandText strong, .topHeader .brandName { font-size: 20px !important; }
+  .headerIcon, .topbar-btn {
+    width: 44px !important;
+    height: 44px !important;
+  }
+}
+
+/* Laptop */
+@media (min-width: 1024px) {
+  .longVideoContainer {
+    /* auto-fill: never more than ~3–4 readable cards */
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)) !important;
+    gap: 20px !important;
+  }
+  .homeContent {
+    max-width: 1100px !important;
+    padding: 20px 28px 48px !important;
+  }
+  .topHeader {
+    max-width: 1100px;
+    padding-left: 28px !important;
+    padding-right: 28px !important;
+  }
+  .feedContainer {
+    max-width: 640px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+  }
+  .videoCardTitle { font-size: 15px !important; }
+  .videoCardMeta { font-size: 12px !important; }
+  .categoryChip {
+    font-size: 13px !important;
+    padding: 10px 16px !important;
+    border-radius: 999px !important;
+  }
+  .feedSwitcher {
+    max-width: 480px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+
+/* Large desktop — still readable, not stamp-sized */
+@media (min-width: 1280px) {
+  .longVideoContainer {
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)) !important;
+    gap: 22px !important;
+  }
+  .homeContent {
+    max-width: 1200px !important;
+  }
+  .topHeader { max-width: 1200px; }
+}
+
+@media (min-width: 1600px) {
+  .longVideoContainer {
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)) !important;
+  }
+  .homeContent {
+    max-width: 1320px !important;
+  }
+  .topHeader { max-width: 1320px; }
+}
+
+/* Nav: readable on all large screens */
+@media (min-width: 768px) {
+  .bottomNav,
+  #vieworaGlobalNav {
+    max-width: 480px !important;
+    width: calc(100% - 48px) !important;
+    bottom: 18px !important;
+    border-radius: 28px !important;
+    height: 72px !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+  }
+  .bottomNav a span:not(.navBadge):not(.uploadNavInner),
+  #vieworaGlobalNav a span:not(.navBadge):not(.uploadNavInner) {
+    font-size: 11px !important;
+  }
+  .bottomNav a i,
+  #vieworaGlobalNav a i {
+    font-size: 22px !important;
+  }
 }
 
 /* ---------- POSTS FEED (Premium) ---------- */
@@ -4384,3 +4510,329 @@ i.whiteTick {
 .watchProgressBar[hidden] {
   display: none !important;
 }
+
+
+/* =========================================================
+   VIEWORA RESPONSIVE — Phone · Tablet · Laptop · TV
+   ========================================================= */
+
+/* Tablet portrait / small laptop */
+@media (min-width: 768px) {
+  .homeContent {
+    width: min(1100px, 100%);
+    padding: 20px max(20px, calc((100vw - 1100px) / 2)) 40px;
+  }
+
+  .storiesSection {
+    margin-bottom: 28px;
+  }
+
+  .storiesContainer,
+  .firebaseStories {
+    gap: 16px;
+    padding: 6px 4px 12px;
+  }
+
+  .storyCard {
+    flex: 0 0 92px;
+    width: 92px;
+  }
+
+  .storyImageWrap {
+    width: 88px;
+    height: 88px;
+  }
+
+  .storyName {
+    width: 92px;
+    font-size: 12px;
+  }
+
+  .feedContainer {
+    max-width: 640px;
+    margin-left: auto;
+    margin-right: auto;
+    gap: 22px;
+  }
+
+  .postCard {
+    border-radius: 18px;
+  }
+
+  .postMedia img,
+  .postMedia video {
+    max-height: 720px;
+  }
+
+  .longVideoContainer {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+  }
+
+  .topHeader {
+    height: 72px;
+  }
+
+  .sectionTop h2 {
+    font-size: 24px;
+  }
+
+  /* Floating bottom nav on tablet+ */
+  .bottomNav,
+  #vieworaGlobalNav {
+    max-width: 520px !important;
+    bottom: 14px !important;
+    border-radius: 28px !important;
+    border: 1px solid rgba(255,255,255,.1) !important;
+    width: calc(100% - 32px) !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    box-shadow: 0 12px 40px rgba(0,0,0,.45) !important;
+  }
+
+  .app {
+    padding-bottom: 120px;
+  }
+}
+
+/* Laptop / desktop */
+@media (min-width: 1024px) {
+  .homeContent {
+    width: min(1280px, 100%);
+    padding: 24px max(24px, calc((100vw - 1280px) / 2)) 48px;
+  }
+
+  .feedContainer {
+    max-width: 680px;
+  }
+
+  .longVideoContainer { grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)) !important; }
+
+  .storyCard {
+    flex: 0 0 100px;
+    width: 100px;
+  }
+
+  .storyImageWrap {
+    width: 96px;
+    height: 96px;
+  }
+
+  .storyName {
+    width: 100px;
+    font-size: 12px;
+  }
+
+  .postHeader {
+    padding: 14px 16px;
+  }
+
+  .postAvatar {
+    width: 46px;
+    height: 46px;
+  }
+
+  .postUser strong {
+    font-size: 14px;
+  }
+
+  .postCaption {
+    font-size: 14px;
+    padding: 14px 16px 4px;
+  }
+
+  .categorySection {
+    max-width: 1280px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .searchSection {
+    max-width: 1280px;
+  }
+}
+
+/* Large desktop / small TV */
+@media (min-width: 1280px) {
+  .homeContent {
+    width: min(1440px, 100%);
+    padding: 28px max(32px, calc((100vw - 1440px) / 2)) 56px;
+  }
+
+  /* Optional 2-column posts on very wide screens */
+  .feedContainer {
+    max-width: 720px;
+  }
+
+  .longVideoContainer { grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)) !important; }
+
+  .bottomNav,
+  #vieworaGlobalNav {
+    max-width: 560px !important;
+    height: 76px !important;
+  }
+
+  .bottomNav a i,
+  #vieworaGlobalNav a i {
+    font-size: 22px;
+  }
+
+  .bottomNav a span:not(.navBadge):not(.uploadNavInner),
+  #vieworaGlobalNav a span:not(.navBadge):not(.uploadNavInner) {
+    font-size: 11px;
+  }
+}
+
+/* TV / ultra-wide */
+@media (min-width: 1600px) {
+  .homeContent {
+    width: min(1600px, 100%);
+    padding: 32px max(40px, calc((100vw - 1600px) / 2)) 64px;
+  }
+
+  .longVideoContainer { grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)) !important; }
+
+  .feedContainer {
+    max-width: 760px;
+  }
+
+  .storyCard {
+    flex: 0 0 110px;
+    width: 110px;
+  }
+
+  .storyImageWrap {
+    width: 104px;
+    height: 104px;
+  }
+
+  .sectionTop h2 {
+    font-size: 28px;
+  }
+
+  /* Larger type for lean-back viewing */
+  body {
+    font-size: 16px;
+  }
+}
+
+/* Landscape phones / foldables — keep usable */
+@media (max-width: 900px) and (orientation: landscape) {
+  .storiesContainer {
+    gap: 10px;
+  }
+  .storyCard {
+    flex: 0 0 64px;
+    width: 64px;
+  }
+  .storyImageWrap {
+    width: 60px;
+    height: 60px;
+  }
+}
+
+
+/* =========================================================
+   VIEWORA FULL-WIDTH GUARD — never shrink to phone strip
+========================================================= */
+html, body {
+  width: 100% !important;
+  max-width: 100% !important;
+  overflow-x: hidden !important;
+}
+.app, #app, .viewora-app {
+  width: 100% !important;
+  max-width: 100% !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+.homeContent {
+  width: 100%;
+  box-sizing: border-box;
+}
+.topHeader {
+  width: 100%;
+  box-sizing: border-box;
+}
+.homeFeed, .swipeFeed, .swipePanel {
+  box-sizing: border-box;
+}
+.swipePanel .longVideoContainer,
+.swipePanel .feedContainer {
+  width: 100%;
+  max-width: 100%;
+}
+
+/* Stories ring — clean sizes across devices */
+.storiesContainer,
+.firebaseStories {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 12px;
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.storyCard {
+  flex: 0 0 auto;
+}
+.storyCard .storyImageWrap {
+  box-sizing: border-box;
+}
+.storyCard.storyUnseen .storyImageWrap {
+  background: conic-gradient(from 0deg, #7c5cff, #00d9ff, #ff4fd8, #f59e0b, #7c5cff) !important;
+  padding: 3px;
+}
+.storyCard.storySeen .storyImageWrap {
+  background: rgba(255,255,255,.28) !important;
+  padding: 2.5px;
+}
+@media (min-width: 768px) {
+  .storyCard { flex-basis: 88px; width: 88px; }
+  .storyImageWrap { width: 84px; height: 84px; }
+  .storyName { width: 88px; font-size: 12px; }
+}
+@media (min-width: 1024px) {
+  .storyCard { flex-basis: 96px; width: 96px; }
+  .storyImageWrap { width: 92px; height: 92px; }
+  .storyName { width: 96px; }
+}
+
+/* Video cards never stamp-sized */
+.videoCard,
+.longVideoCard {
+  min-width: 0;
+  width: 100%;
+}
+.videoCardMedia,
+.longVideoCard .videoThumbnailWrap {
+  aspect-ratio: 16 / 9;
+  width: 100%;
+}
+.videoCardMedia img,
+.videoCardMedia video,
+.longVideoCard .videoThumbnail {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+
+/* Feed error / retry */
+.feedErrorState { padding: 48px 24px; text-align: center; }
+.feedRetryBtn {
+  margin-top: 16px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border: 0;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #6d28d9, #4f46e5);
+  color: #fff;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  font-family: inherit;
+}
+.feedRetryBtn:disabled { opacity: 0.6; cursor: wait; }
