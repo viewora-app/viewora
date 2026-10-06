@@ -379,55 +379,115 @@ if (loginForm) {
 }
 
 /* =========================================================
-   FORGOT PASSWORD
+   FORGOT PASSWORD MODAL
 ========================================================= */
 
-const forgotPasswordBtn =
-    $("forgotPasswordBtn");
+const forgotPasswordBtn = $("forgotPasswordBtn");
+const forgotModal = $("forgotModal");
+const closeForgotModal = $("closeForgotModal");
+const sendResetBtn = $("sendResetBtn");
+const resetEmailInput = $("resetEmail");
+const resetMessage = $("resetMessage");
+
+function openForgotModal() {
+    if (!forgotModal) return;
+    forgotModal.classList.remove("hidden");
+    // Prefill from login form if present
+    try {
+        const loginEmail = ($("adminEmail") && $("adminEmail").value) || "";
+        if (resetEmailInput && loginEmail) {
+            resetEmailInput.value = loginEmail.trim();
+        }
+    } catch (_) {}
+    if (resetMessage) {
+        resetMessage.classList.add("hidden");
+        resetMessage.textContent = "";
+    }
+    setTimeout(function () {
+        try { resetEmailInput && resetEmailInput.focus(); } catch (_) {}
+    }, 50);
+}
+
+function closeForgotModalFn() {
+    if (!forgotModal) return;
+    forgotModal.classList.add("hidden");
+}
 
 if (forgotPasswordBtn) {
+    forgotPasswordBtn.addEventListener("click", function (e) {
+        e.preventDefault();
+        openForgotModal();
+    });
+}
 
-    forgotPasswordBtn.addEventListener(
-        "click",
-        async () => {
+if (closeForgotModal) {
+    closeForgotModal.addEventListener("click", function (e) {
+        e.preventDefault();
+        closeForgotModalFn();
+    });
+}
 
-            const email =
-                $("adminEmail")?.value
-                    .trim();
+if (forgotModal) {
+    const overlay = forgotModal.querySelector(".modalOverlay");
+    if (overlay) {
+        overlay.addEventListener("click", closeForgotModalFn);
+    }
+}
 
-            if (!email) {
+document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape" && forgotModal && !forgotModal.classList.contains("hidden")) {
+        closeForgotModalFn();
+    }
+});
 
-                showToast(
-                    "Enter your admin email first.",
-                    "warning"
-                );
-
-                return;
+if (sendResetBtn) {
+    sendResetBtn.addEventListener("click", async function () {
+        const email = ((resetEmailInput && resetEmailInput.value) || "").trim();
+        if (!email) {
+            if (typeof showToast === "function") {
+                showToast("Enter your admin email.", "warning");
             }
-
-            try {
-
-                await adminAuth
-                    .sendPasswordResetEmail(
-                        email
-                    );
-
-                showToast(
-                    "Password reset email sent.",
-                    "success"
-                );
-
-            } catch (error) {
-
-                console.error(error);
-
-                showToast(
-                    "Unable to send password reset email.",
-                    "error"
-                );
+            if (resetMessage) {
+                resetMessage.textContent = "Please enter a valid email.";
+                resetMessage.classList.remove("hidden");
             }
+            return;
         }
-    );
+        sendResetBtn.disabled = true;
+        const prev = sendResetBtn.innerHTML;
+        sendResetBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> <span>Sending…</span>';
+        try {
+            await adminAuth.sendPasswordResetEmail(email);
+            if (resetMessage) {
+                resetMessage.textContent = "Reset link sent. Check your inbox.";
+                resetMessage.classList.remove("hidden");
+            }
+            if (typeof showToast === "function") {
+                showToast("Password reset email sent.", "success");
+            }
+            setTimeout(closeForgotModalFn, 1600);
+        } catch (error) {
+            console.error(error);
+            var msg = "Unable to send password reset email.";
+            if (error && error.code === "auth/user-not-found") {
+                msg = "No account found for this email.";
+            } else if (error && error.code === "auth/invalid-email") {
+                msg = "Invalid email address.";
+            } else if (error && error.code === "auth/too-many-requests") {
+                msg = "Too many requests. Try again later.";
+            }
+            if (resetMessage) {
+                resetMessage.textContent = msg;
+                resetMessage.classList.remove("hidden");
+            }
+            if (typeof showToast === "function") {
+                showToast(msg, "error");
+            }
+        } finally {
+            sendResetBtn.disabled = false;
+            sendResetBtn.innerHTML = prev;
+        }
+    });
 }
 
 /* =========================================================

@@ -20,9 +20,31 @@ if (typeof firebase === "undefined") {
 }
 
 /*
- * Use the existing Firebase instances.
- * No const auth / const db declaration here.
+ * Resolve auth/db from window (firebase.js exports).
+ * Top-level `let auth` in firebase.js is NOT a shared global across files.
  */
+function resolveAdminFirebase() {
+    var a = window.auth || window.firebaseAuth || null;
+    var d = window.db || window.firebaseDB || null;
+    try {
+        if (!a && typeof firebase !== "undefined") a = firebase.auth();
+        if (!d && typeof firebase !== "undefined") d = firebase.database();
+    } catch (_) {}
+    if (a) window.auth = a;
+    if (d) {
+        window.db = d;
+        window.firebaseDB = d;
+    }
+    return { auth: a, db: d };
+}
+
+var __fb = resolveAdminFirebase();
+var auth = __fb.auth;
+var db = __fb.db;
+
+if (!auth || !db) {
+    console.error("[VIEWORA ADMIN] auth/db missing — ensure firebase.js loads first");
+}
 
 
 /* =========================================================
@@ -338,7 +360,9 @@ function showToast(message, type = "success") {
    AUTH
 ========================================================= */
 
-auth.onAuthStateChanged(async (user) => {
+(function(){ var _r = resolveAdminFirebase(); auth = _r.auth || auth; db = _r.db || db; })();
+if (!auth) { console.error("[VIEWORA ADMIN] No auth"); }
+else auth.onAuthStateChanged(async (user) => {
 
     if (!user) {
         window.location.replace("admin-login.html");

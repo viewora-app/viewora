@@ -2030,11 +2030,14 @@ window.firebaseConfig =
 
 
 window.auth =
-    auth;
+    auth || (typeof firebase !== "undefined" ? firebase.auth() : null);
 
 
 window.db =
-    db;
+    db || (typeof firebase !== "undefined" ? firebase.database() : null);
+
+window.firebaseDB = window.db;
+window.firebaseAuth = window.auth;
 
 
 window.storage =
