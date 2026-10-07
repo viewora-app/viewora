@@ -51,6 +51,8 @@
     window.CLOUDINARY_UPLOAD_PRESET = UPLOAD_PRESET;
 
     window.CLOUDINARY_UPLOAD_URL = UPLOAD_URL;
+    window.VIEWORA_CLOUDINARY_CLOUD = window.VIEWORA_CLOUDINARY_CLOUD || CLOUD_NAME;
+    window.VIEWORA_CLOUDINARY_PRESET = window.VIEWORA_CLOUDINARY_PRESET || UPLOAD_PRESET;
 
 
     /* ======================================================
@@ -61,7 +63,7 @@
 
         if (!CLOUD_NAME) {
             throw new Error(
-                "Cloudinary cloud name is missing."
+                "Cloudinary cloud name is missing. Set window.VIEWORA_CLOUDINARY_CLOUD or enable Firebase Storage fallback."
             );
         }
 
