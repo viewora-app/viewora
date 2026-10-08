@@ -989,7 +989,7 @@
 
         feedContainer.innerHTML = "";
 
-        const posts = [];
+        let posts = [];
 
         snapshot.forEach((child) => {
             const data = child.val() || {};

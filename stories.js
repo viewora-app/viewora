@@ -775,6 +775,26 @@
     const g = currentGroup();
     if (!g || !g.items.length) {
       const uid = new URLSearchParams(location.search).get("uid") || "";
+      const stage = document.getElementById("stage");
+      if (stage && !stage.dataset.emptyShown) {
+        stage.dataset.emptyShown = "1";
+        stage.innerHTML = '<div style="color:#fff;text-align:center;padding:40px 20px;font-family:system-ui"><p style="opacity:.7;margin:0 0 16px">No active story</p><button type="button" id="storyEmptyBack" style="padding:12px 20px;border:0;border-radius:12px;background:#6d28d9;color:#fff;font-weight:700">Back</button></div>';
+        const b = document.getElementById("storyEmptyBack");
+        if (b) b.onclick = function () {
+          window.location.href = uid
+            ? "profile.html?uid=" + encodeURIComponent(uid)
+            : "index.html";
+        };
+        // auto-back after 2.5s
+        setTimeout(function () {
+          if (document.getElementById("storyEmptyBack")) {
+            window.location.href = uid
+              ? "profile.html?uid=" + encodeURIComponent(uid)
+              : "index.html";
+          }
+        }, 2500);
+        return;
+      }
       window.location.href = uid
         ? "profile.html?uid=" + encodeURIComponent(uid)
         : "index.html";
@@ -968,9 +988,19 @@
     let snap;
     if (focusUid && (soloMode || true)) {
       // Full scan still needed for home chain; but prioritize speed with once
-      snap = await db.ref("stories").once("value");
+      try {
+        snap = await db.ref("stories").once("value");
+      } catch (e) {
+        console.warn("[VIEWORA STORIES] load", e);
+        snap = { forEach: function () {}, exists: function () { return false; }, val: function () { return null; } };
+      }
     } else {
-      snap = await db.ref("stories").once("value");
+      try {
+        snap = await db.ref("stories").once("value");
+      } catch (e) {
+        console.warn("[VIEWORA STORIES] load", e);
+        snap = { forEach: function () {}, exists: function () { return false; }, val: function () { return null; } };
+      }
     }
     const byUser = {};
 

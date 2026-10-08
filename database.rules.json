@@ -45,7 +45,10 @@
         "stories": {
           ".write": "auth != null && auth.uid === $uid"
         }
-      }
+      },
+      ".indexOn": [
+        "isLive"
+      ]
     },
     "admins": {
       "$uid": {

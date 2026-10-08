@@ -319,8 +319,10 @@ async function messagesInitialize() {
 
         messagesInitialized = true;
         try {
-          if (typeof loadNotesStrip === "function") loadNotesStrip();
-          else if (typeof window.loadNotesStrip === "function") window.loadNotesStrip();
+          try {
+            if (typeof window.loadNotesStrip === "function") window.loadNotesStrip();
+            else if (typeof loadNotesStrip === "function") loadNotesStrip();
+          } catch (e) { console.warn("[VIEWORA MSG] notes strip", e); }
         } catch (_) {}
 
         console.log(
@@ -3652,8 +3654,8 @@ console.log(
     var box = document.getElementById("friendsNotes");
     var uid =
       (firebase.auth().currentUser && firebase.auth().currentUser.uid) ||
-      me ||
       (typeof messagesUID !== "undefined" ? messagesUID : "") ||
+      (typeof messagesUser !== "undefined" && messagesUser && messagesUser.uid) ||
       "";
     if (!uid) return;
     var db = firebase.database();
