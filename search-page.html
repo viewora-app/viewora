@@ -50,6 +50,9 @@
       </button>
     </div>
 
+    <button type="button" class="search-mic" id="searchMic" aria-label="Voice search">
+      <i class="fa-solid fa-microphone"></i>
+    </button>
     <button type="button" class="search-go" id="searchGo" aria-label="Search">
       <i class="fa-solid fa-magnifying-glass"></i>
     </button>
@@ -120,5 +123,47 @@
 <script src="theme.js"></script>
 <script src="search-page.js"></script>
 <script src="nav.js"></script>
+
+<script>
+(function(){
+  var mic = document.getElementById("searchMic");
+  var input = document.getElementById("searchInput");
+  if (!mic) return;
+  mic.addEventListener("click", function(){
+    var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) { alert("Voice search not supported on this device."); return; }
+    var r = new SR();
+    r.lang = "en-IN";
+    mic.classList.add("listening");
+    r.onresult = function(ev){
+      var t = (ev.results[0]&&ev.results[0][0]&&ev.results[0][0].transcript)||"";
+      if (input) { input.value = t; input.dispatchEvent(new Event("input",{bubbles:true})); }
+      var go = document.getElementById("searchGo");
+      if (go) go.click();
+    };
+    r.onerror = r.onend = function(){ mic.classList.remove("listening"); };
+    try { r.start(); } catch(e){ mic.classList.remove("listening"); }
+  });
+})();
+</script>
+
+
+<script>
+(function(){
+  try {
+    var q = new URLSearchParams(location.search).get("q") || "";
+    var input = document.getElementById("searchInput");
+    if (q && input) {
+      input.value = q;
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+      setTimeout(function(){
+        var go = document.getElementById("searchGo");
+        if (go) go.click();
+      }, 200);
+    }
+  } catch(e) {}
+})();
+</script>
+
 </body>
 </html>

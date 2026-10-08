@@ -1162,3 +1162,13 @@ a {
 .spActions .spShare i {
   font-size: 17px !important;
 }
+
+.search-mic {
+  width: 40px; height: 40px; border: 0; border-radius: 50%;
+  background: rgba(255,255,255,0.08); color: #fff;
+  display: grid; place-items: center; flex-shrink: 0; cursor: pointer;
+}
+.search-mic.listening { background: rgba(239,68,68,0.35); color: #fca5a5; }
+@media (min-width: 900px) {
+  .search-page { max-width: 840px; margin: 0 auto; }
+}

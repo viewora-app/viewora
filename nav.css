@@ -422,3 +422,243 @@ nav.bottom-nav:not(#vieworaGlobalNav),
   margin-top: 2px;
   font-weight: 500;
 }
+
+
+
+/* =========================================================
+   VIEWORA RESPONSIVE NAV
+   Phone  → bottom bar (Instagram)
+   ≥900px → left sidebar (YouTube / IG desktop)
+========================================================= */
+
+:root {
+  --side-nav-w: 88px;
+  --side-nav-w-wide: 220px;
+}
+
+/* Tablet / Laptop: compact left rail */
+@media (min-width: 900px) {
+  html.has-bottom-nav,
+  body.has-bottom-nav {
+    padding-bottom: 0 !important;
+    padding-left: var(--side-nav-w) !important;
+  }
+
+  .bottomNav,
+  #vieworaGlobalNav,
+  #bottomNav {
+    position: fixed !important;
+    left: 0 !important;
+    top: 0 !important;
+    bottom: 0 !important;
+    right: auto !important;
+    transform: none !important;
+
+    width: var(--side-nav-w) !important;
+    max-width: var(--side-nav-w) !important;
+    min-width: var(--side-nav-w) !important;
+    height: 100vh !important;
+    height: 100dvh !important;
+
+    display: flex !important;
+    flex-direction: column !important;
+    grid-template-columns: none !important;
+    justify-content: flex-start !important;
+    align-items: center !important;
+    gap: 6px !important;
+
+    padding: 20px 8px 24px !important;
+    margin: 0 !important;
+
+    border-top: 0 !important;
+    border-right: 1px solid var(--nav-border, rgba(255,255,255,0.08)) !important;
+    border-radius: 0 !important;
+
+    background: rgba(10, 10, 14, 0.96) !important;
+    backdrop-filter: blur(24px) !important;
+    -webkit-backdrop-filter: blur(24px) !important;
+    box-shadow: 8px 0 32px rgba(0,0,0,0.25) !important;
+    z-index: 99999 !important;
+  }
+
+  .bottomNav a,
+  #vieworaGlobalNav a,
+  #bottomNav a {
+    width: 100% !important;
+    max-width: 72px !important;
+    height: auto !important;
+    min-height: 64px !important;
+    padding: 10px 4px !important;
+    border-radius: 16px !important;
+    gap: 6px !important;
+    font-size: 11px !important;
+  }
+
+  .bottomNav a i,
+  #vieworaGlobalNav a i,
+  #bottomNav a i {
+    font-size: 22px !important;
+  }
+
+  .bottomNav a.active,
+  #vieworaGlobalNav a.active {
+    background: rgba(124, 92, 255, 0.14) !important;
+    color: #fff !important;
+  }
+
+  /* Center + button stays prominent */
+  .bottomNav a.uploadNav,
+  #vieworaGlobalNav a.uploadNav,
+  .bottomNav a[data-nav="create"],
+  #vieworaGlobalNav a[data-nav="create"] {
+    margin: 8px 0 !important;
+  }
+  .bottomNav a.uploadNav .uploadNavInner,
+  #vieworaGlobalNav a.uploadNav .uploadNavInner,
+  .bottomNav .uploadBtn,
+  #vieworaGlobalNav .uploadBtn {
+    width: 48px !important;
+    height: 48px !important;
+    border-radius: 16px !important;
+  }
+
+  /* Push content away from sidebar */
+  .homeContent,
+  .app,
+  #app,
+  .viewora-app,
+  .topHeader,
+  main,
+  .profilePage,
+  .settingsPage {
+    margin-left: 0 !important; /* body padding handles offset */
+  }
+
+  /* Kill old "phone pill" nav constraints from index.css */
+  .bottomNav,
+  #vieworaGlobalNav {
+    max-width: var(--side-nav-w) !important;
+    width: var(--side-nav-w) !important;
+    border-radius: 0 !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    transform: none !important;
+  }
+}
+
+/* Wide desktop: labeled sidebar */
+@media (min-width: 1280px) {
+  html.has-bottom-nav,
+  body.has-bottom-nav {
+    padding-left: var(--side-nav-w-wide) !important;
+  }
+
+  .bottomNav,
+  #vieworaGlobalNav,
+  #bottomNav {
+    width: var(--side-nav-w-wide) !important;
+    max-width: var(--side-nav-w-wide) !important;
+    min-width: var(--side-nav-w-wide) !important;
+    align-items: stretch !important;
+    padding: 24px 12px 28px !important;
+    gap: 4px !important;
+  }
+
+  .bottomNav a,
+  #vieworaGlobalNav a,
+  #bottomNav a {
+    max-width: none !important;
+    flex-direction: row !important;
+    justify-content: flex-start !important;
+    gap: 14px !important;
+    min-height: 52px !important;
+    padding: 12px 16px !important;
+    border-radius: 14px !important;
+    font-size: 14px !important;
+    font-weight: 600 !important;
+  }
+
+  .bottomNav a i,
+  #vieworaGlobalNav a i {
+    font-size: 20px !important;
+    width: 24px !important;
+    text-align: center !important;
+  }
+
+  .bottomNav a span:not(.navBadge):not(.uploadNavInner),
+  #vieworaGlobalNav a span:not(.navBadge):not(.uploadNavInner) {
+    display: inline !important;
+    font-size: 14px !important;
+  }
+
+  .bottomNav a.uploadNav,
+  #vieworaGlobalNav a[data-nav="create"] {
+    justify-content: center !important;
+  }
+}
+
+/* Phone / small tablet — keep classic bottom nav */
+@media (max-width: 899px) {
+  .bottomNav,
+  #vieworaGlobalNav {
+    position: fixed !important;
+    left: 50% !important;
+    bottom: 0 !important;
+    top: auto !important;
+    transform: translateX(-50%) !important;
+    width: 100% !important;
+    max-width: 650px !important;
+    height: calc(var(--nav-height, 72px) + env(safe-area-inset-bottom, 0px)) !important;
+    flex-direction: row !important;
+    display: grid !important;
+    grid-template-columns: repeat(5, 1fr) !important;
+    border-right: 0 !important;
+    border-top: 1px solid var(--nav-border, rgba(255,255,255,0.08)) !important;
+    border-radius: 0 !important;
+    padding: 0 4px env(safe-area-inset-bottom, 0px) !important;
+  }
+
+  html.has-bottom-nav,
+  body.has-bottom-nav {
+    padding-left: 0 !important;
+    padding-bottom: calc(var(--nav-height, 72px) + env(safe-area-inset-bottom, 0px)) !important;
+  }
+}
+
+
+/* =========================================================
+   PAGE DESKTOP SHELL — all pages with has-bottom-nav
+========================================================= */
+@media (min-width: 900px) {
+  body.has-bottom-nav .page,
+  body.has-bottom-nav .app,
+  body.has-bottom-nav .container,
+  body.has-bottom-nav .profilePage,
+  body.has-bottom-nav .settingsWrap,
+  body.has-bottom-nav .uploadPage,
+  body.has-bottom-nav .videoPage,
+  body.has-bottom-nav .search-page,
+  body.has-bottom-nav main {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 899.98px) {
+  html.has-bottom-nav, body.has-bottom-nav {
+    padding-left: 0 !important;
+  }
+  .bottomNav, #vieworaGlobalNav {
+    left: 50% !important;
+    top: auto !important;
+    bottom: 0 !important;
+    transform: translateX(-50%) !important;
+    width: 100% !important;
+    max-width: 650px !important;
+    height: calc(var(--nav-height, 72px) + env(safe-area-inset-bottom, 0px)) !important;
+    flex-direction: row !important;
+    display: grid !important;
+    grid-template-columns: repeat(5, 1fr) !important;
+  }
+}

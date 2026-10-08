@@ -127,7 +127,7 @@
 
 
     const formatDuration = (sec) => {
-        sec = Math.max(0, Math.floor(Number(sec) || 0));
+        sec = normalizeDurationSec(sec);
         if (!sec) return "";
         const h = Math.floor(sec / 3600);
         const m = Math.floor((sec % 3600) / 60);
@@ -135,6 +135,46 @@
         if (h > 0) return h + ":" + String(m).padStart(2, "0") + ":" + String(s).padStart(2, "0");
         return m + ":" + String(s).padStart(2, "0");
     };
+
+    /** Accept seconds, ms, or "m:ss" / "h:mm:ss" strings; reject timestamps */
+    function normalizeDurationSec(val) {
+        if (val == null || val === "") return 0;
+        if (typeof val === "string") {
+            var t = val.trim();
+            if (/^\d{1,2}:\d{2}(:\d{2})?$/.test(t)) {
+                var parts = t.split(":").map(Number);
+                if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
+                if (parts.length === 2) return parts[0] * 60 + parts[1];
+            }
+            val = Number(t);
+        }
+        var n = Number(val);
+        if (!Number.isFinite(n) || n <= 0) return 0;
+        // milliseconds (e.g. 125000)
+        if (n >= 1000 && n < 1e11 && n === Math.floor(n) && n % 1000 === 0 && n / 1000 < 86400) {
+            // ambiguous; if looks like ms for video ( > 60000 and divisible)
+            if (n > 36000) n = n / 1000; // > 10 hours as seconds unlikely; treat large as ms
+        }
+        // pure ms range often used: 1000–86400000 for under 24h
+        if (n > 86400 && n < 86400000) n = n / 1000;
+        // unix timestamps mistaken as duration
+        if (n > 1e11) return 0;
+        n = Math.floor(n);
+        if (n > 86400) return 0; // > 24h not a clip duration
+        return n;
+    }
+
+    function durationFromData(data) {
+        if (!data) return 0;
+        return normalizeDurationSec(
+            data.durationSec != null ? data.durationSec :
+            data.duration != null ? data.duration :
+            data.length != null ? data.length :
+            data.videoDuration != null ? data.videoDuration :
+            data.mediaDuration != null ? data.mediaDuration :
+            0
+        );
+    }
 
 
     const getAvatar = (data) => {
@@ -1263,9 +1303,7 @@
         const vUrlForCard = video || getVideoURL(data);
         if (vUrlForCard) card.dataset.videoUrl = vUrlForCard;
 
-        const durSec = Number(
-            data.duration || data.durationSec || data.length || data.videoDuration || 0
-        ) || 0;
+        const durSec = durationFromData(data);
         const hasMusic = !!(
             data.music || data.musicId || data.audioUrl || data.hasMusic ||
             (data.category && String(data.category).toLowerCase().includes("music"))
@@ -1655,32 +1693,49 @@
             try { paintAllWatchProgress(); } catch (_) {}
             setTimeout(function () { try { paintAllWatchProgress(); } catch (_) {} }, 400);
 
-            // Auto-fill duration badge when missing
+            // Fill / correct duration badges from real media metadata
             longVideoContainer.querySelectorAll(".longVideoCard").forEach((card) => {
                 const badge = card.querySelector(".videoDurationBadge");
-                if (badge && (badge.textContent || "").trim()) return;
                 const vUrl = card.dataset.videoUrl;
                 const vidId = card.dataset.videoId || "";
                 if (!vUrl) return;
+                const existing = badge ? (badge.textContent || "").trim() : "";
+                // Re-probe if missing or looks wrong (0:00, empty, or > 3h as string)
+                const needsProbe = !existing || existing === "0:00" || existing === "0:0";
+                if (!needsProbe && existing) {
+                    // still verify in background if duration field was suspect
+                }
                 try {
                     const v = document.createElement("video");
                     v.preload = "metadata";
                     v.muted = true;
+                    v.playsInline = true;
                     v.src = vUrl;
-                    v.onloadedmetadata = () => {
+                    const apply = function () {
                         const d = v.duration;
-                        if (d && isFinite(d) && d > 0) {
+                        if (d && isFinite(d) && d > 0 && d < 86400) {
                             const label = formatDuration(d);
                             if (badge) {
                                 badge.textContent = label;
                                 badge.style.display = "";
                             }
-                            try {
-                                db.ref("videos/" + vidId).update({ duration: Math.round(d) }).catch(() => {});
-                            } catch (_) {}
+                            if (vidId && db) {
+                                try {
+                                    db.ref("videos/" + vidId).update({
+                                        duration: Math.round(d),
+                                        durationSec: Math.round(d)
+                                    }).catch(function () {});
+                                } catch (_) {}
+                            }
                         }
                         try { v.removeAttribute("src"); v.load(); } catch (_) {}
                     };
+                    v.onloadedmetadata = apply;
+                    v.onerror = function () {
+                        try { v.removeAttribute("src"); } catch (_) {}
+                    };
+                    // iOS sometimes needs load()
+                    try { v.load(); } catch (_) {}
                 } catch (_) {}
             });
 
@@ -2368,9 +2423,12 @@
             feedContainer.addEventListener("click", function (e) {
                 const t = e.target;
                 if (!t || !t.closest) return;
-                if (t.closest("button, a, .postAction, .carouselPrev, .carouselNext, .postMusicMute, .homeMenuBtn, [data-action], [data-menu-action], .postUser")) {
+                // Only open when user taps the post media (not whole card / meta)
+                if (t.closest("button, a, .postAction, .carouselPrev, .carouselNext, .postMusicMute, .homeMenuBtn, [data-action], [data-menu-action], .postUser, .postActions, .postMeta, .postCaption")) {
                     return;
                 }
+                const media = t.closest(".postMediaWrap, .postMedia, .post-image, [data-view-image], .postCarouselTrack");
+                if (!media) return; // ignore non-media clicks — post stays closed
                 const card = t.closest(".vieworaPostCard[data-post-id]");
                 if (!card) return;
                 e.preventDefault();

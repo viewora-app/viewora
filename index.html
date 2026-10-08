@@ -136,6 +136,102 @@
         }
     </style>
 
+
+<style id="homeSearchStyle">
+/* Header search between brand and message/crown */
+.topHeader {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  padding-left: 12px !important;
+  padding-right: 12px !important;
+}
+.topHeader .brand { flex-shrink: 0; }
+.headerSearch {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 520px;
+}
+.headerSearchField {
+  flex: 1;
+  min-width: 0;
+  height: 40px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: rgba(255,255,255,0.55);
+  font-size: 14px;
+  font-weight: 500;
+  font-family: inherit;
+  text-align: left;
+  padding: 0 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  -webkit-tap-highlight-color: transparent;
+}
+.headerSearchField:active {
+  background: rgba(255,255,255,0.12);
+}
+.headerSearchPlaceholder {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.headerSearchMic {
+  width: 40px;
+  height: 40px;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.08);
+  color: #fff;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  cursor: pointer;
+  font-size: 15px;
+}
+.headerSearchMic.listening {
+  background: rgba(239,68,68,0.4);
+  color: #fecaca;
+  animation: micPulse 1s ease infinite;
+}
+@keyframes micPulse {
+  50% { box-shadow: 0 0 0 8px rgba(239,68,68,0.18); }
+}
+.headerActions {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  flex-shrink: 0 !important;
+}
+/* Hide old standalone search icon if any leftover */
+#searchBtn { display: none !important; }
+@media (max-width: 380px) {
+  .headerSearchField { font-size: 12px; height: 36px; padding: 0 10px; }
+  .headerSearchMic { width: 36px; height: 36px; }
+}
+@media (min-width: 900px) {
+  .headerSearchField { height: 44px; font-size: 15px; }
+  .headerSearchMic { width: 44px; height: 44px; }
+}
+</style>
+
+
+<style id="feedLayoutFix">
+.homeFeed { overflow-x: hidden !important; width: 100% !important; max-width: 100% !important; }
+.swipeFeed { display: block !important; width: 100% !important; transform: none !important; }
+.swipePanel { display: none !important; width: 100% !important; }
+.swipeFeed:not(.posts-view) .swipePanel:first-child { display: block !important; }
+.swipeFeed.posts-view .swipePanel:last-child { display: block !important; }
+.longVideoContainer { display: grid !important; grid-template-columns: repeat(2, minmax(0,1fr)) !important; gap: 12px !important; }
+.feedContainer { display: flex !important; flex-direction: column !important; gap: 16px !important; max-width: 640px !important; margin: 0 auto !important; }
+</style>
+
 </head>
 
 <body>
@@ -150,15 +246,20 @@
             <img src="assets/logo.png" alt="Viewora" class="brandLogo" onerror="this.onerror=null;this.src='assets/default-avatar.png'">
             <div class="brandText">
                 <strong>Viewora</strong>
-          
             </div>
         </a>
 
-                        <div class="headerActions">
-            <button id="searchBtn" class="headerIcon" type="button" aria-label="Search">
-                <i class="fa-solid fa-magnifying-glass"></i>
+        <!-- Search sits between brand and message/subscription -->
+        <div class="headerSearch" id="headerSearch">
+            <button type="button" class="headerSearchField" id="headerSearchOpen" aria-label="Search on Viewora">
+                <span class="headerSearchPlaceholder">Search on Viewora</span>
             </button>
+            <button type="button" class="headerSearchMic" id="homeSearchMic" aria-label="Voice search">
+                <i class="fa-solid fa-microphone"></i>
+            </button>
+        </div>
 
+        <div class="headerActions">
             <button id="messageBtn" class="headerIcon" type="button" aria-label="Messages"
                     onclick="location.href='messages.html'">
                 <i class="fa-regular fa-paper-plane"></i>
@@ -170,9 +271,8 @@
                 <i class="fa-solid fa-crown"></i>
             </button>
         </div>
-
-
     </header>
+
 
     <!-- SEARCH PANEL -->
     <section id="searchSection" class="searchSection">
@@ -518,16 +618,21 @@
     function switchView(view) {
         currentView = view;
 
-        // Update tabs
         feedTabs.forEach(tab => {
             tab.classList.toggle("active", tab.dataset.view === view);
         });
 
-        // Move panels
+        if (!swipeFeed) return;
         if (view === "posts") {
             swipeFeed.classList.add("posts-view");
         } else {
             swipeFeed.classList.remove("posts-view");
+        }
+        // Hard-toggle panels (no side-by-side leak)
+        var panels = swipeFeed.querySelectorAll(".swipePanel");
+        if (panels.length >= 2) {
+            panels[0].style.display = (view === "posts") ? "none" : "block";
+            panels[1].style.display = (view === "posts") ? "block" : "none";
         }
     }
 
@@ -537,6 +642,9 @@
             switchView(this.dataset.view);
         });
     });
+
+    // Initial: Long Videos only (posts hidden until tab click)
+    switchView("videos");
 
     // Touch swipe support
     let startX = 0;
@@ -579,6 +687,70 @@
         }, { passive: true });
     }
 
+})();
+</script>
+
+
+<script>
+(function () {
+  function goSearch(q) {
+    q = (q || "").trim();
+    var url = "search-page.html";
+    if (q) url += "?q=" + encodeURIComponent(q);
+    window.location.href = url;
+  }
+
+  function startVoiceSearch(micBtn) {
+    var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) {
+      alert("Voice search is not supported on this browser. Please type to search.");
+      goSearch("");
+      return;
+    }
+    var rec = new SR();
+    rec.lang = (navigator.language || "en-IN");
+    rec.interimResults = false;
+    rec.maxAlternatives = 1;
+    if (micBtn) micBtn.classList.add("listening");
+    rec.onresult = function (ev) {
+      var t = "";
+      try {
+        t = (ev.results[0][0].transcript || "").trim();
+      } catch (_) {}
+      if (micBtn) micBtn.classList.remove("listening");
+      if (t) goSearch(t);
+      else goSearch("");
+    };
+    rec.onerror = function () {
+      if (micBtn) micBtn.classList.remove("listening");
+    };
+    rec.onend = function () {
+      if (micBtn) micBtn.classList.remove("listening");
+    };
+    try {
+      rec.start();
+    } catch (e) {
+      if (micBtn) micBtn.classList.remove("listening");
+      alert("Could not start microphone. Check permission.");
+    }
+  }
+
+  var openBtn = document.getElementById("headerSearchOpen");
+  var micBtn = document.getElementById("homeSearchMic");
+
+  if (openBtn) {
+    openBtn.addEventListener("click", function (e) {
+      e.preventDefault();
+      goSearch(""); // open search page — type there
+    });
+  }
+  if (micBtn) {
+    micBtn.addEventListener("click", function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      startVoiceSearch(micBtn);
+    });
+  }
 })();
 </script>
 

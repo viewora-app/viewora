@@ -2577,7 +2577,7 @@ html.viewer-open {
 @media (min-width: 768px) {
   .bottomNav,
   #vieworaGlobalNav {
-    max-width: 480px !important;
+    max-width: none /* was 480 — desktop sidebar in nav.css */;
     width: calc(100% - 48px) !important;
     bottom: 18px !important;
     border-radius: 28px !important;
@@ -4836,3 +4836,154 @@ html, body {
   font-family: inherit;
 }
 .feedRetryBtn:disabled { opacity: 0.6; cursor: wait; }
+
+
+
+
+
+/* =========================================================
+   FEED LAYOUT FIX — one tab at a time, 2-col videos, 1-col posts
+========================================================= */
+
+/* Parent must clip the 200% swipe track */
+.homeFeed {
+  width: 100% !important;
+  max-width: 100% !important;
+  overflow-x: hidden !important;
+  overflow-y: visible !important;
+  position: relative !important;
+  box-sizing: border-box !important;
+}
+
+/* Default: stack panels but only show active */
+.swipeFeed {
+  display: block !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  transform: none !important;
+  transition: none !important;
+  will-change: auto !important;
+}
+
+.swipePanel {
+  display: none !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  flex: none !important;
+  padding-bottom: 110px !important;
+  box-sizing: border-box !important;
+}
+
+/* Active panel only */
+.swipeFeed:not(.posts-view) .swipePanel:first-child,
+.swipeFeed.posts-view .swipePanel:last-child {
+  display: block !important;
+}
+
+/* Long videos: always 2 equal columns */
+.longVideoContainer,
+.swipePanel .longVideoContainer {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 12px !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  padding: 8px 0 0 !important;
+  box-sizing: border-box !important;
+}
+
+.longVideoCard,
+.videoCard {
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+}
+
+.longVideoCard .videoThumbnailWrap,
+.videoCardMedia {
+  aspect-ratio: 16 / 9 !important;
+  width: 100% !important;
+}
+
+/* Posts: one per line */
+.feedContainer,
+.swipePanel .feedContainer {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 16px !important;
+  width: 100% !important;
+  max-width: 640px !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+
+.vieworaPostCard,
+.postCard {
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+/* Kill skeleton posts showing beside videos */
+.swipeFeed:not(.posts-view) #feedContainer,
+.swipeFeed:not(.posts-view) .swipePanel:last-child {
+  display: none !important;
+}
+.swipeFeed.posts-view #longVideoContainer,
+.swipeFeed.posts-view .swipePanel:first-child {
+  display: none !important;
+}
+
+/* Phone / tablet: bottom nav only (never left rail under 900) */
+@media (max-width: 899.98px) {
+  html.has-bottom-nav,
+  body.has-bottom-nav {
+    padding-left: 0 !important;
+    padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+  .bottomNav,
+  #vieworaGlobalNav,
+  #bottomNav {
+    position: fixed !important;
+    left: 50% !important;
+    right: auto !important;
+    top: auto !important;
+    bottom: 0 !important;
+    transform: translateX(-50%) !important;
+    width: 100% !important;
+    max-width: 650px !important;
+    height: calc(72px + env(safe-area-inset-bottom, 0px)) !important;
+    flex-direction: row !important;
+    display: grid !important;
+    grid-template-columns: repeat(5, 1fr) !important;
+    border-right: 0 !important;
+    border-top: 1px solid rgba(255,255,255,0.08) !important;
+    border-radius: 0 !important;
+    padding: 0 4px env(safe-area-inset-bottom, 0px) !important;
+  }
+  .bottomNav a,
+  #vieworaGlobalNav a {
+    flex-direction: column !important;
+    max-width: none !important;
+    min-height: 56px !important;
+  }
+}
+
+/* Desktop: left sidebar — content full remaining width */
+@media (min-width: 900px) {
+  .longVideoContainer {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 16px !important;
+    max-width: 900px !important;
+    margin: 0 auto !important;
+  }
+  .feedContainer {
+    max-width: 600px !important;
+  }
+}
+
+@media (min-width: 1280px) {
+  .longVideoContainer {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    max-width: 960px !important;
+  }
+}

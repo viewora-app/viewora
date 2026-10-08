@@ -384,15 +384,27 @@
     try {
       currentUser = auth.currentUser;
       if (!currentUser) {
-        await new Promise((resolve, reject) => {
+        await new Promise((resolve) => {
+          let done = false;
+          const t = setTimeout(function () {
+            if (done) return;
+            done = true;
+            try { unsub(); } catch (_) {}
+            resolve(null);
+          }, 6000);
           const unsub = auth.onAuthStateChanged((u) => {
-            unsub();
-            if (u) {
-              currentUser = u;
-              resolve(u);
-            } else reject(new Error("no auth"));
+            if (done) return;
+            done = true;
+            clearTimeout(t);
+            try { unsub(); } catch (_) {}
+            currentUser = u || null;
+            resolve(currentUser);
           });
         });
+      }
+      if (!currentUser) {
+        log("not logged in — message listener idle");
+        return;
       }
     } catch (_) {
       log("not logged in — listener idle");
