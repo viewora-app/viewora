@@ -2,53 +2,82 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <meta name="theme-color" content="#0a0614">
-  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#050507">
   <title>Viewora</title>
   <link rel="icon" href="assets/logo.png">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="splash.css">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      height: 100%;
+      background: #050507;
+      overflow: hidden;
+      font-family: Inter, system-ui, -apple-system, sans-serif;
+    }
+    .splash {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(ellipse at 50% 40%, #12122a 0%, #050507 70%);
+      z-index: 999999;
+      transition: opacity 0.45s ease, visibility 0.45s ease;
+    }
+    .splash.hide {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+    .splashLogo {
+      width: min(140px, 32vw);
+      height: min(140px, 32vw);
+      object-fit: contain;
+      /* transparent logo feel */
+      filter: drop-shadow(0 12px 40px rgba(99, 102, 241, 0.35));
+      animation: splashIn 0.8s ease both;
+    }
+    .splashWord {
+      margin-top: 22px;
+      font-size: clamp(28px, 7vw, 40px);
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      color: #fff;
+      animation: splashIn 0.8s ease 0.12s both;
+    }
+    .splashWord span {
+      background: linear-gradient(135deg, #22d3ee, #818cf8, #c084fc);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+    @keyframes splashIn {
+      from { opacity: 0; transform: translateY(12px) scale(0.96); }
+      to { opacity: 1; transform: none; }
+    }
+  </style>
 </head>
 <body>
-  <div class="splash" id="splash">
-    <div class="bgGlow bgGlow-a"></div>
-    <div class="bgGlow bgGlow-b"></div>
-    <div class="stars" id="stars" aria-hidden="true"></div>
-
-    <div class="brand" id="brand">
-      <div class="logoMark">
-        <img src="assets/logo.png" alt="Viewora" class="logoImg"
-             onerror="this.style.display='none';this.nextElementSibling.style.display='grid'">
-        <div class="logoFallback" style="display:none" aria-hidden="true">V</div>
-      </div>
-
-      <h1 class="wordmark" aria-label="Viewora">
-        <span class="letter">V</span>
-        <span class="letter">i</span>
-        <span class="letter">e</span>
-        <span class="letter">w</span>
-        <span class="letter oWrap">
-          <span class="oLetter">o</span>
-          <span class="universe" aria-hidden="true">
-            <span class="ring ring1"></span>
-            <span class="ring ring2"></span>
-            <span class="ring ring3"></span>
-            <span class="core"></span>
-            <span class="spark s1"></span>
-            <span class="spark s2"></span>
-            <span class="spark s3"></span>
-            <span class="spark s4"></span>
-          </span>
-        </span>
-        <span class="letter">r</span>
-        <span class="letter">a</span>
-      </h1>
-
-      <p class="tagline">See the universe</p>
-    </div>
+  <div class="splash" id="vieworaSplash">
+    <img class="splashLogo" src="assets/logo.png" alt="" onerror="this.style.display='none'">
+    <div class="splashWord"><span>Viewora</span></div>
   </div>
-  <script src="splash.js"></script>
+  <script>
+    (function () {
+      var target = "index.html";
+      try {
+        var p = new URLSearchParams(location.search);
+        if (p.get("next")) target = p.get("next");
+      } catch (_) {}
+      setTimeout(function () {
+        var el = document.getElementById("vieworaSplash");
+        if (el) el.classList.add("hide");
+        setTimeout(function () {
+          location.replace(target);
+        }, 400);
+      }, 3000);
+    })();
+  </script>
 </body>
 </html>

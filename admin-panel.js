@@ -785,34 +785,27 @@ async function loadDashboard() {
 
     try {
 
-        const [
-            usersSnapshot,
-            postsSnapshot,
-            reportsSnapshot,
-            liveSnapshot
-        ] = await Promise.all([
+        async function softOnce(path) {
+            try {
+                const s = await db.ref(path).once("value");
+                return s.val() || {};
+            } catch (e) {
+                console.warn("[VIEWORA ADMIN] read failed:", path, e && (e.message || e.code));
+                return {};
+            }
+        }
 
-            db.ref("users").once("value"),
+        const usersVal = await softOnce("users");
+        const postsVal = await softOnce("posts");
+        const videosVal = await softOnce("videos");
+        const shortsVal = await softOnce("shorts");
+        const reportsVal = await softOnce("reports");
+        const liveVal = await softOnce("live");
 
-            db.ref("posts").once("value"),
-
-            db.ref("reports").once("value"),
-
-            db.ref("live").once("value")
-
-        ]);
-
-        cachedUsers =
-            usersSnapshot.val() || {};
-
-        cachedPosts =
-            postsSnapshot.val() || {};
-
-        cachedReports =
-            reportsSnapshot.val() || {};
-
-        cachedLive =
-            liveSnapshot.val() || {};
+        cachedUsers = usersVal || {};
+        cachedPosts = Object.assign({}, postsVal || {}, videosVal || {}, shortsVal || {});
+        cachedReports = reportsVal || {};
+        cachedLive = liveVal || {};
 
         updateDashboardStats();
 
@@ -5970,3 +5963,49 @@ if (document.readyState !== "loading") {
 /* =========================================================
    END
 ========================================================= */
+
+/* =========================================================
+   CLICK / OVERLAY SAFETY
+========================================================= */
+(function ensureAdminClicks() {
+    try {
+        var ov = document.getElementById("sidebarOverlay");
+        if (ov) {
+            ov.classList.remove("show");
+            ov.style.pointerEvents = "none";
+        }
+        document.querySelectorAll(".adminModal").forEach(function (m) {
+            if (!m.classList.contains("hidden") && !m.classList.contains("show")) {
+                m.classList.add("hidden");
+            }
+        });
+        var main = document.querySelector(".adminMain");
+        if (main) {
+            main.style.pointerEvents = "auto";
+            main.style.position = "relative";
+            main.style.zIndex = "5";
+        }
+        // Re-bind hamburger if present
+        var menuBtn = document.getElementById("menuToggle") || document.getElementById("sidebarToggle") || document.querySelector("[data-sidebar-toggle]");
+        var sidebar = document.getElementById("adminSidebar");
+        if (menuBtn && sidebar) {
+            menuBtn.addEventListener("click", function (e) {
+                e.preventDefault();
+                sidebar.classList.toggle("open");
+                if (ov) {
+                    ov.classList.toggle("show");
+                    ov.style.pointerEvents = ov.classList.contains("show") ? "auto" : "none";
+                }
+            });
+        }
+        if (ov) {
+            ov.addEventListener("click", function () {
+                if (sidebar) sidebar.classList.remove("open");
+                ov.classList.remove("show");
+                ov.style.pointerEvents = "none";
+            });
+        }
+    } catch (e) {
+        console.warn("[VIEWORA ADMIN] click safety", e);
+    }
+})();

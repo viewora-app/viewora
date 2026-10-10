@@ -2552,3 +2552,35 @@ tbody tr:hover {
     grid-template-columns: 1fr;
   }
 }
+
+
+/* Mobile admin: full width, clicks work */
+@media (max-width: 900px) {
+  .adminMain {
+    width: 100% !important;
+    margin-left: 0 !important;
+    pointer-events: auto !important;
+    position: relative;
+    z-index: 5;
+  }
+  .adminSidebar {
+    transform: translateX(-105%);
+    transition: transform 0.25s ease;
+  }
+  .adminSidebar.open {
+    transform: translateX(0);
+  }
+  .sidebarOverlay {
+    pointer-events: none;
+  }
+  .sidebarOverlay.show {
+    pointer-events: auto;
+  }
+}
+.adminMain, .adminContent, .adminSection, .navItem, button {
+  pointer-events: auto !important;
+}
+.adminBackground {
+  pointer-events: none !important;
+  z-index: -1 !important;
+}

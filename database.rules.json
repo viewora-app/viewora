@@ -48,7 +48,8 @@
       },
       ".indexOn": [
         "isLive"
-      ]
+      ],
+      ".read": "auth != null"
     },
     "admins": {
       "$uid": {

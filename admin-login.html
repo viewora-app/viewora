@@ -55,6 +55,15 @@
 
 <body>
 
+<div id="vieworaSplash" style="position:fixed;inset:0;z-index:999999;display:flex;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(ellipse at 50% 40%,#12122a 0%,#050507 70%);transition:opacity .45s ease">
+  <img src="assets/logo.png" alt="" style="width:min(120px,28vw);object-fit:contain;filter:drop-shadow(0 12px 40px rgba(99,102,241,.35))" onerror="this.style.display='none'">
+  <div style="margin-top:18px;font-size:clamp(24px,6vw,36px);font-weight:800;letter-spacing:.04em;background:linear-gradient(135deg,#22d3ee,#818cf8,#c084fc);-webkit-background-clip:text;background-clip:text;color:transparent;font-family:system-ui,sans-serif">Viewora</div>
+</div>
+<script>
+setTimeout(function(){var e=document.getElementById("vieworaSplash");if(e){e.style.opacity="0";e.style.pointerEvents="none";setTimeout(function(){e.remove()},450)}},3000);
+</script>
+
+
     <!-- =====================================================
          BACKGROUND
     ====================================================== -->
