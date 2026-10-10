@@ -55,9 +55,12 @@
     return d?.uid || d?.userId || d?.ownerId || "";
   }
   function isExpired(d, now) {
-    const c = Number(d.createdAt || d.timestamp || 0);
+    let c = Number(d.createdAt || d.timestamp || 0);
     if (!c) return true;
-    const e = Number(d.expiresAt || c + STORY_TTL);
+    if (c < 1e12) c = c * 1000; // seconds → ms
+    let e = Number(d.expiresAt || 0);
+    if (e && e < 1e12) e = e * 1000;
+    if (!e) e = c + STORY_TTL;
     return e < now;
   }
   function avatarOf(d) {
@@ -1633,15 +1636,42 @@
   function init() {
     injectStoriesCSS();
     paintFromUrlParams();
+    try {
+      document.body.style.background = "#000";
+      document.documentElement.style.background = "#000";
+    } catch (_) {}
     if (!ready()) {
       showToast("Firebase not ready");
       return;
     }
     bind();
-    firebase.auth().onAuthStateChanged(async (user) => {
+    var loading = false;
+    function runLoad(user) {
+      if (loading) return;
+      loading = true;
       state.user = user || null;
-      await loadAll();
+      loadAll()
+        .catch(function (e) {
+          console.warn("[STORIES] loadAll", e);
+          showToast("Could not load story");
+        })
+        .finally(function () {
+          loading = false;
+        });
+    }
+    var unsub = firebase.auth().onAuthStateChanged(function (user) {
+      runLoad(user || null);
     });
+    // Guest safety: if auth never fires within 1.2s, load as guest
+    setTimeout(function () {
+      if (!state.user && !loading) {
+        try {
+          if (!firebase.auth().currentUser) runLoad(null);
+        } catch (_) {
+          runLoad(null);
+        }
+      }
+    }, 1200);
   }
 
   if (document.readyState === "loading") {

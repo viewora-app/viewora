@@ -22,6 +22,24 @@
 
     window.__VIEWORA_INDEX_INITIALIZED__ = true;
 
+    function softIncrementViews(root, id) {
+        if (!db || !id) return;
+        const paths = [
+            root + "/" + id + "/views",
+            root + "/" + id + "/viewCount"
+        ];
+        paths.forEach(function (p) {
+            try {
+                db.ref(p).transaction(function (cur) {
+                    const n = Number(cur) || 0;
+                    return n + 1;
+                }).catch(function () {});
+            } catch (_) {}
+        });
+    }
+
+
+
 
     /* ======================================================
        HELPERS
@@ -3632,7 +3650,8 @@
                             localStorage.setItem("vieworaVideoId", id);
                         }
                     } catch (_) {}
-                    window.location.href =
+                    try { softIncrementViews("videos", id); } catch (_) {}
+                        window.location.href =
                         "video.html?id=" + encodeURIComponent(id || "");
                 });
             });

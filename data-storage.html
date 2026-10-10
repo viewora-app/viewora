@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Data &amp; Storage · Viewora</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+<link rel="stylesheet" href="theme.css">
+<link rel="stylesheet" href="nav.css">
+<style>
+body{margin:0;font-family:system-ui,sans-serif;background:#0a0a0f;color:#fff}
+.wrap{max-width:560px;margin:0 auto;padding:16px 16px 110px}
+header{display:flex;align-items:center;gap:12px;padding:8px 0 20px}
+header a{color:#fff;font-size:20px;text-decoration:none}
+h1{margin:0;font-size:20px}
+.card{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:16px;margin-bottom:14px}
+.card h3{margin:0 0 8px;font-size:15px}
+.card p{margin:0;font-size:13px;color:rgba(255,255,255,.55);line-height:1.45}
+.row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid rgba(255,255,255,.06)}
+.row:last-child{border-bottom:0}
+.row label{font-size:14px;font-weight:600}
+.row select,.row button{border:0;border-radius:10px;padding:8px 12px;background:rgba(255,255,255,.1);color:#fff;font-weight:600}
+.btn{width:100%;margin-top:8px;padding:14px;border:0;border-radius:12px;background:linear-gradient(135deg,#6d28d9,#4f46e5);color:#fff;font-weight:700}
+.muted{font-size:12px;color:rgba(255,255,255,.45);margin-top:8px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <a href="settings.html" aria-label="Back"><i class="fa-solid fa-arrow-left"></i></a>
+    <h1>Data &amp; Storage</h1>
+  </header>
+
+  <div class="card">
+    <h3>Media quality</h3>
+    <div class="row">
+      <label>Upload quality</label>
+      <select id="uploadQuality">
+        <option value="high">High</option>
+        <option value="medium" selected>Medium</option>
+        <option value="low">Data saver</option>
+      </select>
+    </div>
+    <div class="row">
+      <label>Auto-play videos</label>
+      <select id="autoplay">
+        <option value="wifi">Wi‑Fi only</option>
+        <option value="always">Always</option>
+        <option value="never">Never</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Cache</h3>
+    <p>Clear cached images and temporary files on this device.</p>
+    <button type="button" class="btn" id="clearCache">Clear cache</button>
+    <p class="muted" id="cacheStatus"></p>
+  </div>
+
+  <div class="card">
+    <h3>Download</h3>
+    <div class="row">
+      <label>Default download quality</label>
+      <select id="dlQuality">
+        <option value="high">High</option>
+        <option value="medium" selected>Medium</option>
+        <option value="low">Low</option>
+      </select>
+    </div>
+  </div>
+</div>
+<script src="nav.js"></script>
+<script>
+(function(){
+  var keys = ["viewora_upload_quality","viewora_autoplay","viewora_dl_quality"];
+  function load(){
+    try {
+      document.getElementById("uploadQuality").value = localStorage.getItem(keys[0]) || "medium";
+      document.getElementById("autoplay").value = localStorage.getItem(keys[1]) || "wifi";
+      document.getElementById("dlQuality").value = localStorage.getItem(keys[2]) || "medium";
+    } catch(_){}
+  }
+  function save(){
+    try {
+      localStorage.setItem(keys[0], document.getElementById("uploadQuality").value);
+      localStorage.setItem(keys[1], document.getElementById("autoplay").value);
+      localStorage.setItem(keys[2], document.getElementById("dlQuality").value);
+    } catch(_){}
+  }
+  ["uploadQuality","autoplay","dlQuality"].forEach(function(id){
+    document.getElementById(id).addEventListener("change", save);
+  });
+  document.getElementById("clearCache").addEventListener("click", function(){
+    var status = document.getElementById("cacheStatus");
+    try {
+      // clear non-auth cache keys
+      var remove = [];
+      for (var i=0;i<localStorage.length;i++){
+        var k = localStorage.key(i);
+        if (k && (k.indexOf("viewora_cache")===0 || k.indexOf("viewora_feed")===0 || k.indexOf("viewora_seen")===0))
+          remove.push(k);
+      }
+      remove.forEach(function(k){ localStorage.removeItem(k); });
+      if (window.caches && caches.keys) {
+        caches.keys().then(function(names){ names.forEach(function(n){ caches.delete(n); }); });
+      }
+      status.textContent = "Cache cleared on this device.";
+    } catch(e){
+      status.textContent = "Could not clear cache.";
+    }
+  });
+  load();
+})();
+</script>
+</body>
+</html>

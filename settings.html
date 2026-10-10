@@ -316,5 +316,39 @@
   </div>
 </div>
 
+
+<script>
+(function(){
+  // Ensure Data & Storage + Blocked links exist in settings
+  function addLink(href, label, icon) {
+    if (document.querySelector('a[href="'+href+'"]')) return;
+    var list = document.querySelector(".settingsList, .settings-list, .settingsRows, #settingsList, .list");
+    if (!list) {
+      var main = document.querySelector("main, .settingsPage, .wrap, .container") || document.body;
+      var a = document.createElement("a");
+      a.href = href;
+      a.style.cssText = "display:flex;align-items:center;gap:12px;padding:14px 16px;margin:8px 16px;border-radius:14px;background:rgba(255,255,255,.06);color:#fff;text-decoration:none;font-weight:600";
+      a.innerHTML = '<i class="fa-solid '+icon+'"></i> '+label;
+      main.appendChild(a);
+      return;
+    }
+    var a = document.createElement("a");
+    a.href = href;
+    a.className = "settingsRow";
+    a.innerHTML = '<span>'+label+'</span>';
+    list.appendChild(a);
+  }
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", function(){
+      addLink("data-storage.html", "Data & Storage", "fa-database");
+      addLink("blocked-users.html", "Blocked users", "fa-user-slash");
+    });
+  } else {
+    addLink("data-storage.html", "Data & Storage", "fa-database");
+    addLink("blocked-users.html", "Blocked users", "fa-user-slash");
+  }
+})();
+</script>
+
 </body>
 </html>
