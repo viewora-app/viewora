@@ -274,14 +274,38 @@ auth.onAuthStateChanged(
     async function(user) {
 
         if (!user) {
-
-            location.replace("login.html");
-
+            // Phase 3: soft login gate (no instant blank flash)
+            try {
+                if (typeof messagesHideSkeleton === "function") messagesHideSkeleton();
+            } catch (_) {}
+            try {
+                if (messagesChatList) messagesChatList.classList.add("hidden");
+                if (messagesEmpty) {
+                    messagesEmpty.classList.remove("hidden");
+                    // ensure CTA exists
+                    if (!document.getElementById("messagesLoginCta")) {
+                        var cta = document.createElement("div");
+                        cta.id = "messagesLoginCta";
+                        cta.style.cssText = "text-align:center;padding:12px 16px 24px;";
+                        cta.innerHTML = '<p style="color:rgba(255,255,255,.6);margin:0 0 12px;font-size:14px">Sign in to view your messages</p><a href="login.html?next=messages.html" style="display:inline-block;padding:12px 20px;border-radius:999px;background:linear-gradient(90deg,#7c5cff,#00e5c8);color:#fff;font-weight:700;text-decoration:none;font-size:14px">Sign in</a>';
+                        messagesEmpty.appendChild(cta);
+                    }
+                } else {
+                    location.replace("login.html?next=messages.html");
+                }
+            } catch (_) {
+                location.replace("login.html?next=messages.html");
+            }
             return;
         }
 
         messagesUser = user;
         messagesUID = user.uid;
+
+        try {
+            var cta = document.getElementById("messagesLoginCta");
+            if (cta) cta.remove();
+        } catch (_) {}
 
         messagesUpdateConnection();
 

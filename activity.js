@@ -1278,8 +1278,8 @@ function isFollow(notification) {
 
         if (!currentUser) {
             showEmpty(
-                "Login required",
-                "Please login to see your notifications."
+                "Sign in to see activity",
+                "Likes, comments and follows will show up here."
             );
             return;
         }
@@ -3012,8 +3012,8 @@ function isFollow(notification) {
             if (!currentUser) {
 
                 showEmpty(
-                    "Login required",
-                    "Please login to see your notifications."
+                    "Sign in to see activity",
+                    "Likes, comments and follows will show up here."
                 );
 
                 return;

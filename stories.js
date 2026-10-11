@@ -1162,23 +1162,27 @@
     }
 
     if (!state.groups.length) {
+      // Phase-1: never history.back() into about:blank — show empty UI
+      try {
+        const empty = document.getElementById("storiesEmpty");
+        if (empty) {
+          empty.classList.remove("hidden");
+          empty.style.display = "grid";
+        }
+        const app = document.getElementById("app");
+        if (app) app.classList.add("is-empty");
+      } catch (_) {}
       showToast("No stories");
+      // Soft redirect only when we clearly came from profile with a uid
       setTimeout(() => {
         try {
-          if (window.history.length > 1) {
-            history.back();
-            return;
+          const from = (params.get("from") || "").toLowerCase();
+          if (from === "profile" && focusUid) {
+            location.href = "profile.html?uid=" + encodeURIComponent(focusUid);
           }
+          // otherwise stay on empty state (user taps Back to Home)
         } catch (_) {}
-        const from = (params.get("from") || "").toLowerCase();
-        if (from === "profile" && focusUid) {
-          location.href = "profile.html?uid=" + encodeURIComponent(focusUid);
-        } else if (focusUid && soloMode) {
-          location.href = "profile.html?uid=" + encodeURIComponent(focusUid);
-        } else {
-          location.href = "index.html";
-        }
-      }, 600);
+      }, 800);
       return;
     }
 

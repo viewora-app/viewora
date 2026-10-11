@@ -49,9 +49,10 @@
       ".indexOn": [
         "isLive",
         "username",
-        "createdAt"
+        "createdAt",
+        "displayName"
       ],
-      ".read": "auth != null"
+      ".read": true
     },
     "admins": {
       "$uid": {
@@ -103,7 +104,7 @@
         },
         "views": {
           ".write": true,
-          ".validate": "newData.isNumber() || newData.isString()"
+          ".validate": "newData.isNumber() || newData.isString() || !newData.exists()"
         },
         "likedBy": {
           "$likerId": {
@@ -112,15 +113,15 @@
         },
         "viewCount": {
           ".write": true,
-          ".validate": "newData.isNumber() || newData.isString()"
+          ".validate": "newData.isNumber() || newData.isString() || !newData.exists()"
         },
         "plays": {
           ".write": true,
-          ".validate": "newData.isNumber() || newData.isString()"
+          ".validate": "newData.isNumber() || newData.isString() || !newData.exists()"
         },
         "playCount": {
           ".write": true,
-          ".validate": "newData.isNumber() || newData.isString()"
+          ".validate": "newData.isNumber() || newData.isString() || !newData.exists()"
         }
       },
       ".indexOn": [
@@ -141,7 +142,7 @@
         },
         "views": {
           ".write": true,
-          ".validate": "newData.isNumber() || newData.isString()"
+          ".validate": "newData.isNumber() || newData.isString() || !newData.exists()"
         },
         "likedBy": {
           "$likerId": {
@@ -150,15 +151,15 @@
         },
         "viewCount": {
           ".write": true,
-          ".validate": "newData.isNumber() || newData.isString()"
+          ".validate": "newData.isNumber() || newData.isString() || !newData.exists()"
         },
         "plays": {
           ".write": true,
-          ".validate": "newData.isNumber() || newData.isString()"
+          ".validate": "newData.isNumber() || newData.isString() || !newData.exists()"
         },
         "playCount": {
           ".write": true,
-          ".validate": "newData.isNumber() || newData.isString()"
+          ".validate": "newData.isNumber() || newData.isString() || !newData.exists()"
         }
       },
       ".indexOn": [
@@ -179,7 +180,7 @@
         },
         "views": {
           ".write": true,
-          ".validate": "newData.isNumber() || newData.isString()"
+          ".validate": "newData.isNumber() || newData.isString() || !newData.exists()"
         },
         "likedBy": {
           "$likerId": {
@@ -188,15 +189,15 @@
         },
         "viewCount": {
           ".write": true,
-          ".validate": "newData.isNumber() || newData.isString()"
+          ".validate": "newData.isNumber() || newData.isString() || !newData.exists()"
         },
         "plays": {
           ".write": true,
-          ".validate": "newData.isNumber() || newData.isString()"
+          ".validate": "newData.isNumber() || newData.isString() || !newData.exists()"
         },
         "playCount": {
           ".write": true,
-          ".validate": "newData.isNumber() || newData.isString()"
+          ".validate": "newData.isNumber() || newData.isString() || !newData.exists()"
         }
       },
       ".indexOn": [

@@ -266,6 +266,24 @@
         });
     }
 
+    function requireLogin(action) {
+        try {
+            if (currentUser && currentUser.uid) return true;
+            if (typeof firebase !== "undefined" && firebase.auth && firebase.auth().currentUser) {
+                currentUser = firebase.auth().currentUser;
+                return true;
+            }
+        } catch (_) {}
+        const label = action ? ("Sign in to " + action) : "Sign in to continue";
+        try {
+            if (typeof showToast === "function") showToast(label);
+            else if (window.VieworaToast) window.VieworaToast(label);
+        } catch (_) {}
+        return false;
+    }
+
+
+
 
     /* =====================================================
        USER LOOKUP (fixed – real name after upload)
@@ -1625,11 +1643,7 @@
     }
 
     async function submitReport(reason) {
-        if (!currentUser) {
-            showToast("Login required to report");
-            closeReportSheet();
-            return;
-        }
+        if (!requireLogin("report")) { try { closeReportSheet(); } catch(_){} return; }
 
         const id = getActiveShortId() ||
             (activeShort
@@ -1743,10 +1757,7 @@
     }
 
     async function doLike(card, short, fromDoubleTap) {
-        if (!currentUser) {
-            showToast("Login required to like");
-            return;
-        }
+        if (!requireLogin("like")) return;
 
         const id = String(short.id || short.shortId || short.key || "");
         if (!id) return;
@@ -1869,10 +1880,7 @@
     }
 
     async function doSave(card, short) {
-        if (!currentUser) {
-            showToast("Login required to save");
-            return;
-        }
+        if (!requireLogin("save")) return;
 
         const id = String(short.id || short.shortId || short.key);
         const ref = db.ref("savedShorts/" + currentUser.uid + "/" + id);
@@ -1902,10 +1910,7 @@
     }
 
     async function doFollow(button, uid) {
-        if (!currentUser) {
-            showToast("Login required to follow");
-            return;
-        }
+        if (!requireLogin("follow")) return;
         if (!uid || uid === currentUser.uid) return;
 
         const followingRef = db.ref(
@@ -2206,10 +2211,7 @@
     let __shortCommentInFlight = false;
 
     async function submitComment() {
-        if (!currentUser) {
-            showToast("Login required to comment");
-            return;
-        }
+        if (!requireLogin("comment")) return;
         if (!activeShort) return;
         if (__shortCommentInFlight) return;
 

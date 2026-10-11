@@ -145,6 +145,16 @@
 
     <audio id="storyAudio" playsinline preload="auto" loop style="display:none"></audio>
     <div id="toast" class="toast hidden"><span id="toastText">Done</span></div>
+
+    <!-- Empty state (no stories / direct open) — prevents white/blank screen -->
+    <div id="storiesEmpty" class="storiesEmpty hidden" style="position:fixed;inset:0;z-index:50;display:none;place-items:center;background:#000;color:#fff;text-align:center;padding:32px 20px;">
+        <div style="max-width:280px">
+            <div style="width:72px;height:72px;margin:0 auto 16px;border-radius:50%;background:rgba(255,255,255,.08);display:grid;place-items:center;font-size:28px">○</div>
+            <h2 style="font-size:18px;font-weight:700;margin:0 0 8px">No stories yet</h2>
+            <p style="font-size:14px;color:rgba(255,255,255,.55);margin:0 0 20px;line-height:1.4">Stories from people you follow will show up here for 24 hours.</p>
+            <a href="index.html" style="display:inline-block;padding:12px 22px;border-radius:999px;background:linear-gradient(90deg,#7c5cff,#00e5c8);color:#fff;font-weight:700;text-decoration:none;font-size:14px">Back to Home</a>
+        </div>
+    </div>
 </div>
 
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
