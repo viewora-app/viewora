@@ -1,0 +1,194 @@
+/* =========================================================
+   VIEWORA Phase 5 — Global empty states + skeletons
+   Include on all pages after theme/nav:
+   <link rel="stylesheet" href="viewora-empty.css" />
+========================================================= */
+
+:root {
+  --v-empty-fg: rgba(255, 255, 255, 0.72);
+  --v-empty-muted: rgba(255, 255, 255, 0.45);
+  --v-empty-line: rgba(255, 255, 255, 0.08);
+  --v-empty-card: rgba(255, 255, 255, 0.04);
+  --v-accent: #7c5cff;
+  --v-accent2: #00e5c8;
+}
+
+/* ----- Empty state block ----- */
+.vieworaEmpty,
+.emptyState,
+.contentEmpty,
+.profilePrivateLock {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 8px;
+  padding: 48px 24px;
+  color: var(--v-empty-fg);
+  min-height: 180px;
+}
+
+.vieworaEmpty i,
+.emptyState i,
+.contentEmpty i,
+.profilePrivateLock i {
+  font-size: 36px;
+  opacity: 0.45;
+  margin-bottom: 6px;
+}
+
+.vieworaEmpty strong,
+.emptyState strong,
+.contentEmpty strong,
+.profilePrivateLock strong,
+.vieworaEmpty h2,
+.emptyState h2 {
+  font-size: 16px;
+  font-weight: 700;
+  color: #fff;
+  margin: 0;
+}
+
+.vieworaEmpty span,
+.emptyState span,
+.contentEmpty span,
+.profilePrivateLock span,
+.vieworaEmpty p,
+.emptyState p {
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--v-empty-muted);
+  margin: 0;
+  max-width: 280px;
+}
+
+.vieworaEmpty .emptyCta,
+.emptyState .emptyCta {
+  display: inline-block;
+  margin-top: 14px;
+  padding: 12px 20px;
+  border-radius: 999px;
+  border: 0;
+  font-weight: 700;
+  font-size: 13px;
+  color: #fff;
+  text-decoration: none;
+  cursor: pointer;
+  background: linear-gradient(90deg, var(--v-accent), var(--v-accent2));
+}
+
+/* ----- Skeleton loaders ----- */
+.vieworaSkeleton,
+.skRow,
+.skCard {
+  position: relative;
+  overflow: hidden;
+  background: var(--v-empty-card);
+  border-radius: 12px;
+}
+
+.vieworaSkeleton::after,
+.skRow::after,
+.skCard::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.06),
+    transparent
+  );
+  animation: vieworaShimmer 1.2s infinite;
+}
+
+@keyframes vieworaShimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.skAvatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--v-empty-card);
+}
+
+.skLine {
+  height: 12px;
+  border-radius: 6px;
+  background: var(--v-empty-card);
+  margin: 6px 0;
+}
+
+.skLine.sm {
+  width: 40%;
+}
+.skLine.md {
+  width: 70%;
+}
+.skLine.lg {
+  width: 100%;
+}
+
+.skFeedCard {
+  border-radius: 16px;
+  border: 1px solid var(--v-empty-line);
+  background: var(--v-empty-card);
+  aspect-ratio: 16 / 10;
+  margin-bottom: 12px;
+}
+
+/* ----- Error / retry ----- */
+.vieworaError {
+  text-align: center;
+  padding: 32px 20px;
+  color: var(--v-empty-fg);
+}
+
+.vieworaError button {
+  margin-top: 12px;
+  padding: 10px 18px;
+  border-radius: 999px;
+  border: 1px solid var(--v-empty-line);
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* ----- Safe area helpers ----- */
+.vieworaSafeBottom {
+  padding-bottom: calc(88px + env(safe-area-inset-bottom, 0px));
+}
+
+.vieworaSafeTop {
+  padding-top: max(12px, env(safe-area-inset-top, 0px));
+}
+
+/* ----- Broken image fallback look ----- */
+img.vieworaBroken,
+img[data-fallback="1"] {
+  object-fit: cover;
+  background: #1a1a24;
+}
+
+/* ----- Desktop content offset when left nav present ----- */
+@media (min-width: 900px) {
+  body.has-side-nav .vieworaEmpty,
+  body.has-side-nav .emptyState {
+    min-height: 240px;
+  }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .vieworaSkeleton::after,
+  .skRow::after,
+  .skCard::after {
+    animation: none;
+  }
+}
