@@ -5449,3 +5449,31 @@
     }
 
 })();
+
+/* VIEWORA_FORCE_HIDE_LOADER */
+(function () {
+  function hideAllLoaders() {
+    try {
+      document.body.classList.add("feed-ready");
+      document.querySelectorAll("#pageLoader, .pageLoader, .premiumLoading, #bootLoader, #loadingOverlay").forEach(function (el) {
+        el.classList.add("hidden");
+        el.style.display = "none";
+        el.style.opacity = "0";
+        el.style.pointerEvents = "none";
+      });
+    } catch (_) {}
+  }
+  window.addEventListener("load", function () {
+    setTimeout(hideAllLoaders, 400);
+    setTimeout(hideAllLoaders, 1500);
+    setTimeout(hideAllLoaders, 4000);
+  });
+  // If feed renders, hide immediately
+  var obs = new MutationObserver(function () {
+    if (document.querySelector(".longVideoCard, .postCard, .videoCard")) hideAllLoaders();
+  });
+  try {
+    obs.observe(document.body, { childList: true, subtree: true });
+    setTimeout(function () { obs.disconnect(); }, 12000);
+  } catch (_) {}
+})();

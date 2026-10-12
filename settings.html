@@ -14,6 +14,21 @@
   <link rel="stylesheet" href="viewora-empty.css" />
   <link rel="stylesheet" href="nav.css">
   <script src="nav.js" defer></script>
+
+<style id="vieworaSheetFix">
+/* critical: force sheets vertical before other CSS */
+.sheet{position:fixed!important;left:0!important;right:0!important;bottom:0!important;top:auto!important;z-index:200001!important;display:flex!important;flex-direction:column!important;align-items:stretch!important;width:100%!important;max-width:520px!important;margin:0 auto!important;max-height:88vh!important;overflow-y:auto!important;background:#12121a!important;border-radius:20px 20px 0 0!important;padding:12px 18px calc(20px + env(safe-area-inset-bottom))!important;transform:translateY(110%)!important;box-sizing:border-box!important}
+.sheet.open{transform:translateY(0)!important}
+.sheet>*{width:100%!important;box-sizing:border-box!important;flex:0 0 auto!important}
+.sheet input,.sheet select{display:block!important;width:100%!important;margin:0 0 10px!important;padding:13px 14px!important;border-radius:12px!important;border:1px solid rgba(255,255,255,.12)!important;background:rgba(255,255,255,.06)!important;color:#fff!important;font-size:15px!important}
+.sheet .fieldLabel,.sheet label{display:block!important;margin:10px 0 6px!important;font-size:12px!important;font-weight:600!important;color:rgba(255,255,255,.7)!important}
+.sheet .actions{display:flex!important;gap:10px!important;margin-top:12px!important}
+.sheet .actions .btn{flex:1!important;min-height:46px!important;border:0!important;border-radius:12px!important;font-weight:700!important}
+.mask{position:fixed!important;inset:0!important;z-index:200000!important;background:rgba(0,0,0,.55)!important;opacity:0;pointer-events:none}
+.mask.open{opacity:1!important;pointer-events:auto!important}
+body{max-width:none!important}
+</style>
+
 </head>
 <body>
   <!-- MAIN -->

@@ -2336,3 +2336,26 @@ html[data-theme="light"] .profileSocials a {
   border-color: rgba(0,0,0,.08);
 }
 html[data-theme="light"] .profileWebsite { color: #2563eb; }
+
+
+/* VIEWORA_PROFILE_LAYOUT */
+.profilePage, .profileWrap, #profileRoot, main.profile {
+  width: 100% !important;
+  max-width: 680px !important;
+  margin: 0 auto !important;
+  box-sizing: border-box !important;
+  padding-left: 12px !important;
+  padding-right: 12px !important;
+}
+@media (min-width: 768px) {
+  .profilePage, .profileWrap, #profileRoot {
+    max-width: 720px !important;
+    padding-left: 20px !important;
+    padding-right: 20px !important;
+  }
+}
+@media (min-width: 1280px) {
+  .profilePage, .profileWrap, #profileRoot {
+    max-width: 840px !important;
+  }
+}

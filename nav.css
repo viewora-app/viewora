@@ -792,3 +792,28 @@ body.has-bottom-nav {
     transform: none !important;
   }
 }
+
+
+/* VIEWORA_PAGE_WIDTH — content uses space next to sidebar */
+@media (min-width: 768px) {
+  body.has-bottom-nav .page,
+  body.has-bottom-nav .profilePage,
+  body.has-bottom-nav .settingsPage,
+  body.has-bottom-nav .activityPage,
+  body.has-bottom-nav .shortsPage,
+  body.has-bottom-nav main,
+  body.has-bottom-nav .app-content {
+    width: 100% !important;
+    max-width: 720px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    box-sizing: border-box !important;
+  }
+}
+@media (min-width: 1280px) {
+  body.has-bottom-nav .page,
+  body.has-bottom-nav .profilePage,
+  body.has-bottom-nav main {
+    max-width: 900px !important;
+  }
+}

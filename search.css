@@ -1172,3 +1172,16 @@ a {
 @media (min-width: 900px) {
   .search-page { max-width: 840px; margin: 0 auto; }
 }
+
+
+/* VIEWORA_SEARCH_LAYOUT */
+.search-page, .searchPage, #searchRoot {
+  width: 100% !important;
+  max-width: 720px !important;
+  margin: 0 auto !important;
+  padding: 12px !important;
+  box-sizing: border-box !important;
+}
+@media (min-width: 768px) {
+  .search-page, .searchPage { max-width: 800px !important; padding: 20px !important; }
+}
