@@ -424,241 +424,371 @@ nav.bottom-nav:not(#vieworaGlobalNav),
 }
 
 
-
-/* =========================================================
-   VIEWORA RESPONSIVE NAV
-   Phone  → bottom bar (Instagram)
-   ≥900px → left sidebar (YouTube / IG desktop)
-========================================================= */
+/* ============================================================
+   VIEWORA RESPONSIVE SYSTEM — device layouts
+   320–480   phone
+   481–767   large phone
+   768–1023  tablet
+   1024–1279 compact desktop
+   1280–1599 desktop dashboard
+   1600+     expanded dashboard
+============================================================ */
 
 :root {
-  --side-nav-w: 88px;
-  --side-nav-w-wide: 220px;
+  --nav-h: 64px;
+  --top-h: 56px;
+  --rail-compact: 72px;
+  --rail-wide: 240px;
+  --right-rail: 280px;
+  --feed-max: 640px;
+  --content-max: 1200px;
+  --page-pad: 12px;
 }
 
-/* Tablet / Laptop: compact left rail */
-@media (min-width: 900px) {
+/* ---------- BASE: mobile-first bottom nav ---------- */
+html.has-bottom-nav,
+body.has-bottom-nav {
+  padding-bottom: calc(var(--nav-h) + env(safe-area-inset-bottom, 0px));
+  padding-left: 0;
+}
+
+.bottomNav,
+#vieworaGlobalNav {
+  position: fixed !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  top: auto !important;
+  transform: none !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  height: calc(var(--nav-h) + env(safe-area-inset-bottom, 0px)) !important;
+  display: grid !important;
+  grid-template-columns: repeat(5, 1fr) !important;
+  align-items: stretch !important;
+  gap: 0 !important;
+  padding: 0 0 env(safe-area-inset-bottom, 0px) !important;
+  margin: 0 !important;
+  border-radius: 0 !important;
+  border-top: 1px solid rgba(255,255,255,0.08) !important;
+  border-right: 0 !important;
+  background: rgba(12,12,16,0.94) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  z-index: 99999 !important;
+  box-shadow: 0 -6px 28px rgba(0,0,0,0.3) !important;
+}
+
+.bottomNav a,
+#vieworaGlobalNav a {
+  min-width: 44px !important;
+  min-height: 44px !important;
+  height: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 2px !important;
+  padding: 6px 2px !important;
+  font-size: 10px !important;
+  border-radius: 0 !important;
+  max-width: none !important;
+}
+
+.bottomNav a i,
+#vieworaGlobalNav a i {
+  font-size: 20px !important;
+}
+
+/* ========== 320–480: Smartphone ========== */
+@media (max-width: 480px) {
+  :root { --top-h: 52px; --nav-h: 60px; --page-pad: 10px; }
+  .topHeader {
+    min-height: var(--top-h) !important;
+    padding: 0 10px !important;
+  }
+  .homeContent, .app, main, .search-page {
+    padding-left: var(--page-pad) !important;
+    padding-right: var(--page-pad) !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+}
+
+/* ========== 481–767: Large smartphone ========== */
+@media (min-width: 481px) and (max-width: 767.98px) {
+  :root { --top-h: 56px; --nav-h: 64px; --page-pad: 14px; }
+  .homeContent, .app, main {
+    padding-left: var(--page-pad) !important;
+    padding-right: var(--page-pad) !important;
+    max-width: 560px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+  }
+}
+
+/* ========== 768–1023: Tablet ========== */
+@media (min-width: 768px) and (max-width: 1023.98px) {
+  :root {
+    --rail-compact: 72px;
+    --page-pad: 20px;
+    --feed-max: 720px;
+  }
+
   html.has-bottom-nav,
   body.has-bottom-nav {
     padding-bottom: 0 !important;
-    padding-left: var(--side-nav-w) !important;
+    padding-left: var(--rail-compact) !important;
   }
 
   .bottomNav,
-  #vieworaGlobalNav,
-  #bottomNav {
-    position: fixed !important;
+  #vieworaGlobalNav {
     left: 0 !important;
+    right: auto !important;
     top: 0 !important;
     bottom: 0 !important;
-    right: auto !important;
-    transform: none !important;
-
-    width: var(--side-nav-w) !important;
-    max-width: var(--side-nav-w) !important;
-    min-width: var(--side-nav-w) !important;
+    width: var(--rail-compact) !important;
+    max-width: var(--rail-compact) !important;
     height: 100vh !important;
     height: 100dvh !important;
-
     display: flex !important;
     flex-direction: column !important;
     grid-template-columns: none !important;
-    justify-content: flex-start !important;
     align-items: center !important;
-    gap: 6px !important;
-
-    padding: 20px 8px 24px !important;
-    margin: 0 !important;
-
+    justify-content: flex-start !important;
+    gap: 4px !important;
+    padding: 18px 6px 24px !important;
     border-top: 0 !important;
-    border-right: 1px solid var(--nav-border, rgba(255,255,255,0.08)) !important;
-    border-radius: 0 !important;
-
-    background: rgba(10, 10, 14, 0.96) !important;
-    backdrop-filter: blur(24px) !important;
-    -webkit-backdrop-filter: blur(24px) !important;
-    box-shadow: 8px 0 32px rgba(0,0,0,0.25) !important;
-    z-index: 99999 !important;
+    border-right: 1px solid rgba(255,255,255,0.08) !important;
+    background: rgba(10,10,14,0.97) !important;
   }
 
   .bottomNav a,
-  #vieworaGlobalNav a,
-  #bottomNav a {
-    width: 100% !important;
-    max-width: 72px !important;
+  #vieworaGlobalNav a {
+    width: 56px !important;
+    max-width: 56px !important;
+    min-height: 52px !important;
     height: auto !important;
-    min-height: 64px !important;
-    padding: 10px 4px !important;
-    border-radius: 16px !important;
-    gap: 6px !important;
-    font-size: 11px !important;
+    border-radius: 14px !important;
+    padding: 8px 4px !important;
   }
 
-  .bottomNav a i,
-  #vieworaGlobalNav a i,
-  #bottomNav a i {
-    font-size: 22px !important;
+  .bottomNav a span:not(.navBadge):not(.uploadNavInner) {
+    display: none !important;
   }
 
-  .bottomNav a.active,
-  #vieworaGlobalNav a.active {
-    background: rgba(124, 92, 255, 0.14) !important;
-    color: #fff !important;
-  }
+  .bottomNav a i { font-size: 22px !important; }
 
-  /* Center + button stays prominent */
-  .bottomNav a.uploadNav,
-  #vieworaGlobalNav a.uploadNav,
-  .bottomNav a[data-nav="create"],
-  #vieworaGlobalNav a[data-nav="create"] {
-    margin: 8px 0 !important;
-  }
-  .bottomNav a.uploadNav .uploadNavInner,
-  #vieworaGlobalNav a.uploadNav .uploadNavInner,
-  .bottomNav .uploadBtn,
-  #vieworaGlobalNav .uploadBtn {
-    width: 48px !important;
-    height: 48px !important;
-    border-radius: 16px !important;
-  }
-
-  /* Push content away from sidebar */
-  .homeContent,
-  .app,
-  #app,
-  .viewora-app,
-  .topHeader,
-  main,
-  .profilePage,
-  .settingsPage {
-    margin-left: 0 !important; /* body padding handles offset */
-  }
-
-  /* Kill old "phone pill" nav constraints from index.css */
-  .bottomNav,
-  #vieworaGlobalNav {
-    max-width: var(--side-nav-w) !important;
-    width: var(--side-nav-w) !important;
-    border-radius: 0 !important;
-    bottom: 0 !important;
-    left: 0 !important;
-    transform: none !important;
+  .homeContent, main, .search-page {
+    max-width: var(--feed-max) !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    padding-left: var(--page-pad) !important;
+    padding-right: var(--page-pad) !important;
   }
 }
 
-/* Wide desktop: labeled sidebar */
-@media (min-width: 1280px) {
+/* ========== 1024–1279: Compact desktop ========== */
+@media (min-width: 1024px) and (max-width: 1279.98px) {
+  :root {
+    --rail-compact: 76px;
+    --page-pad: 24px;
+    --feed-max: 680px;
+    --content-max: 1100px;
+  }
+
   html.has-bottom-nav,
   body.has-bottom-nav {
-    padding-left: var(--side-nav-w-wide) !important;
+    padding-bottom: 0 !important;
+    padding-left: var(--rail-compact) !important;
   }
 
   .bottomNav,
-  #vieworaGlobalNav,
-  #bottomNav {
-    width: var(--side-nav-w-wide) !important;
-    max-width: var(--side-nav-w-wide) !important;
-    min-width: var(--side-nav-w-wide) !important;
-    align-items: stretch !important;
-    padding: 24px 12px 28px !important;
+  #vieworaGlobalNav {
+    left: 0 !important;
+    top: 0 !important;
+    bottom: 0 !important;
+    width: var(--rail-compact) !important;
+    max-width: var(--rail-compact) !important;
+    height: 100dvh !important;
+    display: flex !important;
+    flex-direction: column !important;
+    grid-template-columns: none !important;
+    align-items: center !important;
     gap: 4px !important;
+    padding: 20px 8px 28px !important;
+    border-top: 0 !important;
+    border-right: 1px solid rgba(255,255,255,0.08) !important;
+    border-radius: 0 !important;
+    transform: none !important;
   }
 
   .bottomNav a,
-  #vieworaGlobalNav a,
-  #bottomNav a {
+  #vieworaGlobalNav a {
+    width: 58px !important;
+    max-width: 58px !important;
+    min-height: 54px !important;
+    height: auto !important;
+    flex-direction: column !important;
+    border-radius: 14px !important;
+  }
+
+  .bottomNav a span:not(.navBadge):not(.uploadNavInner) {
+    display: none !important;
+  }
+
+  .homeContent, main {
+    max-width: var(--content-max) !important;
+    margin: 0 auto !important;
+    padding-left: var(--page-pad) !important;
+    padding-right: var(--page-pad) !important;
+  }
+}
+
+/* ========== 1280–1599: Desktop dashboard ========== */
+@media (min-width: 1280px) and (max-width: 1599.98px) {
+  :root {
+    --rail-wide: 232px;
+    --page-pad: 28px;
+    --feed-max: 640px;
+    --content-max: 1280px;
+    --right-rail: 280px;
+  }
+
+  html.has-bottom-nav,
+  body.has-bottom-nav {
+    padding-bottom: 0 !important;
+    padding-left: var(--rail-wide) !important;
+  }
+
+  .bottomNav,
+  #vieworaGlobalNav {
+    left: 0 !important;
+    top: 0 !important;
+    bottom: 0 !important;
+    width: var(--rail-wide) !important;
+    max-width: var(--rail-wide) !important;
+    min-width: var(--rail-wide) !important;
+    height: 100dvh !important;
+    display: flex !important;
+    flex-direction: column !important;
+    grid-template-columns: none !important;
+    align-items: stretch !important;
+    gap: 2px !important;
+    padding: 22px 12px 28px !important;
+    border-top: 0 !important;
+    border-right: 1px solid rgba(255,255,255,0.08) !important;
+    transform: none !important;
+    background: rgba(8,8,12,0.98) !important;
+  }
+
+  .bottomNav a,
+  #vieworaGlobalNav a {
+    width: 100% !important;
     max-width: none !important;
+    min-height: 48px !important;
+    height: auto !important;
     flex-direction: row !important;
     justify-content: flex-start !important;
     gap: 14px !important;
-    min-height: 52px !important;
-    padding: 12px 16px !important;
-    border-radius: 14px !important;
+    padding: 10px 14px !important;
+    border-radius: 12px !important;
     font-size: 14px !important;
     font-weight: 600 !important;
   }
 
-  .bottomNav a i,
-  #vieworaGlobalNav a i {
+  .bottomNav a span:not(.navBadge):not(.uploadNavInner) {
+    display: inline !important;
+    font-size: 14px !important;
+  }
+
+  .bottomNav a i {
     font-size: 20px !important;
     width: 24px !important;
     text-align: center !important;
   }
 
-  .bottomNav a span:not(.navBadge):not(.uploadNavInner),
-  #vieworaGlobalNav a span:not(.navBadge):not(.uploadNavInner) {
-    display: inline !important;
-    font-size: 14px !important;
-  }
-
-  .bottomNav a.uploadNav,
-  #vieworaGlobalNav a[data-nav="create"] {
-    justify-content: center !important;
+  .homeContent, main {
+    max-width: var(--content-max) !important;
+    margin: 0 auto !important;
+    padding-left: var(--page-pad) !important;
+    padding-right: var(--page-pad) !important;
   }
 }
 
-/* Phone / small tablet — keep classic bottom nav */
-@media (max-width: 899px) {
-  .bottomNav,
-  #vieworaGlobalNav {
-    position: fixed !important;
-    left: 50% !important;
-    bottom: 0 !important;
-    top: auto !important;
-    transform: translateX(-50%) !important;
-    width: 100% !important;
-    max-width: 650px !important;
-    height: calc(var(--nav-height, 72px) + env(safe-area-inset-bottom, 0px)) !important;
-    flex-direction: row !important;
-    display: grid !important;
-    grid-template-columns: repeat(5, 1fr) !important;
-    border-right: 0 !important;
-    border-top: 1px solid var(--nav-border, rgba(255,255,255,0.08)) !important;
-    border-radius: 0 !important;
-    padding: 0 4px env(safe-area-inset-bottom, 0px) !important;
+/* ========== 1600+: Expanded dashboard ========== */
+@media (min-width: 1600px) {
+  :root {
+    --rail-wide: 250px;
+    --page-pad: 32px;
+    --feed-max: 680px;
+    --content-max: 1440px;
+    --right-rail: 300px;
   }
 
   html.has-bottom-nav,
   body.has-bottom-nav {
-    padding-left: 0 !important;
-    padding-bottom: calc(var(--nav-height, 72px) + env(safe-area-inset-bottom, 0px)) !important;
+    padding-bottom: 0 !important;
+    padding-left: var(--rail-wide) !important;
   }
-}
 
-
-/* =========================================================
-   PAGE DESKTOP SHELL — all pages with has-bottom-nav
-========================================================= */
-@media (min-width: 900px) {
-  body.has-bottom-nav .page,
-  body.has-bottom-nav .app,
-  body.has-bottom-nav .container,
-  body.has-bottom-nav .profilePage,
-  body.has-bottom-nav .settingsWrap,
-  body.has-bottom-nav .uploadPage,
-  body.has-bottom-nav .videoPage,
-  body.has-bottom-nav .search-page,
-  body.has-bottom-nav main {
-    box-sizing: border-box;
-    width: 100%;
-    max-width: 100%;
-  }
-}
-
-@media (max-width: 899.98px) {
-  html.has-bottom-nav, body.has-bottom-nav {
-    padding-left: 0 !important;
-  }
-  .bottomNav, #vieworaGlobalNav {
-    left: 50% !important;
-    top: auto !important;
+  .bottomNav,
+  #vieworaGlobalNav {
+    left: 0 !important;
+    top: 0 !important;
     bottom: 0 !important;
-    transform: translateX(-50%) !important;
+    width: var(--rail-wide) !important;
+    max-width: var(--rail-wide) !important;
+    min-width: var(--rail-wide) !important;
+    height: 100dvh !important;
+    display: flex !important;
+    flex-direction: column !important;
+    grid-template-columns: none !important;
+    align-items: stretch !important;
+    padding: 24px 14px 32px !important;
+    border-top: 0 !important;
+    border-right: 1px solid rgba(255,255,255,0.08) !important;
+    transform: none !important;
+  }
+
+  .bottomNav a,
+  #vieworaGlobalNav a {
     width: 100% !important;
-    max-width: 650px !important;
-    height: calc(var(--nav-height, 72px) + env(safe-area-inset-bottom, 0px)) !important;
+    max-width: none !important;
+    min-height: 50px !important;
     flex-direction: row !important;
-    display: grid !important;
-    grid-template-columns: repeat(5, 1fr) !important;
+    justify-content: flex-start !important;
+    gap: 16px !important;
+    padding: 12px 16px !important;
+    border-radius: 14px !important;
+    font-size: 15px !important;
+    font-weight: 600 !important;
+  }
+
+  .bottomNav a span:not(.navBadge):not(.uploadNavInner) {
+    display: inline !important;
+    font-size: 15px !important;
+  }
+
+  .bottomNav a i {
+    font-size: 20px !important;
+    width: 24px !important;
+  }
+
+  .homeContent, main {
+    max-width: var(--content-max) !important;
+    margin: 0 auto !important;
+    padding-left: var(--page-pad) !important;
+    padding-right: var(--page-pad) !important;
+  }
+}
+
+/* Kill old floating pill nav on all non-phone */
+@media (min-width: 768px) {
+  .bottomNav,
+  #vieworaGlobalNav {
+    border-radius: 0 !important;
+    left: 0 !important;
+    transform: none !important;
   }
 }

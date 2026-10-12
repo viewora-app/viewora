@@ -694,13 +694,6 @@
         "Default story audience",
         valChev(labelMap("story_privacy", "everyone"))
       );
-      html += linkRow(
-        "blocked-users.html",
-        "ban",
-        "red",
-        "Blocked Accounts",
-        "Manage blocked users"
-      );
     }
 
     /* 14 Notifications */
@@ -1950,11 +1943,11 @@ try {
     { q: "password security", open: "account", label: "Account → Password" },
     { q: "delete deactivate account status", open: "account", label: "Account → Delete" },
     { q: "private account privacy follow", open: "privacy", label: "Privacy → Private Account" },
-    { q: "message comment mentions story blocked", open: "privacy", label: "Privacy" },
+    { q: "message comment mentions story", open: "privacy", label: "Privacy" },
     { q: "push notifications likes comments followers", open: "notifications", label: "Notifications" },
     { q: "messages calls voice video requests privacy", open: "messages", label: "Messages & Calls" },
     { q: "upload quality video autoplay data saver content media", open: "content", label: "Content & Media" },
-    { q: "community guidelines report safety blocked", open: "safety", label: "Safety" },
+    { q: "community guidelines report safety blocked blocked users", open: "safety", label: "Safety → Blocked" },
     { q: "payment payout upi bank paypal wallet billing subscription razorpay", open: "payments", label: "Payments" },
     { q: "theme dark light appearance font language", open: "appearance", label: "Appearance" },
     { q: "cache storage data accessibility", open: "app", label: "Data & Storage" },
