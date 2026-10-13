@@ -1185,3 +1185,9 @@ a {
 @media (min-width: 768px) {
   .search-page, .searchPage { max-width: 800px !important; padding: 20px !important; }
 }
+
+/* VIEWORA_BREATH */
+
+@media (min-width: 1024px) {
+  .search-page, .searchPage, #searchRoot { max-width: 100% !important; width: 100% !important; padding: 20px 28px !important; }
+}

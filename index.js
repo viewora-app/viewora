@@ -21,6 +21,16 @@
     }
 
     window.__VIEWORA_INDEX_INITIALIZED__ = true;
+    function shuffleFeedArray(arr) {
+        if (!Array.isArray(arr) || arr.length < 2) return arr;
+        var a = arr.slice();
+        for (var i = a.length - 1; i > 0; i--) {
+            var j = Math.floor(Math.random() * (i + 1));
+            var t = a[i]; a[i] = a[j]; a[j] = t;
+        }
+        return a;
+    }
+
 
     function softIncrementViews(root, id) {
         if (!db || !id) return;

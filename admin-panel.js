@@ -218,18 +218,28 @@ function getUserTickHTML(user) {
 }
 
 async function setUserTick(uid, kind) {
-    // kind: "red" | "blue" | "white" | "none"
+    // kind: "red" | "blue" | "yellow" | "white" | "none"
     if (!uid) return;
     const updates = {
         redTick: kind === "red",
         redTickForce: kind === "red",
         blueTick: kind === "blue",
+        blueTickForce: kind === "blue",
+        yellowTick: kind === "yellow",
+        yellowTickForce: kind === "yellow",
+        businessVerified: kind === "yellow",
         whiteTick: kind === "white",
         whiteTickForce: kind === "white",
         verified: kind === "blue" || kind === "red",
         isVerified: kind === "blue" || kind === "red",
         verificationStatus:
-            kind === "blue" || kind === "red" ? "verified" : "none",
+            kind === "blue" || kind === "red"
+                ? "verified"
+                : kind === "yellow"
+                ? "business"
+                : kind === "white"
+                ? "achievement"
+                : "none",
         tickType: kind === "none" ? "none" : kind,
         vip: kind === "red",
         elite: kind === "red",
@@ -249,8 +259,11 @@ async function setUserTick(uid, kind) {
     } else if (kind === "blue") {
         const u = cachedUsers[uid] || {};
         if (!u.role || u.role === "user") updates.role = "creator";
+    } else if (kind === "yellow") {
+        const u = cachedUsers[uid] || {};
+        if (!u.role || u.role === "user") updates.role = "business";
+        updates.accountType = "business";
     } else if (kind === "white" || kind === "none") {
-        // clear red force when removing / white only
         updates.redTickForce = false;
         updates.vip = false;
         updates.elite = false;
@@ -258,8 +271,36 @@ async function setUserTick(uid, kind) {
     if (kind === "none") {
         updates.whiteTickForce = false;
         updates.redTickForce = false;
+        updates.blueTickForce = false;
+        updates.yellowTickForce = false;
+        updates.businessVerified = false;
+        updates.yellowTick = false;
     }
     await db.ref("users/" + uid).update(updates);
+
+    // Activity notify user
+    try {
+        if (kind !== "none") {
+            const labels = { red: "Red Tick (Elite)", blue: "Blue Tick", yellow: "Yellow Tick (Business)", white: "White Tick" };
+            const nid = "verif_approved_" + kind + "_" + Date.now();
+            await db.ref("notifications/" + uid + "/" + nid).set({
+                id: nid,
+                type: "verification_approved",
+                title: "Congratulations! " + (labels[kind] || "Tick") + " approved",
+                body: "Your " + (labels[kind] || "badge") + " is now active on Viewora.",
+                tickType: kind,
+                createdAt: Date.now(),
+                read: false,
+                icon: "badge"
+            });
+            await db.ref("users/" + uid + "/tickApplications/" + kind).update({
+                status: "approved",
+                updatedAt: Date.now()
+            });
+        }
+    } catch (e) {
+        console.warn("tick notify", e);
+    }
 }
 
 async function permanentDeleteUser(uid) {
@@ -2749,37 +2790,28 @@ async function stopLive(liveId) {
    VERIFICATION
 ========================================================= */
 
+
 async function loadVerification() {
-
-    const container =
-        $("verificationContainer");
-
+    const container = $("verificationContainer");
     if (!container) return;
 
-    container.innerHTML = `
-        <div class="largeEmptyState">
-            <i class="fa-solid fa-spinner fa-spin"></i>
-            <h3>Loading requests...</h3>
-            <p>Please wait.</p>
-        </div>
-    `;
-
     try {
-
-        const snapshot =
-            await db.ref(
-                "verificationRequests"
-            ).once("value");
-
-        const requests =
-            snapshot.val() || {};
-
-        renderVerification(requests);
-
+        const [snapA, snapB] = await Promise.all([
+            db.ref("verificationApplications").once("value"),
+            db.ref("verificationRequests").once("value")
+        ]);
+        const merged = {};
+        const a = snapA.val() || {};
+        const b = snapB.val() || {};
+        Object.keys(a).forEach(function (id) {
+            merged[id] = Object.assign({ _path: "verificationApplications" }, a[id]);
+        });
+        Object.keys(b).forEach(function (id) {
+            if (!merged[id]) merged[id] = Object.assign({ _path: "verificationRequests", type: "blue" }, b[id]);
+        });
+        renderVerification(merged);
     } catch (error) {
-
         console.error(error);
-
         container.innerHTML = `
             <div class="largeEmptyState">
                 <i class="fa-solid fa-circle-xmark"></i>
@@ -2791,211 +2823,139 @@ async function loadVerification() {
 }
 
 function renderVerification(requests) {
-
-    const container =
-        $("verificationContainer");
-
+    const container = $("verificationContainer");
     if (!container) return;
 
-    const entries =
-        Object.entries(requests || {})
-            .filter(
-                ([, item]) =>
-                    item?.status !== "approved" &&
-                    item?.status !== "rejected"
-            );
+    const entries = Object.entries(requests || {}).filter(function (pair) {
+        const item = pair[1];
+        const st = String((item && item.status) || "under_review").toLowerCase();
+        return st !== "approved" && st !== "rejected";
+    });
 
     if (!entries.length) {
-
         container.innerHTML = `
             <div class="largeEmptyState">
                 <i class="fa-solid fa-circle-check"></i>
                 <h3>No pending requests</h3>
-                <p>Verification requests will appear here.</p>
+                <p>Subscription & verification applications appear here.</p>
             </div>
         `;
-
         return;
     }
 
-    container.innerHTML =
-        entries.map(([id, request]) => {
-
-            const name =
-                escapeHTML(
-                    request?.name ||
-                    request?.username ||
-                    "Creator"
-                );
-
-            return `
-                <div class="verificationAdminCard">
-
-                    <div class="verificationIcon">
-                        <i class="fa-solid fa-user-check"></i>
-                    </div>
-
-                    <div class="verificationInfo">
-
-                        <strong>
-                            ${name}
-                        </strong>
-
-                        <span>
-                            Verification request
-                        </span>
-
-                        <small>
-                            ${formatDate(
-                                request?.createdAt
-                            )}
-                        </small>
-
-                    </div>
-
-                    <button
-                        class="verificationApproveBtn"
-                        data-approve-verification="${escapeAttribute(id)}"
-                    >
-                        Approve
-                    </button>
-
-                    <button
-                        class="verificationRejectBtn"
-                        data-reject-verification="${escapeAttribute(id)}"
-                    >
-                        Reject
-                    </button>
-
-                </div>
-            `;
-
-        }).join("");
-
-    qsa(
-        "[data-approve-verification]",
-        container
-    ).forEach(button => {
-
-        button.addEventListener(
-            "click",
-            () =>
-                updateVerification(
-                    button.dataset.approveVerification,
-                    "approved"
-                )
-        );
+    // newest first
+    entries.sort(function (a, b) {
+        return (Number(b[1].createdAt) || 0) - (Number(a[1].createdAt) || 0);
     });
 
-    qsa(
-        "[data-reject-verification]",
-        container
-    ).forEach(button => {
-
-        button.addEventListener(
-            "click",
-            () =>
-                updateVerification(
-                    button.dataset.rejectVerification,
-                    "rejected"
-                )
+    container.innerHTML = entries.map(function (pair) {
+        const id = pair[0];
+        const request = pair[1] || {};
+        const name = escapeHTML(
+            request.name ||
+            request.displayName ||
+            request.username ||
+            request.legalName ||
+            request.businessName ||
+            "User"
         );
+        const t = String(request.type || "blue").toLowerCase();
+        const colors = { red: "#ff3b5c", blue: "#1d9bf0", yellow: "#f5c518", white: "#f0f4fa" };
+        const labels = { red: "Red · Elite", blue: "Blue · Creator", yellow: "Yellow · Business", white: "White · Achievement" };
+        const color = colors[t] || colors.blue;
+        const label = labels[t] || "Verification";
+        const plan = request.plan ? (" · plan: " + escapeHTML(String(request.plan))) : "";
+        const src = request.source === "subscription" ? " · from subscription" : "";
+
+        return `
+            <div class="verificationAdminCard">
+                <div class="verificationIcon">
+                    <i class="fa-solid fa-circle-check" style="color:${color}"></i>
+                </div>
+                <div class="verificationInfo">
+                    <strong>${name}</strong>
+                    <span>${label}${plan}${src}</span>
+                    <small>${formatDate(request.createdAt)} · ${escapeHTML(String(request.status || "under_review"))}</small>
+                    <small style="display:block;opacity:.7">${escapeHTML(String(request.uid || request.userId || ""))}</small>
+                </div>
+                <button class="verificationApproveBtn" data-approve-verification="${escapeAttribute(id)}" data-tick-type="${escapeAttribute(t)}" data-path="${escapeAttribute(request._path || "verificationApplications")}">
+                    Approve
+                </button>
+                <button class="verificationRejectBtn" data-reject-verification="${escapeAttribute(id)}" data-tick-type="${escapeAttribute(t)}" data-path="${escapeAttribute(request._path || "verificationApplications")}">
+                    Reject
+                </button>
+            </div>
+        `;
+    }).join("");
+
+    container.querySelectorAll("[data-approve-verification]").forEach(function (button) {
+        button.addEventListener("click", function () {
+            updateVerification(
+                button.dataset.approveVerification,
+                "approved",
+                button.dataset.tickType || "blue",
+                button.dataset.path || "verificationApplications"
+            );
+        });
+    });
+    container.querySelectorAll("[data-reject-verification]").forEach(function (button) {
+        button.addEventListener("click", function () {
+            updateVerification(
+                button.dataset.rejectVerification,
+                "rejected",
+                button.dataset.tickType || "blue",
+                button.dataset.path || "verificationApplications"
+            );
+        });
     });
 }
 
-async function updateVerification(
-    id,
-    status
-) {
-
+async function updateVerification(id, status, tickType, path) {
     if (!id) return;
+    tickType = String(tickType || "blue").toLowerCase();
+    path = path || "verificationApplications";
 
     try {
-
-        const reqSnap =
-            await db.ref(
-                "verificationRequests/" + id
-            ).once("value");
-
-        const request =
-            reqSnap.val() || {};
-
-        const targetUID =
-            request.uid ||
-            request.userId ||
-            request.creatorId ||
-            id;
-
-        await db.ref(
-            "verificationRequests/" + id
-        ).update({
-
-            status,
-
-            reviewedAt:
-                firebase.database.ServerValue.TIMESTAMP,
-
-            reviewedBy:
-                currentAdmin
-                    ? currentAdmin.uid
-                    : null
-        });
-
-        /*
-         * BLUE TICK
-         * Approve → users/{uid}.verified = true
-         * Reject  → remove verified flag
-         */
-        if (targetUID) {
-
-            if (status === "approved") {
-
-                await db.ref(
-                    "users/" + targetUID
-                ).update({
-
-                    verified: true,
-                    isVerified: true,
-                    blueTick: true,
-                    verificationStatus: "verified",
-                    verifiedAt:
-                        firebase.database.ServerValue.TIMESTAMP,
-                    verifiedBy:
-                        currentAdmin
-                            ? currentAdmin.uid
-                            : null
-                });
-
-            } else if (status === "rejected") {
-
-                await db.ref(
-                    "users/" + targetUID
-                ).update({
-
-                    verified: false,
-                    isVerified: false,
-                    blueTick: false,
-                    verificationStatus: "rejected"
-                });
-            }
+        const reqSnap = await db.ref(path + "/" + id).once("value");
+        const request = reqSnap.val() || {};
+        const targetUID = request.uid || request.userId || request.creatorId || null;
+        if (!targetUID) {
+            showToast("Missing user id on application", "error");
+            return;
         }
 
-        showToast(
-            status === "approved"
-                ? "Blue tick granted. Creator is verified."
-                : "Verification rejected."
-        );
+        await db.ref(path + "/" + id).update({
+            status: status,
+            reviewedAt: firebase.database.ServerValue.TIMESTAMP,
+            reviewedBy: currentAdmin ? currentAdmin.uid : null
+        });
+
+        if (status === "approved") {
+            await setUserTick(targetUID, tickType === "none" ? "blue" : tickType);
+            showToast((tickType || "blue") + " tick granted.");
+        } else {
+            await db.ref("users/" + targetUID + "/tickApplications/" + tickType).update({
+                status: "rejected",
+                updatedAt: Date.now()
+            });
+            const nid = "verif_rejected_" + tickType + "_" + Date.now();
+            await db.ref("notifications/" + targetUID + "/" + nid).set({
+                id: nid,
+                type: "verification_rejected",
+                title: "Application update",
+                body: "Your " + tickType + " tick application was not approved. You may re-apply if eligible.",
+                tickType: tickType,
+                createdAt: Date.now(),
+                read: false,
+                icon: "badge"
+            });
+            showToast("Verification rejected.");
+        }
 
         await loadVerification();
-
     } catch (error) {
-
         console.error(error);
-
-        showToast(
-            "Unable to update verification.",
-            "error"
-        );
+        showToast("Unable to update verification.", "error");
     }
 }
 

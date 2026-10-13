@@ -642,48 +642,67 @@
             createdAt: now
         });
 
-        // Badge hierarchy: Elite → Red VIP, Plus/Pro → Blue verified
+        // Benefits unlock immediately — TICK stays under review until admin approves
         try {
-            if (window.VieworaBadges && typeof VieworaBadges.applySubscriptionBadges === "function") {
-                await VieworaBadges.applySubscriptionBadges(user.uid, payload);
-            } else {
-                // Fallback if badges.js not loaded
-                const plan = String(selectedPlan || "").toLowerCase();
-                const badgeUpdate = {
-                    premium: true,
-                    isPremium: true,
-                    plan: plan,
-                    subscriptionActive: true,
-                    subscriptionStatus: "active"
-                };
-                if (plan === "elite") {
-                    badgeUpdate.redTick = true;
-                    badgeUpdate.redTickForce = true;
-                    badgeUpdate.vip = true;
-                    badgeUpdate.elite = true;
-                    badgeUpdate.verified = true;
-                    badgeUpdate.isVerified = true;
-                    badgeUpdate.blueTick = false;
-                    badgeUpdate.whiteTick = false;
-                    badgeUpdate.tickType = "red";
-                    badgeUpdate.badge = "vip";
-                    badgeUpdate.verificationStatus = "vip";
-                } else if (plan === "plus" || plan === "pro") {
-                    badgeUpdate.verified = true;
-                    badgeUpdate.isVerified = true;
-                    badgeUpdate.blueTick = true;
-                    badgeUpdate.redTick = false;
-                    badgeUpdate.redTickForce = false;
-                    badgeUpdate.vip = false;
-                    badgeUpdate.elite = false;
-                    badgeUpdate.tickType = "blue";
-                    badgeUpdate.badge = "verified";
-                    badgeUpdate.verificationStatus = "verified";
-                }
-                await db.ref("users/" + user.uid).update(badgeUpdate);
+            const plan = String(selectedPlan || "").toLowerCase();
+            const benefitUpdate = {
+                premium: true,
+                isPremium: true,
+                plan: plan,
+                subscriptionActive: true,
+                subscriptionStatus: "active"
+            };
+            // Elite membership flag (benefits) — tick still needs admin approve
+            if (plan === "elite") {
+                benefitUpdate.vip = true;
+                benefitUpdate.elite = true;
             }
+            await db.ref("users/" + user.uid).update(benefitUpdate);
+
+            // Map plan → tick application type
+            var tickType = "blue";
+            if (plan === "elite") tickType = "red";
+            else if (plan === "business") tickType = "yellow";
+            else if (plan === "plus" || plan === "pro" || plan === "premium") tickType = "blue";
+
+            var appRef = db.ref("verificationApplications").push();
+            var appId = appRef.key;
+            var appPayload = {
+                id: appId,
+                uid: user.uid,
+                type: tickType,
+                status: "under_review",
+                source: "subscription",
+                plan: plan,
+                paymentId: paymentResponse.razorpay_payment_id || "",
+                email: user.email || null,
+                displayName: user.displayName || null,
+                createdAt: now,
+                updatedAt: now
+            };
+            await appRef.set(appPayload);
+            await db.ref("users/" + user.uid + "/tickApplications/" + tickType).set({
+                status: "under_review",
+                applicationId: appId,
+                plan: plan,
+                updatedAt: now
+            });
+
+            // Activity notification
+            var nid = "verif_sub_" + tickType + "_" + now;
+            var tickLabel = tickType === "red" ? "Red Tick (Elite)" : tickType === "yellow" ? "Yellow Tick (Business)" : "Blue Tick";
+            await db.ref("notifications/" + user.uid + "/" + nid).set({
+                id: nid,
+                type: "verification_submitted",
+                title: tickLabel + " — Under Review",
+                body: "Payment successful. Your " + tickLabel + " application is under review. We will notify you when a decision is made. Plan benefits are already active.",
+                tickType: tickType,
+                createdAt: now,
+                read: false,
+                icon: "badge"
+            });
         } catch (badgeErr) {
-            console.warn("Badge update skipped:", badgeErr);
+            console.warn("Tick application / benefits update:", badgeErr);
         }
 
         updateSubscriptionUI(payload);

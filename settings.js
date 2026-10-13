@@ -2222,3 +2222,20 @@ if (window.firebase && firebase.apps && firebase.apps.length) boot();
   });
 
 })();
+
+/* Verification entry */
+(function(){
+  try {
+    document.addEventListener('DOMContentLoaded', function(){
+      var list = document.querySelector('.settingsList, .menuList, #settingsRoot');
+      if (!list || document.getElementById('gotoVerification')) return;
+      var a = document.createElement('a');
+      a.id = 'gotoVerification';
+      a.href = 'verification.html';
+      a.className = 'settingsRow linkRow';
+      a.innerHTML = '<span>Verification & Ticks</span><i class="fa-solid fa-chevron-right"></i>';
+      a.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:14px 16px;margin:12px 16px;border-radius:14px;background:rgba(255,255,255,0.04);color:#fff;text-decoration:none;font-weight:600';
+      list.appendChild(a);
+    });
+  } catch(e){}
+})();

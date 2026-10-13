@@ -1,819 +1,109 @@
-/*=========================================
-   VIEWORA — GLOBAL FIXED BOTTOM NAV
-   Home · Shorts · + · Activity · Profile
-=========================================*/
-
+/* VIEWORA GLOBAL NAV — structure + base (breakpoints in responsive.css) */
 :root {
-    --nav-bg: rgba(12, 12, 16, 0.92);
-    --nav-border: rgba(255, 255, 255, 0.08);
-    --primary: #00aaff;
-    --secondary: #6366f1;
-    --text: #ffffff;
-    --text2: #9ca3af;
-    --nav-height: 72px;
-}
-
-/* Space for fixed nav on every page */
-html.has-bottom-nav,
-body.has-bottom-nav {
-    padding-bottom: calc(var(--nav-height) + env(safe-area-inset-bottom, 0px)) !important;
-    /* never lock page scroll */
-    overflow-y: auto !important;
-    height: auto !important;
-    max-height: none !important;
-}
-
-/* Bottom Navigation */
-.bottomNav,
-#vieworaGlobalNav {
-    position: fixed !important;
-    left: 50% !important;
-    bottom: 0 !important;
-    transform: translateX(-50%) !important;
-
-    width: 100% !important;
-    max-width: 650px !important;
-
-    height: calc(var(--nav-height) + env(safe-area-inset-bottom, 0px)) !important;
-
-    display: grid !important;
-    grid-template-columns: repeat(5, 1fr) !important;
-    align-items: center !important;
-
-    background: var(--nav-bg) !important;
-    backdrop-filter: blur(22px) !important;
-    -webkit-backdrop-filter: blur(22px) !important;
-
-    border-top: 1px solid var(--nav-border) !important;
-    border-left: 0 !important;
-    border-right: 0 !important;
-    border-bottom: 0 !important;
-    border-radius: 0 !important;
-
-    z-index: 99999 !important;
-
-    padding: 0 4px env(safe-area-inset-bottom, 0px) !important;
-    margin: 0 !important;
-
-    box-shadow: 0 -8px 40px rgba(0, 0, 0, 0.35) !important;
-}
-
-/* Nav items */
-.bottomNav a,
-#vieworaGlobalNav a {
-    width: 100%;
-    height: 100%;
-    min-height: 56px;
-
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    gap: 3px;
-
-    text-decoration: none;
-    color: var(--text2);
-
-    font-size: 10px;
-    font-weight: 600;
-    font-family: Inter, system-ui, sans-serif;
-
-    position: relative;
-    overflow: hidden;
-
-    transition: color 0.22s ease, transform 0.22s ease;
-    -webkit-tap-highlight-color: transparent;
-    background: transparent;
-    border: 0;
-}
-
-.bottomNav a i,
-#vieworaGlobalNav a i {
-    font-size: 20px;
-    transition: transform 0.22s ease, color 0.22s ease;
-}
-
-.bottomNav a span:not(.navBadge):not(.uploadNavInner),
-#vieworaGlobalNav a span:not(.navBadge):not(.uploadNavInner) {
-    line-height: 1;
-    transition: color 0.22s ease;
-}
-
-/* Active */
-.bottomNav a.active,
-#vieworaGlobalNav a.active {
-    color: var(--primary);
-}
-
-.bottomNav a.active i,
-#vieworaGlobalNav a.active i {
-    transform: translateY(-2px) scale(1.08);
-    color: var(--primary);
-}
-
-.bottomNav a.active span:not(.navBadge),
-#vieworaGlobalNav a.active span:not(.navBadge) {
-    color: #fff;
-}
-
-/* Active top bar */
-.activeIndicator {
-    position: absolute;
-    top: 0;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 28px;
-    height: 3px;
-    border-radius: 20px;
-    background: var(--primary);
-    box-shadow: 0 0 12px var(--primary);
-    opacity: 0;
-    transition: opacity 0.22s ease;
-}
-
-.bottomNav a.active .activeIndicator,
-#vieworaGlobalNav a.active .activeIndicator {
-    opacity: 1;
-}
-
-/* Center + button */
-.uploadNav {
-    width: 100% !important;
-    height: 100% !important;
-    justify-self: center;
-    align-self: center;
-}
-
-.uploadNav .uploadNavInner {
-    width: 48px;
-    height: 48px;
-    margin-top: -10px;
-
-    display: grid;
-    place-items: center;
-
-    border-radius: 16px;
-    background: linear-gradient(135deg, #00aaff, #6366f1);
-    color: #fff !important;
-    box-shadow:
-        0 8px 24px rgba(0, 170, 255, 0.4),
-        0 0 0 4px rgba(12, 12, 16, 0.9);
-}
-
-.uploadNav span:not(.uploadNavInner) {
-    display: none !important;
-}
-
-.uploadNav .activeIndicator {
-    display: none !important;
-}
-
-.uploadNav i {
-    font-size: 22px !important;
-    transform: none !important;
-    color: #fff !important;
-}
-
-.uploadNav.active .uploadNavInner,
-.uploadNav:hover .uploadNavInner {
-    transform: translateY(-2px) scale(1.04);
-    box-shadow:
-        0 10px 28px rgba(0, 170, 255, 0.5),
-        0 0 0 4px rgba(12, 12, 16, 0.9);
-}
-
-/* Activity badge */
-.navBadge {
-    position: absolute;
-    top: 8px;
-    right: calc(50% - 16px);
-
-    min-width: 16px;
-    height: 16px;
-    padding: 0 4px;
-
-    display: grid;
-    place-items: center;
-
-    border-radius: 50px;
-    background: #ff4d67;
-    color: #fff;
-    font-size: 9px;
-    font-weight: 800;
-    border: 2px solid #0c0c10;
-    line-height: 1;
-}
-
-.navBadge.hidden {
-    display: none !important;
-}
-
-/* Ripple */
-.navRipple {
-    position: absolute;
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.3);
-    transform: translate(-50%, -50%) scale(0);
-    pointer-events: none;
-    animation: navRipple 0.55s linear;
-}
-
-@keyframes navRipple {
-    to {
-        transform: translate(-50%, -50%) scale(16);
-        opacity: 0;
-    }
-}
-
-.bottomNav a:hover,
-#vieworaGlobalNav a:hover {
-    color: #fff;
-}
-
-/* Hide every other bottom nav */
-.bottomNav:not(#vieworaGlobalNav),
-#bottomNav:not(#vieworaGlobalNav),
-.vieworaBottomNav,
-.shortsBottomNav,
-nav.bottom-nav:not(#vieworaGlobalNav),
-.appBottomNav,
-.mainBottomNav {
-    display: none !important;
-    visibility: hidden !important;
-    pointer-events: none !important;
-    height: 0 !important;
-    overflow: hidden !important;
-}
-
-#vieworaGlobalNav {
-    display: grid !important;
-    visibility: visible !important;
-    pointer-events: auto !important;
-}
-
-/* Mobile */
-@media (max-width: 480px) {
-    :root {
-        --nav-height: 68px;
-    }
-
-    .bottomNav a i,
-    #vieworaGlobalNav a i {
-        font-size: 19px;
-    }
-
-    .bottomNav a,
-    #vieworaGlobalNav a {
-        font-size: 9px;
-    }
-
-    .uploadNav .uploadNavInner {
-        width: 46px;
-        height: 46px;
-        margin-top: -12px;
-        border-radius: 14px;
-    }
-}
-
-@media (max-width: 360px) {
-    .bottomNav a i,
-    #vieworaGlobalNav a i {
-        font-size: 18px;
-    }
-
-    .uploadNav .uploadNavInner {
-        width: 44px;
-        height: 44px;
-    }
-}
-
-/* Account switcher — Instagram style */
-.vieworaAccountSwitcher {
-  position: fixed;
-  inset: 0;
-  z-index: 99999;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-}
-.vieworaAccountSwitcher.hidden { display: none !important; }
-.vasBackdrop {
-  position: absolute;
-  inset: 0;
-  background: rgba(0,0,0,0.55);
-  backdrop-filter: blur(6px);
-}
-.vasSheet {
-  position: relative;
-  z-index: 2;
-  width: 100%;
-  max-width: 480px;
-  background: #1c1c1e;
-  border-radius: 20px 20px 0 0;
-  padding: 10px 16px calc(20px + env(safe-area-inset-bottom));
-  box-shadow: 0 -12px 40px rgba(0,0,0,0.45);
-}
-.vasHandle {
-  width: 40px;
-  height: 4px;
-  border-radius: 4px;
-  background: rgba(255,255,255,0.25);
-  margin: 4px auto 16px;
-}
-.vasItem {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px 10px;
-  border: 0;
-  background: transparent;
-  color: #fff;
-  border-radius: 12px;
-  text-align: left;
-  cursor: pointer;
-}
-.vasItem:active { background: rgba(255,255,255,0.06); }
-.vasItem.active { background: rgba(255,255,255,0.04); }
-.vasAvatar {
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  object-fit: cover;
-  background: #333;
-}
-.vasMeta { flex: 1; }
-.vasMeta strong { font-size: 15px; font-weight: 600; }
-.vasCheck { color: #3b82f6; font-size: 20px; }
-.vasAdd, .vasCenter {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 14px 10px;
-  margin-top: 4px;
-  border: 0;
-  background: transparent;
-  color: #fff;
-  font-size: 15px;
-  font-weight: 500;
-  border-radius: 12px;
-  text-align: left;
-  cursor: pointer;
-}
-.vasAddIcon {
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  background: #2c2c2e;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 22px;
-  font-weight: 300;
-}
-.vasCenter {
-  justify-content: center;
-  color: rgba(255,255,255,0.55);
-  font-size: 14px;
-  margin-top: 8px;
-  border-top: 1px solid rgba(255,255,255,0.08);
-  border-radius: 0;
-  padding-top: 16px;
-}
-.vasEmpty {
-  padding: 16px;
-  text-align: center;
-  color: rgba(255,255,255,0.5);
-  font-size: 14px;
-}
-
-.vasPassRow {
-  display: flex;
-  gap: 8px;
-  padding: 8px 4px 12px;
-}
-.vasPassRow.hidden { display: none !important; }
-.vasPassRow input {
-  flex: 1;
-  height: 44px;
-  border-radius: 12px;
-  border: 1px solid rgba(255,255,255,0.12);
-  background: #0b0b0f;
-  color: #fff;
-  padding: 0 12px;
-  font-size: 14px;
-}
-.vasPassRow button {
-  height: 44px;
-  padding: 0 16px;
-  border: 0;
-  border-radius: 12px;
-  background: linear-gradient(135deg, #7c5cff, #3b82f6);
-  color: #fff;
-  font-weight: 700;
-  font-size: 14px;
-}
-.vasMeta small {
-  display: block;
-  font-size: 11px;
-  margin-top: 2px;
-  font-weight: 500;
-}
-
-
-/* ============================================================
-   VIEWORA RESPONSIVE SYSTEM — device layouts
-   320–480   phone
-   481–767   large phone
-   768–1023  tablet
-   1024–1279 compact desktop
-   1280–1599 desktop dashboard
-   1600+     expanded dashboard
-============================================================ */
-
-:root {
+  --nav-bg: rgba(12, 12, 16, 0.96);
+  --nav-border: rgba(255, 255, 255, 0.08);
+  --primary: #6366f1;
+  --text: #ffffff;
+  --text2: #9ca3af;
   --nav-h: 64px;
-  --top-h: 56px;
-  --rail-compact: 72px;
-  --rail-wide: 240px;
-  --right-rail: 280px;
-  --feed-max: 640px;
-  --content-max: 1200px;
-  --page-pad: 12px;
+  --rail-w: 72px;
+  --rail-wide: 220px;
 }
 
-/* ---------- BASE: mobile-first bottom nav ---------- */
 html.has-bottom-nav,
 body.has-bottom-nav {
   padding-bottom: calc(var(--nav-h) + env(safe-area-inset-bottom, 0px));
-  padding-left: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  height: auto;
+  max-height: none;
 }
 
 .bottomNav,
-#vieworaGlobalNav {
-  position: fixed !important;
-  left: 0 !important;
-  right: 0 !important;
-  bottom: 0 !important;
-  top: auto !important;
-  transform: none !important;
-  width: 100% !important;
-  max-width: 100% !important;
-  height: calc(var(--nav-h) + env(safe-area-inset-bottom, 0px)) !important;
-  display: grid !important;
-  grid-template-columns: repeat(5, 1fr) !important;
-  align-items: stretch !important;
-  gap: 0 !important;
-  padding: 0 0 env(safe-area-inset-bottom, 0px) !important;
-  margin: 0 !important;
-  border-radius: 0 !important;
-  border-top: 1px solid rgba(255,255,255,0.08) !important;
-  border-right: 0 !important;
-  background: rgba(12,12,16,0.94) !important;
-  backdrop-filter: blur(20px) !important;
-  -webkit-backdrop-filter: blur(20px) !important;
-  z-index: 99999 !important;
-  box-shadow: 0 -6px 28px rgba(0,0,0,0.3) !important;
+#vieworaGlobalNav,
+#bottomNav {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  top: auto;
+  width: 100%;
+  max-width: 100%;
+  height: calc(var(--nav-h) + env(safe-area-inset-bottom, 0px));
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  align-items: stretch;
+  background: var(--nav-bg);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border-top: 1px solid var(--nav-border);
+  z-index: 99999;
+  padding: 0 0 env(safe-area-inset-bottom, 0px);
+  margin: 0;
+  box-shadow: 0 -6px 24px rgba(0, 0, 0, 0.35);
 }
 
 .bottomNav a,
 #vieworaGlobalNav a {
-  min-width: 44px !important;
-  min-height: 44px !important;
-  height: 100% !important;
-  display: flex !important;
-  flex-direction: column !important;
-  align-items: center !important;
-  justify-content: center !important;
-  gap: 2px !important;
-  padding: 6px 2px !important;
-  font-size: 10px !important;
-  border-radius: 0 !important;
-  max-width: none !important;
+  width: 100%;
+  height: 100%;
+  min-height: 48px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 2px;
+  text-decoration: none;
+  color: var(--text2);
+  font-size: 10px;
+  font-weight: 600;
+  font-family: Inter, system-ui, sans-serif;
+  background: transparent;
+  border: 0;
+  -webkit-tap-highlight-color: transparent;
+  position: relative;
 }
 
 .bottomNav a i,
 #vieworaGlobalNav a i {
-  font-size: 20px !important;
+  font-size: 20px;
 }
 
-/* ========== 320–480: Smartphone ========== */
-@media (max-width: 480px) {
-  :root { --top-h: 52px; --nav-h: 60px; --page-pad: 10px; }
-  .topHeader {
-    min-height: var(--top-h) !important;
-    padding: 0 10px !important;
-  }
-  .homeContent, .app, main, .search-page {
-    padding-left: var(--page-pad) !important;
-    padding-right: var(--page-pad) !important;
-    width: 100% !important;
-    max-width: 100% !important;
-  }
+.bottomNav a.active,
+#vieworaGlobalNav a.active {
+  color: var(--text);
+}
+.bottomNav a.active i {
+  color: var(--primary);
 }
 
-/* ========== 481–767: Large smartphone ========== */
-@media (min-width: 481px) and (max-width: 767.98px) {
-  :root { --top-h: 56px; --nav-h: 64px; --page-pad: 14px; }
-  .homeContent, .app, main {
-    padding-left: var(--page-pad) !important;
-    padding-right: var(--page-pad) !important;
-    max-width: 560px !important;
-    margin-left: auto !important;
-    margin-right: auto !important;
-  }
+.bottomNav .uploadNavInner,
+#vieworaGlobalNav .uploadNavInner {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: #fff;
+  font-size: 20px;
+  box-shadow: 0 4px 16px rgba(99, 102, 241, 0.4);
 }
 
-/* ========== 768–1023: Tablet ========== */
-@media (min-width: 768px) and (max-width: 1023.98px) {
-  :root {
-    --rail-compact: 72px;
-    --page-pad: 20px;
-    --feed-max: 720px;
-  }
-
-  html.has-bottom-nav,
-  body.has-bottom-nav {
-    padding-bottom: 0 !important;
-    padding-left: var(--rail-compact) !important;
-  }
-
-  .bottomNav,
-  #vieworaGlobalNav {
-    left: 0 !important;
-    right: auto !important;
-    top: 0 !important;
-    bottom: 0 !important;
-    width: var(--rail-compact) !important;
-    max-width: var(--rail-compact) !important;
-    height: 100vh !important;
-    height: 100dvh !important;
-    display: flex !important;
-    flex-direction: column !important;
-    grid-template-columns: none !important;
-    align-items: center !important;
-    justify-content: flex-start !important;
-    gap: 4px !important;
-    padding: 18px 6px 24px !important;
-    border-top: 0 !important;
-    border-right: 1px solid rgba(255,255,255,0.08) !important;
-    background: rgba(10,10,14,0.97) !important;
-  }
-
-  .bottomNav a,
-  #vieworaGlobalNav a {
-    width: 56px !important;
-    max-width: 56px !important;
-    min-height: 52px !important;
-    height: auto !important;
-    border-radius: 14px !important;
-    padding: 8px 4px !important;
-  }
-
-  .bottomNav a span:not(.navBadge):not(.uploadNavInner) {
-    display: none !important;
-  }
-
-  .bottomNav a i { font-size: 22px !important; }
-
-  .homeContent, main, .search-page {
-    max-width: var(--feed-max) !important;
-    margin-left: auto !important;
-    margin-right: auto !important;
-    padding-left: var(--page-pad) !important;
-    padding-right: var(--page-pad) !important;
-  }
+.navBadge {
+  position: absolute;
+  top: 6px;
+  right: calc(50% - 18px);
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 99px;
+  background: #ef4444;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  display: grid;
+  place-items: center;
 }
-
-/* ========== 1024–1279: Compact desktop ========== */
-@media (min-width: 1024px) and (max-width: 1279.98px) {
-  :root {
-    --rail-compact: 76px;
-    --page-pad: 24px;
-    --feed-max: 680px;
-    --content-max: 1100px;
-  }
-
-  html.has-bottom-nav,
-  body.has-bottom-nav {
-    padding-bottom: 0 !important;
-    padding-left: var(--rail-compact) !important;
-  }
-
-  .bottomNav,
-  #vieworaGlobalNav {
-    left: 0 !important;
-    top: 0 !important;
-    bottom: 0 !important;
-    width: var(--rail-compact) !important;
-    max-width: var(--rail-compact) !important;
-    height: 100dvh !important;
-    display: flex !important;
-    flex-direction: column !important;
-    grid-template-columns: none !important;
-    align-items: center !important;
-    gap: 4px !important;
-    padding: 20px 8px 28px !important;
-    border-top: 0 !important;
-    border-right: 1px solid rgba(255,255,255,0.08) !important;
-    border-radius: 0 !important;
-    transform: none !important;
-  }
-
-  .bottomNav a,
-  #vieworaGlobalNav a {
-    width: 58px !important;
-    max-width: 58px !important;
-    min-height: 54px !important;
-    height: auto !important;
-    flex-direction: column !important;
-    border-radius: 14px !important;
-  }
-
-  .bottomNav a span:not(.navBadge):not(.uploadNavInner) {
-    display: none !important;
-  }
-
-  .homeContent, main {
-    max-width: var(--content-max) !important;
-    margin: 0 auto !important;
-    padding-left: var(--page-pad) !important;
-    padding-right: var(--page-pad) !important;
-  }
-}
-
-/* ========== 1280–1599: Desktop dashboard ========== */
-@media (min-width: 1280px) and (max-width: 1599.98px) {
-  :root {
-    --rail-wide: 232px;
-    --page-pad: 28px;
-    --feed-max: 640px;
-    --content-max: 1280px;
-    --right-rail: 280px;
-  }
-
-  html.has-bottom-nav,
-  body.has-bottom-nav {
-    padding-bottom: 0 !important;
-    padding-left: var(--rail-wide) !important;
-  }
-
-  .bottomNav,
-  #vieworaGlobalNav {
-    left: 0 !important;
-    top: 0 !important;
-    bottom: 0 !important;
-    width: var(--rail-wide) !important;
-    max-width: var(--rail-wide) !important;
-    min-width: var(--rail-wide) !important;
-    height: 100dvh !important;
-    display: flex !important;
-    flex-direction: column !important;
-    grid-template-columns: none !important;
-    align-items: stretch !important;
-    gap: 2px !important;
-    padding: 22px 12px 28px !important;
-    border-top: 0 !important;
-    border-right: 1px solid rgba(255,255,255,0.08) !important;
-    transform: none !important;
-    background: rgba(8,8,12,0.98) !important;
-  }
-
-  .bottomNav a,
-  #vieworaGlobalNav a {
-    width: 100% !important;
-    max-width: none !important;
-    min-height: 48px !important;
-    height: auto !important;
-    flex-direction: row !important;
-    justify-content: flex-start !important;
-    gap: 14px !important;
-    padding: 10px 14px !important;
-    border-radius: 12px !important;
-    font-size: 14px !important;
-    font-weight: 600 !important;
-  }
-
-  .bottomNav a span:not(.navBadge):not(.uploadNavInner) {
-    display: inline !important;
-    font-size: 14px !important;
-  }
-
-  .bottomNav a i {
-    font-size: 20px !important;
-    width: 24px !important;
-    text-align: center !important;
-  }
-
-  .homeContent, main {
-    max-width: var(--content-max) !important;
-    margin: 0 auto !important;
-    padding-left: var(--page-pad) !important;
-    padding-right: var(--page-pad) !important;
-  }
-}
-
-/* ========== 1600+: Expanded dashboard ========== */
-@media (min-width: 1600px) {
-  :root {
-    --rail-wide: 250px;
-    --page-pad: 32px;
-    --feed-max: 680px;
-    --content-max: 1440px;
-    --right-rail: 300px;
-  }
-
-  html.has-bottom-nav,
-  body.has-bottom-nav {
-    padding-bottom: 0 !important;
-    padding-left: var(--rail-wide) !important;
-  }
-
-  .bottomNav,
-  #vieworaGlobalNav {
-    left: 0 !important;
-    top: 0 !important;
-    bottom: 0 !important;
-    width: var(--rail-wide) !important;
-    max-width: var(--rail-wide) !important;
-    min-width: var(--rail-wide) !important;
-    height: 100dvh !important;
-    display: flex !important;
-    flex-direction: column !important;
-    grid-template-columns: none !important;
-    align-items: stretch !important;
-    padding: 24px 14px 32px !important;
-    border-top: 0 !important;
-    border-right: 1px solid rgba(255,255,255,0.08) !important;
-    transform: none !important;
-  }
-
-  .bottomNav a,
-  #vieworaGlobalNav a {
-    width: 100% !important;
-    max-width: none !important;
-    min-height: 50px !important;
-    flex-direction: row !important;
-    justify-content: flex-start !important;
-    gap: 16px !important;
-    padding: 12px 16px !important;
-    border-radius: 14px !important;
-    font-size: 15px !important;
-    font-weight: 600 !important;
-  }
-
-  .bottomNav a span:not(.navBadge):not(.uploadNavInner) {
-    display: inline !important;
-    font-size: 15px !important;
-  }
-
-  .bottomNav a i {
-    font-size: 20px !important;
-    width: 24px !important;
-  }
-
-  .homeContent, main {
-    max-width: var(--content-max) !important;
-    margin: 0 auto !important;
-    padding-left: var(--page-pad) !important;
-    padding-right: var(--page-pad) !important;
-  }
-}
-
-/* Kill old floating pill nav on all non-phone */
-@media (min-width: 768px) {
-  .bottomNav,
-  #vieworaGlobalNav {
-    border-radius: 0 !important;
-    left: 0 !important;
-    transform: none !important;
-  }
-}
-
-
-/* VIEWORA_PAGE_WIDTH — content uses space next to sidebar */
-@media (min-width: 768px) {
-  body.has-bottom-nav .page,
-  body.has-bottom-nav .profilePage,
-  body.has-bottom-nav .settingsPage,
-  body.has-bottom-nav .activityPage,
-  body.has-bottom-nav .shortsPage,
-  body.has-bottom-nav main,
-  body.has-bottom-nav .app-content {
-    width: 100% !important;
-    max-width: 720px !important;
-    margin-left: auto !important;
-    margin-right: auto !important;
-    box-sizing: border-box !important;
-  }
-}
-@media (min-width: 1280px) {
-  body.has-bottom-nav .page,
-  body.has-bottom-nav .profilePage,
-  body.has-bottom-nav main {
-    max-width: 900px !important;
-  }
-}
+.navBadge.hidden { display: none !important; }

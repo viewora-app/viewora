@@ -2472,7 +2472,7 @@ html.viewer-open {
 /* ≥600px: 2 columns, cards stay readable */
 @media (min-width: 600px) {
   .longVideoContainer {
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    /* was forced 2-col */
     gap: 14px !important;
   }
 }
@@ -2574,26 +2574,7 @@ html.viewer-open {
 }
 
 /* Nav: readable on all large screens */
-@media (min-width: 768px) {
-  .bottomNav,
-  #vieworaGlobalNav {
-    max-width: none /* was 480 — desktop sidebar in nav.css */;
-    width: calc(100% - 48px) !important;
-    bottom: 18px !important;
-    border-radius: 28px !important;
-    height: 72px !important;
-    left: 50% !important;
-    transform: translateX(-50%) !important;
-  }
-  .bottomNav a span:not(.navBadge):not(.uploadNavInner),
-  #vieworaGlobalNav a span:not(.navBadge):not(.uploadNavInner) {
-    font-size: 11px !important;
-  }
-  .bottomNav a i,
-  #vieworaGlobalNav a i {
-    font-size: 22px !important;
-  }
-}
+/* removed 768 bottomNav rail from index.css */
 
 /* ---------- POSTS FEED (Premium) ---------- */
 .feedContainer {
@@ -4884,7 +4865,7 @@ html, body {
 .longVideoContainer,
 .swipePanel .longVideoContainer {
   display: grid !important;
-  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  /* was forced 2-col */
   gap: 12px !important;
   width: 100% !important;
   max-width: 100% !important;
@@ -4930,154 +4911,5 @@ html, body {
 }
 .swipeFeed.posts-view #longVideoContainer,
 .swipeFeed.posts-view .swipePanel:first-child {
-  display: none !important;
-}
-
-/* Phone / tablet: bottom nav only (never left rail under 900) */
-@media (max-width: 899.98px) {
-  html.has-bottom-nav,
-  body.has-bottom-nav {
-    padding-left: 0 !important;
-    padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px)) !important;
-  }
-  .bottomNav,
-  #vieworaGlobalNav,
-  #bottomNav {
-    position: fixed !important;
-    left: 50% !important;
-    right: auto !important;
-    top: auto !important;
-    bottom: 0 !important;
-    transform: translateX(-50%) !important;
-    width: 100% !important;
-    max-width: 650px !important;
-    height: calc(72px + env(safe-area-inset-bottom, 0px)) !important;
-    flex-direction: row !important;
-    display: grid !important;
-    grid-template-columns: repeat(5, 1fr) !important;
-    border-right: 0 !important;
-    border-top: 1px solid rgba(255,255,255,0.08) !important;
-    border-radius: 0 !important;
-    padding: 0 4px env(safe-area-inset-bottom, 0px) !important;
-  }
-  .bottomNav a,
-  #vieworaGlobalNav a {
-    flex-direction: column !important;
-    max-width: none !important;
-    min-height: 56px !important;
-  }
-}
-
-/* Desktop: left sidebar — content full remaining width */
-@media (min-width: 900px) {
-  .longVideoContainer {
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-    gap: 16px !important;
-    max-width: 900px !important;
-    margin: 0 auto !important;
-  }
-  .feedContainer {
-    max-width: 600px !important;
-  }
-}
-
-@media (min-width: 1280px) {
-  .longVideoContainer {
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-    max-width: 960px !important;
-  }
-}
-
-/* === VIEWORA FEED — device video sizes (user final) ===
-   Phone: 1 big long video per row
-   iPad:  3 small square videos
-   Laptop: 2 medium rectangle videos
-   Posts: always 1 column
-*/
-html, body, .app, #app, .homeFeed { overflow-x: hidden !important; max-width: 100vw !important; }
-.swipeFeed { display: block !important; width: 100% !important; transform: none !important; }
-.swipePanel { display: none !important; width: 100% !important; }
-.swipeFeed:not(.posts-view) .swipePanel:first-child { display: block !important; }
-.swipeFeed.posts-view .swipePanel:last-child { display: block !important; }
-
-.feedContainer {
-  display: flex !important;
-  flex-direction: column !important;
-  gap: 14px !important;
-  width: 100% !important;
-  max-width: 640px !important;
-  margin: 0 auto !important;
-}
-
-/* PHONE ≤767: 1 big video */
-@media (max-width: 767.98px) {
-  .longVideoContainer {
-    display: grid !important;
-    grid-template-columns: 1fr !important;
-    gap: 14px !important;
-    width: 100% !important;
-    max-width: 100% !important;
-  }
-  .longVideoCard .videoThumbnailWrap {
-    aspect-ratio: 16 / 9 !important;
-    min-height: 180px !important;
-  }
-  .homeContent { padding-left: 12px !important; padding-right: 12px !important; }
-}
-
-/* iPAD / tablet 768–1023: 3 square small */
-@media (min-width: 768px) and (max-width: 1023.98px) {
-  .longVideoContainer {
-    display: grid !important;
-    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-    gap: 12px !important;
-    max-width: 900px !important;
-    margin: 0 auto !important;
-  }
-  .longVideoCard .videoThumbnailWrap {
-    aspect-ratio: 1 / 1 !important;
-  }
-  .longVideoCard .videoInfo { font-size: 12px !important; }
-  .homeContent { padding: 0 20px !important; max-width: 960px !important; margin: 0 auto !important; }
-}
-
-/* LAPTOP 1024–1599: 2 medium rectangle */
-@media (min-width: 1024px) and (max-width: 1599.98px) {
-  .longVideoContainer {
-    display: grid !important;
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-    gap: 16px !important;
-    max-width: 900px !important;
-    margin: 0 auto !important;
-  }
-  .longVideoCard .videoThumbnailWrap {
-    aspect-ratio: 16 / 9 !important;
-  }
-  .homeContent { padding: 0 24px !important; max-width: 1100px !important; margin: 0 auto !important; }
-}
-
-/* LARGE ≥1600: 2–3 rectangle */
-@media (min-width: 1600px) {
-  .longVideoContainer {
-    display: grid !important;
-    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-    gap: 18px !important;
-    max-width: 1200px !important;
-    margin: 0 auto !important;
-  }
-  .longVideoCard .videoThumbnailWrap { aspect-ratio: 16 / 9 !important; }
-  .homeContent { max-width: 1400px !important; margin: 0 auto !important; padding: 0 32px !important; }
-}
-
-/* Loader: never stuck */
-#pageLoader, .pageLoader, .premiumLoading, #bootLoader {
-  transition: opacity .35s ease, visibility .35s ease !important;
-}
-#pageLoader.hidden, .pageLoader.hidden, .premiumLoading.hidden,
-#pageLoader.is-hidden, body.feed-ready #pageLoader,
-body.feed-ready .premiumLoading {
-  opacity: 0 !important;
-  visibility: hidden !important;
-  pointer-events: none !important;
   display: none !important;
 }

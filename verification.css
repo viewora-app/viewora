@@ -1,0 +1,292 @@
+/* Viewora Verification — Four-Tick System */
+:root {
+  --v-bg: #08080d;
+  --v-card: rgba(255,255,255,0.04);
+  --v-border: rgba(255,255,255,0.08);
+  --v-text: #f5f5f7;
+  --v-muted: #9ca3af;
+  --blue: #1d9bf0;
+  --red: #ff3b5c;
+  --yellow: #f5c518;
+  --white-tick: #f0f4fa;
+  --purple: #6366f1;
+}
+
+.vPage {
+  min-height: 100dvh;
+  background: var(--v-bg);
+  color: var(--v-text);
+  padding: 0 0 calc(80px + env(safe-area-inset-bottom, 0px));
+  font-family: Inter, system-ui, sans-serif;
+}
+
+.vTop {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--v-border);
+  position: sticky;
+  top: 0;
+  background: rgba(8,8,13,0.92);
+  backdrop-filter: blur(12px);
+  z-index: 20;
+}
+.vTop h1 {
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0;
+}
+.vBack {
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  border: 0;
+  background: rgba(255,255,255,0.08);
+  color: #fff;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+
+.vHero {
+  padding: 24px 16px 8px;
+  text-align: center;
+}
+.vHero h2 {
+  font-size: 22px;
+  margin: 0 0 8px;
+  font-weight: 800;
+}
+.vHero p {
+  color: var(--v-muted);
+  font-size: 14px;
+  line-height: 1.5;
+  margin: 0 auto;
+  max-width: 420px;
+}
+
+.vGrid {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.vCard {
+  background: var(--v-card);
+  border: 1px solid var(--v-border);
+  border-radius: 18px;
+  padding: 18px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.vCardHead {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.vIcon {
+  width: 48px; height: 48px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  font-size: 22px;
+  flex-shrink: 0;
+}
+.vIcon.blue { background: rgba(29,155,240,0.15); color: var(--blue); }
+.vIcon.red { background: rgba(255,59,92,0.15); color: var(--red); }
+.vIcon.yellow { background: rgba(245,197,24,0.15); color: var(--yellow); }
+.vIcon.white { background: rgba(240,244,250,0.12); color: var(--white-tick); }
+
+.vCard h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+}
+.vCard .vSub {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: var(--v-muted);
+}
+.vStatus {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 99px;
+  margin-left: auto;
+}
+.vStatus.active { background: rgba(34,197,94,0.15); color: #4ade80; }
+.vStatus.review { background: rgba(245,197,24,0.15); color: #f5c518; }
+.vStatus.none { background: rgba(255,255,255,0.06); color: var(--v-muted); }
+.vStatus.rejected { background: rgba(239,68,68,0.15); color: #f87171; }
+
+.vCard ul {
+  margin: 0;
+  padding: 0 0 0 18px;
+  color: var(--v-muted);
+  font-size: 13px;
+  line-height: 1.55;
+}
+.vCard li { margin-bottom: 4px; }
+
+.vBtn {
+  width: 100%;
+  padding: 12px 16px;
+  border-radius: 14px;
+  border: 0;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: #fff;
+}
+.vBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.vBtn.ghost {
+  background: rgba(255,255,255,0.08);
+  color: #fff;
+}
+.vBtn.danger {
+  background: rgba(239,68,68,0.2);
+  color: #fca5a5;
+}
+
+.vNote {
+  max-width: 720px;
+  margin: 8px auto 24px;
+  padding: 0 16px;
+  font-size: 12px;
+  color: var(--v-muted);
+  line-height: 1.5;
+}
+
+/* Apply modal sheet */
+.vSheetBackdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.65);
+  z-index: 100000;
+  display: none;
+  align-items: flex-end;
+  justify-content: center;
+}
+.vSheetBackdrop.open { display: flex; }
+.vSheet {
+  width: 100%;
+  max-width: 520px;
+  max-height: 88dvh;
+  overflow-y: auto;
+  background: #121218;
+  border-radius: 20px 20px 0 0;
+  padding: 12px 16px 28px;
+  border: 1px solid var(--v-border);
+}
+.vSheetHandle {
+  width: 40px; height: 4px;
+  border-radius: 4px;
+  background: rgba(255,255,255,0.2);
+  margin: 4px auto 14px;
+}
+.vSheet h3 { margin: 0 0 12px; font-size: 17px; }
+.vField {
+  margin-bottom: 12px;
+}
+.vField label {
+  display: block;
+  font-size: 12px;
+  color: var(--v-muted);
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+.vField input,
+.vField textarea,
+.vField select {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--v-border);
+  background: rgba(255,255,255,0.05);
+  color: #fff;
+  font-size: 14px;
+  outline: none;
+}
+.vField textarea { min-height: 90px; resize: vertical; }
+
+/* Long-press badge panel (global) */
+.tickHoldPanel {
+  position: fixed;
+  inset: 0;
+  z-index: 100001;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.55);
+  padding: 20px;
+}
+.tickHoldPanel.open { display: flex; }
+.tickHoldCard {
+  width: 100%;
+  max-width: 340px;
+  background: #14141c;
+  border: 1px solid var(--v-border);
+  border-radius: 20px;
+  padding: 20px 18px 16px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+}
+.tickHoldCard h4 {
+  margin: 0 0 4px;
+  font-size: 15px;
+  text-align: center;
+}
+.tickHoldBrand {
+  text-align: center;
+  color: var(--v-muted);
+  font-size: 12px;
+  margin-bottom: 16px;
+}
+.tickHoldRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  font-size: 14px;
+}
+.tickHoldRow:last-of-type { border-bottom: 0; }
+.tickHoldRow .lab { flex: 1; color: #e5e7eb; }
+.tickHoldRow .st {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--v-muted);
+}
+.tickHoldRow .st.ok { color: #4ade80; }
+.tickHoldRow .st.rev { color: #f5c518; }
+.tickHoldRow .st.rej { color: #f87171; }
+.tickHoldClose {
+  width: 100%;
+  margin-top: 14px;
+  padding: 12px;
+  border: 0;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.08);
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+@media (min-width: 1024px) {
+  .vPage { padding-left: 0; }
+  .vGrid { grid-template-columns: 1fr 1fr; }
+  .vSheetBackdrop { align-items: center; }
+  .vSheet {
+    border-radius: 20px;
+    max-height: 80vh;
+  }
+}

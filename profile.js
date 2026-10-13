@@ -1053,42 +1053,39 @@ function safeNumber(value) {
                 }
             });
 
-        /* Inject hierarchical tick next to name */
+        /* Inject ONE tick (same icon, color + glow only) — admin-granted */
         const nameEl = $("profileName");
         if (nameEl) {
-            nameEl.querySelectorAll(".profileBlueTick, .profileRedTick, .profileWhiteTick, .vieworaTick").forEach((x) => x.remove());
-            if (verified || (window.VieworaBadges && VieworaBadges.isVerified(user))) {
-                const badge = (window.VieworaBadges && VieworaBadges.resolve(user)) || null;
-                const tick = document.createElement("i");
-                const level = (badge && badge.level) || (
-                    (user.redTick || user.vip || user.elite) ? "red" :
-                    (user.blueTick || user.verified || user.isVerified) ? "blue" :
-                    (user.whiteTick || user.monetized) ? "white" : "none"
-                );
-                // RED > BLUE > WHITE — never show white if blue/red
-                if (level === "red") {
-                    tick.className = "fa-solid fa-certificate profileRedTick vieworaTick redTick";
-                    tick.title = "VIP Elite";
-                    tick.style.cssText = "color:#ff3b5c;margin-left:6px;font-size:0.9em;vertical-align:middle";
-                } else if (level === "blue") {
-                    tick.className = "fa-solid fa-circle-check profileBlueTick vieworaTick blueTick verifiedTick";
-                    tick.title = "Verified";
-                    tick.style.cssText = "color:#1d9bf0;margin-left:6px;font-size:0.85em;vertical-align:middle";
-                } else if (level === "white") {
-                    tick.className = "fa-solid fa-circle-check profileWhiteTick vieworaTick whiteTick";
-                    tick.title = "Monetized creator";
-                    tick.style.cssText = "color:#f0f4fa;margin-left:6px;font-size:0.85em;vertical-align:middle";
-                } else {
-                    tick.remove();
-                    if (verifiedBadge) verifiedBadge.classList.add("hidden");
+            nameEl.querySelectorAll(".profileBlueTick, .profileRedTick, .profileWhiteTick, .profileYellowTick, .vieworaTick").forEach((x) => x.remove());
+            let level = "none";
+            let title = "";
+            try {
+                if (window.VieworaBadges && typeof VieworaBadges.resolve === "function") {
+                    const badge = VieworaBadges.resolve(user) || {};
+                    level = badge.type || badge.level || "none";
+                    title = badge.title || "";
                 }
-                if (level === "red" || level === "blue" || level === "white") {
+            } catch (_) {}
+            if (level === "none") {
+                if (user.redTick || user.vip || user.elite) { level = "red"; title = "Viewora Elite"; }
+                else if (user.blueTick || user.verified || user.isVerified) { level = "blue"; title = "Verified"; }
+                else if (user.yellowTick || user.businessVerified) { level = "yellow"; title = "Official Business"; }
+                else if (user.whiteTick) { level = "white"; title = "Achievement"; }
+            }
+            const colors = { red: "#ff3b5c", blue: "#1d9bf0", yellow: "#f5c518", white: "#f0f4fa" };
+            if (level !== "none" && colors[level]) {
+                const tick = document.createElement("i");
+                tick.className = "fa-solid fa-circle-check vieworaTick profileTick " + level + "Tick";
+                tick.title = title || level;
                 tick.setAttribute("aria-label", tick.title);
+                tick.style.cssText = "color:" + colors[level] + ";margin-left:6px;font-size:0.92em;vertical-align:middle;cursor:pointer";
                 nameEl.appendChild(tick);
                 if (verifiedBadge) {
                     verifiedBadge.classList.remove("hidden");
                     verifiedBadge.innerHTML = tick.outerHTML;
                 }
+                if (window.VieworaVerification && VieworaVerification.bindLongPressOnTick) {
+                    try { VieworaVerification.bindLongPressOnTick(tick, function () { return user; }); } catch (_) {}
                 }
             } else if (verifiedBadge) {
                 verifiedBadge.classList.add("hidden");
@@ -6212,69 +6209,22 @@ function safeNumber(value) {
                 profileUser
             );
 
-
-            /*
-             * STEP 6
-             * Profile mode
-             */
-
-            renderProfileMode();
-
-
-            /*
-             * STEP 7
-             * Setup UI
-             */
-
-            setupProfileButtons();
-
-            setupTabs();
-
-            setupStory();
-
-            setupScrollTop();
-
-
-            /*
-             * STEP 8
-             * Hide loader NOW.
-             */
-
             hidePageLoader();
 
+            async function safeStep(name, fn) {
+                try { await fn(); }
+                catch (e) { console.warn("Profile step failed:", name, e); }
+            }
 
-            /*
-             * STEP 9
-             * Follow state.
-             */
-
-            await checkFollowState();
-
-
-            /*
-             * STEP 10
-             * Real followers/following.
-             */
-
-            await refreshRealFollowCounts();
-
-
-            /*
-             * STEP 11
-             * Stories.
-             *
-             * Don't let story errors block profile.
-             */
-
-            await loadStories();
-
-
-            /*
-             * STEP 12
-             * Default posts.
-             */
-
-            await loadPosts();
+            await safeStep("renderProfileMode", function () { return renderProfileMode(); });
+            await safeStep("setupProfileButtons", function () { return setupProfileButtons(); });
+            await safeStep("setupTabs", function () { return setupTabs(); });
+            await safeStep("setupStory", function () { return setupStory(); });
+            await safeStep("setupScrollTop", function () { return setupScrollTop(); });
+            await safeStep("checkFollowState", function () { return checkFollowState(); });
+            await safeStep("refreshRealFollowCounts", function () { return refreshRealFollowCounts(); });
+            await safeStep("loadStories", function () { return loadStories(); });
+            await safeStep("loadPosts", function () { return loadPosts(); });
 
 
             console.log(
