@@ -2,49 +2,85 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="theme-color" content="#08080d">
-  <title>Viewora · Verification</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0b1020">
+  <title>Verification • Viewora</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
   <link rel="stylesheet" href="nav.css">
   <link rel="stylesheet" href="responsive.css">
   <link rel="stylesheet" href="verification.css">
 </head>
-<body class="has-bottom-nav">
-  <div class="vPage">
+<body>
+  <main class="vPage">
     <header class="vTop">
-      <button type="button" class="vBack" onclick="history.length>1?history.back():location.href='settings.html'" aria-label="Back">
-        <i class="fa-solid fa-arrow-left"></i>
-      </button>
-      <h1>Verification</h1>
+      <a class="vBack" href="settings.html" aria-label="Go back">←</a>
+      <div class="vTopText">
+        <span class="vEyebrow">VIEWORA ACCOUNT</span>
+        <h1>Verification</h1>
+      </div>
     </header>
 
-    <div class="vHero">
-      <h2>Viewora Ticks</h2>
-      <p>One tick shows on your profile. Long-press it to see all badge statuses. Badges are granted only after review — payment alone does not verify you.</p>
-    </div>
+    <section class="vHero">
+      <div class="vHeroMark" aria-hidden="true">✓</div>
+      <div class="vHeroCopy">
+        <p class="vEyebrow">AUTHENTICITY MATTERS</p>
+        <h2>Choose your verification badge</h2>
+        <p>Explore the available badge styles and submit a request. A badge is shown only after approval.</p>
+      </div>
+    </section>
 
-    <div class="vGrid" id="tickGrid">
-      <!-- filled by JS -->
-    </div>
+    <section class="vSection" aria-labelledby="badgeHeading">
+      <div class="vSectionHead">
+        <div>
+          <p class="vEyebrow">BADGE COLLECTION</p>
+          <h2 id="badgeHeading">Available badges</h2>
+        </div>
+        <span class="vSectionNote">4 styles</span>
+      </div>
 
-    <p class="vNote">
-      Blue = identity verification · Red = Elite membership · Yellow = official business · White = follower achievement.
-      Multiple badges can be earned; profile shows the highest active tick.
-    </p>
-  </div>
+      <!-- verification.js fills this grid with the available badges -->
+      <div class="vGrid" id="tickGrid" aria-live="polite">
+        <div class="vLoading">Loading verification badges…</div>
+      </div>
+    </section>
 
-  <!-- Apply sheet -->
+    <section class="tickHoldPanel" id="tickHoldPanel" aria-labelledby="holdHeading">
+      <div class="vSectionHead">
+        <div>
+          <p class="vEyebrow">YOUR REQUESTS</p>
+          <h2 id="holdHeading">Request status</h2>
+        </div>
+      </div>
+      <div id="tickHoldRows">
+        <p class="vMuted">Your verification requests will appear here.</p>
+      </div>
+    </section>
+
+    <section class="vInfo">
+      <span class="vInfoIcon" aria-hidden="true">i</span>
+      <div>
+        <h3>Before you apply</h3>
+        <p>Submit accurate account information. Sending a request does not guarantee approval, and you should never share your password or login code.</p>
+      </div>
+    </section>
+  </main>
+
+  <!-- Application sheet -->
   <div class="vSheetBackdrop" id="applySheet" aria-hidden="true">
-    <div class="vSheet" role="dialog" aria-labelledby="applyTitle">
-      <div class="vSheetHandle"></div>
-      <h3 id="applyTitle">Apply</h3>
-      <div id="applyBody"></div>
-      <button type="button" class="vBtn" id="applySubmit" style="margin-top:8px">Submit application</button>
-      <button type="button" class="vBtn ghost" id="applyCancel" style="margin-top:8px">Cancel</button>
-    </div>
+    <section class="vSheet" role="dialog" aria-modal="true" aria-labelledby="applyTitle">
+      <button class="vSheetClose" id="applyCancel" type="button" aria-label="Close application">×</button>
+      <p class="vEyebrow">VERIFICATION REQUEST</p>
+      <h2 id="applyTitle">Apply for a badge</h2>
+      <div id="applyBody">
+        <!-- verification.js inserts the selected badge and application fields here -->
+      </div>
+      <button class="vBtn vBtnPrimary" id="applySubmit" type="button">Submit request</button>
+    </section>
   </div>
 
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
   <script src="firebase.js"></script>
   <script src="badges.js"></script>
   <script src="nav.js"></script>

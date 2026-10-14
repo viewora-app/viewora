@@ -648,6 +648,31 @@
       );
     }
 
+    /* Verification */
+    if (id === "verification") {
+      html +=
+        '<div class="verifHeroCard" style="padding:18px 16px;margin-bottom:8px;border-radius:16px;border:1px solid rgba(255,255,255,.08);background:linear-gradient(145deg,rgba(29,155,240,.12),rgba(229,57,53,.06),rgba(245,197,24,.06))">' +
+        '<div style="display:flex;align-items:center;gap:12px;margin-bottom:10px">' +
+        '<span class="settingsCycleTick" id="settingsCycleTickInner" style="width:36px;height:36px"></span>' +
+        '<div><strong style="font-size:16px">Viewora verified</strong>' +
+        '<div style="font-size:12px;color:#9ca3af;margin-top:2px">Badge colors cycle · approved ticks show on profile</div></div></div>' +
+        '<p style="font-size:12px;color:#aab4c8;line-height:1.5;margin:0">Blue Creator · Red Elite · Yellow Business · White Achievement. Subscribe first, then Apply. Admin approves ticks.</p></div>';
+      html += linkRow(
+        "verification.html",
+        "certificate",
+        "blue",
+        "Open Verification",
+        "Apply for Blue / Yellow · view status"
+      );
+      html += linkRow(
+        "subscription.html",
+        "crown",
+        "gold",
+        "Subscription plans",
+        "Plus, Pro, Elite — unlock Apply"
+      );
+    }
+
     /* 7–13 Privacy */
     if (id === "privacy") {
       html += toggleRow(
@@ -1899,6 +1924,7 @@ try {
 
   var CAT_TITLES = {
     account: "Account",
+    verification: "Verification",
     privacy: "Privacy",
     notifications: "Notification Settings",
     messages: "Messages & Calls",
@@ -2239,3 +2265,43 @@ if (window.firebase && firebase.apps && firebase.apps.length) boot();
     });
   } catch(e){}
 })();
+
+/* Settings — cycling verification tick (2s color change) + Viewora verified */
+(function () {
+  var COLORS = ["#1D9BF0", "#E53935", "#F5C518", "#F0F4FA"];
+  var idx = 0;
+  var SCALLOP =
+    "M12 1.2 L14.15 3.05 L16.95 2.75 L17.95 5.35 L20.55 6.35 L20.25 9.15 L22.1 12 L20.25 14.15 L20.55 16.95 L17.95 17.95 L16.95 20.55 L14.15 20.25 L12 22.1 L9.85 20.25 L7.05 20.55 L6.05 17.95 L3.45 16.95 L3.75 14.15 L1.9 12 L3.75 9.85 L3.45 7.05 L6.05 6.05 L7.05 3.45 L9.85 3.75 Z";
+
+  function svg(color) {
+    return (
+      '<svg viewBox="0 0 24 24" width="100%" height="100%" aria-hidden="true">' +
+      '<path fill="' + color + '" d="' + SCALLOP + '"/>' +
+      '<path fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" d="M7.2 12.2 L10.2 15.1 L16.8 8.7"/>' +
+      "</svg>"
+    );
+  }
+
+  function paint() {
+    var color = COLORS[idx % COLORS.length];
+    document.querySelectorAll(".settingsCycleTick").forEach(function (el) {
+      el.innerHTML = svg(color);
+      el.style.color = color;
+    });
+    idx++;
+  }
+
+  function start() {
+    paint();
+    if (window.__vieworaTickCycle) clearInterval(window.__vieworaTickCycle);
+    window.__vieworaTickCycle = setInterval(paint, 2000);
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", start);
+  } else {
+    start();
+  }
+  setTimeout(start, 400);
+})();
+

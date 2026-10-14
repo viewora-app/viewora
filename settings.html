@@ -2,7 +2,7 @@
 <html lang="en" data-theme="dark">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#05050a">
 <title>Settings • Viewora</title>
 <link rel="icon" href="assets/logo.png">
@@ -13,6 +13,7 @@
 <link rel="stylesheet" href="settings.css">
   <link rel="stylesheet" href="viewora-empty.css" />
   <link rel="stylesheet" href="nav.css">
+  <link rel="stylesheet" href="responsive.css">
   <script src="nav.js" defer></script>
 
 <style id="vieworaSheetFix">
@@ -27,6 +28,33 @@
 .mask{position:fixed!important;inset:0!important;z-index:200000!important;background:rgba(0,0,0,.55)!important;opacity:0;pointer-events:none}
 .mask.open{opacity:1!important;pointer-events:auto!important}
 body{max-width:none!important}
+</style>
+
+
+<style id="settingsCycleTickCSS">
+.settingsCycleTick{
+  display:inline-flex;width:28px;height:28px;align-items:center;justify-content:center;
+}
+.settingsCycleTick svg{width:26px;height:26px;display:block;
+  animation:settingsTickPulse 2s ease-in-out infinite}
+.settingsVerifiedLabel{
+  background:linear-gradient(90deg,#1D9BF0,#E53935,#F5C518,#F0F4FA,#1D9BF0);
+  background-size:300% 100%;
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  font-weight:800;animation:settingsLabelShift 6s linear infinite;
+}
+@keyframes settingsTickPulse{
+  0%,100%{filter:drop-shadow(0 0 2px currentColor)}
+  50%{filter:drop-shadow(0 0 6px currentColor)}
+}
+@keyframes settingsLabelShift{0%{background-position:0% 50%}100%{background-position:100% 50%}}
+@keyframes settingsTickColorCycle{
+  0%,24%{color:#1D9BF0}
+  25%,49%{color:#E53935}
+  50%,74%{color:#F5C518}
+  75%,100%{color:#F0F4FA}
+}
+.settingsCycleTick{animation:settingsTickColorCycle 8s steps(1) infinite}
 </style>
 
 </head>
@@ -61,6 +89,16 @@ body{max-width:none!important}
         <button type="button" class="row catRow" data-open="account">
           <span class="rowIcon"><i class="fa-solid fa-user"></i></span>
           <span class="rowBody"><span class="rowTitle" data-i18n="Account">Account</span><span class="rowDesc" data-i18n="Profile, email, password, delete">Profile, email, password, delete</span></span>
+          <span class="rowRight"><i class="fa-solid fa-chevron-right"></i></span>
+        </button>
+        <button type="button" class="row catRow" data-open="verification">
+          <span class="rowIcon gold" id="settingsVerifIconWrap" style="background:transparent;overflow:visible">
+            <span class="settingsCycleTick" id="settingsCycleTick" aria-hidden="true"></span>
+          </span>
+          <span class="rowBody">
+            <span class="rowTitle">Verification</span>
+            <span class="rowDesc"><span class="settingsVerifiedLabel">Viewora verified</span> · Blue, Red, Yellow, White</span>
+          </span>
           <span class="rowRight"><i class="fa-solid fa-chevron-right"></i></span>
         </button>
         <button type="button" class="row catRow" data-open="privacy">

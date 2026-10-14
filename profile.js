@@ -1073,19 +1073,30 @@ function safeNumber(value) {
                 else if (user.whiteTick) { level = "white"; title = "Achievement"; }
             }
             const colors = { red: "#ff3b5c", blue: "#1d9bf0", yellow: "#f5c518", white: "#f0f4fa" };
-            if (level !== "none" && colors[level]) {
-                const tick = document.createElement("i");
-                tick.className = "fa-solid fa-circle-check vieworaTick profileTick " + level + "Tick";
-                tick.title = title || level;
-                tick.setAttribute("aria-label", tick.title);
-                tick.style.cssText = "color:" + colors[level] + ";margin-left:6px;font-size:0.92em;vertical-align:middle;cursor:pointer";
-                nameEl.appendChild(tick);
-                if (verifiedBadge) {
-                    verifiedBadge.classList.remove("hidden");
-                    verifiedBadge.innerHTML = tick.outerHTML;
-                }
-                if (window.VieworaVerification && VieworaVerification.bindLongPressOnTick) {
-                    try { VieworaVerification.bindLongPressOnTick(tick, function () { return user; }); } catch (_) {}
+            if (level !== "none") {
+                let html = "";
+                try {
+                    if (window.VieworaBadges && VieworaBadges.resolve) {
+                        html = (VieworaBadges.resolve(user) || {}).html || "";
+                    }
+                    if (!html && window.VieworaBadges && VieworaBadges.tickSvg) {
+                        html = VieworaBadges.tickSvg(level, title || level);
+                    }
+                } catch (_) {}
+                if (html) {
+                    const wrap = document.createElement("span");
+                    wrap.className = "profileTickWrap";
+                    wrap.style.cssText = "display:inline-flex;align-items:center;margin-left:4px;cursor:pointer;vertical-align:middle";
+                    wrap.innerHTML = html;
+                    wrap.title = title || level;
+                    nameEl.appendChild(wrap);
+                    if (verifiedBadge) {
+                        verifiedBadge.classList.remove("hidden");
+                        verifiedBadge.innerHTML = html;
+                    }
+                    if (window.VieworaVerification && VieworaVerification.bindLongPressOnTick) {
+                        try { VieworaVerification.bindLongPressOnTick(wrap, function () { return user; }); } catch (_) {}
+                    }
                 }
             } else if (verifiedBadge) {
                 verifiedBadge.classList.add("hidden");

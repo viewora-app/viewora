@@ -39,10 +39,14 @@ function resolveAdminFirebase() {
 }
 
 var __fb = resolveAdminFirebase();
-var auth = __fb.auth;
-var db = __fb.db;
-
-if (!auth || !db) {
+// Do NOT redeclare auth/db — firebase.js may already bind them with const/let
+function getAdminAuth() {
+    return window.auth || window.firebaseAuth || (__fb && __fb.auth) || (typeof firebase !== "undefined" ? firebase.auth() : null);
+}
+function getAdminDb() {
+    return window.db || window.firebaseDB || (__fb && __fb.db) || (typeof firebase !== "undefined" ? firebase.database() : null);
+}
+if (!getAdminAuth() || !getAdminDb()) {
     console.error("[VIEWORA ADMIN] auth/db missing — ensure firebase.js loads first");
 }
 
@@ -217,6 +221,76 @@ function getUserTickHTML(user) {
     return "";
 }
 
+
+/* =========================================================
+   SUBSCRIPTION ADMIN HELPERS
+========================================================= */
+
+function formatSubscriptionRemaining(user) {
+    if (!user) return "No subscription";
+    var sub = user.subscription || {};
+    var active = sub.active === true || sub.status === "active" || user.subscriptionActive === true;
+    var plan = String(sub.plan || user.plan || "").toLowerCase() || "none";
+    var cycle = String(sub.billingCycle || sub.cycle || "").toLowerCase();
+    var exp = Number(sub.expiresAt || user.subscriptionExpiresAt || 0);
+    if (!active && !exp) return "Free / none";
+    var now = Date.now();
+    var leftMs = exp > now ? exp - now : 0;
+    var days = Math.floor(leftMs / (24 * 60 * 60 * 1000));
+    var weeks = Math.floor(days / 7);
+    var months = Math.floor(days / 30);
+    var years = Math.floor(days / 365);
+    var leftStr;
+    if (leftMs <= 0) leftStr = "Expired";
+    else if (years >= 1) leftStr = years + " year" + (years > 1 ? "s" : "") + " left";
+    else if (months >= 1) leftStr = months + " month" + (months > 1 ? "s" : "") + " · " + days + " days left";
+    else if (weeks >= 1) leftStr = weeks + " week" + (weeks > 1 ? "s" : "") + " · " + days + " days left";
+    else leftStr = days + " day" + (days !== 1 ? "s" : "") + " left";
+    var cycleLabel = cycle === "yearly" ? "Yearly" : cycle === "monthly" ? "Monthly" : (cycle || "—");
+    return (plan || "plan").toUpperCase() + " · " + cycleLabel + " · " + leftStr;
+}
+
+async function clearUserSubscription(uid) {
+    if (!uid) return;
+    var database = getAdminDb();
+    if (!database) throw new Error("Database not ready");
+    var cleared = {
+        active: false,
+        status: "cancelled",
+        plan: null,
+        billingCycle: null,
+        cycle: null,
+        expiresAt: null,
+        cancelledAt: Date.now(),
+        cancelledBy: (currentAdmin && currentAdmin.uid) || "admin",
+        source: "admin_clear"
+    };
+    await database.ref("users/" + uid + "/subscription").update(cleared);
+    await database.ref("subscriptions/" + uid).update(cleared);
+    await database.ref("users/" + uid).update({
+        subscriptionActive: false,
+        subscriptionStatus: "cancelled",
+        premium: false,
+        isPremium: false,
+        plan: null,
+        // Do not auto-strip ticks — admin uses Remove All Ticks separately
+        vip: false,
+        elite: false
+    });
+    var nid = "sub_cleared_" + Date.now();
+    try {
+        await database.ref("notifications/" + uid + "/" + nid).set({
+            id: nid,
+            type: "subscription_cancelled",
+            title: "Subscription ended",
+            body: "Your subscription was cleared by Viewora admin. Tick status is unchanged until reviewed.",
+            createdAt: Date.now(),
+            read: false
+        });
+    } catch (_) {}
+}
+
+
 async function setUserTick(uid, kind) {
     // kind: "red" | "blue" | "yellow" | "white" | "none"
     if (!uid) return;
@@ -276,14 +350,14 @@ async function setUserTick(uid, kind) {
         updates.businessVerified = false;
         updates.yellowTick = false;
     }
-    await db.ref("users/" + uid).update(updates);
+    await getAdminDb().ref("users/" + uid).update(updates);
 
     // Activity notify user
     try {
         if (kind !== "none") {
             const labels = { red: "Red Tick (Elite)", blue: "Blue Tick", yellow: "Yellow Tick (Business)", white: "White Tick" };
             const nid = "verif_approved_" + kind + "_" + Date.now();
-            await db.ref("notifications/" + uid + "/" + nid).set({
+            await getAdminDb().ref("notifications/" + uid + "/" + nid).set({
                 id: nid,
                 type: "verification_approved",
                 title: "Congratulations! " + (labels[kind] || "Tick") + " approved",
@@ -293,7 +367,7 @@ async function setUserTick(uid, kind) {
                 read: false,
                 icon: "badge"
             });
-            await db.ref("users/" + uid + "/tickApplications/" + kind).update({
+            await getAdminDb().ref("users/" + uid + "/tickApplications/" + kind).update({
                 status: "approved",
                 updatedAt: Date.now()
             });
@@ -307,11 +381,11 @@ async function permanentDeleteUser(uid) {
     if (!uid) return;
     const roots = ["posts", "shorts", "videos", "stories"];
     // Remove user node
-    await db.ref("users/" + uid).remove();
+    await getAdminDb().ref("users/" + uid).remove();
     // Remove content owned by user (best-effort)
     for (const root of roots) {
         try {
-            const snap = await db.ref(root).once("value");
+            const snap = await getAdminDb().ref(root).once("value");
             const val = snap.val() || {};
             const updates = {};
             Object.keys(val).forEach((id) => {
@@ -327,16 +401,16 @@ async function permanentDeleteUser(uid) {
                 }
             });
             if (Object.keys(updates).length) {
-                await db.ref().update(updates);
+                await getAdminDb().ref().update(updates);
             }
         } catch (e) {
             console.warn("purge", root, e);
         }
     }
     try {
-        await db.ref("followers/" + uid).remove();
-        await db.ref("following/" + uid).remove();
-        await db.ref("userChats/" + uid).remove();
+        await getAdminDb().ref("followers/" + uid).remove();
+        await getAdminDb().ref("following/" + uid).remove();
+        await getAdminDb().ref("userChats/" + uid).remove();
     } catch (_) {}
 }
 
@@ -401,9 +475,9 @@ function showToast(message, type = "success") {
    AUTH
 ========================================================= */
 
-(function(){ var _r = resolveAdminFirebase(); auth = _r.auth || auth; db = _r.db || db; })();
-if (!auth) { console.error("[VIEWORA ADMIN] No auth"); }
-else auth.onAuthStateChanged(async (user) => {
+(function(){ resolveAdminFirebase(); })();
+if (!getAdminAuth()) { console.error("[VIEWORA ADMIN] No auth"); }
+else getAdminAuth().onAuthStateChanged(async (user) => {
 
     if (!user) {
         window.location.replace("admin-login.html");
@@ -438,7 +512,7 @@ else auth.onAuthStateChanged(async (user) => {
         setTimeout(async () => {
 
             try {
-                await auth.signOut();
+                await getAdminAuth().signOut();
             } catch (_) {}
 
             window.location.replace(
@@ -462,7 +536,7 @@ async function verifyAdmin(user) {
     }
 
     const snapshot =
-        await db.ref(
+        await getAdminDb().ref(
             "admins/" + user.uid
         ).once("value");
 
@@ -828,7 +902,7 @@ async function loadDashboard() {
 
         async function softOnce(path) {
             try {
-                const s = await db.ref(path).once("value");
+                const s = await getAdminDb().ref(path).once("value");
                 return s.val() || {};
             } catch (e) {
                 console.warn("[VIEWORA ADMIN] read failed:", path, e && (e.message || e.code));
@@ -862,7 +936,7 @@ async function loadDashboard() {
 
         // Prefetch deletion requests for nav badge
         try {
-            const delSnap = await db.ref("deletionRequests").once("value");
+            const delSnap = await getAdminDb().ref("deletionRequests").once("value");
             cachedDeletions = delSnap.val() || {};
             updateDeletionNavCount();
         } catch (_) {}
@@ -1176,7 +1250,7 @@ async function loadUsers() {
     try {
 
         const snapshot =
-            await db.ref("users").once("value");
+            await getAdminDb().ref("users").once("value");
 
         cachedUsers =
             snapshot.val() || {};
@@ -1533,6 +1607,19 @@ function openUserModal(uid) {
         }
     } catch (_) {}
 
+    // Subscription summary
+    try {
+        var subLine = document.getElementById("userModalSubInfo");
+        if (!subLine) {
+            subLine = document.createElement("p");
+            subLine.id = "userModalSubInfo";
+            subLine.style.cssText = "font-size:13px;color:#94a3b8;margin:8px 0 0";
+            var desc = $("userModalDescription");
+            if (desc && desc.parentNode) desc.parentNode.insertBefore(subLine, desc.nextSibling);
+        }
+        if (subLine) subLine.textContent = "Subscription: " + formatSubscriptionRemaining(user);
+    } catch (_) {}
+
     modal.classList.remove("hidden");
     modal.classList.add("show");
 }
@@ -1644,7 +1731,7 @@ if (changeRoleBtn) {
 
             try {
 
-                await db.ref(
+                await getAdminDb().ref(
                     "users/" +
                     selectedUserId
                 ).update({
@@ -1705,7 +1792,7 @@ if (blockUserBtn) {
 
                     try {
 
-                        await db.ref(
+                        await getAdminDb().ref(
                             "users/" +
                             selectedUserId
                         ).update({
@@ -1763,9 +1850,9 @@ async function loadPosts() {
 
     try {
         const [postsSnap, shortsSnap, videosSnap] = await Promise.all([
-            db.ref("posts").once("value"),
-            db.ref("shorts").once("value"),
-            db.ref("videos").once("value")
+            getAdminDb().ref("posts").once("value"),
+            getAdminDb().ref("shorts").once("value"),
+            getAdminDb().ref("videos").once("value")
         ]);
 
         const merged = {};
@@ -1827,8 +1914,8 @@ async function loadPosts() {
         // Also try alternate roots used by app
         try {
             const extra = await Promise.all([
-                db.ref("longVideos").once("value").catch(() => null),
-                db.ref("reels").once("value").catch(() => null)
+                getAdminDb().ref("longVideos").once("value").catch(() => null),
+                getAdminDb().ref("reels").once("value").catch(() => null)
             ]);
             if (extra[0] && extra[0].val) ingest(extra[0].val(), "video", "longVideos");
             if (extra[1] && extra[1].val) ingest(extra[1].val(), "short", "reels");
@@ -2110,10 +2197,10 @@ async function deletePost(postId, root) {
         "This content will be permanently removed from Firebase.",
         async () => {
             try {
-                await db.ref(root + "/" + realId).remove();
+                await getAdminDb().ref(root + "/" + realId).remove();
                 // also try posts path if nested
                 if (root !== "posts") {
-                    try { await db.ref("posts/" + postId).remove(); } catch (_) {}
+                    try { await getAdminDb().ref("posts/" + postId).remove(); } catch (_) {}
                 }
                 showToast("Content deleted successfully.");
                 await loadPosts();
@@ -2140,7 +2227,7 @@ async function blockContent(postId, root) {
         "This post/short/video will be hidden from feeds (blocked).",
         async () => {
             try {
-                await db.ref(root + "/" + realId).update({
+                await getAdminDb().ref(root + "/" + realId).update({
                     blocked: true,
                     hidden: true,
                     status: "blocked",
@@ -2166,16 +2253,18 @@ document.addEventListener("click", async function vieworaAdminClick(e) {
     const t = e.target.closest("button, a, [data-user-action]");
     if (!t) return;
 
-    // Open user modal from table
-    if (t.hasAttribute("data-user-action") || t.dataset.userId) {
-        const uid = t.dataset.userId || t.getAttribute("data-user-action");
-        if (uid && typeof openUserModal === "function") {
-            // let existing handler run too; if none, open here
-        }
+    // 3-dot / table action → open user modal
+    if (t.dataset && t.dataset.userAction && t.dataset.userId) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (typeof openUserModal === "function") openUserModal(t.dataset.userId);
+        return;
     }
-
-    if (!selectedUserId) {
-        // still allow content buttons without selected user
+    if (t.classList && t.classList.contains("tableActionBtn") && t.dataset.userId) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (typeof openUserModal === "function") openUserModal(t.dataset.userId);
+        return;
     }
 
     const id = t.id;
@@ -2195,7 +2284,7 @@ document.addEventListener("click", async function vieworaAdminClick(e) {
     if (id === "grantBlueTickBtn") {
         e.preventDefault();
         e.stopPropagation();
-        if (!selectedUserId) return;
+        if (!selectedUserId) { showToast("Select a user first", "error"); return; }
         const u = cachedUsers[selectedUserId] || {};
         const has = u.blueTick === true || u.verified === true;
         await safe(
@@ -2207,22 +2296,36 @@ document.addEventListener("click", async function vieworaAdminClick(e) {
     if (id === "grantRedTickBtn") {
         e.preventDefault();
         e.stopPropagation();
-        if (!selectedUserId) return;
-        await safe(() => setUserTick(selectedUserId, "red"), "Red VIP tick granted.");
+        if (!selectedUserId) { showToast("Select a user first", "error"); return; }
+        await safe(() => setUserTick(selectedUserId, "red"), "Red Elite tick granted.");
+        return;
+    }
+    if (id === "grantYellowTickBtn") {
+        e.preventDefault();
+        e.stopPropagation();
+        if (!selectedUserId) { showToast("Select a user first", "error"); return; }
+        await safe(() => setUserTick(selectedUserId, "yellow"), "Yellow Business tick granted.");
         return;
     }
     if (id === "grantWhiteTickBtn") {
         e.preventDefault();
         e.stopPropagation();
-        if (!selectedUserId) return;
+        if (!selectedUserId) { showToast("Select a user first", "error"); return; }
         await safe(() => setUserTick(selectedUserId, "white"), "White tick granted.");
         return;
     }
     if (id === "removeTickBtn") {
         e.preventDefault();
         e.stopPropagation();
-        if (!selectedUserId) return;
+        if (!selectedUserId) { showToast("Select a user first", "error"); return; }
         await safe(() => setUserTick(selectedUserId, "none"), "All ticks removed.");
+        return;
+    }
+    if (id === "clearSubscriptionBtn") {
+        e.preventDefault();
+        e.stopPropagation();
+        if (!selectedUserId) { showToast("Select a user first", "error"); return; }
+        await safe(function () { return clearUserSubscription(selectedUserId); }, "Subscription cleared.");
         return;
     }
     if (id === "deleteUserBtn") {
@@ -2303,7 +2406,7 @@ async function loadReports() {
     try {
 
         const snapshot =
-            await db.ref("reports").once("value");
+            await getAdminDb().ref("reports").once("value");
 
         cachedReports =
             snapshot.val() || {};
@@ -2540,7 +2643,7 @@ async function resolveReport(reportId) {
 
     try {
 
-        await db.ref(
+        await getAdminDb().ref(
             "reports/" + reportId
         ).update({
 
@@ -2595,7 +2698,7 @@ async function loadLive() {
     try {
 
         const snapshot =
-            await db.ref("live").once("value");
+            await getAdminDb().ref("live").once("value");
 
         cachedLive =
             snapshot.val() || {};
@@ -2749,7 +2852,7 @@ async function stopLive(liveId) {
 
             try {
 
-                await db.ref(
+                await getAdminDb().ref(
                     "live/" + liveId
                 ).update({
 
@@ -2797,8 +2900,8 @@ async function loadVerification() {
 
     try {
         const [snapA, snapB] = await Promise.all([
-            db.ref("verificationApplications").once("value"),
-            db.ref("verificationRequests").once("value")
+            getAdminDb().ref("verificationApplications").once("value"),
+            getAdminDb().ref("verificationRequests").once("value")
         ]);
         const merged = {};
         const a = snapA.val() || {};
@@ -2916,7 +3019,7 @@ async function updateVerification(id, status, tickType, path) {
     path = path || "verificationApplications";
 
     try {
-        const reqSnap = await db.ref(path + "/" + id).once("value");
+        const reqSnap = await getAdminDb().ref(path + "/" + id).once("value");
         const request = reqSnap.val() || {};
         const targetUID = request.uid || request.userId || request.creatorId || null;
         if (!targetUID) {
@@ -2924,7 +3027,7 @@ async function updateVerification(id, status, tickType, path) {
             return;
         }
 
-        await db.ref(path + "/" + id).update({
+        await getAdminDb().ref(path + "/" + id).update({
             status: status,
             reviewedAt: firebase.database.ServerValue.TIMESTAMP,
             reviewedBy: currentAdmin ? currentAdmin.uid : null
@@ -2934,12 +3037,12 @@ async function updateVerification(id, status, tickType, path) {
             await setUserTick(targetUID, tickType === "none" ? "blue" : tickType);
             showToast((tickType || "blue") + " tick granted.");
         } else {
-            await db.ref("users/" + targetUID + "/tickApplications/" + tickType).update({
+            await getAdminDb().ref("users/" + targetUID + "/tickApplications/" + tickType).update({
                 status: "rejected",
                 updatedAt: Date.now()
             });
             const nid = "verif_rejected_" + tickType + "_" + Date.now();
-            await db.ref("notifications/" + targetUID + "/" + nid).set({
+            await getAdminDb().ref("notifications/" + targetUID + "/" + nid).set({
                 id: nid,
                 type: "verification_rejected",
                 title: "Application update",
@@ -2987,7 +3090,7 @@ async function getCreatorStats(uid) {
     try {
         /* Followers */
         const folSnap =
-            await db.ref(
+            await getAdminDb().ref(
                 "followers/" + uid
             ).once("value");
 
@@ -3000,7 +3103,7 @@ async function getCreatorStats(uid) {
 
         /* Also check user node counters */
         const userSnap =
-            await db.ref(
+            await getAdminDb().ref(
                 "users/" + uid
             ).once("value");
 
@@ -3044,9 +3147,9 @@ async function getCreatorStats(uid) {
 
         const [posts, shorts, videos] =
             await Promise.all([
-                db.ref("posts").once("value"),
-                db.ref("shorts").once("value"),
-                db.ref("videos").once("value")
+                getAdminDb().ref("posts").once("value"),
+                getAdminDb().ref("shorts").once("value"),
+                getAdminDb().ref("videos").once("value")
             ]);
 
         stats.views +=
@@ -3063,7 +3166,7 @@ async function getCreatorStats(uid) {
 
         /* Stories count */
         const storiesSnap =
-            await db.ref("stories").once("value");
+            await getAdminDb().ref("stories").once("value");
 
         const stories =
             storiesSnap.val() || {};
@@ -3116,7 +3219,7 @@ async function grantMonetization(uid, enable = true) {
     if (!uid) return;
 
     try {
-        await db.ref("users/" + uid).update({
+        await getAdminDb().ref("users/" + uid).update({
 
             monetizationEnabled: enable === true,
             monetizationStatus:
@@ -3133,7 +3236,7 @@ async function grantMonetization(uid, enable = true) {
                     : null
         });
 
-        await db.ref(
+        await getAdminDb().ref(
             "monetization/" + uid
         ).update({
 
@@ -3221,7 +3324,7 @@ async function grantBlueTick(uid, enable = true) {
     if (!uid) return;
 
     try {
-        await db.ref("users/" + uid).update({
+        await getAdminDb().ref("users/" + uid).update({
             verified: enable === true,
             isVerified: enable === true,
             blueTick: enable === true,
@@ -3272,12 +3375,12 @@ async function loadAnalytics() {
             videosSnapshot,
             storiesSnapshot
         ] = await Promise.all([
-            db.ref("users").once("value"),
-            db.ref("posts").once("value"),
-            db.ref("reports").once("value"),
-            db.ref("shorts").once("value").catch(function () { return { val: function () { return {}; } }; }),
-            db.ref("videos").once("value").catch(function () { return { val: function () { return {}; } }; }),
-            db.ref("stories").once("value").catch(function () { return { val: function () { return {}; } }; })
+            getAdminDb().ref("users").once("value"),
+            getAdminDb().ref("posts").once("value"),
+            getAdminDb().ref("reports").once("value"),
+            getAdminDb().ref("shorts").once("value").catch(function () { return { val: function () { return {}; } }; }),
+            getAdminDb().ref("videos").once("value").catch(function () { return { val: function () { return {}; } }; }),
+            getAdminDb().ref("stories").once("value").catch(function () { return { val: function () { return {}; } }; })
         ]);
 
         const users =
@@ -3610,7 +3713,7 @@ function startRealtimeListeners() {
     stopRealtimeListeners();
 
     unsubscribeUsers =
-        db.ref("users").on(
+        getAdminDb().ref("users").on(
             "value",
             snapshot => {
 
@@ -3648,7 +3751,7 @@ function startRealtimeListeners() {
         );
 
     unsubscribePosts =
-        db.ref("posts").on(
+        getAdminDb().ref("posts").on(
             "value",
             snapshot => {
 
@@ -3672,7 +3775,7 @@ function startRealtimeListeners() {
         );
 
     unsubscribeReports =
-        db.ref("reports").on(
+        getAdminDb().ref("reports").on(
             "value",
             snapshot => {
 
@@ -3703,7 +3806,7 @@ function startRealtimeListeners() {
         );
 
     unsubscribeLive =
-        db.ref("live").on(
+        getAdminDb().ref("live").on(
             "value",
             snapshot => {
 
@@ -3727,7 +3830,7 @@ function startRealtimeListeners() {
         );
 
     try {
-        db.ref("deletionRequests").on(
+        getAdminDb().ref("deletionRequests").on(
             "value",
             (snapshot) => {
                 cachedDeletions = snapshot.val() || {};
@@ -3747,22 +3850,22 @@ function stopRealtimeListeners() {
     try {
 
         if (unsubscribeUsers) {
-            db.ref("users")
+            getAdminDb().ref("users")
                 .off("value", unsubscribeUsers);
         }
 
         if (unsubscribePosts) {
-            db.ref("posts")
+            getAdminDb().ref("posts")
                 .off("value", unsubscribePosts);
         }
 
         if (unsubscribeReports) {
-            db.ref("reports")
+            getAdminDb().ref("reports")
                 .off("value", unsubscribeReports);
         }
 
         if (unsubscribeLive) {
-            db.ref("live")
+            getAdminDb().ref("live")
                 .off("value", unsubscribeLive);
         }
 
@@ -3967,7 +4070,7 @@ if (adminLogoutBtn) {
 
                     try {
 
-                        await auth.signOut();
+                        await getAdminAuth().signOut();
 
                         window.location.replace(
                             "admin-login.html"
@@ -4335,7 +4438,7 @@ document.addEventListener(
    DATABASE CONNECTION TEST
 ========================================================= */
 
-db.ref(".info/connected")
+getAdminDb().ref(".info/connected")
     .on(
         "value",
         snapshot => {
@@ -4394,7 +4497,7 @@ async function loadDeletions() {
     `;
 
     try {
-        const snap = await db.ref("deletionRequests").once("value");
+        const snap = await getAdminDb().ref("deletionRequests").once("value");
         cachedDeletions = snap.val() || {};
         renderDeletions();
         updateDeletionNavCount();
@@ -4554,7 +4657,7 @@ async function permanentlyDeleteUserData(uid) {
             keys.slice(i, i + CHUNK).forEach((k) => {
                 part[k] = obj[k];
             });
-            await db.ref().update(part);
+            await getAdminDb().ref().update(part);
         }
     }
 
@@ -4591,7 +4694,7 @@ async function permanentlyDeleteUserData(uid) {
         await applyUpdates(roots);
     } catch (e) {
         errors.push("roots:" + (e.message || e));
-        try { await db.ref("users/" + uidStr).remove(); } catch (e2) {
+        try { await getAdminDb().ref("users/" + uidStr).remove(); } catch (e2) {
             errors.push("users.remove:" + (e2.message || e2));
         }
     }
@@ -4600,7 +4703,7 @@ async function permanentlyDeleteUserData(uid) {
     const contentRoots = ["posts", "videos", "shorts", "stories", "lives", "highlights"];
     for (const root of contentRoots) {
         try {
-            const snap = await db.ref(root).once("value");
+            const snap = await getAdminDb().ref(root).once("value");
             const all = snap.val() || {};
             const batch = {};
             Object.keys(all).forEach((id) => {
@@ -4619,7 +4722,7 @@ async function permanentlyDeleteUserData(uid) {
 
     // 3) Chats: remove chats where user is participant + messages
     try {
-        const chatsSnap = await db.ref("chats").once("value");
+        const chatsSnap = await getAdminDb().ref("chats").once("value");
         const chats = chatsSnap.val() || {};
         const batch = {};
         Object.keys(chats).forEach((cid) => {
@@ -4640,13 +4743,13 @@ async function permanentlyDeleteUserData(uid) {
     // 4) Remove from others' following/followers
     try {
         const batch2 = {};
-        const followingTree = (await db.ref("following").once("value")).val() || {};
+        const followingTree = (await getAdminDb().ref("following").once("value")).val() || {};
         Object.keys(followingTree).forEach((otherUid) => {
             if (followingTree[otherUid] && followingTree[otherUid][uidStr]) {
                 batch2["following/" + otherUid + "/" + uidStr] = null;
             }
         });
-        const followersTree = (await db.ref("followers").once("value")).val() || {};
+        const followersTree = (await getAdminDb().ref("followers").once("value")).val() || {};
         Object.keys(followersTree).forEach((otherUid) => {
             if (followersTree[otherUid] && followersTree[otherUid][uidStr]) {
                 batch2["followers/" + otherUid + "/" + uidStr] = null;
@@ -4660,7 +4763,7 @@ async function permanentlyDeleteUserData(uid) {
     // 5) Comments / likes left by user (best effort scan)
     for (const root of ["postComments", "comments", "postLikes", "likes"]) {
         try {
-            const snap = await db.ref(root).once("value");
+            const snap = await getAdminDb().ref(root).once("value");
             if (!snap.exists()) continue;
             const batch = {};
             snap.forEach((child) => {
@@ -4688,7 +4791,7 @@ async function permanentlyDeleteUserData(uid) {
 
     // 6) Tombstone — block same uid forever
     try {
-        await db.ref("deletedUsers/" + uidStr).set({
+        await getAdminDb().ref("deletedUsers/" + uidStr).set({
             deletedAt: Date.now(),
             deletedBy: currentAdmin ? currentAdmin.uid : null,
             permanent: true,
@@ -4724,7 +4827,7 @@ async function approveDeletion(requestId, uid) {
             }
         }
 
-        await db.ref("deletionRequests/" + requestId).update({
+        await getAdminDb().ref("deletionRequests/" + requestId).update({
             status: "approved",
             permanent: true,
             resolvedAt: firebase.database.ServerValue.TIMESTAMP,
@@ -4753,13 +4856,13 @@ async function approveDeletion(requestId, uid) {
 async function rejectDeletion(requestId, uid) {
     if (!requestId) return;
     try {
-        await db.ref("deletionRequests/" + requestId).update({
+        await getAdminDb().ref("deletionRequests/" + requestId).update({
             status: "rejected",
             resolvedAt: firebase.database.ServerValue.TIMESTAMP,
             resolvedBy: currentAdmin ? currentAdmin.uid : null
         });
         if (uid) {
-            await db.ref("users/" + uid).update({
+            await getAdminDb().ref("users/" + uid).update({
                 deletionRequested: false,
                 deletionStatus: "rejected"
             });
@@ -4795,7 +4898,7 @@ async function loadMusicAdmin() {
     `;
 
     try {
-        const snap = await db.ref("musicLibrary").once("value");
+        const snap = await getAdminDb().ref("musicLibrary").once("value");
         const data = snap.val() || {};
         let entries = Object.entries(data).map(([id, v]) => ({ id, ...v }));
 
@@ -4844,7 +4947,7 @@ async function loadMusicAdmin() {
             btn.addEventListener("click", async () => {
                 const id = btn.dataset.toggleMusic;
                 const next = btn.dataset.active === "1" ? false : true;
-                await db.ref("musicLibrary/" + id + "/active").set(next);
+                await getAdminDb().ref("musicLibrary/" + id + "/active").set(next);
                 showToast(next ? "Track visible." : "Track hidden.");
                 loadMusicAdmin();
             });
@@ -4856,7 +4959,7 @@ async function loadMusicAdmin() {
                     "Delete track?",
                     "This music will be removed from the store.",
                     async () => {
-                        await db.ref("musicLibrary/" + btn.dataset.deleteMusic).remove();
+                        await getAdminDb().ref("musicLibrary/" + btn.dataset.deleteMusic).remove();
                         showToast("Track deleted.");
                         loadMusicAdmin();
                     }
@@ -4978,7 +5081,7 @@ if (saveMusicBtn) {
             if (window.VieworaStores?.MusicStore) {
                 await VieworaStores.MusicStore.addTrack(payload);
             } else {
-                await db.ref("musicLibrary").push(payload);
+                await getAdminDb().ref("musicLibrary").push(payload);
             }
 
             showToast("Music track uploaded.");
@@ -5029,7 +5132,7 @@ async function loadStickersAdmin() {
     `;
 
     try {
-        const snap = await db.ref("stickerPacks").once("value");
+        const snap = await getAdminDb().ref("stickerPacks").once("value");
         const data = snap.val() || {};
         const entries = Object.entries(data)
             .map(([id, v]) => ({ id, ...v }))
@@ -5068,7 +5171,7 @@ async function loadStickersAdmin() {
         qsa("[data-toggle-pack]", container).forEach((btn) => {
             btn.addEventListener("click", async () => {
                 const next = btn.dataset.active === "1" ? false : true;
-                await db.ref("stickerPacks/" + btn.dataset.togglePack + "/active").set(next);
+                await getAdminDb().ref("stickerPacks/" + btn.dataset.togglePack + "/active").set(next);
                 showToast(next ? "Pack visible." : "Pack hidden.");
                 loadStickersAdmin();
             });
@@ -5080,7 +5183,7 @@ async function loadStickersAdmin() {
                     "Delete pack?",
                     "This sticker pack will be removed.",
                     async () => {
-                        await db.ref("stickerPacks/" + btn.dataset.deletePack).remove();
+                        await getAdminDb().ref("stickerPacks/" + btn.dataset.deletePack).remove();
                         showToast("Pack deleted.");
                         loadStickersAdmin();
                     }
@@ -5193,7 +5296,7 @@ if (saveStickerPackBtn) {
             if (window.VieworaStores?.StickerStore) {
                 await VieworaStores.StickerStore.addPack(payload);
             } else {
-                await db.ref("stickerPacks").push(payload);
+                await getAdminDb().ref("stickerPacks").push(payload);
             }
 
             showToast("Sticker pack added.");
@@ -5233,7 +5336,7 @@ async function loadMonetizationAdmin() {
     `;
 
     try {
-        const usersSnap = await db.ref("users").once("value");
+        const usersSnap = await getAdminDb().ref("users").once("value");
         const users = usersSnap.val() || {};
         const entries = Object.entries(users);
 
@@ -5332,7 +5435,7 @@ async function loadMonetizationAdmin() {
                 if (typeof grantMonetization === "function") {
                     await grantMonetization(uid, enable);
                 } else {
-                    await db.ref("users/" + uid).update({
+                    await getAdminDb().ref("users/" + uid).update({
                         monetizationEnabled: enable,
                         monetizationStatus: enable ? "active" : "disabled"
                     });
@@ -5452,7 +5555,7 @@ window.VieworaAdmin = {
             return;
         }
         try {
-            await db.ref("users/" + selectedUserId).update({
+            await getAdminDb().ref("users/" + selectedUserId).update({
                 blocked: shouldBlock,
                 disabled: shouldBlock,
                 status: shouldBlock ? "disabled" : "active",
@@ -5487,7 +5590,7 @@ window.VieworaAdmin = {
             return;
         }
         try {
-            await db.ref("users/" + selectedUserId).update({
+            await getAdminDb().ref("users/" + selectedUserId).update({
                 role: newRole.toLowerCase()
             });
             showToast("Role updated to " + newRole);
@@ -5546,7 +5649,7 @@ const ADMIN_AUDIT_PATH = "adminAudit";
 async function logAdminAction(action, detail) {
     try {
         if (!currentAdmin) return;
-        await db.ref(ADMIN_AUDIT_PATH).push({
+        await getAdminDb().ref(ADMIN_AUDIT_PATH).push({
             action: String(action || ""),
             detail: String(detail || "").slice(0, 300),
             adminUid: currentAdmin.uid,
@@ -5579,7 +5682,7 @@ async function loadSettings() {
     // Database ping
     const dbStatus = $("databaseStatus");
     try {
-        await db.ref(".info/connected").once("value");
+        await getAdminDb().ref(".info/connected").once("value");
         if (dbStatus) {
             dbStatus.textContent = "Connected";
             dbStatus.className = "systemStatus online";
@@ -5599,7 +5702,7 @@ async function loadSettings() {
     }
 
     try {
-        const snap = await db.ref(APP_CONFIG_PATH).once("value");
+        const snap = await getAdminDb().ref(APP_CONFIG_PATH).once("value");
         const c = snap.val() || {};
         const ff = c.features || {};
         const mono = c.monetization || {};
@@ -5701,10 +5804,10 @@ async function saveAllSettings() {
 
     try {
         // merge broadcast if exists
-        const existing = (await db.ref(APP_CONFIG_PATH).once("value")).val() || {};
+        const existing = (await getAdminDb().ref(APP_CONFIG_PATH).once("value")).val() || {};
         if (existing.broadcast) payload.broadcast = existing.broadcast;
 
-        await db.ref(APP_CONFIG_PATH).update(payload);
+        await getAdminDb().ref(APP_CONFIG_PATH).update(payload);
         await logAdminAction("settings_save", "Updated appConfig");
         showToast("Settings saved");
         const plat = $("platformStatusBadge");
@@ -5737,9 +5840,9 @@ async function sendBroadcast() {
             sentAt: Date.now(),
             sentBy: currentAdmin ? currentAdmin.uid : null
         };
-        await db.ref(APP_CONFIG_PATH + "/broadcast").set(broadcast);
+        await getAdminDb().ref(APP_CONFIG_PATH + "/broadcast").set(broadcast);
         // Also push a system notification node for clients that listen
-        await db.ref("systemAnnouncements").push({
+        await getAdminDb().ref("systemAnnouncements").push({
             ...broadcast,
             type: "broadcast"
         });
@@ -5754,7 +5857,7 @@ async function sendBroadcast() {
 
 async function clearBroadcast() {
     try {
-        await db.ref(APP_CONFIG_PATH + "/broadcast").remove();
+        await getAdminDb().ref(APP_CONFIG_PATH + "/broadcast").remove();
         setVal("broadcastTitle", "");
         setVal("broadcastBody", "");
         const bst = $("broadcastStatus");
@@ -5770,7 +5873,7 @@ async function loadAdminAudit() {
     const list = $("adminAuditList");
     if (!list) return;
     try {
-        const snap = await db.ref(ADMIN_AUDIT_PATH).limitToLast(40).once("value");
+        const snap = await getAdminDb().ref(ADMIN_AUDIT_PATH).limitToLast(40).once("value");
         const val = snap.val() || {};
         const rows = Object.entries(val)
             .map(([id, v]) => ({ id, ...v }))
@@ -5813,7 +5916,7 @@ function downloadCSV(filename, headers, rows) {
 async function exportUsersCSV() {
     try {
         showToast("Exporting users…");
-        const snap = await db.ref("users").once("value");
+        const snap = await getAdminDb().ref("users").once("value");
         const data = snap.val() || {};
         const rows = Object.entries(data).map(([uid, u]) => ({
             uid,
@@ -5835,7 +5938,7 @@ async function exportUsersCSV() {
 async function exportPostsCSV() {
     try {
         showToast("Exporting posts…");
-        const snap = await db.ref("posts").once("value");
+        const snap = await getAdminDb().ref("posts").once("value");
         const data = snap.val() || {};
         const rows = Object.entries(data).map(([id, p]) => ({
             id,
@@ -5857,7 +5960,7 @@ async function exportPostsCSV() {
 async function exportReportsCSV() {
     try {
         showToast("Exporting reports…");
-        const snap = await db.ref("reports").once("value");
+        const snap = await getAdminDb().ref("reports").once("value");
         const data = snap.val() || {};
         const rows = Object.entries(data).map(([id, r]) => ({
             id,

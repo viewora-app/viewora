@@ -1,223 +1,487 @@
 "use strict";
-/**
- * Viewora Verification — application + status UI
- * Firebase paths:
- *   verificationApplications/{appId}
- *   users/{uid}/tickApplications/{type}
- *   notifications/{uid}/{nid}
- */
+
+/*
+========================================================
+ VIEWORA VERIFICATION SYSTEM
+ Blue  : Identity / Creator Verification
+ Red   : Elite Membership
+ Yellow: Business / Brand Verification
+ White : Follower Achievements
+
+ Firebase:
+ verificationApplications/{applicationId}
+ users/{uid}/tickApplications/{type}
+ notifications/{uid}/{notificationId}
+
+ IMPORTANT:
+ Production approval and payment entitlements must be
+ controlled by a trusted server/admin, not client flags.
+========================================================
+*/
 
 (function () {
-  const TICKS = [
-    {
-      type: "blue",
-      icon: "fa-circle-check",
-      colorClass: "blue",
+  if (window.__VIEWORA_VERIFICATION_INIT__) return;
+  window.__VIEWORA_VERIFICATION_INIT__ = true;
+
+  const TYPES = {
+    blue: {
       title: "Blue Tick",
-      subtitle: "Creator Verification",
+      subtitle: "Identity & Creator Verification",
+      color: "blue",
       points: [
-        "Identity & authenticity review",
-        "Complete profile required",
-        "Not sold by follower count alone",
-        "Payment (if any) ≠ automatic approval"
-      ],
-      needsId: true,
-      paidHint: "Optional verification plan on Subscription"
+        "Identity and account authenticity review",
+        "Creator, artist or public figure",
+        "Complete and authentic profile required",
+        "Subscription does not guarantee approval"
+      ]
     },
-    {
-      type: "red",
-      icon: "fa-certificate",
-      colorClass: "red",
+
+    red: {
       title: "Red Tick",
       subtitle: "Viewora Elite",
+      color: "red",
       points: [
-        "Active Elite membership",
-        "Premium tools & priority support",
-        "Not a wealth verification badge",
-        "Ends if Elite subscription expires"
-      ],
-      needsId: false,
-      paidHint: "Requires Elite plan",
-      eliteOnly: true
+        "Elite subscription benefits",
+        "Elite status must be active",
+        "Membership and verification are separate",
+        "Benefits end according to subscription status"
+      ]
     },
-    {
-      type: "yellow",
-      icon: "fa-circle-check",
-      colorClass: "yellow",
+
+    yellow: {
       title: "Yellow Tick",
-      subtitle: "Official Business",
+      subtitle: "Official Business / Brand",
+      color: "yellow",
       points: [
-        "Registered company / brand",
-        "Business authorization review",
-        "Does not guarantee every product is genuine",
-        "Separate from creator Blue Tick"
-      ],
-      needsId: true,
-      business: true
+        "Minimum 5,000 genuine followers required",
+        "Business or brand ownership review",
+        "Business name and category required",
+        "Registration or official proof may be requested",
+        "Payment does not guarantee approval"
+      ]
     },
-    {
-      type: "white",
-      icon: "fa-certificate",
-      colorClass: "white",
+
+    white: {
       title: "White Tick",
-      subtitle: "Achievement",
+      subtitle: "Follower Achievement",
+      color: "white",
       points: [
-        "Earned from follower milestones",
-        "1M → Level 1 · 5M → Level 2 · 10M → Level 3",
-        "No subscription purchase required",
-        "Suspicious growth may be reviewed"
-      ],
-      needsId: false,
-      achievement: true
+        "Earned through follower milestones",
+        "1M, 5M and 10M milestone levels",
+        "Follower authenticity may be reviewed",
+        "Buying followers does not qualify"
+      ]
     }
-  ];
+  };
 
-  function db() {
-    return window.db || (window.firebase && firebase.database && firebase.database());
+  const $ = id => document.getElementById(id);
+
+  let currentUser = null;
+  let applicationType = null;
+  let submitting = false;
+
+  function getAuth() {
+    if (window.auth) return window.auth;
+
+    if (window.firebase && firebase.auth) {
+      return firebase.auth();
+    }
+
+    return null;
   }
-  function auth() {
-    return window.auth || (window.firebase && firebase.auth && firebase.auth());
+
+  function getDB() {
+    if (window.db) return window.db;
+
+    if (window.firebase && firebase.database) {
+      return firebase.database();
+    }
+
+    return null;
   }
 
-  function statusLabel(st) {
-    if (st === "active" || st === "approved" || st === "verified") return { text: "Active", cls: "active" };
-    if (st === "under_review" || st === "pending" || st === "review") return { text: "Under Review", cls: "review" };
-    if (st === "rejected") return { text: "Rejected", cls: "rejected" };
-    if (st === "more_info") return { text: "More info needed", cls: "review" };
-    return { text: "Not Earned", cls: "none" };
+  function notify(message) {
+    alert(message);
   }
 
-  function tickStatusFromUser(user, type) {
-    if (!user) return "none";
-    const B = window.VieworaBadges;
-    if (type === "blue" && B && B.hasBlue(user)) return "active";
-    if (type === "red" && B && B.hasRed(user)) return "active";
-    if (type === "yellow" && B && B.hasYellow(user)) return "active";
-    if (type === "white" && B && B.hasWhite(user)) return "active";
+  function escapeHTML(value) {
+    return String(value == null ? "" : value)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
 
-    const apps = user.tickApplications || {};
-    const a = apps[type];
-    if (a && a.status) return String(a.status);
+  function normalizeStatus(status) {
+    const s = String(status || "").toLowerCase();
+
+    if (["active", "approved", "verified"].includes(s)) {
+      return "approved";
+    }
+
+    if (["pending", "review", "under_review"].includes(s)) {
+      return "under_review";
+    }
+
+    if (["rejected", "more_info", "none"].includes(s)) {
+      return s;
+    }
+
     return "none";
   }
 
-  async function loadUser(uid) {
-    const ref = db().ref("users/" + uid);
-    const snap = await ref.once("value");
-    return snap.val() || {};
+  function statusInfo(status) {
+    const s = normalizeStatus(status);
+
+    const map = {
+      approved: {
+        label: "Approved",
+        cls: "active"
+      },
+      under_review: {
+        label: "Under Review",
+        cls: "review"
+      },
+      rejected: {
+        label: "Rejected",
+        cls: "rejected"
+      },
+      more_info: {
+        label: "More Information Needed",
+        cls: "review"
+      },
+      none: {
+        label: "Not Applied",
+        cls: "none"
+      }
+    };
+
+    return map[s] || map.none;
   }
 
-  async function pushActivity(uid, payload) {
-    if (!uid || !db()) return;
-    const nid = "verif_" + (payload.type || "x") + "_" + Date.now();
-    try {
-      await db().ref("notifications/" + uid + "/" + nid).set({
-        id: nid,
-        type: payload.notifType || "verification",
-        title: payload.title || "Verification",
-        body: payload.body || "",
-        tickType: payload.type || null,
-        createdAt: Date.now(),
-        read: false,
-        icon: payload.icon || "badge"
-      });
-    } catch (e) {
-      console.warn("notif failed", e);
+  async function loadUser(uid) {
+    const database = getDB();
+
+    if (!database) {
+      throw new Error("Firebase Database is unavailable.");
     }
+
+    const snapshot = await database
+      .ref("users/" + uid)
+      .once("value");
+
+    return snapshot.val() || {};
+  }
+
+  /*
+   * Badge eligibility should come from trusted server/admin
+   * records. Application status alone is not approval.
+   */
+  function isBadgeActive(user, type) {
+    const B = window.VieworaBadges;
+
+    if (B) {
+      if (type === "blue" && B.hasBlue) {
+        return B.hasBlue(user);
+      }
+
+      if (type === "red" && B.hasRed) {
+        return B.hasRed(user);
+      }
+
+      if (type === "yellow" && B.hasYellow) {
+        return B.hasYellow(user);
+      }
+
+      if (type === "white" && B.hasWhite) {
+        return B.hasWhite(user);
+      }
+    }
+
+    const verification = user && user.verification;
+    const approved = verification && verification[type];
+
+    return !!(
+      approved &&
+      approved.status === "approved" &&
+      approved.active === true
+    );
+  }
+
+  function getStatus(user, type) {
+    if (!user) return "none";
+
+    if (isBadgeActive(user, type)) {
+      return "approved";
+    }
+
+    const app = user.tickApplications &&
+      user.tickApplications[type];
+
+    return normalizeStatus(app && app.status);
+  }
+
+  var YELLOW_MIN_FOLLOWERS = 5000;
+
+  function hasActiveSubscription(user) {
+    if (!user) return false;
+    var sub = user.subscription || {};
+    if (sub.active === true || String(sub.status || "").toLowerCase() === "active") {
+      var exp = Number(sub.expiresAt || 0);
+      if (exp > 0 && exp < Date.now()) return false;
+      return true;
+    }
+    if (user.subscriptionActive === true || user.premium === true || user.isPremium === true) {
+      return true;
+    }
+    return false;
+  }
+
+  function planOfUser(user) {
+    var sub = (user && user.subscription) || {};
+    return String(sub.plan || user.plan || "").toLowerCase();
+  }
+
+  function getFollowerCount(user) {
+    const B = window.VieworaBadges;
+
+    if (B && typeof B.followersOf === "function") {
+      return Number(B.followersOf(user)) || 0;
+    }
+
+    return Number(
+      user.followersCount ||
+      user.followers_count ||
+      0
+    );
+  }
+
+  function getWhiteLevel(user) {
+    const B = window.VieworaBadges;
+
+    if (B && typeof B.getWhiteLevel === "function") {
+      return B.getWhiteLevel(user);
+    }
+
+    const count = getFollowerCount(user);
+
+    if (count >= 10000000) {
+      return { level: 3, label: "Level 3 · 10M followers" };
+    }
+
+    if (count >= 5000000) {
+      return { level: 2, label: "Level 2 · 5M followers" };
+    }
+
+    if (count >= 1000000) {
+      return { level: 1, label: "Level 1 · 1M followers" };
+    }
+
+    return {
+      level: 0,
+      label: "Next milestone: 1M followers"
+    };
   }
 
   function renderGrid(user) {
-    const grid = document.getElementById("tickGrid");
+    const grid = $("tickGrid");
     if (!grid) return;
-    grid.innerHTML = "";
 
-    TICKS.forEach(function (t) {
-      const st = tickStatusFromUser(user, t.type);
-      const lab = statusLabel(st);
+    grid.replaceChildren();
+
+    Object.keys(TYPES).forEach(type => {
+      const item = TYPES[type];
+      const status = getStatus(user, type);
+      const info = statusInfo(status);
+
       const card = document.createElement("article");
       card.className = "vCard";
-      card.innerHTML =
-        '<div class="vCardHead">' +
-        '<div class="vIcon ' + t.colorClass + '"><i class="fa-solid ' + t.icon + '"></i></div>' +
-        '<div style="flex:1;min-width:0">' +
-        "<h3>" + t.title + "</h3>" +
-        '<p class="vSub">' + t.subtitle + "</p></div>" +
-        '<span class="vStatus ' + lab.cls + '">' + lab.text + "</span></div>" +
-        "<ul>" + t.points.map(function (p) { return "<li>" + p + "</li>"; }).join("") + "</ul>" +
-        '<button type="button" class="vBtn" data-apply="' + t.type + '"></button>';
 
-      const btn = card.querySelector("[data-apply]");
-      if (st === "active") {
-        btn.textContent = "Active on profile";
-        btn.disabled = true;
-        btn.classList.add("ghost");
-      } else if (st === "under_review" || st === "pending") {
-        btn.textContent = "Under review…";
-        btn.disabled = true;
-        btn.classList.add("ghost");
-      } else if (t.achievement) {
-        btn.textContent = "View milestones";
-        btn.classList.add("ghost");
-      } else if (t.eliteOnly) {
-        btn.textContent = "Go to Elite plan";
+      const head = document.createElement("div");
+      head.className = "vCardHead";
+
+      const icon = document.createElement("div");
+      icon.className = "vIcon " + item.color;
+      icon.textContent = "✓";
+      icon.setAttribute("aria-label", item.title);
+
+      const details = document.createElement("div");
+      details.style.flex = "1";
+      details.style.minWidth = "0";
+
+      const title = document.createElement("h3");
+      title.textContent = item.title;
+
+      const subtitle = document.createElement("p");
+      subtitle.className = "vSub";
+      subtitle.textContent = item.subtitle;
+
+      details.append(title, subtitle);
+
+      const badgeStatus = document.createElement("span");
+      badgeStatus.className = "vStatus " + info.cls;
+      badgeStatus.textContent = info.label;
+
+      head.append(icon, details, badgeStatus);
+
+      const list = document.createElement("ul");
+
+      item.points.forEach(point => {
+        const li = document.createElement("li");
+        li.textContent = point;
+        list.appendChild(li);
+      });
+
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "vBtn";
+      button.dataset.apply = type;
+
+      if (status === "approved") {
+        button.textContent = "Active on profile";
+        button.disabled = true;
+        button.classList.add("ghost");
+      } else if (status === "under_review") {
+        button.textContent = "Application under review";
+        button.disabled = true;
+        button.classList.add("ghost");
+      } else if (type === "red") {
+        button.textContent = "View Elite subscription";
+      } else if (type === "white") {
+        button.textContent = "View milestones";
+      } else if (type === "yellow") {
+        var yfc = getFollowerCount(user);
+        if (yfc < YELLOW_MIN_FOLLOWERS) {
+          button.textContent = "Locked · need 5,000 followers";
+          button.classList.add("ghost");
+        } else if (!hasActiveSubscription(user)) {
+          button.textContent = "Buy plan, then Apply";
+        } else {
+          button.textContent =
+            status === "rejected" || status === "more_info"
+              ? "Review / Re-apply"
+              : "Apply for " + item.title;
+        }
+      } else if (type === "blue" && !hasActiveSubscription(user)) {
+        button.textContent = "Subscribe, then Apply";
       } else {
-        btn.textContent = st === "rejected" ? "Re-apply" : "Apply for " + t.title;
+        button.textContent =
+          status === "rejected" || status === "more_info"
+            ? "Review / Re-apply"
+            : "Apply for " + item.title;
       }
+
+      card.append(head, list, button);
       grid.appendChild(card);
     });
 
-    grid.querySelectorAll("[data-apply]").forEach(function (btn) {
-      btn.addEventListener("click", function () {
-        const type = btn.getAttribute("data-apply");
-        onApplyClick(type, user);
+    grid.querySelectorAll("[data-apply]").forEach(button => {
+      button.addEventListener("click", () => {
+        handleApply(button.dataset.apply, user);
       });
     });
   }
 
-  let applyType = null;
+  function field(id, label, placeholder, maxLength) {
+    return `
+      <div class="vField">
+        <label for="${id}">${escapeHTML(label)}</label>
+        <input
+          id="${id}"
+          maxlength="${maxLength || 120}"
+          placeholder="${escapeHTML(placeholder || "")}"
+          autocomplete="off"
+        >
+      </div>
+    `;
+  }
 
-  function onApplyClick(type, user) {
-    const meta = TICKS.find(function (t) { return t.type === type; });
-    if (!meta) return;
+  function selectField(id, label, options) {
+    return `
+      <div class="vField">
+        <label for="${id}">${escapeHTML(label)}</label>
+        <select id="${id}">
+          ${options.map(option => `
+            <option value="${escapeHTML(option[0])}">
+              ${escapeHTML(option[1])}
+            </option>
+          `).join("")}
+        </select>
+      </div>
+    `;
+  }
 
-    if (meta.eliteOnly) {
-      location.href = "subscription.html";
+  function textArea(id, label, placeholder) {
+    return `
+      <div class="vField">
+        <label for="${id}">${escapeHTML(label)}</label>
+        <textarea
+          id="${id}"
+          maxlength="500"
+          placeholder="${escapeHTML(placeholder || "")}"
+        ></textarea>
+      </div>
+    `;
+  }
+
+  function openSheet(type) {
+    const meta = TYPES[type];
+    const sheet = $("applySheet");
+    const title = $("applyTitle");
+    const body = $("applyBody");
+
+    if (!meta || !sheet || !title || !body) {
+      notify("Verification form could not be opened.");
       return;
     }
-    if (meta.achievement) {
-      const B = window.VieworaBadges;
-      const fc = B ? B.followersOf(user) : 0;
-      const wl = B ? B.getWhiteLevel(user) : { label: "", level: 0 };
-      alert(
-        "White Tick is earned from followers.\n\n" +
-        "Your followers: " + fc.toLocaleString() + "\n" +
-        (wl.label || "Keep growing to unlock Level 1 at 1M followers.")
-      );
-      return;
-    }
 
-    applyType = type;
-    const sheet = document.getElementById("applySheet");
-    const title = document.getElementById("applyTitle");
-    const body = document.getElementById("applyBody");
+    applicationType = type;
     title.textContent = "Apply · " + meta.title;
-    body.innerHTML = "";
 
-    if (meta.business) {
+    if (type === "blue") {
       body.innerHTML =
-        '<div class="vField"><label>Business / brand name</label><input id="vfBiz" maxlength="80" placeholder="Official company name"></div>' +
-        '<div class="vField"><label>Business type</label><select id="vfBizType"><option value="company">Company</option><option value="brand">Brand</option><option value="seller">Authorized seller</option><option value="other">Other</option></select></div>' +
-        '<div class="vField"><label>Registration / GST / ID (text only)</label><input id="vfReg" maxlength="60" placeholder="Registration number"></div>' +
-        '<div class="vField"><label>Why this account is official</label><textarea id="vfWhy" maxlength="500" placeholder="Website, proof links…"></textarea></div>' +
-        '<p class="vNote" style="padding:0">Payment does not auto-approve. Team reviews business authorization.</p>';
+        field("vfName", "Public / creator name", "Your name", 100) +
+        selectField("vfCat", "Account category", [
+          ["creator", "Creator / Influencer"],
+          ["artist", "Artist / Musician"],
+          ["public", "Public figure"],
+          ["journalist", "Journalist"],
+          ["other", "Other"]
+        ]) +
+        field("vfWebsite", "Official website / profile link",
+          "https://…", 250) +
+        textArea("vfWhy", "Why should this account be verified?",
+          "Share public links that help establish authenticity.") +
+        `<p class="vNote">
+          Do not enter Aadhaar/PAN numbers or upload identity documents
+          into this form. If additional identity proof is needed, use a
+          secure verification process provided by Viewora.
+        </p>`;
+    } else if (type === "yellow") {
+      body.innerHTML =
+        field("vfBiz", "Business / brand name",
+          "Official registered name", 100) +
+        selectField("vfBizType", "Business type", [
+          ["company", "Company"],
+          ["brand", "Brand"],
+          ["seller", "Authorized seller"],
+          ["shop", "Shop / Store"],
+          ["other", "Other"]
+        ]) +
+        field("vfRegType", "Registration proof type",
+          "For example: company registration", 100) +
+        field("vfWebsite", "Official website / store link",
+          "https://…", 250) +
+        textArea("vfWhy", "Business details and proof links",
+          "Describe the business and provide public proof links.") +
+        `<p class="vNote">
+          Never share passwords, bank details, full government ID numbers
+          or confidential documents in this form. Payment alone does
+          not approve a business badge.
+        </p>`;
     } else {
-      body.innerHTML =
-        '<div class="vField"><label>Full legal name</label><input id="vfName" maxlength="80" placeholder="As on ID"></div>' +
-        '<div class="vField"><label>Category</label><select id="vfCat"><option value="creator">Creator / influencer</option><option value="public">Public figure</option><option value="artist">Artist / musician</option><option value="other">Other</option></select></div>' +
-        '<div class="vField"><label>Government ID type</label><select id="vfIdType"><option value="aadhaar">Aadhaar (last 4 only)</option><option value="passport">Passport</option><option value="dl">Driving licence</option><option value="other">Other</option></select></div>' +
-        '<div class="vField"><label>ID last 4 digits only</label><input id="vfIdLast4" maxlength="4" inputmode="numeric" placeholder="XXXX"></div>' +
-        '<div class="vField"><label>Why you should be verified</label><textarea id="vfWhy" maxlength="500" placeholder="Links to other platforms, press…"></textarea></div>' +
-        '<p class="vNote" style="padding:0">We only store minimal ID hints. Full documents are reviewed securely by staff — never write secrets in public posts.</p>';
+      return;
     }
 
     sheet.classList.add("open");
@@ -225,203 +489,445 @@
   }
 
   function closeSheet() {
-    const sheet = document.getElementById("applySheet");
-    sheet.classList.remove("open");
-    sheet.setAttribute("aria-hidden", "true");
-    applyType = null;
+    const sheet = $("applySheet");
+
+    if (sheet) {
+      sheet.classList.remove("open");
+      sheet.setAttribute("aria-hidden", "true");
+    }
+
+    applicationType = null;
   }
 
-  async function submitApplication() {
-    const u = auth() && auth().currentUser;
-    if (!u) {
-      alert("Please log in to apply.");
+  function readValue(id) {
+    const el = $(id);
+    return el ? String(el.value || "").trim() : "";
+  }
+
+  function handleApply(type, user) {
+    if (!currentUser) {
+      notify("Please log in to apply.");
       location.href = "login.html";
       return;
     }
-    if (!applyType) return;
 
-    const meta = TICKS.find(function (t) { return t.type === applyType; });
+    if (type === "red") {
+      location.href = "subscription.html";
+      return;
+    }
+
+    if (type === "white") {
+      const followers = getFollowerCount(user);
+      const level = getWhiteLevel(user);
+
+      notify(
+        "Your followers: " + followers.toLocaleString() +
+        "\n" + level.label +
+        "\n\nFollower milestones are subject to authenticity checks."
+      );
+
+      return;
+    }
+
+    const status = getStatus(user, type);
+
+    if (status === "under_review") {
+      notify("Your application is already under review.");
+      return;
+    }
+
+    if (status === "approved") {
+      notify("This badge is already active.");
+      return;
+    }
+
+    /* Yellow: minimum 5,000 followers */
+    if (type === "yellow") {
+      var fc = getFollowerCount(user);
+      if (fc < YELLOW_MIN_FOLLOWERS) {
+        notify(
+          "Business Verification Locked\n\n" +
+          "You need at least 5,000 followers to apply.\n" +
+          "Your followers: " + fc.toLocaleString() + "\n\n" +
+          "Grow your authentic audience to unlock business verification."
+        );
+        return;
+      }
+      if (!hasActiveSubscription(user)) {
+        notify(
+          "Subscription required\n\n" +
+          "Buy a Viewora plan first, then return here to Apply for Yellow Tick.\n" +
+          "Payment alone does not approve the badge."
+        );
+        location.href = "subscription.html";
+        return;
+      }
+    }
+
+    /* Blue: need Plus/Pro/Elite (or any active sub) then Apply → under review */
+    if (type === "blue") {
+      if (!hasActiveSubscription(user)) {
+        notify(
+          "Subscription required\n\n" +
+          "Purchase Plus, Pro or Elite first.\n" +
+          "After payment, come back to Verification and tap Apply.\n" +
+          "Admin review is required — tick is not automatic."
+        );
+        location.href = "subscription.html";
+        return;
+      }
+    }
+
+    openSheet(type);
+  }
+
+  function validHttpURL(value) {
+    if (!value) return true;
+
+    try {
+      const url = new URL(value);
+      return url.protocol === "https:" || url.protocol === "http:";
+    } catch (_) {
+      return false;
+    }
+  }
+
+  async function submitApplication() {
+    if (submitting) return;
+
+    const auth = getAuth();
+    const database = getDB();
+    const user = auth && auth.currentUser;
+
+    if (!user) {
+      notify("Please log in first.");
+      location.href = "login.html";
+      return;
+    }
+
+    if (!database || !applicationType) {
+      notify("Verification service is unavailable.");
+      return;
+    }
+
+    if (!["blue", "yellow"].includes(applicationType)) {
+      notify("This application type cannot be submitted here.");
+      return;
+    }
+
+    const type = applicationType;
+    const existingUser = await loadUser(user.uid).catch(() => ({}));
+
+    const existingStatus = getStatus(existingUser, type);
+
+    if (existingStatus === "under_review" ||
+        existingStatus === "approved") {
+      notify("An application is already active or under review.");
+      closeSheet();
+      renderGrid(existingUser);
+      return;
+    }
+
     const payload = {
-      uid: u.uid,
-      type: applyType,
+      uid: user.uid,
+      type: type,
       status: "under_review",
       createdAt: Date.now(),
       updatedAt: Date.now(),
-      email: u.email || null
+      schemaVersion: 1
     };
 
-    if (meta && meta.business) {
-      payload.businessName = (document.getElementById("vfBiz") || {}).value || "";
-      payload.businessType = (document.getElementById("vfBizType") || {}).value || "";
-      payload.registrationHint = (document.getElementById("vfReg") || {}).value || "";
-      payload.reason = (document.getElementById("vfWhy") || {}).value || "";
-      if (!payload.businessName.trim()) {
-        alert("Business name is required.");
-        return;
-      }
-    } else {
-      payload.legalName = (document.getElementById("vfName") || {}).value || "";
-      payload.category = (document.getElementById("vfCat") || {}).value || "";
-      payload.idType = (document.getElementById("vfIdType") || {}).value || "";
-      payload.idLast4 = (document.getElementById("vfIdLast4") || {}).value || "";
-      payload.reason = (document.getElementById("vfWhy") || {}).value || "";
-      if (!payload.legalName.trim()) {
-        alert("Legal name is required.");
+    if (type === "blue") {
+      payload.publicName = readValue("vfName");
+      payload.category = readValue("vfCat");
+      payload.officialLink = readValue("vfWebsite");
+      payload.reason = readValue("vfWhy");
+
+      if (!payload.publicName || !payload.reason) {
+        notify("Please enter your name and verification reason.");
         return;
       }
     }
 
-    const btn = document.getElementById("applySubmit");
-    btn.disabled = true;
-    btn.textContent = "Submitting…";
+    if (type === "yellow") {
+      payload.businessName = readValue("vfBiz");
+      payload.businessType = readValue("vfBizType");
+      payload.registrationProofType = readValue("vfRegType");
+      payload.officialLink = readValue("vfWebsite");
+      payload.reason = readValue("vfWhy");
+
+      if (!payload.businessName || !payload.reason) {
+        notify("Business name and business details are required.");
+        return;
+      }
+    }
+
+    if (!validHttpURL(payload.officialLink)) {
+      notify("Enter a valid HTTP or HTTPS link.");
+      return;
+    }
+
+    const submitButton = $("applySubmit");
+    submitting = true;
+
+    if (submitButton) {
+      submitButton.disabled = true;
+      submitButton.textContent = "Submitting…";
+    }
 
     try {
-      const appRef = db().ref("verificationApplications").push();
-      payload.id = appRef.key;
-      await appRef.set(payload);
-      await db().ref("users/" + u.uid + "/tickApplications/" + applyType).set({
-        status: "under_review",
-        applicationId: payload.id,
-        updatedAt: Date.now()
-      });
+      const applicationRef =
+        database.ref("verificationApplications").push();
 
-      await pushActivity(u.uid, {
-        type: applyType,
-        notifType: "verification_submitted",
-        title: meta.title + " application",
-        body: "Your application has been submitted successfully and is now under review. We'll notify you when a decision is made.",
-        icon: "badge"
+      const applicationId = applicationRef.key;
+
+      payload.id = applicationId;
+
+      /*
+       * Both writes are client requests, so Firebase Rules must
+       * authorize only safe application fields. Approval fields
+       * must be writable by trusted admin/server only.
+       */
+      await applicationRef.set(payload);
+
+      await database
+        .ref("users/" + user.uid + "/tickApplications/" + type)
+        .set({
+          status: "under_review",
+          applicationId: applicationId,
+          updatedAt: Date.now()
+        });
+
+      const notificationRef =
+        database.ref("notifications/" + user.uid).push();
+
+      await notificationRef.set({
+        id: notificationRef.key,
+        type: "verification_submitted",
+        title: TYPES[type].title + " application submitted",
+        body: "Your application is under review. Payment does not guarantee approval.",
+        tickType: type,
+        createdAt: Date.now(),
+        read: false
       });
 
       closeSheet();
-      alert("Application submitted. Check Activity for updates.");
-      const user = await loadUser(u.uid);
-      renderGrid(user);
-    } catch (e) {
-      console.error(e);
-      alert("Could not submit. Check login and try again.");
+      notify("Application submitted successfully. It is now under review.");
+
+      const refreshed = await loadUser(user.uid);
+      renderGrid(refreshed);
+    } catch (error) {
+      console.error("[Viewora Verification]", error);
+      notify(
+        "Could not submit the application. Check your Firebase login and database rules."
+      );
     } finally {
-      btn.disabled = false;
-      btn.textContent = "Submit application";
+      submitting = false;
+
+      if (submitButton) {
+        submitButton.disabled = false;
+        submitButton.textContent = "Submit application";
+      }
     }
   }
 
-  /* ---------- Long-press tick panel (global helper) ---------- */
-  function ensureHoldPanel() {
-    let el = document.getElementById("tickHoldPanel");
-    if (el) return el;
-    el = document.createElement("div");
-    el.id = "tickHoldPanel";
-    el.className = "tickHoldPanel";
-    el.innerHTML =
-      '<div class="tickHoldCard" role="dialog" aria-label="Viewora Verification">' +
-      "<h4>Viewora Verification</h4>" +
-      '<div class="tickHoldBrand">Viewora ✓</div>' +
-      '<div id="tickHoldRows"></div>' +
-      '<button type="button" class="tickHoldClose" id="tickHoldClose">Close</button></div>';
-    document.body.appendChild(el);
-    el.addEventListener("click", function (e) {
-      if (e.target === el) el.classList.remove("open");
-    });
-    el.querySelector("#tickHoldClose").addEventListener("click", function () {
-      el.classList.remove("open");
-    });
-    return el;
-  }
+  /* -------- Tick details panel -------- */
 
   function showTickHoldPanel(user) {
-    const el = ensureHoldPanel();
-    const rows = el.querySelector("#tickHoldRows");
-    const items = [
-      { type: "blue", label: "🔵 Blue Tick", key: "blue" },
-      { type: "red", label: "🔴 Red Tick", key: "red" },
-      { type: "yellow", label: "🟡 Yellow Tick", key: "yellow" },
-      { type: "white", label: "⚪ White Tick", key: "white" }
-    ];
-    rows.innerHTML = items.map(function (it) {
-      const st = tickStatusFromUser(user || {}, it.key);
-      const lab = statusLabel(st);
-      return (
-        '<div class="tickHoldRow"><span>' + it.label + '</span>' +
-        '<span class="lab"></span>' +
-        '<span class="st ' +
-        (lab.cls === "active" ? "ok" : lab.cls === "review" ? "rev" : lab.cls === "rejected" ? "rej" : "") +
-        '">' + lab.text + "</span></div>"
-      );
-    }).join("");
-    el.classList.add("open");
+    let panel = $("tickHoldPanel");
+
+    if (!panel) {
+      panel = document.createElement("div");
+      panel.id = "tickHoldPanel";
+      panel.className = "tickHoldPanel";
+
+      panel.innerHTML = `
+        <div class="tickHoldCard" role="dialog"
+             aria-label="Viewora verification status">
+          <h4>Viewora Verification</h4>
+          <div class="tickHoldBrand">Viewora ✓</div>
+          <div id="tickHoldRows"></div>
+          <button type="button" class="tickHoldClose">Close</button>
+        </div>
+      `;
+
+      document.body.appendChild(panel);
+
+      panel.addEventListener("click", event => {
+        if (event.target === panel) {
+          panel.classList.remove("open");
+        }
+      });
+
+      panel.querySelector(".tickHoldClose")
+        .addEventListener("click", () => {
+          panel.classList.remove("open");
+        });
+    }
+
+    const rows = $("tickHoldRows");
+    if (!rows) return;
+
+    rows.replaceChildren();
+
+    Object.keys(TYPES).forEach(type => {
+      const meta = TYPES[type];
+      const status = statusInfo(getStatus(user || {}, type));
+
+      const row = document.createElement("div");
+      row.className = "tickHoldRow";
+
+      const label = document.createElement("span");
+      label.textContent = meta.title;
+
+      const value = document.createElement("span");
+      value.className = "st " + status.cls;
+      value.textContent = status.label;
+
+      row.append(label, value);
+      rows.appendChild(row);
+    });
+
+    panel.classList.add("open");
   }
 
   function bindLongPressOnTick(node, getUser) {
     if (!node || node.dataset.tickHoldBound) return;
+
     node.dataset.tickHoldBound = "1";
+
     let timer = null;
-    const start = function (e) {
-      timer = setTimeout(function () {
-        timer = null;
-        Promise.resolve(getUser()).then(function (user) {
-          showTickHoldPanel(user || {});
-        });
-      }, 3000);
-    };
-    const cancel = function () {
+    let startX = 0;
+    let startY = 0;
+    let triggered = false;
+
+    function cancel() {
       if (timer) clearTimeout(timer);
       timer = null;
-    };
+    }
+
+    function start(event) {
+      cancel();
+      triggered = false;
+
+      const point = event.touches && event.touches[0]
+        ? event.touches[0]
+        : event;
+
+      startX = point.clientX || 0;
+      startY = point.clientY || 0;
+
+      timer = setTimeout(async () => {
+        timer = null;
+        triggered = true;
+
+        try {
+          const user = await Promise.resolve(getUser());
+          showTickHoldPanel(user || {});
+        } catch (error) {
+          console.warn(error);
+        }
+      }, 700);
+    }
+
+    function move(event) {
+      const point = event.touches && event.touches[0]
+        ? event.touches[0]
+        : event;
+
+      if (
+        Math.abs((point.clientX || 0) - startX) > 12 ||
+        Math.abs((point.clientY || 0) - startY) > 12
+      ) {
+        cancel();
+      }
+    }
+
     node.addEventListener("touchstart", start, { passive: true });
+    node.addEventListener("touchmove", move, { passive: true });
     node.addEventListener("touchend", cancel);
     node.addEventListener("touchcancel", cancel);
-    node.addEventListener("mousedown", start);
-    node.addEventListener("mouseup", cancel);
-    node.addEventListener("mouseleave", cancel);
-    // Desktop click alternative: Alt+click or double-click
-    node.addEventListener("dblclick", function (e) {
-      e.preventDefault();
-      Promise.resolve(getUser()).then(function (user) {
-        showTickHoldPanel(user || {});
-      });
+
+    node.addEventListener("pointerdown", start);
+    node.addEventListener("pointermove", move);
+    node.addEventListener("pointerup", cancel);
+    node.addEventListener("pointercancel", cancel);
+    node.addEventListener("pointerleave", cancel);
+
+    node.addEventListener("dblclick", async event => {
+      event.preventDefault();
+
+      const user = await Promise.resolve(getUser());
+      showTickHoldPanel(user || {});
     });
-    node.setAttribute("title", "Hold 3s or double-click for all badges");
+
+    node.setAttribute(
+      "title",
+      "Hold to view badge statuses or double-click"
+    );
   }
 
-  // Expose for profile/feed
   window.VieworaVerification = {
-    showTickHoldPanel: showTickHoldPanel,
-    bindLongPressOnTick: bindLongPressOnTick,
-    tickStatusFromUser: tickStatusFromUser,
-    statusLabel: statusLabel
+    showTickHoldPanel,
+    bindLongPressOnTick,
+    tickStatusFromUser: getStatus,
+    statusLabel: statusInfo,
+    refresh: async function () {
+      const user = getAuth() && getAuth().currentUser;
+      if (!user) return;
+
+      const data = await loadUser(user.uid);
+      renderGrid(data);
+    }
   };
 
-  // Page init
-  document.getElementById("applyCancel") && document.getElementById("applyCancel").addEventListener("click", closeSheet);
-  document.getElementById("applySubmit") && document.getElementById("applySubmit").addEventListener("click", submitApplication);
-  document.getElementById("applySheet") && document.getElementById("applySheet").addEventListener("click", function (e) {
-    if (e.target.id === "applySheet") closeSheet();
-  });
+  function init() {
+    const cancelButton = $("applyCancel");
+    const submitButton = $("applySubmit");
+    const sheet = $("applySheet");
 
-  function boot() {
-    const a = auth();
-    if (!a) {
+    if (cancelButton) {
+      cancelButton.addEventListener("click", closeSheet);
+    }
+
+    if (submitButton) {
+      submitButton.addEventListener("click", submitApplication);
+    }
+
+    if (sheet) {
+      sheet.addEventListener("click", event => {
+        if (event.target === sheet) closeSheet();
+      });
+    }
+
+    const auth = getAuth();
+
+    if (!auth) {
       renderGrid({});
       return;
     }
-    a.onAuthStateChanged(async function (user) {
+
+    auth.onAuthStateChanged(async user => {
+      currentUser = user || null;
+
       if (!user) {
         renderGrid({});
         return;
       }
+
       try {
         const data = await loadUser(user.uid);
         renderGrid(data);
-      } catch (e) {
+      } catch (error) {
+        console.error("[Viewora Verification] Load failed:", error);
         renderGrid({});
       }
     });
   }
 
   if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", boot);
+    document.addEventListener("DOMContentLoaded", init);
   } else {
-    boot();
+    init();
   }
 })();
