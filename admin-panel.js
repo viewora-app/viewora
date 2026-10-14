@@ -317,11 +317,7 @@ async function setUserTick(uid, kind) {
         tickType: kind === "none" ? "none" : kind,
         vip: kind === "red",
         elite: kind === "red",
-        tickUpdatedAt:
-            (firebase.database &&
-                firebase.database.ServerValue &&
-                firebase.database.ServerValue.TIMESTAMP) ||
-            Date.now(),
+        tickUpdatedAt: Date.now(),
         tickUpdatedBy:
             (typeof currentAdmin !== "undefined" &&
                 currentAdmin &&
@@ -331,30 +327,63 @@ async function setUserTick(uid, kind) {
     if (kind === "red") {
         updates.role = "influencer";
     } else if (kind === "blue") {
-        const u = cachedUsers[uid] || {};
+        const u = (cachedUsers && cachedUsers[uid]) || {};
         if (!u.role || u.role === "user") updates.role = "creator";
     } else if (kind === "yellow") {
-        const u = cachedUsers[uid] || {};
+        const u = (cachedUsers && cachedUsers[uid]) || {};
         if (!u.role || u.role === "user") updates.role = "business";
         updates.accountType = "business";
-    } else if (kind === "white" || kind === "none") {
+    }
+    // Always clear competing force flags when switching kind
+    if (kind !== "red") { updates.redTick = false; updates.redTickForce = false; updates.vip = false; updates.elite = false; }
+    if (kind !== "blue") { updates.blueTick = false; updates.blueTickForce = false; }
+    if (kind !== "yellow") { updates.yellowTick = false; updates.yellowTickForce = false; updates.businessVerified = false; }
+    if (kind !== "white") { updates.whiteTick = false; updates.whiteTickForce = false; }
+    if (kind === "none") {
+        updates.redTick = false;
         updates.redTickForce = false;
+        updates.blueTick = false;
+        updates.blueTickForce = false;
+        updates.yellowTick = false;
+        updates.yellowTickForce = false;
+        updates.whiteTick = false;
+        updates.whiteTickForce = false;
+        updates.businessVerified = false;
+        updates.verified = false;
+        updates.isVerified = false;
         updates.vip = false;
         updates.elite = false;
-    }
-    if (kind === "none") {
-        updates.whiteTickForce = false;
-        updates.redTickForce = false;
-        updates.blueTickForce = false;
-        updates.yellowTickForce = false;
-        updates.businessVerified = false;
-        updates.yellowTick = false;
+        updates.verificationStatus = "none";
+        updates.tickType = "none";
     }
     await getAdminDb().ref("users/" + uid).update(updates);
+    // Keep cache in sync so UI doesn't glitch
+    try {
+        if (cachedUsers && cachedUsers[uid]) {
+            Object.assign(cachedUsers[uid], updates);
+        }
+    } catch (_) {}
 
     // Activity notify user
     try {
-        if (kind !== "none") {
+        if (kind === "none") {
+            const nid = "verif_removed_" + Date.now();
+            await getAdminDb().ref("notifications/" + uid + "/" + nid).set({
+                id: nid,
+                type: "verification_removed",
+                title: "Verification updated",
+                body: "Your verification badge was removed by Viewora.",
+                createdAt: Date.now(),
+                read: false,
+                icon: "badge"
+            });
+            ["red", "blue", "yellow", "white"].forEach(function (k) {
+                getAdminDb().ref("users/" + uid + "/tickApplications/" + k).update({
+                    status: "none",
+                    updatedAt: Date.now()
+                }).catch(function () {});
+            });
+        } else {
             const labels = { red: "Red Tick (Elite)", blue: "Blue Tick", yellow: "Yellow Tick (Business)", white: "White Tick" };
             const nid = "verif_approved_" + kind + "_" + Date.now();
             await getAdminDb().ref("notifications/" + uid + "/" + nid).set({

@@ -117,6 +117,16 @@
         var type = text(user.tickType || user.badge);
         var status = text(user.verificationStatus);
 
+        // Explicit other tick wins — never show blue for white/yellow/red accounts
+        if (type === "red" || type === "yellow" || type === "white") {
+            return false;
+        }
+        if (status === "achievement" || status === "business" || status === "none") {
+            if (user.blueTickForce !== true && user.blueTick !== true) {
+                return false;
+            }
+        }
+
         if (
             user.blueTickForce === true ||
             user.blueTick === true ||
@@ -125,11 +135,11 @@
             return true;
         }
 
+        // Legacy verified only if no other tick type claimed
         if (user.verified === true || user.isVerified === true) {
-            if (status === "business" && user.blueTick !== true) {
+            if (user.whiteTick === true || user.yellowTick === true || user.redTick === true) {
                 return false;
             }
-
             return true;
         }
 
@@ -157,6 +167,7 @@
 
         var type = text(user.tickType || user.badge);
 
+        // Only explicit admin/system grant — milestones still need whiteTick flag
         if (
             user.whiteTickForce === true ||
             user.whiteTick === true ||
@@ -165,7 +176,7 @@
             return true;
         }
 
-        return followersOf(user) >= 1000000;
+        return false;
     }
 
     function isVerified(user) {
@@ -290,15 +301,19 @@
 
     function resolveBadge(user) {
         var type = "";
+        var forced = text(user && (user.tickType || user.badge));
 
-        if (hasRed(user)) {
-            type = "red";
-        } else if (hasBlue(user)) {
-            type = "blue";
-        } else if (hasYellow(user)) {
-            type = "yellow";
-        } else if (hasWhite(user)) {
-            type = "white";
+        // tickType is source of truth when admin set a single active badge
+        if (forced === "none") {
+            type = "";
+        } else if (forced === "red" || forced === "blue" || forced === "yellow" || forced === "white") {
+            type = forced;
+        } else {
+            // Priority: Red > Blue > Yellow > White
+            if (hasRed(user)) type = "red";
+            else if (hasBlue(user)) type = "blue";
+            else if (hasYellow(user)) type = "yellow";
+            else if (hasWhite(user)) type = "white";
         }
 
         if (!type) {
