@@ -1,0 +1,33 @@
+/* Add to database.rules.json under "rules":
+
+  "ads": {
+    "config": {
+      ".read": true,
+      ".write": "auth != null && root.child('admins').child(auth.uid).child('active').val() === true"
+    },
+    "creatives": {
+      ".read": true,
+      ".indexOn": ["active", "placement", "priority"],
+      "$adId": {
+        ".write": "auth != null && root.child('admins').child(auth.uid).child('active').val() === true",
+        "impressions": {
+          ".write": true
+        },
+        "clicks": {
+          ".write": true
+        }
+      }
+    },
+    "events": {
+      ".read": "auth != null && root.child('admins').child(auth.uid).child('active').val() === true",
+      ".write": true
+    }
+  }
+
+Also wire scripts:
+  index.html: <script src="feed-ad.js"></script><script src="banner-ad.js"></script>
+    then VieworaFeedAds.autoHook('#postsContainer'); VieworaBannerAds.autoMount();
+  shorts.html: <script src="shorts-ad.js"></script>
+  video.html: <script src="video-ad.js"></script>
+  admin-panel: link to ad-settings.html
+*/

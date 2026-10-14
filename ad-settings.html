@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#050816" />
+  <title>Viewora • Ads Settings</title>
+  <link rel="icon" href="assets/logo.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" />
+  <style>
+    :root {
+      --bg: #07060f;
+      --card: #12101c;
+      --line: rgba(255,255,255,0.08);
+      --text: #f3f0ff;
+      --muted: #9b95ad;
+      --accent: #a855f7;
+      --ok: #22c55e;
+      --danger: #ef4444;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; min-height: 100dvh;
+      font-family: Inter, system-ui, sans-serif;
+      background: var(--bg); color: var(--text);
+    }
+    .top {
+      display: flex; align-items: center; gap: 12px;
+      padding: 16px 18px; border-bottom: 1px solid var(--line);
+      position: sticky; top: 0; background: rgba(7,6,15,0.92);
+      backdrop-filter: blur(12px); z-index: 10;
+    }
+    .top a {
+      color: var(--muted); text-decoration: none; font-size: 14px;
+    }
+    .top h1 { font-size: 18px; margin: 0; flex: 1; }
+    .wrap { max-width: 960px; margin: 0 auto; padding: 20px 16px 80px; }
+    .grid { display: grid; gap: 16px; }
+    @media (min-width: 800px) {
+      .grid.two { grid-template-columns: 1fr 1fr; }
+    }
+    .card {
+      background: var(--card); border: 1px solid var(--line);
+      border-radius: 16px; padding: 16px 18px;
+    }
+    .card h2 {
+      margin: 0 0 12px; font-size: 15px; font-weight: 700;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .row {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--line);
+    }
+    .row:last-child { border-bottom: 0; }
+    .row label { font-size: 13px; color: var(--muted); }
+    .row .val { font-size: 13px; font-weight: 600; }
+    input[type="number"], input[type="text"], input[type="url"], select, textarea {
+      width: 100%; padding: 10px 12px; border-radius: 10px;
+      border: 1px solid var(--line); background: #0c0a14; color: var(--text);
+      font: inherit; margin-top: 6px;
+    }
+    textarea { min-height: 72px; resize: vertical; }
+    .switch {
+      position: relative; width: 48px; height: 28px; flex-shrink: 0;
+    }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .switch span {
+      position: absolute; inset: 0; border-radius: 999px;
+      background: #2a2640; cursor: pointer; transition: 0.2s;
+    }
+    .switch span:before {
+      content: ""; position: absolute; width: 22px; height: 22px;
+      left: 3px; top: 3px; border-radius: 50%; background: #fff;
+      transition: 0.2s;
+    }
+    .switch input:checked + span { background: var(--accent); }
+    .switch input:checked + span:before { transform: translateX(20px); }
+    .btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 10px 16px; border-radius: 12px; border: 0;
+      font-weight: 700; font-size: 13px; cursor: pointer;
+      background: var(--accent); color: #fff;
+    }
+    .btn.ghost {
+      background: transparent; border: 1px solid var(--line); color: var(--text);
+    }
+    .btn.danger { background: var(--danger); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+    .hint { font-size: 12px; color: var(--muted); margin-top: 8px; line-height: 1.4; }
+    .status {
+      font-size: 12px; padding: 8px 12px; border-radius: 10px;
+      background: rgba(168,85,247,0.12); color: #d8b4fe; margin-bottom: 14px;
+      display: none;
+    }
+    .status.show { display: block; }
+    .status.ok { background: rgba(34,197,94,0.12); color: #86efac; }
+    .status.err { background: rgba(239,68,68,0.12); color: #fca5a5; }
+    .creatives { display: grid; gap: 12px; }
+    .creative {
+      display: grid; grid-template-columns: 72px 1fr auto; gap: 12px;
+      align-items: center; padding: 12px; border-radius: 12px;
+      border: 1px solid var(--line); background: #0c0a14;
+    }
+    .creative img {
+      width: 72px; height: 48px; object-fit: cover; border-radius: 8px; background: #1a1528;
+    }
+    .creative .meta strong { display: block; font-size: 13px; }
+    .creative .meta span { font-size: 11px; color: var(--muted); }
+    .creative .stats { font-size: 11px; color: var(--muted); text-align: right; }
+    .field { margin-bottom: 12px; }
+    .field label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+    .pill {
+      display: inline-block; font-size: 10px; font-weight: 700;
+      padding: 3px 8px; border-radius: 999px; background: rgba(168,85,247,0.2);
+      color: #e9d5ff; text-transform: uppercase;
+    }
+    .pill.off { background: rgba(239,68,68,0.15); color: #fca5a5; }
+    .gate {
+      max-width: 420px; margin: 80px auto; text-align: center; padding: 24px;
+    }
+    .gate a { color: var(--accent); }
+  </style>
+</head>
+<body>
+  <div class="top">
+    <a href="admin-panel.html"><i class="fa-solid fa-arrow-left"></i> Admin</a>
+    <h1><i class="fa-solid fa-rectangle-ad"></i> Ads Settings</h1>
+    <button type="button" class="btn ghost" id="refreshBtn"><i class="fa-solid fa-rotate"></i></button>
+  </div>
+
+  <div class="wrap" id="app" hidden>
+    <div class="status" id="status"></div>
+
+    <div class="grid two">
+      <!-- Feed -->
+      <section class="card" data-placement="feed">
+        <h2><i class="fa-solid fa-newspaper"></i> Feed ads
+          <span class="pill" id="pill-feed">ON</span>
+        </h2>
+        <div class="row">
+          <label>Enabled</label>
+          <label class="switch"><input type="checkbox" id="feed-enabled" checked /><span></span></label>
+        </div>
+        <div class="field">
+          <label>Frequency (every N posts)</label>
+          <input type="number" id="feed-frequency" min="2" max="30" value="5" />
+        </div>
+        <div class="field">
+          <label>Start after (posts)</label>
+          <input type="number" id="feed-startAfter" min="0" max="20" value="2" />
+        </div>
+        <div class="field">
+          <label>Max per session</label>
+          <input type="number" id="feed-maxPerSession" min="1" max="50" value="8" />
+        </div>
+        <div class="actions">
+          <button type="button" class="btn" data-save="feed">Save feed</button>
+        </div>
+      </section>
+
+      <!-- Shorts -->
+      <section class="card" data-placement="shorts">
+        <h2><i class="fa-solid fa-clapperboard"></i> Shorts ads
+          <span class="pill" id="pill-shorts">ON</span>
+        </h2>
+        <div class="row">
+          <label>Enabled</label>
+          <label class="switch"><input type="checkbox" id="shorts-enabled" checked /><span></span></label>
+        </div>
+        <div class="field">
+          <label>Frequency (every N shorts)</label>
+          <input type="number" id="shorts-frequency" min="2" max="20" value="4" />
+        </div>
+        <div class="field">
+          <label>Start after</label>
+          <input type="number" id="shorts-startAfter" min="0" max="10" value="1" />
+        </div>
+        <div class="field">
+          <label>Max per session</label>
+          <input type="number" id="shorts-maxPerSession" min="1" max="30" value="6" />
+        </div>
+        <div class="actions">
+          <button type="button" class="btn" data-save="shorts">Save shorts</button>
+        </div>
+      </section>
+
+      <!-- Banner -->
+      <section class="card" data-placement="banner">
+        <h2><i class="fa-solid fa-panorama"></i> Banner ads
+          <span class="pill" id="pill-banner">ON</span>
+        </h2>
+        <div class="row">
+          <label>Enabled</label>
+          <label class="switch"><input type="checkbox" id="banner-enabled" checked /><span></span></label>
+        </div>
+        <div class="field">
+          <label>Position</label>
+          <select id="banner-position">
+            <option value="top">Top (under header)</option>
+            <option value="bottom">Bottom (above nav)</option>
+            <option value="inline">Inline slot only</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Rotate every (seconds)</label>
+          <input type="number" id="banner-rotateSeconds" min="8" max="120" value="30" />
+        </div>
+        <div class="row">
+          <label>Dismissible</label>
+          <label class="switch"><input type="checkbox" id="banner-dismissible" checked /><span></span></label>
+        </div>
+        <div class="actions">
+          <button type="button" class="btn" data-save="banner">Save banner</button>
+        </div>
+      </section>
+
+      <!-- Video -->
+      <section class="card" data-placement="video">
+        <h2><i class="fa-solid fa-play"></i> Video ads
+          <span class="pill" id="pill-video">ON</span>
+        </h2>
+        <div class="row">
+          <label>Enabled</label>
+          <label class="switch"><input type="checkbox" id="video-enabled" checked /><span></span></label>
+        </div>
+        <div class="row">
+          <label>Companion card</label>
+          <label class="switch"><input type="checkbox" id="video-companion" checked /><span></span></label>
+        </div>
+        <div class="row">
+          <label>Pre-roll (needs video creative / VAST)</label>
+          <label class="switch"><input type="checkbox" id="video-preRoll" /><span></span></label>
+        </div>
+        <div class="row">
+          <label>Mid-roll</label>
+          <label class="switch"><input type="checkbox" id="video-midRoll" /><span></span></label>
+        </div>
+        <div class="field">
+          <label>Mid-roll at (%)</label>
+          <input type="number" id="video-midRollPercent" min="10" max="90" value="50" />
+        </div>
+        <div class="field">
+          <label>Skip after (seconds)</label>
+          <input type="number" id="video-skipAfterSeconds" min="0" max="30" value="5" />
+        </div>
+        <div class="field">
+          <label>VAST / ad-tag URL (optional, for network ads)</label>
+          <input type="url" id="video-vastUrl" placeholder="https://..." />
+        </div>
+        <div class="actions">
+          <button type="button" class="btn" data-save="video">Save video</button>
+        </div>
+        <p class="hint">Pre/mid-roll play Viewora creatives with <code>videoUrl</code>. For AdMob/IMA, set VAST URL and wire the SDK in production.</p>
+      </section>
+    </div>
+
+    <!-- Creatives -->
+    <section class="card" style="margin-top:16px">
+      <h2><i class="fa-solid fa-images"></i> Ad creatives</h2>
+      <p class="hint">Active creatives are served live by placement. Track impressions & clicks in Firebase.</p>
+
+      <div class="field">
+        <label>Title</label>
+        <input type="text" id="c-title" placeholder="Summer offer" />
+      </div>
+      <div class="field">
+        <label>Description</label>
+        <textarea id="c-desc" placeholder="Short line under title"></textarea>
+      </div>
+      <div class="grid two">
+        <div class="field">
+          <label>Image URL</label>
+          <input type="url" id="c-image" placeholder="https://..." />
+        </div>
+        <div class="field">
+          <label>Video URL (optional, shorts/pre-roll)</label>
+          <input type="url" id="c-video" placeholder="https://..." />
+        </div>
+      </div>
+      <div class="grid two">
+        <div class="field">
+          <label>Click URL</label>
+          <input type="url" id="c-click" placeholder="https://..." />
+        </div>
+        <div class="field">
+          <label>CTA text</label>
+          <input type="text" id="c-cta" value="Learn more" />
+        </div>
+      </div>
+      <div class="grid two">
+        <div class="field">
+          <label>Placement</label>
+          <select id="c-placement">
+            <option value="all">All placements</option>
+            <option value="feed">Feed only</option>
+            <option value="shorts">Shorts only</option>
+            <option value="banner">Banner only</option>
+            <option value="video">Video only</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Priority (higher first)</label>
+          <input type="number" id="c-priority" value="10" />
+        </div>
+      </div>
+      <div class="field">
+        <label>Sponsor name</label>
+        <input type="text" id="c-sponsor" placeholder="Brand name" />
+      </div>
+      <div class="actions">
+        <button type="button" class="btn" id="addCreativeBtn"><i class="fa-solid fa-plus"></i> Add creative</button>
+      </div>
+
+      <div class="creatives" id="creativesList" style="margin-top:16px"></div>
+    </section>
+  </div>
+
+  <div class="gate" id="gate">
+    <h2>Admin only</h2>
+    <p style="color:#9b95ad">Sign in with an admin account to manage live ads.</p>
+    <p><a href="admin-login.html">Admin login</a></p>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
+  <script src="firebase.js"></script>
+  <script src="ad-settings.js"></script>
+</body>
+</html>

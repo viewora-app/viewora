@@ -725,77 +725,69 @@
 
         const media = getMediaURL(short);
         const thumbnail = getThumbnail(short);
-        // Tick hierarchy: Red VIP > Blue > White — profile parity
+        // Scalloped Seal Badge — Red > Blue > Yellow > White (same icon, color only)
         let tickHTML = "";
         try {
             const u = creator && typeof creator === "object" ? Object.assign({}, creator) : {};
-            // Never let short.verified override a red VIP creator
-            const isRed =
-                u.redTick === true ||
-                u.redTickForce === true ||
-                u.vip === true ||
-                u.elite === true ||
-                String(u.tickType || "").toLowerCase() === "red" ||
-                String(u.tickType || "").toLowerCase() === "vip" ||
-                String(u.badge || "").toLowerCase() === "vip" ||
-                short.redTick === true ||
-                short.redTickForce === true ||
-                short.tickType === "red";
+            // Merge short-level flags
+            if (short.redTick || short.redTickForce || short.tickType === "red" || short.vip) {
+                u.redTick = true; u.vip = true; u.tickType = "red";
+            }
+            if (short.blueTick || short.verified || short.tickType === "blue") {
+                u.blueTick = true; u.verified = true;
+            }
+            if (short.yellowTick || short.tickType === "yellow" || short.businessTick) {
+                u.yellowTick = true; u.tickType = u.tickType || "yellow";
+            }
+            if (short.whiteTick || short.tickType === "white") {
+                u.whiteTick = true;
+            }
 
-            if (isRed) {
-                u.redTick = true;
-                u.redTickForce = true;
-                u.vip = true;
-                u.tickType = "red";
-                // strip blue so hierarchy stays red
-                u.blueTick = false;
-            } else {
-                if (short.blueTick || short.verified || short.tickType === "blue") {
-                    u.blueTick = u.blueTick || true;
-                    u.verified = u.verified || true;
+            function sealSvg(type, title) {
+                if (window.VieworaTickBadge && typeof VieworaTickBadge.svg === "function") {
+                    return VieworaTickBadge.svg(type, title);
                 }
-                if (short.whiteTick || short.tickType === "white") {
-                    u.whiteTick = true;
-                    u.tickType = u.tickType || "white";
+                if (window.VieworaBadges && typeof VieworaBadges.tickSvg === "function") {
+                    return VieworaBadges.tickSvg(type, title);
                 }
+                // inline fallback scalloped seal
+                var COLORS = { red: "#E53935", blue: "#1D9BF0", yellow: "#F5C518", white: "#F0F4FA" };
+                var c = COLORS[type] || COLORS.blue;
+                return (
+                    '<svg class="viewora-tick viewora-tick--' + type + '" viewBox="0 0 24 24" width="14" height="14" ' +
+                    'aria-label="' + (title || type) + '" role="img" xmlns="http://www.w3.org/2000/svg" style="display:inline-block;vertical-align:middle;margin-left:5px">' +
+                    '<path fill="' + c + '" d="M12 1.1l1.48 1.08 1.74-.5.85 1.6 1.7.5.32 1.74 1.56.94-.5 1.74 1.08 1.48-1.08 1.48.5 1.74-1.56.94-.32 1.74-1.7.5-.85 1.6-1.74-.5L12 22.9l-1.48-1.08-1.74.5-.85-1.6-1.7-.5-.32-1.74-1.56-.94.5-1.74L2.03 13.5l1.08-1.48-.5-1.74 1.56-.94.32-1.74 1.7-.5.85-1.6 1.74.5L12 1.1z"/>' +
+                    '<path fill="#ffffff" d="M10.05 15.45L7.35 12.75l1.12-1.12 1.58 1.58 4.1-4.1 1.12 1.12-5.22 5.22z"/>' +
+                    "</svg>"
+                );
             }
 
             if (window.VieworaBadges && typeof VieworaBadges.resolve === "function") {
                 const r = VieworaBadges.resolve(u);
-                if (r && r.level === "red") {
-                    tickHTML = '<i class="fa-solid fa-certificate vieworaTick redTick" title="VIP Elite" aria-label="VIP" style="color:#ff3b5c;font-size:12px;margin-left:5px;vertical-align:middle"></i>';
-                } else if (r && r.html) {
+                if (r && r.html) {
                     tickHTML = r.html;
+                } else if (r && r.type) {
+                    tickHTML = sealSvg(r.type, r.title || r.type);
+                } else if (r && r.level) {
+                    var map = { red: "red", blue: "blue", yellow: "yellow", white: "white", vip: "red" };
+                    var t = map[r.level] || r.level;
+                    tickHTML = sealSvg(t, r.title || t);
                 }
-            } else if (isRed) {
-                tickHTML = '<i class="fa-solid fa-certificate vieworaTick redTick" style="color:#ff3b5c;font-size:12px;margin-left:5px;vertical-align:middle" title="VIP Elite"></i>';
-            } else if (u.blueTick || u.verified || u.isVerified) {
-                tickHTML = '<i class="fa-solid fa-circle-check vieworaTick blueTick" style="color:#1d9bf0;font-size:11px;margin-left:4px" title="Verified"></i>';
-            } else if (u.whiteTick || u.monetized) {
-                tickHTML = '<i class="fa-solid fa-circle-check vieworaTick whiteTick" style="color:#e8e8e8;font-size:11px;margin-left:4px" title="Monetized"></i>';
             }
-        } catch (e) {
-            console.warn("[shorts] tick resolve", e);
+            if (!tickHTML) {
+                if (u.redTick || u.vip || u.elite || String(u.tickType).toLowerCase() === "red") {
+                    tickHTML = sealSvg("red", "Viewora Elite");
+                } else if (u.blueTick || u.verified || u.isVerified) {
+                    tickHTML = sealSvg("blue", "Verified Creator");
+                } else if (u.yellowTick || String(u.tickType).toLowerCase() === "yellow") {
+                    tickHTML = sealSvg("yellow", "Official Business");
+                } else if (u.whiteTick || String(u.tickType).toLowerCase() === "white") {
+                    tickHTML = sealSvg("white", "Achievement");
+                }
+            }
+        } catch (tickErr) {
+            console.warn("tick", tickErr);
         }
-
-        const likes = safeNumber(short.likes || short.likeCount);
-        const comments = safeNumber(short.comments || short.commentCount);
-        const shares = safeNumber(short.shares || short.shareCount);
-        const views = safeNumber(short.views || short.viewCount);
-
-        // Settings from short-edit / publish
-        const hideLikeCount =
-            short.hideLikeCount === true ||
-            short.showLikeCount === false ||
-            short.hideLikes === true;
-        const commentsOff =
-            short.commentsDisabled === true ||
-            short.allowComments === false ||
-            short.disableComments === true;
-        const hideCommentCount =
-            commentsOff ||
-            short.showCommentCount === false ||
-            short.hideComments === true;
 
         const musicMeta = getMusicMeta(short, username);
         const musicLabel = musicMeta.label;
@@ -820,6 +812,14 @@
             short.mediaType === "video" ||
             /\.(mp4|webm|mov|m4v|ogg)(\?|$)/i.test(media) ||
             !/\.(jpg|jpeg|png|gif|webp|bmp)(\?|$)/i.test(media);
+
+        const likes = safeNumber(short.likes || short.likeCount || 0);
+        const comments = safeNumber(short.comments || short.commentCount || 0);
+        const views = safeNumber(short.views || short.viewCount || short.plays || short.playCount || 0);
+        const shares = safeNumber(short.shares || short.shareCount || 0);
+        const hideLikeCount = short.hideLikeCount === true || short.likesHidden === true;
+        const hideCommentCount = short.hideCommentCount === true || short.commentsHidden === true;
+        const commentsOff = short.commentsDisabled === true || short.disableComments === true || short.commentsOff === true;
 
         const card = document.createElement("article");
         card.className = "shortCard";
@@ -2477,6 +2477,16 @@
 
     async function loadShorts() {
         if (!container) return;
+        if (!db) {
+            try { db = window.db || (typeof firebase !== "undefined" ? firebase.database() : null); } catch (_) {}
+        }
+        if (!db) {
+            console.error("Shorts: Firebase db missing");
+            showToast("Connection error");
+            showEmpty();
+            hideSkeleton();
+            return;
+        }
 
         try {
             const params = new URLSearchParams(window.location.search);
@@ -2610,7 +2620,7 @@
 
         if (requested) {
             const target = container.querySelector(
-                `[data-short-id="${CSS.escape(requested)}"]`
+                `[data-short-id="${String(requested).replace(/"/g, "")}"]`
             );
             if (target) {
                 setTimeout(() => {

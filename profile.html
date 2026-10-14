@@ -60,6 +60,7 @@
         rel="stylesheet"
         href="nav.css"
     >
+  <link rel="stylesheet" href="responsive.css">
   <link rel="stylesheet" href="viewora-empty.css" />
 
 
@@ -2733,6 +2734,27 @@ html[data-theme="light"] .historyOpenBtn { color: rgba(0,0,0,.45); }
 </style>
 
 
+
+  <style id="viewora-layout-lock">
+  /* Full width — never phone strip on tablet/desktop */
+  html, body { width: 100% !important; max-width: 100% !important; margin: 0 !important; }
+  #app, .profilePage, .profileWrap {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 auto !important;
+    box-sizing: border-box !important;
+  }
+  @media (min-width: 768px) {
+    #app { max-width: 100% !important; padding-left: 16px !important; padding-right: 16px !important; }
+    .profileCard { max-width: 720px !important; margin-left: auto !important; margin-right: auto !important; }
+  }
+  @media (min-width: 1024px) {
+    #app { max-width: 100% !important; padding-left: 8px !important; padding-right: 24px !important; }
+    .profileCard { max-width: 900px !important; }
+    .profileBanner { max-width: none !important; }
+  }
+  </style>
+
 </head>
 
 
@@ -3747,7 +3769,7 @@ html[data-theme="light"] .historyOpenBtn { color: rgba(0,0,0,.45); }
 
     <script src="firebase.js"></script>
 <script src="upload-queue.js"></script>
-  <script scr="security.js"></script>
+  <script src="security.js"></script>
 <script src="badges.js"></script>
 
   

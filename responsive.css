@@ -423,3 +423,189 @@ button, input, textarea, select {
     padding: 20px 16px !important;
   }
 }
+
+
+/* ============================================================
+   VIEWORA LAYOUT LOCK — Phone / iPad / Desktop
+   Phone & small tablets (<1024): bottom nav, NO left rail
+   Desktop (≥1024): left rail, Settings pinned bottom
+============================================================ */
+
+/* Phone: hide Settings in bottom bar (use Profile → Settings) */
+@media (max-width: 1023.98px) {
+  #vieworaGlobalNav a[data-nav="settings"],
+  .bottomNav a[data-nav="settings"],
+  .navSettings {
+    display: none !important;
+  }
+  /* 5 main items only on phone */
+  #vieworaGlobalNav,
+  .bottomNav {
+    grid-template-columns: repeat(5, 1fr) !important;
+  }
+}
+
+/* Desktop rail: Settings sticks to bottom like YouTube */
+@media (min-width: 1024px) {
+  #vieworaGlobalNav,
+  .bottomNav {
+    display: flex !important;
+    flex-direction: column !important;
+  }
+  #vieworaGlobalNav a[data-nav="settings"],
+  .bottomNav a[data-nav="settings"],
+  .navSettings {
+    display: flex !important;
+    margin-top: auto !important;
+    margin-bottom: 8px !important;
+  }
+  /* Content uses full width beside rail — no phone strip */
+  .homeContent,
+  .app,
+  #app,
+  main {
+    width: 100% !important;
+    max-width: none !important;
+  }
+  .topHeader {
+    width: 100% !important;
+    max-width: none !important;
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+  }
+  /* YouTube-like video grid */
+  .longVideoContainer,
+  #longVideoContainer {
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)) !important;
+    gap: 16px !important;
+  }
+}
+
+@media (min-width: 1280px) {
+  .longVideoContainer,
+  #longVideoContainer {
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)) !important;
+  }
+}
+
+@media (min-width: 1600px) {
+  .longVideoContainer,
+  #longVideoContainer {
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)) !important;
+  }
+}
+
+/* iPad 768–1023: 2 video cols, bottom nav */
+@media (min-width: 768px) and (max-width: 1023.98px) {
+  .longVideoContainer,
+  #longVideoContainer {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 14px !important;
+  }
+}
+
+/* Pure phone < 768: 1 video col */
+@media (max-width: 767.98px) {
+  .longVideoContainer,
+  #longVideoContainer {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+}
+
+
+/* ============================================================
+   VIEWORA NUCLEAR LAYOUT — force sidebar / full width
+============================================================ */
+@media (max-width: 1023.98px) {
+  html.has-bottom-nav, body.has-bottom-nav {
+    padding-left: 0 !important;
+    padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+  #vieworaGlobalNav, .bottomNav, #bottomNav {
+    position: fixed !important;
+    left: 0 !important; right: 0 !important; bottom: 0 !important; top: auto !important;
+    width: 100% !important; max-width: 100% !important; height: calc(64px + env(safe-area-inset-bottom, 0px)) !important;
+    display: grid !important; grid-template-columns: repeat(5, 1fr) !important;
+    flex-direction: row !important;
+    transform: none !important; border-radius: 0 !important;
+  }
+  a.navSettings, [data-nav="settings"] { display: none !important; }
+  #app, .homeContent, .app, main, .profilePage, .profileWrap, #profileRoot {
+    width: 100% !important; max-width: 100% !important; margin: 0 !important;
+  }
+}
+
+@media (min-width: 1024px) {
+  html.has-bottom-nav, body.has-bottom-nav {
+    padding-bottom: 0 !important;
+    padding-left: 72px !important;
+  }
+  #vieworaGlobalNav, .bottomNav, #bottomNav {
+    position: fixed !important;
+    left: 0 !important; right: auto !important; top: 0 !important; bottom: 0 !important;
+    width: 72px !important; max-width: 72px !important; min-width: 72px !important;
+    height: 100vh !important; height: 100dvh !important;
+    display: flex !important; flex-direction: column !important;
+    grid-template-columns: none !important;
+    align-items: center !important; justify-content: flex-start !important;
+    gap: 4px !important;
+    padding: 16px 6px 24px !important;
+    border-top: 0 !important;
+    border-right: 1px solid rgba(255,255,255,0.08) !important;
+    border-radius: 0 !important;
+    transform: none !important;
+    z-index: 99999 !important;
+  }
+  #vieworaGlobalNav a, .bottomNav a {
+    width: 56px !important; min-height: 52px !important; height: auto !important;
+    border-radius: 14px !important; flex-direction: column !important;
+  }
+  #vieworaGlobalNav a span:not(.navBadge):not(.uploadNavInner),
+  .bottomNav a span:not(.navBadge):not(.uploadNavInner) {
+    display: none !important;
+  }
+  a.navSettings, [data-nav="settings"] {
+    display: flex !important;
+    margin-top: auto !important;
+  }
+  #app, .homeContent, .app, main, .profilePage, .profileWrap, #profileRoot,
+  .settingsPage, #settingsRoot, .search-page, .activityPage {
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    box-sizing: border-box !important;
+  }
+  .profileCard { max-width: 900px !important; margin-left: auto !important; margin-right: auto !important; }
+  .longVideoContainer, #longVideoContainer {
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)) !important;
+  }
+}
+
+@media (min-width: 1280px) {
+  html.has-bottom-nav, body.has-bottom-nav {
+    padding-left: 220px !important;
+  }
+  #vieworaGlobalNav, .bottomNav, #bottomNav {
+    width: 220px !important; max-width: 220px !important; min-width: 220px !important;
+    align-items: stretch !important;
+    padding: 20px 12px 28px !important;
+  }
+  #vieworaGlobalNav a, .bottomNav a {
+    width: 100% !important; max-width: none !important;
+    flex-direction: row !important; justify-content: flex-start !important;
+    gap: 14px !important; padding: 10px 14px !important;
+  }
+  #vieworaGlobalNav a span:not(.navBadge):not(.uploadNavInner),
+  .bottomNav a span:not(.navBadge):not(.uploadNavInner) {
+    display: inline !important; font-size: 14px !important;
+  }
+}
+
+/* iPad: bottom nav stays, full width content, 2-col videos */
+@media (min-width: 768px) and (max-width: 1023.98px) {
+  #app, .homeContent { width: 100% !important; max-width: 100% !important; }
+  .longVideoContainer, #longVideoContainer {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}

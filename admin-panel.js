@@ -1535,22 +1535,37 @@ if (userStatusFilter) {
    USER MODAL
 ========================================================= */
 
-function openUserModal(uid) {
+async function openUserModal(uid) {
+    if (!uid) {
+        showToast("Invalid user.", "error");
+        return;
+    }
+    uid = String(uid);
 
-    const user =
-        cachedUsers?.[uid];
+    let user = (typeof cachedUsers === "object" && cachedUsers) ? cachedUsers[uid] : null;
+
+    // Live fetch if not in cache (3-dot must always work)
+    if (!user) {
+        try {
+            const snap = await getAdminDb().ref("users/" + uid).once("value");
+            user = snap.val();
+            if (user) {
+                if (!cachedUsers) cachedUsers = {};
+                cachedUsers[uid] = Object.assign({ uid: uid }, user);
+                user = cachedUsers[uid];
+            }
+        } catch (err) {
+            console.error("[openUserModal] fetch", err);
+        }
+    }
 
     if (!user) {
-
-        showToast(
-            "User not found.",
-            "error"
-        );
-
+        showToast("User not found in database.", "error");
         return;
     }
 
     selectedUserId = uid;
+
 
     const modal =
         $("userModal");
@@ -1622,21 +1637,19 @@ function openUserModal(uid) {
 
     modal.classList.remove("hidden");
     modal.classList.add("show");
+    modal.style.display = "flex";
+    modal.style.pointerEvents = "auto";
+    modal.style.zIndex = "99999";
 }
 
 function closeUserModal() {
-
-    const modal =
-        $("userModal");
-
+    const modal = $("userModal");
     if (!modal) return;
-
     modal.classList.remove("show");
-
-    setTimeout(() => {
+    modal.style.display = "";
+    setTimeout(function () {
         modal.classList.add("hidden");
     }, 180);
-
     selectedUserId = null;
 }
 
@@ -2250,22 +2263,24 @@ async function blockContent(postId, root) {
 ========================================================= */
 
 document.addEventListener("click", async function vieworaAdminClick(e) {
+    // Capture 3-dot even when clicking the <i> inside the button
+    const actionBtn = e.target.closest("[data-user-action], .tableActionBtn, button.tableActionBtn");
+    if (actionBtn && actionBtn.dataset && actionBtn.dataset.userId) {
+        e.preventDefault();
+        e.stopPropagation();
+        const uid = actionBtn.dataset.userId;
+        try {
+            await openUserModal(uid);
+        } catch (err) {
+            console.error(err);
+            showToast("Could not open user", "error");
+        }
+        return;
+    }
+
     const t = e.target.closest("button, a, [data-user-action]");
     if (!t) return;
 
-    // 3-dot / table action → open user modal
-    if (t.dataset && t.dataset.userAction && t.dataset.userId) {
-        e.preventDefault();
-        e.stopPropagation();
-        if (typeof openUserModal === "function") openUserModal(t.dataset.userId);
-        return;
-    }
-    if (t.classList && t.classList.contains("tableActionBtn") && t.dataset.userId) {
-        e.preventDefault();
-        e.stopPropagation();
-        if (typeof openUserModal === "function") openUserModal(t.dataset.userId);
-        return;
-    }
 
     const id = t.id;
 
@@ -2899,19 +2914,56 @@ async function loadVerification() {
     if (!container) return;
 
     try {
-        const [snapA, snapB] = await Promise.all([
-            getAdminDb().ref("verificationApplications").once("value"),
-            getAdminDb().ref("verificationRequests").once("value")
+        const db = getAdminDb();
+        const [snapA, snapB, snapC, snapUsers] = await Promise.all([
+            db.ref("verificationApplications").once("value").catch(function () { return { val: function () { return null; } }; }),
+            db.ref("verificationRequests").once("value").catch(function () { return { val: function () { return null; } }; }),
+            db.ref("tickApplications").once("value").catch(function () { return { val: function () { return null; } }; }),
+            db.ref("users").limitToFirst(500).once("value").catch(function () { return { val: function () { return null; } }; })
         ]);
         const merged = {};
-        const a = snapA.val() || {};
-        const b = snapB.val() || {};
-        Object.keys(a).forEach(function (id) {
-            merged[id] = Object.assign({ _path: "verificationApplications" }, a[id]);
+        function ingest(obj, path, defaultType) {
+            const a = obj || {};
+            Object.keys(a).forEach(function (id) {
+                const item = a[id] || {};
+                merged[path + "_" + id] = Object.assign({
+                    _path: path,
+                    _key: id,
+                    type: item.type || item.tickType || defaultType || "blue"
+                }, item);
+            });
+        }
+        ingest(snapA.val(), "verificationApplications", "blue");
+        ingest(snapB.val(), "verificationRequests", "blue");
+        ingest(snapC.val(), "tickApplications", "blue");
+
+        // users/{uid}/tickApplications/{kind}
+        const users = snapUsers.val() || {};
+        Object.keys(users).forEach(function (uid) {
+            const u = users[uid] || {};
+            const apps = u.tickApplications || u.verification || {};
+            Object.keys(apps).forEach(function (kind) {
+                const item = apps[kind];
+                if (!item || typeof item !== "object") return;
+                const st = String(item.status || "").toLowerCase();
+                if (st === "approved" || st === "rejected") return;
+                const id = "user_" + uid + "_" + kind;
+                merged[id] = Object.assign({
+                    _path: "users/" + uid + "/tickApplications/" + kind,
+                    _key: kind,
+                    uid: uid,
+                    type: kind,
+                    name: u.displayName || u.username || u.name,
+                    username: u.username,
+                    email: u.email,
+                    followers: u.followersCount || u.followers || 0,
+                    status: item.status || "under_review",
+                    createdAt: item.createdAt || item.submittedAt || 0,
+                    note: item.note || item.reason || ""
+                }, item);
+            });
         });
-        Object.keys(b).forEach(function (id) {
-            if (!merged[id]) merged[id] = Object.assign({ _path: "verificationRequests", type: "blue" }, b[id]);
-        });
+
         renderVerification(merged);
     } catch (error) {
         console.error(error);
@@ -2970,23 +3022,33 @@ function renderVerification(requests) {
         const plan = request.plan ? (" · plan: " + escapeHTML(String(request.plan))) : "";
         const src = request.source === "subscription" ? " · from subscription" : "";
 
+        const uidShow = escapeHTML(String(request.uid || request.userId || ""));
+        const email = escapeHTML(String(request.email || ""));
+        const uname = escapeHTML(String(request.username || ""));
+        const followers = request.followers != null ? formatNumber(request.followers) : "—";
+        const note = escapeHTML(String(request.note || request.businessName || request.legalName || ""));
         return `
-            <div class="verificationAdminCard">
+            <div class="verificationAdminCard" style="display:flex;flex-wrap:wrap;gap:12px;align-items:center">
                 <div class="verificationIcon">
-                    <i class="fa-solid fa-circle-check" style="color:${color}"></i>
+                    <i class="fa-solid fa-circle-check" style="color:${color};font-size:28px"></i>
                 </div>
-                <div class="verificationInfo">
+                <div class="verificationInfo" style="flex:1;min-width:180px">
                     <strong>${name}</strong>
-                    <span>${label}${plan}${src}</span>
-                    <small>${formatDate(request.createdAt)} · ${escapeHTML(String(request.status || "under_review"))}</small>
-                    <small style="display:block;opacity:.7">${escapeHTML(String(request.uid || request.userId || ""))}</small>
+                    <span style="display:block;color:${color};font-weight:700;font-size:12px;margin-top:2px">${label}${plan}${src}</span>
+                    <small style="display:block;margin-top:4px">${uname ? "@" + uname + " · " : ""}${email || "no email"}</small>
+                    <small style="display:block;opacity:.75">Followers: ${followers} · ${formatDate(request.createdAt)} · ${escapeHTML(String(request.status || "under_review"))}</small>
+                    ${note ? `<small style="display:block;opacity:.8;margin-top:2px">${note}</small>` : ""}
+                    <small style="display:block;opacity:.55;font-size:10px">${uidShow}</small>
                 </div>
-                <button class="verificationApproveBtn" data-approve-verification="${escapeAttribute(id)}" data-tick-type="${escapeAttribute(t)}" data-path="${escapeAttribute(request._path || "verificationApplications")}">
-                    Approve
-                </button>
-                <button class="verificationRejectBtn" data-reject-verification="${escapeAttribute(id)}" data-tick-type="${escapeAttribute(t)}" data-path="${escapeAttribute(request._path || "verificationApplications")}">
-                    Reject
-                </button>
+                <div style="display:flex;flex-direction:column;gap:8px">
+                  <button class="verificationApproveBtn" data-approve-verification="${escapeAttribute(id)}" data-tick-type="${escapeAttribute(t)}" data-path="${escapeAttribute(request._path || "verificationApplications")}">
+                      <i class="fa-solid fa-check"></i> Approve ${escapeHTML(t)}
+                  </button>
+                  <button class="verificationRejectBtn" data-reject-verification="${escapeAttribute(id)}" data-tick-type="${escapeAttribute(t)}" data-path="${escapeAttribute(request._path || "verificationApplications")}">
+                      <i class="fa-solid fa-xmark"></i> Reject
+                  </button>
+                  ${uidShow ? `<button type="button" class="tableActionBtn" data-user-action="view" data-user-id="${uidShow}" style="padding:8px 12px">Open user</button>` : ""}
+                </div>
             </div>
         `;
     }).join("");
@@ -3019,17 +3081,48 @@ async function updateVerification(id, status, tickType, path) {
     path = path || "verificationApplications";
 
     try {
-        const reqSnap = await getAdminDb().ref(path + "/" + id).once("value");
-        const request = reqSnap.val() || {};
-        const targetUID = request.uid || request.userId || request.creatorId || null;
+        const db = getAdminDb();
+        let request = {};
+        let targetUID = null;
+        let updateRef = null;
+
+        // Path may be full user tickApplications path or collection + key
+        if (String(path).indexOf("users/") === 0) {
+            updateRef = db.ref(path);
+            const reqSnap = await updateRef.once("value");
+            request = reqSnap.val() || {};
+            targetUID = String(path).split("/")[1] || request.uid;
+        } else {
+            const key = id.indexOf("_") >= 0 && id.split("_").length > 1 ? (id.split("_").slice(1).join("_") || id) : id;
+            // merged keys look like verificationApplications_xyz
+            let realKey = id;
+            if (id.indexOf(path + "_") === 0) realKey = id.slice(path.length + 1);
+            else if (id.indexOf("_") >= 0 && !path.includes("/")) {
+                const parts = id.split("_");
+                if (parts[0] === "user") {
+                    targetUID = parts[1];
+                    tickType = parts[2] || tickType;
+                    updateRef = db.ref("users/" + targetUID + "/tickApplications/" + tickType);
+                } else {
+                    realKey = parts.slice(1).join("_") || id;
+                }
+            }
+            if (!updateRef) {
+                updateRef = db.ref(path + "/" + realKey);
+            }
+            const reqSnap = await updateRef.once("value");
+            request = reqSnap.val() || {};
+            targetUID = targetUID || request.uid || request.userId || request.creatorId || null;
+        }
+
         if (!targetUID) {
             showToast("Missing user id on application", "error");
             return;
         }
 
-        await getAdminDb().ref(path + "/" + id).update({
+        await updateRef.update({
             status: status,
-            reviewedAt: firebase.database.ServerValue.TIMESTAMP,
+            reviewedAt: Date.now(),
             reviewedBy: currentAdmin ? currentAdmin.uid : null
         });
 

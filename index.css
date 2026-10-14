@@ -4913,3 +4913,49 @@ html, body {
 .swipeFeed.posts-view .swipePanel:first-child {
   display: none !important;
 }
+
+
+/* VIEWORA_DESKTOP_GRID_FIX — override old forced 2-col */
+@media (max-width: 767.98px) {
+  .longVideoContainer,
+  #longVideoContainer,
+  .swipePanel .longVideoContainer {
+    grid-template-columns: 1fr !important;
+  }
+}
+@media (min-width: 768px) and (max-width: 1023.98px) {
+  .longVideoContainer,
+  #longVideoContainer,
+  .swipePanel .longVideoContainer {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+@media (min-width: 1024px) {
+  .longVideoContainer,
+  #longVideoContainer,
+  .swipePanel .longVideoContainer {
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)) !important;
+    gap: 16px !important;
+  }
+  .homeContent {
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding-left: 20px !important;
+    padding-right: 20px !important;
+  }
+  .topHeader {
+    max-width: none !important;
+    padding-left: 16px !important;
+    padding-right: 20px !important;
+  }
+  /* Kill floating centered bottom nav from old media queries */
+  .bottomNav,
+  #vieworaGlobalNav {
+    max-width: none !important;
+    left: 0 !important;
+    transform: none !important;
+    border-radius: 0 !important;
+    bottom: auto !important;
+  }
+}

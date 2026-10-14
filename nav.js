@@ -122,6 +122,12 @@
                 <i class="fa-regular fa-user"></i>
                 <span data-i18n="Profile">Profile</span>
             </a>
+
+            <a href="settings.html" class="navItem navSettings ${active === "settings" ? "active" : ""}" data-nav="settings">
+                <div class="activeIndicator"></div>
+                <i class="fa-solid fa-gear"></i>
+                <span data-i18n="Settings">Settings</span>
+            </a>
         `;
 
         document.body.appendChild(nav);
@@ -184,7 +190,7 @@
                             try { navigator.vibrate(30); } catch (_) {}
                         }
                         openAccountSwitcher();
-                    }, 3000);
+                    }, 2500);
                 }, { passive: true });
 
                 link.addEventListener("touchend", function () {
@@ -200,7 +206,7 @@
                     holdTimer = setTimeout(function () {
                         holdFired = true;
                         openAccountSwitcher();
-                    }, 3000);
+                    }, 2500);
                 });
                 link.addEventListener("mouseup", function () {
                     if (holdTimer) clearTimeout(holdTimer);
