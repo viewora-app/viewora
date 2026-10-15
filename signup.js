@@ -874,13 +874,19 @@ async function createAccount(event) {
 
         try { localStorage.removeItem("viewora_onboarding_done"); } catch (_) {}
 
-        /* Email verify optional — full setup on onboarding (photo, age 13+, follow, perms) */
+        /* Show verify modal + always allow Continue → onboarding */
         if (verifyModal) {
             verifyModal.classList.remove("hidden");
             verifyModal.setAttribute("aria-hidden", "false");
+            // Safety: auto-continue after 12s if user doesn't click
+            setTimeout(function () {
+                if (verifyModal && !verifyModal.classList.contains("hidden")) {
+                    window.location.href = "onboarding.html";
+                }
+            }, 12000);
         } else {
             setTimeout(function () {
-                location.replace("onboarding.html");
+                window.location.href = "onboarding.html";
             }, 700);
         }
 
@@ -1302,56 +1308,46 @@ openMailBtn?.addEventListener(
 
 continueBtn?.addEventListener(
     "click",
-    async () => {
-
-        const user =
-            auth.currentUser;
-
-
+    async function () {
+        var user = auth.currentUser;
         if (!user) {
-
-            showToast(
-                "Please sign in again",
-                "error"
-            );
-
+            showToast("Please sign in again", "error");
             return;
         }
 
-
+        continueBtn.disabled = true;
         try {
-
             await user.reload();
-
-
             if (user.emailVerified) {
-                await safeUpdate("users/" + user.uid, {
-                    emailVerified: true,
-                    online: true,
-                    lastLogin: SERVER_TIME
-                });
-                showToast("Email verified successfully");
+                try {
+                    await safeUpdate("users/" + user.uid, {
+                        emailVerified: true,
+                        online: true,
+                        lastLogin: SERVER_TIME
+                    });
+                } catch (_) {}
+                showToast("Email verified — continuing setup");
             } else {
-                showToast("You can verify email in the next steps");
+                showToast("Continuing setup — verify email anytime");
             }
-
-            try { localStorage.removeItem("viewora_onboarding_done"); } catch (_) {}
-            setTimeout(function () {
-                location.replace("onboarding.html");
-            }, 600);
-
-
         } catch (error) {
-
-            console.error(error);
-
-            showToast(
-                "Unable to check verification",
-                "error"
-            );
+            console.warn("verify check", error);
+            showToast("Continuing to setup…");
         }
+
+        try { localStorage.removeItem("viewora_onboarding_done"); } catch (_) {}
+
+        // Always leave signup — onboarding required for new accounts
+        setTimeout(function () {
+            window.location.href = "onboarding.html";
+        }, 400);
     }
 );
+
+/* Auto-open setup if modal is showing and user clicks overlay (optional safety) */
+verifyModal?.querySelector(".modalOverlay")?.addEventListener("click", function () {
+    /* do not close — force explicit Continue */
+});
 
 
 /*==========================================================
@@ -1843,7 +1839,8 @@ async function socialSignupProvider(provider, name) {
         const user = result.user;
         const userRef = db.ref("users/" + user.uid);
         const snapshot = await userRef.once("value");
-        if (!snapshot.exists()) {
+        var isNewSocial = !snapshot.exists();
+        if (isNewSocial) {
             let baseUsername = (user.displayName || "user")
                 .toLowerCase().replace(/[^a-z0-9]/g, "").substring(0, 15) || "user";
             let finalUsername = baseUsername;
@@ -1888,7 +1885,6 @@ async function socialSignupProvider(provider, name) {
             });
         }
         hideLoading();
-        var isNewSocial = !snapshot.exists();
         showToast(isNewSocial ? (name + " signup successful") : "Welcome back");
         try {
             if (isNewSocial) localStorage.removeItem("viewora_onboarding_done");
