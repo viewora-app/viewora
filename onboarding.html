@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#050505">
+  <title>Viewora • Setup</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+  <link rel="stylesheet" href="onboarding.css">
+</head>
+<body>
+
+<div class="obBg">
+  <div class="obGlow g1"></div>
+  <div class="obGlow g2"></div>
+  <div class="obGlow g3"></div>
+</div>
+
+<!-- TOP BAR -->
+<header class="obTop">
+  <div class="obProgress">
+    <i data-step="1" class="active"></i>
+    <i data-step="2"></i>
+    <i data-step="3"></i>
+    <i data-step="4"></i>
+  </div>
+  <button type="button" id="obSkip" class="obSkip">Skip</button>
+</header>
+
+<main class="obMain">
+
+  <!-- ========== STEP 1: PHOTO + BANNER ========== -->
+  <section class="obStep active" data-step="1" id="stepPhoto">
+    <div class="obHero">
+      <h1>Add a profile photo</h1>
+      <p>Help people recognize you. You can change this anytime.</p>
+    </div>
+
+    <div class="obBannerWrap">
+      <img id="obBannerPreview" class="obBannerImg" src="assets/default-banner.jpg" alt="">
+      <button type="button" class="obBannerBtn" id="obBannerPick">
+        <i class="fa-solid fa-camera"></i> Banner
+      </button>
+      <input type="file" id="obBannerFile" accept="image/*" hidden>
+    </div>
+
+    <div class="obAvatarWrap">
+      <img id="obAvatarPreview" class="obAvatarImg" src="assets/default-avatar.png" alt="">
+      <button type="button" class="obAvatarBtn" id="obAvatarPick">
+        <i class="fa-solid fa-camera"></i>
+      </button>
+      <input type="file" id="obAvatarFile" accept="image/*" hidden>
+    </div>
+
+    <p class="obHint">Tap the camera to upload from gallery</p>
+
+    <button type="button" class="obPrimary" id="obNext1">
+      Continue <i class="fa-solid fa-arrow-right"></i>
+    </button>
+  </section>
+
+  <!-- ========== STEP 2: VERIFY + DOB (13+) ========== -->
+  <section class="obStep" data-step="2" id="stepVerify">
+    <div class="obHero">
+      <h1>Verify &amp; confirm age</h1>
+      <p>Secure your account. You must be <strong>13 or older</strong> to use Viewora.</p>
+    </div>
+
+    <div class="obCard">
+      <label class="obLabel">Date of birth</label>
+      <div class="obInput">
+        <i class="fa-solid fa-cake-candles"></i>
+        <input type="date" id="obDob" required>
+      </div>
+      <div id="obAgeMsg" class="obMsg">You must be at least 13 years old</div>
+
+      <label class="obCheck">
+        <input type="checkbox" id="obAgeConfirm">
+        <span class="obBox"><i class="fa-solid fa-check"></i></span>
+        <span>I confirm I am 13+ and this date is correct</span>
+      </label>
+    </div>
+
+    <div class="obCard">
+      <label class="obLabel">Verify contact</label>
+      <div class="obTabs">
+        <button type="button" class="obTab active" data-verify="email">Email</button>
+        <button type="button" class="obTab" data-verify="phone">Phone</button>
+      </div>
+
+      <div id="obVerifyEmail" class="obVerifyPane">
+        <div class="obInput">
+          <i class="fa-solid fa-envelope"></i>
+          <input type="email" id="obEmail" placeholder="you@example.com" readonly>
+        </div>
+        <button type="button" class="obSecondary" id="obSendEmail">
+          <i class="fa-solid fa-paper-plane"></i> Send verification link
+        </button>
+        <p class="obTiny" id="obEmailStatus">We’ll email a secure link</p>
+      </div>
+
+      <div id="obVerifyPhone" class="obVerifyPane hidden">
+        <div class="obInput">
+          <i class="fa-solid fa-phone"></i>
+          <input type="tel" id="obPhone" placeholder="+91 98765 43210">
+        </div>
+        <button type="button" class="obSecondary" id="obSendOtp">
+          <i class="fa-solid fa-message"></i> Send OTP
+        </button>
+        <div class="obInput" style="margin-top:10px">
+          <i class="fa-solid fa-key"></i>
+          <input type="text" id="obOtp" placeholder="Enter 6-digit OTP" maxlength="6" inputmode="numeric">
+        </div>
+        <p class="obTiny" id="obPhoneStatus">OTP via SMS (if enabled in Firebase)</p>
+      </div>
+    </div>
+
+    <div id="obAgeBlock" class="obAgeBlock hidden">
+      <strong>Sorry, you can’t join yet</strong>
+      Viewora is only for people aged 13 and above.
+    </div>
+
+    <button type="button" class="obPrimary" id="obNext2" disabled>
+      Continue <i class="fa-solid fa-arrow-right"></i>
+    </button>
+  </section>
+
+  <!-- ========== STEP 3: SUGGESTED FOLLOWS ========== -->
+  <section class="obStep" data-step="3" id="stepFollow">
+    <div class="obHero">
+      <h1>Follow people to see</h1>
+      <p>Creators, friends &amp; viral profiles. Follow a few to personalize your feed.</p>
+    </div>
+
+    <div class="obSearch">
+      <i class="fa-solid fa-magnifying-glass"></i>
+      <input type="search" id="obFollowSearch" placeholder="Search people" autocomplete="off">
+    </div>
+
+    <div class="obSectionTitle">Suggested for you</div>
+    <div id="obSuggestList" class="obPeopleList">
+      <div class="obPeopleLoading"><i class="fa-solid fa-spinner fa-spin"></i> Loading…</div>
+    </div>
+
+    <button type="button" class="obPrimary" id="obNext3">
+      Continue <i class="fa-solid fa-arrow-right"></i>
+    </button>
+  </section>
+
+  <!-- ========== STEP 4: PERMISSIONS ========== -->
+  <section class="obStep" data-step="4" id="stepPerms">
+    <div class="obHero">
+      <h1>Stay in the loop</h1>
+      <p>Turn on notifications &amp; location so you never miss what matters — just like Instagram.</p>
+    </div>
+
+    <div class="obPermCard">
+      <div class="obPermIcon notif"><i class="fa-solid fa-bell"></i></div>
+      <div class="obPermBody">
+        <h3>Notifications</h3>
+        <p>Likes, comments, messages, live &amp; new followers</p>
+      </div>
+      <button type="button" class="obPermBtn" id="obEnableNotif">Enable</button>
+    </div>
+
+    <div class="obPermCard">
+      <div class="obPermIcon loc"><i class="fa-solid fa-location-dot"></i></div>
+      <div class="obPermBody">
+        <h3>Location</h3>
+        <p>Local trends, nearby creators &amp; better recommendations</p>
+      </div>
+      <button type="button" class="obPermBtn" id="obEnableLoc">Enable</button>
+    </div>
+
+    <p class="obHint">You can change these anytime in Settings</p>
+
+    <button type="button" class="obPrimary" id="obFinish">
+      Finish setup <i class="fa-solid fa-check"></i>
+    </button>
+  </section>
+
+</main>
+
+<!-- ========== WELCOME ANIMATION ========== -->
+<div id="welcomeOverlay" class="welcomeOverlay" aria-hidden="true">
+  <div class="welcomeBurst"></div>
+  <div class="welcomeCard">
+    <div class="welcomeLogo">
+      <img src="assets/logo.png" alt="Viewora" onerror="this.style.display='none'">
+      <div class="welcomeRing"></div>
+    </div>
+    <h1 class="welcomeTitle">Welcome to Viewora</h1>
+    <p class="welcomeSub">World · Create · Connect</p>
+    <div class="welcomeBar"><i></i></div>
+  </div>
+</div>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-storage-compat.js"></script>
+<script src="firebase.js"></script>
+<script src="onboarding.js"></script>
+</body>
+</html>

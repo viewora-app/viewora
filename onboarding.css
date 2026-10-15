@@ -1,0 +1,119 @@
+/* VIEWORA — Instagram-style Onboarding */
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#050505;--card:rgba(18,18,24,.88);--white:#fff;--muted:#9ca3af;
+  --border:rgba(255,255,255,.1);--purple:#8b5cf6;--blue:#168cff;--pink:#ff3cac;
+  --green:#00d26a;--red:#ff4d67;--radius:20px;
+}
+html,body{min-height:100%;background:var(--bg);color:var(--white);font-family:Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+.obBg{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+.obGlow{position:absolute;border-radius:50%;filter:blur(80px);opacity:.35}
+.g1{width:320px;height:320px;background:var(--purple);top:-80px;left:-60px}
+.g2{width:280px;height:280px;background:var(--blue);bottom:10%;right:-80px}
+.g3{width:200px;height:200px;background:var(--pink);bottom:-40px;left:30%;opacity:.2}
+
+.obTop{position:sticky;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;padding:14px 18px;backdrop-filter:blur(16px);background:rgba(5,5,5,.65)}
+.obProgress{display:flex;gap:6px}
+.obProgress i{width:28px;height:4px;border-radius:99px;background:rgba(255,255,255,.15);display:block}
+.obProgress i.active{background:linear-gradient(90deg,var(--purple),var(--blue))}
+.obProgress i.done{background:var(--green)}
+.obSkip{border:none;background:transparent;color:var(--muted);font-size:14px;font-weight:600;padding:8px 4px;cursor:pointer}
+.obSkip:active{opacity:.7}
+
+.obMain{position:relative;z-index:1;max-width:440px;margin:0 auto;padding:8px 20px 40px;min-height:calc(100vh - 56px)}
+.obStep{display:none;animation:obIn .35s ease}
+.obStep.active{display:block}
+@keyframes obIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+
+.obHero{text-align:center;margin:12px 0 22px}
+.obHero h1{font-size:1.55rem;font-weight:800;letter-spacing:-.02em;margin-bottom:8px}
+.obHero p{color:var(--muted);font-size:14px;line-height:1.5}
+
+.obBannerWrap{position:relative;height:120px;border-radius:16px;overflow:hidden;background:#1a1a22;border:1px solid var(--border)}
+.obBannerImg{width:100%;height:100%;object-fit:cover}
+.obBannerBtn{position:absolute;right:10px;bottom:10px;border:none;border-radius:99px;padding:8px 12px;font-size:12px;font-weight:600;background:rgba(0,0,0,.55);color:#fff;cursor:pointer;backdrop-filter:blur(8px)}
+
+.obAvatarWrap{position:relative;width:104px;height:104px;margin:-48px auto 12px;z-index:2}
+.obAvatarImg{width:104px;height:104px;border-radius:50%;object-fit:cover;border:4px solid var(--bg);background:#222;box-shadow:0 8px 24px rgba(0,0,0,.4)}
+.obAvatarBtn{position:absolute;right:2px;bottom:2px;width:36px;height:36px;border-radius:50%;border:3px solid var(--bg);background:linear-gradient(135deg,var(--purple),var(--blue));color:#fff;cursor:pointer;display:grid;place-items:center}
+
+.obHint{text-align:center;color:var(--muted);font-size:12px;margin:8px 0 20px}
+.obPrimary{width:100%;min-height:52px;border:none;border-radius:14px;font-size:15px;font-weight:700;color:#fff;cursor:pointer;background:linear-gradient(135deg,var(--purple),var(--blue));display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 12px 32px rgba(124,58,237,.35)}
+.obPrimary:disabled{opacity:.4;cursor:not-allowed;box-shadow:none}
+.obPrimary:active:not(:disabled){transform:scale(.98)}
+.obSecondary{width:100%;min-height:46px;margin-top:10px;border:1px solid var(--border);border-radius:12px;background:rgba(255,255,255,.06);color:#fff;font-weight:600;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px}
+
+.obCard{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:14px;backdrop-filter:blur(20px)}
+.obLabel{display:block;font-size:12px;font-weight:600;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:.04em}
+.obInput{display:flex;align-items:center;gap:10px;background:rgba(0,0,0,.35);border:1px solid var(--border);border-radius:12px;padding:0 14px;min-height:48px}
+.obInput i{color:var(--muted);font-size:14px}
+.obInput input{flex:1;border:none;background:transparent;color:#fff;font-size:15px;outline:none;min-height:46px}
+.obInput input[type=date]{color-scheme:dark}
+.obMsg{font-size:12px;color:var(--muted);margin:8px 0 12px}
+.obMsg.ok{color:var(--green)}
+.obMsg.err{color:var(--red)}
+
+.obCheck{display:flex;align-items:flex-start;gap:12px;cursor:pointer;font-size:13px;line-height:1.4;color:rgba(255,255,255,.85);margin-top:4px}
+.obCheck input{display:none}
+.obBox{width:22px;height:22px;border-radius:7px;border:1.5px solid var(--border);flex-shrink:0;display:grid;place-items:center;background:rgba(0,0,0,.3);margin-top:1px}
+.obBox i{font-size:11px;opacity:0;color:#fff}
+.obCheck input:checked + .obBox{background:linear-gradient(135deg,var(--purple),var(--blue));border-color:transparent}
+.obCheck input:checked + .obBox i{opacity:1}
+
+.obTabs{display:flex;gap:8px;margin-bottom:12px}
+.obTab{flex:1;min-height:40px;border-radius:10px;border:1px solid var(--border);background:transparent;color:var(--muted);font-weight:600;font-size:13px;cursor:pointer}
+.obTab.active{background:rgba(139,92,246,.2);border-color:rgba(139,92,246,.5);color:#fff}
+.obVerifyPane.hidden{display:none}
+.obTiny{font-size:11px;color:var(--muted);margin-top:8px}
+.obAgeBlock{display:none;margin:12px 0;padding:14px;border-radius:14px;background:rgba(255,77,103,.12);border:1px solid rgba(255,77,103,.35);color:#fecaca;font-size:13px;line-height:1.45}
+.obAgeBlock.hidden{display:none}
+.obAgeBlock:not(.hidden){display:block}
+.obAgeBlock strong{display:block;color:#fff;margin-bottom:4px}
+
+.obSearch{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.06);border:1px solid var(--border);border-radius:12px;padding:0 14px;margin-bottom:16px}
+.obSearch i{color:var(--muted)}
+.obSearch input{flex:1;border:none;background:transparent;color:#fff;min-height:46px;outline:none;font-size:14px}
+.obSectionTitle{font-size:13px;font-weight:700;margin-bottom:10px;color:rgba(255,255,255,.9)}
+.obPeopleList{display:flex;flex-direction:column;gap:8px;margin-bottom:20px;max-height:48vh;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.obPeopleLoading{text-align:center;padding:28px;color:var(--muted);font-size:13px}
+.obPerson{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:14px;background:rgba(255,255,255,.04);border:1px solid var(--border)}
+.obPerson img{width:48px;height:48px;border-radius:50%;object-fit:cover;background:#222}
+.obPersonMeta{flex:1;min-width:0}
+.obPersonMeta strong{display:block;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.obPersonMeta span{font-size:12px;color:var(--muted)}
+.obFollowBtn{min-width:88px;min-height:36px;border-radius:10px;border:none;font-weight:700;font-size:13px;cursor:pointer;background:linear-gradient(135deg,var(--purple),var(--blue));color:#fff}
+.obFollowBtn.following{background:rgba(255,255,255,.1);color:#fff}
+
+.obPermCard{display:flex;align-items:center;gap:14px;padding:16px;border-radius:16px;background:var(--card);border:1px solid var(--border);margin-bottom:12px}
+.obPermIcon{width:48px;height:48px;border-radius:14px;display:grid;place-items:center;font-size:18px;flex-shrink:0}
+.obPermIcon.notif{background:rgba(139,92,246,.2);color:#c4b5fd}
+.obPermIcon.loc{background:rgba(22,140,255,.2);color:#7dd3fc}
+.obPermBody{flex:1;min-width:0}
+.obPermBody h3{font-size:15px;margin-bottom:2px}
+.obPermBody p{font-size:12px;color:var(--muted);line-height:1.4}
+.obPermBtn{min-width:78px;min-height:36px;border-radius:10px;border:1px solid var(--border);background:rgba(255,255,255,.08);color:#fff;font-weight:700;font-size:13px;cursor:pointer}
+.obPermBtn.on{background:rgba(0,210,106,.2);border-color:rgba(0,210,106,.4);color:var(--green)}
+
+/* Welcome animation */
+.welcomeOverlay{position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;background:#050505;opacity:0;pointer-events:none;transition:opacity .4s ease}
+.welcomeOverlay.show{opacity:1;pointer-events:auto}
+.welcomeBurst{position:absolute;width:200vw;height:200vw;border-radius:50%;background:radial-gradient(circle,rgba(139,92,246,.45),rgba(22,140,255,.2) 40%,transparent 70%);animation:burst 1.2s ease forwards;opacity:0}
+.welcomeOverlay.show .welcomeBurst{opacity:1}
+@keyframes burst{0%{transform:scale(.2);opacity:0}40%{opacity:1}100%{transform:scale(1);opacity:.6}}
+.welcomeCard{position:relative;text-align:center;padding:24px;animation:welcomePop .7s cubic-bezier(.2,1.2,.3,1) .15s both}
+@keyframes welcomePop{from{opacity:0;transform:scale(.7) translateY(20px)}to{opacity:1;transform:none}}
+.welcomeLogo{position:relative;width:96px;height:96px;margin:0 auto 20px}
+.welcomeLogo img{width:96px;height:96px;border-radius:24px;object-fit:cover;box-shadow:0 16px 40px rgba(124,58,237,.45)}
+.welcomeRing{position:absolute;inset:-8px;border-radius:28px;border:2px solid transparent;border-top-color:var(--purple);border-right-color:var(--blue);animation:spin 1.2s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.welcomeTitle{font-size:1.75rem;font-weight:800;letter-spacing:-.03em;background:linear-gradient(135deg,#fff,var(--purple),var(--blue));-webkit-background-clip:text;background-clip:text;color:transparent;animation:titleIn .6s ease .35s both}
+@keyframes titleIn{from{opacity:0;letter-spacing:.2em;filter:blur(6px)}to{opacity:1;letter-spacing:-.03em;filter:none}}
+.welcomeSub{margin-top:8px;color:var(--muted);font-size:14px;font-weight:500;animation:titleIn .5s ease .5s both}
+.welcomeBar{width:120px;height:4px;border-radius:99px;background:rgba(255,255,255,.1);margin:22px auto 0;overflow:hidden}
+.welcomeBar i{display:block;height:100%;width:0;border-radius:99px;background:linear-gradient(90deg,var(--purple),var(--blue),var(--pink));animation:barFill 2.2s ease .4s forwards}
+@keyframes barFill{to{width:100%}}
+
+@media(min-width:480px){
+  .obMain{padding-top:20px}
+  .obHero h1{font-size:1.75rem}
+}

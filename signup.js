@@ -679,7 +679,11 @@ async function saveNewUser(
             SERVER_TIME,
 
         lastSeen:
-            SERVER_TIME
+            SERVER_TIME,
+
+        onboardingComplete: false,
+
+        ageVerified: false
     };
 
 
@@ -868,12 +872,16 @@ async function createAccount(event) {
             "Account created successfully"
         );
 
+        try { localStorage.removeItem("viewora_onboarding_done"); } catch (_) {}
 
+        /* Email verify optional — full setup on onboarding (photo, age 13+, follow, perms) */
         if (verifyModal) {
-
-            verifyModal.classList.remove(
-                "hidden"
-            );
+            verifyModal.classList.remove("hidden");
+            verifyModal.setAttribute("aria-hidden", "false");
+        } else {
+            setTimeout(function () {
+                location.replace("onboarding.html");
+            }, 700);
         }
 
 
@@ -1018,7 +1026,9 @@ googleSignupBtn?.addEventListener(
                 );
 
 
-            if (!snapshot.exists()) {
+            var isNewUser = !snapshot.exists();
+
+            if (isNewUser) {
 
                 let baseUsername =
                     (
@@ -1143,7 +1153,11 @@ googleSignupBtn?.addEventListener(
                             SERVER_TIME,
 
                         lastSeen:
-                            SERVER_TIME
+                            SERVER_TIME,
+
+                        onboardingComplete: false,
+
+                        ageVerified: false
                     }
                 );
 
@@ -1204,22 +1218,21 @@ googleSignupBtn?.addEventListener(
 
             hideLoading();
 
-
             showToast(
-                "Google signup successful"
+                isNewUser
+                    ? "Google signup successful"
+                    : "Welcome back"
             );
 
+            try {
+                if (isNewUser) localStorage.removeItem("viewora_onboarding_done");
+            } catch (_) {}
 
-            setTimeout(
-                () => {
-
-                    location.replace(
-                        "index.html"
-                    );
-
-                },
-                900
-            );
+            setTimeout(function () {
+                location.replace(
+                    isNewUser ? "onboarding.html" : "index.html"
+                );
+            }, 700);
 
 
         } catch (error) {
@@ -1311,51 +1324,21 @@ continueBtn?.addEventListener(
             await user.reload();
 
 
-            if (
-                user.emailVerified
-            ) {
-
-                await safeUpdate(
-
-                    "users/" +
-                    user.uid,
-
-                    {
-
-                        emailVerified: true,
-
-                        online: true,
-
-                        lastLogin:
-                            SERVER_TIME
-                    }
-                );
-
-
-                showToast(
-                    "Email verified successfully"
-                );
-
-
-                setTimeout(
-                    () => {
-
-                        location.replace(
-                            "login.html"
-                        );
-
-                    },
-                    900
-                );
-
-
+            if (user.emailVerified) {
+                await safeUpdate("users/" + user.uid, {
+                    emailVerified: true,
+                    online: true,
+                    lastLogin: SERVER_TIME
+                });
+                showToast("Email verified successfully");
             } else {
-
-                showToast(
-                    "Please verify your email first",
-                    "error"
-                );
+                showToast("You can verify email in the next steps");
             }
+
+            try { localStorage.removeItem("viewora_onboarding_done"); } catch (_) {}
+            setTimeout(function () {
+                location.replace("onboarding.html");
+            }, 600);
 
 
         } catch (error) {
@@ -1888,7 +1871,9 @@ async function socialSignupProvider(provider, name) {
                 online: true,
                 createdAt: SERVER_TIME,
                 lastLogin: SERVER_TIME,
-                lastSeen: SERVER_TIME
+                lastSeen: SERVER_TIME,
+                onboardingComplete: false,
+                ageVerified: false
             });
             await safeWrite("settings/" + user.uid, {
                 theme: "dark", language: "en", autoplay: true,
@@ -1903,8 +1888,14 @@ async function socialSignupProvider(provider, name) {
             });
         }
         hideLoading();
-        showToast(name + " signup successful");
-        setTimeout(function () { location.replace("index.html"); }, 900);
+        var isNewSocial = !snapshot.exists();
+        showToast(isNewSocial ? (name + " signup successful") : "Welcome back");
+        try {
+            if (isNewSocial) localStorage.removeItem("viewora_onboarding_done");
+        } catch (_) {}
+        setTimeout(function () {
+            location.replace(isNewSocial ? "onboarding.html" : "index.html");
+        }, 700);
     } catch (error) {
         hideLoading();
         if (error.code === "auth/popup-closed-by-user") {

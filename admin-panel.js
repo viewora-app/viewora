@@ -182,41 +182,38 @@ function getUserAvatar(user) {
 
 function getUserTickHTML(user) {
     if (!user) return "";
-    // Explicit tickType wins; else priority Red > Blue > White (only ONE shown)
     const tt = String(user.tickType || user.badge || "").toLowerCase();
-    const isRed =
-        tt === "red" ||
-        user.redTick === true ||
-        user.vip === true ||
-        user.plan === "elite" ||
-        (user.subscription &&
-            (user.subscription.plan === "elite" ||
-                user.subscription.tier === "elite" ||
-                user.subscription.plan === "yearly_vip"));
-    const isBlue =
-        !isRed &&
-        (tt === "blue" ||
-            user.blueTick === true ||
-            ((user.verified === true || user.isVerified === true || user.verificationStatus === "verified") &&
-                user.whiteTick !== true &&
-                user.redTick !== true));
-    // White only if not red/blue — monetization alone should not look like blue
-    const isWhite =
-        !isRed &&
-        !isBlue &&
-        (tt === "white" ||
-            user.whiteTick === true ||
-            user.monetizationEnabled === true ||
-            user.monetizationStatus === "active");
+    if (tt === "none") return "";
 
-    if (isRed) {
-        return '<span class="tickBadge tickRed" title="VIP Red Tick">✓</span>';
+    // tickType is source of truth when set
+    if (tt === "red") {
+        return '<span class="tickBadge tickRed" title="Red · Elite" style="color:#ff3b5c;font-weight:800">✓</span>';
     }
-    if (isBlue) {
-        return '<span class="tickBadge tickBlue" title="Verified Blue Tick">✓</span>';
+    if (tt === "yellow") {
+        return '<span class="tickBadge tickYellow" title="Yellow · Business" style="color:#f5c518;font-weight:800">✓</span>';
     }
-    if (isWhite) {
-        return '<span class="tickBadge tickWhite" title="Monetized White Tick">✓</span>';
+    if (tt === "white") {
+        return '<span class="tickBadge tickWhite" title="White · Achievement" style="color:#e5e7eb;font-weight:800">✓</span>';
+    }
+    if (tt === "blue") {
+        return '<span class="tickBadge tickBlue" title="Blue · Creator" style="color:#1d9bf0;font-weight:800">✓</span>';
+    }
+
+    // Flags when tickType empty — priority Red > Yellow > Blue > White
+    if (user.redTick === true || user.redTickForce === true || user.vip === true) {
+        return '<span class="tickBadge tickRed" title="Red · Elite" style="color:#ff3b5c;font-weight:800">✓</span>';
+    }
+    if (user.yellowTick === true || user.yellowTickForce === true || user.businessVerified === true) {
+        return '<span class="tickBadge tickYellow" title="Yellow · Business" style="color:#f5c518;font-weight:800">✓</span>';
+    }
+    if (user.blueTick === true || user.blueTickForce === true) {
+        return '<span class="tickBadge tickBlue" title="Blue · Creator" style="color:#1d9bf0;font-weight:800">✓</span>';
+    }
+    if (user.whiteTick === true || user.whiteTickForce === true) {
+        return '<span class="tickBadge tickWhite" title="White · Achievement" style="color:#e5e7eb;font-weight:800">✓</span>';
+    }
+    if ((user.verified === true || user.isVerified === true) && user.verificationStatus !== "none") {
+        return '<span class="tickBadge tickBlue" title="Verified" style="color:#1d9bf0;font-weight:800">✓</span>';
     }
     return "";
 }
@@ -265,18 +262,23 @@ async function clearUserSubscription(uid) {
         cancelledBy: (currentAdmin && currentAdmin.uid) || "admin",
         source: "admin_clear"
     };
+    // Primary: user profile subscription (rules allow admin write on users/$uid)
     await database.ref("users/" + uid + "/subscription").update(cleared);
-    await database.ref("subscriptions/" + uid).update(cleared);
     await database.ref("users/" + uid).update({
         subscriptionActive: false,
         subscriptionStatus: "cancelled",
         premium: false,
         isPremium: false,
         plan: null,
-        // Do not auto-strip ticks — admin uses Remove All Ticks separately
         vip: false,
         elite: false
     });
+    // Optional legacy path — never fail the whole action
+    try {
+        await database.ref("subscriptions/" + uid).update(cleared);
+    } catch (e) {
+        console.warn("[clearSubscription] subscriptions/ path skipped", e && e.message);
+    }
     var nid = "sub_cleared_" + Date.now();
     try {
         await database.ref("notifications/" + uid + "/" + nid).set({
@@ -2323,6 +2325,49 @@ document.addEventListener("click", async function vieworaAdminClick(e) {
             console.error(err);
             showToast(errMsg || (err && err.message) || "Action failed", "error");
         }
+    }
+
+    // View Profile
+    if (id === "viewUserBtn") {
+        e.preventDefault();
+        e.stopPropagation();
+        if (!selectedUserId) { showToast("Select a user first", "error"); return; }
+        var profileUrl = "profile.html?uid=" + encodeURIComponent(selectedUserId);
+        try { window.open(profileUrl, "_blank"); } catch (_) { location.href = profileUrl; }
+        return;
+    }
+    // Change Role
+    if (id === "changeRoleBtn") {
+        e.preventDefault();
+        e.stopPropagation();
+        if (!selectedUserId) return;
+        var userR = (cachedUsers && cachedUsers[selectedUserId]) || {};
+        var currentRole = userR.role || "user";
+        var newRole = window.prompt("Enter new role: user, creator, business, influencer, admin", currentRole);
+        if (!newRole) return;
+        newRole = String(newRole).toLowerCase().trim();
+        var allowed = ["user", "creator", "business", "influencer", "admin"];
+        if (allowed.indexOf(newRole) < 0) { showToast("Invalid role.", "error"); return; }
+        await safe(function () {
+            return getAdminDb().ref("users/" + selectedUserId).update({ role: newRole });
+        }, "User role updated.");
+        return;
+    }
+    // Block / Unblock
+    if (id === "blockUserBtn") {
+        e.preventDefault();
+        e.stopPropagation();
+        if (!selectedUserId) return;
+        var userB = (cachedUsers && cachedUsers[selectedUserId]) || {};
+        var blocked = userB.blocked === true || userB.disabled === true || userB.banned === true;
+        await safe(function () {
+            return getAdminDb().ref("users/" + selectedUserId).update({
+                blocked: !blocked,
+                disabled: !blocked,
+                banned: !blocked
+            });
+        }, blocked ? "User unblocked." : "User blocked.");
+        return;
     }
 
     if (id === "grantBlueTickBtn") {
@@ -6173,16 +6218,29 @@ if (document.readyState !== "loading") {
         // Re-bind hamburger if present
         var menuBtn = document.getElementById("menuToggle") || document.getElementById("sidebarToggle") || document.querySelector("[data-sidebar-toggle]");
         var sidebar = document.getElementById("adminSidebar");
-        if (menuBtn && sidebar) {
-            menuBtn.addEventListener("click", function (e) {
-                e.preventDefault();
-                sidebar.classList.toggle("open");
-                if (ov) {
-                    ov.classList.toggle("show");
-                    ov.style.pointerEvents = ov.classList.contains("show") ? "auto" : "none";
-                }
-            });
+        function toggleAdminSidebar(e) {
+            if (e) { e.preventDefault(); e.stopPropagation(); }
+            if (!sidebar) sidebar = document.getElementById("adminSidebar");
+            if (!sidebar) return;
+            sidebar.classList.toggle("open");
+            document.body.classList.toggle("sidebar-open", sidebar.classList.contains("open"));
+            if (ov) {
+                ov.classList.toggle("show", sidebar.classList.contains("open"));
+                ov.style.pointerEvents = sidebar.classList.contains("open") ? "auto" : "none";
+                ov.style.display = sidebar.classList.contains("open") ? "block" : "none";
+            }
         }
+        if (menuBtn) {
+            menuBtn.onclick = toggleAdminSidebar;
+            menuBtn.addEventListener("click", toggleAdminSidebar);
+        }
+        // Also bind any fa-bars in header
+        document.querySelectorAll(".adminTopBar button, .topBar button, #sidebarToggle").forEach(function (btn) {
+            if (btn.querySelector(".fa-bars") || btn.id === "sidebarToggle") {
+                btn.addEventListener("click", toggleAdminSidebar);
+            }
+        });
+        window.toggleAdminSidebar = toggleAdminSidebar;
         if (ov) {
             ov.addEventListener("click", function () {
                 if (sidebar) sidebar.classList.remove("open");
