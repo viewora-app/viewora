@@ -7,7 +7,7 @@
         auth          → firebase.js
         db            → firebase.js
         googleProvider → firebase.js
-        SERVER_TIME   → firebase.js
+        vieworaServerTime   → firebase.js
         usernamesRef  → firebase.js
 ==========================================================*/
 
@@ -21,23 +21,43 @@ if (typeof firebase === "undefined") {
     throw new Error("Firebase SDK Missing");
 }
 
-var auth = (typeof auth !== "undefined" && auth) ? auth : (window.auth || firebase.auth());
-var db = (typeof db !== "undefined" && db) ? db : (window.db || firebase.database());
-if (!auth) throw new Error("Firebase Auth Missing");
-if (!db) throw new Error("Realtime Database Missing");
-var googleProvider = (typeof googleProvider !== "undefined" && googleProvider) ? googleProvider : (window.googleProvider || null);
-var facebookProvider = (typeof facebookProvider !== "undefined" && facebookProvider) ? facebookProvider : (window.facebookProvider || null);
-var twitterProvider = (typeof twitterProvider !== "undefined" && twitterProvider) ? twitterProvider : (window.twitterProvider || window.xProvider || null);
-var usernamesRef = (typeof usernamesRef === "function") ? usernamesRef : (window.usernamesRef || function (u) { return db.ref("usernames/" + String(u||"").toLowerCase()); });
-var safeWrite = (typeof safeWrite === "function") ? safeWrite : (window.safeWrite || async function (path, data) { await db.ref(path).set(data); });
-var safeUpdate = (typeof safeUpdate === "function") ? safeUpdate : (window.safeUpdate || async function (path, data) { await db.ref(path).update(data); });
-var SERVER_TIME = (typeof SERVER_TIME !== "undefined" && SERVER_TIME) ? SERVER_TIME : (window.SERVER_TIME || firebase.database.ServerValue.TIMESTAMP);
+/*
+ * firebase.js already declares: auth, db, usernamesRef, safeWrite,
+ * safeUpdate, vieworaServerTime (let/const). NEVER redeclare those names.
+ * Only use unique local aliases below.
+ */
+var vieworaAuth = (typeof window.auth !== "undefined" && window.auth)
+    ? window.auth
+    : firebase.auth();
+var vieworaDb = (typeof window.db !== "undefined" && window.db)
+    ? window.db
+    : firebase.database();
 
-if (typeof googleProvider === "undefined") {
-    console.warn(
-        "⚠️ googleProvider not found. Google Signup will be disabled."
-    );
-}
+if (!vieworaAuth) throw new Error("Firebase Auth Missing");
+if (!vieworaDb) throw new Error("Realtime Database Missing");
+
+var vieworaUsernamesRef = (typeof window.usernamesRef === "function")
+    ? window.usernamesRef
+    : function (u) {
+        return vieworaDb.ref("usernames/" + String(u || "").toLowerCase());
+      };
+
+var vieworaSafeWrite = (typeof window.safeWrite === "function")
+    ? window.safeWrite
+    : async function (path, data) {
+        await vieworaDb.ref(path).set(data);
+      };
+
+var vieworaSafeUpdate = (typeof window.safeUpdate === "function")
+    ? window.safeUpdate
+    : async function (path, data) {
+        await vieworaDb.ref(path).update(data);
+      };
+
+var vieworaServerTime = (window.SERVER_TIME != null)
+    ? window.SERVER_TIME
+    : firebase.database.ServerValue.TIMESTAMP;
+
 
 
 /*==========================================================
@@ -226,54 +246,27 @@ function showToast(
   6. PASSWORD VISIBILITY
 ==========================================================*/
 
-function togglePasswordField(
-    input,
-    button
-) {
-
+function togglePasswordField(input, button) {
     if (!input || !button) return;
-
-    if (input.type === "password") {
-
-        input.type = "text";
-
-        button.innerHTML =
-            '<i class="fa-solid fa-eye-slash"></i>';
-
-    } else {
-
-        input.type = "password";
-
-        button.innerHTML =
-            '<i class="fa-solid fa-eye"></i>';
-    }
+    var show = input.type === "password";
+    input.type = show ? "text" : "password";
+    button.innerHTML = show
+        ? '<i class="fa-solid fa-eye-slash"></i>'
+        : '<i class="fa-solid fa-eye"></i>';
+    button.setAttribute("aria-label", show ? "Hide password" : "Show password");
 }
 
+function bindPasswordToggle(btn, input) {
+    if (!btn || !input) return;
+    btn.addEventListener("click", function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        togglePasswordField(input, btn);
+    });
+}
 
-togglePassword?.addEventListener(
-    "click",
-    () => {
-
-        togglePasswordField(
-            passwordInput,
-            togglePassword
-        );
-
-    }
-);
-
-
-toggleConfirmPassword?.addEventListener(
-    "click",
-    () => {
-
-        togglePasswordField(
-            confirmPasswordInput,
-            toggleConfirmPassword
-        );
-
-    }
-);
+bindPasswordToggle(togglePassword, passwordInput);
+bindPasswordToggle(toggleConfirmPassword, confirmPasswordInput);
 
 
 /*==========================================================
@@ -399,9 +392,8 @@ async function checkUsernameAvailability() {
     if (username.length < 3) {
 
         if (usernameStatus) {
-
-            usernameStatus.textContent =
-                "Minimum 3 characters required";
+            usernameStatus.textContent = "Minimum 3 characters required";
+            usernameStatus.style.color = "#f59e0b";
         }
 
         return;
@@ -410,61 +402,57 @@ async function checkUsernameAvailability() {
     if (!validUsername(username)) {
 
         if (usernameStatus) {
-
-            usernameStatus.textContent =
-                "Only letters, numbers and _ allowed";
+            usernameStatus.textContent = "Only letters, numbers and _ allowed";
+            usernameStatus.style.color = "#f59e0b";
         }
 
         return;
     }
 
     if (usernameStatus) {
-
-        usernameStatus.textContent =
-            "Checking username...";
+        usernameStatus.textContent = "Checking username...";
+        usernameStatus.style.color = "#9ca3af";
     }
 
     try {
-
-        const snapshot =
-            await usernamesRef(username)
-                .once("value");
+        // Always use direct DB path (do not depend on firebase.js helper)
+        // usernames/{name} MUST be publicly readable in Firebase rules
+        var ref = vieworaDb.ref("usernames/" + username);
+        var snapshot = await ref.once("value");
 
         if (snapshot.exists()) {
-
             usernameAvailable = false;
-
             if (usernameStatus) {
-
-                usernameStatus.textContent =
-                    "❌ Username already taken";
+                usernameStatus.textContent = "❌ Username already taken";
+                usernameStatus.style.color = "#ff4d67";
             }
-
         } else {
-
             usernameAvailable = true;
-
             if (usernameStatus) {
-
-                usernameStatus.textContent =
-                    "✅ Username available";
+                usernameStatus.textContent = "✅ Username available";
+                usernameStatus.style.color = "#00d26a";
             }
         }
+        if (typeof updateSignupButton === "function") updateSignupButton();
 
     } catch (error) {
-
-        console.error(
-            "Username check error:",
-            error
-        );
+        console.error("Username check error:", error && (error.code || error.message || error));
 
         usernameAvailable = false;
 
-        if (usernameStatus) {
-
-            usernameStatus.textContent =
-                "Unable to check username";
+        var msg = "Unable to check username";
+        var code = String((error && error.code) || "");
+        if (code.indexOf("PERMISSION_DENIED") !== -1 || code === "PERMISSION_DENIED") {
+            msg = "⚠️ Username check blocked (Firebase rules) — fix usernames/.read";
+        } else if (code.indexOf("network") !== -1 || !navigator.onLine) {
+            msg = "No internet — cannot check username";
         }
+
+        if (usernameStatus) {
+            usernameStatus.textContent = msg;
+            usernameStatus.style.color = "#ff4d67";
+        }
+        if (typeof updateSignupButton === "function") updateSignupButton();
     }
 }
 
@@ -673,13 +661,13 @@ async function saveNewUser(
         online: true,
 
         createdAt:
-            SERVER_TIME,
+            vieworaServerTime,
 
         lastLogin:
-            SERVER_TIME,
+            vieworaServerTime,
 
         lastSeen:
-            SERVER_TIME,
+            vieworaServerTime,
 
         onboardingComplete: false,
 
@@ -687,13 +675,13 @@ async function saveNewUser(
     };
 
 
-    await safeWrite(
+    await vieworaSafeWrite(
         "users/" + user.uid,
         userData
     );
 
 
-    await safeWrite(
+    await vieworaSafeWrite(
         "settings/" + user.uid,
         {
 
@@ -743,7 +731,7 @@ async function saveNewUser(
 
         collections.map(
             collection =>
-                safeWrite(
+                vieworaSafeWrite(
                     collection +
                     "/" +
                     user.uid,
@@ -793,8 +781,7 @@ async function createAccount(event) {
         ------------------------------------------*/
 
         const credential =
-            await auth
-                .createUserWithEmailAndPassword(
+            await vieworaAuth.createUserWithEmailAndPassword(
                     data.email,
                     data.password
                 );
@@ -824,7 +811,7 @@ async function createAccount(event) {
         ------------------------------------------*/
 
         const usernameSnapshot =
-            await usernamesRef(
+            await vieworaUsernamesRef(
                 data.username
             ).once("value");
 
@@ -837,7 +824,7 @@ async function createAccount(event) {
         }
 
 
-        await safeWrite(
+        await vieworaSafeWrite(
             "usernames/" + data.username,
             createdUser.uid
         );
@@ -980,314 +967,8 @@ signupForm?.addEventListener(
   13. GOOGLE SIGNUP / LOGIN
 ==========================================================*/
 
-googleSignupBtn?.addEventListener(
-    "click",
-    async () => {
 
-        if (loading)
-            return;
-
-
-        if (
-            typeof googleProvider ===
-            "undefined"
-        ) {
-
-            showToast(
-                "Google login is not configured",
-                "error"
-            );
-
-            return;
-        }
-
-
-        showLoading(
-            "Connecting to Google..."
-        );
-
-
-        try {
-
-            const result =
-                await auth.signInWithPopup(
-                    googleProvider
-                );
-
-
-            const user =
-                result.user;
-
-
-            const userRef =
-                db.ref(
-                    "users/" +
-                    user.uid
-                );
-
-
-            const snapshot =
-                await userRef.once(
-                    "value"
-                );
-
-
-            var isNewUser = !snapshot.exists();
-
-            if (isNewUser) {
-
-                let baseUsername =
-                    (
-                        user.displayName ||
-                        "user"
-                    )
-                        .toLowerCase()
-                        .replace(
-                            /[^a-z0-9]/g,
-                            ""
-                        )
-                        .substring(
-                            0,
-                            15
-                        );
-
-
-                if (
-                    baseUsername.length < 3
-                ) {
-
-                    baseUsername =
-                        "user";
-                }
-
-
-                let finalUsername =
-                    baseUsername;
-
-                let counter = 1;
-
-
-                while (
-                    (
-                        await usernamesRef(
-                            finalUsername
-                        ).once("value")
-                    ).exists()
-                ) {
-
-                    finalUsername =
-                        baseUsername +
-                        counter;
-
-                    counter++;
-                }
-
-
-                await safeWrite(
-
-                    "usernames/" +
-                    finalUsername,
-
-                    user.uid
-
-                );
-
-
-                await safeWrite(
-
-                    "users/" +
-                    user.uid,
-
-                    {
-
-                        uid: user.uid,
-
-                        name:
-                            user.displayName ||
-                            "Viewora User",
-
-                        fullName:
-                            user.displayName ||
-                            "Viewora User",
-
-                        username:
-                            finalUsername,
-
-                        email:
-                            user.email || "",
-
-                        profilePhoto:
-                            user.photoURL ||
-                            "assets/default-avatar.png",
-
-                        coverPhoto:
-                            "assets/default-banner.jpg",
-
-                        bio:
-                            "Welcome to Viewora 🚀",
-
-                        verified: false,
-
-                        emailVerified:
-                            true,
-
-                        accountType:
-                            "creator",
-
-                        followers: 0,
-
-                        following: 0,
-
-                        posts: 0,
-
-                        videos: 0,
-
-                        shorts: 0,
-
-                        likes: 0,
-
-                        views: 0,
-
-                        subscribers: 0,
-
-                        online: true,
-
-                        createdAt:
-                            SERVER_TIME,
-
-                        lastLogin:
-                            SERVER_TIME,
-
-                        lastSeen:
-                            SERVER_TIME,
-
-                        onboardingComplete: false,
-
-                        ageVerified: false
-                    }
-                );
-
-
-                await safeWrite(
-
-                    "settings/" +
-                    user.uid,
-
-                    {
-
-                        theme: "dark",
-
-                        language: "en",
-
-                        autoplay: true,
-
-                        notifications: true,
-
-                        privateAccount: false,
-
-                        showEmail: false,
-
-                        showOnlineStatus: true,
-
-                        showFollowers: true,
-
-                        allowMessages: true,
-
-                        downloadQuality: "HD"
-                    }
-                );
-
-
-            } else {
-
-                await safeUpdate(
-
-                    "users/" +
-                    user.uid,
-
-                    {
-
-                        online: true,
-
-                        emailVerified:
-                            true,
-
-                        lastLogin:
-                            SERVER_TIME,
-
-                        lastSeen:
-                            SERVER_TIME
-                    }
-                );
-            }
-
-
-            hideLoading();
-
-            showToast(
-                isNewUser
-                    ? "Google signup successful"
-                    : "Welcome back"
-            );
-
-            try {
-                if (isNewUser) localStorage.removeItem("viewora_onboarding_done");
-            } catch (_) {}
-
-            setTimeout(function () {
-                location.replace(
-                    isNewUser ? "onboarding.html" : "index.html"
-                );
-            }, 700);
-
-
-        } catch (error) {
-
-            hideLoading();
-
-            console.error(
-                "Google signup:",
-                error
-            );
-
-
-            if (
-                error.code ===
-                "auth/popup-closed-by-user"
-            ) {
-
-                showToast(
-                    "Google sign-in cancelled",
-                    "error"
-                );
-
-                return;
-            }
-
-
-            if (
-                error.code ===
-                "auth/account-exists-with-different-credential"
-            ) {
-
-                showToast(
-                    "An account already exists with this email",
-                    "error"
-                );
-
-                return;
-            }
-
-
-            showToast(
-                error.message ||
-                "Google signup failed",
-                "error"
-            );
-        }
-    }
-);
-
+/* Social signup removed by request */
 
 /*==========================================================
   14. EMAIL VERIFICATION MODAL
@@ -1309,7 +990,7 @@ openMailBtn?.addEventListener(
 continueBtn?.addEventListener(
     "click",
     async function () {
-        var user = auth.currentUser;
+        var user = vieworaAuth.currentUser;
         if (!user) {
             showToast("Please sign in again", "error");
             return;
@@ -1320,10 +1001,10 @@ continueBtn?.addEventListener(
             await user.reload();
             if (user.emailVerified) {
                 try {
-                    await safeUpdate("users/" + user.uid, {
+                    await vieworaSafeUpdate("users/" + user.uid, {
                         emailVerified: true,
                         online: true,
-                        lastLogin: SERVER_TIME
+                        lastLogin: vieworaServerTime
                     });
                 } catch (_) {}
                 showToast("Email verified — continuing setup");
@@ -1357,7 +1038,7 @@ verifyModal?.querySelector(".modalOverlay")?.addEventListener("click", function 
 async function checkEmailVerification() {
 
     const user =
-        auth.currentUser;
+        vieworaAuth.currentUser;
 
 
     if (!user)
@@ -1373,7 +1054,7 @@ async function checkEmailVerification() {
             user.emailVerified
         ) {
 
-            await safeUpdate(
+            await vieworaSafeUpdate(
 
                 "users/" +
                 user.uid,
@@ -1546,7 +1227,9 @@ function updateSignupButton() {
 
         nameInput?.value.trim() !== "" &&
 
-        usernameInput?.value.trim() !== "" &&
+        usernameInput?.value.trim().length >= 3 &&
+
+        usernameAvailable === true &&
 
         emailInput?.value.trim() !== "" &&
 
@@ -1672,7 +1355,7 @@ window.addEventListener(
   21. AUTH STATE
 ==========================================================*/
 
-auth.onAuthStateChanged(
+vieworaAuth.onAuthStateChanged(
     async user => {
 
         if (!user) {
@@ -1690,7 +1373,7 @@ auth.onAuthStateChanged(
                 user.emailVerified
             ) {
 
-                await safeUpdate(
+                await vieworaSafeUpdate(
 
                     "users/" +
                     user.uid,
@@ -1703,7 +1386,7 @@ auth.onAuthStateChanged(
                             true,
 
                         lastLogin:
-                            SERVER_TIME
+                            vieworaServerTime
                     }
                 );
             }
@@ -1823,97 +1506,6 @@ window.resetSignupForm =
 
 
 
-
-/*==========================================================
-  SOCIAL: Facebook + X (same flow as Google)
-==========================================================*/
-async function socialSignupProvider(provider, name) {
-    if (loading) return;
-    if (!provider) {
-        showToast(name + " login is not configured", "error");
-        return;
-    }
-    showLoading("Connecting to " + name + "...");
-    try {
-        const result = await auth.signInWithPopup(provider);
-        const user = result.user;
-        const userRef = db.ref("users/" + user.uid);
-        const snapshot = await userRef.once("value");
-        var isNewSocial = !snapshot.exists();
-        if (isNewSocial) {
-            let baseUsername = (user.displayName || "user")
-                .toLowerCase().replace(/[^a-z0-9]/g, "").substring(0, 15) || "user";
-            let finalUsername = baseUsername;
-            let counter = 1;
-            while ((await usernamesRef(finalUsername).once("value")).exists()) {
-                finalUsername = baseUsername + counter;
-                counter++;
-            }
-            await safeWrite("usernames/" + finalUsername, user.uid);
-            await safeWrite("users/" + user.uid, {
-                uid: user.uid,
-                name: user.displayName || "Viewora User",
-                fullName: user.displayName || "Viewora User",
-                username: finalUsername,
-                email: user.email || "",
-                profilePhoto: user.photoURL || "assets/default-avatar.png",
-                coverPhoto: "assets/default-banner.jpg",
-                bio: "Welcome to Viewora 🚀",
-                verified: false,
-                emailVerified: true,
-                accountType: "creator",
-                provider: name.toLowerCase(),
-                followers: 0, following: 0, posts: 0, videos: 0, shorts: 0,
-                likes: 0, views: 0, subscribers: 0,
-                online: true,
-                createdAt: SERVER_TIME,
-                lastLogin: SERVER_TIME,
-                lastSeen: SERVER_TIME,
-                onboardingComplete: false,
-                ageVerified: false
-            });
-            await safeWrite("settings/" + user.uid, {
-                theme: "dark", language: "en", autoplay: true,
-                notifications: true, privateAccount: false,
-                showEmail: false, showOnlineStatus: true,
-                showFollowers: true, allowMessages: true, downloadQuality: "HD"
-            });
-        } else {
-            await safeUpdate("users/" + user.uid, {
-                online: true, emailVerified: true,
-                lastLogin: SERVER_TIME, lastSeen: SERVER_TIME
-            });
-        }
-        hideLoading();
-        showToast(isNewSocial ? (name + " signup successful") : "Welcome back");
-        try {
-            if (isNewSocial) localStorage.removeItem("viewora_onboarding_done");
-        } catch (_) {}
-        setTimeout(function () {
-            location.replace(isNewSocial ? "onboarding.html" : "index.html");
-        }, 700);
-    } catch (error) {
-        hideLoading();
-        if (error.code === "auth/popup-closed-by-user") {
-            showToast(name + " sign-in cancelled", "error");
-            return;
-        }
-        if (error.code === "auth/account-exists-with-different-credential") {
-            showToast("An account already exists with this email", "error");
-            return;
-        }
-        showToast(error.message || (name + " signup failed"), "error");
-    }
-}
-
-document.getElementById("facebookSignup")?.addEventListener("click", function () {
-    var p = typeof facebookProvider !== "undefined" ? facebookProvider : null;
-    socialSignupProvider(p, "Facebook");
-});
-document.getElementById("xSignup")?.addEventListener("click", function () {
-    var p = typeof twitterProvider !== "undefined" ? twitterProvider : (typeof xProvider !== "undefined" ? xProvider : null);
-    socialSignupProvider(p, "X");
-});
 
 
 console.log("✅ Viewora signup.js loaded successfully");
