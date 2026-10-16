@@ -9,6 +9,18 @@
         content="width=device-width, initial-scale=1.0"
     >
 
+<!-- Viewora PWA / TWA -->
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#08080d">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Viewora">
+<link rel="apple-touch-icon" href="assets/icons/icon-192.png">
+<script src="pwa-register.js" defer></script>
+
+
+
     <meta name="theme-color" content="#070914">
 
     <meta
@@ -147,7 +159,79 @@
         </div>
 
 
-        <!-- SOCIAL LOGIN REMOVED -->
+        <!-- =================================
+             SOCIAL LOGIN
+        ================================== -->
+
+        <div class="socialLogin">
+
+            <button
+                id="googleLogin"
+                class="socialBtn googleBtn"
+                type="button"
+            >
+
+                <span class="socialIcon">
+                    <i class="fa-brands fa-google"></i>
+                </span>
+
+                <span>
+                    Continue with Google
+                </span>
+
+            </button>
+
+
+            <button
+                id="facebookLogin"
+                class="socialBtn facebookBtn"
+                type="button"
+            >
+
+                <span class="socialIcon">
+                    <i class="fa-brands fa-facebook-f"></i>
+                </span>
+
+                <span>
+                    Continue with Facebook
+                </span>
+
+            </button>
+
+
+            <button
+                id="xLogin"
+                class="socialBtn xBtn"
+                type="button"
+            >
+
+                <span class="socialIcon">
+                    <i class="fa-brands fa-x-twitter"></i>
+                </span>
+
+                <span>
+                    Continue with X
+                </span>
+
+            </button>
+
+        </div>
+
+
+        <!-- =================================
+             DIVIDER
+        ================================== -->
+
+        <div class="divider">
+
+            <span></span>
+
+            <p>or continue with email</p>
+
+            <span></span>
+
+        </div>
+
 
         <!-- =================================
              LOGIN FORM
