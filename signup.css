@@ -2103,3 +2103,48 @@ button {
     }
 
 }
+/* Creating account loader */
+.loadingOverlay {
+  position: fixed; inset: 0; z-index: 99999;
+  background: rgba(5,5,12,0.82);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  display: flex; align-items: center; justify-content: center;
+}
+.loadingOverlay.hidden { display: none !important; }
+.loadingCard {
+  text-align: center;
+  padding: 28px 32px;
+  border-radius: 20px;
+  background: #12121a;
+  border: 1px solid rgba(255,255,255,0.08);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  min-width: 240px;
+}
+.loadingLogoWrap {
+  position: relative;
+  width: 72px; height: 72px;
+  margin: 0 auto 16px;
+}
+.loadingLogo {
+  width: 56px; height: 56px;
+  object-fit: contain;
+  position: absolute; left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
+  border-radius: 14px;
+}
+.loaderRing {
+  position: absolute; inset: 0;
+  border: 3px solid rgba(139,92,246,0.2);
+  border-top-color: #8b5cf6;
+  border-right-color: #3b82f6;
+  border-radius: 50%;
+  animation: vieworaSpin 0.85s linear infinite;
+}
+@keyframes vieworaSpin { to { transform: rotate(360deg); } }
+.loadingTitle {
+  font-size: 16px; font-weight: 700; color: #f4f4f8; margin: 0 0 6px;
+}
+.loadingSub {
+  font-size: 13px; color: rgba(255,255,255,0.5); margin: 0;
+}

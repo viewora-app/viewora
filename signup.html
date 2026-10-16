@@ -468,31 +468,15 @@
      LOADING OVERLAY
 ========================================================= -->
 
-<div
-    id="loadingOverlay"
-    class="loadingOverlay hidden"
->
-
-    <div class="loadingCard">
-
-        <div class="loaderRing"></div>
-
-        <img
-            src="assets/logo.png"
-            alt="Viewora"
-            class="loadingLogo"
-        >
-
-        <h3>
-            Creating your account
-        </h3>
-
-        <p>
-            Please wait...
-        </p>
-
+<div id="loadingOverlay" class="loadingOverlay hidden" aria-live="polite">
+  <div class="loadingCard">
+    <div class="loadingLogoWrap">
+      <img src="assets/logo.png" alt="Viewora" class="loadingLogo" onerror="this.style.display='none'">
+      <div class="loaderRing"></div>
     </div>
-
+    <h3 class="loadingTitle">Creating your Viewora account</h3>
+    <p class="loadingSub">Setting up your profile…</p>
+  </div>
 </div>
 
 

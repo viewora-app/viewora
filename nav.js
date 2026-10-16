@@ -299,8 +299,8 @@
             list = list.filter(function (a) { return a && a.uid !== acc.uid; });
             list.unshift({
                 uid: acc.uid,
-                username: acc.username || "user",
-                displayName: acc.displayName || acc.username || "User",
+                username: acc.username || "",
+                displayName: acc.displayName || acc.username || "Viewora user",
                 avatar: acc.avatar || "assets/default-avatar.png",
                 email: acc.email || ""
             });
@@ -319,8 +319,8 @@
             if (!db) {
                 saveAccountToList({
                     uid: u.uid,
-                    username: u.displayName || (u.email || "").split("@")[0] || "user",
-                    displayName: u.displayName || "User",
+                    username: (u.email || "").split("@")[0] || "",
+                    displayName: u.displayName || "Viewora user",
                     avatar: u.photoURL || "assets/default-avatar.png",
                     email: u.email || ""
                 });
@@ -399,35 +399,111 @@
         }
     }
 
-    function renderAccountList() {
-        const listEl = document.getElementById("vasAccountList");
-        if (!listEl) return;
-        const list = getSavedAccounts();
-        const currentUid = getCurrentUidSafe();
 
-        if (!list.length) {
-            listEl.innerHTML =
-                '<div class="vasEmpty">Only this device session is active.<br>Use Add account to login another.</div>';
-            return;
+    function accountLabel(a) {
+        if (!a) return "Viewora user";
+        if (a.deleted || a.disabled || a.banned || a.status === "deleted") {
+            return "Viewora user";
         }
+        var name = String(a.displayName || "").trim();
+        var uname = String(a.username || "").trim().replace(/^@/, "");
+        if (name && !/^user$/i.test(name)) return name;
+        if (uname && !/^user$/i.test(uname)) return uname;
+        if (name) return name;
+        if (uname) return uname;
+        return "Viewora user";
+    }
 
+    function accountSub(a, active, saved) {
+        if (a && (a.deleted || a.status === "deleted")) {
+            return '<small class="vasSubDanger">' + escapeNav(a.reason || "Account deleted") + '</small>';
+        }
+        if (a && (a.disabled || a.banned)) {
+            return '<small class="vasSubDanger">' + escapeNav(a.reason || "Account unavailable") + '</small>';
+        }
+        if (active) return '<small style="opacity:.55">Signed in</small>';
+        if (saved) return '<small style="opacity:.55">Tap to switch</small>';
+        return '<small style="opacity:.55">Enter password once</small>';
+    }
+
+    async function enrichAccountsFromFirebase(list) {
+        if (!list || !list.length) return list;
+        var db = null;
+        try {
+            db = window.db || (typeof firebase !== "undefined" && firebase.database && firebase.database());
+        } catch (_) {}
+        if (!db) return list;
+        var out = [];
+        for (var i = 0; i < list.length; i++) {
+            var a = Object.assign({}, list[i]);
+            try {
+                var snap = await db.ref("users/" + a.uid).once("value");
+                if (!snap.exists()) {
+                    a.deleted = true;
+                    a.status = "deleted";
+                    a.reason = "Account deleted";
+                    a.displayName = "Viewora user";
+                    a.username = "viewora_user";
+                    a.avatar = "assets/default-avatar.png";
+                    a.deletedAt = a.deletedAt || Date.now();
+                } else {
+                    var d = snap.val() || {};
+                    if (d.deleted === true || d.status === "deleted" || d.purged === true) {
+                        a.deleted = true;
+                        a.status = "deleted";
+                        a.reason = d.deleteReason || d.reason || "Account deleted";
+                        a.deletedAt = d.deletedAt || d.deleted_at || Date.now();
+                        a.displayName = "Viewora user";
+                        a.username = "viewora_user";
+                        a.avatar = "assets/default-avatar.png";
+                    } else if (d.banned || d.disabled || d.suspended || d.deactivated) {
+                        a.disabled = true;
+                        a.banned = !!d.banned;
+                        a.reason = d.banReason || d.reason || "Account unavailable";
+                        a.displayName = "Viewora user";
+                        a.username = "viewora_user";
+                    } else {
+                        a.displayName = d.displayName || d.name || d.fullName || a.displayName || "";
+                        a.username = d.username || d.userName || a.username || "";
+                        a.avatar = d.profilePhoto || d.photoURL || d.avatar || a.avatar || "assets/default-avatar.png";
+                        a.email = a.email || d.email || "";
+                        a.deleted = false;
+                        a.disabled = false;
+                    }
+                }
+                if (a.deleted && a.deletedAt && (Date.now() - Number(a.deletedAt) > 30 * 24 * 60 * 60 * 1000)) {
+                    continue;
+                }
+            } catch (_) {}
+            out.push(a);
+        }
+        return out;
+    }
+
+    function paintAccountList(listEl, list, currentUid) {
         listEl.innerHTML = list.map(function (a) {
-            const active = currentUid && a.uid === currentUid;
+            const active = !!(currentUid && a.uid === currentUid);
             const saved = window.VieworaAccounts && window.VieworaAccounts.hasSavedLogin
                 ? window.VieworaAccounts.hasSavedLogin(a)
                 : false;
+            const dead = !!(a.deleted || a.disabled || a.banned || a.status === "deleted");
+            const label = accountLabel(a);
+            const avatar = dead ? "assets/default-avatar.png" : (a.avatar || "assets/default-avatar.png");
+            const check = active
+                ? '<span class="vasCheck" aria-label="Active"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="11" fill="#3b82f6"/><path d="M7.5 12.5l3 3 6-6.5" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>'
+                : "";
             return (
-                '<button type="button" class="vasItem' + (active ? " active" : "") + '" data-uid="' +
-                String(a.uid).replace(/"/g, "") + '" data-active="' + (active ? "1" : "0") + '" data-saved="' + (saved ? "1" : "0") + '">' +
-                '<img class="vasAvatar" src="' + String(a.avatar || "assets/default-avatar.png").replace(/"/g, "") +
-                '" alt="">' +
-                '<span class="vasMeta"><strong>' + escapeNav(a.username || a.displayName || "user") +
-                '</strong>' + (saved && !active ? '<small style="opacity:.55">Tap to switch</small>' : (!saved && !active ? '<small style="opacity:.55">Enter password once</small>' : "")) + '</span>' +
-                (active ? '<span class="vasCheck"><i class="fa-solid fa-circle-check"></i></span>' : "") +
-                "</button>"
+                '<button type="button" class="vasItem' + (active ? " active" : "") + (dead ? " vasDead" : "") +
+                '" data-uid="' + String(a.uid).replace(/"/g, "") +
+                '" data-active="' + (active ? "1" : "0") +
+                '" data-saved="' + (saved ? "1" : "0") +
+                '" data-dead="' + (dead ? "1" : "0") + '">' +
+                '<img class="vasAvatar" src="' + String(avatar).replace(/"/g, "") + '" alt="" onerror="this.src=\'assets/default-avatar.png\'">' +
+                '<span class="vasMeta"><strong>' + escapeNav(label) + '</strong>' +
+                accountSub(a, active, saved) + '</span>' + check + "</button>"
             );
         }).join("");
-        // Inline password row for accounts without saved login
+
         if (!document.getElementById("vasPassRow")) {
             const row = document.createElement("div");
             row.id = "vasPassRow";
@@ -436,97 +512,109 @@
                 '<button type="button" id="vasPassGo">Switch</button>';
             listEl.parentNode.insertBefore(row, listEl.nextSibling);
         }
+        bindVasItemClicks(listEl, currentUid);
+    }
 
+    function bindVasItemClicks(listEl, currentUid) {
+        const passRow = document.getElementById("vasPassRow");
+        const passInput = document.getElementById("vasPassInput");
         listEl.querySelectorAll(".vasItem").forEach(function (btn) {
             btn.addEventListener("click", async function () {
                 const uid = btn.getAttribute("data-uid");
                 if (!uid) return;
+                if (btn.getAttribute("data-dead") === "1") return;
                 const isActive = btn.getAttribute("data-active") === "1" || (currentUid && uid === currentUid);
-                if (isActive) {
-                    closeAccountSwitcher();
-                    location.href = "profile.html";
-                    return;
-                }
-                const acc = getSavedAccounts().find(function (x) { return x.uid === uid; });
-                if (!acc) return;
+                if (isActive) { closeAccountSwitcher(); return; }
+                const acc = getSavedAccounts().find(function (x) { return x && x.uid === uid; }) || { uid: uid };
+                const saved = window.VieworaAccounts && window.VieworaAccounts.hasSavedLogin
+                    ? window.VieworaAccounts.hasSavedLogin(acc)
+                    : false;
 
-                const saved = btn.getAttribute("data-saved") === "1";
-                const passRow = document.getElementById("vasPassRow");
-                const passInput = document.getElementById("vasPassInput");
-
-                async function doSwitch(passwordOptional) {
+                async function doSwitch() {
                     btn.disabled = true;
                     try {
-                        if (passwordOptional && acc.email && window.VieworaAccounts) {
-                            window.VieworaAccounts.saveCredentials(acc.email, passwordOptional, acc.uid);
-                        }
                         if (window.VieworaAccounts && window.VieworaAccounts.switchToAccount) {
                             await window.VieworaAccounts.switchToAccount(acc);
                             closeAccountSwitcher();
-                            location.href = "profile.html?switched=1";
+                            location.reload();
                             return;
                         }
+                        throw Object.assign(new Error("NO_CREDS"), { code: "NO_CREDS" });
                     } catch (err) {
                         if (err && err.code === "ACCOUNT_RESTRICTED") {
                             closeAccountSwitcher();
                             location.href = "appeal.html";
                             return;
                         }
-                        if (err && err.code === "NO_CREDS") {
-                            if (passRow) {
-                                passRow.classList.remove("hidden");
-                                passRow.dataset.uid = uid;
-                                if (passInput) {
-                                    passInput.value = "";
-                                    passInput.focus();
-                                }
-                            }
-                            return;
-                        }
-                        // wrong password
                         if (passRow) {
                             passRow.classList.remove("hidden");
                             passRow.dataset.uid = uid;
                             if (passInput) {
                                 passInput.value = "";
-                                passInput.placeholder = "Wrong password — try again";
+                                passInput.placeholder = "Password for " + accountLabel(acc);
                                 passInput.focus();
                             }
+                            const go = document.getElementById("vasPassGo");
+                            if (go && !go.__bound) {
+                                go.__bound = true;
+                                go.addEventListener("click", async function () {
+                                    const u = passRow.dataset.uid;
+                                    const a = getSavedAccounts().find(function (x) { return x && x.uid === u; }) || { uid: u };
+                                    const pw = (passInput && passInput.value) || "";
+                                    if (!pw) { passInput && passInput.focus(); return; }
+                                    try {
+                                        go.disabled = true;
+                                        const email = a.email;
+                                        if (!email) {
+                                            location.href = "login.html?addAccount=1";
+                                            return;
+                                        }
+                                        await firebase.auth().signInWithEmailAndPassword(email, pw);
+                                        closeAccountSwitcher();
+                                        location.reload();
+                                    } catch (e) {
+                                        if (passInput) passInput.placeholder = "Wrong password — try again";
+                                    } finally {
+                                        go.disabled = false;
+                                    }
+                                });
+                            }
                         }
-                        console.warn("switch", err);
                     } finally {
                         btn.disabled = false;
                     }
                 }
 
-                if (saved) {
-                    await doSwitch();
-                } else {
-                    // show password field in sheet (no full login page)
-                    if (passRow) {
-                        passRow.classList.remove("hidden");
-                        passRow.dataset.uid = uid;
-                        if (passInput) {
-                            passInput.value = "";
-                            passInput.placeholder = "Password for @" + (acc.username || "user");
-                            passInput.focus();
-                        }
-                        const go = document.getElementById("vasPassGo");
-                        if (go && !go.__bound) {
-                            go.__bound = true;
-                            go.addEventListener("click", async function () {
-                                const u = passRow.dataset.uid;
-                                const a = getSavedAccounts().find(function (x) { return x.uid === u; });
-                                const pw = (passInput && passInput.value) || "";
-                                if (!a || !pw) return;
-                                await doSwitch(pw);
-                            });
-                        }
-                    }
-                }
+                if (saved) await doSwitch();
+                else await doSwitch();
             });
         });
     }
+
+    function renderAccountList() {
+        const listEl = document.getElementById("vasAccountList");
+        if (!listEl) return;
+        let list = getSavedAccounts();
+        const currentUid = getCurrentUidSafe();
+
+        if (!list.length) {
+            listEl.innerHTML =
+                '<div class="vasEmpty">Only this device session is active.<br>Use Add account to login another.</div>';
+        } else {
+            paintAccountList(listEl, list, currentUid);
+        }
+
+        enrichAccountsFromFirebase(list).then(function (enriched) {
+            if (!enriched) return;
+            try {
+                localStorage.setItem("viewora_saved_accounts", JSON.stringify(enriched.slice(0, 8)));
+            } catch (_) {}
+            if (enriched.length) paintAccountList(listEl, enriched, currentUid);
+            else listEl.innerHTML =
+                '<div class="vasEmpty">Only this device session is active.<br>Use Add account to login another.</div>';
+        }).catch(function () {});
+    }
+
 
     function escapeNav(s) {
         return String(s || "")

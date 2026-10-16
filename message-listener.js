@@ -456,3 +456,37 @@
     start();
   }
 })();
+
+
+/* VIEWORA_MSG_RECONNECT — re-prime listener after offline */
+(function () {
+  "use strict";
+  var t = null;
+  function kick() {
+    try {
+      if (typeof window.__vieworaMsgReprime === "function") {
+        window.__vieworaMsgReprime();
+        return;
+      }
+      // soft reload listener by dispatching auth user again
+      if (window.firebase && firebase.auth && firebase.auth().currentUser) {
+        var u = firebase.auth().currentUser;
+        firebase.auth().updateCurrentUser(u).catch(function () {});
+      }
+    } catch (_) {}
+  }
+  window.addEventListener("online", function () {
+    clearTimeout(t);
+    t = setTimeout(kick, 600);
+  });
+  try {
+    if (window.firebase && firebase.database) {
+      firebase.database().ref(".info/connected").on("value", function (s) {
+        if (s.val() === true) {
+          clearTimeout(t);
+          t = setTimeout(kick, 400);
+        }
+      });
+    }
+  } catch (_) {}
+})();

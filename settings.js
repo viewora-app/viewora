@@ -1625,12 +1625,23 @@ try {
         } else if (/billing|quota|captcha/i.test(msg + (e && e.code || ""))) {
           toast("SMS blocked — enable Phone in Firebase & billing");
         } else {
-          // Fallback device OTP so user is not stuck
-          await writeOtpSession("verify_" + slot, val, "device");
-          if (otpInput) { otpInput.hidden = false; otpInput.focus(); }
-          if (verifyBtn) verifyBtn.hidden = false;
-          showDeviceOtpIfNeeded();
-          toast("SMS/email failed — device OTP shown");
+          // Never substitute a local/device OTP for real verification.
+          console.error("Contact verification send failed:", e);
+          var code = (e && e.code) || "";
+          var message = (e && e.message) || "Could not send verification";
+          if (slot.indexOf("phone") === 0) {
+            if (/billing|quota/i.test(code + " " + message)) {
+              toast("SMS blocked by Firebase billing/quota settings");
+            } else if (/captcha|app-credential/i.test(code + " " + message)) {
+              toast("Phone verification CAPTCHA failed. Check HTTPS and authorized domains.");
+            } else if (/too-many-requests/i.test(code + " " + message)) {
+              toast("Too many attempts. Please wait and try later.");
+            } else {
+              toast("Real SMS was not sent: " + message.slice(0, 110));
+            }
+          } else {
+            toast("Firebase email verification failed: " + message.slice(0, 110));
+          }
         }
       } finally {
         sendBtn.disabled = false;
@@ -1645,13 +1656,14 @@ try {
           if (slot.indexOf("phone") === 0) {
             await confirmFirebasePhoneOtp(code);
           } else {
-            // Email: accept local OTP session OR treat non-empty after link send as manual confirm with device code
-            if (!verifyOtpInput(code)) {
-              // If user clicked email link, emailVerified may flip
-              try { await user.reload(); } catch (_) {}
-              if (!(user.emailVerified && user.email && user.email.toLowerCase() === val.toLowerCase())) {
-                throw new Error("Invalid OTP — or open the link in Gmail first");
-              }
+            // Firebase Auth sends an email verification link, not a 6-digit email OTP.
+            // Only trust Firebase's verified account state; never trust a local code.
+            try { await user.reload(); } catch (_) {}
+            var refreshedUser = firebase.auth().currentUser;
+            if (refreshedUser) user = refreshedUser;
+            if (!(user && user.emailVerified && user.email &&
+                  user.email.toLowerCase() === val.toLowerCase())) {
+              throw new Error("Open the Firebase verification link from your inbox, then return and try Verify again. Firebase email verification is a link, not a 6-digit OTP.");
             }
           }
           if (slot === "email1") { contactDraft.email1 = val; contactDraft.email1Verified = true; setBadge("email1Badge", "verified"); }

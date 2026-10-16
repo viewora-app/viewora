@@ -288,6 +288,29 @@
     { uid: "demo4", name: "Daily Clips", username: "dailyclips", photo: "", badge: "" }
   ];
 
+    function niceName(v) {
+    var name = (v.name || v.fullName || v.displayName || "").trim();
+    var uname = String(v.username || v.userName || "").replace(/^@/, "").trim();
+    if (name && !/^user$/i.test(name)) return name;
+    if (uname && !/^user$/i.test(uname)) return uname;
+    return name || uname || "Viewora user";
+  }
+
+  function mapUser(uid, v) {
+    v = v || {};
+    if (v.banned || v.disabled || v.deleted || v.status === "deleted") return null;
+    var uname = String(v.username || v.userName || "").replace(/^@/, "").trim();
+    return {
+      uid: uid,
+      name: niceName(v),
+      username: uname || "viewora_user",
+      photo: v.profilePhoto || v.photoURL || v.avatar || "",
+      badge: v.redTick || v.vip ? "VIP" : (v.blueTick || v.verified ? "Verified" : "")
+    };
+  }
+
+  var _suggestCache = [];
+
   async function loadSuggestions() {
     var list = $("obSuggestList");
     if (!list) return;
@@ -295,20 +318,13 @@
     var people = [];
     try {
       if (db) {
-        var snap = await db.ref("users").limitToFirst(30).once("value");
+        var snap = await db.ref("users").limitToFirst(40).once("value");
         if (snap.exists()) {
           snap.forEach(function (ch) {
-            var v = ch.val() || {};
             var uid = ch.key;
             if (user && uid === user.uid) return;
-            if (v.banned || v.disabled) return;
-            people.push({
-              uid: uid,
-              name: v.name || v.fullName || v.displayName || "User",
-              username: v.username || "user",
-              photo: v.profilePhoto || v.photoURL || v.avatar || "",
-              badge: v.redTick || v.vip ? "VIP" : v.blueTick || v.verified ? "Verified" : ""
-            });
+            var mapped = mapUser(uid, ch.val());
+            if (mapped) people.push(mapped);
           });
         }
       }
@@ -316,19 +332,63 @@
       console.warn(e);
     }
     if (!people.length) people = DEFAULT_SUGGEST.slice();
-    people = people.slice(0, 20);
+    people = people.slice(0, 24);
+    _suggestCache = people;
     renderPeople(people);
 
-    $("obFollowSearch")?.addEventListener("input", function () {
-      var q = (this.value || "").toLowerCase().trim();
-      var filtered = !q ? people : people.filter(function (p) {
-        return (p.name + " " + p.username).toLowerCase().indexOf(q) !== -1;
+    var searchEl = $("obFollowSearch");
+    if (searchEl && !searchEl.__bound) {
+      searchEl.__bound = true;
+      var searchTimer = null;
+      searchEl.addEventListener("input", function () {
+        var q = (this.value || "").toLowerCase().trim();
+        clearTimeout(searchTimer);
+        if (!q) {
+          renderPeople(_suggestCache);
+          return;
+        }
+        // local filter first (instant)
+        var local = _suggestCache.filter(function (p) {
+          return (p.name + " " + p.username).toLowerCase().indexOf(q) !== -1;
+        });
+        renderPeople(local);
+        // then Firebase username lookup
+        searchTimer = setTimeout(async function () {
+          if (!db || q.length < 2) return;
+          try {
+            var results = [];
+            var unameSnap = await db.ref("usernames").orderByKey().startAt(q).endAt(q + "\uf8ff").limitToFirst(15).once("value");
+            if (unameSnap.exists()) {
+              var uids = [];
+              unameSnap.forEach(function (ch) {
+                var uid = ch.val();
+                if (typeof uid === "string" && uid) uids.push({ uname: ch.key, uid: uid });
+              });
+              for (var i = 0; i < uids.length; i++) {
+                if (user && uids[i].uid === user.uid) continue;
+                var us = await db.ref("users/" + uids[i].uid).once("value");
+                var mapped = mapUser(uids[i].uid, us.val());
+                if (mapped) results.push(mapped);
+              }
+            }
+            // merge local + remote unique
+            var seen = {};
+            var merged = [];
+            local.concat(results).forEach(function (p) {
+              if (!p || seen[p.uid]) return;
+              seen[p.uid] = true;
+              merged.push(p);
+            });
+            renderPeople(merged.length ? merged : local);
+          } catch (e) {
+            console.warn("search", e);
+          }
+        }, 320);
       });
-      renderPeople(filtered);
-    });
+    }
   }
 
-  function renderPeople(people) {
+    function renderPeople(people) {
     var list = $("obSuggestList");
     if (!list) return;
     if (!people.length) {
@@ -345,7 +405,7 @@
         (p.badge ? ' <span style="color:#1d9bf0;font-size:11px">✓ ' + escapeHtml(p.badge) + "</span>" : "") +
         "</strong><span>@" + escapeHtml(p.username) + "</span></div>" +
         '<button type="button" class="obFollowBtn' + (followed ? " following" : "") + '" data-follow="' + p.uid + '">' +
-        (followed ? "Following" : "Follow") + "</button></div>"
+        (followed ? "✓ Following" : "Follow") + "</button></div>"
       );
     }).join("");
 
@@ -364,7 +424,7 @@
     if (!user || !db || !targetUid) {
       state.followed[targetUid] = !state.followed[targetUid];
       btn.classList.toggle("following", !!state.followed[targetUid]);
-      btn.textContent = state.followed[targetUid] ? "Following" : "Follow";
+      btn.textContent = state.followed[targetUid] ? "✓ Following" : "Follow";
       return;
     }
     if (targetUid === user.uid) return;
@@ -376,7 +436,7 @@
       await db.ref().update(updates);
       state.followed[targetUid] = on;
       btn.classList.toggle("following", on);
-      btn.textContent = on ? "Following" : "Follow";
+      btn.textContent = on ? "✓ Following" : "Follow";
     } catch (e) {
       toast("Follow failed");
     }

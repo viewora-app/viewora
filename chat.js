@@ -1326,56 +1326,59 @@
         const now =
             serverTimestamp();
 
-        const updates = {};
-
-        updates[
-            `vieworaChats/${state.chatId}/participants/${state.currentUser.uid}`
-        ] = true;
-
-        updates[
-            `vieworaChats/${state.chatId}/participants/${targetUid}`
-        ] = true;
-
-        updates[
-            `vieworaChats/${state.chatId}/updatedAt`
-        ] = now;
-
-        updates[
-            `vieworaChats/${state.chatId}/participantData/${state.currentUser.uid}/name`
-        ] =
-            state.currentUser.displayName ||
-            state.currentUser.email ||
-            "Viewora User";
-
-        updates[
-            `vieworaChats/${state.chatId}/participantData/${targetUid}/name`
-        ] =
-            state.otherUser.name;
-
-        // Seed inbox rows so chat appears in Messages list
         const myUID = state.currentUser.uid;
         const chatId = state.chatId;
 
-        const myInboxPath =
-            `userChats/${myUID}/${chatId}`;
-        const otherInboxPath =
-            `userChats/${targetUid}/${chatId}`;
+        // 1) Membership first — required by rules for read/write on vieworaChats
+        try {
+            await db.ref("chatMembers/" + chatId + "/" + myUID).set(true);
+        } catch (e) {
+            console.warn("chatMembers self write:", e);
+        }
+        // Peer cannot always be written by us under strict rules; try best-effort
+        try {
+            await db.ref("chatMembers/" + chatId + "/" + targetUid).set(true);
+        } catch (e) {
+            console.warn("chatMembers peer write (may need rules):", e);
+        }
 
-        // Only set defaults if missing fields — do not wipe unread/lastMessage
-        updates[myInboxPath + "/chatId"] = chatId;
-        updates[myInboxPath + "/userId"] = targetUid;
-        updates[myInboxPath + "/name"] = state.otherUser.name;
-        updates[myInboxPath + "/username"] =
-            String(state.otherUser.username || "").replace(/^@/, "");
-        updates[myInboxPath + "/photoURL"] =
-            state.otherUser.photo || DEFAULT_AVATAR;
-        updates[myInboxPath + "/profilePhoto"] =
-            state.otherUser.photo || DEFAULT_AVATAR;
+        // 2) Own inbox only (rules: userChats/$uid write if auth.uid === $uid)
+        try {
+            await db.ref("userChats/" + myUID + "/" + chatId).update({
+                chatId: chatId,
+                userId: targetUid,
+                peerUid: targetUid,
+                name: state.otherUser.name || "User",
+                username: String(state.otherUser.username || "").replace(/^@/, ""),
+                photoURL: state.otherUser.photo || DEFAULT_AVATAR,
+                profilePhoto: state.otherUser.photo || DEFAULT_AVATAR,
+                updatedAt: now
+            });
+        } catch (e) {
+            console.warn("own userChats seed:", e);
+            throw e;
+        }
 
-        updates[otherInboxPath + "/chatId"] = chatId;
-        updates[otherInboxPath + "/userId"] = myUID;
+        // 3) Chat meta — only if rules allow participant writes
+        try {
+            await db.ref("vieworaChats/" + chatId).update({
+                updatedAt: now,
+                ["participants/" + myUID]: true,
+                ["participants/" + targetUid]: true,
+                ["participantData/" + myUID + "/name"]:
+                    state.currentUser.displayName ||
+                    state.currentUser.email ||
+                    "Viewora User",
+                ["participantData/" + targetUid + "/name"]:
+                    state.otherUser.name || "User"
+            });
+        } catch (e) {
+            // Non-fatal if meta write blocked — messaging can still work via messages path
+            console.warn("vieworaChats meta (check rules):", e);
+        }
 
-        await db.ref().update(updates);
+        // 4) Do NOT write other user's userChats from client (permission_denied).
+        //    Inbox for peer is updated on send via transaction in send path / reliability layer.
     }
 
 
@@ -3229,20 +3232,47 @@
 
         } catch (error) {
 
-            // restore text on failure
-            if (messageInput && !messageInput.value) {
-                messageInput.value = pendingText;
-                autoResizeInput();
-            }
             console.error(
                 "Send message error:",
                 error
             );
 
-            showToast(
-                "Message could not be sent.",
-                "error"
-            );
+            // Reliability: queue offline / failed text for automatic retry
+            try {
+                if (window.VieworaChatReliability && pendingText) {
+                    window.VieworaChatReliability.queue({
+                        peerUid: targetUid,
+                        receiverId: targetUid,
+                        text: pendingText,
+                        type: "text",
+                        replyTo: state.replyTo ? { ...state.replyTo } : null
+                    });
+                    showToast(
+                        "Queued — will send when connection is stable.",
+                        "warning"
+                    );
+                    clearReply();
+                    setTyping(false);
+                } else {
+                    if (messageInput && !messageInput.value) {
+                        messageInput.value = pendingText;
+                        autoResizeInput();
+                    }
+                    showToast(
+                        "Message could not be sent.",
+                        "error"
+                    );
+                }
+            } catch (_) {
+                if (messageInput && !messageInput.value) {
+                    messageInput.value = pendingText;
+                    autoResizeInput();
+                }
+                showToast(
+                    "Message could not be sent.",
+                    "error"
+                );
+            }
         } finally {
             state.isSendingMessage = false;
             if (sendBtn) sendBtn.disabled = false;

@@ -1150,7 +1150,15 @@ function safeNumber(value) {
                 user.image ||
                 "";
 
-            vieworaBindAvatarImg(profilePic, photo || vieworaPickPhoto(user), user.displayName || user.username || user.name);
+            let photoFinal = photo || vieworaPickPhoto(user) || "";
+            if (isOwnProfile) {
+                try {
+                    const lsAv = localStorage.getItem("viewora_my_avatar") || "";
+                    if (lsAv && (!photoFinal || photoFinal.indexOf("default") !== -1)) photoFinal = lsAv;
+                    else if (lsAv) photoFinal = lsAv; // prefer latest local after edit
+                } catch (_) {}
+            }
+            vieworaBindAvatarImg(profilePic, photoFinal, user.displayName || user.username || user.name);
 
             profilePic.onerror = () => {
                 profilePic.onerror = null;
@@ -1319,6 +1327,10 @@ function safeNumber(value) {
         if (typeof socials === "string") {
             try { socials = JSON.parse(socials) || {}; } catch (_) { socials = {}; }
         }
+        // also merge flat fields
+        ["instagram","facebook","x","youtube","linkedin","pinterest"].forEach(function (k) {
+            if (!socials[k] && user[k]) socials[k] = user[k];
+        });
         const platforms = [
             { key: "instagram", cls: "ig", icon: "fa-brands fa-instagram", label: "Instagram" },
             { key: "facebook", cls: "fb", icon: "fa-brands fa-facebook", label: "Facebook" },
@@ -1340,11 +1352,17 @@ function safeNumber(value) {
                 case "youtube":
                     return h.indexOf("UC") === 0
                         ? "https://youtube.com/channel/" + encodeURIComponent(h)
-                        : "https://youtube.com/@" + encodeURIComponent(h);
+                        : "https://youtube.com/@" + encodeURIComponent(h.replace(/^@/, ""));
                 case "linkedin": return "https://linkedin.com/in/" + encodeURIComponent(h);
                 case "pinterest": return "https://pinterest.com/" + encodeURIComponent(h);
                 default: return raw;
             }
+        }
+        function isMillion(s) {
+            if (!s || typeof s !== "object") return false;
+            if (s.million === true || s.isMillion === true || s.mega === true) return true;
+            var n = Number(s.followers || s.subscribers || s.count || s.followerCount || s.subscriberCount || 0);
+            return n >= 1000000;
         }
         const parts = [];
         platforms.forEach((p) => {
@@ -1354,19 +1372,28 @@ function safeNumber(value) {
             else if (s && (s.url || s.handle)) url = s.url || buildUrl(p.key, s.handle);
             else if (user[p.key]) url = buildUrl(p.key, user[p.key]);
             if (!url) return;
+            var mega = isMillion(s);
+            // Viewora-side fame: if this profile has 1M+ Viewora followers, glow all socials
+            var vf = Number(user.followersCount || user.followers || 0);
+            if (vf >= 1000000) mega = true;
+            var extra = mega ? " socialMega" : " socialPulse";
+            var badge = mega ? '<span class="megaBadge">1M+</span>' : "";
             parts.push(
-                '<a class="' + p.cls + '" href="' + escapeHTML(url) +
-                '" target="_blank" rel="noopener noreferrer" title="' + p.label +
-                '" aria-label="' + p.label + '"><i class="' + p.icon + '"></i></a>'
+                '<a class="vieworaSocialLink ' + p.cls + extra + '" href="' + escapeHTML(url) +
+                '" target="_blank" rel="noopener noreferrer" title="' + p.label + (mega ? " · 1M+" : "") +
+                '" aria-label="' + p.label + '"><i class="' + p.icon + '"></i>' + badge + '</a>'
             );
         });
         if (parts.length) {
             socialsEl.innerHTML = parts.join("");
             socialsEl.hidden = false;
+            socialsEl.removeAttribute("hidden");
+            socialsEl.style.display = "flex";
         } else {
             socialsEl.innerHTML = "";
             socialsEl.hidden = true;
         }
+        try { window.__vieworaProfileSocials = socials; } catch (_) {}
     }
 
     function paintAbout(user) {

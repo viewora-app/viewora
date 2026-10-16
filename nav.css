@@ -213,3 +213,57 @@ body.has-bottom-nav {
   line-height: 1.45;
 }
 body.vasOpen { overflow: hidden; }
+
+
+/* Account switcher tick + deleted */
+.vasCheck {
+  color: #3b82f6;
+  font-size: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-left: 4px;
+}
+.vasCheck svg { display: block; }
+.vasItem.active {
+  background: rgba(59, 130, 246, 0.12) !important;
+}
+.vasItem.vasDead {
+  opacity: 0.55;
+  pointer-events: none;
+}
+.vasSubDanger {
+  color: #f87171 !important;
+  opacity: 1 !important;
+}
+.vasEmpty {
+  text-align: center;
+  padding: 24px 12px;
+  color: rgba(255,255,255,0.5);
+  font-size: 13px;
+  line-height: 1.45;
+}
+.vasPassRow {
+  display: flex;
+  gap: 8px;
+  padding: 8px 4px 12px;
+}
+.vasPassRow.hidden { display: none !important; }
+.vasPassRow input {
+  flex: 1;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(0,0,0,0.35);
+  color: #fff;
+  padding: 10px 12px;
+  font-size: 14px;
+}
+.vasPassRow button {
+  border: 0;
+  border-radius: 10px;
+  background: #3b82f6;
+  color: #fff;
+  font-weight: 700;
+  padding: 0 14px;
+}

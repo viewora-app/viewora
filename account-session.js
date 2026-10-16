@@ -70,8 +70,8 @@
       });
       list.unshift({
         uid: acc.uid,
-        username: acc.username || (prev && prev.username) || "user",
-        displayName: acc.displayName || (prev && prev.displayName) || "User",
+        username: acc.username || (prev && prev.username) || "",
+        displayName: acc.displayName || (prev && prev.displayName) || "Viewora user",
         avatar: acc.avatar || (prev && prev.avatar) || "assets/default-avatar.png",
         email: acc.email || (prev && prev.email) || ""
       });
@@ -88,7 +88,22 @@
         (typeof firebase !== "undefined" && firebase.database && firebase.database());
       if (!db || !uid) return { ok: true };
       var snap = await db.ref("users/" + uid).once("value");
+      if (!snap.exists()) {
+        return { ok: false, reason: "Account deleted", status: "deleted", label: "Viewora user" };
+      }
       var d = snap.val() || {};
+      if (d.deleted === true || d.status === "deleted" || d.purged === true) {
+        var deletedAt = Number(d.deletedAt || d.deleted_at || 0);
+        var daysLeft = deletedAt ? Math.max(0, 30 - Math.floor((Date.now() - deletedAt) / 86400000)) : 30;
+        return {
+          ok: false,
+          reason: d.deleteReason || d.reason || "Account deleted",
+          status: "deleted",
+          label: "Viewora user",
+          daysLeft: daysLeft,
+          permanent: daysLeft <= 0
+        };
+      }
       if (
         d.banned === true ||
         d.suspended === true ||
@@ -101,7 +116,8 @@
         return {
           ok: false,
           reason: d.banReason || d.suspendReason || d.reason || "Account restricted",
-          status: d.status || (d.banned ? "banned" : d.deactivated ? "deactivated" : "suspended")
+          status: d.status || (d.banned ? "banned" : d.deactivated ? "deactivated" : "suspended"),
+          label: "Viewora user"
         };
       }
       return { ok: true };

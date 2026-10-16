@@ -272,7 +272,25 @@ body{max-width:none!important}
 
     <div class="contactBlock">
       <label class="fieldLabel">Phone 1 <span class="badge" id="phone1Badge">—</span></label>
-      <input type="tel" id="phone1Input" placeholder="+91 98765 43210" autocomplete="tel">
+      <div class="phoneRow">
+        <select id="phone1Country" class="countrySelect" aria-label="Country code">
+          <option value="+91" selected>🇮🇳 +91</option>
+          <option value="+1">🇺🇸 +1</option>
+          <option value="+44">🇬🇧 +44</option>
+          <option value="+971">🇦🇪 +971</option>
+          <option value="+966">🇸🇦 +966</option>
+          <option value="+61">🇦🇺 +61</option>
+          <option value="+81">🇯🇵 +81</option>
+          <option value="+49">🇩🇪 +49</option>
+          <option value="+33">🇫🇷 +33</option>
+          <option value="+65">🇸🇬 +65</option>
+          <option value="+92">🇵🇰 +92</option>
+          <option value="+880">🇧🇩 +880</option>
+          <option value="+977">🇳🇵 +977</option>
+        </select>
+        <input type="tel" id="phone1Input" placeholder="98765 43210" autocomplete="tel" inputmode="tel">
+      </div>
+      <p class="hint" style="margin:4px 0 0">Country code first, then mobile — real SMS only (no demo OTP)</p>
       <div class="contactActions">
         <button type="button" class="btnTiny" id="phone1SendOtp">Send OTP</button>
         <input type="text" id="phone1Otp" class="otpMini" inputmode="numeric" maxlength="6" placeholder="OTP" hidden>
@@ -281,7 +299,24 @@ body{max-width:none!important}
     </div>
     <div class="contactBlock" id="phone2Block" hidden>
       <label class="fieldLabel">Phone 2 <span class="badge" id="phone2Badge">optional</span></label>
-      <input type="tel" id="phone2Input" placeholder="+91 98765 43211" autocomplete="tel">
+      <div class="phoneRow">
+        <select id="phone2Country" class="countrySelect" aria-label="Country code">
+          <option value="+91" selected>🇮🇳 +91</option>
+          <option value="+1">🇺🇸 +1</option>
+          <option value="+44">🇬🇧 +44</option>
+          <option value="+971">🇦🇪 +971</option>
+          <option value="+966">🇸🇦 +966</option>
+          <option value="+61">🇦🇺 +61</option>
+          <option value="+81">🇯🇵 +81</option>
+          <option value="+49">🇩🇪 +49</option>
+          <option value="+33">🇫🇷 +33</option>
+          <option value="+65">🇸🇬 +65</option>
+          <option value="+92">🇵🇰 +92</option>
+          <option value="+880">🇧🇩 +880</option>
+          <option value="+977">🇳🇵 +977</option>
+        </select>
+        <input type="tel" id="phone2Input" placeholder="98765 43211" autocomplete="tel" inputmode="tel">
+      </div>
       <div class="contactActions">
         <button type="button" class="btnTiny" id="phone2SendOtp">Send OTP</button>
         <input type="text" id="phone2Otp" class="otpMini" inputmode="numeric" maxlength="6" placeholder="OTP" hidden>

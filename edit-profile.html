@@ -136,15 +136,15 @@
   <script src="theme.js"></script>
   <script src="edit-profile.js"></script>
 
-<!-- Crop modal -->
+<!-- Crop modal — modern circular + rotate -->
 <div id="cropModal" class="cropModal hidden" aria-hidden="true">
-  <div class="cropSheet">
+  <div class="cropSheet" onclick="event.stopPropagation()">
     <div class="cropHead">
       <button type="button" id="cropCancel" class="cropTextBtn">Cancel</button>
       <strong id="cropTitle">Crop</strong>
       <button type="button" id="cropDone" class="cropTextBtn done">Done</button>
     </div>
-    <div class="cropStage" id="cropStage">
+    <div class="cropStage avatar" id="cropStage">
       <canvas id="cropCanvas"></canvas>
       <div class="cropMask" id="cropMask"></div>
       <div class="cropGuides" id="cropGuides" hidden>
@@ -153,10 +153,14 @@
         <div class="guide guide-all"><span>All devices</span></div>
       </div>
     </div>
-    <p class="cropHint" id="cropHint">Drag to position · pinch/scroll to zoom</p>
-    <input type="range" id="cropZoom" min="1" max="3" step="0.01" value="1">
+    <p class="cropHint" id="cropHint">Drag photo · pull corner handles to zoom · circle is your DP</p>
+    <div class="cropControls">
+      <label class="cropCtrlLab">Zoom</label>
+      <input type="range" id="cropZoom" min="1" max="4" step="0.01" value="1">
+    </div>
   </div>
 </div>
+
 
 </body>
 </html>
