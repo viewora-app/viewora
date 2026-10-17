@@ -1,6 +1,4 @@
-/* Viewora — Firebase Cloud Messaging service worker */
-/* Must be at site root: /viewora/firebase-messaging-sw.js */
-
+/* Viewora FCM background SW — must live next to index.html */
 importScripts('https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/10.14.1/firebase-messaging-compat.js');
 
@@ -18,39 +16,33 @@ const messaging = firebase.messaging();
 
 messaging.onBackgroundMessage(function (payload) {
   console.log('[Viewora FCM] background', payload);
-  const data = payload.data || {};
-  const title =
-    (payload.notification && payload.notification.title) ||
-    data.title ||
-    'Viewora';
-  const body =
-    (payload.notification && payload.notification.body) ||
-    data.body ||
-    '';
-  const link = data.link || data.click_action || './index.html';
-  const icon = data.icon || './icon-192.png';
+  var data = payload.data || {};
+  var n = payload.notification || {};
+  var title = n.title || data.title || 'Viewora';
+  var body = n.body || data.body || '';
+  var link = data.link || data.click_action || './index.html';
+  var icon = data.icon || './icon-192.png';
 
-  self.registration.showNotification(title, {
+  return self.registration.showNotification(title, {
     body: body,
     icon: icon,
     badge: './icon-192.png',
     data: { url: link },
-    tag: data.tag || 'viewora',
-    renotify: true
+    tag: data.tag || 'viewora-msg',
+    renotify: true,
+    requireInteraction: false
   });
 });
 
 self.addEventListener('notificationclick', function (event) {
   event.notification.close();
-  const url =
-    (event.notification.data && event.notification.data.url) ||
-    './index.html';
+  var url = (event.notification.data && event.notification.data.url) || './index.html';
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function (list) {
       for (var i = 0; i < list.length; i++) {
         var c = list[i];
         if (c.url && 'focus' in c) {
-          c.navigate && c.navigate(url);
+          if (c.navigate) try { c.navigate(url); } catch (_) {}
           return c.focus();
         }
       }

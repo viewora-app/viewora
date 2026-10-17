@@ -54,7 +54,7 @@
         .feedSwitcher {
             display: flex;
             gap: 8px;
-            padding: 12px 16px 8px;
+            padding: 4px 16px 6px;
             position: sticky;
             top: 0;
             z-index: 20;
@@ -356,11 +356,11 @@
             </div>
         </section>
 
-        <!-- ========== FEED SWITCHER (Long Videos ↔ All Posts) ========== -->
+        <!-- ========== FEED SWITCHER (Videos ↔ All Posts) ========== -->
         <div class="feedSwitcher">
             <button class="feedTab active" data-view="videos" type="button">
                 <i class="fa-solid fa-play-circle"></i>
-                Long Videos
+                Videos
             </button>
             <button class="feedTab" data-view="posts" type="button">
                 <i class="fa-solid fa-images"></i>
@@ -378,7 +378,7 @@
                         <div class="sectionHeader">
                             <div>
                                 <span class="sectionEyebrow">WATCH</span>
-                                <h2>Long Videos</h2>
+                                <h2>Videos</h2>
                             </div>
                         </div>
 
@@ -617,7 +617,7 @@
 
 
     /* ==================================================
-       FEED SWITCHER + SWIPE (Long Videos ↔ All Posts)
+       FEED SWITCHER + SWIPE (Videos ↔ All Posts)
     ================================================== */
     const swipeFeed   = document.getElementById("swipeFeed");
     const feedTabs    = document.querySelectorAll(".feedTab");
@@ -651,7 +651,7 @@
         });
     });
 
-    // Initial: Long Videos only (posts hidden until tab click)
+    // Initial: Videos only (posts hidden until tab click)
     switchView("videos");
 
     // Touch swipe support
@@ -688,7 +688,7 @@
                     // Swipe left → All Posts
                     switchView("posts");
                 } else if (diffX > 0 && currentView === "posts") {
-                    // Swipe right → Long Videos
+                    // Swipe right → Videos
                     switchView("videos");
                 }
             }

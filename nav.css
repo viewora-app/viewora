@@ -267,3 +267,15 @@ body.vasOpen { overflow: hidden; }
   font-weight: 700;
   padding: 0 14px;
 }
+
+
+/* Never show Settings in bottom nav */
+.bottomNav .navSettings,
+.vieworaGlobalNav .navSettings,
+a.navItem[data-nav="settings"] {
+  display: none !important;
+}
+/* 5 items only — equal flex */
+.bottomNav .navItem:not(.uploadNav) {
+  flex: 1 1 0;
+}

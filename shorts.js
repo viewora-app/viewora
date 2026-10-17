@@ -1,5 +1,84 @@
 "use strict";
 
+/* Snap to full short card — avoids half-screen glitch on load/scroll */
+function vieworaSnapShorts() {
+  try {
+    var sc = document.getElementById("shortsContainer") || document.querySelector(".shortsContainer");
+    if (!sc) return;
+    var cards = sc.querySelectorAll(".shortCard");
+    if (!cards.length) return;
+    var h = sc.clientHeight || window.innerHeight;
+    var idx = Math.round(sc.scrollTop / h);
+    if (idx < 0) idx = 0;
+    if (idx >= cards.length) idx = cards.length - 1;
+    var target = cards[idx];
+    if (target) {
+      sc.scrollTo({ top: target.offsetTop, behavior: "auto" });
+    }
+  } catch (_) {}
+}
+function vieworaBindShortsSnap() {
+  var sc = document.getElementById("shortsContainer") || document.querySelector(".shortsContainer");
+  if (!sc || sc.__vieworaSnapBound) return;
+  sc.__vieworaSnapBound = true;
+  var t = null;
+  sc.addEventListener("scroll", function () {
+    clearTimeout(t);
+    t = setTimeout(vieworaSnapShorts, 80);
+  }, { passive: true });
+  window.addEventListener("resize", function () {
+    setTimeout(vieworaSnapShorts, 50);
+  });
+  // After first paint / load
+  setTimeout(vieworaSnapShorts, 100);
+  setTimeout(vieworaSnapShorts, 400);
+  setTimeout(vieworaSnapShorts, 1000);
+}
+
+
+async function vieworaInjectShortsStories() {
+  try {
+    if (document.querySelector(".shortsStoriesStrip")) return;
+    var db = firebase.database();
+    var snap = await db.ref("stories").limitToLast(24).once("value");
+    if (!snap.exists()) return;
+    var items = [];
+    snap.forEach(function (c) {
+      var v = c.val() || {};
+      if (v.isPrivate || v.private || v.visibility === "private") return;
+      var uid = v.uid || v.userId || v.ownerId || "";
+      var photo = v.profilePhoto || v.photoURL || v.avatar || v.thumb || "";
+      var name = v.name || v.username || v.displayName || "User";
+      if (!photo && !uid) return;
+      items.push({ id: c.key, uid: uid, photo: photo, name: name });
+    });
+    // randomize & take 8
+    items = items.sort(function () { return Math.random() - 0.5; }).slice(0, 8);
+    if (!items.length) return;
+    var strip = document.createElement("div");
+    strip.className = "shortsStoriesStrip";
+    strip.innerHTML = items.map(function (it) {
+      var href = it.uid ? ("profile.html?id=" + encodeURIComponent(it.uid)) : "#";
+      var img = it.photo || "assets/default-avatar.png";
+      return '<a class="shortsStoryCircle" href="' + href + '"><div class="ring"><img src="' + img + '" alt=""></div><span>' +
+        String(it.name).slice(0, 8) + '</span></a>';
+    }).join("");
+    var app = document.querySelector(".shortsApp") || document.body;
+    app.appendChild(strip);
+  } catch (e) {}
+}
+
+
+/* VIEWORA: skip private account shorts */
+function vieworaIsPrivateUser(u) {
+  if (!u || typeof u !== "object") return false;
+  if (u.isPrivate === true || u.private === true || u.privacy === "private") return true;
+  if (String(u.accountType || "").toLowerCase() === "private") return true;
+  if (u.visibility === "private" || u.profileVisibility === "private") return true;
+  return false;
+}
+
+
 /*
 ============================================================
  VIEWORA SHORTS ENGINE
@@ -239,7 +318,7 @@
     }
 
     function showEmpty() {
-        hideSkeleton();
+        hideSkeleton(); try { vieworaBindShortsSnap(); vieworaSnapShorts(); } catch(_){}
         emptyState?.classList.remove("hidden");
     }
 
@@ -865,8 +944,10 @@
                             onerror="this.onerror=null;this.src='https://ui-avatars.com/api/?name=U&background=7c3aed&color=fff&size=128'"
                         >
                         <span class="shortUsername">
-                            ${escapeHTML(displayName)}
-                            ${tickHTML}
+                            <span class="shortUserNameWrap">
+                                <span class="shortUserNameMarquee ${(displayName||"").length >= 14 ? "is-sliding" : "no-slide"}"><span>${escapeHTML(displayName)}</span></span>
+                                <span class="shortUserTick">${tickHTML || ""}</span>
+                            </span>
                         </span>
                     </div>
                     ${
@@ -881,7 +962,7 @@
                 ${
                     caption
                         ? `<p class="shortCaption" data-action="caption">${escapeHTML(caption)}</p>`
-                        : `<p class="shortCaption" data-action="caption">${escapeHTML(displayName)}</p>`
+                        : ""
                 }
 
                 <!-- YouTube-style meta: views • likes • time (toggle on caption click) -->
@@ -2519,6 +2600,15 @@
                     return { ...data, id: data.id || key };
                 })
                 .filter(Boolean)
+                .filter((s) => {
+                    if (!s) return false;
+                    if (s.isPrivate === true || s.private === true || s.visibility === "private") return false;
+                    if (s.user && vieworaIsPrivateUser(s.user)) return false;
+                    if (s.author && vieworaIsPrivateUser(s.author)) return false;
+                    // author privacy flag on short itself
+                    if (s.authorPrivate === true || s.ownerPrivate === true) return false;
+                    return true;
+                })
                 .filter((s) => !!getMediaURL(s))
                 .filter(
                     (s) =>
@@ -2527,6 +2617,26 @@
                         s.hidden !== true &&
                         s.visibility !== "private"
                 );
+
+            // Drop shorts from private accounts (users/{uid}.isPrivate)
+            try {
+                var uids = [];
+                shorts.forEach(function (s) {
+                    var uid = s.uid || s.userId || s.ownerId || s.creatorId || (s.user && s.user.uid) || "";
+                    if (uid && uids.indexOf(uid) === -1) uids.push(uid);
+                });
+                var privMap = {};
+                await Promise.all(uids.slice(0, 40).map(async function (uid) {
+                    try {
+                        var us = await db.ref("users/" + uid).once("value");
+                        if (us.exists() && vieworaIsPrivateUser(us.val())) privMap[uid] = true;
+                    } catch (_) {}
+                }));
+                shorts = shorts.filter(function (s) {
+                    var uid = s.uid || s.userId || s.ownerId || s.creatorId || (s.user && s.user.uid) || "";
+                    return !privMap[uid];
+                });
+            } catch (_) {}
 
             // Profile / deep-link: ONLY this creator's shorts
             if (soloMode && focusUid) {
@@ -3626,3 +3736,5 @@ window.VieworaRefreshFeed = function () {
   }
   window.__vieworaIsHiddenContent = isHiddenContent;
 })();
+
+try { document.addEventListener("DOMContentLoaded", function(){ setTimeout(vieworaBindShortsSnap, 300); }); } catch(_){}

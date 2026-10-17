@@ -122,13 +122,7 @@
                 <i class="fa-regular fa-user"></i>
                 <span data-i18n="Profile">Profile</span>
             </a>
-
-            <a href="settings.html" class="navItem navSettings ${active === "settings" ? "active" : ""}" data-nav="settings">
-                <div class="activeIndicator"></div>
-                <i class="fa-solid fa-gear"></i>
-                <span data-i18n="Settings">Settings</span>
-            </a>
-        `;
+`;
 
         document.body.appendChild(nav);
         document.body.classList.add("has-bottom-nav");

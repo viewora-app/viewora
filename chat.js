@@ -3046,22 +3046,28 @@
             console.warn("Own inbox update failed:", err && (err.code || err.message));
         }
 
-        // 2) Peer inbox — increment unread
+        // 2) Peer inbox — use transaction (read+write same path; rules allow if chatId contains me)
         let peerOk = false;
         try {
-            const otherRef = db.ref("userChats/" + otherUID + "/" + chatId);
-            const otherSnap = await otherRef.once("value");
-            let unread = 1;
-            if (otherSnap.exists()) {
-                const prev = otherSnap.val() || {};
-                unread = Number(prev.unread || prev.unreadCount || 0) + 1;
-            }
-            otherInbox.unread = unread;
-            otherInbox.unreadCount = unread;
-            otherInbox.unreadMessages = unread;
-            otherInbox.unread_count = unread;
-            await otherRef.update(otherInbox);
+            await db.ref("userChats/" + otherUID + "/" + chatId).transaction(function (cur) {
+                cur = cur || {};
+                var nextUnread = (Number(cur.unread || cur.unreadCount || 0) || 0) + 1;
+                // merge fields
+                Object.keys(otherInbox).forEach(function (k) {
+                    if (k === "unread" || k === "unreadCount" || k === "unreadMessages" || k === "unread_count") return;
+                    cur[k] = otherInbox[k];
+                });
+                cur.unread = nextUnread;
+                cur.unreadCount = nextUnread;
+                cur.unreadMessages = nextUnread;
+                cur.unread_count = nextUnread;
+                cur.read = false;
+                cur.seen = false;
+                cur.isRead = false;
+                return cur;
+            });
             peerOk = true;
+            console.log("[VIEWORA] Peer inbox updated OK");
         } catch (err) {
             console.warn("Peer inbox denied, using pendingInbox:", err && (err.code || err.message));
         }
