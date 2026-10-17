@@ -340,6 +340,7 @@ async function messagesInitialize() {
 
         messagesListenConnection();
         messagesListenChats();
+        try { messagesFlushPendingInbox(); } catch (_) {}
 
         messagesInitialized = true;
         try {
@@ -563,6 +564,53 @@ function messagesCleanupDuplicateKeys(rawList) {
     }
 }
 
+
+function messagesFlushPendingInbox() {
+    if (!messagesUID) return;
+    try {
+        var ref = db.ref("pendingInbox/" + messagesUID);
+        ref.once("value").then(function (snap) {
+            if (!snap.exists()) return;
+            var updates = {};
+            snap.forEach(function (child) {
+                var item = child.val() || {};
+                var chatId = item.chatId;
+                if (!chatId) {
+                    updates["pendingInbox/" + messagesUID + "/" + child.key] = null;
+                    return;
+                }
+                var path = "userChats/" + messagesUID + "/" + chatId;
+                updates[path + "/chatId"] = chatId;
+                updates[path + "/userId"] = item.userId || item.fromUid || item.peerId || null;
+                updates[path + "/peerId"] = item.peerId || item.fromUid || item.userId || null;
+                updates[path + "/peerUid"] = item.peerUid || item.fromUid || item.userId || null;
+                if (item.name) updates[path + "/name"] = item.name;
+                if (item.photoURL || item.profilePhoto) {
+                    updates[path + "/photoURL"] = item.photoURL || item.profilePhoto;
+                    updates[path + "/profilePhoto"] = item.profilePhoto || item.photoURL;
+                }
+                updates[path + "/lastMessage"] = item.lastMessage || "New message";
+                updates[path + "/lastMessageTime"] = item.lastMessageTime || item.lastMessageAt || Date.now();
+                updates[path + "/lastMessageAt"] = item.lastMessageAt || item.lastMessageTime || Date.now();
+                updates[path + "/lastSenderId"] = item.lastSenderId || item.fromUid || null;
+                updates[path + "/updatedAt"] = Date.now();
+                updates[path + "/read"] = false;
+                updates[path + "/seen"] = false;
+                updates[path + "/unread"] = 1;
+                updates[path + "/unreadCount"] = 1;
+                updates["pendingInbox/" + messagesUID + "/" + child.key] = null;
+            });
+            if (Object.keys(updates).length) {
+                db.ref().update(updates).catch(function (e) {
+                    console.warn("pendingInbox flush", e);
+                });
+            }
+        });
+    } catch (e) {
+        console.warn("messagesFlushPendingInbox", e);
+    }
+}
+
 function messagesListenChats() {
 
     if (!messagesUID) {
@@ -698,9 +746,14 @@ function messagesListenChats() {
                 })
             ).then(() => {
                 messagesRender();
+            }).catch(function () {
+                messagesRender();
             });
 
-            messagesRender();
+            // Don't render twice — wait for badge/photo enrich to avoid tick flicker
+            if (!newChats.length) {
+                messagesRender();
+            }
 
         };
 

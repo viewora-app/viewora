@@ -197,6 +197,7 @@
     try {
       await db.ref("userChats/" + me + "/" + chatId).update(inboxPatch);
     } catch (_) {}
+    var peerOk = false;
     try {
       await db.ref("userChats/" + peer + "/" + chatId).transaction(function (cur) {
         cur = cur || {};
@@ -215,7 +216,24 @@
         cur.seen = false;
         return cur;
       });
+      peerOk = true;
     } catch (_) {}
+    if (!peerOk) {
+      try {
+        await db.ref("pendingInbox/" + peer).push({
+          fromUid: me,
+          chatId: chatId,
+          lastMessage: inboxPatch.lastMessage,
+          lastMessageTime: nowMs,
+          lastMessageAt: nowMs,
+          lastSenderId: me,
+          userId: me,
+          peerId: me,
+          peerUid: me,
+          createdAt: nowMs
+        });
+      } catch (_) {}
+    }
     try {
       await db.ref("vieworaChats/" + chatId).update({
         lastMessage: preview,

@@ -425,6 +425,71 @@
     });
 
     log("listening userChats/" + currentUser.uid);
+
+    // pendingInbox fallback — promote to userChats when peer write was denied for sender
+    try {
+      var pendRef = db.ref("pendingInbox/" + currentUser.uid);
+      pendRef.on("child_added", function (snap) {
+        var item = snap.val() || {};
+        var chatId = item.chatId;
+        if (!chatId) {
+          snap.ref.remove().catch(function () {});
+          return;
+        }
+        var patch = {
+          chatId: chatId,
+          userId: item.userId || item.fromUid || item.peerId || "",
+          peerId: item.peerId || item.fromUid || item.userId || "",
+          peerUid: item.peerUid || item.fromUid || item.userId || "",
+          name: item.name || "Someone",
+          username: item.username || "",
+          photoURL: item.photoURL || item.profilePhoto || "",
+          profilePhoto: item.profilePhoto || item.photoURL || "",
+          lastMessage: item.lastMessage || "New message",
+          lastMessageTime: item.lastMessageTime || item.lastMessageAt || Date.now(),
+          lastMessageAt: item.lastMessageAt || item.lastMessageTime || Date.now(),
+          lastSenderId: item.lastSenderId || item.fromUid || "",
+          updatedAt: Date.now(),
+          unread: 1,
+          unreadCount: 1,
+          read: false,
+          seen: false
+        };
+        db.ref("userChats/" + currentUser.uid + "/" + chatId)
+          .transaction(function (cur) {
+            cur = cur || {};
+            var prevUnread = Number(cur.unread || cur.unreadCount || 0);
+            cur.chatId = patch.chatId;
+            cur.userId = patch.userId || cur.userId;
+            cur.peerId = patch.peerId || cur.peerId;
+            cur.peerUid = patch.peerUid || cur.peerUid;
+            if (patch.name) cur.name = patch.name;
+            if (patch.photoURL) {
+              cur.photoURL = patch.photoURL;
+              cur.profilePhoto = patch.photoURL;
+            }
+            cur.lastMessage = patch.lastMessage;
+            cur.lastMessageTime = patch.lastMessageTime;
+            cur.lastMessageAt = patch.lastMessageAt;
+            cur.lastSenderId = patch.lastSenderId;
+            cur.updatedAt = Date.now();
+            cur.unread = prevUnread + 1;
+            cur.unreadCount = prevUnread + 1;
+            cur.read = false;
+            cur.seen = false;
+            return cur;
+          })
+          .then(function () {
+            return snap.ref.remove();
+          })
+          .catch(function (e) {
+            console.warn("[VIEWORA MSG] pendingInbox promote", e);
+          });
+      });
+      log("listening pendingInbox/" + currentUser.uid);
+    } catch (e) {
+      console.warn("[VIEWORA MSG] pendingInbox setup", e);
+    }
   }
 
   // Public helpers for settings page

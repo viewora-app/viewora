@@ -2950,8 +2950,16 @@
         const chatId = state.chatId;
         const preview = previewFromMessage(message);
         const now = serverTimestamp();
+        const nowMs = Date.now();
 
-        // Current user profile for the other person's inbox entry
+        // Ensure membership BEFORE peer inbox write (rules may require it)
+        try {
+            await db.ref("chatMembers/" + chatId + "/" + myUID).set(true);
+        } catch (_) {}
+        try {
+            await db.ref("chatMembers/" + chatId + "/" + otherUID).set(true);
+        } catch (_) {}
+
         let myName =
             state.currentUser.displayName ||
             "Viewora User";
@@ -2995,7 +3003,6 @@
             lastMessageAt: now,
             lastSenderId: myUID,
             updatedAt: now,
-            // sender clears own unread
             unread: 0,
             unreadCount: 0,
             online: Boolean(state.otherUser.online)
@@ -3014,62 +3021,84 @@
             lastMessageTime: now,
             lastMessageAt: now,
             lastSenderId: myUID,
-            updatedAt: now
+            updatedAt: now,
+            read: false,
+            seen: false,
+            isRead: false
         };
 
+        // Request flag if they don't follow me
         try {
-            // Request if they don't follow me and haven't accepted
-            try {
-                const fol = await db.ref("following/" + otherUID + "/" + myUID).once("value");
-                const theyFollow = fol.exists();
-                if (!theyFollow) {
-                    otherInbox.request = true;
-                    otherInbox.accepted = false;
-                } else {
-                    otherInbox.request = false;
-                    otherInbox.accepted = true;
-                }
-            } catch (_) {}
+            const fol = await db.ref("following/" + otherUID + "/" + myUID).once("value");
+            if (!fol.exists()) {
+                otherInbox.request = true;
+                otherInbox.accepted = false;
+            } else {
+                otherInbox.request = false;
+                otherInbox.accepted = true;
+            }
+        } catch (_) {}
 
-            // Update my inbox entry
+        // 1) Own inbox — must succeed
+        try {
             await db.ref("userChats/" + myUID + "/" + chatId).update(myInbox);
+        } catch (err) {
+            console.warn("Own inbox update failed:", err && (err.code || err.message));
+        }
 
-            // Update other user's inbox + increment unread
+        // 2) Peer inbox — increment unread
+        let peerOk = false;
+        try {
             const otherRef = db.ref("userChats/" + otherUID + "/" + chatId);
             const otherSnap = await otherRef.once("value");
             let unread = 1;
             if (otherSnap.exists()) {
                 const prev = otherSnap.val() || {};
-                unread = Number(prev.unread || 0) + 1;
+                unread = Number(prev.unread || prev.unreadCount || 0) + 1;
             }
             otherInbox.unread = unread;
             otherInbox.unreadCount = unread;
             otherInbox.unreadMessages = unread;
             otherInbox.unread_count = unread;
-            // clear read flags so home badge counts this chat again
-            otherInbox.read = false;
-            otherInbox.seen = false;
-            otherInbox.isRead = false;
-            otherInbox.updatedAt = now;
-            otherInbox.peerId = myUID;
-
             await otherRef.update(otherInbox);
+            peerOk = true;
+        } catch (err) {
+            console.warn("Peer inbox denied, using pendingInbox:", err && (err.code || err.message));
+        }
 
-            // Single canonical key only: sorted uidA_uidB (no dual key = no duplicate rows)
+        // 3) Fallback: pendingInbox so peer still gets notified
+        if (!peerOk) {
+            try {
+                await db.ref("pendingInbox/" + otherUID).push({
+                    fromUid: myUID,
+                    chatId: chatId,
+                    lastMessage: preview,
+                    lastMessageTime: nowMs,
+                    lastMessageAt: nowMs,
+                    lastSenderId: myUID,
+                    name: myName,
+                    username: myUsername,
+                    photoURL: myPhoto,
+                    profilePhoto: myPhoto,
+                    userId: myUID,
+                    peerId: myUID,
+                    peerUid: myUID,
+                    createdAt: nowMs
+                });
+            } catch (e2) {
+                console.warn("pendingInbox also failed:", e2 && (e2.code || e2.message));
+            }
+        }
 
-            // Also keep chat meta updated
+        // 4) Chat meta
+        try {
             await db.ref("vieworaChats/" + chatId).update({
                 updatedAt: now,
                 lastMessage: preview,
                 lastMessageTime: now,
                 lastSenderId: myUID
             });
-        } catch (err) {
-            var code = (err && (err.code || err.message)) || err;
-            console.warn("Inbox sync failed:", code, err);
-            // Own inbox may still have updated — peer write needs rules:
-            // userChats/$uid/$chatId write if auth.uid === $uid || $chatId.contains(auth.uid)
-        }
+        } catch (_) {}
     }
 
     async function clearMyUnread() {
