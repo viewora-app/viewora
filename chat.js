@@ -1347,12 +1347,17 @@
             await db.ref("userChats/" + myUID + "/" + chatId).update({
                 chatId: chatId,
                 userId: targetUid,
+                peerId: targetUid,
                 peerUid: targetUid,
                 name: state.otherUser.name || "User",
                 username: String(state.otherUser.username || "").replace(/^@/, ""),
                 photoURL: state.otherUser.photo || DEFAULT_AVATAR,
                 profilePhoto: state.otherUser.photo || DEFAULT_AVATAR,
-                updatedAt: now
+                updatedAt: now,
+                lastMessageTime: now,
+                lastMessageAt: now,
+                unread: 0,
+                unreadCount: 0
             });
         } catch (e) {
             console.warn("own userChats seed:", e);
@@ -1950,7 +1955,7 @@
                                 ? `<img class="${thumbClass}" src="${escapeHTML(
                                       safeURL(thumb)
                                   )}" alt="" loading="lazy"
-                                    onerror="this.onerror=null;this.style.display='none';var p=this.parentNode;if(p&&!p.querySelector('.shareFallback')){var f=document.createElement('div');f.className='shareFallback';f.style.cssText='aspect-ratio:9/16;min-height:160px;display:flex;align-items:center;justify-content:center;background:#1a1b22;color:#fff;font-size:28px';f.innerHTML='<i class=\'fa-solid fa-play\'></i>';p.appendChild(f);}">`
+                                    onerror="this.onerror=null;this.style.display='none';var p=this.parentNode;if(p&&!p.querySelector('.shareFallback')){var f=document.createElement('div');f.className='shareFallback';f.style.cssText='aspect-ratio:9/16;min-height:160px;display:flex;align-items:center;justify-content:center;background:#1a1b22;color:#fff;font-size:28px';f.textContent='▶';p.appendChild(f);}">`
                                 : `<div class="${thumbClass}" style="display:flex;align-items:center;justify-content:center;background:#222">
                                     <i class="fa-solid fa-${
                                         shareType === "story"
@@ -2979,28 +2984,37 @@
         const myInbox = {
             chatId,
             userId: otherUID,
+            peerId: otherUID,
+            peerUid: otherUID,
             name: otherName,
             username: otherUsername,
             photoURL: otherPhoto,
             profilePhoto: otherPhoto,
             lastMessage: preview,
             lastMessageTime: now,
+            lastMessageAt: now,
             lastSenderId: myUID,
+            updatedAt: now,
             // sender clears own unread
             unread: 0,
+            unreadCount: 0,
             online: Boolean(state.otherUser.online)
         };
 
         const otherInbox = {
             chatId,
             userId: myUID,
+            peerId: myUID,
+            peerUid: myUID,
             name: myName,
             username: myUsername,
             photoURL: myPhoto,
             profilePhoto: myPhoto,
             lastMessage: preview,
             lastMessageTime: now,
-            lastSenderId: myUID
+            lastMessageAt: now,
+            lastSenderId: myUID,
+            updatedAt: now
         };
 
         try {
@@ -3051,7 +3065,10 @@
                 lastSenderId: myUID
             });
         } catch (err) {
-            console.warn("Inbox sync failed:", err);
+            var code = (err && (err.code || err.message)) || err;
+            console.warn("Inbox sync failed:", code, err);
+            // Own inbox may still have updated — peer write needs rules:
+            // userChats/$uid/$chatId write if auth.uid === $uid || $chatId.contains(auth.uid)
         }
     }
 
@@ -6035,9 +6052,15 @@
                     reactionBar?.classList.add(
                         "hidden"
                     );
+
+                    document.getElementById("emojiPanel")?.classList.add("hidden");
                 }
             }
         );
+
+        document.getElementById("closeEmojiPanelBtn")?.addEventListener("click", function () {
+            document.getElementById("emojiPanel")?.classList.add("hidden");
+        });
     }
 
 
@@ -6082,15 +6105,20 @@
         if (!state.currentUser || !targetUid) return;
         try {
             const me = state.currentUser.uid;
-            const [a, b] = await Promise.all([
-                db.ref("blocks/" + me + "/" + targetUid).once("value"),
-                db.ref("blocks/" + targetUid + "/" + me).once("value")
-            ]);
+            // Own blocks only (rules allow auth.uid === $uid)
+            const a = await db.ref("blocks/" + me + "/" + targetUid).once("value");
             state.blockedByMe = a.exists() && a.val() !== null && a.val() !== false;
-            state.blockedMe = b.exists() && b.val() !== null && b.val() !== false;
+            // Am I blocked by them? Prefer reverse index blockedBy/{me}/{them}
+            state.blockedMe = false;
+            try {
+                const rev = await db.ref("blockedBy/" + me + "/" + targetUid).once("value");
+                state.blockedMe = rev.exists() && rev.val() !== null && rev.val() !== false;
+            } catch (_) {
+                // optional path — ignore
+            }
             applyBlockUI();
         } catch (e) {
-            console.warn("block state", e);
+            // non-fatal
         }
     }
 
@@ -6170,7 +6198,13 @@
                     userId: targetUid,
                     name: state.otherUser.name || "User"
                 });
-                // mark inbox
+                // reverse index so peer can know they were blocked without reading our tree
+                try {
+                    await db.ref("blockedBy/" + targetUid + "/" + me).set({
+                        blockedAt: serverTimestamp(),
+                        userId: me
+                    });
+                } catch (_) {}
                 try {
                     await db.ref(
                         "userChats/" + me + "/" + state.chatId
@@ -6180,6 +6214,9 @@
                 showToast("User blocked", "success");
             } else {
                 await db.ref("blocks/" + me + "/" + targetUid).remove();
+                try {
+                    await db.ref("blockedBy/" + targetUid + "/" + me).remove();
+                } catch (_) {}
                 try {
                     await db.ref(
                         "userChats/" + me + "/" + state.chatId

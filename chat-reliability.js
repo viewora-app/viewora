@@ -179,30 +179,40 @@
 
     // lightweight inbox sync (best-effort)
     var preview = (item.text || "").slice(0, 120);
+    var ts = serverTs();
+    var nowMs = Date.now();
     var inboxPatch = {
+      chatId: chatId,
+      userId: peer,
+      peerId: peer,
+      peerUid: peer,
       lastMessage: preview || (item.type || "message"),
-      lastMessageAt: serverTs(),
+      lastMessageAt: ts,
+      lastMessageTime: ts,
       lastSenderId: me,
-      updatedAt: serverTs(),
-      peerUid: peer
+      updatedAt: ts,
+      unread: 0,
+      unreadCount: 0
     };
     try {
       await db.ref("userChats/" + me + "/" + chatId).update(inboxPatch);
     } catch (_) {}
     try {
-      var otherPatch = Object.assign({}, inboxPatch, {
-        peerUid: me,
-        unread: true
-      });
-      // increment unread if possible
       await db.ref("userChats/" + peer + "/" + chatId).transaction(function (cur) {
         cur = cur || {};
-        cur.lastMessage = otherPatch.lastMessage;
-        cur.lastMessageAt = Date.now();
-        cur.lastSenderId = me;
-        cur.updatedAt = Date.now();
+        cur.chatId = chatId;
+        cur.userId = me;
+        cur.peerId = me;
         cur.peerUid = me;
-        cur.unreadCount = (cur.unreadCount || 0) + 1;
+        cur.lastMessage = inboxPatch.lastMessage;
+        cur.lastMessageAt = nowMs;
+        cur.lastMessageTime = nowMs;
+        cur.lastSenderId = me;
+        cur.updatedAt = nowMs;
+        cur.unread = (Number(cur.unread || 0) || 0) + 1;
+        cur.unreadCount = (Number(cur.unreadCount || 0) || 0) + 1;
+        cur.read = false;
+        cur.seen = false;
         return cur;
       });
     } catch (_) {}

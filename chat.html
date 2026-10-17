@@ -542,11 +542,8 @@
 
         <button
             type="button"
-            onclick="
-                document
-                    .getElementById('emojiPanel')
-                    .classList.add('hidden')
-            "
+            id="closeEmojiPanelBtn"
+            aria-label="Close emoji"
         >
             <i class="fa-solid fa-xmark"></i>
         </button>
@@ -1434,6 +1431,7 @@
 
 <script src="chat.js"></script>
 <script src="chat-reliability.js"></script>
+<script src="message-listener.js"></script>
   
 </body>
 </html>

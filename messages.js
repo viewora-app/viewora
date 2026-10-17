@@ -3521,7 +3521,11 @@ console.log(
       name: ""
     };
     try {
-      var uid = me || (firebase.auth().currentUser && firebase.auth().currentUser.uid);
+      var uid =
+        (typeof me !== "undefined" && me) ||
+        (typeof messagesUID !== "undefined" && messagesUID) ||
+        (firebase.auth().currentUser && firebase.auth().currentUser.uid) ||
+        "";
       if (!uid) return out;
       var s = await firebase.database().ref("users/" + uid).once("value");
       var u = s.val() || {};
