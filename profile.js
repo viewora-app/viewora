@@ -128,6 +128,7 @@ function escapeHtml(s){return String(s||"").replace(/&/g,"&amp;").replace(/</g,"
 
     let isOwnProfile = false;
     let isFollowing = false;
+    let followsMe = false;
     let isPrivateProfile = false;
     let hasPendingRequest = false;
     let hasIncomingRequest = false;
@@ -1641,6 +1642,7 @@ function safeNumber(value) {
             isOwnProfile
         ) {
             isFollowing = false;
+            followsMe = false;
             hasPendingRequest = false;
             updateContentAccess();
             updateFollowButton();
@@ -1658,6 +1660,32 @@ function safeNumber(value) {
                 value === true ||
                 value === 1 ||
                 value === "true";
+
+            // They follow me? (for Follow back)
+            followsMe = false;
+            try {
+                const theySnap = await followersRef(currentUser.uid)
+                    .child(profileUID)
+                    .once("value");
+                const tv = theySnap.val();
+                followsMe =
+                    tv === true ||
+                    tv === 1 ||
+                    tv === "true" ||
+                    (tv && typeof tv === "object");
+            } catch (_) {
+                try {
+                    const alt = await db
+                        .ref("following/" + profileUID + "/" + currentUser.uid)
+                        .once("value");
+                    const av = alt.val();
+                    followsMe =
+                        av === true ||
+                        av === 1 ||
+                        av === "true" ||
+                        (av && typeof av === "object");
+                } catch (_) {}
+            }
 
             // Outgoing: I requested to follow THEM (private)
             hasPendingRequest = false;
@@ -1810,11 +1838,15 @@ function safeNumber(value) {
 
             button.classList.remove("secondaryBtn");
             button.classList.add("primaryBtn");
+            var label = "Follow";
+            if (isPrivateProfile) {
+                label = "Request";
+            } else if (followsMe) {
+                label = "Follow back";
+            }
             button.innerHTML =
                 '<i class="fa-solid fa-user-plus"></i>' +
-                '<span>' +
-                (isPrivateProfile ? "Request" : "Follow") +
-                '</span>';
+                '<span>' + label + '</span>';
 
         }
 
@@ -2246,17 +2278,12 @@ function safeNumber(value) {
             return;
         }
 
-        const page =
-            type === "followers"
-                ? "followers.html"
-                : "following.html";
-
+        var tab = type === "following" ? "following" : "followers";
         window.location.href =
-            page +
-            "?uid=" +
-            encodeURIComponent(
-                profileUID
-            );
+            "follow-list.html?uid=" +
+            encodeURIComponent(profileUID) +
+            "&tab=" +
+            encodeURIComponent(tab);
 
     }
 

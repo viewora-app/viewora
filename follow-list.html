@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+  <meta name="theme-color" content="#08080d">
+  <link rel="manifest" href="manifest.webmanifest">
+  <title>Viewora • Connections</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+  <link rel="stylesheet" href="nav.css">
+  <link rel="stylesheet" href="theme.css">
+  <link rel="stylesheet" href="follow-list.css">
+</head>
+<body>
+  <header class="flHeader">
+    <button type="button" class="flBack" id="flBack" aria-label="Back"><i class="fa-solid fa-arrow-left"></i></button>
+    <div class="flTitle" id="flTitle">Connections</div>
+    <span class="flSpacer"></span>
+  </header>
+
+  <div class="flTabs" role="tablist">
+    <button type="button" class="flTab active" data-tab="followers" role="tab">Followers</button>
+    <button type="button" class="flTab" data-tab="following" role="tab">Following</button>
+    <div class="flTabInk" id="flTabInk"></div>
+  </div>
+
+  <div class="flPager" id="flPager">
+    <section class="flPage" data-page="followers">
+      <div class="flList" id="followersList"><div class="flEmpty">Loading…</div></div>
+    </section>
+    <section class="flPage" data-page="following">
+      <div class="flList" id="followingList"><div class="flEmpty">Loading…</div></div>
+    </section>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
+  <script src="firebase.js"></script>
+  <script src="crash-guard.js"></script>
+  <script src="nav.js"></script>
+  <script src="follow-list.js"></script>
+</body>
+</html>

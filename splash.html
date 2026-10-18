@@ -3,42 +3,48 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-
-<!-- Viewora PWA / TWA -->
-<link rel="manifest" href="manifest.webmanifest">
-<meta name="theme-color" content="#08080d">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Viewora">
-<link rel="apple-touch-icon" href="icon-192.png">
-<script src="pwa-register.js" defer></script>
-
-
+  <link rel="manifest" href="manifest.webmanifest">
   <meta name="theme-color" content="#000000">
+  <meta name="apple-mobile-web-app-capable" content="yes">
   <title>Viewora</title>
-  <link rel="icon" href="assets/logo.png">
+  <link rel="icon" href="icon-192.png">
   <style>
     *{margin:0;padding:0;box-sizing:border-box}
     html,body{height:100%;background:#000;display:flex;align-items:center;justify-content:center;overflow:hidden}
-    .logo{width:72px;height:72px;object-fit:contain;border-radius:18px;opacity:0;animation:in .45s ease .05s forwards}
-    @keyframes in{from{opacity:0;transform:scale(.94)}to{opacity:1;transform:none}}
+    .logo{width:88px;height:88px;object-fit:contain;border-radius:22px;opacity:0;animation:in .4s ease .05s forwards}
+    @keyframes in{from{opacity:0;transform:scale(.92)}to{opacity:1;transform:none}}
   </style>
 </head>
 <body>
-  <img class="logo" src="assets/logo.png" alt="Viewora" onerror="this.style.display='none'">
+  <img class="logo" src="icon-192.png" alt="" onerror="this.onerror=null;this.src='assets/logo.png'">
   <script>
-  (function(){
+  (function () {
+    var KEY = "viewora_splash_done";
+    var REDIR = "viewora_splash_redirecting";
     try {
-      sessionStorage.setItem("viewora_splash_done","1");
-      sessionStorage.removeItem("viewora_splash_redirecting");
-    } catch(e){}
-    var next="index.html";
+      // Mark done immediately so no second splash in this session
+      sessionStorage.setItem(KEY, "1");
+      sessionStorage.removeItem(REDIR);
+    } catch (e) {}
+
+    var next = "index.html";
     try {
-      var p=new URLSearchParams(location.search);
-      if(p.get("next")) next=p.get("next");
-    } catch(e){}
-    setTimeout(function(){ location.replace(next); }, 1100);
+      var p = new URLSearchParams(location.search);
+      var n = p.get("next");
+      if (n && !/^https?:/i.test(n) && n.indexOf("//") === -1) {
+        next = n;
+      }
+    } catch (e) {}
+
+    // Single navigation only
+    var gone = false;
+    function go() {
+      if (gone) return;
+      gone = true;
+      try { sessionStorage.setItem(KEY, "1"); } catch (e) {}
+      location.replace(next);
+    }
+    setTimeout(go, 900);
   })();
   </script>
   <script src="crash-guard.js"></script>

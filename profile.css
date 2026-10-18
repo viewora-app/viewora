@@ -2413,3 +2413,19 @@ html[data-theme="light"] .profileWebsite { color: #2563eb; }
   0% { filter: hue-rotate(0deg); }
   100% { filter: hue-rotate(360deg); }
 }
+
+
+/* VIEWORA_COVER_ALT_FIX */
+.profileBanner img#coverPhoto {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  color: transparent;
+  text-indent: -9999px;
+  overflow: hidden;
+}
+.profileBanner img#coverPhoto::before,
+.profileBanner img#coverPhoto::after {
+  content: none !important;
+}
