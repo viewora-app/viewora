@@ -128,3 +128,28 @@ html, body {
   background: linear-gradient(135deg, #7c3aed, #2563eb) !important;
   color: #fff !important;
 }
+
+
+/* VIEWORA_TICK_UNIFY — same size as profile */
+.flMeta .vieworaBadge,
+.flMeta .vieworaTick,
+.flMeta .flTick {
+  display: inline-flex;
+  vertical-align: middle;
+  margin-left: 4px;
+  flex-shrink: 0;
+}
+.flMeta .vieworaBadgeSvg {
+  width: 15px !important;
+  height: 15px !important;
+}
+.vasMeta .vieworaBadge,
+.vasMeta .vasTick {
+  display: inline-flex;
+  vertical-align: middle;
+  margin-left: 4px;
+}
+.vasMeta .vieworaBadgeSvg {
+  width: 15px !important;
+  height: 15px !important;
+}

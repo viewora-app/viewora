@@ -468,6 +468,16 @@
                         a.email = a.email || d.email || "";
                         a.deleted = false;
                         a.disabled = false;
+                        a.verified = !!(d.verified || d.isVerified || d.blueTick);
+                        a.blueTick = !!(d.blueTick || d.verified || d.isVerified);
+                        a.redTick = !!(d.redTick || d.vip || d.elite);
+                        a.yellowTick = !!(d.yellowTick || d.businessVerified);
+                        a.whiteTick = !!(d.whiteTick);
+                        a.vip = !!d.vip;
+                        a.elite = !!d.elite;
+                        a.tickType = d.tickType || d.badge || "";
+                        a.badge = d.badge || d.tickType || "";
+                        a.verificationStatus = d.verificationStatus || "";
                     }
                 }
                 if (a.deleted && a.deletedAt && (Date.now() - Number(a.deletedAt) > 30 * 24 * 60 * 60 * 1000)) {
@@ -479,6 +489,24 @@
         return out;
     }
 
+    function accountTickHtml(a) {
+        if (!a) return "";
+        try {
+            if (window.VieworaBadges && typeof VieworaBadges.resolveBadge === "function") {
+                var b = VieworaBadges.resolveBadge(a);
+                if (b && b.html) return " " + b.html;
+            }
+        } catch (_) {}
+        var tt = String(a.tickType || a.badge || "").toLowerCase();
+        var color = "";
+        if (tt === "red" || a.redTick || a.vip || a.elite) color = "#E53935";
+        else if (tt === "blue" || a.blueTick || a.verified || a.isVerified) color = "#1D9BF0";
+        else if (tt === "yellow" || a.yellowTick || a.businessVerified) color = "#F5C518";
+        else if (tt === "white" || a.whiteTick) color = "#F0F4FA";
+        if (!color) return "";
+        return ' <i class="fa-solid fa-circle-check vasTick" style="color:' + color + ';font-size:14px;margin-left:4px"></i>';
+    }
+
     function paintAccountList(listEl, list, currentUid) {
         listEl.innerHTML = list.map(function (a) {
             const active = !!(currentUid && a.uid === currentUid);
@@ -488,6 +516,7 @@
             const dead = !!(a.deleted || a.disabled || a.banned || a.status === "deleted");
             const label = accountLabel(a);
             const avatar = dead ? "assets/default-avatar.png" : (a.avatar || "assets/default-avatar.png");
+            const tick = dead ? "" : accountTickHtml(a);
             const check = active
                 ? '<span class="vasCheck" aria-label="Active"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="11" fill="#3b82f6"/><path d="M7.5 12.5l3 3 6-6.5" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>'
                 : "";
@@ -498,7 +527,7 @@
                 '" data-saved="' + (saved ? "1" : "0") +
                 '" data-dead="' + (dead ? "1" : "0") + '">' +
                 '<img class="vasAvatar" src="' + String(avatar).replace(/"/g, "") + '" alt="" onerror="this.src=\'assets/default-avatar.png\'">' +
-                '<span class="vasMeta"><strong>' + escapeNav(label) + '</strong>' +
+                '<span class="vasMeta"><strong>' + escapeNav(label) + tick + '</strong>' +
                 accountSub(a, active, saved) + '</span>' + check + "</button>"
             );
         }).join("");

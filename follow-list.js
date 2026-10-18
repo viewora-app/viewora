@@ -75,18 +75,26 @@
 
   function tickHtml(u) {
     if (!u) return "";
-    var tt = String(u.tickType || "").toLowerCase();
+    try {
+      if (window.VieworaBadges && typeof VieworaBadges.resolveBadge === "function") {
+        var b = VieworaBadges.resolveBadge(u);
+        if (b && b.html) return " " + b.html;
+      }
+      if (window.VieworaBadges && typeof VieworaBadges.badgeHTML === "function") {
+        var h = VieworaBadges.badgeHTML(u);
+        if (h) return " " + h;
+      }
+    } catch (_) {}
+    // same priority as profile / badges.js
+    var tt = String((u.tickType || u.badge || "")).toLowerCase();
     var color = "";
-    if (u.redTick || tt === "red" || u.vip) color = "#ff3b5c";
-    else if (u.yellowTick || tt === "yellow") color = "#f5c542";
-    else if (u.whiteTick || tt === "white" || u.monetized) color = "#e8eef7";
-    else if (u.blueTick || u.verified || u.isVerified || tt === "blue") color = "#1d9bf0";
+    if (tt === "red" || u.redTick || u.vip || u.elite) color = "#E53935";
+    else if (tt === "blue" || u.blueTick || u.verified || u.isVerified) color = "#1D9BF0";
+    else if (tt === "yellow" || u.yellowTick || u.businessVerified) color = "#F5C518";
+    else if (tt === "white" || u.whiteTick) color = "#F0F4FA";
     if (!color) return "";
     return (
-      '<svg class="flTick" width="14" height="14" viewBox="0 0 24 24">' +
-      '<circle cx="12" cy="12" r="11" fill="' + color + '"/>' +
-      '<path d="M7.5 12.5l3 3 6-6.5" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>' +
-      "</svg>"
+      ' <i class="fa-solid fa-circle-check vieworaTick" style="color:' + color + ';font-size:14px;margin-left:2px"></i>'
     );
   }
 
