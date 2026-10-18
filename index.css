@@ -866,10 +866,10 @@ video {
     z-index: 100;
 
     margin:
-        0 -1px 6px;
+        0 -1px 25px;
 
     padding:
-        4px 0 4px;
+        5px 0 10px;
 
     background:
         linear-gradient(
@@ -2380,8 +2380,7 @@ html.viewer-open {
 .feedSwitcher {
     display: flex;
     gap: 10px;
-    padding: 4px 16px 8px;
-    margin-top: 0;
+    padding: 14px 16px 10px;
     position: sticky;
     top: 0;
     z-index: 30;
@@ -4962,24 +4961,16 @@ html, body {
 }
 
 
-/* =========================================================
-   VIEWORA UI FIX — edge-to-edge + tighter home gaps
-========================================================= */
-html, body {
-  width: 100%;
-  max-width: 100%;
-  overflow-x: hidden;
-}
-body {
-  padding-left: 0 !important;
-  padding-right: 0 !important;
-}
-#app, .appShell, .homeShell, main {
-  width: 100%;
-  max-width: 100%;
-}
-.categorySection { margin-bottom: 4px !important; }
-.feedSwitcher { padding-top: 2px !important; margin-top: 0 !important; }
-@media (max-width: 900px) {
-  .categorySection { top: calc(56px + env(safe-area-inset-top, 0px)); }
+/* VIEWORA_LOADER_FORCE_HIDE — never stick on home */
+body.feed-ready #loadingOverlay,
+body.feed-ready .loadingOverlay,
+#loadingOverlay.hidden,
+#loadingOverlay.loaderHide,
+.loadingOverlay.hidden,
+.loadingOverlay.loaderHide {
+  display: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+  z-index: -1 !important;
 }

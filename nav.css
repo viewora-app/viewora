@@ -269,13 +269,20 @@ body.vasOpen { overflow: hidden; }
 }
 
 
-/* Never show Settings in bottom nav */
-.bottomNav .navSettings,
-.vieworaGlobalNav .navSettings,
-a.navItem[data-nav="settings"] {
-  display: none !important;
+/* Account switcher verification tick */
+.vasMeta strong {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 100%;
 }
-/* 5 items only — equal flex */
-.bottomNav .navItem:not(.uploadNav) {
-  flex: 1 1 0;
+.vasTick {
+  flex-shrink: 0;
+  vertical-align: middle;
+}
+.vasItem {
+  transition: background 0.2s ease, transform 0.15s ease;
+}
+.vasItem:active {
+  transform: scale(0.98);
 }
