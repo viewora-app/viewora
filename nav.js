@@ -123,14 +123,13 @@
                 <span data-i18n="Profile">Profile</span>
             </a>
 
-            <a href="settings.html" class="navItem navSettings ${active === "settings" ? "active" : ""}" data-nav="settings">
-                <div class="activeIndicator"></div>
-                <i class="fa-solid fa-gear"></i>
-                <span data-i18n="Settings">Settings</span>
-            </a>
         `;
 
         document.body.appendChild(nav);
+        // never show Settings in bottom bar
+        try {
+            nav.querySelectorAll('[data-nav="settings"], .navSettings, a[href="settings.html"]').forEach(function (el) { el.remove(); });
+        } catch (_) {}
         document.body.classList.add("has-bottom-nav");
         document.documentElement.classList.add("has-bottom-nav");
 
@@ -282,31 +281,11 @@
     }
 
     /* ========== Account switcher (Instagram-style) ========== */
-    function dedupeAccounts(list) {
-        if (!Array.isArray(list)) return [];
-        var byUid = {};
-        var byEmail = {};
-        var out = [];
-        list.forEach(function (a) {
-            if (!a || typeof a !== "object") return;
-            var uid = String(a.uid || "").trim();
-            if (!uid) return;
-            // prefer first occurrence (list is newest-first)
-            if (byUid[uid]) return;
-            byUid[uid] = true;
-            var em = String(a.email || "").trim().toLowerCase();
-            if (em && byEmail[em]) return; // same email → keep one account
-            if (em) byEmail[em] = true;
-            out.push(a);
-        });
-        return out.slice(0, 8);
-    }
-
     function getSavedAccounts() {
         try {
             const raw = localStorage.getItem("viewora_saved_accounts");
             const list = raw ? JSON.parse(raw) : [];
-            return dedupeAccounts(Array.isArray(list) ? list : []);
+            return Array.isArray(list) ? list : [];
         } catch (_) {
             return [];
         }
@@ -315,7 +294,7 @@
     function saveAccountToList(acc) {
         if (!acc || !acc.uid) return;
         try {
-            let list = dedupeAccounts(getSavedAccounts());
+            let list = getSavedAccounts();
             list = list.filter(function (a) { return a && a.uid !== acc.uid; });
             list.unshift({
                 uid: acc.uid,
@@ -324,7 +303,7 @@
                 avatar: acc.avatar || "assets/default-avatar.png",
                 email: acc.email || ""
             });
-            list = dedupeAccounts(list);
+            list = list.slice(0, 8);
             localStorage.setItem("viewora_saved_accounts", JSON.stringify(list));
         } catch (_) {}
     }
@@ -489,13 +468,6 @@
                         a.email = a.email || d.email || "";
                         a.deleted = false;
                         a.disabled = false;
-                        // verification ticks for switcher
-                        a.verified = !!(d.verified || d.isVerified || d.blueTick);
-                        a.blueTick = !!(d.blueTick || d.verified || d.isVerified || d.tickType === "blue");
-                        a.redTick = !!(d.redTick || d.vip || d.elite || d.tickType === "red");
-                        a.yellowTick = !!(d.yellowTick || d.businessTick || d.tickType === "yellow");
-                        a.whiteTick = !!(d.whiteTick || d.monetized || d.tickType === "white");
-                        a.tickType = d.tickType || (a.redTick ? "red" : a.blueTick ? "blue" : a.yellowTick ? "yellow" : a.whiteTick ? "white" : "");
                     }
                 }
                 if (a.deleted && a.deletedAt && (Date.now() - Number(a.deletedAt) > 30 * 24 * 60 * 60 * 1000)) {
@@ -519,18 +491,6 @@
             const check = active
                 ? '<span class="vasCheck" aria-label="Active"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="11" fill="#3b82f6"/><path d="M7.5 12.5l3 3 6-6.5" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>'
                 : "";
-            var tickHtml = "";
-            if (!dead) {
-                var tt = String(a.tickType || "").toLowerCase();
-                var color = "";
-                if (a.redTick || tt === "red" || a.vip) color = "#ff3b5c";
-                else if (a.yellowTick || tt === "yellow") color = "#f5c542";
-                else if (a.whiteTick || tt === "white" || a.monetized) color = "#e8eef7";
-                else if (a.blueTick || a.verified || tt === "blue") color = "#1d9bf0";
-                if (color) {
-                    tickHtml = ' <svg class="vasTick" width="14" height="14" viewBox="0 0 24 24" style="display:inline-block;vertical-align:middle;margin-left:4px;flex-shrink:0"><circle cx="12" cy="12" r="11" fill="' + color + '"/><path d="M7.5 12.5l3 3 6-6.5" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>';
-                }
-            }
             return (
                 '<button type="button" class="vasItem' + (active ? " active" : "") + (dead ? " vasDead" : "") +
                 '" data-uid="' + String(a.uid).replace(/"/g, "") +
@@ -538,7 +498,7 @@
                 '" data-saved="' + (saved ? "1" : "0") +
                 '" data-dead="' + (dead ? "1" : "0") + '">' +
                 '<img class="vasAvatar" src="' + String(avatar).replace(/"/g, "") + '" alt="" onerror="this.src=\'assets/default-avatar.png\'">' +
-                '<span class="vasMeta"><strong>' + escapeNav(label) + tickHtml + '</strong>' +
+                '<span class="vasMeta"><strong>' + escapeNav(label) + '</strong>' +
                 accountSub(a, active, saved) + '</span>' + check + "</button>"
             );
         }).join("");
@@ -633,7 +593,7 @@
     function renderAccountList() {
         const listEl = document.getElementById("vasAccountList");
         if (!listEl) return;
-        let list = dedupeAccounts(getSavedAccounts());
+        let list = getSavedAccounts();
         const currentUid = getCurrentUidSafe();
 
         if (!list.length) {
@@ -646,7 +606,7 @@
         enrichAccountsFromFirebase(list).then(function (enriched) {
             if (!enriched) return;
             try {
-                localStorage.setItem("viewora_saved_accounts", JSON.stringify(dedupeAccounts(enriched)));
+                localStorage.setItem("viewora_saved_accounts", JSON.stringify(enriched.slice(0, 8)));
             } catch (_) {}
             if (enriched.length) paintAccountList(listEl, enriched, currentUid);
             else listEl.innerHTML =

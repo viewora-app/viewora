@@ -18,17 +18,22 @@
     <span class="flSpacer"></span>
   </header>
 
+  <div class="flSearchWrap">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <input type="search" id="flSearch" placeholder="Search" autocomplete="off" enterkeyhint="search">
+  </div>
+
   <div class="flTabs" role="tablist">
-    <button type="button" class="flTab active" data-tab="followers" role="tab">Followers</button>
-    <button type="button" class="flTab" data-tab="following" role="tab">Following</button>
+    <button type="button" class="flTab active" data-tab="followers" role="tab" id="tabFollowers">Followers</button>
+    <button type="button" class="flTab" data-tab="following" role="tab" id="tabFollowing">Following</button>
     <div class="flTabInk" id="flTabInk"></div>
   </div>
 
   <div class="flPager" id="flPager">
-    <section class="flPage" data-page="followers">
+    <section class="flPage" data-page="followers" id="pageFollowers">
       <div class="flList" id="followersList"><div class="flEmpty">Loading…</div></div>
     </section>
-    <section class="flPage" data-page="following">
+    <section class="flPage" data-page="following" id="pageFollowing">
       <div class="flList" id="followingList"><div class="flEmpty">Loading…</div></div>
     </section>
   </div>
