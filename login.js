@@ -222,7 +222,25 @@
       var email = await resolveEmail(id);
       email = String(email || "").trim().toLowerCase();
 
-      var cred = await firebase.auth().signInWithEmailAndPassword(email, pass);
+      // Clean previous session so multi-account / stuck auth does not block
+      try {
+        if (firebase.auth().currentUser) {
+          await firebase.auth().signOut();
+        }
+      } catch (_) {}
+
+      var cred;
+      try {
+        cred = await firebase.auth().signInWithEmailAndPassword(email, pass);
+      } catch (firstErr) {
+        // Retry once with original email casing (rare)
+        var alt = String(id || "").trim();
+        if (isEmail(alt) && alt.toLowerCase() !== email) {
+          cred = await firebase.auth().signInWithEmailAndPassword(alt, pass);
+        } else {
+          throw firstErr;
+        }
+      }
       await saveToSwitcher(cred.user);
       try {
         await firebase.database().ref("users/" + cred.user.uid).update({
@@ -240,6 +258,13 @@
         msg = "Email or password incorrect. Tip: use the exact password from signup, or Forgot password.";
       }
       showError(msg);
+      try { if (navigator.vibrate) navigator.vibrate([40, 30, 40]); } catch (_) {}
+      try {
+        if (password) {
+          password.classList.add("loginShake");
+          setTimeout(function () { password.classList.remove("loginShake"); }, 500);
+        }
+      } catch (_) {}
       setLoading(false);
     }
   });

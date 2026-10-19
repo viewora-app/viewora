@@ -588,20 +588,57 @@
                                 go.addEventListener("click", async function () {
                                     const u = passRow.dataset.uid;
                                     const a = getSavedAccounts().find(function (x) { return x && x.uid === u; }) || { uid: u };
-                                    const pw = (passInput && passInput.value) || "";
+                                    var pw = String((passInput && passInput.value) || "").replace(/^\s+|\s+$/g, "");
+                                    if (passInput) passInput.value = pw;
                                     if (!pw) { passInput && passInput.focus(); return; }
+
+                                    function vibeFail() {
+                                      try {
+                                        if (navigator.vibrate) navigator.vibrate([40, 30, 40]);
+                                      } catch (_) {}
+                                      try {
+                                        if (passInput) {
+                                          passInput.classList.add("vasPassError");
+                                          passInput.value = "";
+                                          passInput.placeholder = "Wrong password — try again";
+                                          passInput.focus();
+                                          setTimeout(function () {
+                                            passInput.classList.remove("vasPassError");
+                                          }, 600);
+                                        }
+                                      } catch (_) {}
+                                    }
+
                                     try {
                                         go.disabled = true;
-                                        const email = a.email;
-                                        if (!email) {
-                                            location.href = "login.html?addAccount=1";
+                                        var email = (a.email || "").trim();
+                                        // Resolve email from RTDB if missing on device list
+                                        if (!email && a.uid && window.firebase && firebase.database) {
+                                          try {
+                                            var snap = await firebase.database().ref("users/" + a.uid).once("value");
+                                            var d = snap.val() || {};
+                                            email = (d.email || d.loginEmail || "").trim();
+                                          } catch (_) {}
+                                        }
+                                        if (!email || email.indexOf("@") < 0) {
+                                            location.href = "login.html?addAccount=1&uid=" + encodeURIComponent(a.uid || "");
                                             return;
                                         }
-                                        await firebase.auth().signInWithEmailAndPassword(email, pw);
+                                        // Switch user: sign out current first for clean session
+                                        try {
+                                          if (firebase.auth().currentUser) {
+                                            await firebase.auth().signOut();
+                                          }
+                                        } catch (_) {}
+                                        await firebase.auth().signInWithEmailAndPassword(email.toLowerCase(), pw);
+                                        try {
+                                          if (navigator.vibrate) navigator.vibrate(25);
+                                        } catch (_) {}
                                         closeAccountSwitcher();
                                         location.reload();
                                     } catch (e) {
-                                        if (passInput) passInput.placeholder = "Wrong password — try again";
+                                        console.warn("switch fail", e && e.code, e);
+                                        vibeFail();
                                     } finally {
                                         go.disabled = false;
                                     }
