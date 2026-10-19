@@ -20,12 +20,6 @@
 
 
   var stack = ["welcome"];
-  var fromLogin = false;
-  try {
-    var params = new URLSearchParams(location.search);
-    fromLogin = params.get("from") === "login" || params.get("step") === "contact";
-  } catch (_) {}
-
   var INTERESTS = [
     "Music", "Comedy", "Sports", "Fashion", "Food", "Travel",
     "Gaming", "Tech", "Dance", "News", "Education", "Animals"
@@ -64,15 +58,7 @@
     if (stack.length > 1) stack.pop();
     go(stack[stack.length - 1] || "welcome", false);
   }
-
-  // Skip welcome with no flash when opened from login
-  if (fromLogin) {
-    stack = ["contact"];
-    go("contact", false);
-    try { document.documentElement.classList.add("from-login"); } catch (_) {}
-  }
-
-  document.querySelectorAll("[data-go]").forEach(function (btn) {
+document.querySelectorAll("[data-go]").forEach(function (btn) {
     btn.addEventListener("click", function () {
       var s = btn.getAttribute("data-go");
       if (s === "email") state.mode = "email";
