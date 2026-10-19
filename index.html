@@ -18,22 +18,7 @@
     <meta name="theme-color" content="#08080d">
     <meta name="description" content="Viewora — Create, Watch, Share & Connect. Social video platform for long videos, shorts, stories and posts.">
     <title>Viewora • Home</title>
-
-    <!-- Viewora boot: splash once per session -->
-    <script>
-    (function () {
-      try {
-        if (/splash\.html/i.test(location.pathname)) return;
-        if (sessionStorage.getItem("viewora_splash_done") === "1") return;
-        if (sessionStorage.getItem("viewora_splash_redirecting") === "1") return;
-        sessionStorage.setItem("viewora_splash_redirecting", "1");
-        location.replace("splash.html");
-      } catch (e) {}
-    })();
-    </script>
-
-
-    <!-- FONT -->
+<!-- FONT -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">

@@ -6,47 +6,114 @@
   <link rel="manifest" href="manifest.webmanifest">
   <meta name="theme-color" content="#000000">
   <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>Viewora</title>
   <link rel="icon" href="icon-192.png">
   <style>
     *{margin:0;padding:0;box-sizing:border-box}
     html,body{height:100%;background:#000;display:flex;align-items:center;justify-content:center;overflow:hidden}
-    .logo{width:88px;height:88px;object-fit:contain;border-radius:22px;opacity:0;animation:in .4s ease .05s forwards}
-    @keyframes in{from{opacity:0;transform:scale(.92)}to{opacity:1;transform:none}}
+    .logo{
+      width:96px;height:96px;object-fit:contain;border-radius:24px;
+      opacity:0;animation:in .35s ease .02s forwards;
+      box-shadow:0 8px 40px rgba(124,58,237,.25)
+    }
+    @keyframes in{from{opacity:0;transform:scale(.9)}to{opacity:1;transform:none}}
   </style>
 </head>
 <body>
-  <img class="logo" src="icon-192.png" alt="" onerror="this.onerror=null;this.src='assets/logo.png'">
+  <img class="logo" src="icon-192.png" alt="Viewora"
+       onerror="this.onerror=null;this.src='assets/logo.png'">
+
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+  <script src="firebase.js"></script>
   <script>
   (function () {
-    var KEY = "viewora_splash_done";
-    var REDIR = "viewora_splash_redirecting";
+    var DONE = "viewora_splash_done";
+    var LOCK = "viewora_splash_lock";
+
+    // Prevent any second run in this document
+    if (window.__vieworaSplashRan) return;
+    window.__vieworaSplashRan = true;
+
     try {
-      // Mark done immediately so no second splash in this session
-      sessionStorage.setItem(KEY, "1");
-      sessionStorage.removeItem(REDIR);
+      sessionStorage.setItem(DONE, "1");
+      sessionStorage.setItem(LOCK, "1");
     } catch (e) {}
 
-    var next = "index.html";
-    try {
-      var p = new URLSearchParams(location.search);
-      var n = p.get("next");
-      if (n && !/^https?:/i.test(n) && n.indexOf("//") === -1) {
-        next = n;
+    function safeNext(n) {
+      if (!n) return null;
+      n = String(n);
+      if (/^https?:/i.test(n) || n.indexOf("//") !== -1) return null;
+      if (/\.\./.test(n)) return null;
+      return n;
+    }
+
+    function hasSavedAccounts() {
+      try {
+        var a = JSON.parse(localStorage.getItem("viewora_saved_accounts") || "[]");
+        return Array.isArray(a) && a.length > 0;
+      } catch (e) {
+        return false;
       }
-    } catch (e) {}
+    }
 
-    // Single navigation only
+    function targetForUser(user) {
+      // ?next= from URL wins
+      try {
+        var p = new URLSearchParams(location.search);
+        var n = safeNext(p.get("next"));
+        if (n && !/splash\.html/i.test(n)) return n;
+      } catch (e) {}
+
+      if (user) return "index.html";
+      if (hasSavedAccounts()) return "login.html";
+      return "signup.html";
+    }
+
     var gone = false;
-    function go() {
+    function go(url) {
       if (gone) return;
       gone = true;
-      try { sessionStorage.setItem(KEY, "1"); } catch (e) {}
-      location.replace(next);
+      try {
+        sessionStorage.setItem(DONE, "1");
+        sessionStorage.removeItem(LOCK);
+      } catch (e) {}
+      location.replace(url || "index.html");
     }
-    setTimeout(go, 900);
+
+    var minMs = 650;
+    var start = Date.now();
+
+    function finish(user) {
+      var wait = Math.max(0, minMs - (Date.now() - start));
+      setTimeout(function () {
+        go(targetForUser(user));
+      }, wait);
+    }
+
+    // Auth resolve with timeout so splash never sticks
+    var settled = false;
+    function once(user) {
+      if (settled) return;
+      settled = true;
+      finish(user || null);
+    }
+
+    try {
+      if (window.firebase && firebase.auth) {
+        var unsub = firebase.auth().onAuthStateChanged(function (u) {
+          try { unsub && unsub(); } catch (e) {}
+          once(u);
+        });
+        setTimeout(function () { once(firebase.auth().currentUser); }, 2500);
+      } else {
+        once(null);
+      }
+    } catch (e) {
+      once(null);
+    }
   })();
   </script>
-  <script src="crash-guard.js"></script>
 </body>
 </html>
