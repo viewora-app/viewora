@@ -122,22 +122,27 @@
     throw new Error("No account found for that username");
   }
 
-  function mapAuthError(code) {
+  function mapAuthError(code, message) {
     switch (code) {
       case "auth/user-not-found":
+        return "No account with this email. Create an account first.";
       case "auth/invalid-email":
-        return "Account not found. Check email/username.";
+        return "Invalid email format.";
       case "auth/wrong-password":
-      case "auth/invalid-credential":
         return "Wrong password. Try again or reset it.";
+      case "auth/invalid-credential":
+      case "auth/invalid-login-credentials":
+        return "Email or password is incorrect. Check both, or use Forgot password.";
       case "auth/too-many-requests":
-        return "Too many attempts. Wait a moment.";
+        return "Too many attempts. Wait a minute and try again.";
       case "auth/network-request-failed":
         return "Network error. Check your connection.";
       case "auth/user-disabled":
         return "This account has been disabled.";
+      case "auth/operation-not-allowed":
+        return "Email/password sign-in is disabled in Firebase Console.";
       default:
-        return "Login failed. Please try again.";
+        return (message && String(message).slice(0, 120)) || "Login failed. Please try again.";
     }
   }
 
@@ -189,7 +194,10 @@
     e.preventDefault();
     showError("");
     var id = (loginId && loginId.value || "").trim();
-    var pass = (password && password.value) || "";
+    // trim password — trailing spaces often cause "wrong password"
+    var pass = String((password && password.value) || "").replace(/^\s+|\s+$/g, "");
+    if (password && pass !== password.value) password.value = pass;
+
     if (!id) {
       showError("Enter email or username");
       loginId && loginId.focus();
@@ -207,21 +215,31 @@
 
     setLoading(true);
     try {
-      await firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+      try {
+        await firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+      } catch (_) {}
+
       var email = await resolveEmail(id);
+      email = String(email || "").trim().toLowerCase();
+
       var cred = await firebase.auth().signInWithEmailAndPassword(email, pass);
       await saveToSwitcher(cred.user);
-      // touch last login
       try {
         await firebase.database().ref("users/" + cred.user.uid).update({
           lastLoginAt: firebase.database.ServerValue.TIMESTAMP
         });
       } catch (_) {}
       toast("Welcome back");
-      setTimeout(goHome, 250);
+      setTimeout(goHome, 200);
     } catch (err) {
-      console.warn(err);
-      showError(mapAuthError(err && err.code) || (err && err.message) || "Login failed");
+      console.warn("login error", err && err.code, err);
+      var code = (err && err.code) || "";
+      var msg = mapAuthError(code, err && err.message);
+      // If Firebase says invalid-credential, hint reset
+      if (code === "auth/invalid-credential" || code === "auth/invalid-login-credentials") {
+        msg = "Email or password incorrect. Tip: use the exact password from signup, or Forgot password.";
+      }
+      showError(msg);
       setLoading(false);
     }
   });

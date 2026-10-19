@@ -19,23 +19,13 @@
   };
 
 
-  // Routing: ?from=login skips welcome → contact
-  // First-time (no saved accounts) stays on welcome
+  var stack = ["welcome"];
+  var fromLogin = false;
   try {
     var params = new URLSearchParams(location.search);
-    var fromLogin = params.get("from") === "login" || params.get("step") === "contact";
-    var hasAccounts = false;
-    try {
-      var acc = JSON.parse(localStorage.getItem("viewora_saved_accounts") || "[]");
-      hasAccounts = Array.isArray(acc) && acc.length > 0;
-    } catch (_) {}
-    if (fromLogin) {
-      // adding another account / came from login signup link
-      setTimeout(function () { go("contact", false); stack = ["welcome", "contact"]; }, 0);
-    }
+    fromLogin = params.get("from") === "login" || params.get("step") === "contact";
   } catch (_) {}
 
-  var stack = ["welcome"];
   var INTERESTS = [
     "Music", "Comedy", "Sports", "Fashion", "Food", "Travel",
     "Gaming", "Tech", "Dance", "News", "Education", "Animals"
@@ -73,6 +63,13 @@
   function back() {
     if (stack.length > 1) stack.pop();
     go(stack[stack.length - 1] || "welcome", false);
+  }
+
+  // Skip welcome with no flash when opened from login
+  if (fromLogin) {
+    stack = ["contact"];
+    go("contact", false);
+    try { document.documentElement.classList.add("from-login"); } catch (_) {}
   }
 
   document.querySelectorAll("[data-go]").forEach(function (btn) {

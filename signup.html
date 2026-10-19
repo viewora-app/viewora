@@ -7,7 +7,23 @@
 <link rel="manifest" href="manifest.webmanifest">
 <title>Viewora • Sign up</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
-<link rel="stylesheet" href="signup-flow.css?v=3">
+<link rel="stylesheet" href="signup-flow.css?v=4">
+
+<style id="fromLoginHide">
+/* Hide welcome until JS decides — prevents 0.1s flash when from=login */
+html.from-login .step[data-step="welcome"]{display:none!important}
+html.from-login .step[data-step="contact"]{display:flex!important}
+</style>
+<script>
+(function(){
+  try {
+    var p = new URLSearchParams(location.search);
+    if (p.get("from")==="login" || p.get("step")==="contact") {
+      document.documentElement.classList.add("from-login");
+    }
+  } catch(e){}
+})();
+</script>
 </head>
 <body>
 <div id="app">
@@ -275,6 +291,6 @@
 <script src="compliance.js"></script>
 <script src="badges.js"></script>
 <script src="crash-guard.js"></script>
-<script src="signup-flow.js?v=3"></script>
+<script src="signup-flow.js?v=4"></script>
 </body>
 </html>
