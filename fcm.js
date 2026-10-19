@@ -1,5 +1,5 @@
 /*==========================================================
-  Viewora FCM — phone web push (GitHub Pages safe)
+  Viewora FCM — uses main sw.js (no second service worker)
 ==========================================================*/
 (function (global) {
   "use strict";
@@ -8,12 +8,10 @@
     "BMDVErTurk8DSxivY3w8BdtbJGBTo3pdWooa6bRPp9x2taNSisj-15w5hHNJ_ctYqDWQGx2lZBFb7j6Gb45610Q";
 
   var TOKEN_PATH = "fcmTokens";
-  var SW_URL = "firebase-messaging-sw.js";
 
   function log() {
     try {
-      var a = ["[Viewora FCM]"].concat([].slice.call(arguments));
-      console.log.apply(console, a);
+      console.log.apply(console, ["[Viewora FCM]"].concat([].slice.call(arguments)));
     } catch (_) {}
   }
 
@@ -33,7 +31,7 @@
     if (!ready()) return null;
     try {
       if (!firebase.messaging) {
-        log("messaging SDK missing — add firebase-messaging-compat.js");
+        log("messaging SDK missing — add firebase-messaging-compat.js before fcm.js");
         return null;
       }
       return firebase.messaging();
@@ -56,42 +54,48 @@
         userAgent: (navigator.userAgent || "").slice(0, 180)
       })
       .then(function () {
-        log("token saved under users/" + uid + "/fcmTokens/" + key);
+        // also mirror single field for simple rules / debugging
+        return firebase.database().ref("users/" + uid + "/fcmToken").set(token);
+      })
+      .then(function () {
+        log("token saved", uid, key);
         return true;
       })
       .catch(function (e) {
-        log("token save FAILED (check DB rules fcmTokens)", e && (e.code || e.message || e));
+        log("token save FAILED — check RTDB rules for users/$uid/fcmTokens", e && (e.code || e.message || e));
         return false;
       });
   }
 
-  function registerMessagingSW() {
+  /** Prefer existing PWA SW (sw.js) so FCM + cache share one controller */
+  function getSwRegistration() {
     if (!("serviceWorker" in navigator)) {
       return Promise.reject(new Error("no serviceWorker"));
     }
-    // Absolute path under current folder (works on /viewora/ GitHub Pages)
-    var url = new URL(SW_URL, window.location.href).pathname;
-    return navigator.serviceWorker.register(url, { scope: new URL("./", window.location.href).pathname })
-      .then(function (reg) {
-        log("SW registered", reg.scope);
+    return navigator.serviceWorker.getRegistration("./").then(function (reg) {
+      if (reg) {
+        log("using existing SW", reg.scope);
         return reg;
+      }
+      // register main sw.js if nothing active yet
+      return navigator.serviceWorker.register("./sw.js", { scope: "./" }).then(function (r) {
+        log("registered sw.js", r.scope);
+        return r;
       });
+    });
   }
 
-  /**
-   * Ask permission + token + save
-   */
   function enablePush() {
     if (!ready()) {
       log("firebase not ready");
       return Promise.resolve(null);
     }
-    if (!("Notification" in window)) {
-      log("Notification API missing (old browser / iOS restrictions)");
+    if (typeof Notification === "undefined") {
+      log("Notification API missing");
       return Promise.resolve(null);
     }
     if (location.protocol !== "https:" && location.hostname !== "localhost") {
-      log("HTTPS required for push");
+      log("HTTPS required");
       return Promise.resolve(null);
     }
 
@@ -102,29 +106,22 @@
       .then(function (perm) {
         log("permission:", perm);
         if (perm !== "granted") return null;
-
-        return registerMessagingSW()
-          .catch(function (e) {
-            log("SW register fail, using ready()", e);
-            return navigator.serviceWorker.ready;
-          })
-          .then(function (reg) {
-            return messaging.getToken({
-              vapidKey: VAPID_KEY,
-              serviceWorkerRegistration: reg
-            });
+        return getSwRegistration().then(function (reg) {
+          return messaging.getToken({
+            vapidKey: VAPID_KEY,
+            serviceWorkerRegistration: reg
           });
+        });
       })
       .then(function (token) {
         if (!token) {
           log("no token");
           return null;
         }
-        log("token:", token.slice(0, 24) + "…");
+        log("token:", token.slice(0, 28) + "…");
         try {
           localStorage.setItem("viewora_fcm_token", token);
         } catch (_) {}
-
         var user = firebase.auth() && firebase.auth().currentUser;
         if (user) {
           return saveToken(user.uid, token).then(function () {
@@ -144,17 +141,17 @@
     if (!messaging) return;
     try {
       messaging.onMessage(function (payload) {
-        log("foreground message", payload);
+        log("foreground", payload);
         var n = (payload && payload.notification) || {};
         var d = (payload && payload.data) || {};
         var title = n.title || d.title || "Viewora";
         var body = n.body || d.body || "";
-        if (Notification.permission === "granted") {
+        if (typeof Notification !== "undefined" && Notification.permission === "granted") {
           try {
             new Notification(title, {
               body: body,
               icon: "icon-192.png",
-              data: { url: d.link || d.click_action || "index.html" }
+              data: { url: d.link || "index.html" }
             });
           } catch (_) {}
         }
@@ -173,7 +170,7 @@
     try {
       firebase.auth().onAuthStateChanged(function (user) {
         if (!user) return;
-        if (Notification.permission === "granted") {
+        if (typeof Notification !== "undefined" && Notification.permission === "granted") {
           enablePush();
         }
       });
