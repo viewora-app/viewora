@@ -280,19 +280,15 @@
   }
 
   /* ---- suggested follows ---- */
-  var DEFAULT_SUGGEST = [
-    { uid: "viewora", name: "Viewora", username: "viewora", photo: "assets/logo.png", badge: "Official" },
-    { uid: "demo1", name: "Creator Hub", username: "creatorhub", photo: "", badge: "Creator" },
-    { uid: "demo2", name: "Viral Now", username: "viralnow", photo: "", badge: "Trending" },
-    { uid: "demo3", name: "Music Wave", username: "musicwave", photo: "", badge: "" },
-    { uid: "demo4", name: "Daily Clips", username: "dailyclips", photo: "", badge: "" }
-  ];
+  var DEFAULT_SUGGEST = [];
 
-    function niceName(v) {
-    var name = (v.name || v.fullName || v.displayName || "").trim();
-    var uname = String(v.username || v.userName || "").replace(/^@/, "").trim();
-    if (name && !/^user$/i.test(name)) return name;
-    if (uname && !/^user$/i.test(uname)) return uname;
+  function niceName(v) {
+    var name = String(v.name || v.fullName || v.displayName || "").trim();
+    // strip accidental tick text baked into names
+    name = name.replace(/\s*[✓✔]\s*(VIP|Verified|Official)?/gi, "").trim();
+    var uname = String(v.username || v.userName || v.handle || "").replace(/^@/, "").trim();
+    if (name && !/^user$/i.test(name) && !/^viewora_user$/i.test(name)) return name;
+    if (uname && !/^user$/i.test(uname) && !/^viewora_user$/i.test(uname)) return uname;
     return name || uname || "Viewora user";
   }
 
@@ -303,9 +299,8 @@
     return {
       uid: uid,
       name: niceName(v),
-      username: uname || "viewora_user",
+      username: uname || "user",
       photo: v.profilePhoto || v.photoURL || v.avatar || v.profilePic || "",
-      // keep full tick fields for VieworaBadges
       redTick: !!(v.redTick || v.vip || v.elite),
       blueTick: !!(v.blueTick || v.verified || v.isVerified),
       yellowTick: !!(v.yellowTick || v.businessVerified),
@@ -313,207 +308,155 @@
       vip: !!v.vip,
       elite: !!v.elite,
       verified: !!(v.verified || v.isVerified || v.blueTick),
-      tickType: v.tickType || v.badge || "",
+      tickType: v.tickType || "",
       badge: v.badge || "",
       _raw: v
     };
   }
 
+  /** Same colors as profile / badges.js */
   function tickHtml(u) {
     if (!u) return "";
     try {
       if (window.VieworaBadges && typeof VieworaBadges.resolveBadge === "function") {
         var b = VieworaBadges.resolveBadge(u._raw || u);
-        if (b && b.html) return " " + b.html;
+        if (b && b.html) {
+          return ' <span class="obTickWrap" style="display:inline-flex;vertical-align:middle;margin-left:4px">' + b.html + "</span>";
+        }
       }
     } catch (_) {}
-    var tt = String(u.tickType || "").toLowerCase();
+    var tt = String(u.tickType || u.badge || "").toLowerCase();
     var color = "";
     if (tt === "red" || u.redTick || u.vip || u.elite) color = "#E53935";
     else if (tt === "blue" || u.blueTick || u.verified) color = "#1D9BF0";
     else if (tt === "yellow" || u.yellowTick) color = "#F5C518";
     else if (tt === "white" || u.whiteTick) color = "#F0F4FA";
     if (!color) return "";
-    return ' <i class="fa-solid fa-circle-check" style="color:' + color + ';font-size:13px;margin-left:3px"></i>';
+    return (
+      ' <i class="fa-solid fa-circle-check obTick" style="color:' +
+      color +
+      ';font-size:14px;margin-left:4px;vertical-align:middle"></i>'
+    );
   }
 
   var _suggestCache = [];
+  var _allUsersCache = null; // full scan cache for search
+
+  async function loadAllUsersCache() {
+    if (_allUsersCache) return _allUsersCache;
+    var list = [];
+    if (!db) {
+      _allUsersCache = list;
+      return list;
+    }
+    try {
+      var snap = await db.ref("users").limitToFirst(300).once("value");
+      if (snap.exists()) {
+        snap.forEach(function (ch) {
+          var uid = ch.key;
+          if (user && uid === user.uid) return;
+          var mapped = mapUser(uid, ch.val());
+          if (mapped) list.push(mapped);
+        });
+      }
+    } catch (e) {
+      console.warn("loadAllUsersCache", e);
+    }
+    _allUsersCache = list;
+    return list;
+  }
+
+  function filterPeople(people, q) {
+    q = String(q || "").toLowerCase().trim().replace(/^@/, "");
+    if (!q) return people.slice();
+    return people.filter(function (p) {
+      var hay = (p.name + " " + p.username + " " + p.uid).toLowerCase();
+      return hay.indexOf(q) !== -1;
+    });
+  }
 
   async function loadSuggestions() {
     var list = $("obSuggestList");
     if (!list) return;
-    list.innerHTML = '<div class="obPeopleLoading"><i class="fa-solid fa-spinner fa-spin"></i> Loading…</div>';
-    var people = [];
-    try {
-      if (db) {
-        var snap = await db.ref("users").limitToFirst(80).once("value");
-        if (snap.exists()) {
-          snap.forEach(function (ch) {
-            var uid = ch.key;
-            if (user && uid === user.uid) return;
-            var mapped = mapUser(uid, ch.val());
-            if (mapped) people.push(mapped);
-          });
-        }
-      }
-    } catch (e) {
-      console.warn(e);
-    }
-    if (!people.length) people = DEFAULT_SUGGEST.slice();
-    people = people.slice(0, 24);
-    _suggestCache = people;
-    renderPeople(people);
+    list.innerHTML =
+      '<div class="obPeopleLoading"><i class="fa-solid fa-spinner fa-spin"></i> Loading…</div>';
+
+    var people = await loadAllUsersCache();
+    // prefer accounts with photo / ticks first
+    people = people.slice().sort(function (a, b) {
+      var sa = (a.redTick || a.blueTick || a.yellowTick ? 2 : 0) + (a.photo ? 1 : 0);
+      var sb = (b.redTick || b.blueTick || b.yellowTick ? 2 : 0) + (b.photo ? 1 : 0);
+      return sb - sa;
+    });
+    _suggestCache = people.slice(0, 30);
+    renderPeople(_suggestCache);
 
     var searchEl = $("obFollowSearch");
     if (searchEl && !searchEl.__bound) {
       searchEl.__bound = true;
       var searchTimer = null;
       searchEl.addEventListener("input", function () {
-        var q = (this.value || "").toLowerCase().trim();
+        var q = (this.value || "").trim();
         clearTimeout(searchTimer);
         if (!q) {
           renderPeople(_suggestCache);
           return;
         }
-        // local filter first (instant)
-        var local = _suggestCache.filter(function (p) {
-          return (p.name + " " + p.username).toLowerCase().indexOf(q) !== -1;
-        });
-        renderPeople(local);
-        // then Firebase username lookup
+        // instant local filter on cache
+        var local = filterPeople(_suggestCache, q);
+        renderPeople(local.length ? local : []);
         searchTimer = setTimeout(async function () {
-          if (!db || q.length < 1) return;
           try {
-            var results = [];
-            var seen = {};
-            function addMapped(uid, val) {
-              if (!uid || (user && uid === user.uid) || seen[uid]) return;
-              var mapped = mapUser(uid, val);
-              if (mapped) {
-                seen[uid] = true;
-                results.push(mapped);
-              }
-            }
-
-            // 1) usernames index (if exists)
-            try {
-              var unameSnap = await db.ref("usernames").orderByKey().startAt(q).endAt(q + "\uf8ff").limitToFirst(20).once("value");
-              if (unameSnap.exists()) {
-                var jobs = [];
-                unameSnap.forEach(function (ch) {
-                  var uid = ch.val();
-                  if (typeof uid === "string" && uid) {
-                    jobs.push(
-                      db.ref("users/" + uid).once("value").then(function (us) {
-                        addMapped(uid, us.val());
-                      })
-                    );
-                  }
-                });
-                await Promise.all(jobs);
-              }
-            } catch (e1) {
-              console.warn("usernames search", e1);
-            }
-
-            // 2) users.username prefix (needs .indexOn: username)
-            if (results.length < 12) {
-              try {
-                var byUser = await db
-                  .ref("users")
-                  .orderByChild("username")
-                  .startAt(q)
-                  .endAt(q + "\uf8ff")
-                  .limitToFirst(20)
-                  .once("value");
-                if (byUser.exists()) {
-                  byUser.forEach(function (ch) {
-                    addMapped(ch.key, ch.val());
-                  });
-                }
-              } catch (e2) {
-                console.warn("username field search", e2);
-              }
-            }
-
-            // 3) displayName prefix
-            if (results.length < 12) {
-              try {
-                var byName = await db
-                  .ref("users")
-                  .orderByChild("displayName")
-                  .startAt(q)
-                  .endAt(q + "\uf8ff")
-                  .limitToFirst(15)
-                  .once("value");
-                if (byName.exists()) {
-                  byName.forEach(function (ch) {
-                    addMapped(ch.key, ch.val());
-                  });
-                }
-              } catch (e3) {
-                console.warn("displayName search", e3);
-              }
-            }
-
-            // 4) client-side scan fallback (first 200 users) — works without indexes
-            if (results.length < 5) {
-              try {
-                var scan = await db.ref("users").limitToFirst(200).once("value");
-                if (scan.exists()) {
-                  scan.forEach(function (ch) {
-                    var v = ch.val() || {};
-                    var hay = (
-                      (v.displayName || "") + " " +
-                      (v.name || "") + " " +
-                      (v.username || "") + " " +
-                      (v.handle || "")
-                    ).toLowerCase();
-                    if (hay.indexOf(q) !== -1) addMapped(ch.key, v);
-                  });
-                }
-              } catch (e4) {
-                console.warn("scan search", e4);
-              }
-            }
-
-            // merge with local
-            local.forEach(function (p) {
-              if (p && !seen[p.uid]) {
-                seen[p.uid] = true;
-                results.unshift(p);
-              }
-            });
-
-            renderPeople(results.length ? results : []);
+            var all = await loadAllUsersCache();
+            var found = filterPeople(all, q);
+            renderPeople(found);
           } catch (e) {
             console.warn("search", e);
             renderPeople(local);
           }
-        }, 280);
+        }, 200);
       });
     }
   }
 
-    function renderPeople(people) {
+  function renderPeople(people) {
     var list = $("obSuggestList");
     if (!list) return;
-    if (!people.length) {
+    if (!people || !people.length) {
       list.innerHTML = '<div class="obPeopleLoading">No people found</div>';
       return;
     }
-    list.innerHTML = people.map(function (p) {
-      var followed = !!state.followed[p.uid];
-      var img = p.photo || ("https://ui-avatars.com/api/?name=" + encodeURIComponent(p.name) + "&background=6d28d9&color=fff&size=96");
-      return (
-        '<div class="obPerson" data-uid="' + p.uid + '">' +
-        '<img src="' + img + '" alt="" onerror="this.src=\'https://ui-avatars.com/api/?name=U&background=6d28d9&color=fff&size=96\'">' +
-        '<div class="obPersonMeta"><strong>' + escapeHtml(p.name) + tickHtml(p) +
-        "</strong><span>@" + escapeHtml(p.username) + "</span></div>" +
-        '<button type="button" class="obFollowBtn' + (followed ? " following" : "") + '" data-follow="' + p.uid + '">' +
-        (followed ? "✓ Following" : "Follow") + "</button></div>"
-      );
-    }).join("");
+    list.innerHTML = people
+      .map(function (p) {
+        var followed = !!state.followed[p.uid];
+        var img =
+          p.photo ||
+          "https://ui-avatars.com/api/?name=" +
+            encodeURIComponent(p.name || "U") +
+            "&background=6d28d9&color=fff&size=96";
+        return (
+          '<div class="obPerson" data-uid="' +
+          p.uid +
+          '">' +
+          '<img src="' +
+          img +
+          '" alt="" onerror="this.src=\'https://ui-avatars.com/api/?name=U&background=6d28d9&color=fff&size=96\'">' +
+          '<div class="obPersonMeta"><strong style="display:inline-flex;align-items:center;gap:2px;flex-wrap:wrap">' +
+          escapeHtml(p.name) +
+          tickHtml(p) +
+          "</strong><span>@" +
+          escapeHtml(p.username) +
+          "</span></div>" +
+          '<button type="button" class="obFollowBtn' +
+          (followed ? " following" : "") +
+          '" data-follow="' +
+          p.uid +
+          '">' +
+          (followed ? "Following" : "Follow") +
+          "</button></div>"
+        );
+      })
+      .join("");
 
     list.querySelectorAll("[data-follow]").forEach(function (btn) {
       btn.addEventListener("click", function () {
@@ -523,11 +466,16 @@
   }
 
   function escapeHtml(s) {
-    return String(s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    return String(s || "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
   }
 
   async function toggleFollow(targetUid, btn) {
-    if (!user || !db || !targetUid) {
+    if (!targetUid) return;
+    if (!user || !db) {
       state.followed[targetUid] = !state.followed[targetUid];
       btn.classList.toggle("following", !!state.followed[targetUid]);
       btn.textContent = state.followed[targetUid] ? "Following" : "Follow";
@@ -538,10 +486,8 @@
     btn.disabled = true;
     try {
       var updates = {};
-      // canonical graphs used by profile / feed / shorts
       updates["following/" + user.uid + "/" + targetUid] = on ? true : null;
       updates["followers/" + targetUid + "/" + user.uid] = on ? true : null;
-      // nested mirrors some pages still read
       updates["users/" + user.uid + "/following/" + targetUid] = on ? true : null;
       updates["users/" + targetUid + "/followers/" + user.uid] = on ? true : null;
       await db.ref().update(updates);
@@ -556,18 +502,21 @@
     btn.disabled = false;
   }
 
-  $("obNext3")?.addEventListener("click", function () { goStep(4); });
+  $("obNext3") &&
+    $("obNext3").addEventListener("click", function () {
+      goStep(4);
+    });
 
   /* ---- permissions ---- */
   function bindPerms() {
     $("obEnableNotif")?.addEventListener("click", async function () {
       var btn = this;
       try {
-        if (!("Notification" in window)) {
+        if (typeof window.Notification === "undefined") {
           toast("Notifications not supported");
           return;
         }
-        var perm = await Notification.requestPermission();
+        var perm = await window.Notification.requestPermission();
         if (perm === "granted") {
           state.notif = true;
           btn.textContent = "On";
