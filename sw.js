@@ -1,12 +1,12 @@
 /* Viewora service worker — offline shell for TWA/PWA */
-const CACHE = "viewora-shell-v1";
+const CACHE = "viewora-shell-v3";
 const SHELL = [
   "./",
   "./index.html",
   "./login.html",
+  "./signup.html",
   "./manifest.webmanifest",
-  "./assets/logo.png",
-  "./assets/default-avatar.png"
+  "./icon-192.png"
 ];
 
 self.addEventListener("install", (event) => {
@@ -27,9 +27,12 @@ self.addEventListener("fetch", (event) => {
   const req = event.request;
   if (req.method !== "GET") return;
   const url = new URL(req.url);
-  // network-first for HTML; cache-first for static assets
   if (url.origin !== self.location.origin) return;
-  if (req.mode === "navigate" || (req.headers.get("accept") || "").includes("text/html")) {
+
+  // Always network-first for HTML + signup flow assets
+  const isHtml = req.mode === "navigate" || (req.headers.get("accept") || "").includes("text/html");
+  const isSignup = /signup/i.test(url.pathname);
+  if (isHtml || isSignup) {
     event.respondWith(
       fetch(req)
         .then((res) => {
@@ -41,16 +44,16 @@ self.addEventListener("fetch", (event) => {
     );
     return;
   }
+
   if (/\.(css|js|png|jpg|jpeg|webp|svg|woff2?)$/i.test(url.pathname)) {
     event.respondWith(
-      caches.match(req).then((hit) => {
-        const net = fetch(req).then((res) => {
+      fetch(req)
+        .then((res) => {
           const copy = res.clone();
           caches.open(CACHE).then((c) => c.put(req, copy)).catch(() => {});
           return res;
-        }).catch(() => hit);
-        return hit || net;
-      })
+        })
+        .catch(() => caches.match(req))
     );
   }
 });

@@ -18,6 +18,23 @@
     uid: null
   };
 
+
+  // Routing: ?from=login skips welcome → contact
+  // First-time (no saved accounts) stays on welcome
+  try {
+    var params = new URLSearchParams(location.search);
+    var fromLogin = params.get("from") === "login" || params.get("step") === "contact";
+    var hasAccounts = false;
+    try {
+      var acc = JSON.parse(localStorage.getItem("viewora_saved_accounts") || "[]");
+      hasAccounts = Array.isArray(acc) && acc.length > 0;
+    } catch (_) {}
+    if (fromLogin) {
+      // adding another account / came from login signup link
+      setTimeout(function () { go("contact", false); stack = ["welcome", "contact"]; }, 0);
+    }
+  } catch (_) {}
+
   var stack = ["welcome"];
   var INTERESTS = [
     "Music", "Comedy", "Sports", "Fashion", "Food", "Travel",
@@ -372,18 +389,37 @@
     go("photo");
   };
 
-  // Avatar
-  $("suAvatarFile").addEventListener("change", function () {
-    var f = this.files && this.files[0];
-    if (!f) return;
-    state.avatarFile = f;
-    var url = URL.createObjectURL(f);
-    var img = $("suAvatarPreview");
-    img.src = url;
-    img.classList.remove("hidden");
-    $("suAvatarPh").classList.add("hidden");
-    // best-effort upload later on finish via cloudinary if present
-  });
+  state.bannerFile = null;
+  state.bannerUrl = "";
+  state.bio = "";
+
+  function previewFile(inputId, imgId, phId, key) {
+    var el = $(inputId);
+    if (!el) return;
+    el.addEventListener("change", function () {
+      var f = this.files && this.files[0];
+      if (!f) return;
+      state[key] = f;
+      var url = URL.createObjectURL(f);
+      var img = $(imgId);
+      if (img) {
+        img.src = url;
+        img.classList.remove("hidden");
+      }
+      var ph = $(phId);
+      if (ph) ph.classList.add("hidden");
+    });
+  }
+  previewFile("suAvatarFile", "suAvatarPreview", "suAvatarPh", "avatarFile");
+  previewFile("suBannerFile", "suBannerPreview", "suBannerPh", "bannerFile");
+
+  if ($("photoDone")) {
+    $("photoDone").onclick = function () {
+      state.bio = (($("suBio") && $("suBio").value) || "").trim().slice(0, 150);
+      go("follow");
+    };
+  }
+
 
   // People
   async function loadPeople() {
@@ -516,7 +552,15 @@
             return state.interests[k];
           })
         };
-        if (state.avatarUrl) patch.profilePhoto = state.avatarUrl;
+        if (state.bio) patch.bio = state.bio;
+        if (state.avatarUrl) {
+          patch.profilePhoto = state.avatarUrl;
+          patch.avatar = state.avatarUrl;
+        }
+        if (state.bannerUrl) {
+          patch.banner = state.bannerUrl;
+          patch.coverPhoto = state.bannerUrl;
+        }
         await firebase.database().ref("users/" + user.uid).update(patch);
       } catch (_) {}
       // try cloudinary if global config exists

@@ -7,7 +7,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <title>Viewora • Sign up</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
-<link rel="stylesheet" href="signup-flow.css">
+<link rel="stylesheet" href="signup-flow.css?v=3">
 </head>
 <body>
 <div id="app">
@@ -17,12 +17,12 @@
     <div class="welcomeHero">
       <div class="lang">English (India)</div>
       <div class="heroArt">
-        <div class="cardStack">
-          <div class="stackCard c1"></div>
-          <div class="stackCard c2"></div>
-          <div class="stackCard c3">
-            <img src="icon-192.png" alt="" onerror="this.style.display='none'">
-          </div>
+        <div class="engageGrid">
+          <!-- Replace these 4 images with your Viewora engagement screenshots -->
+          <div class="engageCard e1"><img src="assets/engage-1.png" alt="" onerror="this.parentElement.classList.add('fallback')"></div>
+          <div class="engageCard e2"><img src="assets/engage-2.png" alt="" onerror="this.parentElement.classList.add('fallback')"></div>
+          <div class="engageCard e3"><img src="assets/engage-3.png" alt="" onerror="this.parentElement.classList.add('fallback')"></div>
+          <div class="engageCard e4"><img src="assets/engage-4.png" alt="" onerror="this.parentElement.classList.add('fallback')"></div>
         </div>
       </div>
       <h1>Join Viewora</h1>
@@ -215,20 +215,30 @@
     </div>
   </section>
 
-  <!-- 13 PHOTO -->
+  <!-- 13 PHOTO + BANNER + BIO -->
   <section class="step" data-step="photo">
     <header class="topBar"><span></span><button type="button" class="skip" data-go="follow">Skip</button></header>
     <div class="pad center">
       <h1>Create a profile that shows your vibe</h1>
-      <div class="avatarPick">
-        <img id="suAvatarPreview" src="" alt="" class="hidden">
-        <div class="avatarPlaceholder" id="suAvatarPh"><i class="fa-regular fa-user"></i></div>
-        <label class="camBtn" for="suAvatarFile"><i class="fa-solid fa-camera"></i></label>
-        <input type="file" id="suAvatarFile" accept="image/*" hidden>
+      <div class="profileCompose">
+        <div class="bannerPick">
+          <img id="suBannerPreview" src="" alt="" class="hidden">
+          <div class="bannerPlaceholder" id="suBannerPh">Banner photo</div>
+          <label class="bannerCam" for="suBannerFile"><i class="fa-solid fa-camera"></i></label>
+          <input type="file" id="suBannerFile" accept="image/*" hidden>
+        </div>
+        <div class="avatarPick onBanner">
+          <img id="suAvatarPreview" src="" alt="" class="hidden">
+          <div class="avatarPlaceholder" id="suAvatarPh"><i class="fa-regular fa-user"></i></div>
+          <label class="camBtn" for="suAvatarFile"><i class="fa-solid fa-camera"></i></label>
+          <input type="file" id="suAvatarFile" accept="image/*" hidden>
+        </div>
       </div>
       <p class="unameLabel" id="suPhotoUname"></p>
       <p class="nameLabel" id="suPhotoName"></p>
-      <button type="button" class="btnPrimary" data-go="follow">Done</button>
+      <textarea class="field bioField" id="suBio" placeholder="Add bio" maxlength="150" rows="3"></textarea>
+      <p class="hint" style="text-align:left">Optional — you can edit later.</p>
+      <button type="button" class="btnPrimary" id="photoDone">Done</button>
     </div>
   </section>
 
@@ -265,6 +275,6 @@
 <script src="compliance.js"></script>
 <script src="badges.js"></script>
 <script src="crash-guard.js"></script>
-<script src="signup-flow.js"></script>
+<script src="signup-flow.js?v=3"></script>
 </body>
 </html>

@@ -88,3 +88,41 @@ h2{font-size:18px;margin-top:16px}
 .toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%);background:#1a1a24;color:#fff;padding:12px 16px;border-radius:12px;font-size:13px;z-index:50;border:1px solid rgba(255,255,255,.1)}
 .hidden{display:none!important}
 #recaptcha-container{margin:8px 0}
+
+/* 4 engagement images on welcome */
+.engageGrid{
+  width:min(320px,88vw);height:280px;position:relative;margin:0 auto;
+}
+.engageCard{
+  position:absolute;width:42%;aspect-ratio:.75;border-radius:18px;overflow:hidden;
+  background:linear-gradient(145deg,#7c3aed,#2563eb);
+  border:1px solid rgba(255,255,255,.12);
+  box-shadow:0 12px 40px rgba(0,0,0,.45);
+}
+.engageCard img{width:100%;height:100%;object-fit:cover;display:block}
+.engageCard.fallback{background:linear-gradient(145deg,#7c3aed,#2563eb)}
+.e1{left:6%;top:8%;transform:rotate(-8deg);z-index:1}
+.e2{right:4%;top:0;transform:rotate(7deg);z-index:2}
+.e3{left:10%;bottom:0;transform:rotate(5deg);z-index:3}
+.e4{right:8%;bottom:6%;transform:rotate(-5deg);z-index:4}
+
+/* profile compose banner + avatar */
+.profileCompose{position:relative;width:100%;max-width:340px;margin:16px auto 8px}
+.bannerPick{
+  position:relative;width:100%;height:120px;border-radius:16px;overflow:hidden;
+  background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1)
+}
+.bannerPlaceholder{
+  height:100%;display:flex;align-items:center;justify-content:center;
+  color:rgba(255,255,255,.35);font-size:13px
+}
+.bannerPick img{width:100%;height:100%;object-fit:cover}
+.bannerCam{
+  position:absolute;right:10px;bottom:10px;width:34px;height:34px;border-radius:50%;
+  background:#0095f6;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px
+}
+.avatarPick.onBanner{margin:-40px auto 0;width:96px;height:96px}
+.avatarPick.onBanner .avatarPlaceholder,
+.avatarPick.onBanner img{width:96px;height:96px;border:3px solid #000}
+.avatarPick.onBanner .camBtn{width:32px;height:32px;font-size:12px;right:0;bottom:0}
+.bioField{text-align:left;resize:none;min-height:72px;margin-top:8px}
