@@ -299,14 +299,42 @@
   function mapUser(uid, v) {
     v = v || {};
     if (v.banned || v.disabled || v.deleted || v.status === "deleted") return null;
-    var uname = String(v.username || v.userName || "").replace(/^@/, "").trim();
+    var uname = String(v.username || v.userName || v.handle || "").replace(/^@/, "").trim();
     return {
       uid: uid,
       name: niceName(v),
       username: uname || "viewora_user",
-      photo: v.profilePhoto || v.photoURL || v.avatar || "",
-      badge: v.redTick || v.vip ? "VIP" : (v.blueTick || v.verified ? "Verified" : "")
+      photo: v.profilePhoto || v.photoURL || v.avatar || v.profilePic || "",
+      // keep full tick fields for VieworaBadges
+      redTick: !!(v.redTick || v.vip || v.elite),
+      blueTick: !!(v.blueTick || v.verified || v.isVerified),
+      yellowTick: !!(v.yellowTick || v.businessVerified),
+      whiteTick: !!v.whiteTick,
+      vip: !!v.vip,
+      elite: !!v.elite,
+      verified: !!(v.verified || v.isVerified || v.blueTick),
+      tickType: v.tickType || v.badge || "",
+      badge: v.badge || "",
+      _raw: v
     };
+  }
+
+  function tickHtml(u) {
+    if (!u) return "";
+    try {
+      if (window.VieworaBadges && typeof VieworaBadges.resolveBadge === "function") {
+        var b = VieworaBadges.resolveBadge(u._raw || u);
+        if (b && b.html) return " " + b.html;
+      }
+    } catch (_) {}
+    var tt = String(u.tickType || "").toLowerCase();
+    var color = "";
+    if (tt === "red" || u.redTick || u.vip || u.elite) color = "#E53935";
+    else if (tt === "blue" || u.blueTick || u.verified) color = "#1D9BF0";
+    else if (tt === "yellow" || u.yellowTick) color = "#F5C518";
+    else if (tt === "white" || u.whiteTick) color = "#F0F4FA";
+    if (!color) return "";
+    return ' <i class="fa-solid fa-circle-check" style="color:' + color + ';font-size:13px;margin-left:3px"></i>';
   }
 
   var _suggestCache = [];
@@ -318,7 +346,7 @@
     var people = [];
     try {
       if (db) {
-        var snap = await db.ref("users").limitToFirst(40).once("value");
+        var snap = await db.ref("users").limitToFirst(80).once("value");
         if (snap.exists()) {
           snap.forEach(function (ch) {
             var uid = ch.key;
@@ -354,36 +382,115 @@
         renderPeople(local);
         // then Firebase username lookup
         searchTimer = setTimeout(async function () {
-          if (!db || q.length < 2) return;
+          if (!db || q.length < 1) return;
           try {
             var results = [];
-            var unameSnap = await db.ref("usernames").orderByKey().startAt(q).endAt(q + "\uf8ff").limitToFirst(15).once("value");
-            if (unameSnap.exists()) {
-              var uids = [];
-              unameSnap.forEach(function (ch) {
-                var uid = ch.val();
-                if (typeof uid === "string" && uid) uids.push({ uname: ch.key, uid: uid });
-              });
-              for (var i = 0; i < uids.length; i++) {
-                if (user && uids[i].uid === user.uid) continue;
-                var us = await db.ref("users/" + uids[i].uid).once("value");
-                var mapped = mapUser(uids[i].uid, us.val());
-                if (mapped) results.push(mapped);
+            var seen = {};
+            function addMapped(uid, val) {
+              if (!uid || (user && uid === user.uid) || seen[uid]) return;
+              var mapped = mapUser(uid, val);
+              if (mapped) {
+                seen[uid] = true;
+                results.push(mapped);
               }
             }
-            // merge local + remote unique
-            var seen = {};
-            var merged = [];
-            local.concat(results).forEach(function (p) {
-              if (!p || seen[p.uid]) return;
-              seen[p.uid] = true;
-              merged.push(p);
+
+            // 1) usernames index (if exists)
+            try {
+              var unameSnap = await db.ref("usernames").orderByKey().startAt(q).endAt(q + "\uf8ff").limitToFirst(20).once("value");
+              if (unameSnap.exists()) {
+                var jobs = [];
+                unameSnap.forEach(function (ch) {
+                  var uid = ch.val();
+                  if (typeof uid === "string" && uid) {
+                    jobs.push(
+                      db.ref("users/" + uid).once("value").then(function (us) {
+                        addMapped(uid, us.val());
+                      })
+                    );
+                  }
+                });
+                await Promise.all(jobs);
+              }
+            } catch (e1) {
+              console.warn("usernames search", e1);
+            }
+
+            // 2) users.username prefix (needs .indexOn: username)
+            if (results.length < 12) {
+              try {
+                var byUser = await db
+                  .ref("users")
+                  .orderByChild("username")
+                  .startAt(q)
+                  .endAt(q + "\uf8ff")
+                  .limitToFirst(20)
+                  .once("value");
+                if (byUser.exists()) {
+                  byUser.forEach(function (ch) {
+                    addMapped(ch.key, ch.val());
+                  });
+                }
+              } catch (e2) {
+                console.warn("username field search", e2);
+              }
+            }
+
+            // 3) displayName prefix
+            if (results.length < 12) {
+              try {
+                var byName = await db
+                  .ref("users")
+                  .orderByChild("displayName")
+                  .startAt(q)
+                  .endAt(q + "\uf8ff")
+                  .limitToFirst(15)
+                  .once("value");
+                if (byName.exists()) {
+                  byName.forEach(function (ch) {
+                    addMapped(ch.key, ch.val());
+                  });
+                }
+              } catch (e3) {
+                console.warn("displayName search", e3);
+              }
+            }
+
+            // 4) client-side scan fallback (first 200 users) — works without indexes
+            if (results.length < 5) {
+              try {
+                var scan = await db.ref("users").limitToFirst(200).once("value");
+                if (scan.exists()) {
+                  scan.forEach(function (ch) {
+                    var v = ch.val() || {};
+                    var hay = (
+                      (v.displayName || "") + " " +
+                      (v.name || "") + " " +
+                      (v.username || "") + " " +
+                      (v.handle || "")
+                    ).toLowerCase();
+                    if (hay.indexOf(q) !== -1) addMapped(ch.key, v);
+                  });
+                }
+              } catch (e4) {
+                console.warn("scan search", e4);
+              }
+            }
+
+            // merge with local
+            local.forEach(function (p) {
+              if (p && !seen[p.uid]) {
+                seen[p.uid] = true;
+                results.unshift(p);
+              }
             });
-            renderPeople(merged.length ? merged : local);
+
+            renderPeople(results.length ? results : []);
           } catch (e) {
             console.warn("search", e);
+            renderPeople(local);
           }
-        }, 320);
+        }, 280);
       });
     }
   }
@@ -401,8 +508,7 @@
       return (
         '<div class="obPerson" data-uid="' + p.uid + '">' +
         '<img src="' + img + '" alt="" onerror="this.src=\'https://ui-avatars.com/api/?name=U&background=6d28d9&color=fff&size=96\'">' +
-        '<div class="obPersonMeta"><strong>' + escapeHtml(p.name) +
-        (p.badge ? ' <span style="color:#1d9bf0;font-size:11px">✓ ' + escapeHtml(p.badge) + "</span>" : "") +
+        '<div class="obPersonMeta"><strong>' + escapeHtml(p.name) + tickHtml(p) +
         "</strong><span>@" + escapeHtml(p.username) + "</span></div>" +
         '<button type="button" class="obFollowBtn' + (followed ? " following" : "") + '" data-follow="' + p.uid + '">' +
         (followed ? "✓ Following" : "Follow") + "</button></div>"
@@ -424,22 +530,30 @@
     if (!user || !db || !targetUid) {
       state.followed[targetUid] = !state.followed[targetUid];
       btn.classList.toggle("following", !!state.followed[targetUid]);
-      btn.textContent = state.followed[targetUid] ? "✓ Following" : "Follow";
+      btn.textContent = state.followed[targetUid] ? "Following" : "Follow";
       return;
     }
     if (targetUid === user.uid) return;
     var on = !state.followed[targetUid];
+    btn.disabled = true;
     try {
       var updates = {};
+      // canonical graphs used by profile / feed / shorts
       updates["following/" + user.uid + "/" + targetUid] = on ? true : null;
       updates["followers/" + targetUid + "/" + user.uid] = on ? true : null;
+      // nested mirrors some pages still read
+      updates["users/" + user.uid + "/following/" + targetUid] = on ? true : null;
+      updates["users/" + targetUid + "/followers/" + user.uid] = on ? true : null;
       await db.ref().update(updates);
       state.followed[targetUid] = on;
       btn.classList.toggle("following", on);
-      btn.textContent = on ? "✓ Following" : "Follow";
+      btn.textContent = on ? "Following" : "Follow";
+      toast(on ? "Following" : "Unfollowed");
     } catch (e) {
+      console.warn(e);
       toast("Follow failed");
     }
+    btn.disabled = false;
   }
 
   $("obNext3")?.addEventListener("click", function () { goStep(4); });
