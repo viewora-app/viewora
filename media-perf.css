@@ -1,0 +1,8 @@
+/* media polish placeholders */
+img.lazy, img[data-src]{
+  background:linear-gradient(110deg,rgba(255,255,255,.04) 30%,rgba(255,255,255,.08) 50%,rgba(255,255,255,.04) 70%);
+  background-size:200% 100%;
+  min-height:48px;
+}
+img.media-loaded{background:none}
+video:not([poster]){background:#0a0a0f}
