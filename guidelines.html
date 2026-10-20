@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#08080d">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Viewora">
+<link rel="apple-touch-icon" href="icon-192.png">
+<script src="pwa-register.js" defer></script>
+<title>Community Guidelines • Viewora</title>
+<meta name="description" content="Viewora Community Guidelines — rules for a safe, respectful space to create, watch and connect.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+<style>
+:root {
+  --bg:#050507; --card:#121216; --border:rgba(255,255,255,.08);
+  --text:#f4f4f5; --muted:rgba(255,255,255,.58); --muted-2:rgba(255,255,255,.38);
+  --accent:#3b82f6; --link:#60a5fa; --safe-top:env(safe-area-inset-top,0px);
+  --safe-bottom:env(safe-area-inset-bottom,0px);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{min-height:100%}
+body{
+  background:radial-gradient(80% 40% at 50% -10%,rgba(124,58,237,.12),transparent 50%),var(--bg);
+  color:var(--text);font-family:"Inter",system-ui,-apple-system,sans-serif;line-height:1.65;
+  padding-top:var(--safe-top);padding-bottom:calc(28px + var(--safe-bottom));
+}
+a{color:var(--link);text-decoration:none}
+a:hover{text-decoration:underline}
+.topbar{
+  position:sticky;top:0;z-index:50;display:flex;align-items:center;gap:12px;
+  padding:12px 16px;background:rgba(5,5,7,.88);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--border);
+}
+.back{
+  width:40px;height:40px;border-radius:12px;border:1px solid var(--border);
+  background:rgba(255,255,255,.04);color:#fff;display:flex;align-items:center;justify-content:center;
+  cursor:pointer;font-size:16px;text-decoration:none;
+}
+.brand{display:flex;align-items:center;gap:10px;min-width:0}
+.brand-logo{
+  width:32px;height:32px;border-radius:10px;background:linear-gradient(135deg,#7c3aed,#2563eb);
+  display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;color:#fff;
+}
+.brand h1{font-size:15px;font-weight:700}
+.brand span{display:block;font-size:11px;color:var(--muted);font-weight:500}
+.wrap{max-width:720px;margin:0 auto;padding:24px 18px 48px}
+.hero{margin-bottom:22px}
+.hero .badge{
+  display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:999px;
+  background:rgba(124,58,237,.14);border:1px solid rgba(124,58,237,.28);
+  color:#c4b5fd;font-size:11px;font-weight:600;margin-bottom:12px;
+}
+.hero h2{font-size:26px;font-weight:800;letter-spacing:-.4px;line-height:1.2;margin-bottom:8px}
+.hero p{font-size:14px;color:var(--muted);max-width:540px}
+.meta{margin-top:12px;font-size:12px;color:var(--muted-2)}
+.toc{
+  display:flex;flex-wrap:wrap;gap:8px;margin:18px 0 8px;
+}
+.toc a{
+  font-size:12px;padding:6px 12px;border-radius:999px;border:1px solid var(--border);
+  background:rgba(255,255,255,.03);color:var(--muted);text-decoration:none;
+}
+.toc a:hover{border-color:rgba(96,165,250,.4);color:#93c5fd}
+.section{margin-bottom:28px;scroll-margin-top:72px}
+.section h3{font-size:16px;font-weight:750;margin-bottom:10px;color:var(--text)}
+.section p,.section li{font-size:14px;color:var(--muted);margin-bottom:8px}
+.section ul,.section ol{padding-left:18px;margin-bottom:8px}
+.section li{margin-bottom:6px}
+.section strong{color:var(--text);font-weight:600}
+.card{
+  background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px;margin-bottom:12px;
+}
+.callout{
+  background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.2);
+  border-radius:14px;padding:12px 14px;margin:12px 0;font-size:13px;color:var(--muted);
+}
+.warn{
+  background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.22);
+  border-radius:14px;padding:12px 14px;margin:12px 0;font-size:13px;color:var(--muted);
+}
+.danger{
+  background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.22);
+  border-radius:14px;padding:12px 14px;margin:12px 0;font-size:13px;color:var(--muted);
+}
+.ok{
+  background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.22);
+  border-radius:14px;padding:12px 14px;margin:12px 0;font-size:13px;color:var(--muted);
+}
+.footer{
+  margin-top:36px;padding-top:20px;border-top:1px solid var(--border);
+  text-align:center;font-size:13px;color:var(--muted-2);
+}
+.footer a{margin:0 8px}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <a class="back" href="javascript:history.length>1?history.back():location.href='index.html'" aria-label="Back"><i class="fa-solid fa-arrow-left"></i></a>
+  <div class="brand">
+    <div class="brand-logo">V</div>
+    <div>
+      <h1>Community Guidelines</h1>
+      <span>Viewora</span>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="hero">
+    <div class="badge"><i class="fa-solid fa-shield-halved"></i> Safety &amp; respect</div>
+    <h2>Community Guidelines</h2>
+    <p>Viewora is for creating, watching, sharing and connecting. These rules keep the platform safe for everyone — including teens 13+ and creators.</p>
+    <p class="meta">Last updated: 20 October 2026 · Applies to all accounts, posts, shorts, stories, live, chat and profiles.</p>
+  </div>
+
+  <nav class="toc" aria-label="Sections">
+    <a href="#spirit">Spirit</a>
+    <a href="#age">Age</a>
+    <a href="#respect">Respect</a>
+    <a href="#safety">Safety</a>
+    <a href="#content">Content</a>
+    <a href="#spam">Spam</a>
+    <a href="#ip">IP</a>
+    <a href="#report">Report</a>
+    <a href="#enforce">Enforcement</a>
+  </nav>
+
+  <section class="section" id="spirit">
+    <h3>1. The spirit of Viewora</h3>
+    <div class="card">
+      <p>We want a place where people can express themselves, grow audiences, and discover videos — without fear of harm, scams, or abuse.</p>
+      <div class="ok"><strong>Do:</strong> be authentic, credit others, disagree politely, report problems early.</div>
+      <div class="danger"><strong>Don’t:</strong> harass, exploit, scam, or post illegal or dangerous material.</div>
+    </div>
+  </section>
+
+  <section class="section" id="age">
+    <h3>2. Age requirement (13+)</h3>
+    <div class="card">
+      <p>You must be <strong>at least 13 years old</strong> to create or use a Viewora account.</p>
+      <ul>
+        <li>We may ask for date of birth or age confirmation at signup.</li>
+        <li>Accounts of under-13 users will be removed when we become aware of them.</li>
+        <li>Parents/guardians: contact us if a child under 13 has an account.</li>
+      </ul>
+      <div class="warn">Sexual content involving minors (anyone 17 or under) is <strong>strictly forbidden</strong> — including fictional, AI-generated, or “roleplay” depictions. We report illegal child sexual abuse material to authorities where required.</div>
+    </div>
+  </section>
+
+  <section class="section" id="respect">
+    <h3>3. Respect &amp; harassment</h3>
+    <div class="card">
+      <p>Do not target people with abuse. Prohibited behaviour includes:</p>
+      <ul>
+        <li>Threats of violence, death threats, or encouraging self-harm</li>
+        <li>Bullying, stalking, repeated unwanted contact, or doxxing (sharing private info)</li>
+        <li>Hate speech based on race, religion, gender, orientation, disability, caste, or nationality</li>
+        <li>Sexual harassment, unsolicited sexual content, or non-consensual intimate imagery</li>
+        <li>Impersonation of another person or brand in a misleading way</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="section" id="safety">
+    <h3>4. Dangerous &amp; illegal activity</h3>
+    <div class="card">
+      <p>Content or behaviour that promotes real-world harm is not allowed, including:</p>
+      <ul>
+        <li>Terrorism, violent extremism, or organized crime recruitment</li>
+        <li>Instructions for weapons, explosives, or violent crime</li>
+        <li>Drug trafficking, scams, fraud, phishing, or stolen payment data</li>
+        <li>Human trafficking, exploitation, or coercion</li>
+        <li>Graphic real violence shared for shock or glorification</li>
+      </ul>
+      <div class="callout">News, education, or documentary context may be allowed when clearly labelled and not instructional for harm. We still remove content that crosses the line into promotion or how-to guidance for crime.</div>
+    </div>
+  </section>
+
+  <section class="section" id="content">
+    <h3>5. Content standards (posts, shorts, stories, live)</h3>
+    <div class="card">
+      <p><strong>Adult / sexual content:</strong> Consensual adult content may be restricted or labelled. Non-consensual, abusive, or illegal sexual content is banned.</p>
+      <p><strong>Nudity:</strong> Follow local law. Sexual content involving minors is never allowed.</p>
+      <p><strong>Violence &amp; gore:</strong> Extreme gore or animal cruelty for entertainment is not allowed.</p>
+      <p><strong>Misinformation:</strong> Don’t run coordinated campaigns that cause harm (e.g. health or election fraud that can cause real damage).</p>
+      <p><strong>Live:</strong> Hosts are responsible for their stream. Ban evasion and ban-dodging accounts may be removed.</p>
+    </div>
+  </section>
+
+  <section class="section" id="spam">
+    <h3>6. Spam, bots &amp; manipulation</h3>
+    <div class="card">
+      <ul>
+        <li>No mass follow/unfollow, fake engagement, or bought metrics</li>
+        <li>No malware links, phishing, or deceptive “giveaway” scams</li>
+        <li>No automated accounts that spam comments, DMs, or posts</li>
+        <li>Don’t flood feeds with repetitive promotional content</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="section" id="ip">
+    <h3>7. Intellectual property</h3>
+    <div class="card">
+      <p>Only post content you own or have the right to use (music, clips, logos, photos).</p>
+      <ul>
+        <li>Copyright owners may request removal of infringing material.</li>
+        <li>Repeated infringement can lead to account termination.</li>
+        <li>Fair use / commentary is not a free pass to re-upload full works.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="section" id="report">
+    <h3>8. How to report</h3>
+    <div class="card">
+      <p>Use in-app <strong>Report</strong> on a profile, post, short, story, live, or chat when available.</p>
+      <p>You can also reach us via the contact method listed in <a href="privacy.html">Privacy Policy</a> / Settings → About.</p>
+      <p>Reports are reviewed as capacity allows. Urgent safety issues (imminent harm, child exploitation) are prioritised.</p>
+    </div>
+  </section>
+
+  <section class="section" id="enforce">
+    <h3>9. Enforcement</h3>
+    <div class="card">
+      <p>Depending on severity and history, we may:</p>
+      <ul>
+        <li>Remove content or limit distribution</li>
+        <li>Warn, restrict features, or temporary suspend</li>
+        <li>Permanently ban accounts and related devices where abuse continues</li>
+        <li>Preserve and disclose data when required by law</li>
+      </ul>
+      <div class="callout">These Guidelines work together with our <a href="terms.html">Terms of Service</a> and <a href="privacy.html">Privacy Policy</a>. We may update this page; continued use means you accept the current version.</div>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <a href="terms.html">Terms</a>
+    <a href="privacy.html">Privacy</a>
+    <a href="index.html">Home</a>
+    <p style="margin-top:14px">© Viewora · Create, Watch, Share &amp; Connect</p>
+  </footer>
+</main>
+
+</body>
+</html>
