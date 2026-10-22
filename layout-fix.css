@@ -1,0 +1,389 @@
+/*
+ * VIEWORA — RESPONSIVE LAYOUT OVERRIDES
+ * Add this stylesheet after all other CSS and the inline <style> block in index.html.
+ * Goals: Instagram-style social feed on phones; separate spacious desktop layout;
+ * YouTube-style long-video thumbnail grid.
+ */
+
+:root {
+  --vo-content-max: 1240px;
+  --vo-post-max: 640px;
+  --vo-video-gap: 24px;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  min-height: 100%;
+  overflow-x: clip;
+}
+
+body {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  min-height: 100vh;
+  min-height: 100dvh;
+  overflow-x: clip;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+img,
+video,
+canvas {
+  max-width: 100%;
+}
+
+button,
+input,
+textarea,
+select {
+  max-width: 100%;
+}
+
+/* Prevent flex/grid children from forcing the page wider than the screen. */
+#app,
+.app,
+.homeContent,
+.topHeader,
+.storiesSection,
+.storiesContainer,
+.firebaseStories,
+.categorySection,
+.categoryScroller,
+.feedSwitcher,
+.homeFeed,
+.swipeFeed,
+.swipePanel,
+#longVideosSection,
+#postsSection,
+#longVideoContainer,
+#feedContainer {
+  min-width: 0;
+  max-width: 100%;
+}
+
+/* Keep stories and category chips swipeable on touch screens. */
+.storiesContainer {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: flex-start;
+  gap: 12px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.storiesContainer::-webkit-scrollbar,
+.categoryScroller::-webkit-scrollbar {
+  display: none;
+}
+
+.categoryScroller {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 8px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.categoryChip {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+/* Instagram-like feed: one clear column for photo/text posts. */
+#feedContainer,
+.feedContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+  max-width: var(--vo-post-max);
+  margin-inline: auto;
+}
+
+#feedContainer > *,
+.feedContainer > * {
+  min-width: 0;
+  width: 100%;
+}
+
+/* YouTube-like long-video cards: thumbnail first, metadata below. */
+#longVideoContainer,
+.longVideoContainer {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+  gap: 18px;
+  width: 100%;
+  margin-inline: auto;
+}
+
+.longVideoCard {
+  width: 100%;
+  min-width: 0;
+  overflow: visible;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  transform: none;
+}
+
+.longVideoCard:hover {
+  transform: none;
+}
+
+.longVideoCard .videoThumbnailWrap {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border-radius: 12px;
+  background: #111118;
+}
+
+.longVideoCard .videoThumbnail {
+  display: block;
+  width: 100%;
+  height: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+}
+
+.longVideoCard .videoInfo {
+  align-items: flex-start;
+  gap: 10px;
+  padding: 11px 2px 16px;
+}
+
+.longVideoCard .videoAvatar {
+  width: 38px;
+  height: 38px;
+  flex: 0 0 38px;
+  object-fit: cover;
+}
+
+.longVideoCard .videoMeta {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.longVideoCard .videoMeta h3 {
+  font-size: 14px;
+  line-height: 1.4;
+  font-weight: 700;
+}
+
+.longVideoCard .videoSubMeta {
+  gap: 5px;
+  margin-top: 5px;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+/* ---------------- PHONE: Instagram-like compact feed ---------------- */
+@media (max-width: 767.98px) {
+  .topHeader {
+    position: sticky;
+    top: 0;
+    z-index: 80;
+    padding: 8px 12px;
+    background: rgba(8, 8, 13, 0.94);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+  }
+
+  .homeContent {
+    width: 100%;
+    padding: 0 0 88px;
+  }
+
+  .storiesSection,
+  .categorySection {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  .storiesSection {
+    padding-top: 8px;
+  }
+
+  .storiesContainer {
+    gap: 11px;
+  }
+
+  .feedSwitcher {
+    position: sticky;
+    top: 56px;
+    z-index: 70;
+    margin: 0 12px 10px;
+    padding: 6px 0;
+    border-radius: 14px;
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+  }
+
+  .feedTab {
+    min-height: 42px;
+  }
+
+  .homeFeed,
+  #longVideosSection,
+  #postsSection {
+    width: 100%;
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  #longVideosSection > .sectionHeader,
+  #postsSection > .sectionHeader {
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+
+  #longVideoContainer,
+  .longVideoContainer {
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 8px !important;
+  }
+
+  .longVideoCard .videoThumbnailWrap {
+    border-radius: 0;
+  }
+
+  .longVideoCard .videoInfo {
+    padding: 10px 12px 16px;
+  }
+
+  .longVideoCard .videoMeta h3 {
+    font-size: 14px;
+  }
+
+  #feedContainer,
+  .feedContainer {
+    max-width: 100%;
+    gap: 0;
+  }
+
+  #feedContainer .postCard,
+  #feedContainer .vieworaPostCard,
+  .feedContainer .postCard,
+  .feedContainer .vieworaPostCard {
+    border-left: 0;
+    border-right: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+}
+
+/* ---------------- TABLET: two video columns + touch navigation ---------- */
+@media (min-width: 768px) and (max-width: 1023.98px) {
+  .homeContent {
+    width: 100%;
+    padding: 8px 16px 96px;
+  }
+
+  #longVideoContainer,
+  .longVideoContainer {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 20px !important;
+  }
+
+  .storiesSection,
+  .categorySection {
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  #feedContainer,
+  .feedContainer {
+    max-width: var(--vo-post-max);
+  }
+}
+
+/* ---------------- LAPTOP/DESKTOP: separate, wider workspace ------------- */
+@media (min-width: 1024px) {
+  .homeContent {
+    width: 100%;
+    max-width: none;
+    margin-inline: auto;
+    padding: 18px clamp(22px, 2.5vw, 44px) 48px;
+  }
+
+  .storiesSection,
+  .categorySection {
+    max-width: var(--vo-content-max);
+    margin-inline: auto;
+  }
+
+  .feedSwitcher {
+    max-width: 760px;
+    margin: 8px auto 16px;
+  }
+
+  #longVideosSection > .sectionHeader,
+  #postsSection > .sectionHeader {
+    width: 100%;
+  }
+
+  #longVideoContainer,
+  .longVideoContainer {
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)) !important;
+    gap: var(--vo-video-gap) 20px !important;
+    max-width: var(--vo-content-max);
+    margin-inline: auto;
+  }
+
+  #feedContainer,
+  .feedContainer {
+    max-width: var(--vo-post-max);
+    margin-inline: auto;
+  }
+
+  .longVideoCard .videoThumbnailWrap {
+    border-radius: 12px;
+  }
+
+  .longVideoCard .videoInfo {
+    padding: 12px 1px 16px;
+  }
+
+  .longVideoCard .videoMeta h3 {
+    font-size: 14px;
+  }
+}
+
+@media (min-width: 1280px) {
+  #longVideoContainer,
+  .longVideoContainer {
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)) !important;
+  }
+}
+
+@media (min-width: 1600px) {
+  #longVideoContainer,
+  .longVideoContainer {
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)) !important;
+  }
+}
+
+/* Reduced-motion accessibility */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

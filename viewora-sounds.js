@@ -1,56 +1,56 @@
 /**
  * VIEWORA SOUNDS — WhatsApp / Instagram style
- * -------------------------------------------
- * Include on ALL main pages AFTER firebase.js, BEFORE message-listener / chat / call:
- *   <script src="viewora-sounds.js"></script>
+ * --------------------------------------------
+ * assets/message-notify.mp3  — msg/like/alert when that chat is NOT open
+ * assets/chat-message.mp3    — soft tone when that chat IS open (~1s)
+ * assets/call-calling.mp3    — you call, peer offline / unreachable
+ * assets/call-ringing.mp3    — you call, peer online (their side ringing)
+ * assets/call-incoming.mp3   — someone is calling you
  *
- * API:
- *   VieworaSounds.playMessage()   // new msg while NOT in that chat
- *   VieworaSounds.playChat()      // new msg while chat open
- *   VieworaSounds.startRing()     // incoming call
- *   VieworaSounds.stopRing()
- *   VieworaSounds.test('message'|'chat'|'ring')
- *   VieworaSounds.setMuted(true)
- *   VieworaSounds.setMessageEnabled(true)
- *   VieworaSounds.setChatEnabled(true)
- *   VieworaSounds.setCallEnabled(true)
+ * Load on every main page AFTER firebase.js, BEFORE listeners:
+ *   <script src="viewora-sounds.js"></script>
  */
-(function (global) {
+(function (g) {
   "use strict";
-  if (global.__VIEWORA_SOUNDS__) return;
-  global.__VIEWORA_SOUNDS__ = true;
+  if (g.__VIEWORA_SOUNDS_NAMED__) return;
+  g.__VIEWORA_SOUNDS_NAMED__ = true;
 
-  var KEYS = {
-    masterMute: "viewora_sound_muted",
-    msgOn: "viewora_sound_message_on",
-    chatOn: "viewora_sound_chat_on",
-    callOn: "viewora_sound_call_on",
-    msgSrc: "viewora_message_sound",
-    chatSrc: "viewora_chat_beep",
-    ringSrc: "viewora_call_ringtone",
+  var FILES = {
+    notify: "assets/message-notify.mp3",
+    chat: "assets/chat-message.mp3",
+    calling: "assets/call-calling.mp3",
+    ringing: "assets/call-ringing.mp3",
+    incoming: "assets/call-incoming.mp3"
+  };
+
+  /* Legacy aliases still used by older scripts */
+  var LEGACY = {
+    messageTone: "assets/message-tone.mp3",
+    chatBeep: "assets/chat-beep.mp3",
+    callRingtone: "assets/call-ringtone.mp3"
+  };
+
+  var KEY = {
+    mute: "viewora_sound_muted",
+    msg: "viewora_sound_message_on",
+    chat: "viewora_sound_chat_on",
+    call: "viewora_sound_call_on",
     vol: "viewora_sound_volume"
   };
 
-  var DEFAULTS = {
-    message: "assets/message-tone.mp3",
-    chat: "assets/chat-beep.mp3",
-    ring: "assets/call-ringtone.mp3"
-  };
-
   var cache = {};
-  var ringAudio = null;
-  var ringTimer = null;
-  var lastMsgAt = 0;
-  var lastChatAt = 0;
+  var loopAudio = null;
+  var loopTimer = null;
+  var lastNotify = 0;
+  var lastChat = 0;
   var unlocked = false;
 
-  function lsGet(k, fallback) {
+  function ls(k, d) {
     try {
       var v = localStorage.getItem(k);
-      if (v == null || v === "") return fallback;
-      return v;
+      return v == null || v === "" ? d : v;
     } catch (_) {
-      return fallback;
+      return d;
     }
   }
   function lsSet(k, v) {
@@ -58,32 +58,20 @@
       localStorage.setItem(k, v);
     } catch (_) {}
   }
-  function bool(k, defTrue) {
-    var v = lsGet(k, defTrue ? "1" : "0");
+  function flagOn(k) {
+    var v = ls(k, "1");
+    return v !== "0" && v !== "false";
+  }
+  function muted() {
+    var v = ls(KEY.mute, "0");
     return v === "1" || v === "true";
   }
-  function setBool(k, on) {
-    lsSet(k, on ? "1" : "0");
+  function vol() {
+    var n = parseFloat(ls(KEY.vol, "0.9"));
+    return isNaN(n) ? 0.9 : Math.max(0, Math.min(1, n));
   }
 
-  function volume() {
-    var n = parseFloat(lsGet(KEYS.vol, "0.85"));
-    if (isNaN(n)) n = 0.85;
-    return Math.max(0, Math.min(1, n));
-  }
-
-  function isMasterMuted() {
-    return bool(KEYS.masterMute, false);
-  }
-
-  function getSrc(kind) {
-    if (kind === "chat") return lsGet(KEYS.chatSrc, DEFAULTS.chat);
-    if (kind === "ring") return lsGet(KEYS.ringSrc, DEFAULTS.ring);
-    return lsGet(KEYS.msgSrc, DEFAULTS.message);
-  }
-
-  function getAudio(kind) {
-    var src = getSrc(kind);
+  function getAudio(src) {
     if (!cache[src]) {
       try {
         var a = new Audio(src);
@@ -96,70 +84,12 @@
     return cache[src];
   }
 
-  function playOnce(kind, minGap) {
-    if (isMasterMuted()) return false;
-    if (kind === "message" && !bool(KEYS.msgOn, true)) return false;
-    if (kind === "chat" && !bool(KEYS.chatOn, true)) return false;
-    if (kind === "ring" && !bool(KEYS.callOn, true)) return false;
-
-    var now = Date.now();
-    if (kind === "message") {
-      if (now - lastMsgAt < (minGap || 400)) return false;
-      lastMsgAt = now;
-    }
-    if (kind === "chat") {
-      if (now - lastChatAt < (minGap || 220)) return false;
-      lastChatAt = now;
-    }
-
-    try {
-      var a = getAudio(kind);
-      if (!a) return beepFallback(kind);
-      a.pause();
-      a.currentTime = 0;
-      a.volume = volume();
-      a.loop = false;
-      var p = a.play();
-      if (p && p.catch) p.catch(function () { beepFallback(kind); });
-      return true;
-    } catch (_) {
-      return beepFallback(kind);
-    }
-  }
-
-  function beepFallback(kind) {
-    try {
-      var Ctx = global.AudioContext || global.webkitAudioContext;
-      if (!Ctx) return false;
-      var ctx = new Ctx();
-      var o = ctx.createOscillator();
-      var g = ctx.createGain();
-      o.type = "sine";
-      o.frequency.value = kind === "chat" ? 1500 : kind === "ring" ? 460 : 1000;
-      g.gain.value = 0.0001;
-      o.connect(g);
-      g.connect(ctx.destination);
-      var t = ctx.currentTime;
-      var peak = volume() * (kind === "chat" ? 0.1 : 0.14);
-      g.gain.exponentialRampToValueAtTime(peak, t + 0.02);
-      g.gain.exponentialRampToValueAtTime(0.0001, t + (kind === "chat" ? 0.08 : 0.25));
-      o.start(t);
-      o.stop(t + 0.3);
-      setTimeout(function () {
-        try { ctx.close(); } catch (_) {}
-      }, 400);
-      return true;
-    } catch (_) {
-      return false;
-    }
-  }
-
   function unlock() {
     if (unlocked) return;
     unlocked = true;
-    ["message", "chat", "ring"].forEach(function (k) {
+    Object.keys(FILES).forEach(function (k) {
       try {
-        var a = getAudio(k);
+        var a = getAudio(FILES[k]);
         if (!a) return;
         var p = a.play();
         if (p && p.then)
@@ -173,137 +103,188 @@
   document.addEventListener("touchstart", unlock, true);
   document.addEventListener("click", unlock, true);
 
-  function startRing() {
-    if (isMasterMuted() || !bool(KEYS.callOn, true)) return;
-    stopRing();
+  function playOnce(src, kind) {
+    if (muted()) return false;
+    if (kind === "notify" && !flagOn(KEY.msg)) return false;
+    if (kind === "chat" && !flagOn(KEY.chat)) return false;
+
+    var now = Date.now();
+    if (kind === "notify") {
+      if (now - lastNotify < 500) return false;
+      lastNotify = now;
+    }
+    if (kind === "chat") {
+      if (now - lastChat < 280) return false;
+      lastChat = now;
+    }
+
     try {
-      ringAudio = getAudio("ring");
-      if (!ringAudio) {
-        // fallback loop via timer + beep
-        ringTimer = setInterval(function () {
-          beepFallback("ring");
-        }, 1200);
-        return;
-      }
-      ringAudio.loop = true;
-      ringAudio.volume = volume();
-      ringAudio.currentTime = 0;
-      var p = ringAudio.play();
+      var a = getAudio(src);
+      if (!a) return false;
+      a.loop = false;
+      a.pause();
+      a.currentTime = 0;
+      a.volume = vol();
+      var p = a.play();
       if (p && p.catch) p.catch(function () {});
-      // safety stop after 45s
-      ringTimer = setTimeout(stopRing, 45000);
-    } catch (_) {}
-  }
-
-  function stopRing() {
-    try {
-      if (ringTimer) {
-        clearTimeout(ringTimer);
-        clearInterval(ringTimer);
-        ringTimer = null;
-      }
-      if (ringAudio) {
-        ringAudio.loop = false;
-        ringAudio.pause();
-        ringAudio.currentTime = 0;
-      }
-    } catch (_) {}
-  }
-
-  /** WhatsApp-like: if viewing this peer chat → chat beep, else message tone */
-  function notifyIncomingMessage(peerId) {
-    try {
-      var onChat = false;
-      var f = (location.pathname || "").split("/").pop() || "";
-      if (f.indexOf("chat") === 0) {
-        var q = new URLSearchParams(location.search || "");
-        var uid =
-          q.get("uid") ||
-          q.get("userId") ||
-          q.get("peer") ||
-          q.get("to") ||
-          "";
-        if (peerId && uid && String(peerId) === String(uid)) onChat = true;
-        if (!peerId && uid) onChat = true;
-      }
-      if (onChat && !document.hidden) {
-        return playOnce("chat", 220);
-      }
-      return playOnce("message", 400);
+      return true;
     } catch (_) {
-      return playOnce("message", 400);
+      return false;
     }
   }
 
-  var api = {
-    playMessage: function () {
-      return playOnce("message", 400);
-    },
-    playChat: function () {
-      return playOnce("chat", 220);
-    },
-    notifyIncomingMessage: notifyIncomingMessage,
-    startRing: startRing,
-    stopRing: stopRing,
-    test: function (kind) {
-      unlock();
-      if (kind === "ring") {
-        startRing();
-        setTimeout(stopRing, 2500);
-        return;
+  function stopLoop() {
+    try {
+      if (loopTimer) {
+        clearTimeout(loopTimer);
+        clearInterval(loopTimer);
+        loopTimer = null;
       }
-      if (kind === "chat") return playOnce("chat", 0);
-      return playOnce("message", 0);
+      if (loopAudio) {
+        loopAudio.loop = false;
+        loopAudio.pause();
+        loopAudio.currentTime = 0;
+      }
+      loopAudio = null;
+    } catch (_) {}
+  }
+
+  function startLoop(src, maxMs) {
+    if (muted() || !flagOn(KEY.call)) return;
+    stopLoop();
+    try {
+      loopAudio = getAudio(src);
+      if (!loopAudio) return;
+      loopAudio.loop = true;
+      loopAudio.volume = vol();
+      loopAudio.currentTime = 0;
+      var p = loopAudio.play();
+      if (p && p.catch) p.catch(function () {});
+      loopTimer = setTimeout(stopLoop, maxMs || 45000);
+    } catch (_) {}
+  }
+
+  function peerFromUrl() {
+    try {
+      var q = new URLSearchParams(location.search || "");
+      return (
+        q.get("uid") ||
+        q.get("userId") ||
+        q.get("peer") ||
+        q.get("to") ||
+        q.get("user") ||
+        ""
+      );
+    } catch (_) {
+      return "";
+    }
+  }
+
+  function isOnChatWith(peerId) {
+    try {
+      var f = (location.pathname || "").split("/").pop() || "";
+      if (f.indexOf("chat") !== 0) return false;
+      if (document.hidden) return false;
+      var uid = peerFromUrl();
+      if (!peerId) return !!uid;
+      return String(peerId) === String(uid);
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /* --- public API --- */
+  function playNotify() {
+    return playOnce(FILES.notify, "notify");
+  }
+  function playChatMessage() {
+    return playOnce(FILES.chat, "chat");
+  }
+  function onNewMessage(peerId) {
+    if (isOnChatWith(peerId)) return playChatMessage();
+    return playNotify();
+  }
+  function startCallingTone() {
+    startLoop(FILES.calling, 45000);
+  }
+  function startOutboundRingingTone() {
+    startLoop(FILES.ringing, 45000);
+  }
+  function startIncomingRingtone() {
+    startLoop(FILES.incoming, 45000);
+  }
+
+  var api = {
+    FILES: FILES,
+    LEGACY: LEGACY,
+    playNotify: playNotify,
+    playChatMessage: playChatMessage,
+    playChatBeep: playChatMessage,
+    playChat: playChatMessage,
+    playMessage: playNotify,
+    onNewMessage: onNewMessage,
+    startCallingTone: startCallingTone,
+    startOutboundRingingTone: startOutboundRingingTone,
+    startIncomingRingtone: startIncomingRingtone,
+    stopCallSounds: stopLoop,
+    stopRing: stopLoop,
+    startRing: startIncomingRingtone,
+    isOnChatWith: isOnChatWith,
+    unlock: unlock,
+    setMuted: function (v) {
+      lsSet(KEY.mute, v ? "1" : "0");
+      if (v) stopLoop();
     },
-    setMuted: function (on) {
-      setBool(KEYS.masterMute, !!on);
-      if (on) stopRing();
+    isMuted: muted,
+    setMessageEnabled: function (v) {
+      lsSet(KEY.msg, v ? "1" : "0");
     },
-    isMuted: isMasterMuted,
-    setMessageEnabled: function (on) {
-      setBool(KEYS.msgOn, !!on);
+    setChatEnabled: function (v) {
+      lsSet(KEY.chat, v ? "1" : "0");
     },
-    setChatEnabled: function (on) {
-      setBool(KEYS.chatOn, !!on);
-    },
-    setCallEnabled: function (on) {
-      setBool(KEYS.callOn, !!on);
-      if (!on) stopRing();
+    setCallEnabled: function (v) {
+      lsSet(KEY.call, v ? "1" : "0");
+      if (!v) stopLoop();
     },
     setVolume: function (v) {
-      lsSet(KEYS.vol, String(v));
+      lsSet(KEY.vol, String(v));
     },
-    getVolume: volume,
+    test: function (name) {
+      unlock();
+      stopLoop();
+      name = String(name || "").toLowerCase();
+      if (name === "notify" || name === "message") return playNotify();
+      if (name === "chat") return playChatMessage();
+      if (name === "calling") return startCallingTone();
+      if (name === "ringing") return startOutboundRingingTone();
+      if (name === "incoming") return startIncomingRingtone();
+      return playNotify();
+    },
     getPrefs: function () {
       return {
-        muted: isMasterMuted(),
-        messageOn: bool(KEYS.msgOn, true),
-        chatOn: bool(KEYS.chatOn, true),
-        callOn: bool(KEYS.callOn, true),
-        volume: volume(),
-        messageSrc: getSrc("message"),
-        chatSrc: getSrc("chat"),
-        ringSrc: getSrc("ring")
+        muted: muted(),
+        messageOn: flagOn(KEY.msg),
+        chatOn: flagOn(KEY.chat),
+        callOn: flagOn(KEY.call),
+        volume: vol()
       };
-    },
-    unlock: unlock
+    }
   };
 
-  // Keep legacy keys in sync for message-listener.js
+  /* Keep older scripts working */
   try {
-    if (!localStorage.getItem(KEYS.msgSrc)) lsSet(KEYS.msgSrc, DEFAULTS.message);
-    if (!localStorage.getItem(KEYS.chatSrc)) lsSet(KEYS.chatSrc, DEFAULTS.chat);
-    if (!localStorage.getItem(KEYS.ringSrc)) lsSet(KEYS.ringSrc, DEFAULTS.ring);
+    lsSet("viewora_message_sound", FILES.notify);
+    lsSet("viewora_chat_beep", FILES.chat);
+    lsSet("viewora_call_ringtone", FILES.incoming);
   } catch (_) {}
 
-  global.VieworaSounds = api;
-  // aliases
-  global.playMessageTone = function () {
-    api.playChat();
+  g.VieworaSounds = api;
+  g.playMessageTone = function () {
+    api.playChatMessage();
   };
-  global.playMessageSound = function () {
-    api.playMessage();
+  g.playMessageSound = function () {
+    api.playNotify();
   };
 
-  console.log("[VieworaSounds] ready — WA/IG style");
+  console.log("[VieworaSounds] named files ready", FILES);
 })(typeof window !== "undefined" ? window : this);

@@ -25,7 +25,7 @@
   window.__VIEWORA_MESSAGE_LISTENER__ = true;
 
   const SOUND_KEY = "viewora_message_sound";
-  const DEFAULT_SOUND = "assets/message-tone.mp3";
+  const DEFAULT_SOUND = "assets/message-notify.mp3";
 
   let currentUser = null;
   let chatsRef = null;
@@ -358,7 +358,11 @@
 
       log("new message from", openId, lastText);
 
-      playMessageSound();
+      if (window.VieworaSounds && window.VieworaSounds.onNewMessage) {
+        window.VieworaSounds.onNewMessage(openId);
+      } else {
+        playMessageSound();
+      }
       showBanner({
         name: name,
         text: lastText,

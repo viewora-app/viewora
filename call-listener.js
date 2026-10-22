@@ -991,6 +991,10 @@
     function startRingtone() {
 
         stopRingtone();
+        if (window.VieworaSounds && window.VieworaSounds.startIncomingRingtone) {
+            window.VieworaSounds.startIncomingRingtone();
+            return;
+        }
 
         // 1) Custom ringtone path from settings (localStorage)
         //    User can set: localStorage.setItem('viewora_call_ringtone', 'assets/my-ring.mp3')
@@ -999,10 +1003,10 @@
         try { isBusy = sessionStorage.getItem("viewora_call_busy") === "1"; } catch (_) {}
         let customSrc = isBusy
             ? (localStorage.getItem("viewora_call_busy_ringtone") || "assets/iphone-ringtone.mp3")
-            : (localStorage.getItem("viewora_call_ringtone") || "assets/call-ringtone.mp3");
+            : (localStorage.getItem("viewora_call_ringtone") || "assets/call-incoming.mp3");
             // Never use message tone as call ring
             if (customSrc.indexOf("message") !== -1) {
-                customSrc = "assets/call-ringtone.mp3";
+                customSrc = "assets/call-incoming.mp3";
             }
             if (customSrc) {
                 const custom = new Audio(customSrc);
@@ -1239,6 +1243,7 @@
     ====================================================== */
 
     function stopRingtone() {
+        try { if (window.VieworaSounds) window.VieworaSounds.stopCallSounds(); } catch (_) {}
 
         try {
             const audioEl = document.getElementById("incomingCallRingtone");
@@ -1382,7 +1387,7 @@
 
             // Gesture unlock audio for next page
             try {
-                const a = new Audio("assets/call-ringtone.mp3");
+                const a = new Audio("assets/call-incoming.mp3");
                 a.volume = 0.01;
                 a.play().then(() => { a.pause(); }).catch(() => {});
             } catch (_) {}
