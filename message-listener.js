@@ -97,6 +97,10 @@
 
   function playMessageSound() {
     try {
+      if (window.VieworaSounds && typeof window.VieworaSounds.playMessage === "function") {
+        window.VieworaSounds.playMessage();
+        return;
+      }
       if (!audioEl) {
         audioEl = new Audio();
         audioEl.preload = "auto";

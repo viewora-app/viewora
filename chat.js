@@ -550,21 +550,27 @@
 
     };
 
-    function playMessageTone() {
+        function playMessageTone() {
+        /* In-chat soft sound — WhatsApp style */
         try {
-            let src = "assets/message-tone.mp3";
+            if (document.hidden) return;
+            if (window.VieworaSounds && typeof window.VieworaSounds.playChat === "function") {
+                window.VieworaSounds.playChat();
+                return;
+            }
+            var src = "assets/chat-beep.mp3";
             try {
-                const s = localStorage.getItem("viewora_message_sound");
+                var s = localStorage.getItem("viewora_chat_beep");
                 if (s && s.indexOf("call-ringtone") === -1) src = s;
             } catch (_) {}
-            if (!window.__vieworaMsgTone || window.__vieworaMsgToneSrc !== src) {
-                window.__vieworaMsgTone = new Audio(src);
-                window.__vieworaMsgTone.volume = 0.85;
-                window.__vieworaMsgToneSrc = src;
+            if (!window.__vieworaChatBeep || window.__vieworaChatBeepSrc !== src) {
+                window.__vieworaChatBeep = new Audio(src);
+                window.__vieworaChatBeep.volume = 0.9;
+                window.__vieworaChatBeepSrc = src;
             }
-            const a = window.__vieworaMsgTone;
+            var a = window.__vieworaChatBeep;
             a.currentTime = 0;
-            a.play().catch(() => {});
+            a.play().catch(function () {});
         } catch (_) {}
     }
 
