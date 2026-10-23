@@ -389,7 +389,6 @@ select {
 }
 
 
-/* === FULL BLEED HOME (mobile) — no side gaps === */
 @media (max-width: 640px) {
   :root {
     --vo-post-max: 100vw;
@@ -417,5 +416,80 @@ select {
   .topHeader, .storiesSection, .categorySection, .feedSwitcher {
     padding-left: 12px !important;
     padding-right: 12px !important;
+  }
+}
+
+
+/* =========================================================
+   MOBILE FULL-BLEED — Instagram / YouTube style (no side gaps)
+   ========================================================= */
+@media (max-width: 720px) {
+  :root {
+    --vo-post-max: 100% !important;
+    --vo-content-max: 100% !important;
+  }
+
+  html, body {
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow-x: hidden !important;
+    margin: 0 !important;
+  }
+
+  #app,
+  .app,
+  .homeContent,
+  .homeFeed,
+  .swipeFeed,
+  .swipePanel,
+  #postsSection,
+  #longVideosSection,
+  #feedContainer,
+  #longVideoContainer {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Posts edge-to-edge */
+  .vieworaPostCard,
+  .postCard,
+  .post-card,
+  .longVideoCard,
+  .videoCard,
+  #feedContainer > article,
+  #feedContainer > div,
+  #longVideoContainer > div {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    border-radius: 0 !important;
+  }
+
+  .postMediaWrap,
+  .postMediaWrap img,
+  .postMedia,
+  .videoThumbnailWrap,
+  .videoThumbnailWrap img {
+    width: 100% !important;
+    max-width: 100% !important;
+    border-radius: 0 !important;
+  }
+
+  /* Keep header / stories / chips with small inset only */
+  .topHeader,
+  .storiesSection,
+  .storiesContainer,
+  .categorySection,
+  .categoryScroller,
+  .feedSwitcher {
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+    max-width: 100% !important;
   }
 }

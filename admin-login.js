@@ -89,35 +89,50 @@ function setLoading(loading) {
    SHOW / HIDE PASSWORD
 ========================================================= */
 
-const togglePassword =
-    $("togglePassword");
-
-if (togglePassword) {
-
-    togglePassword.addEventListener(
-        "click",
-        () => {
-
-            const password =
-                $("adminPassword");
-
-            if (!password) return;
-
-            const isPassword =
-                password.type === "password";
-
-            password.type =
-                isPassword
-                    ? "text"
-                    : "password";
-
-            togglePassword.innerHTML =
-                isPassword
-                    ? `<i class="fa-solid fa-eye-slash"></i>`
-                    : `<i class="fa-solid fa-eye"></i>`;
+function vieworaToggleAdminPassword(e) {
+    try {
+        if (e) {
+            e.preventDefault();
+            e.stopPropagation();
         }
-    );
+        var password = $("adminPassword");
+        var togglePassword = $("togglePassword");
+        if (!password) return;
+        var isPassword = password.type === "password";
+        password.type = isPassword ? "text" : "password";
+        if (togglePassword) {
+            togglePassword.innerHTML = isPassword
+                ? '<i class="fa-solid fa-eye-slash"></i>'
+                : '<i class="fa-solid fa-eye"></i>';
+            togglePassword.setAttribute(
+                "aria-label",
+                isPassword ? "Hide password" : "Show password"
+            );
+        }
+    } catch (err) {
+        console.warn("password toggle", err);
+    }
 }
+
+(function wirePasswordToggle() {
+    function bind() {
+        var btn = $("togglePassword");
+        if (!btn || btn.__vieworaBound) return;
+        btn.__vieworaBound = true;
+        btn.type = "button";
+        btn.style.pointerEvents = "auto";
+        btn.style.zIndex = "20";
+        btn.style.cursor = "pointer";
+        btn.addEventListener("click", vieworaToggleAdminPassword, true);
+        btn.addEventListener("touchend", function (e) {
+            e.preventDefault();
+            vieworaToggleAdminPassword(e);
+        }, { passive: false });
+    }
+    bind();
+    setTimeout(bind, 200);
+    document.addEventListener("DOMContentLoaded", bind);
+})();
 
 /* =========================================================
    CHECK ADMIN
@@ -325,6 +340,9 @@ if (loginForm) {
 
                         message =
                             "Invalid admin email or password.";
+                        try {
+                            if (navigator.vibrate) navigator.vibrate([60, 40, 60]);
+                        } catch (_) {}
 
                         break;
 
@@ -332,6 +350,9 @@ if (loginForm) {
 
                         message =
                             "Incorrect password.";
+                        try {
+                            if (navigator.vibrate) navigator.vibrate([80, 40, 80]);
+                        } catch (_) {}
 
                         break;
 
