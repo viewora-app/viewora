@@ -789,3 +789,46 @@ body.cropOpen { overflow: hidden !important; }
 
 /* Hide any rotate UI if leftover */
 #cropRotate, #cropRotateLeft, #cropRotateRight, .cropRotateRow { display: none !important; }
+
+
+/* === CROP CLICK FIX (Done / Cancel / drag) === */
+body.cropOpen { overflow: hidden !important; }
+#cropModal:not(.hidden) {
+  z-index: 2147483000 !important;
+  pointer-events: auto !important;
+}
+#cropModal .cropSheet {
+  z-index: 2 !important;
+  pointer-events: auto !important;
+}
+#cropModal .cropHead,
+#cropModal #cropDone,
+#cropModal #cropCancel,
+#cropModal .cropTextBtn {
+  position: relative !important;
+  z-index: 100 !important;
+  pointer-events: auto !important;
+  touch-action: manipulation !important;
+  min-height: 48px !important;
+  min-width: 64px !important;
+}
+#cropModal .cropMask,
+#cropModal .cropGuides,
+#cropModal .cropFrame,
+#cropModal canvas {
+  pointer-events: none !important;
+}
+#cropModal .cropStage {
+  pointer-events: auto !important;
+  touch-action: none !important;
+}
+#cropModal .cropHandle {
+  pointer-events: auto !important;
+  z-index: 6 !important;
+}
+#cropModal .cropControls,
+#cropModal #cropZoom {
+  pointer-events: auto !important;
+  position: relative;
+  z-index: 20 !important;
+}

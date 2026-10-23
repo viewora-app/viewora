@@ -230,6 +230,7 @@
   }
 
   function finishCrop(e) {
+    try {
     if (e) { e.preventDefault(); e.stopPropagation(); }
     if (!cropImg) { closeCrop(); return; }
     var sz = stageSize(), w = sz.w, h = sz.h;
@@ -252,9 +253,15 @@
       cctx.beginPath(); cctx.arc(out.width / 2, out.height / 2, out.width / 2, 0, Math.PI * 2); cctx.closePath(); cctx.clip();
       cctx.drawImage(out, 0, 0); out = circled;
     }
-    out.toBlob(function (blob) {
+    function applyCroppedBlob(blob) {
       if (!blob) { toast("Crop failed"); return; }
-      var file = new File([blob], cropKind + "-crop.jpg", { type: "image/jpeg" });
+      var file;
+      try {
+        file = new File([blob], cropKind + "-crop.jpg", { type: "image/jpeg" });
+      } catch (_) {
+        file = blob;
+        try { file.name = cropKind + "-crop.jpg"; } catch (_) {}
+      }
       if (cropKind === "banner") {
         bannerFile = file;
         if (bannerPreviewUrl) try { URL.revokeObjectURL(bannerPreviewUrl); } catch (_) {}
@@ -268,6 +275,10 @@
       }
       closeCrop();
     }, "image/jpeg", 0.92);
+    } catch (err) {
+      console.error("finishCrop", err);
+      toast((err && err.message) || "Crop failed");
+    }
   }
 
   function closeCrop(e) {
@@ -426,9 +437,49 @@
   }
 
   function wire() {
-    var done = $("cropDone"), cancel = $("cropCancel");
-    if (done) done.onclick = function (e) { finishCrop(e); };
-    if (cancel) cancel.onclick = function (e) { closeCrop(e); };
+    function bindCropBtns() {
+      var done = $("cropDone"), cancel = $("cropCancel");
+      function onDone(e) {
+        try {
+          if (e) { e.preventDefault(); e.stopPropagation(); if (e.stopImmediatePropagation) e.stopImmediatePropagation(); }
+          finishCrop(e);
+        } catch (err) {
+          console.error("crop done", err);
+          toast((err && err.message) || "Crop failed");
+        }
+      }
+      function onCancel(e) {
+        try {
+          if (e) { e.preventDefault(); e.stopPropagation(); if (e.stopImmediatePropagation) e.stopImmediatePropagation(); }
+          closeCrop(e);
+        } catch (err) {
+          closeCrop();
+        }
+      }
+      if (done) {
+        done.onclick = onDone;
+        done.ontouchend = function (e) { e.preventDefault(); onDone(e); };
+        done.addEventListener("click", onDone, true);
+      }
+      if (cancel) {
+        cancel.onclick = onCancel;
+        cancel.ontouchend = function (e) { e.preventDefault(); onCancel(e); };
+        cancel.addEventListener("click", onCancel, true);
+      }
+      // Sheet header taps
+      var head = document.querySelector(".cropHead");
+      if (head && !head.__bound) {
+        head.__bound = true;
+        head.addEventListener("click", function (e) {
+          var t = e.target && e.target.closest ? e.target.closest("#cropDone, #cropCancel, .cropTextBtn") : null;
+          if (!t) return;
+          if (t.id === "cropDone" || (t.classList && t.classList.contains("done"))) onDone(e);
+          else if (t.id === "cropCancel") onCancel(e);
+        }, true);
+      }
+    }
+    bindCropBtns();
+    setTimeout(bindCropBtns, 300);
 
     var stage = $("cropStage");
     if (stage) {

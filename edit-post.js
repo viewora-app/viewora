@@ -169,6 +169,49 @@
 
         setupPublish();
 
+        
+    function paintCaptionAvatar() {
+        try {
+            var box = document.querySelector(".captionBox, .postCaptionBox, #captionBox") ||
+                ($("captionInput") && $("captionInput").closest(".card, .panel, .composer, section"));
+            var img = document.getElementById("editPostAvatar") || document.querySelector(".captionAvatar img, .youAvatar, #youAvatar");
+            var url = "";
+            try {
+                url = localStorage.getItem("viewora_my_avatar") || "";
+            } catch (_) {}
+            try {
+                var u = firebase.auth().currentUser;
+                if (u && u.photoURL) url = u.photoURL;
+                if (u) {
+                    firebase.database().ref("users/" + u.uid).once("value").then(function (s) {
+                        var d = s.val() || {};
+                        var p = d.profilePhoto || d.photoURL || d.avatar || url;
+                        var el = document.getElementById("editPostAvatar");
+                        if (el && p) el.src = p;
+                    }).catch(function () {});
+                }
+            } catch (_) {}
+            if (!img && $("captionInput")) {
+                var wrap = $("captionInput").parentElement;
+                if (wrap && !document.getElementById("editPostAvatar")) {
+                    var av = document.createElement("img");
+                    av.id = "editPostAvatar";
+                    av.alt = "";
+                    av.src = url || "assets/default-avatar.png";
+                    av.style.cssText = "width:36px;height:36px;border-radius:50%;object-fit:cover;flex-shrink:0;margin-right:10px;background:#222";
+                    wrap.style.display = "flex";
+                    wrap.style.alignItems = "flex-start";
+                    wrap.insertBefore(av, wrap.firstChild);
+                }
+            } else if (img && url) {
+                img.src = url;
+            }
+        } catch (e) {
+            console.warn("caption avatar", e);
+        }
+    }
+
+        try { paintCaptionAvatar(); } catch (e) {}
         try { setupMusicTrim(); } catch (e) { console.warn("music trim setup", e); }
         try { setupRatio(); } catch (e) { console.warn("ratio setup", e); }
         try { updatePhotoCounter(); } catch (_) {}
@@ -1168,18 +1211,18 @@
 
         // Original audio with no URL → apply directly
         if (!item.audioUrl && item.id === "original") {
-            applyMusicClip(item, 0, 15);
+            try { applyMusicClip(item, 0, 15); } catch (err) { console.warn("music", err); try { showToast("Music", "Could not apply sound"); } catch (_) {} }
             return;
         }
         if (!item.audioUrl) {
-            applyMusicClip(item, 0, 15);
+            try { applyMusicClip(item, 0, 15); } catch (err) { console.warn("music", err); try { showToast("Music", "Could not apply sound"); } catch (_) {} }
             showToast("Music set", item.title || "Track");
             return;
         }
 
         const sheet = $("musicTrimSheet");
         if (!sheet) {
-            applyMusicClip(item, 0, 15);
+            try { applyMusicClip(item, 0, 15); } catch (err) { console.warn("music", err); try { showToast("Music", "Could not apply sound"); } catch (_) {} }
             return;
         }
 
@@ -1226,6 +1269,9 @@
 
 
     function applyMusicClip(item, startAt, duration) {
+        try {
+            if (!item) return;
+
         state.music = {
             id: item.id,
             title: item.title,
@@ -2754,6 +2800,14 @@ function getCloudinaryConfig() {
         }
 
         try {
+            // ensure Cloudinary beta flags for queue
+            try {
+                if (!window.VIEWORA_CLOUDINARY_CLOUD) {
+                    window.VIEWORA_CLOUDINARY_CLOUD = "us0vnwwu";
+                    window.VIEWORA_CLOUDINARY_PRESET = "viewora-beta";
+                    window.VIEWORA_FORCE_CLOUDINARY = true;
+                }
+            } catch (_) {}
             if (!window.VieworaUploadQueue || typeof window.VieworaUploadQueue.enqueueAndLeave !== "function") {
                 throw new Error("Upload queue not loaded");
             }

@@ -130,6 +130,17 @@
 
   // Unhandled promise rejections
   global.addEventListener("unhandledrejection", function (ev) {
+    try {
+      var r = ev && ev.reason;
+      var msg = String((r && r.message) || r || "");
+      // Non-fatal upload/crop/music noise — log only
+      if (/crop|music|Cloudinary|upload preset|Login required to upload|hydrate like|NetworkError|AbortError/i.test(msg)) {
+        console.warn("[Viewora] soft rejection", msg);
+        try { ev.preventDefault(); } catch (_) {}
+        return;
+      }
+    } catch (_) {}
+
     var reason = ev && ev.reason;
     report("unhandledrejection", reason || "rejection", {});
   });
