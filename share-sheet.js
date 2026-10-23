@@ -587,11 +587,19 @@
             }
           } catch (_) {}
         } else if (act === "story") {
+          // Instagram-style: post / short / long video → story editor
+          var st = type || "post";
+          if (st === "long" || st === "longvideo") st = "video";
+          var thumbQ = "";
+          try {
+            if (thumb) thumbQ = "&thumb=" + encodeURIComponent(thumb);
+          } catch (_) {}
           location.href =
             "story-upload.html?share=" +
-            encodeURIComponent(type) +
+            encodeURIComponent(st) +
             "&id=" +
-            encodeURIComponent(id);
+            encodeURIComponent(id || "") +
+            thumbQ;
         }
       });
     });

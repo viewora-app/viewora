@@ -231,50 +231,68 @@
 
   function finishCrop(e) {
     try {
-    if (e) { e.preventDefault(); e.stopPropagation(); }
-    if (!cropImg) { closeCrop(); return; }
-    var sz = stageSize(), w = sz.w, h = sz.h;
-    var out = document.createElement("canvas");
-    if (cropKind === "banner") { out.width = 1500; out.height = 844; }
-    else { out.width = 720; out.height = 720; }
-    var octx = out.getContext("2d");
-    octx.fillStyle = "#000"; octx.fillRect(0, 0, out.width, out.height);
-    var iw = cropImg.naturalWidth, ih = cropImg.naturalHeight;
-    var cover = Math.max(w / iw, h / ih);
-    var base = cover * cropScale;
-    var dw = iw * base, dh = ih * base;
-    var dx = (w - dw) / 2 + cropPanX, dy = (h - dh) / 2 + cropPanY;
-    var sx = out.width / w, sy = out.height / h;
-    octx.drawImage(cropImg, dx * sx, dy * sy, dw * sx, dh * sy);
-    if (cropKind !== "banner") {
-      var circled = document.createElement("canvas");
-      circled.width = out.width; circled.height = out.height;
-      var cctx = circled.getContext("2d");
-      cctx.beginPath(); cctx.arc(out.width / 2, out.height / 2, out.width / 2, 0, Math.PI * 2); cctx.closePath(); cctx.clip();
-      cctx.drawImage(out, 0, 0); out = circled;
-    }
-    function applyCroppedBlob(blob) {
-      if (!blob) { toast("Crop failed"); return; }
-      var file;
-      try {
-        file = new File([blob], cropKind + "-crop.jpg", { type: "image/jpeg" });
-      } catch (_) {
-        file = blob;
-        try { file.name = cropKind + "-crop.jpg"; } catch (_) {}
+      if (e) { e.preventDefault(); e.stopPropagation(); }
+      if (!cropImg) { closeCrop(); return; }
+      var sz = stageSize(), w = sz.w, h = sz.h;
+      var out = document.createElement("canvas");
+      if (cropKind === "banner") { out.width = 1500; out.height = 844; }
+      else { out.width = 720; out.height = 720; }
+      var octx = out.getContext("2d");
+      octx.fillStyle = "#000"; octx.fillRect(0, 0, out.width, out.height);
+      var iw = cropImg.naturalWidth, ih = cropImg.naturalHeight;
+      if (!iw || !ih) { toast("Image not ready"); return; }
+      var cover = Math.max(w / iw, h / ih);
+      var base = cover * cropScale;
+      var dw = iw * base, dh = ih * base;
+      var dx = (w - dw) / 2 + cropPanX, dy = (h - dh) / 2 + cropPanY;
+      var sx = out.width / w, sy = out.height / h;
+      octx.drawImage(cropImg, dx * sx, dy * sy, dw * sx, dh * sy);
+      if (cropKind !== "banner") {
+        var circled = document.createElement("canvas");
+        circled.width = out.width; circled.height = out.height;
+        var cctx = circled.getContext("2d");
+        cctx.beginPath();
+        cctx.arc(out.width / 2, out.height / 2, out.width / 2, 0, Math.PI * 2);
+        cctx.closePath();
+        cctx.clip();
+        cctx.drawImage(out, 0, 0);
+        out = circled;
       }
-      if (cropKind === "banner") {
-        bannerFile = file;
-        if (bannerPreviewUrl) try { URL.revokeObjectURL(bannerPreviewUrl); } catch (_) {}
-        bannerPreviewUrl = URL.createObjectURL(file); setBanner(bannerPreviewUrl);
-        toast("Banner ready — tap Save");
+      function applyCroppedBlob(blob) {
+        if (!blob) { toast("Crop failed"); return; }
+        var file;
+        try {
+          file = new File([blob], cropKind + "-crop.jpg", { type: "image/jpeg" });
+        } catch (_) {
+          file = blob;
+        }
+        if (cropKind === "banner") {
+          bannerFile = file;
+          if (bannerPreviewUrl) try { URL.revokeObjectURL(bannerPreviewUrl); } catch (_) {}
+          bannerPreviewUrl = URL.createObjectURL(blob);
+          setBanner(bannerPreviewUrl);
+          toast("Banner ready — tap Save");
+        } else {
+          avatarFile = file;
+          if (avatarPreviewUrl) try { URL.revokeObjectURL(avatarPreviewUrl); } catch (_) {}
+          avatarPreviewUrl = URL.createObjectURL(blob);
+          setAvatar(avatarPreviewUrl);
+          toast("Photo ready — tap Save");
+        }
+        closeCrop();
+      }
+      if (out.toBlob) {
+        out.toBlob(function (blob) { applyCroppedBlob(blob); }, "image/jpeg", 0.92);
       } else {
-        avatarFile = file;
-        if (avatarPreviewUrl) try { URL.revokeObjectURL(avatarPreviewUrl); } catch (_) {}
-        avatarPreviewUrl = URL.createObjectURL(file); setAvatar(avatarPreviewUrl);
-        toast("Photo ready — tap Save");
+        try {
+          var dataUrl = out.toDataURL("image/jpeg", 0.92);
+          var arr = dataUrl.split(","), bstr = atob(arr[1]), n = bstr.length, u8 = new Uint8Array(n);
+          while (n--) u8[n] = bstr.charCodeAt(n);
+          applyCroppedBlob(new Blob([u8], { type: "image/jpeg" }));
+        } catch (e2) {
+          toast("Crop failed");
+        }
       }
-      closeCrop();
-    }, "image/jpeg", 0.92);
     } catch (err) {
       console.error("finishCrop", err);
       toast((err && err.message) || "Crop failed");

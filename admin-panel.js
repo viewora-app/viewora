@@ -5168,8 +5168,8 @@ if (addMusicBtn) {
 });
 
 async function adminUploadToCloudinary(file) {
-    const CLOUD_NAME = "z5m6wjdf";
-    const UPLOAD_PRESET = "Viewora-upload";
+    const CLOUD_NAME = window.VIEWORA_CLOUDINARY_CLOUD || "us0vnwwu";
+    const UPLOAD_PRESET = window.VIEWORA_CLOUDINARY_PRESET || "viewora-beta";
     const UPLOAD_URL =
         "https://api.cloudinary.com/v1_1/" +
         CLOUD_NAME +
