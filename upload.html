@@ -95,10 +95,45 @@
   <link rel="stylesheet" href="nav.css">
   <script src="nav.js" defer></script>
   
+
+<style id="vieworaCreateNavFix">
+  /* Full-screen create: hide main app bottom nav so controls are not pushed down */
+  body.viewora-create-page .bottomNav,
+  body.viewora-create-page .bottom-nav,
+  body.viewora-create-page #bottomNav,
+  body.viewora-create-page nav.nav,
+  body.viewora-create-page .appNav,
+  body.viewora-create-page .tabBar,
+  body.viewora-create-page .mobileNav {
+    display: none !important;
+    height: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+  }
+  body.viewora-create-page {
+    overflow: hidden !important;
+    height: 100dvh !important;
+    max-height: 100dvh !important;
+  }
+  body.viewora-create-page #app,
+  body.viewora-create-page .creator {
+    height: 100dvh !important;
+    max-height: 100dvh !important;
+    overflow: hidden !important;
+  }
+  /* Keep camera controls above safe area without double-nav gap */
+  body.viewora-create-page .cameraBottom {
+    padding-bottom: calc(88px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+  body.viewora-create-page .modeSelectorArea {
+    bottom: calc(8px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+</style>
+
 </head>
 
 
-<body>
+<body class="viewora-create-page">
 
 <div id="app">
 
@@ -2033,7 +2068,6 @@
 
 <script src="firebase.js"></script>
 <script src="media-upload.js"></script>
-<script src="media-upload-compress-hook.js"></script>
   <script src="crash-guard.js"></script>
 <script src="upload-queue.js"></script>
 

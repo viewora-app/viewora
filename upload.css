@@ -3144,3 +3144,17 @@ label.uploadOption { cursor: pointer; display: flex; }
 .liveKindChip input { accent-color: #8b5cf6; }
 .liveKindChip span { font-weight: 700; font-size: 14px; }
 .liveKindChip small { width: 100%; padding-left: 24px; opacity: .55; font-size: 12px; }
+
+
+/* === Create page layout lock (no bottom-nav push) === */
+body.viewora-create-page .cameraBottom {
+  padding-bottom: calc(88px + env(safe-area-inset-bottom, 0px)) !important;
+}
+body.viewora-create-page .modeSelectorArea {
+  bottom: calc(8px + env(safe-area-inset-bottom, 0px)) !important;
+  z-index: 20;
+}
+body.viewora-create-page .creator {
+  height: 100dvh !important;
+  max-height: 100dvh !important;
+}

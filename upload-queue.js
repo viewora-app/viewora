@@ -13,8 +13,12 @@
   const DB_NAME = "VIEWORA_UPLOAD_QUEUE_DB";
   const DB_VER = 1;
   const STORE = "jobs";
-  const CLOUD = window.VIEWORA_CLOUDINARY_CLOUD || "z5m6wjdf";
-  const PRESET = window.VIEWORA_CLOUDINARY_PRESET || "Viewora-upload";
+  function getCloud() {
+    return window.VIEWORA_CLOUDINARY_CLOUD || window.CLOUDINARY_CLOUD_NAME || "us0vnwwu";
+  }
+  function getPreset() {
+    return window.VIEWORA_CLOUDINARY_PRESET || window.CLOUDINARY_UPLOAD_PRESET || "viewora-beta";
+  }
 
   let processing = false;
   let bannerEl = null;
@@ -355,10 +359,16 @@
 
   function uploadCloudinary(file, onProgress) {
     return new Promise((resolve, reject) => {
-      const url = "https://api.cloudinary.com/v1_1/" + CLOUD + "/auto/upload";
+      const CLOUD = getCloud();
+      const PRESET = getPreset();
+      const url = "https://api.cloudinary.com/v1_1/" + encodeURIComponent(CLOUD) + "/auto/upload";
       const fd = new FormData();
       fd.append("file", file);
       fd.append("upload_preset", PRESET);
+      try {
+        const folder = window.VIEWORA_CLOUDINARY_FOLDER || "viewora-beta";
+        if (folder) fd.append("folder", folder);
+      } catch (_) {}
       const xhr = new XMLHttpRequest();
       activeXhr = xhr;
       xhr.open("POST", url);
@@ -392,14 +402,43 @@
     });
   }
 
-  /** ALWAYS use Firebase Storage first — Cloudinary cloud is disabled */
+  /**
+   * BETA: Cloudinary first when FORCE_CLOUDINARY=true (Google Storage not billed yet).
+   * Otherwise Firebase Storage first, then Cloudinary fallback.
+   */
   async function uploadMedia(file, onProgress) {
+    var forceCloud =
+      window.VIEWORA_FORCE_CLOUDINARY === true ||
+      window.VIEWORA_FORCE_CLOUDINARY === "1";
+    var skipCloud =
+      window.VIEWORA_SKIP_CLOUDINARY === true ||
+      window.VIEWORA_SKIP_CLOUDINARY === "1";
+
+    // Wait briefly for auth (queue often starts before auth restores)
+    try {
+      await waitAuth(2500);
+    } catch (_) {}
+
+    if (forceCloud && !skipCloud) {
+      try {
+        console.log("[VIEWORA] upload via Cloudinary", getCloud(), getPreset());
+        return await uploadCloudinary(file, onProgress);
+      } catch (err) {
+        console.warn("[VIEWORA] Cloudinary failed:", err && err.message);
+        // Fallback Storage if logged in
+        try {
+          return await uploadFirebaseStorage(file, onProgress);
+        } catch (e2) {
+          throw err; // prefer Cloudinary error message for beta
+        }
+      }
+    }
+
     try {
       return await uploadFirebaseStorage(file, onProgress);
     } catch (err) {
       console.warn("[VIEWORA] Storage failed:", err && err.message);
-      // Only try Cloudinary if explicitly forced (account must be active)
-      if (window.VIEWORA_FORCE_CLOUDINARY === true || window.VIEWORA_FORCE_CLOUDINARY === "1") {
+      if (!skipCloud) {
         if (onProgress) onProgress(0);
         return await uploadCloudinary(file, onProgress);
       }

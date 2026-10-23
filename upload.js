@@ -3936,9 +3936,33 @@
     }
     window.getSelectedMusicForPublish = getSelectedMusicForPublish;
 
-    function restoreSelectedMusic() {
+        function restoreSelectedMusic() {
 
         try {
+            // Only auto-apply music when user came from "Use this sound" / remix / explicit URL
+            var allowRestore = false;
+            try {
+                var p = new URLSearchParams(location.search || "");
+                if (
+                    p.get("useMusic") === "1" ||
+                    p.get("music") === "1" ||
+                    p.get("fromMusic") === "1" ||
+                    p.get("fromLong") === "1" ||
+                    p.get("remix") === "1" ||
+                    p.get("soundId")
+                ) {
+                    allowRestore = true;
+                }
+            } catch (_) {}
+            if (!allowRestore) {
+                // Clear sticky old selection so random song does not auto-appear
+                try { sessionStorage.removeItem("viewora_selected_music"); } catch (_) {}
+                try { sessionStorage.removeItem("vieworaSelectedMusic"); } catch (_) {}
+                selectedMusicData = null;
+                selectedMusic?.classList.add("hidden");
+                musicBtn?.classList.remove("hidden");
+                return;
+            }
 
             let raw = null;
             try { raw = sessionStorage.getItem("vieworaSelectedMusic"); } catch (_) {}
@@ -3946,14 +3970,10 @@
                 try { raw = sessionStorage.getItem("viewora_selected_music"); } catch (_) {}
             }
             if (!raw) {
-                try { raw = localStorage.getItem("viewora_selected_music"); } catch (_) {}
-            }
-            if (!raw) {
                 try { raw = sessionStorage.getItem("VIEWORA_REMIX_AUDIO"); } catch (_) {}
             }
-            if (!raw) {
-                try { raw = localStorage.getItem("VIEWORA_REMIX_AUDIO"); } catch (_) {}
-            }
+            // do NOT read localStorage sticky music on normal open
+
 
             if (!raw) {
                 // URL flags
