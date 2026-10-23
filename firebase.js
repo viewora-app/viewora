@@ -2477,3 +2477,154 @@ console.log(
         console.warn("Viewora theme bootstrap failed.", e);
     }
 })();
+
+
+/* ===== Viewora identity helpers (names + default DP) ===== */
+(function () {
+  if (window.__VIEWORA_IDENTITY__) return;
+  window.__VIEWORA_IDENTITY__ = true;
+
+  window.VIEWORA_FALLBACK_AVATAR =
+    window.VIEWORA_FALLBACK_AVATAR ||
+    "data:image/svg+xml," +
+      encodeURIComponent(
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">' +
+          '<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">' +
+          '<stop offset="0%" stop-color="#7c3aed"/><stop offset="100%" stop-color="#2563eb"/></linearGradient></defs>' +
+          '<circle cx="64" cy="64" r="64" fill="url(#g)"/>' +
+          '<circle cx="64" cy="48" r="24" fill="rgba(255,255,255,.92)"/>' +
+          '<ellipse cx="64" cy="106" rx="40" ry="28" fill="rgba(255,255,255,.92)"/></svg>'
+      );
+
+  window.vieworaPickPhoto = function (obj) {
+    if (!obj || typeof obj !== "object") return "";
+    var keys = [
+      "profilePhoto", "photoURL", "photoUrl", "avatar", "profilePic", "profilePicture",
+      "profile_image", "profileImage", "dp", "userPhoto", "ownerPhoto", "creatorPhoto",
+      "authorPhoto", "image", "photo", "picture", "pic"
+    ];
+    for (var i = 0; i < keys.length; i++) {
+      var v = obj[keys[i]];
+      if (typeof v === "string") {
+        v = v.trim();
+        if (
+          v.length > 8 &&
+          v.indexOf("default-avatar") === -1 &&
+          v.indexOf("placeholder") === -1 &&
+          !/^[A-Za-z]$/.test(v)
+        ) {
+          return v;
+        }
+      }
+    }
+    try {
+      if (obj.profile && typeof obj.profile === "object") {
+        var nested = window.vieworaPickPhoto(obj.profile);
+        if (nested) return nested;
+      }
+    } catch (_) {}
+    return "";
+  };
+
+  window.vieworaDisplayName = function (obj, fallback) {
+    if (!obj || typeof obj !== "object") return fallback || "Viewora User";
+    var n =
+      obj.displayName ||
+      obj.name ||
+      obj.fullName ||
+      obj.username ||
+      obj.userName ||
+      obj.handle ||
+      obj.ownerName ||
+      obj.authorName ||
+      "";
+    n = String(n || "").trim();
+    if (!n || /^user$/i.test(n) || n === "@user" || /^viewora\s*user$/i.test(n)) {
+      var u = String(obj.username || obj.userName || obj.handle || "").trim().replace(/^@/, "");
+      if (u && !/^user$/i.test(u)) return u;
+      return fallback || "Viewora User";
+    }
+    return n;
+  };
+
+  window.vieworaAvatarUrl = function (obj) {
+    var p = window.vieworaPickPhoto(obj || {});
+    return p || window.VIEWORA_FALLBACK_AVATAR;
+  };
+
+  // Fix broken <img> avatars app-wide
+  document.addEventListener(
+    "error",
+    function (e) {
+      var t = e.target;
+      if (!t || t.tagName !== "IMG") return;
+      var cls = (t.className || "") + " " + (t.id || "");
+      if (
+        /avatar|photo|dp|storyImage|userImg|profile/i.test(cls) ||
+        (t.getAttribute("alt") || "").toLowerCase().indexOf("avatar") !== -1
+      ) {
+        if (t.dataset.vieworaFb) return;
+        t.dataset.vieworaFb = "1";
+        t.src = window.VIEWORA_FALLBACK_AVATAR;
+      }
+    },
+    true
+  );
+
+  // Hydrate "Viewora User" / @user labels when data-uid is present
+  var cache = {};
+  window.vieworaHydrateUserLabels = function () {
+    try {
+      if (typeof firebase === "undefined" || !firebase.database) return;
+      var nodes = document.querySelectorAll(
+        "[data-uid], [data-user-id], [data-owner], .userName, .postAuthor, .authorName"
+      );
+      nodes.forEach(function (el) {
+        var uid =
+          el.getAttribute("data-uid") ||
+          el.getAttribute("data-user-id") ||
+          el.getAttribute("data-owner") ||
+          "";
+        var text = (el.textContent || "").trim();
+        if (!uid) return;
+        if (text && !/^viewora\s*user$/i.test(text) && text !== "@user" && text !== "user") return;
+        function apply(u) {
+          if (!u) return;
+          var name = window.vieworaDisplayName(u, "Viewora User");
+          var photo = window.vieworaAvatarUrl(u);
+          if (el.tagName === "IMG") el.src = photo;
+          else {
+            var img = el.querySelector && el.querySelector("img");
+            if (img) img.src = photo;
+            if (/^viewora\s*user$/i.test(text) || text === "@user" || text === "user" || !text) {
+              el.textContent = name;
+            }
+          }
+        }
+        if (cache[uid]) return apply(cache[uid]);
+        firebase
+          .database()
+          .ref("users/" + uid)
+          .once("value")
+          .then(function (s) {
+            cache[uid] = s.val() || {};
+            apply(cache[uid]);
+          })
+          .catch(function () {});
+      });
+    } catch (_) {}
+  };
+  setInterval(function () {
+    try {
+      window.vieworaHydrateUserLabels();
+    } catch (_) {}
+  }, 2500);
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", function () {
+      setTimeout(window.vieworaHydrateUserLabels, 800);
+    });
+  } else {
+    setTimeout(window.vieworaHydrateUserLabels, 800);
+  }
+})();
+

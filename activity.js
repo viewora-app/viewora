@@ -296,6 +296,14 @@
        ============================================================ */
 
     function showToast(message) {
+        try {
+            window.__vieworaToastGate = window.__vieworaToastGate || { last: "", t: 0 };
+            var now = Date.now();
+            var m = String(message || "");
+            if (m && m === window.__vieworaToastGate.last && now - window.__vieworaToastGate.t < 2500) return;
+            window.__vieworaToastGate.last = m;
+            window.__vieworaToastGate.t = now;
+        } catch (_) {}
 
         if (!toast) {
             return;

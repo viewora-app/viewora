@@ -131,6 +131,7 @@
     var err = new Error("NO_CREDS");
     err.code = "NO_CREDS";
     err.message = "Please sign in again to switch accounts";
+    try { sessionStorage.setItem('viewora_switch_pending','1'); } catch(_){}
     throw err;
   }
 
@@ -164,12 +165,34 @@
         try {
           localStorage.setItem("viewora_last_uid", user.uid);
         } catch (_) {}
-        upsertAccount({
+        // Clear stale header/profile flash from previous account
+        try {
+          document.documentElement.setAttribute("data-viewora-uid", user.uid);
+          document.querySelectorAll("[data-me-avatar], .myAvatar, #myAvatar, #navAvatar").forEach(function (img) {
+            if (img && img.tagName === "IMG") img.style.opacity = "0.4";
+          });
+        } catch (_) {}
+        var base = {
           uid: user.uid,
           email: user.email || "",
           displayName: user.displayName || "User",
-          avatar: user.photoURL || "assets/default-avatar.png"
-        });
+          avatar: user.photoURL || (window.VIEWORA_FALLBACK_AVATAR || "assets/default-avatar.png")
+        };
+        upsertAccount(base);
+        // Prefer RTDB profile (real name + DP) over Auth defaults
+        try {
+          firebase.database().ref("users/" + user.uid).once("value").then(function (snap) {
+            var d = snap.val() || {};
+            var name = (window.vieworaDisplayName && window.vieworaDisplayName(d, base.displayName)) || d.displayName || d.name || d.username || base.displayName;
+            var av = (window.vieworaAvatarUrl && window.vieworaAvatarUrl(d)) || d.profilePhoto || d.photoURL || d.avatar || base.avatar;
+            upsertAccount({ uid: user.uid, email: user.email || d.email || "", displayName: name, avatar: av });
+            try {
+              document.querySelectorAll("[data-me-avatar], .myAvatar, #myAvatar, #navAvatar").forEach(function (img) {
+                if (img && img.tagName === "IMG") { img.src = av; img.style.opacity = "1"; }
+              });
+            } catch (_) {}
+          });
+        } catch (_) {}
         checkAccountStatus(user.uid).then(function (st) {
           if (!st.ok) {
             try {
