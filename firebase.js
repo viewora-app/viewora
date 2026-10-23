@@ -2428,28 +2428,25 @@ console.log(
   CLOUDINARY (Shorts / media upload)
 ==========================================================*/
 
-window.VIEWORA_SKIP_CLOUDINARY =
-    window.VIEWORA_SKIP_CLOUDINARY != null
-        ? window.VIEWORA_SKIP_CLOUDINARY
-        : true; /* Cloudinary cloud disabled — use Firebase Storage */
+/* BETA Cloudinary until Google Storage billing is ready */
+window.VIEWORA_SKIP_CLOUDINARY = false;
+window.VIEWORA_FORCE_CLOUDINARY = true;
 
-window.VIEWORA_CLOUDINARY_CLOUD =
-    window.VIEWORA_CLOUDINARY_CLOUD ||
-    "z5m6wjdf";
+window.VIEWORA_CLOUDINARY_CLOUD = "us0vnwwu";
+window.VIEWORA_CLOUDINARY_PRESET = "viewora-beta";
+window.VIEWORA_CLOUDINARY_FOLDER = "viewora-beta";
 
-window.VIEWORA_CLOUDINARY_PRESET =
-    window.VIEWORA_CLOUDINARY_PRESET ||
-    "Viewora-upload";
-
-window.VIEWORA_CLOUDINARY_FOLDER =
-    window.VIEWORA_CLOUDINARY_FOLDER ||
-    "";
+/* aliases some older scripts read */
+window.CLOUDINARY_CLOUD_NAME = window.VIEWORA_CLOUDINARY_CLOUD;
+window.CLOUDINARY_UPLOAD_PRESET = window.VIEWORA_CLOUDINARY_PRESET;
+window.CLOUDINARY_CLOUD = window.VIEWORA_CLOUDINARY_CLOUD;
 
 console.log(
-    "☁️ Cloudinary:",
+    "☁️ Cloudinary BETA:",
     window.VIEWORA_CLOUDINARY_CLOUD,
     "/",
-    window.VIEWORA_CLOUDINARY_PRESET
+    window.VIEWORA_CLOUDINARY_PRESET,
+    "(FORCE=true)"
 );
 
 

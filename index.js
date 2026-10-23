@@ -5,7 +5,7 @@
  VIEWORA — INDEX.JS
  Premium Home Feed
  Firebase Realtime Database
- Cloudinary Media URLs
+ Media URLs (Cloudinary / Storage)
 ============================================================
 */
 
@@ -21,6 +21,16 @@
     }
 
     window.__VIEWORA_INDEX_INITIALIZED__ = true;
+/* Soft Cloudinary beta defaults if firebase.js late */
+(function () {
+  try {
+    if (!window.VIEWORA_CLOUDINARY_CLOUD) {
+      window.VIEWORA_CLOUDINARY_CLOUD = "us0vnwwu";
+      window.VIEWORA_CLOUDINARY_PRESET = "viewora-beta";
+    }
+  } catch (_) {}
+})();
+
     function shuffleFeedArray(arr) {
         if (!Array.isArray(arr) || arr.length < 2) return arr;
         var a = arr.slice();

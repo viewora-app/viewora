@@ -354,8 +354,8 @@
   async function uploadImage(file, folder, uid, maxSide) {
     if (!file) return null;
     var blob = await compressImage(file, maxSide || 720, 0.85);
-    var cloudName = (window.VIEWORA_CLOUDINARY_CLOUD || window.CLOUDINARY_CLOUD_NAME || "z5m6wjdf").trim();
-    var preset = (window.VIEWORA_CLOUDINARY_PRESET || window.CLOUDINARY_UPLOAD_PRESET || "Viewora-upload").trim();
+    var cloudName = (window.VIEWORA_CLOUDINARY_CLOUD || window.CLOUDINARY_CLOUD_NAME || "us0vnwwu").trim();
+    var preset = (window.VIEWORA_CLOUDINARY_PRESET || window.CLOUDINARY_UPLOAD_PRESET || "viewora-beta").trim();
     try {
       var fd = new FormData();
       fd.append("file", blob, (folder || "img") + ".jpg");

@@ -30,7 +30,7 @@
  -----------------------------------------------------------
  Firebase Realtime Database
  Firebase Auth
- Cloudinary via media-upload.js
+ Media via media-upload.js (Cloudinary BETA: us0vnwwu / viewora-beta when FORCE=true)
 
  Compatible with:
     chat.html
@@ -42,7 +42,7 @@
     • Realtime 1-to-1 messaging
     • Text messages
     • Image / Video / Audio / Document
-    • Cloudinary upload
+    • Media upload (Cloudinary beta or Firebase Storage)
     • Upload progress + speed
     • Reply
     • Edit

@@ -5,13 +5,13 @@
   var CLOUD =
     global.VIEWORA_CLOUDINARY_CLOUD ||
     global.CLOUDINARY_CLOUD_NAME ||
-    "z5m6wjdf";
+    "us0vnwwu";
   var PRESET =
     global.VIEWORA_CLOUDINARY_PRESET ||
     global.CLOUDINARY_UPLOAD_PRESET ||
-    "Viewora-upload";
+    "viewora-beta";
   var FOLDER =
-    global.VIEWORA_CLOUDINARY_FOLDER || "viewora/chat";
+    global.VIEWORA_CLOUDINARY_FOLDER || "viewora-beta";
 
   function resourceType(file) {
     var t = String((file && file.type) || "").toLowerCase();
