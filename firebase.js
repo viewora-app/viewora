@@ -455,6 +455,30 @@ async function safeUpdate(
 
     try {
 
+        /* Client must not send admin-only user fields (rules also block these) */
+        if (
+            path &&
+            typeof path === "string" &&
+            path.indexOf("users/") === 0 &&
+            data &&
+            typeof data === "object"
+        ) {
+            var blocked = [
+                "verified", "blueTick", "redTick", "whiteTick",
+                "banned", "suspended", "disabled",
+                "balance", "walletBalance", "earnings",
+                "role", "isAdmin", "admin", "monetizationEnabled",
+                "official", "badge"
+            ];
+            var clean = {};
+            var keys = Object.keys(data);
+            for (var i = 0; i < keys.length; i++) {
+                var k = keys[i];
+                if (blocked.indexOf(k) === -1) clean[k] = data[k];
+            }
+            data = clean;
+        }
+
         await db
             .ref(path)
             .update(data);
