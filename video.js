@@ -2630,6 +2630,10 @@ function updateLikeCount() {
 
                 await ref.set({
                     videoId: state.videoId,
+                    type: "video",
+                    thumbnail: state.thumbnail || state.poster || state.cover || "",
+                    title: state.title || state.caption || "",
+                    ownerId: state.ownerId || state.uid || "",
                     savedAt: firebase.database.ServerValue.TIMESTAMP
                 });
 

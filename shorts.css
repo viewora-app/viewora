@@ -3238,3 +3238,41 @@ body.has-bottom-nav .shortContent {
   border: 2px solid #000;
   display: block;
 }
+
+
+/* ===== Tick + @username parity with profile ===== */
+.shortUsername,
+.creatorRow .shortUsername {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  max-width: min(62vw, 240px);
+  font-size: 14px !important;
+  font-weight: 700 !important;
+}
+.shortUserNameWrap {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  min-width: 0;
+  max-width: 100%;
+}
+.shortUserTick {
+  display: inline-flex !important;
+  align-items: center !important;
+  flex-shrink: 0 !important;
+  margin-left: 2px !important;
+}
+.shortUserTick svg,
+.shortUserTick .vieworaTick,
+.shortUserTick .viewora-tick,
+.shortUserTick .vieworaBadgeSvg,
+.shortUsername svg,
+.creatorRow .vieworaTick {
+  width: 15px !important;
+  height: 15px !important;
+  min-width: 15px !important;
+  font-size: 15px !important;
+  margin-left: 0 !important;
+  vertical-align: middle !important;
+}

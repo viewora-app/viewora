@@ -296,7 +296,7 @@ function safeNumber(value) {
         return db.ref("users");
     }
     function savedPostsRef(uid) {
-        return db.ref("saved/" + uid + "/posts");
+        return db.ref("savedPosts/" + uid);
     }
 
 
@@ -4244,157 +4244,209 @@ function safeNumber(value) {
             return;
         }
 
-
-        const container =
-            $("savedList");
-
+        const container = $("savedList");
         if (!container) {
             return;
         }
 
-
         if (!isOwnProfile) {
-
             renderEmpty(
                 container,
                 "Private section",
                 "Saved posts are visible only to you."
             );
-
             return;
-
         }
-
 
         if (!currentUser?.uid) {
             return;
         }
 
-
-        renderLoading(
-            container,
-            "Loading saved..."
-        );
-
+        renderLoading(container, "Loading saved...");
 
         try {
+            const uid = currentUser.uid;
+            const items = [];
 
-            const snapshot =
-                await savedPostsRef(
-                    currentUser.uid
-                ).once("value");
-
-
-            const saved =
-                snapshot.val() || {};
-
-
-            const ids =
-                Object.keys(saved);
-
-
-            if (!ids.length) {
-
-                renderEmpty(
-                    container,
-                    "Nothing saved",
-                    "Posts you save will appear here."
-                );
-
-                return;
-
-            }
-
-
-            const posts = [];
-
-
-            for (const id of ids) {
-
+            async function pull(path, type, fetchOne) {
+                let snap;
                 try {
-
-                    const postSnapshot =
-                        await postRef(id)
-                            .once("value");
-
-
-                    if (
-                        postSnapshot.exists()
-                    ) {
-
-                        const data =
-                            postSnapshot.val() ||
-                            {};
-
-
-                        if (
-                            data.deleted !== true &&
-                            data.archived !== true
-                        ) {
-
-                            posts.push({
-                                id,
-                                ...data
-                            });
-
-                        }
-
-                    }
-
-                } catch (error) {
-
-                    console.warn(
-                        "Saved post skipped:",
-                        id
-                    );
-
+                    snap = await db.ref(path + "/" + uid).once("value");
+                } catch (e) {
+                    console.warn("saved read", path, e);
+                    return;
                 }
-
+                const map = snap.val() || {};
+                for (const id of Object.keys(map)) {
+                    const meta = map[id] || {};
+                    let savedAt = Number(meta.savedAt || meta.createdAt || meta.time || 0) || 0;
+                    let data = null;
+                    try {
+                        data = await fetchOne(id);
+                    } catch (_) {
+                        data = null;
+                    }
+                    if (!data && !(meta.thumbnail || meta.thumb || meta.cover)) {
+                        continue;
+                    }
+                    const merged = Object.assign({}, data || {}, {
+                        id: id,
+                        _saveType: type,
+                        _savedAt: savedAt,
+                        thumbnail:
+                            (data && (data.thumbnail || data.thumbnailUrl || data.cover || data.thumb)) ||
+                            meta.thumbnail ||
+                            meta.thumb ||
+                            meta.cover ||
+                            "",
+                        caption:
+                            (data && (data.caption || data.title || data.text)) ||
+                            meta.caption ||
+                            meta.title ||
+                            ""
+                    });
+                    if (merged.deleted === true || merged.archived === true) {
+                        continue;
+                    }
+                    items.push(merged);
+                }
             }
 
+            await pull("savedPosts", "post", async (id) => {
+                const s = await postRef(id).once("value");
+                return s.exists() ? s.val() : null;
+            });
+            await pull("savedShorts", "short", async (id) => {
+                const s = await shortsRef().child(id).once("value");
+                return s.exists() ? s.val() : null;
+            });
+            await pull("savedVideos", "video", async (id) => {
+                const s = await videosRef().child(id).once("value");
+                return s.exists() ? s.val() : null;
+            });
 
-            if (!posts.length) {
+            // legacy path migration read
+            try {
+                const leg = await db.ref("saved/" + uid + "/posts").once("value");
+                const map = leg.val() || {};
+                for (const id of Object.keys(map)) {
+                    if (items.some((x) => x.id === id && x._saveType === "post")) continue;
+                    const meta = map[id] || {};
+                    const s = await postRef(id).once("value");
+                    if (!s.exists()) continue;
+                    const data = s.val() || {};
+                    if (data.deleted || data.archived) continue;
+                    items.push(
+                        Object.assign({}, data, {
+                            id: id,
+                            _saveType: "post",
+                            _savedAt: Number(meta.savedAt || 0) || 0
+                        })
+                    );
+                }
+            } catch (_) {}
 
+            items.sort(function (a, b) {
+                return (b._savedAt || 0) - (a._savedAt || 0);
+            });
+
+            if (!items.length) {
                 renderEmpty(
                     container,
                     "Nothing saved",
-                    "Your saved posts will appear here."
+                    "Posts, shorts and videos you save will appear here."
                 );
-
                 return;
-
             }
 
+            container.innerHTML = items
+                .map(function (item) {
+                    try {
+                        if (item._saveType === "post" && typeof renderPostCard === "function") {
+                            var card = renderPostCard(item);
+                            var dateStr = item._savedAt
+                                ? new Date(item._savedAt).toLocaleDateString(undefined, {
+                                      day: "numeric",
+                                      month: "short",
+                                      year: "numeric"
+                                  })
+                                : "";
+                            if (dateStr && typeof card === "string") {
+                                card = card.replace(
+                                    "</article>",
+                                    '<div class="savedDateLine" style="padding:4px 12px 10px;font-size:11px;color:#9b9ba8">Saved · ' +
+                                        dateStr +
+                                        "</div></article>"
+                                );
+                            }
+                            return card;
+                        }
+                    } catch (_) {}
+                    var thumb =
+                        item.thumbnail ||
+                        item.thumbnailUrl ||
+                        item.cover ||
+                        item.thumb ||
+                        "";
+                    var href =
+                        item._saveType === "short"
+                            ? "shorts.html?id=" + encodeURIComponent(item.id)
+                            : item._saveType === "video"
+                              ? "video.html?id=" + encodeURIComponent(item.id)
+                              : "post.html?id=" + encodeURIComponent(item.id);
+                    var dateStr = item._savedAt
+                        ? new Date(item._savedAt).toLocaleDateString(undefined, {
+                              day: "numeric",
+                              month: "short",
+                              year: "numeric"
+                          })
+                        : "";
+                    var label =
+                        item._saveType === "short"
+                            ? "Short"
+                            : item._saveType === "video"
+                              ? "Video"
+                              : "Post";
+                    var cap = String(item.caption || "").replace(/</g, "&lt;").slice(0, 80);
+                    return (
+                        '<a class="savedMediaCard" href="' +
+                        href +
+                        '" style="display:block;margin:8px 12px;border-radius:14px;overflow:hidden;background:#12121a;border:1px solid rgba(255,255,255,.08);text-decoration:none;color:#fff">' +
+                        (thumb
+                            ? '<img src="' +
+                              String(thumb).replace(/"/g, "") +
+                              '" alt="" style="width:100%;aspect-ratio:16/9;object-fit:cover" loading="lazy">'
+                            : '<div style="aspect-ratio:16/9;background:#1a1a24"></div>') +
+                        '<div style="padding:10px 12px"><strong style="font-size:13px">' +
+                        label +
+                        "</strong>" +
+                        (cap
+                            ? '<div style="font-size:12px;color:#9b9ba8;margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' +
+                              cap +
+                              "</div>"
+                            : "") +
+                        (dateStr
+                            ? '<div style="font-size:11px;color:#7c7c8a;margin-top:6px">Saved · ' +
+                              dateStr +
+                              "</div>"
+                            : "") +
+                        "</div></a>"
+                    );
+                })
+                .join("");
 
-            container.innerHTML =
-                posts
-                    .map(
-                        renderPostCard
-                    )
-                    .join("");
-
-
-            bindContentActions(
-                container
-            );
-
+            try {
+                bindContentActions(container);
+            } catch (_) {}
         } catch (error) {
-
-            console.error(
-                "Saved loading error:",
-                error
-            );
-
+            console.error("Saved loading error:", error);
             renderEmpty(
                 container,
-                "Unable to load saved posts",
+                "Unable to load saved",
                 "Please try again."
             );
-
         }
-
     }
-
 
     /* =====================================================
        MEDIA URL

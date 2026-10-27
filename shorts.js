@@ -945,7 +945,7 @@ function vieworaIsPrivateUser(u) {
                         >
                         <span class="shortUsername">
                             <span class="shortUserNameWrap">
-                                <span class="shortUserNameMarquee ${(displayName||"").length >= 14 ? "is-sliding" : "no-slide"}"><span>${escapeHTML(displayName)}</span></span>
+                                <span class="shortUserNameMarquee ${((username||displayName)||"").length >= 14 ? "is-sliding" : "no-slide"}"><span>${escapeHTML((username ? ("@" + String(username).replace(/^@/, "")) : (displayName || "user")))}</span></span>
                                 <span class="shortUserTick">${tickHTML || ""}</span>
                             </span>
                         </span>

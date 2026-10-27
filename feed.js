@@ -1131,12 +1131,9 @@ async function(postId) {
         } else {
 
             await ref.set({
-
-                postId,
-
-                savedAt:
-                    SERVER_TIME
-
+                postId: postId,
+                type: "post",
+                savedAt: SERVER_TIME
             });
 
             feedToast("🔖 Post Saved");

@@ -1207,6 +1207,7 @@
         try { wirePostPinchZoom(); } catch (_) {}
         // Show red heart if already liked + correct count
         hydratePostLikes();
+        try { hydratePostSaves(); } catch (_) {}
         feedOrderLocked = true;
     }
 
@@ -2750,6 +2751,42 @@
         }
     }
 
+    
+    async function hydratePostSaves() {
+        if (!feedContainer) return;
+        const uid = getMyUID();
+        if (!uid) return;
+        const cards = feedContainer.querySelectorAll(".vieworaPostCard[data-post-id], .postCard[data-post-id], article[data-post-id]");
+        if (!cards.length) return;
+        await Promise.all(
+            Array.from(cards).map(async (card) => {
+                const postId = card.dataset.postId;
+                if (!postId) return;
+                const button =
+                    card.querySelector('[data-action="save"]') ||
+                    card.querySelector(".saveAction") ||
+                    card.querySelector(".save-btn");
+                if (!button) return;
+                try {
+                    const snap = await db.ref("savedPosts/" + uid + "/" + postId).once("value");
+                    const saved = snap.exists();
+                    const icon = button.querySelector("i");
+                    if (saved) {
+                        button.classList.add("saved");
+                        if (icon) icon.className = "fa-solid fa-bookmark";
+                        if (icon) icon.style.color = "#f5c518";
+                    } else {
+                        button.classList.remove("saved");
+                        if (icon) icon.className = "fa-regular fa-bookmark";
+                        if (icon) icon.style.color = "";
+                    }
+                } catch (e) {
+                    console.warn("hydrate save", postId, e);
+                }
+            })
+        );
+    }
+
     async function togglePostLike(card, postId, button) {
         const uid = getMyUID();
         if (!uid) {
@@ -2909,15 +2946,20 @@
             const snap = await ref.once("value");
             if (snap.exists()) {
                 await ref.remove();
-                if (icon) icon.className = "fa-regular fa-bookmark";
+                if (icon) { icon.className = "fa-regular fa-bookmark"; icon.style.color = ""; }
                 button.classList.remove("saved");
                 showToast("Removed from saved");
             } else {
                 await ref.set({
-                    postId,
+                    postId: postId,
+                    type: "post",
+                    savedAt: firebase.database.ServerValue.TIMESTAMP,
                     createdAt: Date.now()
                 });
-                if (icon) icon.className = "fa-solid fa-bookmark";
+                if (icon) {
+                    icon.className = "fa-solid fa-bookmark";
+                    icon.style.color = "#f5c518";
+                }
                 button.classList.add("saved");
                 showToast("Post saved");
             }

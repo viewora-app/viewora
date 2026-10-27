@@ -247,4 +247,28 @@
     // explicit: passwords are never persisted
     storesPasswords: false
   };
+
+  window.vieworaPrepareAccountSwitch = function () {
+    try { sessionStorage.setItem("viewora_switch_pending", "1"); } catch (_) {}
+    try {
+      var fb = window.VIEWORA_FALLBACK_AVATAR || "";
+      document.querySelectorAll("#profileAvatar, #profilePhoto, #avatarImg, .profileAvatar img, [data-me-avatar], #myAvatar, #navAvatar, .myAvatar").forEach(function (img) {
+        if (img && img.tagName === "IMG") {
+          img.src = fb || img.src;
+          img.style.opacity = "0.35";
+        }
+      });
+    } catch (_) {}
+  };
+  document.addEventListener("click", function (e) {
+    if (e.target.closest("[data-switch-uid], .switchAccountBtn, .accountSwitchItem, [data-account-switch]")) {
+      window.vieworaPrepareAccountSwitch();
+    }
+  }, true);
+  try {
+    if (sessionStorage.getItem("viewora_switch_pending") === "1") {
+      window.vieworaPrepareAccountSwitch && window.vieworaPrepareAccountSwitch();
+    }
+  } catch (_) {}
+
 })();

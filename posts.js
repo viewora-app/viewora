@@ -2230,15 +2230,12 @@ function firebaseReady() {
             } else {
 
                 await ref.set({
-
-                    postId:
-                        post.id,
-
-                    savedAt:
-                        firebase.database
-                            .ServerValue
-                            .TIMESTAMP
-
+                    postId: post.id,
+                    type: "post",
+                    caption: post.caption || post.text || "",
+                    thumbnail: post.thumbnail || post.image || post.photo || (post.media && post.media[0]) || "",
+                    ownerId: post.uid || post.userId || post.ownerId || "",
+                    savedAt: firebase.database.ServerValue.TIMESTAMP
                 });
 
                 setSavedUI(
