@@ -78,6 +78,12 @@
 
         music: null,
         mediaFiles: [],
+        postKind: "photo", // photo | poll | quiz
+        pollOptions: [],
+        quizAnswers: [],
+        quizCorrectIndex: 0,
+        quizExplanation: "",
+
         mediaUrls: [],
 
         location: "",
@@ -213,6 +219,7 @@
 
         try { paintCaptionAvatar(); } catch (e) {}
         try { setupMusicTrim(); } catch (e) { console.warn("music trim setup", e); }
+        try { setupPostTypes(); } catch (e) { console.warn("post types", e); }
         try { setupRatio(); } catch (e) { console.warn("ratio setup", e); }
         try { updatePhotoCounter(); } catch (_) {}
         try { setupMediaSwipe(); } catch (e) { console.warn("swipe init", e); }
@@ -2868,6 +2875,128 @@ function getCloudinaryConfig() {
        PUBLISH POST
     ====================================================== */
 
+
+    function setupPostTypes() {
+        if (window.__vieworaPostTypesWired) return;
+        window.__vieworaPostTypesWired = true;
+
+        function showKind(kind) {
+            state.postKind = kind || "photo";
+            document.querySelectorAll(".postTypeChip").forEach(function (b) {
+                b.classList.toggle("active", b.getAttribute("data-post-type") === state.postKind);
+            });
+            var poll = document.getElementById("pollPanel");
+            var quiz = document.getElementById("quizPanel");
+            if (poll) poll.classList.toggle("hidden", state.postKind !== "poll");
+            if (quiz) quiz.classList.toggle("hidden", state.postKind !== "quiz");
+        }
+
+        document.querySelectorAll(".postTypeChip").forEach(function (btn) {
+            btn.addEventListener("click", function () {
+                showKind(btn.getAttribute("data-post-type") || "photo");
+            });
+        });
+
+        var addPoll = document.getElementById("pollAddOption");
+        if (addPoll) {
+            addPoll.addEventListener("click", function () {
+                var host = document.getElementById("pollOptions");
+                if (!host) return;
+                if (host.querySelectorAll(".pollOptionRow").length >= 4) {
+                    try { showToast("Max 4 options"); } catch (_) {}
+                    return;
+                }
+                var row = document.createElement("div");
+                row.className = "pollOptionRow";
+                row.innerHTML = '<input type="text" class="pollOptionInput" placeholder="Option ' + (host.children.length + 1) + '" maxlength="80">' +
+                    '<button type="button" class="pollOptRemove" aria-label="Remove"><i class="fa-solid fa-trash"></i></button>';
+                host.appendChild(row);
+                row.querySelector(".pollOptRemove").addEventListener("click", function () {
+                    if (host.querySelectorAll(".pollOptionRow").length > 2) row.remove();
+                });
+            });
+        }
+
+        var addQuiz = document.getElementById("quizAddAnswer");
+        if (addQuiz) {
+            addQuiz.addEventListener("click", function () {
+                var host = document.getElementById("quizAnswers");
+                if (!host) return;
+                if (host.querySelectorAll(".quizAnswerRow").length >= 4) {
+                    try { showToast("Max 4 answers"); } catch (_) {}
+                    return;
+                }
+                var row = document.createElement("div");
+                row.className = "quizAnswerRow";
+                row.setAttribute("data-correct", "0");
+                row.innerHTML = '<button type="button" class="quizCorrectBtn" title="Mark correct"><i class="fa-solid fa-check"></i></button>' +
+                    '<input type="text" class="quizAnswerInput" placeholder="Answer ' + (host.children.length + 1) + '" maxlength="80">' +
+                    '<button type="button" class="pollOptRemove" aria-label="Remove"><i class="fa-solid fa-trash"></i></button>';
+                host.appendChild(row);
+                wireQuizRow(row);
+            });
+        }
+
+        function wireQuizRow(row) {
+            var btn = row.querySelector(".quizCorrectBtn");
+            if (btn) {
+                btn.addEventListener("click", function () {
+                    document.querySelectorAll(".quizAnswerRow").forEach(function (r) {
+                        r.setAttribute("data-correct", "0");
+                        var b = r.querySelector(".quizCorrectBtn");
+                        if (b) b.classList.remove("active");
+                    });
+                    row.setAttribute("data-correct", "1");
+                    btn.classList.add("active");
+                });
+            }
+            var rm = row.querySelector(".pollOptRemove");
+            if (rm) {
+                rm.addEventListener("click", function () {
+                    var host = document.getElementById("quizAnswers");
+                    if (host && host.querySelectorAll(".quizAnswerRow").length > 2) row.remove();
+                });
+            }
+        }
+        document.querySelectorAll(".quizAnswerRow").forEach(wireQuizRow);
+        showKind("photo");
+    }
+
+    function collectPollQuizMeta() {
+        var out = {};
+        if (state.postKind === "poll") {
+            var opts = [];
+            document.querySelectorAll("#pollOptions .pollOptionInput").forEach(function (inp) {
+                var v = (inp.value || "").trim();
+                if (v) opts.push({ text: v, votes: 0 });
+            });
+            out.postSubtype = "poll";
+            out.poll = { options: opts, totalVotes: 0 };
+        } else if (state.postKind === "quiz") {
+            var answers = [];
+            var correct = 0;
+            document.querySelectorAll("#quizAnswers .quizAnswerRow").forEach(function (row, i) {
+                var inp = row.querySelector(".quizAnswerInput");
+                var v = (inp && inp.value || "").trim();
+                if (v) {
+                    if (row.getAttribute("data-correct") === "1") correct = answers.length;
+                    answers.push({ text: v });
+                }
+            });
+            var exp = document.getElementById("quizExplanation");
+            out.postSubtype = "quiz";
+            out.quiz = {
+                answers: answers,
+                correctIndex: correct,
+                explanation: (exp && exp.value || "").trim()
+            };
+        } else {
+            out.postSubtype = "photo";
+        }
+        return out;
+    }
+
+
     async function publishPost() {
         if (state.publishing || window.__vieworaPublishingLock) {
             try { showToast("Please wait", "Already publishing…"); } catch (_) {}
@@ -2964,6 +3093,8 @@ function getCloudinaryConfig() {
             username: (user.displayName || user.email || "User"),
             userPhoto: user.photoURL || "",
             music: state.music || null,
+            ...(function () { try { return collectPollQuizMeta(); } catch (_) { return {}; } })(),
+
             musicStartAt: state.music ? Number(state.music.startAt || 0) : 0,
             musicDuration: state.music ? Number(state.music.duration || 15) : 0,
             category: state.category || "",

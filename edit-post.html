@@ -347,6 +347,56 @@
 
             <!-- CAPTION -->
 
+            <!-- POST TYPE: Photo / Poll / Quiz -->
+            <div class="postTypeBar" id="postTypeBar">
+                <button type="button" class="postTypeChip active" data-post-type="photo">
+                    <i class="fa-regular fa-image"></i> Photo
+                </button>
+                <button type="button" class="postTypeChip" data-post-type="poll">
+                    <i class="fa-solid fa-chart-bar"></i> Poll
+                </button>
+                <button type="button" class="postTypeChip" data-post-type="quiz">
+                    <i class="fa-solid fa-circle-question"></i> Quiz
+                </button>
+            </div>
+
+            <!-- POLL -->
+            <div class="postExtraPanel hidden" id="pollPanel">
+                <p class="postExtraTitle">Ask your community…</p>
+                <div id="pollOptions">
+                    <div class="pollOptionRow">
+                        <input type="text" class="pollOptionInput" placeholder="Option 1" maxlength="80">
+                        <button type="button" class="pollOptIcon" tabindex="-1"><i class="fa-regular fa-image"></i></button>
+                    </div>
+                    <div class="pollOptionRow">
+                        <input type="text" class="pollOptionInput" placeholder="Option 2" maxlength="80">
+                        <button type="button" class="pollOptIcon" tabindex="-1"><i class="fa-regular fa-image"></i></button>
+                    </div>
+                </div>
+                <button type="button" class="pollAddBtn" id="pollAddOption">
+                    <i class="fa-solid fa-plus"></i> Add option
+                </button>
+            </div>
+
+            <!-- QUIZ -->
+            <div class="postExtraPanel hidden" id="quizPanel">
+                <p class="postExtraTitle">Quiz your community…</p>
+                <div id="quizAnswers">
+                    <div class="quizAnswerRow" data-correct="1">
+                        <button type="button" class="quizCorrectBtn active" title="Correct answer"><i class="fa-solid fa-check"></i></button>
+                        <input type="text" class="quizAnswerInput" placeholder="Answer 1" maxlength="80">
+                    </div>
+                    <div class="quizAnswerRow" data-correct="0">
+                        <button type="button" class="quizCorrectBtn" title="Mark correct"><i class="fa-solid fa-check"></i></button>
+                        <input type="text" class="quizAnswerInput" placeholder="Answer 2" maxlength="80">
+                    </div>
+                </div>
+                <button type="button" class="pollAddBtn" id="quizAddAnswer">
+                    <i class="fa-solid fa-plus"></i> Add answer
+                </button>
+                <textarea id="quizExplanation" class="quizExplanation" rows="2" placeholder="Add an explanation (optional)" maxlength="300"></textarea>
+            </div>
+
             <div class="captionBox">
 
                 <div class="captionHeader">
