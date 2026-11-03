@@ -186,7 +186,7 @@
     }
 
     // Single-image fields — NEVER photoURL / avatar / profilePhoto (those are DP)
-    ["imageUrl", "image", "postImage", "postImageUrl", "mediaUrl", "coverUrl", "cover", "thumbnailUrl", "thumbnail"].forEach((k) => {
+    ["imageUrl", "image", "postImage", "postImageUrl", "mediaUrl", "mediaURL", "downloadURL", "secure_url", "url", "src", "coverUrl", "cover", "thumbnailUrl", "thumbnail", "videoUrl", "videoURL"].forEach((k) => {
       if (data[k] && !out.length) push(data[k]);
       else if (data[k]) push(data[k]);
     });
@@ -327,10 +327,17 @@
   }
 
   function avatarOf(user) {
-    return safeUrl(
-      user.photoURL || user.avatar || user.profilePic || user.profilePhoto || user.image,
-      ""
-    );
+    if (!user || typeof user !== "object") return "";
+    var keys = ["profilePhoto","photoURL","photoUrl","avatar","profilePic","dp","image"];
+    for (var i = 0; i < keys.length; i++) {
+      var v = user[keys[i]];
+      if (typeof v === "string" && v.trim().length > 8 && !/default-avatar|ui-avatars/i.test(v)) {
+        v = v.trim();
+        if (v.indexOf("//") === 0) v = "https:" + v;
+        return safeUrl(v, v) || v;
+      }
+    }
+    return "";
   }
 
   function displayNameOf(user) {
@@ -1076,6 +1083,7 @@
     }
 
     resultsBody.innerHTML = html;
+    try { hydrateSearchPostCards(resultsBody); } catch (_) {}
     hydrateSearchLikes();
   }
 
@@ -1143,9 +1151,126 @@
     }
   }
 
+  
+  function formatSearchCount(n) {
+    n = Number(n) || 0;
+    if (n >= 1e6) return (n / 1e6).toFixed(1).replace(/\.0$/, "") + "M";
+    if (n >= 1e3) return (n / 1e3).toFixed(1).replace(/\.0$/, "") + "K";
+    return n ? String(n) : "";
+  }
+  function searchPostCardHTML(id, data) {
+    data = data || {};
+    id = String(id || "");
+    var mediaList = typeof postMediaList === "function" ? postMediaList(data) : [];
+    if (!mediaList.length) {
+      var one = postMediaUrl(data);
+      if (one) mediaList = [one];
+    }
+    var avatar = avatarOf(data) || data.profilePhoto || data.photoURL || data.avatar || "assets/default-avatar.png";
+    var username = String(data.username || data.userName || data.displayName || data.name || data.creatorName || "User").replace(/^@+/, "");
+    var uid = data.uid || data.userId || data.ownerId || data.authorId || "";
+    var caption = String(data.caption || data.description || data.text || data.title || "");
+    var likes = formatSearchCount(data.likesCount || data.likes || 0);
+    var comments = formatSearchCount(data.commentsCount || data.comments || 0);
+    var views = formatSearchCount(data.views || data.viewsCount || 0);
+    var time = formatDate(data.createdAt || data.timestamp || data.uploadedAt);
+    var mediaHtml = "";
+    if (mediaList.length) {
+      mediaHtml = '<div class="postMediaWrap"><img class="postMedia" src="' + escapeHtml(mediaList[0]) + '" alt="" loading="eager" onerror="this.style.display=\'none\'"></div>';
+    }
+    return (
+      '<article class="vieworaPostCard" data-post-id="' + escapeHtml(id) + '" data-uid="' + escapeHtml(uid) + '">' +
+      '<div class="postHeader"><button class="postUser" type="button" data-user-id="' + escapeHtml(uid) + '">' +
+      '<img class="postAvatar" src="' + escapeHtml(avatar) + '" alt="" onerror="this.onerror=null;this.src=\'assets/default-avatar.png\'">' +
+      '<span class="postUserInfo"><strong>' + escapeHtml(username) + '</strong><small>' + escapeHtml(time) + '</small></span></button>' +
+      '<button class="postMore" type="button" data-action="more"><i class="fa-solid fa-ellipsis"></i></button></div>' +
+      mediaHtml +
+      (caption ? '<div class="postCaption">' + escapeHtml(caption).slice(0, 400) + '</div>' : '') +
+      '<div class="postActions">' +
+      '<button type="button" class="postAction" data-action="like"><i class="fa-regular fa-heart"></i><span class="likeCountSpan">' + escapeHtml(likes) + '</span></button>' +
+      '<button type="button" class="postAction" data-action="comment"><i class="fa-regular fa-comment"></i><span class="commentCountSpan">' + escapeHtml(comments) + '</span></button>' +
+      '<button type="button" class="postAction" data-action="share"><i class="fa-regular fa-paper-plane"></i></button>' +
+      '<button type="button" class="postAction saveAction" data-action="save"><i class="fa-regular fa-bookmark"></i></button>' +
+      '</div><div class="postStats"><span>' + (views ? escapeHtml(views) + ' views' : '') + '</span></div></article>'
+    );
+  }
+  async function searchToggleLike(postId, button) {
+    if (!authUser || !db) { alert("Login required"); return; }
+    var uid = authUser.uid;
+    var icon = button.querySelector("i");
+    var span = button.querySelector(".likeCountSpan");
+    var ref = db.ref("postLikes/" + postId + "/" + uid);
+    var refB = db.ref("likes/" + postId + "/" + uid);
+    var refC = db.ref("posts/" + postId + "/likedBy/" + uid);
+    try {
+      var snap = await ref.once("value");
+      var was = snap.exists();
+      if (was) {
+        await ref.remove();
+        try { await refB.remove(); } catch (_) {}
+        try { await refC.remove(); } catch (_) {}
+        if (icon) icon.className = "fa-regular fa-heart";
+      } else {
+        await ref.set(true);
+        try { await refB.set(true); } catch (_) {}
+        try { await refC.set(true); } catch (_) {}
+        if (icon) icon.className = "fa-solid fa-heart";
+        try {
+          var p = (await db.ref("posts/" + postId).once("value")).val() || {};
+          var owner = p.uid || p.userId || p.ownerId || "";
+          if (owner && owner !== uid) {
+            var me = (await db.ref("users/" + uid).once("value")).val() || {};
+            var name = me.displayName || me.name || me.username || "Someone";
+            var nid = "like_" + postId + "_" + uid;
+            var payload = {
+              type: "like", action: "like", kind: "post", postId: postId, fromUid: uid, fromName: name,
+              fromPhoto: me.profilePhoto || me.photoURL || "",
+              text: name + " liked your post", message: name + " liked your post",
+              createdAt: firebase.database.ServerValue.TIMESTAMP, read: false
+            };
+            await db.ref("notifications/" + owner + "/" + nid).set(payload);
+            try { await db.ref("activity/" + owner + "/" + nid).set(payload); } catch (_) {}
+          }
+        } catch (_) {}
+      }
+      var tree = await db.ref("postLikes/" + postId).once("value");
+      var count = tree.exists() ? Object.keys(tree.val() || {}).length : 0;
+      try { await db.ref("posts/" + postId).update({ likes: count, likesCount: count, likeCount: count }); } catch (_) {}
+      if (span) span.textContent = formatSearchCount(count);
+    } catch (e) { console.error("search like", e); }
+  }
+  async function searchToggleSave(postId, button) {
+    if (!authUser || !db) return;
+    var icon = button.querySelector("i");
+    var ref = db.ref("savedPosts/" + authUser.uid + "/" + postId);
+    try {
+      var snap = await ref.once("value");
+      if (snap.exists()) { await ref.remove(); if (icon) icon.className = "fa-regular fa-bookmark"; }
+      else { await ref.set({ postId: postId, type: "post", savedAt: firebase.database.ServerValue.TIMESTAMP }); if (icon) icon.className = "fa-solid fa-bookmark"; }
+    } catch (e) { console.error("search save", e); }
+  }
+  async function hydrateSearchPostCards(root) {
+    if (!root || !db || !authUser) return;
+    var cards = root.querySelectorAll(".vieworaPostCard[data-post-id]");
+    for (var i = 0; i < cards.length; i++) {
+      var card = cards[i];
+      var postId = card.getAttribute("data-post-id");
+      try {
+        var liked = await db.ref("postLikes/" + postId + "/" + authUser.uid).once("value");
+        var likeBtn = card.querySelector('[data-action="like"] i');
+        if (liked.exists() && likeBtn) likeBtn.className = "fa-solid fa-heart";
+        var saved = await db.ref("savedPosts/" + authUser.uid + "/" + postId).once("value");
+        var saveBtn = card.querySelector('[data-action="save"] i');
+        if (saved.exists() && saveBtn) saveBtn.className = "fa-solid fa-bookmark";
+      } catch (_) {}
+    }
+  }
+
+
   function mediaCard(row, kind) {
     const id = row.id;
     const data = row.data || {};
+    if (kind === "post") return searchPostCardHTML(id, data);
     const title = String(
       data.title || data.caption || data.name || data.text || (kind === "post" ? "Post" : "Untitled")
     ).trim();
@@ -1489,6 +1614,24 @@
 
     if (resultsBody) {
       resultsBody.addEventListener("click", async (e) => {
+        const vpc = e.target.closest(".vieworaPostCard");
+        if (vpc) {
+          const pid = vpc.getAttribute("data-post-id");
+          if (e.target.closest('[data-action="like"]')) { e.preventDefault(); e.stopPropagation(); searchToggleLike(pid, e.target.closest('[data-action="like"]')); return; }
+          if (e.target.closest('[data-action="save"]')) { e.preventDefault(); e.stopPropagation(); searchToggleSave(pid, e.target.closest('[data-action="save"]')); return; }
+          if (e.target.closest('[data-action="comment"]')) { e.preventDefault(); location.href = "post.html?id=" + encodeURIComponent(pid); return; }
+          if (e.target.closest('[data-action="share"]')) {
+            e.preventDefault();
+            var url = location.origin + "/post.html?id=" + encodeURIComponent(pid);
+            if (navigator.share) navigator.share({ url: url }).catch(function(){});
+            else if (navigator.clipboard) navigator.clipboard.writeText(url);
+            return;
+          }
+          if (e.target.closest('[data-action="more"]')) { e.preventDefault(); location.href = "post.html?id=" + encodeURIComponent(pid); return; }
+          var ub = e.target.closest(".postUser[data-user-id]");
+          if (ub) { e.preventDefault(); location.href = "profile.html?uid=" + encodeURIComponent(ub.getAttribute("data-user-id")); return; }
+        }
+
         const userBtn = e.target.closest(".spUser, .user-card");
         if (userBtn && userBtn.getAttribute("data-uid")) {
           e.preventDefault();

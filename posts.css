@@ -2400,3 +2400,10 @@ body.sheet-open #bottomNav {
   font-weight: 700 !important;
   font-size: 14px !important;
 }
+
+/* No loading screen — posts open instantly */
+#loadingState,
+.loading-state,
+.state.loading-state {
+  display: none !important;
+}

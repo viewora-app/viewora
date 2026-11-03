@@ -852,9 +852,18 @@ function switchSection(section) {
         loadSettings();
     }
 
-    if (window.innerWidth <= 850) {
-        closeSidebar();
-    }
+    // Always close sidebar + overlay (blur bug on mobile/tablet)
+    try { closeSidebar(); } catch (_) {}
+    try {
+        var ov = document.getElementById("sidebarOverlay");
+        if (ov) {
+            ov.classList.remove("show");
+            ov.style.display = "none";
+        }
+        var sb = document.getElementById("adminSidebar");
+        if (sb) sb.classList.remove("open");
+        document.body.classList.remove("sidebar-open");
+    } catch (_) {}
 
     window.scrollTo({
         top: 0,
@@ -889,9 +898,9 @@ function toggleSidebar() {
     sidebar.classList.toggle("open");
 
     if (overlay) {
-        overlay.classList.toggle(
-            "show"
-        );
+        var open = sidebar.classList.contains("open");
+        overlay.classList.toggle("show", open);
+        try { overlay.style.display = open ? "block" : "none"; } catch (_) {}
     }
 }
 
@@ -909,7 +918,9 @@ function closeSidebar() {
 
     if (overlay) {
         overlay.classList.remove("show");
+        try { overlay.style.display = "none"; } catch (_) {}
     }
+    try { document.body.classList.remove("sidebar-open"); } catch (_) {}
 }
 
 const sidebarOverlay =
@@ -2242,10 +2253,26 @@ async function deletePost(postId, root) {
         async () => {
             try {
                 await getAdminDb().ref(root + "/" + realId).remove();
-                // also try posts path if nested
+                // mirrors / alternate roots
                 if (root !== "posts") {
-                    try { await getAdminDb().ref("posts/" + postId).remove(); } catch (_) {}
+                    try { await getAdminDb().ref("posts/" + realId).remove(); } catch (_) {}
                 }
+                try { await getAdminDb().ref("shorts/" + realId).remove(); } catch (_) {}
+                try { await getAdminDb().ref("videos/" + realId).remove(); } catch (_) {}
+                try { await getAdminDb().ref("reels/" + realId).remove(); } catch (_) {}
+                try { await getAdminDb().ref("longVideos/" + realId).remove(); } catch (_) {}
+                // clear like trees
+                try { await getAdminDb().ref("postLikes/" + realId).remove(); } catch (_) {}
+                try { await getAdminDb().ref("likes/" + realId).remove(); } catch (_) {}
+                // user mirror posts if uid known
+                try {
+                    var cached = cachedPosts[postId] || {};
+                    var ou = cached.uid || cached.userId || cached.ownerId || "";
+                    if (ou) {
+                        try { await getAdminDb().ref("users/" + ou + "/posts/" + realId).remove(); } catch (_) {}
+                        try { await getAdminDb().ref("users/" + ou + "/userPosts/" + realId).remove(); } catch (_) {}
+                    }
+                } catch (_) {}
                 showToast("Content deleted successfully.");
                 await loadPosts();
                 try { await loadDashboard(); } catch (_) {}

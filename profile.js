@@ -3463,43 +3463,40 @@ function safeNumber(value) {
                             !__vieworaProfileHideItem(item, typeof isOwnProfile !== "undefined" && isOwnProfile);
                     });
             }
-            function isPostsTabItem(item, loose) {
+            function isPostsTabItem(item) {
+                if (!item || typeof item !== "object") return false;
                 var ty = String(item.type || item.mediaType || item.kind || "").toLowerCase();
                 if (ty === "video" || ty === "long" || ty === "longvideo" || ty === "long-video" || ty === "short" || ty === "shorts") return false;
                 if (item.kind === "long" || item.kind === "short") return false;
                 if (item.isShort === true || item.shorts === true) return false;
+                if (item.deleted === true || item.archived === true || item.hidden === true) return false;
+
                 var media = getMediaURL(item);
                 if (media) {
                     var low = String(media).toLowerCase();
                     if (low.indexOf("default-avatar") !== -1) return false;
-                    if (!loose) {
-                        var hasImgField = !!(item.images || item.imageUrl || item.imageURL || item.thumbnail || item.thumbnailUrl || (Array.isArray(item.mediaUrls) && item.mediaUrls.length) || (Array.isArray(item.media) && item.media.length));
-                        var looksVideo = /\.(mp4|webm|mov|m3u8)(\?|$)/i.test(media) || ty === "video";
-                        if (looksVideo && !hasImgField) return false;
-                    }
+                    if (low.indexOf("ui-avatars.com") !== -1) return false;
+                    if (low.indexOf("data:image/svg") !== -1) return false;
+                    // pure video without image fields → belongs in Videos/Shorts, not Posts grid
+                    var hasImgField = !!(item.images || item.imageUrl || item.imageURL || item.thumbnail || item.thumbnailUrl || (Array.isArray(item.mediaUrls) && item.mediaUrls.length) || (Array.isArray(item.media) && item.media.length) || item.photo || item.picture);
+                    var looksVideo = /\.(mp4|webm|mov|m3u8)(\?|$)/i.test(media) || ty === "video";
+                    if (looksVideo && !hasImgField && ty !== "post" && ty !== "image" && ty !== "photo") return false;
                     return true;
                 }
-                if (ty === "post" || ty === "image" || ty === "photo" || ty === "carousel" || !ty) {
-                    var cap = String(item.caption || item.description || item.title || item.text || "").trim();
-                    if (cap) return true;
+                // text-only post: must have real caption
+                var cap = String(item.caption || item.description || item.title || item.text || "").trim();
+                if (cap.length >= 1 && (ty === "post" || ty === "image" || ty === "photo" || ty === "carousel" || ty === "text" || !ty)) {
+                    return true;
                 }
-                // loose: any owner row that isn't explicitly a short/video
-                if (loose && (ty === "post" || ty === "image" || !ty)) return true;
+                // no media + no caption = ghost row → never show
                 return false;
             }
             var items = baseList()
-                .filter(function (item) { return isPostsTabItem(item, false); })
+                .filter(function (item) { return isPostsTabItem(item); })
                 .sort(function (a, b) {
                     return safeNumber(b.createdAt) - safeNumber(a.createdAt);
                 });
-            // Fallback: if strict filter emptied the grid but we did find owner rows, show them
-            if (!items.length) {
-                items = baseList()
-                    .filter(function (item) { return isPostsTabItem(item, true); })
-                    .sort(function (a, b) {
-                        return safeNumber(b.createdAt) - safeNumber(a.createdAt);
-                    });
-            }
+            // NO loose fallback — empty/broken rows must not appear as black Post cards
 
 
             /*
@@ -3583,21 +3580,33 @@ function safeNumber(value) {
 
 
         if (!media) {
-
+            var textCap = String(item.caption || item.description || item.title || item.text || "").trim();
+            if (!textCap) {
+                // ghost post — do not render
+                return "";
+            }
+            // text-only post card
             return `
                 <article
-                    class="profileContentCard"
+                    class="profileContentCard profileTextPost"
                     data-id="${escapeHTML(item.id)}"
                     data-type="post"
                 >
-
-                    <div class="contentPlaceholder">
-                        <i class="fa-solid fa-image"></i>
+                    <div class="contentTextOnly">
+                        <p>${escapeHTML(textCap.length > 120 ? textCap.slice(0, 120) + "…" : textCap)}</p>
                     </div>
-
+                    <div class="contentOverlay">
+                        <span>
+                            <i class="fa-solid fa-heart"></i>
+                            ${formatNumber(item.likesCount || item.likes || 0)}
+                        </span>
+                        <span>
+                            <i class="fa-solid fa-comment"></i>
+                            ${formatNumber(item.commentsCount || item.comments || 0)}
+                        </span>
+                    </div>
                 </article>
             `;
-
         }
 
 

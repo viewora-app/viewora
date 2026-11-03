@@ -554,7 +554,7 @@ function firebaseReady() {
                     auth.currentUser || null
                 );
 
-            }, 5000);
+            }, 1500);
 
         });
 
@@ -691,111 +691,56 @@ function firebaseReady() {
 
     async function getPostsForProfile(uid) {
 
-        uid =
-            normalizeUID(uid);
-
-        if (!uid) {
-            return [];
-        }
+        uid = normalizeUID(uid);
+        if (!uid) return [];
 
         const result = [];
+        const seen = {};
 
-        /* -----------------------------------------------
-           GLOBAL POSTS
-        ------------------------------------------------ */
-
-        try {
-
-            const snapshot =
-                await db
-                    .ref("posts")
-                    .once("value");
-
-            if (snapshot.exists()) {
-
-                const posts =
-                    objectToPosts(
-                        snapshot.val()
-                    );
-
-                posts.forEach(post => {
-
-                    if (
-                        getAuthorUID(post) === uid
-                    ) {
-
-                        result.push(post);
-
-                    }
-
-                });
-
-            }
-
-        } catch (error) {
-
-            console.warn(
-                "Global posts failed:",
-                error
-            );
-
+        function pushList(posts) {
+            (posts || []).forEach(function (post) {
+                if (!post || !post.id) return;
+                if (getAuthorUID(post) && getAuthorUID(post) !== uid) return;
+                if (!getAuthorUID(post)) post.uid = uid;
+                if (seen[String(post.id)]) return;
+                seen[String(post.id)] = 1;
+                result.push(post);
+            });
         }
 
-
-        /* -----------------------------------------------
-           USER POSTS FALLBACK
-        ------------------------------------------------ */
-
+        /* Fast path: users/{uid}/posts */
         try {
+            const snap = await db.ref("users/" + uid + "/posts").once("value");
+            if (snap.exists()) pushList(objectToPosts(snap.val()));
+        } catch (e) {
+            console.warn("users/posts", e);
+        }
 
-            const snapshot =
-                await db
-                    .ref(
-                        "users/" +
-                        uid +
-                        "/posts"
-                    )
+        if (result.length) return result;
+
+        /* Indexed query — no full tree */
+        try {
+            const snap = await db
+                .ref("posts")
+                .orderByChild("uid")
+                .equalTo(uid)
+                .limitToLast(40)
+                .once("value");
+            if (snap.exists()) pushList(objectToPosts(snap.val()));
+        } catch (e) {
+            console.warn("posts by uid", e);
+            /* last resort: try userId field */
+            try {
+                const snap2 = await db
+                    .ref("posts")
+                    .orderByChild("userId")
+                    .equalTo(uid)
+                    .limitToLast(40)
                     .once("value");
-
-            if (snapshot.exists()) {
-
-                const posts =
-                    objectToPosts(
-                        snapshot.val()
-                    );
-
-                posts.forEach(post => {
-
-                    if (
-                        !getAuthorUID(post)
-                    ) {
-
-                        post.uid = uid;
-
-                    }
-
-                    const exists =
-                        result.some(
-                            item =>
-                                String(item.id) ===
-                                String(post.id)
-                        );
-
-                    if (!exists) {
-                        result.push(post);
-                    }
-
-                });
-
+                if (snap2.exists()) pushList(objectToPosts(snap2.val()));
+            } catch (e2) {
+                console.warn("posts by userId", e2);
             }
-
-        } catch (error) {
-
-            console.warn(
-                "Nested posts failed:",
-                error
-            );
-
         }
 
         return result;
@@ -807,7 +752,8 @@ function firebaseReady() {
        RESOLVE POST PROFILE
     ===================================================== */
 
-    async function resolveProfileFromPost() {
+    
+async function resolveProfileFromPost() {
 
         if (!requestedPostID) {
             return null;
@@ -848,149 +794,93 @@ function firebaseReady() {
         try {
 
             if (!firebaseReady()) {
-
-                throw new Error(
-                    "Firebase is not ready."
-                );
-
+                throw new Error("Firebase is not ready.");
             }
 
-            currentUser =
-                await waitForAuth();
+            /* Don't block UI on auth */
+            currentUser = auth && auth.currentUser ? auth.currentUser : null;
+            try {
+                waitForAuth().then(function (u) { currentUser = u || currentUser; }).catch(function () {});
+            } catch (_) {}
 
             let exactPost = null;
 
-            /* -------------------------------------------
-               EXACT POST HAS PRIORITY
-            -------------------------------------------- */
-
+            /* ---- EXACT POST FIRST (smooth open from profile) ---- */
             if (requestedPostID) {
-
-                exactPost =
-                    await resolveProfileFromPost();
-
-                if (!exactPost) {
-
-                    showEmpty(
-                        "Post not found",
-                        "This post may have been deleted or is no longer available."
-                    );
-
-                    return;
-
+                exactPost = await getExactPost(requestedPostID);
+                if (exactPost) {
+                    const authorUID = getAuthorUID(exactPost);
+                    if (authorUID) profileUID = authorUID;
+                    loadedPosts = [exactPost];
+                    renderPosts();
+                } else {
+                    /* still try resolve */
+                    exactPost = await resolveProfileFromPost();
+                    if (exactPost) {
+                        loadedPosts = [exactPost];
+                        renderPosts();
+                    } else {
+                        showEmpty(
+                            "Post not found",
+                            "This post may have been deleted or is no longer available."
+                        );
+                        return;
+                    }
                 }
-
             }
 
-            /* -------------------------------------------
-               FALLBACK TO CURRENT USER
-            -------------------------------------------- */
-
             if (!profileUID) {
-
                 if (currentUser) {
-
-                    profileUID =
-                        currentUser.uid;
-
-                } else {
-
+                    profileUID = currentUser.uid;
+                } else if (!exactPost) {
                     showEmpty(
                         "Profile not found",
                         "The profile information for this post is missing."
                     );
-
                     return;
-
                 }
-
             }
 
-            loadedPosts =
-                await getPostsForProfile(
-                    profileUID
-                );
-
-            loadedPosts = (loadedPosts || []).filter(function (post) {
-                return !isEmptyLiveReplayPost(post);
-            });
-
-            /* -------------------------------------------
-               EXACT POST FALLBACK
-            -------------------------------------------- */
-
-            if (exactPost) {
-
-                const exists =
-                    loadedPosts.some(
-                        post =>
-                            String(post.id) ===
-                            String(exactPost.id)
-                    );
-
-                if (!exists) {
-
-                    loadedPosts.unshift(
-                        exactPost
-                    );
-
+            /* Load rest of profile posts in background (no full DB dump) */
+            if (profileUID) {
+                try {
+                    const more = await getPostsForProfile(profileUID);
+                    const filtered = (more || []).filter(function (post) {
+                        return !isEmptyLiveReplayPost(post);
+                    });
+                    if (exactPost) {
+                        const id = String(exactPost.id);
+                        const rest = filtered.filter(function (p) {
+                            return String(p.id) !== id;
+                        });
+                        loadedPosts = [exactPost].concat(rest);
+                    } else {
+                        loadedPosts = filtered;
+                    }
+                    loadedPosts.sort(function (a, b) {
+                        return getPostTime(b) - getPostTime(a);
+                    });
+                    if (requestedPostID) {
+                        const index = loadedPosts.findIndex(function (post) {
+                            return String(post.id) === String(requestedPostID);
+                        });
+                        if (index > 0) {
+                            const target = loadedPosts.splice(index, 1)[0];
+                            loadedPosts.unshift(target);
+                        }
+                    }
+                    renderPosts();
+                } catch (e) {
+                    console.warn("profile posts", e);
+                    if (!loadedPosts.length) {
+                        showEmpty("No posts yet", "This profile hasn't posted anything yet.");
+                    }
                 }
-
             }
-
-            /* -------------------------------------------
-               SORT
-            -------------------------------------------- */
-
-            loadedPosts.sort(
-                (a, b) => {
-
-                    return (
-                        getPostTime(b) -
-                        getPostTime(a)
-                    );
-
-                }
-            );
-
-            /* -------------------------------------------
-               REQUESTED POST FIRST
-            -------------------------------------------- */
-
-            if (requestedPostID) {
-
-                const index =
-                    loadedPosts.findIndex(
-                        post =>
-                            String(post.id) ===
-                            String(requestedPostID)
-                    );
-
-                if (index > 0) {
-
-                    const target =
-                        loadedPosts.splice(
-                            index,
-                            1
-                        )[0];
-
-                    loadedPosts.unshift(
-                        target
-                    );
-
-                }
-
-            }
-
-            renderPosts();
 
         } catch (error) {
 
-            console.error(
-                "Posts load failed:",
-                error
-            );
-
+            console.error("Posts load failed:", error);
             showEmpty(
                 "Unable to load posts",
                 "Please check your Firebase connection and try again."
@@ -1004,6 +894,7 @@ function firebaseReady() {
     /* =====================================================
        POST TIME
     ===================================================== */
+
 
     function getPostTime(post) {
 

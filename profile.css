@@ -2476,3 +2476,29 @@ html[data-theme="light"] .profileWebsite { color: #2563eb; }
   position: relative !important;
   overflow: hidden !important;
 }
+
+
+/* Text-only posts on profile grid */
+.profileContentCard.profileTextPost {
+  background: linear-gradient(160deg, #1a1a24 0%, #12121a 100%);
+  min-height: 120px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+.profileContentCard .contentTextOnly {
+  padding: 14px 12px 36px;
+  flex: 1;
+  display: flex;
+  align-items: center;
+}
+.profileContentCard .contentTextOnly p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.35;
+  color: #e8e8ef;
+  display: -webkit-box;
+  -webkit-line-clamp: 5;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}

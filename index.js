@@ -812,6 +812,12 @@
 
         article.dataset.postId =
             id;
+        // owner for like notifications + permissions
+        var _ownerId = data.uid || data.userId || data.ownerId || data.creatorId || "";
+        if (_ownerId) {
+            article.dataset.ownerId = String(_ownerId);
+            article.dataset.uid = String(_ownerId);
+        }
         if (musicUrl) {
             article.dataset.musicUrl = musicUrl;
             article.dataset.musicTitle = musicTitle || "";
@@ -2825,22 +2831,39 @@
             button.style.pointerEvents = "none";
         }
 
-        // Instant UI — no wait for network (smooth, no jump)
+        // Resolve post owner (for notification + rules)
+        let ownerId = "";
+        try {
+            if (card) {
+                ownerId =
+                    card.dataset.ownerId ||
+                    card.dataset.uid ||
+                    (card.querySelector("[data-user-id]") &&
+                        card.querySelector("[data-user-id]").getAttribute("data-user-id")) ||
+                    "";
+            }
+        } catch (_) {}
+
+        // Instant optimistic UI
+        let optimisticLiked = false;
         try {
             const icon = button && button.querySelector("i");
             const span = button && button.querySelector(".likeCountSpan");
             const currentlyLiked = icon && icon.classList.contains("fa-solid");
-            const nextLiked = !currentlyLiked;
-            let count = Number(
-                (card && card.dataset.likeCount) ||
-                (span && span.textContent) ||
-                0
-            ) || 0;
-            if (nextLiked) count += 1;
+            optimisticLiked = !currentlyLiked;
+            let count =
+                Number(
+                    (card && card.dataset.likeCount) ||
+                        (span && span.textContent) ||
+                        0
+                ) || 0;
+            if (optimisticLiked) count += 1;
             else count = Math.max(0, count - 1);
             if (icon) {
-                icon.className = nextLiked ? "fa-solid fa-heart" : "fa-regular fa-heart";
-                icon.style.color = nextLiked ? "#ff2d55" : "";
+                icon.className = optimisticLiked
+                    ? "fa-solid fa-heart"
+                    : "fa-regular fa-heart";
+                icon.style.color = optimisticLiked ? "#ff2d55" : "";
             }
             if (span) span.textContent = count > 0 ? String(count) : "";
             if (card) card.dataset.likeCount = String(count);
@@ -2848,34 +2871,54 @@
 
         const likeRefA = db.ref("postLikes/" + postId + "/" + uid);
         const likeRefB = db.ref("likes/" + postId + "/" + uid);
+        const likedByRef = db.ref("posts/" + postId + "/likedBy/" + uid);
 
         try {
-            let wasLiked = false;
-            // Membership from either path
             const [a0, b0] = await Promise.all([
                 likeRefA.once("value"),
                 likeRefB.once("value")
             ]);
-            wasLiked =
+            const wasLiked =
                 a0.exists() ||
                 b0.val() === true ||
                 b0.val() === 1 ||
                 (b0.exists() && b0.val() !== false && b0.val() !== null);
 
-            // Atomic toggle on primary
-            await likeRefA.transaction((cur) => {
-                if (cur === null) return true;
-                return null;
-            });
+            // Prefer set/remove over transaction (rules-friendly + predictable)
+            if (wasLiked) {
+                await Promise.all([
+                    likeRefA.remove().catch(function () {}),
+                    likeRefB.remove().catch(function () {}),
+                    likedByRef.remove().catch(function () {})
+                ]);
+            } else {
+                const likePayload = {
+                    uid: uid,
+                    postId: postId,
+                    createdAt: firebase.database.ServerValue.TIMESTAMP
+                };
+                await Promise.all([
+                    likeRefA.set(likePayload).catch(function (e) {
+                        // fallback boolean if object blocked
+                        return likeRefA.set(true);
+                    }),
+                    likeRefB.set(true).catch(function () {}),
+                    likedByRef.set(true).catch(function () {})
+                ]);
+            }
 
             const after = await likeRefA.once("value");
-            const isLiked = after.exists();
-
-            // Mirror secondary
-            try {
-                if (isLiked) await likeRefB.set(true);
-                else await likeRefB.remove();
-            } catch (_) {}
+            let isLiked = after.exists();
+            // if primary path denied, trust secondary
+            if (!isLiked) {
+                try {
+                    const b1 = await likeRefB.once("value");
+                    isLiked =
+                        b1.val() === true ||
+                        b1.val() === 1 ||
+                        (b1.exists() && b1.val() !== false && b1.val() !== null);
+                } catch (_) {}
+            }
 
             // Count = unique keys in postLikes (source of truth)
             let finalCount = 0;
@@ -2885,13 +2928,12 @@
                     finalCount = Object.keys(tree.val() || {}).length;
                 }
             } catch (_) {}
-
             if (!finalCount) {
                 try {
                     const tree2 = await db.ref("likes/" + postId).once("value");
                     if (tree2.exists()) {
                         const v = tree2.val() || {};
-                        finalCount = Object.keys(v).filter((k) => {
+                        finalCount = Object.keys(v).filter(function (k) {
                             const item = v[k];
                             return (
                                 item === true ||
@@ -2903,21 +2945,97 @@
                 } catch (_) {}
             }
 
-            // Persist aggregate (numbers only — never object)
+            // Update count fields that rules allow for any auth user
+            // Only write numeric count fields (posts/likes is a $likerId map — do not overwrite)
             try {
-                await db.ref("posts/" + postId).update({
-                    likes: finalCount,
-                    likesCount: finalCount,
-                    likeCount: finalCount
-                });
+                await db.ref("posts/" + postId + "/likesCount").set(finalCount);
+            } catch (_) {}
+            try {
+                await db.ref("posts/" + postId + "/likeCount").set(finalCount);
             } catch (_) {}
 
             setPostLikedUI(button, isLiked, finalCount);
-            if (card) {
-                card.dataset.likeCount = String(finalCount);
+            if (card) card.dataset.likeCount = String(finalCount);
+
+            // ---- LIKE NOTIFICATION (only when newly liked, never self) ----
+            if (isLiked && !wasLiked) {
+                try {
+                    if (!ownerId) {
+                        const pSnap = await db.ref("posts/" + postId).once("value");
+                        const pd = pSnap.val() || {};
+                        ownerId =
+                            pd.uid || pd.userId || pd.ownerId || pd.creatorId || "";
+                    }
+                    if (ownerId && String(ownerId) !== String(uid)) {
+                        // Fetch liker name for message
+                        let actorName = "Someone";
+                        try {
+                            const uSnap = await db
+                                .ref("users/" + uid)
+                                .once("value");
+                            const u = uSnap.val() || {};
+                            actorName =
+                                u.displayName ||
+                                u.username ||
+                                u.name ||
+                                "Someone";
+                        } catch (_) {}
+
+                        const notif = {
+                            type: "like",
+                            // fields that match database.rules.json write checks
+                            fromUid: uid,
+                            from: uid,
+                            senderId: uid,
+                            senderUID: uid,
+                            actorId: uid,
+                            recipientUID: ownerId,
+                            toUid: ownerId,
+                            postId: postId,
+                            targetId: postId,
+                            targetType: "post",
+                            message: "liked your post",
+                            text: actorName + " liked your post",
+                            createdAt: firebase.database.ServerValue.TIMESTAMP,
+                            timestamp: firebase.database.ServerValue.TIMESTAMP,
+                            read: false,
+                            seen: false
+                        };
+
+                        // notifications/{ownerId}/{pushId}
+                        await db
+                            .ref("notifications/" + ownerId)
+                            .push(notif)
+                            .catch(function () {});
+                        // mirror activity feed if used
+                        await db
+                            .ref("activity/" + ownerId)
+                            .push(
+                                Object.assign({}, notif, {
+                                    type: "post_like"
+                                })
+                            )
+                            .catch(function () {});
+                    }
+                } catch (notifErr) {
+                    console.warn("Like notification failed:", notifErr);
+                }
             }
         } catch (err) {
             console.error("Like failed:", err);
+            // rollback optimistic UI on hard failure
+            try {
+                if (button) {
+                    const icon = button.querySelector("i");
+                    const span = button.querySelector(".likeCountSpan");
+                    if (icon) {
+                        icon.className = optimisticLiked
+                            ? "fa-regular fa-heart"
+                            : "fa-solid fa-heart";
+                        icon.style.color = optimisticLiked ? "" : "#ff2d55";
+                    }
+                }
+            } catch (_) {}
             showToast("Like failed");
         } finally {
             if (typeof postLikeInFlight !== "undefined") {
@@ -2930,6 +3048,7 @@
             }
         }
     }
+
 
 
     async function togglePostSave(card, postId, button) {

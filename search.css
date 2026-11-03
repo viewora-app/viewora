@@ -1191,3 +1191,23 @@ a {
 @media (min-width: 1024px) {
   .search-page, .searchPage, #searchRoot { max-width: 100% !important; width: 100% !important; padding: 20px 28px !important; }
 }
+
+.vieworaPostCard { width:100%; margin:0 0 14px; background:#0e0e14; border-bottom:1px solid rgba(255,255,255,.06); color:#fff; }
+.vieworaPostCard .postHeader { display:flex; align-items:center; justify-content:space-between; padding:12px 14px 10px; }
+.vieworaPostCard .postUser { display:flex; align-items:center; gap:10px; background:none; border:0; color:inherit; cursor:pointer; }
+.vieworaPostCard .postAvatar { width:36px; height:36px; border-radius:50%; object-fit:cover; }
+.vieworaPostCard .postUserInfo { display:flex; flex-direction:column; }
+.vieworaPostCard .postUserInfo strong { font-size:14px; font-weight:700; }
+.vieworaPostCard .postUserInfo small { font-size:11px; color:rgba(255,255,255,.45); }
+.vieworaPostCard .postMore { border:0; background:transparent; color:#aaa; width:36px; height:36px; }
+.vieworaPostCard .postMediaWrap { width:100%; background:#000; }
+.vieworaPostCard .postMedia { width:100%; max-height:75vh; object-fit:contain; display:block; }
+.vieworaPostCard .postCaption { padding:12px 14px 4px; font-size:13px; line-height:1.45; white-space:pre-wrap; }
+.vieworaPostCard .postActions { display:flex; align-items:center; gap:4px; padding:8px 10px 6px; }
+.vieworaPostCard .postAction { border:0; background:transparent; color:#c9c9d3; min-height:40px; padding:0 12px; display:inline-flex; align-items:center; gap:7px; cursor:pointer; font-weight:600; }
+.vieworaPostCard .postAction i { font-size:18px; }
+.vieworaPostCard .postAction.saveAction { margin-left:auto; }
+.vieworaPostCard .postAction .fa-heart.fa-solid { color:#ff2d55; }
+.vieworaPostCard .postAction.saveAction .fa-solid { color:#f5c518; }
+.vieworaPostCard .postStats { padding:0 14px 14px; font-size:11px; color:rgba(255,255,255,.45); }
+.searchMixedFeed { padding:0 !important; }

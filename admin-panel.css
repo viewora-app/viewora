@@ -2584,3 +2584,20 @@ tbody tr:hover {
   pointer-events: none !important;
   z-index: -1 !important;
 }
+
+
+/* ===== Viewora admin overlay fix (blur stuck) ===== */
+.sidebarOverlay {
+  pointer-events: none;
+}
+.sidebarOverlay.show {
+  display: block !important;
+  pointer-events: auto;
+  z-index: 9998;
+}
+.adminSidebar.open {
+  z-index: 9999;
+}
+body.sidebar-open {
+  overflow: hidden;
+}
