@@ -1293,34 +1293,57 @@
 
 
 
-<div id="musicTrimSheet" class="overlay hidden">
+<div id="musicTrimSheet" class="overlay hidden" aria-hidden="true">
   <div class="overlayBackdrop" data-close="musicTrimSheet"></div>
-  <section class="bottomSheet smallSheet">
+  <section class="bottomSheet musicTrimSheetPanel">
     <div class="sheetHandle"></div>
-    <header class="sheetHeader">
-      <div>
-        <span class="eyebrow">VIEWORA MUSIC</span>
-        <h2>Set music clip</h2>
-      </div>
+    <header class="sheetHeader musicTrimHead">
       <button type="button" class="sheetClose" data-close="musicTrimSheet" aria-label="Close">
         <i class="fa-solid fa-xmark"></i>
       </button>
-    </header>
-    <p class="sheetHint" id="musicTrimTitle" style="opacity:.7;font-size:13px;margin:0 0 14px"></p>
-    <div class="musicTrimBody">
-      <label class="trimLabel">Start</label>
-      <input type="range" id="musicStartRange" min="0" max="300" step="0.5" value="0">
-      <div class="trimLabels">
-        <span id="musicStartLabel">0.0s</span>
-        <span id="musicEndLabel">15.0s</span>
+      <div class="musicTrimHeadCenter">
+        <span class="eyebrow">VIEWORA MUSIC</span>
+        <h2>Trim sound</h2>
       </div>
-      <label class="trimLabel" style="margin-top:12px">Clip length</label>
-      <input type="range" id="musicLenRange" min="5" max="60" step="1" value="15">
+      <button type="button" id="musicTrimConfirm" class="musicTrimDoneBtn">Done</button>
+    </header>
+
+    <div class="musicTrimTrackRow">
+      <div class="musicTrimCover" id="musicTrimCover">
+        <i class="fa-solid fa-music"></i>
+      </div>
+      <div class="musicTrimMeta">
+        <strong id="musicTrimTitle">Track</strong>
+        <span id="musicTrimArtist">Artist</span>
+      </div>
+      <button type="button" id="musicPreviewBtn" class="musicTrimPlayBtn" aria-label="Preview">
+        <i class="fa-solid fa-play" id="musicPreviewIcon"></i>
+      </button>
     </div>
-    <div class="musicTrimActions">
-      <button type="button" id="musicPreviewBtn" class="secondaryBtn">Preview</button>
-      <button type="button" id="musicTrimConfirm" class="sheetPrimaryButton">Use this clip</button>
+
+    <div class="musicWaveWrap" id="musicWaveWrap">
+      <div class="musicWaveBars" id="musicWaveBars" aria-hidden="true"></div>
+      <div class="musicWaveDim musicWaveDimL" id="musicWaveDimL"></div>
+      <div class="musicWaveDim musicWaveDimR" id="musicWaveDimR"></div>
+      <div class="musicWaveSelect" id="musicWaveSelect">
+        <span class="musicWaveHandle musicWaveHandleL" id="musicWaveHandleL"></span>
+        <span class="musicWaveHandle musicWaveHandleR" id="musicWaveHandleR"></span>
+        <span class="musicWaveSelectGlow"></span>
+      </div>
+      <div class="musicWaveProgress" id="musicWaveProgress"></div>
     </div>
+
+    <div class="musicTrimTimeRow">
+      <span id="musicStartLabel">0:00</span>
+      <span class="musicTrimClipLen" id="musicClipLenLabel">15s clip</span>
+      <span id="musicEndLabel">0:15</span>
+    </div>
+
+    <!-- hidden ranges for compatibility with existing JS reads -->
+    <input type="hidden" id="musicStartRange" value="0">
+    <input type="hidden" id="musicLenRange" value="15">
+
+    <p class="musicTrimHint">Drag the purple window to pick the part of the song. Handles change clip length.</p>
   </section>
 </div>
 

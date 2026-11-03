@@ -3133,3 +3133,232 @@ body.editMode .mediaControls {
   opacity: 0.5;
   pointer-events: none;
 }
+
+
+/* ============================================================
+   VIEWORA — Instagram-style music trim
+   ============================================================ */
+#musicTrimSheet {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: none;
+  align-items: flex-end;
+  justify-content: center;
+}
+#musicTrimSheet:not(.hidden):not([hidden]),
+#musicTrimSheet.open {
+  display: flex !important;
+}
+#musicTrimSheet .overlayBackdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,.62);
+  backdrop-filter: blur(6px);
+}
+.musicTrimSheetPanel {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 520px;
+  background: #121218;
+  border-radius: 22px 22px 0 0;
+  padding: 10px 16px calc(18px + env(safe-area-inset-bottom, 0px));
+  border: 1px solid rgba(255,255,255,.1);
+  box-shadow: 0 -12px 40px rgba(0,0,0,.45);
+}
+.musicTrimHead {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.musicTrimHeadCenter {
+  flex: 1;
+  text-align: center;
+}
+.musicTrimHeadCenter .eyebrow {
+  display: block;
+  font-size: 10px;
+  letter-spacing: .12em;
+  color: #a78bfa;
+  font-weight: 700;
+}
+.musicTrimHeadCenter h2 {
+  margin: 2px 0 0;
+  font-size: 17px;
+  font-weight: 700;
+}
+.musicTrimDoneBtn {
+  border: 0;
+  background: linear-gradient(135deg, #8b5cf6, #3b82f6);
+  color: #fff;
+  font-weight: 700;
+  font-size: 13px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+.musicTrimTrackRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.musicTrimCover {
+  width: 52px;
+  height: 52px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #7c3aed, #2563eb);
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  flex-shrink: 0;
+  color: #fff;
+  font-size: 18px;
+}
+.musicTrimCover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.musicTrimMeta {
+  flex: 1;
+  min-width: 0;
+}
+.musicTrimMeta strong {
+  display: block;
+  font-size: 15px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.musicTrimMeta span {
+  display: block;
+  font-size: 12px;
+  color: rgba(255,255,255,.55);
+  margin-top: 2px;
+}
+.musicTrimPlayBtn {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 0;
+  background: rgba(255,255,255,.1);
+  color: #fff;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.musicTrimPlayBtn:active {
+  transform: scale(.96);
+}
+
+/* Waveform */
+.musicWaveWrap {
+  position: relative;
+  height: 72px;
+  border-radius: 14px;
+  background: #0a0a10;
+  overflow: hidden;
+  touch-action: none;
+  user-select: none;
+  border: 1px solid rgba(255,255,255,.06);
+  margin-bottom: 10px;
+}
+.musicWaveBars {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 8px 4px;
+  z-index: 1;
+}
+.musicWaveBars span {
+  flex: 1;
+  border-radius: 2px;
+  background: rgba(167, 139, 250, 0.35);
+  min-width: 2px;
+}
+.musicWaveDim {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  background: rgba(0,0,0,.55);
+  z-index: 2;
+  pointer-events: none;
+}
+.musicWaveDimL { left: 0; }
+.musicWaveDimR { right: 0; }
+.musicWaveSelect {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  z-index: 3;
+  border: 2px solid #a78bfa;
+  border-radius: 10px;
+  background: rgba(139, 92, 246, 0.18);
+  box-sizing: border-box;
+  cursor: grab;
+}
+.musicWaveSelect:active { cursor: grabbing; }
+.musicWaveSelectGlow {
+  position: absolute;
+  inset: 0;
+  border-radius: 8px;
+  box-shadow: inset 0 0 20px rgba(167,139,250,.25);
+  pointer-events: none;
+}
+.musicWaveHandle {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 18px;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.musicWaveHandle::after {
+  content: "";
+  width: 4px;
+  height: 28px;
+  border-radius: 4px;
+  background: #fff;
+  box-shadow: 0 0 8px rgba(0,0,0,.4);
+}
+.musicWaveHandleL { left: -2px; cursor: ew-resize; }
+.musicWaveHandleR { right: -2px; cursor: ew-resize; }
+.musicWaveProgress {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 0;
+  background: rgba(255,255,255,.12);
+  z-index: 2;
+  pointer-events: none;
+}
+
+.musicTrimTimeRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  color: rgba(255,255,255,.65);
+  font-variant-numeric: tabular-nums;
+  margin-bottom: 8px;
+}
+.musicTrimClipLen {
+  color: #c4b5fd;
+  font-weight: 600;
+}
+.musicTrimHint {
+  margin: 0;
+  font-size: 12px;
+  color: rgba(255,255,255,.4);
+  text-align: center;
+  line-height: 1.4;
+}

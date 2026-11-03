@@ -1203,167 +1203,358 @@
 
     
     let pendingMusic = null;
+    let musicTrimState = {
+        duration: 30,
+        start: 0,
+        len: 15,
+        dragging: null, // 'move' | 'left' | 'right'
+        audio: null
+    };
 
-        function openMusicTrim(item) {
-        pendingMusic = item;
-        stopPostMusicPreview();
-        closeSheet("musicSheet");
+    function formatMusicTime(sec) {
+        sec = Math.max(0, Number(sec) || 0);
+        var m = Math.floor(sec / 60);
+        var s = Math.floor(sec % 60);
+        return m + ":" + String(s).padStart(2, "0");
+    }
 
-        // Original audio with no URL → apply directly
-        if (!item.audioUrl && item.id === "original") {
-            try { applyMusicClip(item, 0, 15); } catch (err) { console.warn("music", err); try { showToast("Music", "Could not apply sound"); } catch (_) {} }
-            return;
+    function updateMusicTrimLabels() {
+        var st = musicTrimState;
+        var start = Number(st.start) || 0;
+        var len = Number(st.len) || 15;
+        var end = start + len;
+        var startEl = $("musicStartLabel");
+        var endEl = $("musicEndLabel");
+        var lenEl = $("musicClipLenLabel");
+        if (startEl) startEl.textContent = formatMusicTime(start);
+        if (endEl) endEl.textContent = formatMusicTime(end);
+        if (lenEl) lenEl.textContent = Math.round(len) + "s clip";
+        var startR = $("musicStartRange");
+        var lenR = $("musicLenRange");
+        if (startR) startR.value = String(start);
+        if (lenR) lenR.value = String(len);
+        // visual selection
+        var dur = Math.max(st.duration || 30, 0.1);
+        var leftPct = (start / dur) * 100;
+        var widthPct = (len / dur) * 100;
+        var sel = $("musicWaveSelect");
+        var dimL = $("musicWaveDimL");
+        var dimR = $("musicWaveDimR");
+        if (sel) {
+            sel.style.left = leftPct + "%";
+            sel.style.width = Math.max(widthPct, 2) + "%";
         }
-        if (!item.audioUrl) {
-            try { applyMusicClip(item, 0, 15); } catch (err) { console.warn("music", err); try { showToast("Music", "Could not apply sound"); } catch (_) {} }
-            showToast("Music set", item.title || "Track");
-            return;
-        }
-
-        const sheet = $("musicTrimSheet");
-        if (!sheet) {
-            try { applyMusicClip(item, 0, 15); } catch (err) { console.warn("music", err); try { showToast("Music", "Could not apply sound"); } catch (_) {} }
-            return;
-        }
-
-        if ($("musicTrimTitle")) {
-            $("musicTrimTitle").textContent =
-                (item.title || "Track") + (item.artist ? " · " + item.artist : "");
-        }
-
-        const startR = $("musicStartRange");
-        const lenR = $("musicLenRange");
-        if (startR) {
-            startR.min = "0";
-            startR.max = "300";
-            startR.step = "0.5";
-            startR.value = "0";
-        }
-        if (lenR) {
-            lenR.min = "5";
-            lenR.max = "60";
-            lenR.value = "15";
-        }
-        try { updateMusicTrimLabels(); } catch (_) {}
-
-        // Open as proper overlay (same as music sheet)
-        sheet.classList.remove("hidden");
-        sheet.hidden = false;
-        sheet.style.display = "";
-        document.body.classList.add("sheetOpen");
-
-        if (item.audioUrl) {
-            try {
-                const a = new Audio();
-                a.preload = "metadata";
-                a.src = item.audioUrl;
-                a.addEventListener("loadedmetadata", function () {
-                    const dur = Math.max(15, Math.floor(a.duration || 0));
-                    if (startR) startR.max = String(Math.max(0, dur - 5));
-                    if (lenR) lenR.max = String(Math.min(60, dur));
-                    try { updateMusicTrimLabels(); } catch (_) {}
-                });
-            } catch (_) {}
+        if (dimL) dimL.style.width = leftPct + "%";
+        if (dimR) {
+            dimR.style.left = (leftPct + widthPct) + "%";
+            dimR.style.width = Math.max(0, 100 - leftPct - widthPct) + "%";
         }
     }
 
+    function buildMusicWaveBars(count) {
+        var host = $("musicWaveBars");
+        if (!host) return;
+        count = count || 48;
+        var html = "";
+        // deterministic-ish pattern so it feels like a real waveform
+        for (var i = 0; i < count; i++) {
+            var n = Math.sin(i * 0.55) * 0.35 + Math.sin(i * 1.3) * 0.25 + Math.cos(i * 0.2) * 0.2;
+            var h = 18 + Math.abs(n) * 70 + ((i * 7) % 17);
+            h = Math.max(12, Math.min(92, h));
+            html += '<span style="height:' + h + '%"></span>';
+        }
+        host.innerHTML = html;
+    }
+
+    function stopPostMusicPreview() {
+        try {
+            if (musicTrimState.audio) {
+                musicTrimState.audio.pause();
+                musicTrimState.audio = null;
+            }
+        } catch (_) {}
+        try {
+            if (postMusicPreview) {
+                postMusicPreview.pause();
+                postMusicPreview = null;
+            }
+        } catch (_) {}
+        var icon = $("musicPreviewIcon");
+        if (icon) icon.className = "fa-solid fa-play";
+        var prog = $("musicWaveProgress");
+        if (prog) prog.style.width = "0%";
+    }
+
+    function openMusicTrim(item) {
+        pendingMusic = item;
+        stopPostMusicPreview();
+        try { closeSheet("musicSheet"); } catch (_) {}
+
+        if (!item) return;
+
+        // Original / no URL → apply directly
+        if ((!item.audioUrl && item.id === "original") || !item.audioUrl) {
+            try { applyMusicClip(item, 0, 15); } catch (err) {
+                console.warn("music", err);
+            }
+            return;
+        }
+
+        var sheet = $("musicTrimSheet");
+        if (!sheet) {
+            try { applyMusicClip(item, 0, 15); } catch (_) {}
+            return;
+        }
+
+        // Header meta
+        if ($("musicTrimTitle")) {
+            $("musicTrimTitle").textContent = item.title || item.name || "Track";
+        }
+        if ($("musicTrimArtist")) {
+            $("musicTrimArtist").textContent = item.artist || "Viewora Music";
+        }
+        var cover = $("musicTrimCover");
+        if (cover) {
+            if (item.coverUrl) {
+                cover.innerHTML = '<img src="' + String(item.coverUrl).replace(/"/g, "") + '" alt="">';
+            } else {
+                cover.innerHTML = '<i class="fa-solid fa-music"></i>';
+            }
+        }
+
+        musicTrimState.start = 0;
+        musicTrimState.len = 15;
+        musicTrimState.duration = 30;
+        musicTrimState.dragging = null;
+        buildMusicWaveBars(56);
+        updateMusicTrimLabels();
+
+        sheet.classList.remove("hidden");
+        sheet.hidden = false;
+        sheet.style.display = "";
+        sheet.setAttribute("aria-hidden", "false");
+        document.body.classList.add("sheetOpen");
+
+        // Load real duration
+        try {
+            var a = new Audio();
+            a.preload = "metadata";
+            a.crossOrigin = "anonymous";
+            a.src = item.audioUrl;
+            a.addEventListener("loadedmetadata", function () {
+                var dur = Number(a.duration) || 30;
+                if (!isFinite(dur) || dur < 1) dur = 30;
+                musicTrimState.duration = dur;
+                musicTrimState.len = Math.min(15, Math.max(5, dur));
+                musicTrimState.start = 0;
+                updateMusicTrimLabels();
+            });
+            a.addEventListener("error", function () {
+                musicTrimState.duration = 60;
+                updateMusicTrimLabels();
+            });
+        } catch (_) {}
+    }
 
     function applyMusicClip(item, startAt, duration) {
         try {
             if (!item) return;
-
-        state.music = {
-            id: item.id,
-            title: item.title,
-            name: item.title,
-            artist: item.artist,
-            audioUrl: item.audioUrl || "",
-            coverUrl: item.coverUrl || "",
-            startAt: Number(startAt) || 0,
-            duration: Number(duration) || 15,
-            endAt: (Number(startAt) || 0) + (Number(duration) || 15)
-        };
-        try {
-            const small = $("musicBtn")?.querySelector(".toolText small");
-            if (small) small.textContent = item.title + " (" + Math.round(state.music.startAt) + "s)";
-        } catch (_) {}
-        showToast("Music clip set", item.title);
-        closeSheet("musicTrimSheet");
-        const sheet = $("musicTrimSheet");
-        if (sheet) {
-            sheet.hidden = true;
-            sheet.classList.add("hidden");
-            sheet.classList.remove("open");
-            sheet.style.display = "";
+            state.music = {
+                id: item.id,
+                title: item.title || item.name || "Track",
+                name: item.title || item.name || "Track",
+                artist: item.artist || "",
+                audioUrl: item.audioUrl || "",
+                coverUrl: item.coverUrl || "",
+                startAt: Number(startAt) || 0,
+                duration: Number(duration) || 15,
+                endAt: (Number(startAt) || 0) + (Number(duration) || 15)
+            };
+            try {
+                var small = $("musicBtn") && $("musicBtn").querySelector(".toolText small");
+                if (small) {
+                    small.textContent =
+                        state.music.title +
+                        " (" +
+                        Math.round(state.music.startAt) +
+                        "s–" +
+                        Math.round(state.music.endAt) +
+                        "s)";
+                }
+            } catch (_) {}
+            try { showToast("Music clip set", state.music.title); } catch (_) {}
+            closeSheet("musicTrimSheet");
+            var sheet = $("musicTrimSheet");
+            if (sheet) {
+                sheet.hidden = true;
+                sheet.classList.add("hidden");
+                sheet.classList.remove("open");
+                sheet.style.display = "";
+                sheet.setAttribute("aria-hidden", "true");
+            }
+            stopPostMusicPreview();
+        } catch (e) {
+            console.warn("applyMusicClip", e);
         }
-        stopPostMusicPreview();
+    }
+
+    function musicTrimFromClientX(clientX) {
+        var wrap = $("musicWaveWrap");
+        if (!wrap) return 0;
+        var rect = wrap.getBoundingClientRect();
+        var pct = (clientX - rect.left) / Math.max(rect.width, 1);
+        pct = Math.max(0, Math.min(1, pct));
+        return pct * (musicTrimState.duration || 30);
     }
 
     function setupMusicTrim() {
         if (window.__musicTrimWired) return;
         window.__musicTrimWired = true;
 
-        function readTrim() {
-            const start = Number($("musicStartRange")?.value || 0);
-            const len = Number($("musicLenRange")?.value || 15);
-            return { start: isFinite(start) ? start : 0, len: isFinite(len) && len > 0 ? len : 15 };
+        var wrap = null;
+
+        function onPointerDown(e) {
+            var t = e.target;
+            if (!t || !t.closest) return;
+            if (!t.closest("#musicWaveWrap")) return;
+            e.preventDefault();
+            var st = musicTrimState;
+            if (t.closest("#musicWaveHandleL")) st.dragging = "left";
+            else if (t.closest("#musicWaveHandleR")) st.dragging = "right";
+            else st.dragging = "move";
+            // store grab offset for move
+            if (st.dragging === "move") {
+                var at = musicTrimFromClientX(e.clientX || (e.touches && e.touches[0] && e.touches[0].clientX) || 0);
+                st._grabOffset = at - st.start;
+            }
+            try { (e.target).setPointerCapture && e.target.setPointerCapture(e.pointerId); } catch (_) {}
         }
 
-        document.addEventListener("input", function (e) {
-            const t = e.target;
-            if (!t || !t.id) return;
-            if (t.id === "musicStartRange" || t.id === "musicLenRange") {
-                updateMusicTrimLabels();
+        function onPointerMove(e) {
+            var st = musicTrimState;
+            if (!st.dragging) return;
+            var x = e.clientX;
+            if (x == null && e.touches && e.touches[0]) x = e.touches[0].clientX;
+            if (x == null) return;
+            var at = musicTrimFromClientX(x);
+            var dur = st.duration || 30;
+            var minLen = 5;
+            var maxLen = Math.min(60, dur);
+
+            if (st.dragging === "move") {
+                var next = at - (st._grabOffset || 0);
+                next = Math.max(0, Math.min(dur - st.len, next));
+                st.start = next;
+            } else if (st.dragging === "left") {
+                var end = st.start + st.len;
+                var newStart = Math.max(0, Math.min(end - minLen, at));
+                st.len = end - newStart;
+                st.start = newStart;
+                if (st.len > maxLen) {
+                    st.start = end - maxLen;
+                    st.len = maxLen;
+                }
+            } else if (st.dragging === "right") {
+                var newEnd = Math.max(st.start + minLen, Math.min(dur, at));
+                st.len = newEnd - st.start;
+                if (st.len > maxLen) st.len = maxLen;
             }
-        });
+            updateMusicTrimLabels();
+        }
+
+        function onPointerUp() {
+            musicTrimState.dragging = null;
+        }
+
+        document.addEventListener("pointerdown", onPointerDown, true);
+        document.addEventListener("pointermove", onPointerMove, true);
+        document.addEventListener("pointerup", onPointerUp, true);
+        document.addEventListener("pointercancel", onPointerUp, true);
+        // touch fallback
+        document.addEventListener("touchstart", function (e) {
+            if (e.target && e.target.closest && e.target.closest("#musicWaveWrap")) {
+                onPointerDown({
+                    target: e.target,
+                    clientX: e.touches[0] && e.touches[0].clientX,
+                    preventDefault: function () { e.preventDefault(); },
+                    touches: e.touches
+                });
+            }
+        }, { passive: false });
+        document.addEventListener("touchmove", function (e) {
+            if (!musicTrimState.dragging) return;
+            onPointerMove({ clientX: e.touches[0] && e.touches[0].clientX, touches: e.touches });
+        }, { passive: true });
+        document.addEventListener("touchend", onPointerUp, true);
 
         document.addEventListener("click", function (e) {
-            const t = e.target;
+            var t = e.target;
             if (!t) return;
-            const btn = t.closest ? t.closest("button, [role=button], a") : t;
+            var btn = t.closest ? t.closest("button") : null;
 
             // Preview
-            if (btn && (btn.id === "musicPreviewBtn" || (btn.textContent || "").trim() === "Preview")) {
-                if (!pendingMusic || !pendingMusic.audioUrl) return;
+            if (btn && (btn.id === "musicPreviewBtn" || btn.id === "musicPreviewIcon" || (btn.closest && btn.closest("#musicPreviewBtn")))) {
                 e.preventDefault();
                 e.stopPropagation();
-                stopPostMusicPreview();
-                const { start, len } = readTrim();
+                if (!pendingMusic || !pendingMusic.audioUrl) return;
                 try {
-                    postMusicPreview = new Audio(pendingMusic.audioUrl);
-                    postMusicPreview.currentTime = start;
-                    postMusicPreview.volume = 0.8;
-                    postMusicPreview.play().catch(function () {});
+                    if (musicTrimState.audio && !musicTrimState.audio.paused) {
+                        stopPostMusicPreview();
+                        return;
+                    }
+                    stopPostMusicPreview();
+                    var a = new Audio(pendingMusic.audioUrl);
+                    a.currentTime = musicTrimState.start || 0;
+                    musicTrimState.audio = a;
+                    var icon = $("musicPreviewIcon");
+                    if (icon) icon.className = "fa-solid fa-pause";
+                    a.play().catch(function () {});
+                    var startAt = musicTrimState.start || 0;
+                    var len = musicTrimState.len || 15;
+                    var dur = musicTrimState.duration || 30;
+                    var prog = $("musicWaveProgress");
+                    function tick() {
+                        if (!musicTrimState.audio || musicTrimState.audio !== a) return;
+                        var tnow = a.currentTime;
+                        if (tnow >= startAt + len || a.ended) {
+                            stopPostMusicPreview();
+                            return;
+                        }
+                        if (prog) {
+                            var pct = (tnow / dur) * 100;
+                            prog.style.width = Math.min(100, Math.max(0, pct)) + "%";
+                        }
+                        requestAnimationFrame(tick);
+                    }
+                    a.addEventListener("playing", function () { requestAnimationFrame(tick); });
                     clearTimeout(window.__musicTrimStop);
                     window.__musicTrimStop = setTimeout(function () {
                         stopPostMusicPreview();
-                    }, len * 1000);
-                } catch (_) {}
-                return;
-            }
-
-            // Use this clip
-            if (btn && (btn.id === "musicTrimConfirm" || /use this clip/i.test(btn.textContent || ""))) {
-                e.preventDefault();
-                e.stopPropagation();
-                if (!pendingMusic) {
-                    showToast("No track", "Select a song first");
-                    return;
+                    }, (len + 0.3) * 1000);
+                } catch (err) {
+                    console.warn("preview", err);
                 }
-                const { start, len } = readTrim();
-                applyMusicClip(pendingMusic, start, len);
                 return;
             }
 
-            // Close sheet
-            const closer = t.closest ? t.closest('[data-close="musicTrimSheet"]') : null;
+            // Done / Use this clip
+            if (btn && (btn.id === "musicTrimConfirm" || /use this clip|done/i.test(btn.textContent || ""))) {
+                if (!pendingMusic) return;
+                if (!(btn.id === "musicTrimConfirm" || (btn.closest && btn.closest("#musicTrimSheet")))) return;
+                e.preventDefault();
+                applyMusicClip(pendingMusic, musicTrimState.start, musicTrimState.len);
+                return;
+            }
+
+            var closer = t.closest ? t.closest('[data-close="musicTrimSheet"]') : null;
             if (closer || (btn && btn.getAttribute && btn.getAttribute("data-close") === "musicTrimSheet")) {
                 closeSheet("musicTrimSheet");
-                const sheet = $("musicTrimSheet");
+                var sheet = $("musicTrimSheet");
                 if (sheet) {
                     sheet.hidden = true;
                     sheet.classList.add("hidden");
                     sheet.classList.remove("open");
+                    sheet.setAttribute("aria-hidden", "true");
                 }
                 stopPostMusicPreview();
             }
@@ -1371,7 +1562,6 @@
     }
 
 
-    
     function dataURLtoBlob(dataURL, mime) {
         try {
             const parts = String(dataURL).split(",");
