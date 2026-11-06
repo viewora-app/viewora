@@ -3940,3 +3940,10 @@ i.whiteTick {
   opacity: 0.9;
 }
 .chatAvatar, .userAvatar { position: relative; }
+
+.messageStatus.sent { color: rgba(255,255,255,.45); }
+.messageStatus.delivered { color: rgba(255,255,255,.55); }
+.messageStatus.seen { color: #53bdeb; }
+.messageStatus.seen i { filter: drop-shadow(0 0 3px rgba(83,189,235,.5)); }
+.messageStatus.sending { color: rgba(255,255,255,.4); }
+.messageStatus.failed { color: #f87171; }

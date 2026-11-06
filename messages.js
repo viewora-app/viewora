@@ -838,24 +838,33 @@ function messagesSortChats() {
 
 
     /* Viewora: resolve DP + online badge (never bare "U") */
+    window.VIEWORA_MSG_FALLBACK_AVATAR = window.VIEWORA_MSG_FALLBACK_AVATAR || ("data:image/svg+xml," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#7c3aed"/><stop offset="100%" stop-color="#2563eb"/></linearGradient></defs><circle cx="64" cy="64" r="64" fill="url(#g)"/><circle cx="64" cy="48" r="24" fill="rgba(255,255,255,.92)"/><ellipse cx="64" cy="106" rx="40" ry="28" fill="rgba(255,255,255,.92)"/></svg>'));
+    var VIEWORA_MSG_FALLBACK_AVATAR = "data:image/svg+xml," + encodeURIComponent(
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">' +
+        '<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">' +
+        '<stop offset="0%" stop-color="#7c3aed"/><stop offset="100%" stop-color="#2563eb"/></linearGradient></defs>' +
+        '<circle cx="64" cy="64" r="64" fill="url(#g)"/>' +
+        '<circle cx="64" cy="48" r="24" fill="rgba(255,255,255,.92)"/>' +
+        '<ellipse cx="64" cy="106" rx="40" ry="28" fill="rgba(255,255,255,.92)"/></svg>'
+    );
+
     function vieworaChatAvatarUrl(chat) {
         try {
-            var keys = ["photoURL","profilePhoto","avatar","photo","profilePic","dp","image"];
+            var keys = ["photoURL","profilePhoto","avatar","photo","profilePic","dp","image","userPhoto"];
             for (var i = 0; i < keys.length; i++) {
                 var v = chat && chat[keys[i]];
                 if (typeof v === "string") {
                     v = v.trim();
-                    if (v.length > 8 && !/^https?:\/\/ui-avatars\.com\/api\/\?name=U\b/i.test(v) && v.indexOf("default-avatar") === -1) {
+                    if (v.length > 8 &&
+                        v.indexOf("default-avatar") === -1 &&
+                        v.indexOf("ui-avatars.com") === -1) {
                         return v;
                     }
                 }
             }
         } catch (_) {}
-        var name = (chat && (chat.name || chat.displayName || chat.username || chat.userName)) || "User";
-        name = String(name).replace(/^@/, "").trim() || "User";
-        // Use first letter(s) of real name — not generic U
-        return "https://ui-avatars.com/api/?name=" + encodeURIComponent(name.slice(0, 24)) +
-            "&background=6d28d9&color=fff&size=128&bold=true";
+        // No real photo → Viewora default person avatar (never letter initials)
+        return VIEWORA_MSG_FALLBACK_AVATAR;
     }
 
     function vieworaOnlineBadge(online) {
@@ -1360,7 +1369,7 @@ function messagesCreateCard(chat) {
                 src="${messagesEscape(photo)}"
                 alt="${name}"
                 loading="lazy"
-                onerror="this.onerror=null;this.src='https://ui-avatars.com/api/?name=User&background=6d28d9&color=fff&size=128&bold=true'"
+                onerror="this.onerror=null;this.src=window.VIEWORA_MSG_FALLBACK_AVATAR||this.src"
             >
 
             ${onlineHTML}
@@ -1764,7 +1773,7 @@ function messagesCreateActionSheet() {
                 <div class="messageActionAvatar">
                     <img
                         id="actionUserPhoto"
-                        src="https://ui-avatars.com/api/?name=User&background=6d28d9&color=fff&size=128&bold=true"
+                        src=""+ (window.VIEWORA_MSG_FALLBACK_AVATAR||"") +""
                         alt=""
                     >
                 </div>
@@ -2016,8 +2025,8 @@ function messagesOpenActionSheet(chat) {
 
         photoElement.onerror =
             function() {
-                this.src =
-                    "https://ui-avatars.com/api/?name=User&background=6d28d9&color=fff&size=128&bold=true";
+                this.onerror = null;
+                this.src = window.VIEWORA_MSG_FALLBACK_AVATAR || VIEWORA_MSG_FALLBACK_AVATAR;
             };
     }
 
@@ -2208,17 +2217,27 @@ async function messagesToggleMute(chat) {
         chat.muted !== true;
 
     try {
+        var cid = chat.chatId || chat.id;
+        var updates = {};
+        updates["userChats/" + messagesUID + "/" + cid + "/muted"] = newValue;
+        // also mirror under chats path used by some builds
+        updates["chats/" + messagesUID + "/" + cid + "/muted"] = newValue;
+        try {
+            updates["vieworaChats/" + cid + "/muted/" + messagesUID] = newValue;
+        } catch (_) {}
 
-        await db.ref(
-            "userChats/" +
-            messagesUID +
-            "/" +
-            chat.chatId
-        ).update({
+        await db.ref().update(updates);
 
-            muted: newValue
-
-        });
+        // Instant local UI
+        chat.muted = newValue;
+        try {
+            for (var i = 0; i < messagesChats.length; i++) {
+                if (messagesChats[i] && (messagesChats[i].chatId === cid || messagesChats[i].id === cid)) {
+                    messagesChats[i].muted = newValue;
+                }
+            }
+        } catch (_) {}
+        try { messagesRender(); } catch (_) {}
 
         messagesCloseActionSheet();
 
@@ -2925,7 +2944,7 @@ function messagesCreateUserCard(uid, user) {
     const photo =
         user.photoURL ||
         user.profilePhoto ||
-        "https://ui-avatars.com/api/?name=User&background=6d28d9&color=fff&size=128&bold=true";
+        ""+ (window.VIEWORA_MSG_FALLBACK_AVATAR||"") +"";
 
     card.innerHTML = `
 
@@ -2935,7 +2954,7 @@ function messagesCreateUserCard(uid, user) {
                 src="${messagesEscape(photo)}"
                 alt="User"
                 loading="lazy"
-                onerror="this.onerror=null;this.src='https://ui-avatars.com/api/?name=User&background=6d28d9&color=fff&size=128&bold=true'"
+                onerror="this.onerror=null;this.src=window.VIEWORA_MSG_FALLBACK_AVATAR||this.src"
             >
 
             ${
@@ -3360,7 +3379,7 @@ console.log(
               u.profilePhoto ||
               u.photoURL ||
               u.avatar ||
-              "https://ui-avatars.com/api/?name=User&background=6d28d9&color=fff&size=128&bold=true";
+              ""+ (window.VIEWORA_MSG_FALLBACK_AVATAR||"") +"";
             peopleCache.push({
               uid,
               username: name,
@@ -3666,7 +3685,7 @@ console.log(
       wrap.className = "noteEditor";
       wrap.innerHTML =
         '<div class="noteEditorCard">' +
-        '<div class="noteEditorHead"><img id="noteEditorAvatar" src="https://ui-avatars.com/api/?name=User&background=6d28d9&color=fff&size=128&bold=true" alt=""><h3>Your note</h3></div>' +
+        '<div class="noteEditorHead"><img id="noteEditorAvatar" src=""+ (window.VIEWORA_MSG_FALLBACK_AVATAR||"") +"" alt=""><h3>Your note</h3></div>' +
         '<textarea id="noteTextInput" maxlength="60" placeholder="Share a thought…"></textarea>' +
         '<div class="noteEditorActions">' +
         '<button type="button" id="noteSaveBtn">Share</button>' +
@@ -3819,7 +3838,7 @@ console.log(
         if (ph) av.src = ph;
         av.style.display = "block";
         av.onerror = function () {
-          this.src = "https://ui-avatars.com/api/?name=User&background=6d28d9&color=fff&size=128&bold=true";
+          this.src = ""+ (window.VIEWORA_MSG_FALLBACK_AVATAR||"") +"";
         };
       }
     } catch (e) {
@@ -3882,7 +3901,7 @@ console.log(
             u.photoURL ||
             u.avatar ||
             n.photo ||
-            "https://ui-avatars.com/api/?name=User&background=6d28d9&color=fff&size=128&bold=true",
+            ""+ (window.VIEWORA_MSG_FALLBACK_AVATAR||"") +"",
           name: u.displayName || u.name || u.username || n.name || "User",
           username: u.username || "",
           at: Number(n.updatedAt || 0),

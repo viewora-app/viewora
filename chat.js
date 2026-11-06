@@ -456,8 +456,8 @@
        CONSTANTS
     ====================================================== */
 
-    const DEFAULT_AVATAR =
-        "https://ui-avatars.com/api/?name=User&background=6d28d9&color=fff&size=128&bold=true";
+    const DEFAULT_AVATAR = (typeof window !== "undefined" && window.VIEWORA_MSG_FALLBACK_AVATAR) ||
+        "data:image/svg+xml," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#7c3aed"/><stop offset="100%" stop-color="#2563eb"/></linearGradient></defs><circle cx="64" cy="64" r="64" fill="url(#g)"/><circle cx="64" cy="48" r="24" fill="rgba(255,255,255,.92)"/><ellipse cx="64" cy="106" rx="40" ry="28" fill="rgba(255,255,255,.92)"/></svg>');
 
     const MAX_MESSAGE_LENGTH =
         5000;
@@ -2187,17 +2187,25 @@
     ====================================================== */
 
     function renderStatus(message) {
-        // Circle ticks: grey outline = sent, grey fill = delivered, blue = seen
+        // WhatsApp-style double ticks; blue when seen. "sending" when offline/pending.
+        if (message.pending || message.sending || message.status === "sending") {
+            return '<span class="messageStatus sending" title="Sending">' +
+                '<i class="fa-solid fa-clock" style="font-size:10px"></i></span>';
+        }
+        if (message.failed || message.status === "failed") {
+            return '<span class="messageStatus failed" title="Failed">' +
+                '<i class="fa-solid fa-exclamation" style="font-size:10px"></i></span>';
+        }
         if (message.seenAt) {
             return '<span class="messageStatus seen" title="Seen">' +
-                '<i class="fa-solid fa-circle-check"></i></span>';
+                '<i class="fa-solid fa-check-double"></i></span>';
         }
         if (message.deliveredAt) {
             return '<span class="messageStatus delivered" title="Delivered">' +
-                '<i class="fa-solid fa-circle"></i></span>';
+                '<i class="fa-solid fa-check-double"></i></span>';
         }
         return '<span class="messageStatus sent" title="Sent">' +
-            '<i class="fa-regular fa-circle"></i></span>';
+            '<i class="fa-solid fa-check-double"></i></span>';
     }
 
 
@@ -3241,7 +3249,38 @@
         if (messageInput) messageInput.value = "";
         autoResizeInput();
 
+        // Optimistic UI: show "sending" tick when offline / slow network
+        var offline = false;
+        try { offline = !navigator.onLine; } catch (_) {}
+        var tempId = messageRef.key;
         try {
+            message.pending = true;
+            message.sending = true;
+            message.status = "sending";
+            if (!message.createdAt) message.createdAt = Date.now();
+            if (typeof appendLocalMessage === "function") {
+                appendLocalMessage(Object.assign({}, message));
+            } else if (typeof renderMessages === "function" && Array.isArray(state.messages)) {
+                state.messages.push(Object.assign({}, message));
+                renderMessages();
+            }
+        } catch (_) {}
+
+        try {
+            if (offline) {
+                // Queue and keep sending indicator
+                if (window.VieworaChatReliability && pendingText) {
+                    window.VieworaChatReliability.queue({
+                        peerUid: targetUid,
+                        receiverId: targetUid,
+                        text: pendingText,
+                        type: "text",
+                        clientId: tempId
+                    });
+                }
+                showToast("Sending when you are back online…", "warning");
+                // don't hard-fail
+            }
 
             await messageRef.set(
                 message
@@ -5238,6 +5277,16 @@
        MUTE
     ====================================================== */
 
+    function goBackToMessages(e) {
+        try { if (e) { e.preventDefault(); e.stopPropagation(); } } catch (_) {}
+        try {
+            // Single fast navigation — don't rely on empty history stack
+            window.location.replace("messages.html");
+        } catch (_) {
+            window.location.href = "messages.html";
+        }
+    }
+
     async function toggleMute() {
 
         state.muted =
@@ -5271,12 +5320,13 @@
         }
 
         try {
-
-            await db.ref(
-                `vieworaChats/${state.chatId}/muted/${state.currentUser.uid}`
-            ).set(
-                state.muted
-            );
+            var uid = state.currentUser.uid;
+            var cid = state.chatId;
+            var multi = {};
+            multi["vieworaChats/" + cid + "/muted/" + uid] = state.muted;
+            multi["userChats/" + uid + "/" + cid + "/muted"] = state.muted;
+            multi["chats/" + uid + "/" + cid + "/muted"] = state.muted;
+            await db.ref().update(multi);
 
             showToast(
                 state.muted
@@ -5285,11 +5335,15 @@
             );
 
         } catch (error) {
-
-            console.warn(
-                "Mute save error:",
-                error
-            );
+            // still keep local mute even if one path fails
+            console.warn("Mute save error:", error);
+            try {
+                await db.ref("userChats/" + state.currentUser.uid + "/" + state.chatId).update({ muted: state.muted });
+                showToast(state.muted ? "Notifications muted." : "Notifications unmuted.");
+            } catch (e2) {
+                showToast("Could not save mute", "error");
+                state.muted = !state.muted; // revert
+            }
         }
     }
 
@@ -5468,8 +5522,8 @@
 
         backBtn?.addEventListener(
             "click",
-            () => {
-                window.history.back();
+            (e) => {
+                goBackToMessages(e);
             }
         );
 
