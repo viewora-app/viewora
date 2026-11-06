@@ -165,11 +165,33 @@
         try {
           localStorage.setItem("viewora_last_uid", user.uid);
         } catch (_) {}
-        // Clear stale header/profile flash from previous account
+        // Clear stale header/profile flash from previous account IMMEDIATELY
         try {
           document.documentElement.setAttribute("data-viewora-uid", user.uid);
-          document.querySelectorAll("[data-me-avatar], .myAvatar, #myAvatar, #navAvatar").forEach(function (img) {
-            if (img && img.tagName === "IMG") img.style.opacity = "0.4";
+          // Don't use previous account's global avatar
+          var cachedForUid = "";
+          try {
+            cachedForUid = localStorage.getItem("viewora_my_avatar_" + user.uid) || "";
+            if (cachedForUid) {
+              localStorage.setItem("viewora_my_avatar", cachedForUid);
+              localStorage.setItem("viewora_my_avatar_uid", user.uid);
+            } else {
+              // wipe global so profile doesn't show UserA while UserB loads
+              var gUid = localStorage.getItem("viewora_my_avatar_uid") || "";
+              if (gUid && gUid !== user.uid) {
+                localStorage.removeItem("viewora_my_avatar");
+                localStorage.setItem("viewora_my_avatar_uid", user.uid);
+              }
+            }
+          } catch (_) {}
+          var placeholder = cachedForUid || user.photoURL || (window.VIEWORA_FALLBACK_AVATAR || "assets/default-avatar.png");
+          document.querySelectorAll(
+            "[data-me-avatar], .myAvatar, #myAvatar, #navAvatar, #profilePic, .profileAvatar img, #storyRing img"
+          ).forEach(function (img) {
+            if (img && img.tagName === "IMG") {
+              img.src = placeholder;
+              img.style.opacity = "1";
+            }
           });
         } catch (_) {}
         var base = {
@@ -187,7 +209,16 @@
             var av = (window.vieworaAvatarUrl && window.vieworaAvatarUrl(d)) || d.profilePhoto || d.photoURL || d.avatar || base.avatar;
             upsertAccount({ uid: user.uid, email: user.email || d.email || "", displayName: name, avatar: av });
             try {
-              document.querySelectorAll("[data-me-avatar], .myAvatar, #myAvatar, #navAvatar").forEach(function (img) {
+              if (av) {
+                localStorage.setItem("viewora_my_avatar", av);
+                localStorage.setItem("viewora_my_avatar_uid", user.uid);
+                localStorage.setItem("viewora_my_avatar_" + user.uid, av);
+              }
+            } catch (_) {}
+            try {
+              document.querySelectorAll(
+                "[data-me-avatar], .myAvatar, #myAvatar, #navAvatar, #profilePic, .profileAvatar img, #storyRing img"
+              ).forEach(function (img) {
                 if (img && img.tagName === "IMG") { img.src = av; img.style.opacity = "1"; }
               });
             } catch (_) {}

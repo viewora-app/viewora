@@ -179,7 +179,11 @@ function escapeHtml(s){return String(s||"").replace(/&/g,"&amp;").replace(/</g,"
                 } catch (_) {}
             }
             if (photo && mine) {
-                try { localStorage.setItem("viewora_my_avatar", photo); } catch (_) {}
+                try {
+                    localStorage.setItem("viewora_my_avatar", photo);
+                    localStorage.setItem("viewora_my_avatar_uid", String(uid));
+                    localStorage.setItem("viewora_my_avatar_" + String(uid), photo);
+                } catch (_) {}
             }
         } catch (_) {}
         return data;
@@ -1152,11 +1156,26 @@ function safeNumber(value) {
                 "";
 
             let photoFinal = photo || vieworaPickPhoto(user) || "";
+            // Per-UID cache only — never show previous account's DP after switch
             if (isOwnProfile) {
                 try {
-                    const lsAv = localStorage.getItem("viewora_my_avatar") || "";
-                    if (lsAv && (!photoFinal || photoFinal.indexOf("default") !== -1)) photoFinal = lsAv;
-                    else if (lsAv) photoFinal = lsAv; // prefer latest local after edit
+                    var uidKey = String(user.uid || user.id || profileUID || "");
+                    var lsAv = "";
+                    if (uidKey) {
+                        lsAv = localStorage.getItem("viewora_my_avatar_" + uidKey) || "";
+                    }
+                    // only use global key if it matches current uid marker
+                    var globalAv = localStorage.getItem("viewora_my_avatar") || "";
+                    var globalUid = localStorage.getItem("viewora_my_avatar_uid") || "";
+                    if (!lsAv && globalAv && globalUid && uidKey && globalUid === uidKey) {
+                        lsAv = globalAv;
+                    }
+                    // prefer RTDB photo when present; use LS only as fill for empty/default
+                    if (lsAv) {
+                        if (!photoFinal || /default-avatar|ui-avatars|data:image\/svg/i.test(String(photoFinal))) {
+                            photoFinal = lsAv;
+                        }
+                    }
                 } catch (_) {}
             }
             vieworaBindAvatarImg(profilePic, photoFinal, user.displayName || user.username || user.name);
@@ -6330,6 +6349,13 @@ function safeNumber(value) {
              * This prevents the page from staying
              * blank while counts are loading.
              */
+
+            // Instant paint — clear stale previous-account flash first
+            try {
+                if (profileUser && profileUser.uid) {
+                    document.documentElement.setAttribute("data-viewora-uid", String(profileUser.uid));
+                }
+            } catch (_) {}
 
             renderProfile(
                 profileUser
