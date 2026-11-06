@@ -2242,3 +2242,26 @@ a.newMessageFab {
 .vieworaTick.blueTick, i.blueTick, .verifiedTick i.blueTick { color: #1d9bf0 !important; }
 .vieworaTick.whiteTick, i.whiteTick { color: #e8eef7 !important; }
 .chatName .vieworaTick, .messagesName .vieworaTick { margin-left: 5px; font-size: 12px; vertical-align: middle; }
+
+
+/* Chat status circles */
+.messageStatus { display: inline-flex; align-items: center; margin-left: 4px; font-size: 11px; }
+.messageStatus.sent { color: rgba(255,255,255,.45); }
+.messageStatus.delivered { color: rgba(255,255,255,.55); }
+.messageStatus.seen { color: #3b82f6; }
+.messageStatus.seen i { filter: drop-shadow(0 0 4px rgba(59,130,246,.55)); }
+
+/* Online / offline under DP */
+.onlineDot {
+  position: absolute; right: 2px; bottom: 2px;
+  width: 12px; height: 12px; border-radius: 50%;
+  background: #22c55e; border: 2px solid #0c0c12;
+  box-shadow: 0 0 0 1px rgba(34,197,94,.35);
+}
+.offlineDot {
+  position: absolute; right: 2px; bottom: 2px;
+  width: 12px; height: 12px; border-radius: 50%;
+  background: #e5e7eb; border: 2px solid #0c0c12;
+  opacity: 0.9;
+}
+.chatAvatar, .userAvatar { position: relative; }

@@ -457,7 +457,7 @@
     ====================================================== */
 
     const DEFAULT_AVATAR =
-        "https://ui-avatars.com/api/?name=U&background=7c3aed&color=fff&size=128";
+        "https://ui-avatars.com/api/?name=User&background=6d28d9&color=fff&size=128&bold=true";
 
     const MAX_MESSAGE_LENGTH =
         5000;
@@ -2187,39 +2187,17 @@
     ====================================================== */
 
     function renderStatus(message) {
-
+        // Circle ticks: grey outline = sent, grey fill = delivered, blue = seen
         if (message.seenAt) {
-
-            return `
-                <span
-                    class="messageStatus seen"
-                    title="Seen"
-                >
-                    <i class="fa-solid fa-check-double"></i>
-                </span>
-            `;
+            return '<span class="messageStatus seen" title="Seen">' +
+                '<i class="fa-solid fa-circle-check"></i></span>';
         }
-
         if (message.deliveredAt) {
-
-            return `
-                <span
-                    class="messageStatus delivered"
-                    title="Delivered"
-                >
-                    <i class="fa-solid fa-check-double"></i>
-                </span>
-            `;
+            return '<span class="messageStatus delivered" title="Delivered">' +
+                '<i class="fa-solid fa-circle"></i></span>';
         }
-
-        return `
-            <span
-                class="messageStatus sent"
-                title="Sent"
-            >
-                <i class="fa-solid fa-check"></i>
-            </span>
-        `;
+        return '<span class="messageStatus sent" title="Sent">' +
+            '<i class="fa-regular fa-circle"></i></span>';
     }
 
 

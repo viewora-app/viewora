@@ -374,7 +374,36 @@
        STATUS
     ====================================================== */
 
-    function setStatus(text) {
+    
+    async function peerIsOnline(uid) {
+        if (!uid || !db) return false;
+        try {
+            const snap = await db.ref("users/" + uid + "/online").once("value");
+            if (snap.exists() && snap.val()) return true;
+        } catch (_) {}
+        try {
+            const snap2 = await db.ref("users/" + uid + "/isOnline").once("value");
+            if (snap2.exists() && snap2.val()) return true;
+        } catch (_) {}
+        try {
+            const snap3 = await db.ref("presence/" + uid).once("value");
+            const v = snap3.val();
+            if (v === true || (v && (v.online || v.state === "online"))) return true;
+        } catch (_) {}
+        return false;
+    }
+
+    async function setOutboundStatus(peerUid) {
+        try {
+            const on = await peerIsOnline(peerUid);
+            setStatus(on ? "Ringing..." : "Calling...");
+            setConnecting(true, on ? "Ringing..." : "Calling...");
+        } catch (_) {
+            setStatus("Calling...");
+        }
+    }
+
+function setStatus(text) {
 
         if (callStatus) {
 
@@ -1846,20 +1875,16 @@
         await createCall();
 
 
-        setStatus(
-            "Calling..."
-        );
-
-
-        setConnecting(
-            true,
-            "Calling..."
-        );
+        try {
+            await setOutboundStatus(receiverId);
+        } catch (_) {
+            setStatus("Calling...");
+            setConnecting(true, "Calling...");
+        }
 
         startRingTimeout();
         requestWakeLock();
         startCallerRingtone();
-        try { setStatus("Calling…"); } catch (_) {}
 
 
         /*
@@ -2656,37 +2681,42 @@
             b.classList.toggle("active", speakerOn);
             const icon = b.querySelector("i");
             if (icon) {
+                // ON = loud speaker icon, OFF = quieter/earpiece icon
                 icon.className = speakerOn
                     ? "fa-solid fa-volume-high"
                     : "fa-solid fa-volume-low";
             }
         });
 
-        // Always keep remote audio audible — never mute when toggling speaker
         const targets = [remoteAudio, remoteVideo].filter(Boolean);
         for (const el of targets) {
             try {
                 el.muted = false;
-                el.volume = 1;
+                // Speaker ON → full volume + loud output
+                // Speaker OFF → still audible (don't silence) but prefer earpiece if available
+                el.volume = speakerOn ? 1.0 : 0.85;
                 if (typeof el.setSinkId === "function") {
-                    // Prefer explicit device when speaker ON; leave default when OFF
-                    if (speakerOn) {
-                        try {
-                            const devices = await navigator.mediaDevices.enumerateDevices();
-                            const outs = devices.filter(d => d.kind === "audiooutput");
-                            const speaker = outs.find(d =>
-                                /speaker|loud|external/i.test(d.label || "")
-                            ) || outs[outs.length - 1];
-                            if (speaker && speaker.deviceId) {
-                                await el.setSinkId(speaker.deviceId);
-                            } else {
-                                await el.setSinkId("default");
-                            }
-                        } catch (_) {
-                            await el.setSinkId("default");
+                    try {
+                        const devices = await navigator.mediaDevices.enumerateDevices();
+                        const outs = devices.filter(function (d) { return d.kind === "audiooutput"; });
+                        if (speakerOn) {
+                            var loud = outs.find(function (d) {
+                                return /speaker|loud|external|wired/i.test(d.label || "");
+                            }) || outs.find(function (d) {
+                                return !/earpiece|phone|receiver/i.test(d.label || "");
+                            }) || outs[0];
+                            if (loud && loud.deviceId) await el.setSinkId(loud.deviceId);
+                            else await el.setSinkId("default");
+                        } else {
+                            var ear = outs.find(function (d) {
+                                return /earpiece|phone|receiver|headset/i.test(d.label || "");
+                            });
+                            if (ear && ear.deviceId) await el.setSinkId(ear.deviceId);
+                            // else leave current sink — never blank id
                         }
+                    } catch (e) {
+                        try { await el.setSinkId("default"); } catch (_) {}
                     }
-                    // speaker off: do NOT setSinkId("") — that silences many Android WebViews
                 }
                 el.play().catch(function () {});
             } catch (err) {
@@ -3258,17 +3288,67 @@
        CAMERA
     ====================================================== */
 
-    function toggleCamera() {
+    async function toggleCamera() {
 
         if (!localStream) {
             return;
         }
 
-        const videoTrack =
+        let videoTrack =
             localStream.getVideoTracks()[0];
 
+        // Audio call → turning camera ON: confirm switch to video call
         if (!videoTrack) {
-            return;
+            var ok = true;
+            try {
+                ok = window.confirm("Switch to video call? Your camera will turn on.");
+            } catch (_) {}
+            if (!ok) return;
+            try {
+                setStatus("Switching to video...");
+                var vs = await navigator.mediaDevices.getUserMedia({
+                    audio: false,
+                    video: {
+                        facingMode: { ideal: "user" },
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 }
+                    }
+                });
+                videoTrack = vs.getVideoTracks()[0];
+                if (!videoTrack) {
+                    toast("Camera unavailable");
+                    return;
+                }
+                localStream.addTrack(videoTrack);
+                if (peerConnection) {
+                    try {
+                        peerConnection.addTrack(videoTrack, localStream);
+                    } catch (eAdd) {
+                        try {
+                            var senders = peerConnection.getSenders();
+                            var vsender = senders.find(function (s) { return s.track && s.track.kind === "video"; });
+                            if (vsender) await vsender.replaceTrack(videoTrack);
+                            else peerConnection.addTrack(videoTrack, localStream);
+                        } catch (e2) {
+                            logError("add video track", e2);
+                        }
+                    }
+                }
+                if (localVideo) {
+                    localVideo.srcObject = localStream;
+                    localVideo.muted = true;
+                    localVideo.play().catch(function () {});
+                }
+                try {
+                    callType = "video";
+                    if (callRef) callRef.update({ type: "video", video: true });
+                } catch (_) {}
+                toast("Video on");
+            } catch (e) {
+                logError("enable camera", e);
+                toast("Allow camera permission to switch to video");
+                return;
+            }
         }
 
         videoTrack.enabled = !videoTrack.enabled;
