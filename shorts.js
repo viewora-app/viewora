@@ -353,6 +353,17 @@ function vieworaIsPrivateUser(u) {
                 return true;
             }
         } catch (_) {}
+        try {
+            if (window.VieworaAuthGate) {
+                var map = {
+                    like: "like", comment: "comment", share: "share",
+                    follow: "follow", save: "save", message: "message"
+                };
+                var key = map[String(action || "").toLowerCase()] || "default";
+                VieworaAuthGate.require(key);
+                return false;
+            }
+        } catch (_) {}
         const label = action ? ("Sign in to " + action) : "Sign in to continue";
         try {
             if (typeof showToast === "function") showToast(label);

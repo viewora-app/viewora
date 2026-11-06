@@ -44,6 +44,19 @@
 
     function softIncrementViews(root, id) {
         if (!db || !id) return;
+        // Guests can watch — views only count for signed-in users
+        try {
+            var uid = null;
+            try { uid = typeof getMyUID === "function" ? getMyUID() : null; } catch (_) {}
+            if (!uid) {
+                try {
+                    if (window.VieworaAuthGate && !VieworaAuthGate.isLoggedIn()) return;
+                } catch (_) {}
+                try {
+                    if (typeof firebase !== "undefined" && firebase.auth && !firebase.auth().currentUser) return;
+                } catch (_) { return; }
+            }
+        } catch (_) { return; }
         const paths = [
             root + "/" + id + "/views",
             root + "/" + id + "/viewCount"
@@ -2796,7 +2809,10 @@
     async function togglePostLike(card, postId, button) {
         const uid = getMyUID();
         if (!uid) {
-            showToast("Login required to like");
+            try {
+                if (window.VieworaAuthGate) VieworaAuthGate.require("like");
+                else showToast("Login required to like");
+            } catch (_) { showToast("Login required to like"); }
             return;
         }
         if (!postId) return;
@@ -3054,7 +3070,10 @@
     async function togglePostSave(card, postId, button) {
         const uid = getMyUID();
         if (!uid) {
-            showToast("Login required to save");
+            try {
+                if (window.VieworaAuthGate) VieworaAuthGate.require("save");
+                else showToast("Login required to save");
+            } catch (_) { showToast("Login required to save"); }
             return;
         }
 
@@ -3623,7 +3642,7 @@
                     const user = (typeof getCurrentUser === "function" ? getCurrentUser() : null) ||
                         (firebase.auth && firebase.auth().currentUser);
                     if (!user) {
-                        showToast("Login required");
+                        try { if (window.VieworaAuthGate) VieworaAuthGate.require("default"); else showToast("Login required"); } catch (_) { showToast("Login required"); }
                         return;
                     }
                     if (btn.dataset.busy === "1") return;
@@ -3688,7 +3707,7 @@
             (typeof getCurrentUser === "function" ? getCurrentUser() : null) ||
             (firebase.auth && firebase.auth().currentUser);
         if (!user) {
-            showToast("Login required");
+            try { if (window.VieworaAuthGate) VieworaAuthGate.require("default"); else showToast("Login required"); } catch (_) { showToast("Login required"); }
             return;
         }
         const input = document.getElementById("homeCommentInput");
