@@ -1,22 +1,22 @@
 /*==========================================================
-  Viewora Crash Guard (D — bugs / crash pass)
-  - Global error + unhandledrejection handlers
-  - Optional RTDB log: crashes/{uid|anon}/{id}
-  - Soft UI: never leave user on pure white screen
-  - Safe helpers: VieworaSafe.run / VieworaSafe.async
+  Viewora Crash Guard v2
+  - Ignores non-fatal mobile noise (FCM, permissions, network)
+  - Recovery bar only for real repeated hard failures
+  - Never blocks the app on first-open / new device
 
-  Upload: root crash-guard.js
-  Include FIRST after firebase.js (or early in <head>):
-    <script src="crash-guard.js"></script>
+  Upload: root crash-guard.js (overwrite)
 ==========================================================*/
 (function (global) {
   "use strict";
 
-  if (global.__VIEWORA_CRASH_GUARD__) return;
+  if (global.__VIEWORA_CRASH_GUARD_V2__) return;
+  global.__VIEWORA_CRASH_GUARD_V2__ = true;
   global.__VIEWORA_CRASH_GUARD__ = true;
 
-  var MAX_LOGS_PER_SESSION = 12;
+  var MAX_LOGS_PER_SESSION = 20;
+  var HARD_THRESHOLD = 6; // was 3 — too aggressive on new phones
   var logged = 0;
+  var hardCount = 0;
   var lastSig = "";
   var lastAt = 0;
 
@@ -56,15 +56,64 @@
     return String(msg || "").slice(0, 120) + "|" + String(src || "").slice(-40) + "|" + String(line || "");
   }
 
-  function shouldSkip(sig) {
+  /** Non-fatal patterns common on first open / mobile Chrome */
+  function isSoftError(msg, src) {
+    var m = String(msg || "");
+    var s = String(src || "");
+    var soft = [
+      /Script error\.?$/i,
+      /ResizeObserver loop/i,
+      /Loading CSS chunk/i,
+      /chrome-extension:\/\//i,
+      /moz-extension:\/\//i,
+      /Permission denied/i,
+      /permission.?denied/i,
+      /Notifications? permission/i,
+      /Notification\.requestPermission/i,
+      /messaging\/|FirebaseError.*messaging/i,
+      /Failed to register a ServiceWorker/i,
+      /ServiceWorker/i,
+      /push service/i,
+      /PushManager/i,
+      /The operation is insecure/i,
+      /Only secure origins/i,
+      /NetworkError/i,
+      /Failed to fetch/i,
+      /Load failed/i,
+      /net::ERR_/i,
+      /AbortError/i,
+      /QuotaExceeded/i,
+      /Storage quota/i,
+      /IDBDatabase/i,
+      /IndexedDB/i,
+      /play\(\) failed/i,
+      /NotAllowedError/i,
+      /NotSupportedError/i,
+      /user denied/i,
+      /blocked by client/i,
+      /Cloudinary/i,
+      /upload preset/i,
+      /Login required to upload/i,
+      /hydrate like/i,
+      /crop|music trim/i,
+      /MAXIMUM_CALL_STACK/i, // sometimes noise from third party
+      /__gCrWeb/i,
+      /Java object is gone/i,
+      /onGetPixelsOutOfMemory/i
+    ];
+    for (var i = 0; i < soft.length; i++) {
+      if (soft[i].test(m) || soft[i].test(s)) return true;
+    }
+    // fcm.js / messaging path
+    if (/fcm\.js|firebase-messaging/i.test(s)) return true;
+    return false;
+  }
+
+  function shouldSkip(sig, msg, src) {
     var t = now();
     if (sig === lastSig && t - lastAt < 4000) return true;
     if (logged >= MAX_LOGS_PER_SESSION) return true;
-    // ignore noisy browser noise
-    if (/Script error\.?$/i.test(sig)) return true;
-    if (/ResizeObserver loop/i.test(sig)) return true;
-    if (/Loading CSS chunk/i.test(sig)) return true;
-    if (/chrome-extension:\/\//i.test(sig)) return true;
+    if (isSoftError(msg, src)) return true;
     return false;
   }
 
@@ -76,7 +125,7 @@
     } catch (_) {}
   }
 
-  function report(kind, err, extra) {
+  function report(kind, err, extra, forceHard) {
     try {
       var msg = "";
       var stack = "";
@@ -89,8 +138,17 @@
       var src = (extra && extra.source) || "";
       var line = (extra && extra.lineno) || 0;
       var col = (extra && extra.colno) || 0;
+
+      // Soft errors: console only, never recovery bar
+      if (!forceHard && isSoftError(msg, src)) {
+        try {
+          console.warn("[Viewora soft]", kind, msg);
+        } catch (_) {}
+        return;
+      }
+
       var sig = signature(msg, src, line);
-      if (shouldSkip(sig)) return;
+      if (shouldSkip(sig, msg, src)) return;
       lastSig = sig;
       lastAt = now();
       logged += 1;
@@ -110,42 +168,43 @@
       };
 
       try {
-        console.error("[Viewora Crash]", payload.kind, payload.message, payload);
+        console.error("[Viewora Crash]", payload.kind, payload.message);
       } catch (_) {}
 
       writeCrash(payload);
+
+      hardCount += 1;
+      if (hardCount >= HARD_THRESHOLD) showRecovery();
     } catch (_) {}
   }
 
-  // Global JS errors
   global.onerror = function (message, source, lineno, colno, error) {
     report("onerror", error || message, {
       source: source,
       lineno: lineno,
       colno: colno
     });
-    // do not block default logging
     return false;
   };
 
-  // Unhandled promise rejections
   global.addEventListener("unhandledrejection", function (ev) {
     try {
       var r = ev && ev.reason;
       var msg = String((r && r.message) || r || "");
-      // Non-fatal upload/crop/music noise — log only
-      if (/crop|music|Cloudinary|upload preset|Login required to upload|hydrate like|NetworkError|AbortError/i.test(msg)) {
-        console.warn("[Viewora] soft rejection", msg);
-        try { ev.preventDefault(); } catch (_) {}
+      if (isSoftError(msg, "")) {
+        try {
+          console.warn("[Viewora] soft rejection", msg);
+        } catch (_) {}
+        try {
+          ev.preventDefault();
+        } catch (_) {}
         return;
       }
     } catch (_) {}
-
     var reason = ev && ev.reason;
     report("unhandledrejection", reason || "rejection", {});
   });
 
-  // Soft recovery: if body looks empty after load, show recovery bar
   function softRecoveryUI() {
     try {
       if (document.getElementById("vieworaCrashBar")) return;
@@ -161,14 +220,19 @@
         '<span style="flex:1">Something went wrong. Reload to continue.</span>' +
         '<button type="button" id="vieworaCrashReload" style="border:0;border-radius:10px;padding:8px 12px;' +
         'background:linear-gradient(135deg,#7c3aed,#db2777);color:#fff;font-weight:700;cursor:pointer">Reload</button>';
-      document.body.appendChild(bar);
+      (document.body || document.documentElement).appendChild(bar);
       var btn = document.getElementById("vieworaCrashReload");
       if (btn) {
         btn.onclick = function () {
           try {
+            hardCount = 0;
+            logged = 0;
+            sessionStorage.setItem("viewora_force_reload", "1");
+          } catch (_) {}
+          try {
             location.reload();
           } catch (_) {
-            location.href = location.href;
+            location.href = location.href.split("#")[0];
           }
         };
       }
@@ -183,16 +247,14 @@
     } catch (_) {}
   }
 
-  // Expose after several crashes in one session
-  var hardCount = 0;
-  var origReport = report;
-  report = function (kind, err, extra) {
-    origReport(kind, err, extra);
-    hardCount += 1;
-    if (hardCount >= 3) showRecovery();
-  };
+  function hideRecovery() {
+    try {
+      var bar = document.getElementById("vieworaCrashBar");
+      if (bar) bar.style.display = "none";
+      hardCount = 0;
+    } catch (_) {}
+  }
 
-  // Safe runners
   function run(fn, fallback) {
     try {
       return typeof fn === "function" ? fn() : undefined;
@@ -229,12 +291,11 @@
     }
   }
 
-  // Kill stuck loaders globally (any page)
   function killStuckLoaders() {
     run(function () {
       document
         .querySelectorAll(
-          "#loadingOverlay, .loadingOverlay, #pageLoader, .pageLoader, #bootLoader, .premiumLoading"
+          "#loadingOverlay, .loadingOverlay, #pageLoader, .pageLoader, #bootLoader, .premiumLoading, #feedSkeleton, .feedSkeleton"
         )
         .forEach(function (el) {
           el.classList.add("hidden", "loaderHide");
@@ -249,8 +310,11 @@
 
   function boot() {
     softRecoveryUI();
-    setTimeout(killStuckLoaders, 2500);
-    setTimeout(killStuckLoaders, 6000);
+    // Never auto-show bar on boot
+    hideRecovery();
+    setTimeout(killStuckLoaders, 2000);
+    setTimeout(killStuckLoaders, 5000);
+    setTimeout(killStuckLoaders, 10000);
   }
 
   if (document.readyState === "loading") {
@@ -260,6 +324,14 @@
   }
   global.addEventListener("load", function () {
     setTimeout(killStuckLoaders, 400);
+    // If feed has content, hide recovery
+    setTimeout(function () {
+      try {
+        if (document.querySelector(".vieworaPostCard, .longVideoCard, #videoFeed, #postFeed")) {
+          hideRecovery();
+        }
+      } catch (_) {}
+    }, 3000);
   });
 
   global.VieworaSafe = {
@@ -269,10 +341,11 @@
       report("manual", err, extra || {});
     },
     killLoaders: killStuckLoaders,
-    showRecovery: showRecovery
+    showRecovery: showRecovery,
+    hideRecovery: hideRecovery
   };
 
   try {
-    console.log("[Viewora Crash Guard] active");
+    console.log("[Viewora Crash Guard v2] active");
   } catch (_) {}
 })(typeof window !== "undefined" ? window : this);
