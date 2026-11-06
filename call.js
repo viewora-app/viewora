@@ -376,30 +376,46 @@
 
     
     async function peerIsOnline(uid) {
+        // My network must be up; otherwise always "Calling..."
+        try {
+            if (typeof navigator !== "undefined" && navigator.onLine === false) return false;
+        } catch (_) {}
         if (!uid || !db) return false;
         try {
-            const snap = await db.ref("users/" + uid + "/online").once("value");
-            if (snap.exists() && snap.val()) return true;
-        } catch (_) {}
-        try {
-            const snap2 = await db.ref("users/" + uid + "/isOnline").once("value");
-            if (snap2.exists() && snap2.val()) return true;
-        } catch (_) {}
-        try {
-            const snap3 = await db.ref("presence/" + uid).once("value");
-            const v = snap3.val();
-            if (v === true || (v && (v.online || v.state === "online"))) return true;
+            const snap = await db.ref("users/" + uid).once("value");
+            const u = snap.val() || {};
+            var on = !!(u.online || u.isOnline || (u.presence && u.presence === "online"));
+            if (!on && u.presence && typeof u.presence === "object") {
+                on = !!(u.presence.online || u.presence.state === "online");
+            }
+            // Stale presence: lastSeen older than 2 min → offline
+            if (on && u.lastSeen) {
+                var ls = Number(u.lastSeen);
+                if (ls < 1e12) ls = ls * 1000;
+                if (Date.now() - ls > 120000) on = false;
+            }
+            return on;
         } catch (_) {}
         return false;
     }
 
     async function setOutboundStatus(peerUid) {
         try {
+            var myNet = true;
+            try { myNet = navigator.onLine !== false; } catch (_) {}
+            if (!myNet) {
+                setStatus("Calling...");
+                setConnecting(true, "Calling...");
+                try { startTonePattern("calling"); } catch (_) {}
+                return;
+            }
             const on = await peerIsOnline(peerUid);
             setStatus(on ? "Ringing..." : "Calling...");
             setConnecting(true, on ? "Ringing..." : "Calling...");
+            try { startTonePattern(on ? "ringing" : "calling"); } catch (_) {}
         } catch (_) {
             setStatus("Calling...");
+            try { startTonePattern("calling"); } catch (_) {}
         }
     }
 
@@ -1080,7 +1096,7 @@ function setStatus(text) {
                     clearRingTimeout();
                     accepted = true;
                     setConnecting(false);
-                    setStatus("Connected"); try { if (window.__vieworaArmCallBackGuard) window.__vieworaArmCallBackGuard(); } catch (_) {}
+                    setStatus("Connected"); try { stopTonePattern(); } catch (_) {} try { setupPipDragAndSwap(); setupCallMinimize(); } catch (_) {} try { if (window.__vieworaArmCallBackGuard) window.__vieworaArmCallBackGuard(); } catch (_) {}
                     try {
                         if (db && currentUser) {
                             db.ref("users/" + currentUser.uid + "/callStatus").set({
@@ -1105,7 +1121,7 @@ function setStatus(text) {
 
                 if (state === "disconnected") {
                     setConnecting(true, "Reconnecting...");
-                    setStatus("Reconnecting...");
+                    setStatus("Reconnecting..."); try { startTonePattern("reconnect"); } catch (_) {}
                     setTimeout(() => {
                         tryRestartIce("disconnected");
                     }, 2500);
@@ -1113,7 +1129,7 @@ function setStatus(text) {
 
                 if (state === "failed") {
                     setConnecting(true, "Reconnecting...");
-                    setStatus("Reconnecting...");
+                    setStatus("Reconnecting..."); try { startTonePattern("reconnect"); } catch (_) {}
                     tryRestartIce("failed").then(ok => {
                         if (!ok) {
                             setConnecting(false);
@@ -1892,6 +1908,7 @@ function setStatus(text) {
          */
 
         await getLocalMedia();
+        try { setupPipDragAndSwap(); setupCallMinimize(); } catch (_) {}
 
 
         /*
@@ -2937,16 +2954,23 @@ function setStatus(text) {
             if (remoteUserId) inCall.push(remoteUserId);
 
             const ids = new Set();
-            const fol = folSnap.val() || {};
-            Object.keys(fol).forEach(function (k) { if (fol[k]) ids.add(k); });
+            // Prefer people you already message (userChats)
             const chats = chatSnap.val() || {};
             Object.keys(chats).forEach(function (k) {
                 const c = chats[k] || {};
-                if (c.uid) ids.add(c.uid);
-                if (c.peerId) ids.add(c.peerId);
-                if (c.with) ids.add(c.with);
-                if (c.members) Object.keys(c.members).forEach(function (m) { ids.add(m); });
+                if (c.isGroup || c.groupId) return;
+                var peer = c.userId || c.uid || c.peerId || c.with || c.otherUid || "";
+                if (!peer && k && k.indexOf("_") !== -1) {
+                    var parts = k.split("_");
+                    peer = parts[0] === uid ? parts[1] : parts[0];
+                }
+                if (peer && peer !== uid) ids.add(peer);
             });
+            // If no chats, fall back to following
+            if (ids.size === 0) {
+                const fol = folSnap.val() || {};
+                Object.keys(fol).forEach(function (k) { if (fol[k]) ids.add(k); });
+            }
             ids.delete(uid);
 
             const arr = Array.from(ids).slice(0, 40);
@@ -2963,7 +2987,11 @@ function setStatus(text) {
                         uid: id,
                         name: u.name || u.fullName || u.displayName || u.username || "User",
                         username: u.username || "",
-                        photo: u.profilePhoto || u.photoURL || u.avatar || "assets/default-avatar.png",
+                        photo: (function(){
+                        var p = u.profilePhoto || u.photoURL || u.avatar || u.photo || "";
+                        if (p && String(p).indexOf("ui-avatars") === -1 && p.length > 8) return p;
+                        return "data:image/svg+xml," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#7c3aed"/><stop offset="100%" stop-color="#2563eb"/></linearGradient></defs><circle cx="64" cy="64" r="64" fill="url(#g)"/><circle cx="64" cy="48" r="24" fill="rgba(255,255,255,.92)"/><ellipse cx="64" cy="106" rx="40" ry="28" fill="rgba(255,255,255,.92)"/></svg>');
+                    })(),
                         inCall: inCall.indexOf(id) !== -1
                     };
                 } catch (_) {
@@ -3220,6 +3248,118 @@ function setStatus(text) {
         }
     }
 
+
+
+    function setupPipDragAndSwap() {
+        var wrap = document.getElementById("localVideoWrap");
+        if (!wrap || wrap.dataset.pipReady) return;
+        wrap.dataset.pipReady = "1";
+        var startX = 0, startY = 0, origL = 0, origT = 0, moved = false;
+
+        function onDown(e) {
+            var pt = e.touches ? e.touches[0] : e;
+            startX = pt.clientX; startY = pt.clientY;
+            var r = wrap.getBoundingClientRect();
+            origL = r.left; origT = r.top;
+            moved = false;
+            wrap.classList.add("dragging");
+            wrap.style.right = "auto";
+            wrap.style.bottom = "auto";
+            wrap.style.left = origL + "px";
+            wrap.style.top = origT + "px";
+            e.preventDefault();
+        }
+        function onMove(e) {
+            if (!wrap.classList.contains("dragging")) return;
+            var pt = e.touches ? e.touches[0] : e;
+            var dx = pt.clientX - startX, dy = pt.clientY - startY;
+            if (Math.abs(dx) + Math.abs(dy) > 8) moved = true;
+            var nl = Math.max(0, Math.min(window.innerWidth - wrap.offsetWidth, origL + dx));
+            var nt = Math.max(0, Math.min(window.innerHeight - wrap.offsetHeight - 80, origT + dy));
+            wrap.style.left = nl + "px";
+            wrap.style.top = nt + "px";
+        }
+        function onUp() {
+            if (!wrap.classList.contains("dragging")) return;
+            wrap.classList.remove("dragging");
+            if (!moved) {
+                // tap → swap / expand
+                try { swapLocalRemoteView(); } catch (_) {}
+            }
+        }
+        wrap.addEventListener("mousedown", onDown);
+        wrap.addEventListener("touchstart", onDown, { passive: false });
+        window.addEventListener("mousemove", onMove);
+        window.addEventListener("touchmove", onMove, { passive: false });
+        window.addEventListener("mouseup", onUp);
+        window.addEventListener("touchend", onUp);
+    }
+
+    var __pipSwapped = false;
+    function swapLocalRemoteView() {
+        var local = document.getElementById("localVideo");
+        var remote = document.getElementById("remoteVideo");
+        var wrap = document.getElementById("localVideoWrap");
+        if (!local || !remote) return;
+        __pipSwapped = !__pipSwapped;
+        // swap srcObjects
+        var a = local.srcObject;
+        local.srcObject = remote.srcObject;
+        remote.srcObject = a;
+        try { local.play(); remote.play(); } catch (_) {}
+        if (wrap) wrap.classList.toggle("expanded", false);
+    }
+
+    function setupCallMinimize() {
+        var bar = document.getElementById("callMiniBar");
+        var app = document.getElementById("callApp") || document.body;
+        function showMini() {
+            if (!bar) return;
+            bar.classList.add("show");
+            try {
+                document.getElementById("callStage") && (document.getElementById("callStage").style.opacity = "0");
+            } catch (_) {}
+            // keep media alive; hide chrome
+            try {
+                document.querySelector(".call-controls").style.visibility = "hidden";
+                document.querySelector(".call-topbar") && (document.querySelector(".call-topbar").style.visibility = "hidden");
+            } catch (_) {}
+        }
+        function hideMini() {
+            if (!bar) return;
+            bar.classList.remove("show");
+            try {
+                document.querySelector(".call-controls").style.visibility = "";
+                document.querySelector(".call-topbar") && (document.querySelector(".call-topbar").style.visibility = "");
+                var stage = document.getElementById("callStage");
+                if (stage) stage.style.opacity = "";
+            } catch (_) {}
+        }
+        if (bar) {
+            bar.onclick = function () { hideMini(); };
+        }
+        var minBtn = document.getElementById("minimizeCallBtn");
+        if (minBtn) {
+            minBtn.style.display = "";
+            minBtn.onclick = function () { showMini(); };
+        }
+        // Sync mini timer
+        setInterval(function () {
+            try {
+                var t = document.getElementById("callTimer");
+                var mt = document.getElementById("callMiniTimer");
+                if (t && mt) mt.textContent = t.textContent || "00:00";
+            } catch (_) {}
+        }, 1000);
+        // Page hide → show mini hint (call keeps running in tab)
+        document.addEventListener("visibilitychange", function () {
+            if (document.hidden && !callEnded && accepted) {
+                try {
+                    sessionStorage.setItem("viewora_call_bg", "1");
+                } catch (_) {}
+            }
+        });
+    }
 
     function toggleMute() {
 
