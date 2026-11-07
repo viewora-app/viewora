@@ -1,3 +1,25 @@
+
+/* VIEWORA_CALL_UI_BOOT — never blank on any device */
+(function () {
+  function showStage() {
+    try {
+      document.body.classList.add("call-page");
+      var app = document.getElementById("callApp") || document.getElementById("callPage");
+      if (app) { app.style.display = "block"; app.style.visibility = "visible"; app.style.opacity = "1"; }
+      var err = document.getElementById("callErrorScreen");
+      if (err && !err.dataset.force) err.classList.add("hidden");
+      var stage = document.querySelector(".call-stage, .callStage, #callStage");
+      if (stage) { stage.style.display = "block"; stage.style.minHeight = "100vh"; }
+      var controls = document.querySelector(".call-controls");
+      if (controls) { controls.style.display = "flex"; controls.style.visibility = "visible"; }
+    } catch (e) {}
+  }
+  showStage();
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", showStage);
+  setTimeout(showStage, 50);
+  setTimeout(showStage, 400);
+  setTimeout(showStage, 1200);
+})();
 "use strict";
 
 /*

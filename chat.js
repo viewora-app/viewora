@@ -1443,9 +1443,17 @@
                                 id,
                                 {
                                     ...message,
-                                    id
+                                    id,
+                                    pending: false,
+                                    sending: false,
+                                    _serverConfirmed: true,
+                                    status: message.seenAt || message.seen || message.status === "seen"
+                                        ? "seen"
+                                        : (message.deliveredAt || message.status === "delivered"
+                                            ? "delivered"
+                                            : (message.status === "sending" ? "sent" : (message.status || "sent")))
                                 }
-                            );
+                            ); /* VIEWORA_CLEAR_PENDING */
 
                             if (
                                 message.senderId &&
@@ -2254,21 +2262,21 @@ state.messagesListener = {
     ====================================================== */
 
     function renderStatus(message) {
+        if (!message) return "";
         var st = String(message.status || "").toLowerCase();
         var seen = !!(message.seenAt || message.seen || st === "seen" || st === "read");
         var delivered = !!(message.deliveredAt || message.delivered || st === "delivered");
-        // Offline / still sending → clock circle
-        if (message.pending || message.sending || st === "sending" || !navigator.onLine) {
-            if (message.pending || message.sending || st === "sending") {
-                return '<span class="messageStatus sending" title="Waiting for network">' +
-                    '<i class="fa-regular fa-clock"></i></span>';
-            }
+        var sending = !!(message.pending || message.sending || st === "sending");
+        // Only local optimistic / failed states show clock
+        if (sending && !message._serverConfirmed) {
+            return '<span class="messageStatus sending" title="Sending">' +
+                '<i class="fa-regular fa-clock"></i></span>';
         }
         if (message.failed || st === "failed") {
             return '<span class="messageStatus failed" title="Failed">' +
                 '<i class="fa-solid fa-exclamation"></i></span>';
         }
-        // Seen → white/blue double tick
+        // Seen → white double tick
         if (seen) {
             return '<span class="messageStatus seen" title="Seen">' +
                 '<i class="fa-solid fa-check-double"></i></span>';
@@ -2278,7 +2286,7 @@ state.messagesListener = {
             return '<span class="messageStatus delivered" title="Delivered">' +
                 '<i class="fa-solid fa-check-double"></i></span>';
         }
-        // Sent → white circle (not yet delivered)
+        // Sent confirmed → white circle
         return '<span class="messageStatus sent" title="Sent">' +
             '<i class="fa-regular fa-circle"></i></span>';
     }
@@ -3362,9 +3370,29 @@ state.messagesListener = {
             }
 
             try { await vieworaMaybeMarkRequest(targetUid, state.chatId); } catch (reqErr) { showToast(reqErr.message || "Cannot message", "error"); state.isSendingMessage = false; return; }
-            await messageRef.set(
-                message
-            );
+            // Never persist pending/sending flags — they stuck the clock forever
+            var toWrite = Object.assign({}, message);
+            delete toWrite.pending;
+            delete toWrite.sending;
+            toWrite.status = "sent";
+            toWrite.deliveredAt = null;
+            toWrite.seenAt = null;
+            await messageRef.set(toWrite);
+            // Local confirm so clock upgrades immediately
+            try {
+                if (state.messages && state.messages.set) {
+                    var cur = state.messages.get(tempId) || {};
+                    state.messages.set(tempId, Object.assign({}, cur, toWrite, {
+                        id: tempId,
+                        pending: false,
+                        sending: false,
+                        status: "sent",
+                        _serverConfirmed: true,
+                        createdAt: cur.createdAt || Date.now()
+                    }));
+                    if (typeof renderMessages === "function") renderMessages();
+                }
+            } catch (_) {}
 
             // Update both users' inbox list
             await syncInboxAfterSend(message);
@@ -3474,69 +3502,39 @@ async function vieworaMaybeMarkRequest(peerUid, chatId) {
 }
 
     async function markIncomingAsSeen() {
-
-        if (!state.currentUser) {
-            return;
-        }
-
+        if (!state.currentUser || !state.chatId) return;
         const updates = {};
-
-        state.messages.forEach(
-            message => {
-
-                if (
-                    message.senderId ===
-                    state.currentUser.uid
-                ) {
-                    return;
-                }
-
-                if (
-                    message.seenAt
-                ) {
-                    return;
-                }
-
-                updates[
-                    `${message.id}/deliveredAt`
-                ] =
-                    message.deliveredAt ||
-                    serverTimestamp();
-
-                // Always mark seen while chat is open (WhatsApp-style read receipts)
-                updates[
-                    `${message.id}/seenAt`
-                ] =
-                    serverTimestamp();
-            }
-        );
-
-        if (!Object.keys(updates).length) {
-            return;
-        }
-
+        const now = Date.now();
         try {
-
+            state.messages.forEach(function (message) {
+                if (!message || !message.id) return;
+                if (message.senderId === state.currentUser.uid) return;
+                if (message.deletedForEveryone) return;
+                if (!message.deliveredAt) {
+                    updates[message.id + "/deliveredAt"] = now;
+                }
+                if (!message.seenAt) {
+                    updates[message.id + "/seenAt"] = now;
+                    updates[message.id + "/status"] = "seen";
+                    updates[message.id + "/seen"] = true;
+                }
+            });
+        } catch (e) { console.warn(e); }
+        if (!Object.keys(updates).length) return;
+        try {
             await messagesRef().update(updates);
-
-            // Also set status:seen for clients that only check status string
+        } catch (err) {
+            console.warn("markIncomingAsSeen", err && (err.code || err.message));
+            // per-key fallback
             try {
-                Object.keys(updates).forEach(function (k) {
-                    if (k.indexOf("seenAt") !== -1) {
-                        var mid = k.split("/")[0];
-                        messagesRef().child(mid).child("status").set("seen").catch(function(){});
+                for (var k in updates) {
+                    if (!Object.prototype.hasOwnProperty.call(updates, k)) continue;
+                    var parts = k.split("/");
+                    if (parts.length === 2) {
+                        messagesRef().child(parts[0]).child(parts[1]).set(updates[k]).catch(function () {});
                     }
-                });
+                }
             } catch (_) {}
-
-            await clearMyUnread();
-
-        } catch (error) {
-
-            console.warn(
-                "Read receipt error:",
-                error
-            );
         }
     }
 

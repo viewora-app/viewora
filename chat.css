@@ -4008,3 +4008,12 @@ i.whiteTick {
 .messageStatus.seen { color: #e8e8e8; }
 .messageStatus.seen i { color: #e8e8e8; }
 .messageStatus.sending { color: rgba(255,255,255,0.45); }
+
+/* VIEWORA_TICK_CSS */
+.messageStatus { display:inline-flex; align-items:center; margin-left:4px; font-size:11px; vertical-align:middle; }
+.messageStatus.sending { color: rgba(255,255,255,0.45); }
+.messageStatus.sent { color: rgba(255,255,255,0.55); }
+.messageStatus.delivered { color: rgba(255,255,255,0.7); }
+.messageStatus.seen { color: #f5f5f5; }
+.messageStatus.seen i { color: #f5f5f5; }
+.messageMeta .messageStatus i { font-size: 11px; }
