@@ -1216,7 +1216,7 @@ function setStatus(text) {
                     setStatus("Connected");
                     try { stopTonePattern(); } catch (_) {}
                     try { if (window.VieworaSounds) window.VieworaSounds.play("connect_group_call"); } catch (_) {}
-                    try { setupPipDragAndSwap(); setupCallMinimize(); } catch (_) {}
+                    try { setupPipDragAndSwap(); setupCallMinimize(); listenCallTypeUpgrade(); listenRemoteMediaFlags(); } catch (_) {}
                     try { if (window.__vieworaArmCallBackGuard) window.__vieworaArmCallBackGuard(); } catch (_) {}
                     try {
                         if (db && currentUser) {
@@ -1486,10 +1486,19 @@ function setStatus(text) {
             return;
         }
 
-        // First offer only once; later offers allowed if iceRestart renegotiation
-        var isRestart = !!(offer.iceRestart) || offerHandled;
-        if (offerHandled && !isRestart) {
-            return;
+        // First offer once; later offers for iceRestart OR video upgrade renegotiation
+        var isRestart = !!(offer.iceRestart);
+        var isRenego = !!(offer.renegotiate || offer.videoUpgrade);
+        if (offerHandled && !isRestart && !isRenego) {
+            // still allow if SDP is a new offer while we are stable (perfect negotiation)
+            try {
+                if (!(peerConnection && peerConnection.signalingState === "stable" && offer.type === "offer")) {
+                    return;
+                }
+                isRenego = true;
+            } catch (_) {
+                return;
+            }
         }
 
         offerHandled = true;
@@ -2057,7 +2066,7 @@ function setStatus(text) {
          */
 
         await getLocalMedia();
-        try { setupPipDragAndSwap(); setupCallMinimize(); } catch (_) {}
+        try { setupPipDragAndSwap(); setupCallMinimize(); listenCallTypeUpgrade(); listenRemoteMediaFlags(); } catch (_) {}
 
 
         /*
@@ -3527,51 +3536,113 @@ function setStatus(text) {
 
     function setupCallMinimize() {
         var bar = document.getElementById("callMiniBar");
-        var app = document.getElementById("callApp") || document.body;
+        if (!bar) {
+            bar = document.createElement("div");
+            bar.id = "callMiniBar";
+            bar.innerHTML = '<span class="miniDot"></span><span id="callMiniLabel">Viewora Call</span><span id="callMiniTimer">00:00</span>';
+            document.body.appendChild(bar);
+        }
         function showMini() {
             if (!bar) return;
             bar.classList.add("show");
+            bar.style.display = "flex";
+            document.body.classList.add("call-minimized");
             try {
-                document.getElementById("callStage") && (document.getElementById("callStage").style.opacity = "0");
-            } catch (_) {}
-            // keep media alive; hide chrome
-            try {
-                document.querySelector(".call-controls").style.visibility = "hidden";
-                document.querySelector(".call-topbar") && (document.querySelector(".call-topbar").style.visibility = "hidden");
+                var stage = document.getElementById("callStage");
+                if (stage) stage.style.opacity = "0";
+                var c = document.querySelector(".call-controls");
+                if (c) c.style.visibility = "hidden";
+                var top = document.querySelector(".call-topbar");
+                if (top) top.style.visibility = "hidden";
             } catch (_) {}
         }
         function hideMini() {
             if (!bar) return;
             bar.classList.remove("show");
+            document.body.classList.remove("call-minimized");
             try {
-                document.querySelector(".call-controls").style.visibility = "";
-                document.querySelector(".call-topbar") && (document.querySelector(".call-topbar").style.visibility = "");
+                var c = document.querySelector(".call-controls");
+                if (c) c.style.visibility = "";
+                var top = document.querySelector(".call-topbar");
+                if (top) top.style.visibility = "";
                 var stage = document.getElementById("callStage");
                 if (stage) stage.style.opacity = "";
             } catch (_) {}
         }
-        if (bar) {
-            bar.onclick = function () { hideMini(); };
-        }
+        window.__vieworaShowCallMini = showMini;
+        window.__vieworaHideCallMini = hideMini;
+
+        // Click restores full UI
+        bar.addEventListener("click", function (e) {
+            if (bar.dataset.dragging === "1") return;
+            hideMini();
+        });
+
+        // Drag anywhere
+        (function makeDraggable(el) {
+            if (!el || el.dataset.dragReady) return;
+            el.dataset.dragReady = "1";
+            var ox = 0, oy = 0, sx = 0, sy = 0, moved = false;
+            function pos(ev) {
+                if (ev.touches && ev.touches[0]) return { x: ev.touches[0].clientX, y: ev.touches[0].clientY };
+                return { x: ev.clientX, y: ev.clientY };
+            }
+            function onStart(ev) {
+                var p = pos(ev);
+                var r = el.getBoundingClientRect();
+                ox = p.x - r.left; oy = p.y - r.top;
+                sx = p.x; sy = p.y; moved = false;
+                el.dataset.dragging = "0";
+                el.style.transition = "none";
+                el.style.left = r.left + "px";
+                el.style.top = r.top + "px";
+                el.style.right = "auto";
+                el.style.bottom = "auto";
+                el.style.transform = "none";
+            }
+            function onMove(ev) {
+                var p = pos(ev);
+                if (Math.abs(p.x - sx) + Math.abs(p.y - sy) > 8) {
+                    moved = true; el.dataset.dragging = "1";
+                }
+                if (!moved) return;
+                ev.preventDefault();
+                var nx = p.x - ox, ny = p.y - oy;
+                nx = Math.max(4, Math.min(window.innerWidth - el.offsetWidth - 4, nx));
+                ny = Math.max(4, Math.min(window.innerHeight - el.offsetHeight - 4, ny));
+                el.style.left = nx + "px";
+                el.style.top = ny + "px";
+            }
+            function onEnd() {
+                setTimeout(function () { el.dataset.dragging = "0"; }, 50);
+                el.style.transition = "";
+            }
+            el.addEventListener("mousedown", onStart);
+            el.addEventListener("touchstart", onStart, { passive: true });
+            window.addEventListener("mousemove", onMove, { passive: false });
+            window.addEventListener("touchmove", onMove, { passive: false });
+            window.addEventListener("mouseup", onEnd);
+            window.addEventListener("touchend", onEnd);
+        })(bar);
+
         var minBtn = document.getElementById("minimizeCallBtn");
         if (minBtn) {
             minBtn.style.display = "";
-            minBtn.onclick = function () { showMini(); };
+            minBtn.onclick = function (e) { e.preventDefault(); showMini(); };
         }
-        // Sync mini timer
         setInterval(function () {
             try {
-                var t = document.getElementById("callTimer");
+                var t = document.getElementById("callTimer") || document.getElementById("callDuration");
                 var mt = document.getElementById("callMiniTimer");
-                if (t && mt) mt.textContent = t.textContent || "00:00";
+                if (t && mt) mt.textContent = (t.textContent || "00:00").trim();
             } catch (_) {}
         }, 1000);
-        // Page hide → show mini hint (call keeps running in tab)
         document.addEventListener("visibilitychange", function () {
             if (document.hidden && !callEnded && accepted) {
-                try {
-                    sessionStorage.setItem("viewora_call_bg", "1");
-                } catch (_) {}
+                try { sessionStorage.setItem("viewora_call_bg", "1"); } catch (_) {}
+                // Don't end — keep media; show mini when visible again
+            } else if (!document.hidden && sessionStorage.getItem("viewora_call_bg") === "1") {
+                try { sessionStorage.removeItem("viewora_call_bg"); } catch (_) {}
             }
         });
     }
@@ -3643,6 +3714,34 @@ function setStatus(text) {
        CAMERA
     ====================================================== */
 
+
+    async function renegotiateForVideoUpgrade() {
+        if (!peerConnection || !callRef) return;
+        try {
+            // Ensure we offer to receive video too
+            var offer = await peerConnection.createOffer({
+                offerToReceiveAudio: true,
+                offerToReceiveVideo: true
+            });
+            await peerConnection.setLocalDescription(offer);
+            answerHandled = false;
+            await callRef.child("offer").set({
+                type: offer.type,
+                sdp: offer.sdp,
+                renegotiate: true,
+                videoUpgrade: true,
+                at: Date.now()
+            });
+            try {
+                await callRef.update({ type: "video", video: true });
+            } catch (_) {}
+            console.log("[VieworaCall] video upgrade offer sent");
+        } catch (e) {
+            console.warn("renegotiateForVideoUpgrade", e);
+            throw e;
+        }
+    }
+
     async function toggleCamera() {
 
         if (!localStream) {
@@ -3696,7 +3795,21 @@ function setStatus(text) {
                 }
                 try {
                     callType = "video";
-                    if (callRef) callRef.update({ type: "video", video: true });
+                    if (callRef) callRef.update({ type: "video", video: true, videoUpgradeAt: Date.now() });
+                } catch (_) {}
+                // CRITICAL: renegotiate so peer receives video track
+                try {
+                    await renegotiateForVideoUpgrade();
+                } catch (re) {
+                    console.warn("renegotiate", re);
+                }
+                try {
+                    document.body.classList.add("video-call");
+                    var lv = document.getElementById("localVideo");
+                    var wrap = document.getElementById("localVideoWrap") || document.querySelector(".local-video-wrap");
+                    if (wrap) { wrap.classList.remove("hidden"); wrap.style.display = ""; }
+                    if (lv) { lv.srcObject = localStream; lv.muted = true; lv.play().catch(function(){}); }
+                    setStatus("Video call");
                 } catch (_) {}
                 toast("Video on");
             } catch (e) {
@@ -3761,6 +3874,50 @@ function setStatus(text) {
             }
         } catch (_) {}
     }
+
+
+    function listenCallTypeUpgrade() {
+        if (!callRef) return;
+        callRef.child("type").on("value", function (snap) {
+            var t = snap.val();
+            if (t === "video" && callType !== "video") {
+                callType = "video";
+                try {
+                    document.body.classList.add("video-call");
+                    setStatus("Video call");
+                    toast("Peer switched to video");
+                } catch (_) {}
+                // Try play remote if track already present
+                try {
+                    if (remoteStream) {
+                        var hasV = remoteStream.getVideoTracks().some(function (tr) { return tr.enabled !== false; });
+                        if (hasV && remoteVideo) {
+                            remoteVideo.srcObject = remoteStream;
+                            remoteVideo.style.display = "block";
+                            remoteVideo.style.opacity = "1";
+                            remoteVideo.play().catch(function () {});
+                        }
+                    }
+                } catch (_) {}
+            }
+        });
+        // Also listen offer for renegotiation on callee
+        callRef.child("offer").on("value", function (snap) {
+            var o = snap.val();
+            if (!o || !o.sdp) return;
+            if (o.videoUpgrade || o.renegotiate) {
+                try {
+                    callType = "video";
+                    document.body.classList.add("video-call");
+                } catch (_) {}
+                if (role !== "caller" && accepted) {
+                    offerHandled = false; // allow handleOffer again
+                    handleOffer(o).catch(function (e) { console.warn(e); });
+                }
+            }
+        });
+    }
+    /* VIEWORA_REMOTE_VIDEO_UPGRADE */
 
     function listenRemoteMediaFlags() {
         if (!callRef || !remoteUserId) return;
@@ -4522,7 +4679,7 @@ function setStatus(text) {
 
 
 
-/* VIEWORA_CALL_BACK_GUARD — back during active call asks before ending */
+/* VIEWORA_CALL_BACK_GUARD — back minimizes call, does NOT end */
 (function () {
   var armed = false;
   function isInCall() {
@@ -4532,27 +4689,42 @@ function setStatus(text) {
         !!(window.localStream);
     } catch (_) { return !!window.localStream; }
   }
+  function doMinimize() {
+    try {
+      var bar = document.getElementById("callMiniBar");
+      if (bar) {
+        bar.classList.add("show");
+        bar.style.display = "flex";
+      }
+      var controls = document.querySelector(".call-controls");
+      if (controls) controls.style.visibility = "hidden";
+      var top = document.querySelector(".call-topbar");
+      if (top) top.style.visibility = "hidden";
+      var stage = document.getElementById("callStage");
+      if (stage) stage.style.opacity = "0";
+      // keep page, just chrome hidden — media stays alive
+      document.body.classList.add("call-minimized");
+    } catch (e) { console.warn(e); }
+  }
   window.addEventListener("popstate", function (e) {
     if (!isInCall()) return;
-    // push state back so user stays on call page
     try { history.pushState({ vieworaCall: 1 }, "", location.href); } catch (_) {}
-    var ok = confirm("Leave call? Call will end.");
-    if (ok) {
-      try {
-        if (window.VieworaCall && typeof window.VieworaCall.endCall === "function") {
-          window.VieworaCall.endCall();
-        } else if (typeof endCall === "function") {
-          endCall();
-        }
-      } catch (_) {}
-    }
+    // Minimize, never auto-end
+    doMinimize();
   });
-  // arm history once call starts
   window.__vieworaArmCallBackGuard = function () {
     if (armed) return;
     armed = true;
     try { history.pushState({ vieworaCall: 1 }, "", location.href); } catch (_) {}
   };
+  // Hardware back / in-app back buttons
+  document.addEventListener("click", function (e) {
+    var t = e.target && e.target.closest && e.target.closest("#backBtn, .backBtn, [data-action=back], #minimizeCallBtn");
+    if (!t || !isInCall()) return;
+    e.preventDefault();
+    e.stopPropagation();
+    doMinimize();
+  }, true);
 })();
 
 /* VIEWORA_CALL_BLANK_FIX */
@@ -4585,4 +4757,32 @@ function setStatus(text) {
   setInterval(unblank, 1500);
   document.addEventListener("DOMContentLoaded", unblank);
   window.addEventListener("load", unblank);
+})();
+
+/* VIEWORA_NET_CUT — phone off / long network loss ends call */
+(function () {
+  var offlineSince = 0;
+  var failTimer = null;
+  function scheduleEnd() {
+    clearTimeout(failTimer);
+    failTimer = setTimeout(function () {
+      try {
+        if (sessionStorage.getItem("viewora_call_busy") !== "1") return;
+        if (navigator.onLine) return;
+        if (window.VieworaCall && window.VieworaCall.endCall) window.VieworaCall.endCall();
+      } catch (_) {}
+    }, 45000);
+  }
+  window.addEventListener("offline", function () {
+    offlineSince = Date.now();
+    try {
+      var st = document.getElementById("callStatus");
+      if (st) st.textContent = "Reconnecting...";
+    } catch (_) {}
+    scheduleEnd();
+  });
+  window.addEventListener("online", function () {
+    offlineSince = 0;
+    clearTimeout(failTimer);
+  });
 })();

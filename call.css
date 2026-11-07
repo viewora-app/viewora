@@ -2639,3 +2639,44 @@ body.call-page, #callApp, .call-stage {
   align-items: center;
   justify-content: center;
 }
+
+/* Draggable Viewora Call mini bar */
+#callMiniBar {
+  display: none;
+  position: fixed !important;
+  top: calc(10px + env(safe-area-inset-top)) !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  z-index: 2147483646 !important;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px !important;
+  border-radius: 999px !important;
+  background: #0b3d2e !important;
+  border: 1px solid rgba(34,197,94,.5) !important;
+  color: #ecfdf5 !important;
+  font: 600 13px/1.2 system-ui, -apple-system, sans-serif !important;
+  box-shadow: 0 10px 32px rgba(0,0,0,.45) !important;
+  cursor: grab !important;
+  touch-action: none !important;
+  user-select: none !important;
+  max-width: calc(100vw - 24px);
+}
+#callMiniBar.show, body.call-minimized #callMiniBar {
+  display: flex !important;
+}
+#callMiniBar:active { cursor: grabbing !important; }
+body.call-minimized .call-controls,
+body.call-minimized .call-topbar {
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+body.video-call #localVideoWrap,
+body.video-call .local-video-wrap {
+  display: block !important;
+  opacity: 1 !important;
+}
+body.video-call #remoteVideo {
+  display: block !important;
+  opacity: 1 !important;
+}
