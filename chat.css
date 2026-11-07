@@ -3947,3 +3947,57 @@ i.whiteTick {
 .messageStatus.seen i { filter: drop-shadow(0 0 3px rgba(83,189,235,.5)); }
 .messageStatus.sending { color: rgba(255,255,255,.4); }
 .messageStatus.failed { color: #f87171; }
+
+
+/* ===== Chat reliability layout (slow phones / landscape) ===== */
+#app, .chatApp, .app-shell {
+  display: flex !important;
+  flex-direction: column !important;
+  height: 100% !important;
+  min-height: 100dvh !important;
+  max-height: 100dvh !important;
+  overflow: hidden !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+#loadingOverlay.hidden,
+#loadingOverlay[style*="none"] {
+  display: none !important;
+  pointer-events: none !important;
+}
+.messagesArea, #messagesScroll, .messagesScroll, .chatBody {
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch;
+}
+.composer, footer.composer {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  position: sticky !important;
+  bottom: 0 !important;
+  z-index: 200 !important;
+  flex: 0 0 auto !important;
+  width: 100% !important;
+  background: rgba(9,10,15,.96) !important;
+  padding-bottom: max(10px, env(safe-area-inset-bottom)) !important;
+}
+.messageInputShell, #messageInput {
+  display: block !important;
+  width: 100% !important;
+  min-height: 40px;
+}
+.messageStatus.seen {
+  color: #53bdeb !important;
+}
+.messageStatus.seen i {
+  color: #53bdeb !important;
+  filter: drop-shadow(0 0 3px rgba(83,189,235,.55));
+}
+.messageStatus.delivered {
+  color: rgba(255,255,255,.55) !important;
+}
+.messageStatus.sent {
+  color: rgba(255,255,255,.4) !important;
+}

@@ -4532,3 +4532,35 @@ function setStatus(text) {
     try { history.pushState({ vieworaCall: 1 }, "", location.href); } catch (_) {}
   };
 })();
+
+/* VIEWORA_CALL_BLANK_FIX */
+(function () {
+  function unblank() {
+    try {
+      var ov = document.getElementById("connectingOverlay");
+      if (ov) { ov.classList.add("hidden"); ov.style.display = "none"; }
+      var app = document.getElementById("callApp");
+      if (app) {
+        app.classList.remove("hidden");
+        app.style.display = "";
+        app.style.opacity = "1";
+        app.style.visibility = "visible";
+      }
+      var rv = document.getElementById("remoteVideo");
+      if (rv && rv.srcObject) {
+        rv.style.display = "block";
+        rv.style.opacity = "1";
+        rv.play().catch(function () {});
+      }
+      var lv = document.getElementById("localVideo");
+      if (lv && lv.srcObject) {
+        var w = document.getElementById("localVideoWrap");
+        if (w) w.classList.remove("hidden");
+        lv.play().catch(function () {});
+      }
+    } catch (e) {}
+  }
+  setInterval(unblank, 1500);
+  document.addEventListener("DOMContentLoaded", unblank);
+  window.addEventListener("load", unblank);
+})();

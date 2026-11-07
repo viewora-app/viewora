@@ -824,6 +824,8 @@
 
 
     function hideLoading() {
+        /* VIEWORA_CHAT_BOOT_HIDE */
+
         if (loadingOverlay) {
             loadingOverlay.classList.add("hidden");
             loadingOverlay.style.display = "none";
@@ -1467,7 +1469,23 @@
             callback
         );
 
-        state.messagesListener = {
+        
+    // Never leave loading/connecting stuck on slow phones
+    try {
+        setTimeout(function () { try { hideLoading(); } catch (_) {} }, 400);
+        setTimeout(function () { try { hideLoading(); } catch (_) {} }, 2000);
+        setTimeout(function () {
+            try {
+                hideLoading();
+                var st = document.getElementById("peerStatus") || document.querySelector(".peerStatus, .headerStatus");
+                if (st && /connect/i.test(st.textContent || "")) {
+                    st.textContent = "Tap to refresh";
+                }
+            } catch (_) {}
+        }, 5000);
+    } catch (_) {}
+
+state.messagesListener = {
             ref,
             callback
         };
@@ -2217,25 +2235,28 @@
     ====================================================== */
 
     function renderStatus(message) {
-        // WhatsApp-style double ticks; blue when seen. "sending" when offline/pending.
-        if (message.pending || message.sending || message.status === "sending") {
+        var st = String(message.status || "").toLowerCase();
+        var seen = !!(message.seenAt || message.seen || st === "seen" || st === "read");
+        var delivered = !!(message.deliveredAt || message.delivered || st === "delivered");
+        if (message.pending || message.sending || st === "sending") {
             return '<span class="messageStatus sending" title="Sending">' +
-                '<i class="fa-solid fa-clock" style="font-size:10px"></i></span>';
+                '<i class="fa-solid fa-check"></i></span>';
         }
-        if (message.failed || message.status === "failed") {
+        if (message.failed || st === "failed") {
             return '<span class="messageStatus failed" title="Failed">' +
-                '<i class="fa-solid fa-exclamation" style="font-size:10px"></i></span>';
+                '<i class="fa-solid fa-exclamation"></i></span>';
         }
-        if (message.seenAt) {
+        if (seen) {
             return '<span class="messageStatus seen" title="Seen">' +
                 '<i class="fa-solid fa-check-double"></i></span>';
         }
-        if (message.deliveredAt) {
+        if (delivered) {
             return '<span class="messageStatus delivered" title="Delivered">' +
                 '<i class="fa-solid fa-check-double"></i></span>';
         }
+        // Sent = single check (not circle)
         return '<span class="messageStatus sent" title="Sent">' +
-            '<i class="fa-solid fa-check-double"></i></span>';
+            '<i class="fa-solid fa-check"></i></span>';
     }
 
 
@@ -3417,14 +3438,11 @@
                     message.deliveredAt ||
                     serverTimestamp();
 
-                if (
-                    state.isNearBottom
-                ) {
-                    updates[
-                        `${message.id}/seenAt`
-                    ] =
-                        serverTimestamp();
-                }
+                // Always mark seen while chat is open (WhatsApp-style read receipts)
+                updates[
+                    `${message.id}/seenAt`
+                ] =
+                    serverTimestamp();
             }
         );
 
@@ -3434,12 +3452,18 @@
 
         try {
 
-            await messagesRef()
-                .update(
-                    updates
-                );
+            await messagesRef().update(updates);
 
-            // Clear inbox unread when messages are seen / opened
+            // Also set status:seen for clients that only check status string
+            try {
+                Object.keys(updates).forEach(function (k) {
+                    if (k.indexOf("seenAt") !== -1) {
+                        var mid = k.split("/")[0];
+                        messagesRef().child(mid).child("status").set("seen").catch(function(){});
+                    }
+                });
+            } catch (_) {}
+
             await clearMyUnread();
 
         } catch (error) {
@@ -6953,4 +6977,43 @@
   }
 
   window.VieworaChatShare = { open: openPicker, send: sendSharedContent };
+})();
+
+/* VIEWORA_COMPOSER_FIX */
+(function () {
+  try {
+    function pinComposer() {
+      var c = document.querySelector(".composer") || document.getElementById("composer");
+      var app = document.getElementById("app");
+      var ov = document.getElementById("loadingOverlay");
+      if (ov) { ov.classList.add("hidden"); ov.style.display = "none"; }
+      if (app) {
+        app.classList.remove("hidden");
+        app.style.display = "flex";
+        app.style.flexDirection = "column";
+        app.style.height = "100%";
+        app.style.minHeight = "100dvh";
+        app.style.opacity = "1";
+        app.style.visibility = "visible";
+      }
+      if (c) {
+        c.style.display = "block";
+        c.style.visibility = "visible";
+        c.style.opacity = "1";
+        c.style.position = "sticky";
+        c.style.bottom = "0";
+        c.style.zIndex = "200";
+      }
+      var inp = document.getElementById("messageInput");
+      if (inp) {
+        inp.style.display = "block";
+        inp.removeAttribute("disabled");
+      }
+    }
+    pinComposer();
+    document.addEventListener("DOMContentLoaded", pinComposer);
+    window.addEventListener("load", pinComposer);
+    setTimeout(pinComposer, 300);
+    setTimeout(pinComposer, 1200);
+  } catch (e) {}
 })();
