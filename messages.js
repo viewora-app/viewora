@@ -954,7 +954,100 @@ function messagesUpdateUnread() {
    FILTER
 ========================================================= */
 
+
+/* ========== SELF CHAT (You) — WhatsApp/IG style ========== */
+function vieworaEnsureSelfChat() {
+  try {
+    var u = (typeof auth !== "undefined" && auth.currentUser) || (window.firebase && firebase.auth && firebase.auth().currentUser);
+    if (!u) return;
+    var uid = u.uid;
+    var selfId = "self_" + uid;
+    var exists = messagesChats.some(function (c) {
+      return c && (c.isSelf || c.userId === uid || c.id === selfId || c.chatId === selfId);
+    });
+    if (exists) return;
+    var name = u.displayName || "You";
+    try {
+      var n = localStorage.getItem("viewora_my_name");
+      if (n) name = n;
+    } catch (_) {}
+    var photo = "";
+    try {
+      photo = localStorage.getItem("viewora_my_avatar_" + uid) || localStorage.getItem("viewora_my_avatar") || u.photoURL || "";
+    } catch (_) {}
+    messagesChats.unshift({
+      id: selfId,
+      chatId: selfId,
+      userId: uid,
+      isSelf: true,
+      name: name + " (You)",
+      username: "you",
+      photo: photo,
+      lastMessage: "Message yourself",
+      lastMessageType: "note",
+      updatedAt: Date.now() + 1e12, // pin top-ish
+      pinned: true,
+      unread: 0,
+      request: false,
+      accepted: true
+    });
+  } catch (e) {
+    console.warn("self chat", e);
+  }
+}
+
+
+async function acceptMessageRequest(peerUid) {
+  try {
+    var me = firebase.auth().currentUser;
+    if (!me || !peerUid || !db) return;
+    var chatId = [me.uid, peerUid].sort().join("_");
+    var patch = { request: false, accepted: true, acceptedAt: Date.now() };
+    await db.ref("userChats/" + me.uid + "/" + chatId).update(patch);
+    await db.ref("userChats/" + peerUid + "/" + chatId).update({
+      request: false,
+      accepted: true,
+      acceptedAt: Date.now()
+    });
+    try {
+      await db.ref("chatMembers/" + chatId + "/" + me.uid).set(true);
+      await db.ref("chatMembers/" + chatId + "/" + peerUid).set(true);
+    } catch (_) {}
+    messagesToast("Request accepted", "success");
+  } catch (e) {
+    console.warn(e);
+    messagesToast("Could not accept", "error");
+  }
+}
+async function declineMessageRequest(peerUid) {
+  try {
+    var me = firebase.auth().currentUser;
+    if (!me || !peerUid || !db) return;
+    var chatId = [me.uid, peerUid].sort().join("_");
+    await db.ref("userChats/" + me.uid + "/" + chatId).remove();
+    try {
+      await db.ref("messageRequests/" + me.uid + "/" + peerUid).remove();
+    } catch (_) {}
+    // 24h cooldown for peer
+    try {
+      await db.ref("messageRequestCooldown/" + me.uid + "/" + peerUid).set({
+        declinedAt: Date.now(),
+        until: Date.now() + 24 * 60 * 60 * 1000
+      });
+    } catch (_) {}
+    messagesChats = messagesChats.filter(function (c) {
+      return !(c && (c.userId === peerUid || c.id === chatId));
+    });
+    try { messagesRenderChats(); } catch (_) {}
+    messagesToast("Request declined", "success");
+  } catch (e) {
+    messagesToast("Could not decline", "error");
+  }
+}
+
 function messagesGetFilteredChats() {
+    try { vieworaEnsureSelfChat(); } catch (_) {}
+
 
     let result =
         messagesChats.slice();
@@ -1355,6 +1448,9 @@ function messagesCreateCard(chat) {
     if (isReq) card.classList.add("requestCard");
     const requestHTML = isReq
         ? `<div class="requestActions">
+                    <button type="button" class="reqAcceptBtn" data-accept-request="${chat.userId || chat.id}">Accept</button>
+                    <button type="button" class="reqDeclineBtn" data-decline-request="${chat.userId || chat.id}">Decline</button>
+
                 <button type="button" class="reqBtn accept" data-req="accept">Accept</button>
                 <button type="button" class="reqBtn decline" data-req="decline">Decline</button>
                 <button type="button" class="reqBtn block" data-req="block">Block</button>
@@ -1553,8 +1649,7 @@ function messagesCreateCard(chat) {
                 try { messagesUpdateUnread(); } catch (_) {}
             } catch (_) {}
             location.href =
-                "chat.html?uid=" +
-                encodeURIComponent(peerUid);
+                (chat.isSelf ? "chat.html?uid=" + encodeURIComponent(peerUid) + "&self=1" : "chat.html?uid=" + encodeURIComponent(peerUid));
 
         }
     );
@@ -4213,3 +4308,21 @@ console.log(
     }
   };
 })();
+
+/* VIEWORA_REQ_CLICK */
+document.addEventListener("click", function (e) {
+  var t = e.target;
+  if (!t) return;
+  var acc = t.closest("[data-accept-request]");
+  var dec = t.closest("[data-decline-request]");
+  if (acc) {
+    e.preventDefault();
+    e.stopPropagation();
+    acceptMessageRequest(acc.getAttribute("data-accept-request"));
+  }
+  if (dec) {
+    e.preventDefault();
+    e.stopPropagation();
+    declineMessageRequest(dec.getAttribute("data-decline-request"));
+  }
+}, true);

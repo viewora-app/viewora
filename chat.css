@@ -4001,3 +4001,10 @@ i.whiteTick {
 .messageStatus.sent {
   color: rgba(255,255,255,.4) !important;
 }
+
+.messageStatus { font-size: 12px; margin-left: 4px; opacity: 0.9; }
+.messageStatus.sent { color: rgba(255,255,255,0.55); }
+.messageStatus.delivered { color: rgba(255,255,255,0.7); }
+.messageStatus.seen { color: #e8e8e8; }
+.messageStatus.seen i { color: #e8e8e8; }
+.messageStatus.sending { color: rgba(255,255,255,0.45); }

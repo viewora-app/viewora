@@ -1,4 +1,17 @@
 
+/* VIEWORA_IS_SELF_CHAT */
+(function () {
+  try {
+    var q = new URLSearchParams(location.search || "");
+    window.__vieworaSelfChat = q.get("self") === "1";
+    var authUser = null;
+    try { authUser = firebase.auth().currentUser; } catch (_) {}
+    // if uid === self
+    var peer = q.get("uid") || "";
+    if (authUser && peer && peer === authUser.uid) window.__vieworaSelfChat = true;
+  } catch (_) {}
+})();
+
 /* VIEWORA_CHAT_PAGE_GUARD — do not run chat room logic on Home/Profile/etc */
 (function vieworaChatPageGuard() {
   try {
@@ -1585,6 +1598,7 @@ state.messagesListener = {
         ) return "profile_share";
 
         if (t === "call" || t === "voice_call" || t === "video_call") return "call";
+        if (t === "mention" || t === "story_mention" || t === "collab" || t === "collaboration") return "mention";
 
         return "text";
     }
@@ -1744,6 +1758,11 @@ state.messagesListener = {
                 </div>
             `;
 
+        } else if (kind === "mention") {
+            var mtxt = message.text || "Mentioned you";
+            content = `<div class="systemMentionBubble" style="padding:10px 14px;border-radius:14px;background:rgba(124,92,255,.15);border:1px solid rgba(124,92,255,.25);color:#ddd">
+                <i class="fa-solid fa-at" style="color:#a78bfa;margin-right:6px"></i>${escapeHTML(mtxt)}
+            </div>`;
         } else if (kind === "call") {
             var isMissed = !!message.missed;
             var isVideo = (message.callType === "video" || message.type === "video_call");
@@ -2238,25 +2257,30 @@ state.messagesListener = {
         var st = String(message.status || "").toLowerCase();
         var seen = !!(message.seenAt || message.seen || st === "seen" || st === "read");
         var delivered = !!(message.deliveredAt || message.delivered || st === "delivered");
-        if (message.pending || message.sending || st === "sending") {
-            return '<span class="messageStatus sending" title="Sending">' +
-                '<i class="fa-solid fa-check"></i></span>';
+        // Offline / still sending → clock circle
+        if (message.pending || message.sending || st === "sending" || !navigator.onLine) {
+            if (message.pending || message.sending || st === "sending") {
+                return '<span class="messageStatus sending" title="Waiting for network">' +
+                    '<i class="fa-regular fa-clock"></i></span>';
+            }
         }
         if (message.failed || st === "failed") {
             return '<span class="messageStatus failed" title="Failed">' +
                 '<i class="fa-solid fa-exclamation"></i></span>';
         }
+        // Seen → white/blue double tick
         if (seen) {
             return '<span class="messageStatus seen" title="Seen">' +
                 '<i class="fa-solid fa-check-double"></i></span>';
         }
+        // Delivered → grey double tick
         if (delivered) {
             return '<span class="messageStatus delivered" title="Delivered">' +
                 '<i class="fa-solid fa-check-double"></i></span>';
         }
-        // Sent = single check (not circle)
+        // Sent → white circle (not yet delivered)
         return '<span class="messageStatus sent" title="Sent">' +
-            '<i class="fa-solid fa-check"></i></span>';
+            '<i class="fa-regular fa-circle"></i></span>';
     }
 
 
@@ -3337,6 +3361,7 @@ state.messagesListener = {
                 // don't hard-fail
             }
 
+            try { await vieworaMaybeMarkRequest(targetUid, state.chatId); } catch (reqErr) { showToast(reqErr.message || "Cannot message", "error"); state.isSendingMessage = false; return; }
             await messageRef.set(
                 message
             );
@@ -3407,6 +3432,46 @@ state.messagesListener = {
     /* ======================================================
        MARK DELIVERED / SEEN
     ====================================================== */
+
+    
+/* mark request for stranger */
+async function vieworaMaybeMarkRequest(peerUid, chatId) {
+  try {
+    if (!db || !state.currentUser || !peerUid) return;
+    if (window.__vieworaSelfChat || peerUid === state.currentUser.uid) return;
+    // already accepted?
+    var mine = await db.ref("userChats/" + state.currentUser.uid + "/" + chatId).once("value");
+    var mv = mine.val() || {};
+    if (mv.accepted === true || mv.request === false) return;
+    // following?
+    var fol = await db.ref("following/" + state.currentUser.uid + "/" + peerUid).once("value");
+    var fol2 = await db.ref("followers/" + state.currentUser.uid + "/" + peerUid).once("value");
+    if (fol.exists() || fol2.exists()) {
+      await db.ref("userChats/" + state.currentUser.uid + "/" + chatId).update({ request: false, accepted: true });
+      await db.ref("userChats/" + peerUid + "/" + chatId).update({ request: false, accepted: true });
+      return;
+    }
+    // cooldown?
+    var cd = await db.ref("messageRequestCooldown/" + peerUid + "/" + state.currentUser.uid).once("value");
+    if (cd.exists() && cd.val() && cd.val().until && Date.now() < cd.val().until) {
+      throw new Error("Request declined. Try again after 24 hours.");
+    }
+    // peer sees as request
+    await db.ref("userChats/" + peerUid + "/" + chatId).update({
+      request: true,
+      accepted: false,
+      userId: state.currentUser.uid
+    });
+    await db.ref("userChats/" + state.currentUser.uid + "/" + chatId).update({
+      request: false,
+      accepted: true,
+      outboundRequest: true
+    });
+  } catch (e) {
+    console.warn("request mark", e);
+    if (e && e.message && e.message.indexOf("24 hours") !== -1) throw e;
+  }
+}
 
     async function markIncomingAsSeen() {
 
@@ -7016,4 +7081,27 @@ state.messagesListener = {
     setTimeout(pinComposer, 300);
     setTimeout(pinComposer, 1200);
   } catch (e) {}
+})();
+
+/* VIEWORA_HIDE_SELF_CALL */
+(function hideSelfCalls() {
+  function run() {
+    if (!window.__vieworaSelfChat) return;
+    ["voiceCallBtn","videoCallBtn","callBtn","headerCallBtn","headerVideoBtn","audioCallBtn"].forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el) { el.style.display = "none"; el.setAttribute("disabled", "true"); }
+    });
+    document.querySelectorAll('[data-action="voice-call"],[data-action="video-call"],.headerCall,.callHeaderBtn').forEach(function (el) {
+      el.style.display = "none";
+    });
+    // title
+    var name = document.getElementById("peerName") || document.querySelector(".peerName, .chatPeerName");
+    if (name && name.textContent && name.textContent.indexOf("(You)") === -1) {
+      name.textContent = (name.textContent || "You").replace(/\s*\(You\)\s*$/, "") + " (You)";
+    }
+  }
+  run();
+  document.addEventListener("DOMContentLoaded", run);
+  setTimeout(run, 500);
+  setTimeout(run, 1500);
 })();

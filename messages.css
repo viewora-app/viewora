@@ -2272,3 +2272,11 @@ a.newMessageFab {
 .messageStatus.seen i { filter: drop-shadow(0 0 3px rgba(83,189,235,.5)); }
 .messageStatus.sending { color: rgba(255,255,255,.4); }
 .messageStatus.failed { color: #f87171; }
+
+.requestActions { display:flex; gap:8px; margin-top:8px; }
+.reqAcceptBtn, .reqDeclineBtn {
+  flex:1; padding:8px 12px; border-radius:12px; border:none; font-weight:700; font-size:13px; cursor:pointer;
+}
+.reqAcceptBtn { background:linear-gradient(135deg,#7c5cff,#a24fff); color:#fff; }
+.reqDeclineBtn { background:rgba(255,255,255,.08); color:#ddd; }
+.chatCard.selfChat .chatName::after { content:""; }
