@@ -1566,6 +1566,8 @@
             t === "profile_share"
         ) return "profile_share";
 
+        if (t === "call" || t === "voice_call" || t === "video_call") return "call";
+
         return "text";
     }
 
@@ -1722,6 +1724,34 @@
                         This message was deleted
                     </span>
                 </div>
+            `;
+
+        } else if (kind === "call") {
+            var isMissed = !!message.missed;
+            var isVideo = (message.callType === "video" || message.type === "video_call");
+            var icon = isMissed
+                ? "fa-phone-slash"
+                : (isVideo ? "fa-video" : "fa-phone");
+            var label = message.text || (
+                isMissed
+                    ? ("Missed " + (isVideo ? "video" : "voice") + " call")
+                    : ((isVideo ? "Video" : "Voice") + " call")
+            );
+            var peer = message.senderId === (state.currentUser && state.currentUser.uid)
+                ? (targetUid || "")
+                : (message.senderId || "");
+            content = `
+                <button type="button" class="callHistoryBubble ${isMissed ? "missed" : ""}"
+                    data-action="call-back" data-peer="${escapeHTML(peer)}"
+                    style="display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:14px;border:none;background:rgba(255,255,255,0.08);color:#fff;width:100%;text-align:left;cursor:pointer">
+                    <span style="width:40px;height:40px;border-radius:50%;display:grid;place-items:center;background:${isMissed ? "rgba(255,59,95,.2)" : "rgba(167,139,250,.25)"}">
+                        <i class="fa-solid ${icon}" style="color:${isMissed ? "#ff3b5c" : "#c4b5fd"}"></i>
+                    </span>
+                    <span style="flex:1">
+                        <strong style="display:block;font-size:14px">${escapeHTML(label)}</strong>
+                        <small style="opacity:.65">${isMissed ? "Tap to call back" : ""}</small>
+                    </span>
+                </button>
             `;
 
         } else if (kind === "image") {
@@ -2916,6 +2946,10 @@
         if (type === "short" || type === "short_share" || type === "shorts_share") return "Shared a short";
         if (type === "video_share" || type === "long_video") return "Shared a video";
         if (type === "story" || type === "story_share") return "Shared a story";
+        if (type === "call" || type === "voice_call" || type === "video_call") {
+            if (message.missed) return "Missed call";
+            return message.callType === "video" ? "Video call" : "Voice call";
+        }
         if (type === "profile" || type === "profile_share") return "Shared a profile";
 
         const text = String(message.text || message.caption || "").trim();

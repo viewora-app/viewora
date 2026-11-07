@@ -1,290 +1,268 @@
 /**
- * VIEWORA SOUNDS — WhatsApp / Instagram style
- * --------------------------------------------
- * assets/message-notify.mp3  — msg/like/alert when that chat is NOT open
- * assets/chat-message.mp3    — soft tone when that chat IS open (~1s)
- * assets/call-calling.mp3    — you call, peer offline / unreachable
- * assets/call-ringing.mp3    — you call, peer online (their side ringing)
- * assets/call-incoming.mp3   — someone is calling you
+ * Viewora Sound Manager
+ * All call / chat / PTT / group events → real files in assets/sounds/
  *
- * Load on every main page AFTER firebase.js, BEFORE listeners:
- *   <script src="viewora-sounds.js"></script>
+ * Usage:
+ *   VieworaSounds.play("send_message");
+ *   VieworaSounds.loop("incoming");
+ *   VieworaSounds.stop("incoming");
+ *   VieworaSounds.stopAll();
  */
-(function (g) {
+(function (global) {
   "use strict";
-  if (g.__VIEWORA_SOUNDS_NAMED__) return;
-  g.__VIEWORA_SOUNDS_NAMED__ = true;
 
-  var FILES = {
-    notify: "assets/message-notify.mp3",
-    chat: "assets/chat-message.mp3",
-    calling: "assets/call-calling.mp3",
-    ringing: "assets/call-ringing.mp3",
-    incoming: "assets/call-incoming.mp3"
+  var BASE = "assets/sounds/";
+
+  // Map logical event → file (relative to site root)
+  var MAP = {
+    // Calls
+    connect_group_call: "connect-group.wav",
+    end_call: "end-call.wav",
+    end_call_m4: "end-call-m4.wav",
+    incoming: "incoming.wav",
+    incoming_group: "incoming-group.wav",
+    incoming_short: "incoming-short.wav",
+    join_group_call: "join-group.wav",
+    join_group_call_m4: "join-group-m4.wav",
+    leave_group_call: "leave-group.wav",
+    leave_group_call_m4: "leave-group-m4.wav",
+    group_ring_short: "group-ring-short.wav",
+    calling: "calling.mp3",
+    outgoing_call: "outgoing-call.mp3",
+    ringing: "ringing.wav",
+    on_hold: "on-hold.wav",
+    reconnect: "reconnect.wav",
+
+    // Chat / message
+    send_message: "send-message.wav",
+    message: "message.wav",
+    voice_note_stop: "voice-note-stop.wav",
+
+    // Push-to-talk / voice note (WhatsApp-style cues)
+    ptt_end_fast: "ptt-end.wav",
+    ptt_middle_fast: "ptt-middle.wav",
+    ptt_start: "ptt-start.wav",
+    ptt_stop: "voice-note-stop.wav",
+    ptt_sent: "ptt-sent.wav",
+    ptt_cancel: "ptt-cancel.wav",
+    ptt_quick_cancel: "ptt-cancel.wav",
+    ptt_slide_cancel: "ptt-slide-cancel.wav",
+    ptt_start_recording: "ptt-start.wav",
+    ptt_stop_recording: "ptt-end.wav"
   };
 
-  /* Legacy aliases still used by older scripts */
-  var LEGACY = {
-    messageTone: "assets/message-tone.mp3",
-    chatBeep: "assets/chat-beep.mp3",
-    callRingtone: "assets/call-ringtone.mp3"
+  // Aliases people might type
+  var ALIAS = {
+    "1": "connect_group_call",
+    "2": "end_call",
+    "3": "end_call_m4",
+    "4": "incoming",
+    "5": "incoming_group",
+    "6": "incoming_short",
+    "7": "join_group_call",
+    "8": "join_group_call_m4",
+    "9": "leave_group_call",
+    "10": "leave_group_call_m4",
+    "11": "group_ring_short",
+    "12": "ptt_end_fast",
+    "13": "ptt_middle_fast",
+    "14": "send_message",
+    "15": "voice_note_stop",
+    "16": "ptt_quick_cancel",
+    "17": "ptt_sent",
+    "18": "ptt_slide_cancel",
+    "19": "ptt_start_recording",
+    "20": "ptt_stop_recording",
+    end: "end_call",
+    hangup: "end_call",
+    ring: "ringing",
+    ringtone: "incoming",
+    chat_beep: "send_message",
+    notify: "message"
   };
 
-  var KEY = {
-    mute: "viewora_sound_muted",
-    msg: "viewora_sound_message_on",
-    chat: "viewora_sound_chat_on",
-    call: "viewora_sound_call_on",
-    vol: "viewora_sound_volume"
-  };
+  var pool = {}; // key → HTMLAudioElement
+  var looping = {};
 
-  var cache = {};
-  var loopAudio = null;
-  var loopTimer = null;
-  var lastNotify = 0;
-  var lastChat = 0;
-  var unlocked = false;
+  function resolve(name) {
+    if (!name) return null;
+    var k = String(name).trim();
+    if (ALIAS[k]) k = ALIAS[k];
+    if (ALIAS[k.toLowerCase()]) k = ALIAS[k.toLowerCase()];
+    // normalize spaces / dashes
+    var n = k.toLowerCase().replace(/[\s-]+/g, "_");
+    if (MAP[n]) return n;
+    if (MAP[k]) return k;
+    return n;
+  }
 
-  function ls(k, d) {
+  function urlFor(key) {
+    var file = MAP[key];
+    if (!file) return null;
+    return BASE + file;
+  }
+
+  function getAudio(key) {
+    if (pool[key]) return pool[key];
+    var url = urlFor(key);
+    if (!url) return null;
     try {
-      var v = localStorage.getItem(k);
-      return v == null || v === "" ? d : v;
-    } catch (_) {
-      return d;
+      var a = new Audio(url);
+      a.preload = "auto";
+      a.crossOrigin = "anonymous";
+      pool[key] = a;
+      return a;
+    } catch (e) {
+      console.warn("[VieworaSounds] create", key, e);
+      return null;
     }
   }
-  function lsSet(k, v) {
+
+  function play(name, opts) {
+    opts = opts || {};
+    var key = resolve(name);
+    if (!key || !MAP[key]) {
+      console.warn("[VieworaSounds] unknown:", name);
+      return null;
+    }
     try {
-      localStorage.setItem(k, v);
+      var a = getAudio(key);
+      if (!a) return null;
+      // clone for overlapping one-shots
+      var node = a.cloneNode(true);
+      node.volume = opts.volume != null ? opts.volume : 0.85;
+      if (opts.loop) node.loop = true;
+      var p = node.play();
+      if (p && typeof p.catch === "function") {
+        p.catch(function (err) {
+          // autoplay policy — silent fail, retry on next gesture
+          console.warn("[VieworaSounds] play blocked", key, err && err.name);
+        });
+      }
+      if (opts.loop) looping[key] = node;
+      return node;
+    } catch (e) {
+      console.warn("[VieworaSounds] play", key, e);
+      return null;
+    }
+  }
+
+  function loop(name, opts) {
+    opts = opts || {};
+    opts.loop = true;
+    stop(name);
+    return play(name, opts);
+  }
+
+  function stop(name) {
+    var key = resolve(name);
+    try {
+      if (key && looping[key]) {
+        looping[key].pause();
+        try {
+          looping[key].currentTime = 0;
+        } catch (_) {}
+        looping[key] = null;
+      }
+      // also stop pooled original if looping on it
+      if (key && pool[key]) {
+        pool[key].pause();
+        try {
+          pool[key].currentTime = 0;
+        } catch (_) {}
+      }
     } catch (_) {}
   }
-  function flagOn(k) {
-    var v = ls(k, "1");
-    return v !== "0" && v !== "false";
-  }
-  function muted() {
-    var v = ls(KEY.mute, "0");
-    return v === "1" || v === "true";
-  }
-  function vol() {
-    var n = parseFloat(ls(KEY.vol, "0.9"));
-    return isNaN(n) ? 0.9 : Math.max(0, Math.min(1, n));
-  }
 
-  function getAudio(src) {
-    if (!cache[src]) {
+  function stopAll() {
+    Object.keys(looping).forEach(function (k) {
       try {
-        var a = new Audio(src);
-        a.preload = "auto";
-        cache[src] = a;
-      } catch (_) {
-        return null;
-      }
-    }
-    return cache[src];
-  }
-
-  function unlock() {
-    if (unlocked) return;
-    unlocked = true;
-    Object.keys(FILES).forEach(function (k) {
+        if (looping[k]) {
+          looping[k].pause();
+          looping[k] = null;
+        }
+      } catch (_) {}
+    });
+    Object.keys(pool).forEach(function (k) {
       try {
-        var a = getAudio(FILES[k]);
-        if (!a) return;
-        var p = a.play();
-        if (p && p.then)
-          p.then(function () {
-            a.pause();
-            a.currentTime = 0;
-          }).catch(function () {});
+        pool[k].pause();
+        pool[k].currentTime = 0;
       } catch (_) {}
     });
   }
-  document.addEventListener("touchstart", unlock, true);
-  document.addEventListener("click", unlock, true);
 
-  function playOnce(src, kind) {
-    if (muted()) return false;
-    if (kind === "notify" && !flagOn(KEY.msg)) return false;
-    if (kind === "chat" && !flagOn(KEY.chat)) return false;
+  /** Preload important ones so first ring is instant */
+  function preload(list) {
+    (list || Object.keys(MAP)).forEach(function (k) {
+      try {
+        getAudio(k);
+      } catch (_) {}
+    });
+  }
 
-    var now = Date.now();
-    if (kind === "notify") {
-      if (now - lastNotify < 500) return false;
-      lastNotify = now;
-    }
-    if (kind === "chat") {
-      if (now - lastChat < 280) return false;
-      lastChat = now;
-    }
-
+  // Unlock audio on first user gesture (mobile)
+  function unlock() {
     try {
-      var a = getAudio(src);
-      if (!a) return false;
-      a.loop = false;
-      a.pause();
-      a.currentTime = 0;
-      a.volume = vol();
+      var a = getAudio("ptt_start") || getAudio("send_message");
+      if (!a) return;
       var p = a.play();
-      if (p && p.catch) p.catch(function () {});
-      return true;
-    } catch (_) {
-      return false;
-    }
-  }
-
-  function stopLoop() {
-    try {
-      if (loopTimer) {
-        clearTimeout(loopTimer);
-        clearInterval(loopTimer);
-        loopTimer = null;
+      if (p && p.then) {
+        p.then(function () {
+          a.pause();
+          a.currentTime = 0;
+        }).catch(function () {});
       }
-      if (loopAudio) {
-        loopAudio.loop = false;
-        loopAudio.pause();
-        loopAudio.currentTime = 0;
-      }
-      loopAudio = null;
     } catch (_) {}
   }
-
-  function startLoop(src, maxMs) {
-    if (muted() || !flagOn(KEY.call)) return;
-    stopLoop();
-    try {
-      loopAudio = getAudio(src);
-      if (!loopAudio) return;
-      loopAudio.loop = true;
-      loopAudio.volume = vol();
-      loopAudio.currentTime = 0;
-      var p = loopAudio.play();
-      if (p && p.catch) p.catch(function () {});
-      loopTimer = setTimeout(stopLoop, maxMs || 45000);
-    } catch (_) {}
-  }
-
-  function peerFromUrl() {
-    try {
-      var q = new URLSearchParams(location.search || "");
-      return (
-        q.get("uid") ||
-        q.get("userId") ||
-        q.get("peer") ||
-        q.get("to") ||
-        q.get("user") ||
-        ""
-      );
-    } catch (_) {
-      return "";
-    }
-  }
-
-  function isOnChatWith(peerId) {
-    try {
-      var f = (location.pathname || "").split("/").pop() || "";
-      if (f.indexOf("chat") !== 0) return false;
-      if (document.hidden) return false;
-      var uid = peerFromUrl();
-      if (!peerId) return !!uid;
-      return String(peerId) === String(uid);
-    } catch (_) {
-      return false;
-    }
-  }
-
-  /* --- public API --- */
-  function playNotify() {
-    return playOnce(FILES.notify, "notify");
-  }
-  function playChatMessage() {
-    return playOnce(FILES.chat, "chat");
-  }
-  function onNewMessage(peerId) {
-    if (isOnChatWith(peerId)) return playChatMessage();
-    return playNotify();
-  }
-  function startCallingTone() {
-    startLoop(FILES.calling, 45000);
-  }
-  function startOutboundRingingTone() {
-    startLoop(FILES.ringing, 45000);
-  }
-  function startIncomingRingtone() {
-    startLoop(FILES.incoming, 45000);
-  }
+  ["touchstart", "pointerdown", "click"].forEach(function (ev) {
+    document.addEventListener(
+      ev,
+      function once() {
+        unlock();
+        document.removeEventListener(ev, once, true);
+      },
+      true
+    );
+  });
 
   var api = {
-    FILES: FILES,
-    LEGACY: LEGACY,
-    playNotify: playNotify,
-    playChatMessage: playChatMessage,
-    playChatBeep: playChatMessage,
-    playChat: playChatMessage,
-    playMessage: playNotify,
-    onNewMessage: onNewMessage,
-    startCallingTone: startCallingTone,
-    startOutboundRingingTone: startOutboundRingingTone,
-    startIncomingRingtone: startIncomingRingtone,
-    stopCallSounds: stopLoop,
-    stopRing: stopLoop,
-    startRing: startIncomingRingtone,
-    isOnChatWith: isOnChatWith,
+    play: play,
+    loop: loop,
+    stop: stop,
+    stopAll: stopAll,
+    preload: preload,
     unlock: unlock,
-    setMuted: function (v) {
-      lsSet(KEY.mute, v ? "1" : "0");
-      if (v) stopLoop();
-    },
-    isMuted: muted,
-    setMessageEnabled: function (v) {
-      lsSet(KEY.msg, v ? "1" : "0");
-    },
-    setChatEnabled: function (v) {
-      lsSet(KEY.chat, v ? "1" : "0");
-    },
-    setCallEnabled: function (v) {
-      lsSet(KEY.call, v ? "1" : "0");
-      if (!v) stopLoop();
-    },
-    setVolume: function (v) {
-      lsSet(KEY.vol, String(v));
-    },
-    test: function (name) {
-      unlock();
-      stopLoop();
-      name = String(name || "").toLowerCase();
-      if (name === "notify" || name === "message") return playNotify();
-      if (name === "chat") return playChatMessage();
-      if (name === "calling") return startCallingTone();
-      if (name === "ringing") return startOutboundRingingTone();
-      if (name === "incoming") return startIncomingRingtone();
-      return playNotify();
-    },
-    getPrefs: function () {
-      return {
-        muted: muted(),
-        messageOn: flagOn(KEY.msg),
-        chatOn: flagOn(KEY.chat),
-        callOn: flagOn(KEY.call),
-        volume: vol()
-      };
-    }
+    map: MAP
   };
 
-  /* Keep older scripts working */
+  global.VieworaSounds = api;
+
+  // Auto-preload core call/chat sounds
   try {
-    lsSet("viewora_message_sound", FILES.notify);
-    lsSet("viewora_chat_beep", FILES.chat);
-    lsSet("viewora_call_ringtone", FILES.incoming);
+    if (document.readyState === "complete") {
+      preload([
+        "calling",
+        "ringing",
+        "incoming",
+        "end_call",
+        "send_message",
+        "message",
+        "reconnect",
+        "ptt_start",
+        "ptt_stop"
+      ]);
+    } else {
+      window.addEventListener("load", function () {
+        preload([
+          "calling",
+          "ringing",
+          "incoming",
+          "end_call",
+          "send_message",
+          "message",
+          "reconnect"
+        ]);
+      });
+    }
   } catch (_) {}
-
-  g.VieworaSounds = api;
-  g.playMessageTone = function () {
-    api.playChatMessage();
-  };
-  g.playMessageSound = function () {
-    api.playNotify();
-  };
-
-  console.log("[VieworaSounds] named files ready", FILES);
 })(typeof window !== "undefined" ? window : this);

@@ -375,7 +375,20 @@
     ====================================================== */
 
     
-    async function peerIsOnline(uid) {
+    
+/* Viewora real sound hooks */
+function __vsPlay(name, loop) {
+  try {
+    if (!window.VieworaSounds) return false;
+    if (loop) VieworaSounds.loop(name); else VieworaSounds.play(name);
+    return true;
+  } catch (_) { return false; }
+}
+function __vsStop() {
+  try { if (window.VieworaSounds) VieworaSounds.stopAll(); } catch (_) {}
+}
+
+async function peerIsOnline(uid) {
         // My network must be up; otherwise always "Calling..."
         try {
             if (typeof navigator !== "undefined" && navigator.onLine === false) return false;
@@ -399,7 +412,88 @@
         return false;
     }
 
-    async function setOutboundStatus(peerUid) {
+    
+    var __toneAudio = null;
+    function stopTonePattern() {
+        try {
+            if (__toneAudio && typeof __toneAudio.stop === "function") __toneAudio.stop();
+        } catch (_) {}
+        __toneAudio = null;
+        try { if (window.VieworaSounds) window.VieworaSounds.stopAll(); } catch (_) {}
+        try { stopCallerRingtone(); } catch (_) {}
+    }
+    function startTonePattern(kind) {
+        try {
+            if (window.VieworaSounds) {
+                try { window.VieworaSounds.stopAll(); } catch (_) {}
+                if (kind === "ringing") {
+                    window.VieworaSounds.loop("ringing", { volume: 0.75 });
+                    __toneAudio = { stop: function () { try { window.VieworaSounds.stop("ringing"); window.VieworaSounds.stop("incoming"); } catch (_) {} } };
+                    return;
+                }
+                if (kind === "calling") {
+                    window.VieworaSounds.loop("calling", { volume: 0.7 });
+                    __toneAudio = { stop: function () { try { window.VieworaSounds.stop("calling"); window.VieworaSounds.stop("outgoing_call"); } catch (_) {} } };
+                    return;
+                }
+                if (kind === "reconnect") {
+                    window.VieworaSounds.loop("on_hold", { volume: 0.4 });
+                    __toneAudio = { stop: function () { try { window.VieworaSounds.stop("on_hold"); window.VieworaSounds.stop("reconnect"); } catch (_) {} } };
+                    return;
+                }
+            }
+        } catch (e) { console.warn("tone file", e); }
+        // Synth fallback
+        try {
+            stopTonePattern();
+            var Ctx = window.AudioContext || window.webkitAudioContext;
+            if (!Ctx) return;
+            var ctx = new Ctx();
+            var gain = ctx.createGain();
+            gain.connect(ctx.destination);
+            gain.gain.value = 0.08;
+            var dead = false;
+            var timers = [];
+            function beep(freq, dur) {
+                if (dead) return;
+                try {
+                    var o = ctx.createOscillator();
+                    o.type = kind === "ringing" ? "sine" : (kind === "reconnect" ? "triangle" : "square");
+                    o.frequency.value = freq;
+                    o.connect(gain);
+                    var t0 = ctx.currentTime;
+                    o.start(t0);
+                    o.stop(t0 + dur);
+                } catch (_) {}
+            }
+            function loop() {
+                if (dead) return;
+                if (kind === "ringing") {
+                    beep(440, 0.2);
+                    timers.push(setTimeout(function () { beep(480, 0.2); }, 220));
+                    timers.push(setTimeout(loop, 1800));
+                } else if (kind === "reconnect") {
+                    beep(360, 0.15);
+                    timers.push(setTimeout(loop, 900));
+                } else {
+                    beep(420, 0.4);
+                    timers.push(setTimeout(loop, 2000));
+                }
+            }
+            loop();
+            __toneAudio = {
+                stop: function () {
+                    dead = true;
+                    timers.forEach(function (id) { try { clearTimeout(id); } catch (_) {} });
+                    try { ctx.close(); } catch (_) {}
+                }
+            };
+        } catch (e2) {
+            console.warn("tone synth", e2);
+        }
+    }
+
+async function setOutboundStatus(peerUid) {
         try {
             var myNet = true;
             try { myNet = navigator.onLine !== false; } catch (_) {}
@@ -1002,6 +1096,7 @@ function setStatus(text) {
                     if (remoteVideo && callType === "video") {
                         remoteVideo.muted = false;
                         remoteVideo.play().catch(() => {});
+            try { setConnecting(false); } catch (_) {}
                     }
                 } catch (_) {}
 
@@ -1096,7 +1191,11 @@ function setStatus(text) {
                     clearRingTimeout();
                     accepted = true;
                     setConnecting(false);
-                    setStatus("Connected"); try { stopTonePattern(); } catch (_) {} try { setupPipDragAndSwap(); setupCallMinimize(); } catch (_) {} try { if (window.__vieworaArmCallBackGuard) window.__vieworaArmCallBackGuard(); } catch (_) {}
+                    setStatus("Connected");
+                    try { stopTonePattern(); } catch (_) {}
+                    try { if (window.VieworaSounds) window.VieworaSounds.play("connect_group_call"); } catch (_) {}
+                    try { setupPipDragAndSwap(); setupCallMinimize(); } catch (_) {}
+                    try { if (window.__vieworaArmCallBackGuard) window.__vieworaArmCallBackGuard(); } catch (_) {}
                     try {
                         if (db && currentUser) {
                             db.ref("users/" + currentUser.uid + "/callStatus").set({
@@ -1207,47 +1306,64 @@ function setStatus(text) {
             return;
         }
 
+        var hasVideo = false;
+        try {
+            hasVideo = remoteStream.getVideoTracks().some(function (t) {
+                return t && t.readyState !== "ended";
+            });
+        } catch (_) {}
 
-        if (
-            callType === "video" &&
-            remoteVideo
-        ) {
-
-            remoteVideo.srcObject =
-                remoteStream;
-
-            remoteVideo.playsInline =
-                true;
-
-
-            remoteVideo
-                .play()
-                .catch(() => {});
-
-
-            if (remotePlaceholder) {
-
-                remotePlaceholder.classList.add(
-                    "hidden"
-                );
-
+        // Always attach video element if stream has video (fixes purple blank screen)
+        if (remoteVideo) {
+            try {
+                remoteVideo.srcObject = remoteStream;
+                remoteVideo.playsInline = true;
+                remoteVideo.muted = false;
+                remoteVideo.setAttribute("playsinline", "");
+                remoteVideo.setAttribute("webkit-playsinline", "");
+                var p = remoteVideo.play();
+                if (p && p.catch) p.catch(function () {});
+            } catch (e) {
+                console.warn("remoteVideo attach", e);
             }
-
+            if (hasVideo || callType === "video") {
+                if (remotePlaceholder) remotePlaceholder.classList.add("hidden");
+                try {
+                    remoteVideo.style.display = "block";
+                    remoteVideo.style.opacity = "1";
+                } catch (_) {}
+            }
         }
-
 
         if (remoteAudio) {
-
-            remoteAudio.srcObject =
-                remoteStream;
-
-
-            remoteAudio
-                .play()
-                .catch(() => {});
-
+            try {
+                remoteAudio.srcObject = remoteStream;
+                remoteAudio.muted = false;
+                var pa = remoteAudio.play();
+                if (pa && pa.catch) pa.catch(function () {});
+            } catch (_) {}
         }
 
+        // Camera-off remote: show peer DP if no video track
+        try {
+            var off = document.getElementById("remoteCameraOff");
+            if (!off && remoteVideo && remoteVideo.parentElement) {
+                off = document.createElement("div");
+                off.id = "remoteCameraOff";
+                off.className = "remote-camera-off";
+                off.innerHTML = '<img id="remoteCameraOffImg" alt=""/><span>Camera off</span>';
+                remoteVideo.parentElement.appendChild(off);
+            }
+            if (off) {
+                off.classList.toggle("show", !hasVideo && callType === "video");
+                var img = document.getElementById("remoteCameraOffImg");
+                if (img && !hasVideo) {
+                    img.src =
+                        (window.__vieworaRemotePhoto) ||
+                        "data:image/svg+xml," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#7c3aed"/><stop offset="100%" stop-color="#2563eb"/></linearGradient></defs><circle cx="64" cy="64" r="64" fill="url(#g)"/><circle cx="64" cy="48" r="24" fill="rgba(255,255,255,.92)"/><ellipse cx="64" cy="106" rx="40" ry="28" fill="rgba(255,255,255,.92)"/></svg>');
+                }
+            }
+        } catch (_) {}
     }
 
 
@@ -1764,6 +1880,17 @@ function setStatus(text) {
 
     function startCallerRingtone() {
         try {
+            if (window.VieworaSounds) {
+                window.VieworaSounds.loop("calling", { volume: 0.7 });
+                callerRingAudio = {
+                    pause: function () { try { window.VieworaSounds.stop("calling"); } catch (_) {} },
+                    stop: function () { try { window.VieworaSounds.stop("calling"); } catch (_) {} }
+                };
+                return;
+            }
+        } catch (_) {}
+
+        try {
             stopCallerRingtone();
             const src =
                 localStorage.getItem("viewora_call_ringtone") ||
@@ -1987,18 +2114,24 @@ function setStatus(text) {
         }
 
 
-        if (
-            data.receiverId &&
-            data.receiverId !==
-            currentUser.uid
-        ) {
-
-            showEnded(
-                "This call is not for you."
-            );
-
-            return;
-
+        // Allow if receiver, caller, participant, or invited
+        try {
+            var uid = currentUser.uid;
+            var allowed = false;
+            if (!data.receiverId || data.receiverId === uid) allowed = true;
+            if (data.callerId === uid) allowed = true;
+            if (data.participants && data.participants[uid]) allowed = true;
+            if (data.invited && data.invited[uid]) allowed = true;
+            if (data.members && data.members[uid]) allowed = true;
+            if (!allowed) {
+                showEnded("This call is not for you.");
+                return;
+            }
+        } catch (_) {
+            if (data.receiverId && data.receiverId !== currentUser.uid) {
+                showEnded("This call is not for you.");
+                return;
+            }
         }
 
 
@@ -2469,6 +2602,58 @@ function setStatus(text) {
        END CALL
     ====================================================== */
 
+    
+    async function logCallToChat(opts) {
+        opts = opts || {};
+        try {
+            if (!db || !currentUser) return;
+            var peer = remoteUserId || receiverId || callerId;
+            if (!peer || peer === currentUser.uid) return;
+            var uids = [currentUser.uid, peer].sort();
+            var chatId = uids.join("_");
+            var durationSec = 0;
+            try {
+                if (typeof callSeconds === "number") durationSec = callSeconds;
+                else if (window.__vieworaCallSeconds) durationSec = window.__vieworaCallSeconds;
+            } catch (_) {}
+            var typeLabel = (callType === "video") ? "Video call" : "Voice call";
+            var missed = !!opts.missed;
+            var text = missed
+                ? ("Missed " + (callType === "video" ? "video" : "voice") + " call")
+                : (typeLabel + (durationSec > 0 ? (" · " + formatCallDuration(durationSec)) : ""));
+            var payload = {
+                type: "call",
+                callType: callType || "voice",
+                missed: missed,
+                duration: durationSec,
+                text: text,
+                senderId: currentUser.uid,
+                receiverId: peer,
+                createdAt: firebase.database.ServerValue.TIMESTAMP
+            };
+            await db.ref("chats/" + chatId + "/messages").push(payload);
+            var preview = text;
+            var inbox = {
+                lastMessage: preview,
+                lastMessageType: "call",
+                updatedAt: firebase.database.ServerValue.TIMESTAMP,
+                chatId: chatId
+            };
+            await db.ref("userChats/" + currentUser.uid + "/" + chatId).update(inbox);
+            await db.ref("userChats/" + peer + "/" + chatId).update(inbox);
+        } catch (e) {
+            console.warn("logCallToChat", e);
+        }
+    }
+    function formatCallDuration(sec) {
+        sec = Math.max(0, Math.floor(Number(sec) || 0));
+        if (sec < 60) return sec + " secs";
+        var m = Math.floor(sec / 60);
+        if (m < 60) return m + (m === 1 ? " min" : " mins");
+        var h = Math.floor(m / 60);
+        return h + " hr " + (m % 60) + " min";
+    }
+
     async function endCall() {
 
         if (callEnded) {
@@ -2547,10 +2732,8 @@ function setStatus(text) {
 
         cleanup();
         scheduleCallPurge();
-
-        showEnded(
-            "Call ended."
-        );
+        try { await logCallToChat({ missed: false }); } catch (_) {}
+        showEnded("Call ended.");
 
     }
 
@@ -3101,6 +3284,16 @@ function setStatus(text) {
                     startMeshLayer();
                 }
             } catch (_) {}
+            try { if (window.VieworaSounds) window.VieworaSounds.play("join_group_call"); } catch (_) {}
+            try {
+                await db.ref("calls/" + (callId || room) + "/participants/" + uid).set({
+                    invited: true,
+                    invitedBy: currentUser.uid,
+                    at: Date.now()
+                });
+                await db.ref("calls/" + (callId || room) + "/invited/" + uid).set(true);
+            } catch (_) {}
+            try { if (window.VieworaSounds) window.VieworaSounds.play("join_group_call"); } catch (_) {}
             toast("Invite sent");
         } catch (e) {
             console.warn(e);
@@ -3759,51 +3952,66 @@ function setStatus(text) {
 
         try { stopCallerRingtone(); } catch (_) {}
         try { clearRingTimeout(); } catch (_) {}
+        try { stopTonePattern(); } catch (_) {}
+        try { if (window.VieworaSounds) window.VieworaSounds.stopAll(); } catch (_) {}
+        try { clearBusyFlag(); } catch (_) {}
 
-        setConnecting(
-            false
-        );
-
-
-        setStatus(
-            message
-        );
-
+        setConnecting(false);
+        setStatus(message || "Call ended.");
 
         if ($("endedText")) {
-
-            $("endedText").textContent =
-                message;
-
+            $("endedText").textContent = message || "Call ended.";
         }
-
 
         if (endedScreen) {
-
-            endedScreen.classList.remove(
-                "hidden"
-            );
-
+            endedScreen.classList.remove("hidden");
+            endedScreen.style.display = "flex";
+            endedScreen.style.zIndex = "9999";
         }
-
 
         if (callApp) {
-
-            callApp.classList.add(
-                "hidden"
-            );
-
+            callApp.classList.add("hidden");
         }
-
 
         if (incomingScreen) {
-
-            incomingScreen.classList.add(
-                "hidden"
-            );
-
+            incomingScreen.classList.add("hidden");
         }
 
+        // Wire Back buttons once
+        try {
+            function goBackFromCall(e) {
+                try { if (e) { e.preventDefault(); e.stopPropagation(); } } catch (_) {}
+                try { cleanup(); } catch (_) {}
+                var backTo = "messages.html";
+                try {
+                    var q = new URLSearchParams(location.search || "");
+                    var peer = q.get("uid") || q.get("peer") || remoteUserId || receiverId || "";
+                    if (peer) backTo = "chat.html?uid=" + encodeURIComponent(peer);
+                } catch (_) {}
+                try { window.location.replace(backTo); } catch (_) {
+                    window.location.href = backTo;
+                }
+            }
+            ["endedBackBtn", "backHomeBtn", "backFromEnded", "endedBack"].forEach(function (id) {
+                var el = document.getElementById(id);
+                if (el && !el.dataset.bound) {
+                    el.dataset.bound = "1";
+                    el.onclick = goBackFromCall;
+                }
+            });
+            // Any button inside ended screen
+            if (endedScreen && !endedScreen.dataset.bound) {
+                endedScreen.dataset.bound = "1";
+                endedScreen.addEventListener("click", function (ev) {
+                    var t = ev.target;
+                    if (!t) return;
+                    if (t.id === "endedBackBtn" || t.closest("#endedBackBtn") ||
+                        (t.tagName === "BUTTON" && /back/i.test(t.textContent || ""))) {
+                        goBackFromCall(ev);
+                    }
+                });
+            }
+        } catch (_) {}
     }
 
 
@@ -3830,6 +4038,23 @@ function setStatus(text) {
             "click",
             endCall
         );
+
+    function __vieworaLeaveCallPage(e) {
+        try { if (e) { e.preventDefault(); e.stopPropagation(); } } catch (_) {}
+        try { cleanup(); } catch (_) {}
+        try { clearBusyFlag(); } catch (_) {}
+        var dest = "messages.html";
+        try {
+            var peer = remoteUserId || receiverId || "";
+            if (peer) dest = "chat.html?uid=" + encodeURIComponent(peer);
+        } catch (_) {}
+        try { location.replace(dest); } catch (_) { location.href = dest; }
+    }
+    ["backHomeBtn", "endedBackBtn"].forEach(function (id) {
+        var el = document.getElementById(id);
+        if (el) el.addEventListener("click", __vieworaLeaveCallPage);
+    });
+
 
 
     $("muteBtn")

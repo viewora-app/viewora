@@ -481,7 +481,7 @@
 
 
             <button
-                id="backHomeBtn"
+                id="backHomeBtn" type="button"
                 class="ended-button"
                 type="button"
             >
@@ -580,7 +580,8 @@
   <script src="crash-guard.js"></script>
 <script src="theme.js"></script>
 <script src="call-mesh.js"></script>
-<script src="call.js"></script>
+<script src="viewora-sounds.js"></script>
+    <script src="call.js"></script>
 <!-- ========================================================
      PREMIUM CALL UI CONTROLLER
 ========================================================= -->
@@ -1032,6 +1033,17 @@
   <span class="miniDot"></span>
   <span id="callMiniLabel">Viewora Call</span>
   <span id="callMiniTimer">00:00</span>
+</div>
+
+<div id="endedScreen" class="ended-screen hidden" style="display:none">
+  <div class="ended-card">
+    <div style="width:64px;height:64px;margin:0 auto 16px;border-radius:50%;background:rgba(255,59,95,.15);display:grid;place-items:center">
+      <i class="fa-solid fa-phone-slash" style="color:#ff3b5c;font-size:24px"></i>
+    </div>
+    <h2 style="color:#fff;margin:0 0 8px;font-size:22px">Call Ended</h2>
+    <p id="endedText" style="color:rgba(255,255,255,.65);margin:0 0 8px">Call ended.</p>
+    <button type="button" id="endedBackBtn" class="ended-back">← Back</button>
+  </div>
 </div>
 </body>
 </html>
