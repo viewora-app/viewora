@@ -2677,6 +2677,18 @@ state.messagesListener = {
             );
         }
 
+        // Copy only for text; Forward for all (image/voice/text)
+        var isText = !message.type || message.type === "text";
+        var isMedia = /image|photo|video|audio|voice|file|media/i.test(String(message.type || ""));
+        var copyBtn = document.getElementById("copyMessageBtn");
+        var fwdBtn = document.getElementById("forwardMessageBtn");
+        if (copyBtn) {
+            copyBtn.classList.toggle("hidden", !isText || !!message.deletedForEveryone);
+        }
+        if (fwdBtn) {
+            fwdBtn.classList.toggle("hidden", !!message.deletedForEveryone);
+        }
+
         if (deleteMessageBtn) {
             deleteMessageBtn.classList.remove(
                 "hidden"
@@ -2747,6 +2759,66 @@ state.messagesListener = {
         );
     }
 
+
+
+    async function forwardMessage(message) {
+        if (!message || !state.currentUser) return;
+        closeMessageMenu();
+        try {
+            // Pick peer from prompt (simple) — chats list
+            var peer = window.prompt("Forward to user UID or @username:");
+            if (!peer) return;
+            peer = String(peer).trim().replace(/^@/, "");
+            var target = peer;
+            // resolve username
+            try {
+                if (peer.length < 28) {
+                    var snap = await db.ref("usernames/" + peer.toLowerCase()).once("value");
+                    if (snap.exists()) target = snap.val();
+                }
+            } catch (_) {}
+            if (!target) {
+                showToast("User not found", "error");
+                return;
+            }
+            var chatId = [state.currentUser.uid, target].sort().join("_");
+            try {
+                await db.ref("chatMembers/" + chatId + "/" + state.currentUser.uid).set(true);
+                await db.ref("chatMembers/" + chatId + "/" + target).set(true);
+            } catch (_) {}
+            var payload = {
+                senderId: state.currentUser.uid,
+                receiverId: target,
+                type: message.type || "text",
+                text: message.text || "",
+                mediaUrl: message.mediaUrl || message.url || message.imageUrl || null,
+                duration: message.duration || null,
+                forwarded: true,
+                forwardedFrom: message.senderId || null,
+                createdAt: firebase.database.ServerValue.TIMESTAMP,
+                deliveredAt: null,
+                seenAt: null
+            };
+            if (message.caption) payload.caption = message.caption;
+            await db.ref("vieworaChats/" + chatId + "/messages").push(payload);
+            try {
+                await db.ref("userChats/" + state.currentUser.uid + "/" + chatId).update({
+                    userId: target,
+                    lastMessage: "Forwarded message",
+                    updatedAt: Date.now()
+                });
+                await db.ref("userChats/" + target + "/" + chatId).update({
+                    userId: state.currentUser.uid,
+                    lastMessage: "Forwarded message",
+                    updatedAt: Date.now()
+                });
+            } catch (_) {}
+            showToast("Message forwarded", "success");
+        } catch (e) {
+            console.warn(e);
+            showToast("Could not forward", "error");
+        }
+    }
 
     function closeMessageMenu() {
 
@@ -6032,6 +6104,9 @@ async function vieworaMaybeMarkRequest(peerUid, chatId) {
         );
 
 
+        document.getElementById("forwardMessageBtn")?.addEventListener("click", function () {
+            if (state.selectedMessage) forwardMessage(state.selectedMessage);
+        });
         copyMessageBtn?.addEventListener(
             "click",
             copySelectedMessage

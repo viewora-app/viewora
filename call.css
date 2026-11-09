@@ -2680,3 +2680,24 @@ body.video-call #remoteVideo {
   display: block !important;
   opacity: 1 !important;
 }
+
+#callMiniBar .miniNav {
+  display: inline-flex;
+  gap: 8px;
+  margin-left: 8px;
+}
+#callMiniBar .miniNav a {
+  color: #bbf7d0;
+  text-decoration: none;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.08);
+}
+body.call-minimized #callApp {
+  pointer-events: none;
+}
+body.call-minimized #callMiniBar {
+  pointer-events: auto !important;
+}

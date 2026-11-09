@@ -9,18 +9,6 @@
         content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
     >
 
-<!-- Viewora PWA / TWA -->
-<link rel="manifest" href="manifest.webmanifest">
-<meta name="theme-color" content="#08080d">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Viewora">
-<link rel="apple-touch-icon" href="icon-192.png">
-<script src="pwa-register.js" defer></script>
-
-
-
     <meta
         name="theme-color"
         content="#08090d"
@@ -542,8 +530,11 @@
 
         <button
             type="button"
-            id="closeEmojiPanelBtn"
-            aria-label="Close emoji"
+            onclick="
+                document
+                    .getElementById('emojiPanel')
+                    .classList.add('hidden')
+            "
         >
             <i class="fa-solid fa-xmark"></i>
         </button>
@@ -1218,6 +1209,16 @@
 
 
     <button
+        id="forwardMessageBtn"
+        class="menuItem"
+        type="button"
+    >
+        <i class="fa-solid fa-share"></i>
+        <span>Forward</span>
+    </button>
+
+
+    <button
         id="reactMessageBtn"
         class="menuItem"
         type="button"
@@ -1418,14 +1419,6 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
 
 <script src="firebase.js"></script>
-  <script src="viewora-sounds.js"></script>
-<script src="message-listener.js"></script>
-  <link rel="stylesheet" href="media-perf.css">
-<script src="media-perf.js"></script>
-<script src="media-upload-compress-hook.js"></script>
-  <script src="crash-guard.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging-compat.js"></script>
-<script src="fcm.js"></script>
 <script src="theme.js"></script>
   <script src="badges.js"></script>
 
@@ -1437,7 +1430,7 @@
 
 <script src="chat.js"></script>
 <script src="chat-reliability.js"></script>
-
   
+<script src="viewora-sounds.js"></script>
 </body>
 </html>

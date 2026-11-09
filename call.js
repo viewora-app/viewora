@@ -917,35 +917,24 @@ function setStatus(text) {
             // permissions.query unsupported or camera name fails — ignore
         }
 
-        // Soft constraints first (mobile-friendly) — simplest first for Chrome
+        // Soft constraints — VIDEO first when video call (was audio-first → never got camera)
         const wantVideo = callType === "video";
         const attempts = [];
-
-        // Always try plain audio first (highest success on Chrome mobile)
-        attempts.push({ audio: true, video: false });
 
         if (wantVideo) {
             attempts.push({
                 audio: true,
-                video: true
+                video: { facingMode: "user", width: { ideal: 640 }, height: { ideal: 480 } }
             });
+            attempts.push({ audio: true, video: { facingMode: "user" } });
+            attempts.push({ audio: true, video: true });
             attempts.push({
-                audio: true,
-                video: { facingMode: "user" }
-            });
-            attempts.push({
-                audio: {
-                    echoCancellation: true,
-                    noiseSuppression: true
-                },
-                video: {
-                    facingMode: "user",
-                    width: { ideal: 640 },
-                    height: { ideal: 480 }
-                }
+                audio: { echoCancellation: true, noiseSuppression: true },
+                video: { facingMode: { ideal: "user" } }
             });
         }
-
+        // Audio fallbacks
+        attempts.push({ audio: true, video: false });
         attempts.push({
             audio: {
                 echoCancellation: true,
@@ -962,9 +951,14 @@ function setStatus(text) {
                 localStream = await navigator.mediaDevices.getUserMedia(
                     attempts[i]
                 );
+                // If we need video but this attempt gave audio-only, keep trying
                 if (wantVideo && !localStream.getVideoTracks().length) {
-                    callType = "audio";
-                    try { toast("Camera unavailable — voice only."); } catch (_) {}
+                    try {
+                        localStream.getTracks().forEach(function (t) { t.stop(); });
+                    } catch (_) {}
+                    localStream = null;
+                    lastErr = new Error("No video track");
+                    continue;
                 }
                 lastErr = null;
                 break;
@@ -974,7 +968,11 @@ function setStatus(text) {
             }
         }
 
-        if (!localStream) {
+        if (localStream && wantVideo && !localStream.getVideoTracks().length) {
+            callType = "audio";
+            try { toast("Camera unavailable — voice only."); } catch (_) {}
+        }
+        if (!localStream) /* VIEWORA_VIDEO_FALLBACK_AUDIO */ {
             const name = lastErr && lastErr.name ? lastErr.name : "";
             const denied =
                 name === "NotAllowedError" ||
@@ -3539,7 +3537,7 @@ function setStatus(text) {
         if (!bar) {
             bar = document.createElement("div");
             bar.id = "callMiniBar";
-            bar.innerHTML = '<span class="miniDot"></span><span id="callMiniLabel">Viewora Call</span><span id="callMiniTimer">00:00</span>';
+            bar.innerHTML = '<span class="miniDot"></span><span id="callMiniLabel">Viewora Call</span><span id="callMiniTimer">00:00</span><span class="miniNav"><a href="index.html" target="_blank" rel="noopener">Home</a><a href="messages.html" target="_blank" rel="noopener">Chat</a><a href="profile.html" target="_blank" rel="noopener">Profile</a></span>';
             document.body.appendChild(bar);
         }
         function showMini() {
@@ -3751,15 +3749,17 @@ function setStatus(text) {
         let videoTrack =
             localStream.getVideoTracks()[0];
 
-        // Audio call → turning camera ON: confirm switch to video call
+        // No video track yet — turn camera on (confirm only if this was a VOICE call)
         if (!videoTrack) {
             var ok = true;
+            if (callType !== "video") {
+                try {
+                    ok = window.confirm("Switch to video call? Your camera will turn on.");
+                } catch (_) {}
+                if (!ok) return;
+            }
             try {
-                ok = window.confirm("Switch to video call? Your camera will turn on.");
-            } catch (_) {}
-            if (!ok) return;
-            try {
-                setStatus("Switching to video...");
+                setStatus(callType === "video" ? "Turning camera on..." : "Switching to video...");
                 var vs = await navigator.mediaDevices.getUserMedia({
                     audio: false,
                     video: {
@@ -4679,52 +4679,65 @@ function setStatus(text) {
 
 
 
-/* VIEWORA_CALL_BACK_GUARD — back minimizes call, does NOT end */
+/* VIEWORA_CALL_BACK_GUARD — back always minimizes; never ends; traps history */
 (function () {
   var armed = false;
   function isInCall() {
     try {
-      return sessionStorage.getItem("viewora_call_busy") === "1" ||
-        document.body.classList.contains("in-call") ||
-        !!(window.localStream);
-    } catch (_) { return !!window.localStream; }
+      if (sessionStorage.getItem("viewora_call_busy") === "1") return true;
+      if (document.body.classList.contains("in-call")) return true;
+      if (window.localStream) return true;
+    } catch (_) {}
+    return false;
   }
   function doMinimize() {
     try {
-      var bar = document.getElementById("callMiniBar");
-      if (bar) {
-        bar.classList.add("show");
-        bar.style.display = "flex";
+      if (typeof window.__vieworaShowCallMini === "function") {
+        window.__vieworaShowCallMini();
+        return;
       }
+      var bar = document.getElementById("callMiniBar");
+      if (bar) { bar.classList.add("show"); bar.style.display = "flex"; }
+      document.body.classList.add("call-minimized");
       var controls = document.querySelector(".call-controls");
       if (controls) controls.style.visibility = "hidden";
       var top = document.querySelector(".call-topbar");
       if (top) top.style.visibility = "hidden";
       var stage = document.getElementById("callStage");
       if (stage) stage.style.opacity = "0";
-      // keep page, just chrome hidden — media stays alive
-      document.body.classList.add("call-minimized");
     } catch (e) { console.warn(e); }
+  }
+  function trapHistory() {
+    try {
+      history.pushState({ vieworaCall: 1 }, "", location.href);
+      history.pushState({ vieworaCall: 2 }, "", location.href);
+    } catch (_) {}
   }
   window.addEventListener("popstate", function (e) {
     if (!isInCall()) return;
-    try { history.pushState({ vieworaCall: 1 }, "", location.href); } catch (_) {}
-    // Minimize, never auto-end
+    trapHistory();
     doMinimize();
   });
   window.__vieworaArmCallBackGuard = function () {
-    if (armed) return;
     armed = true;
-    try { history.pushState({ vieworaCall: 1 }, "", location.href); } catch (_) {}
+    trapHistory();
   };
-  // Hardware back / in-app back buttons
   document.addEventListener("click", function (e) {
-    var t = e.target && e.target.closest && e.target.closest("#backBtn, .backBtn, [data-action=back], #minimizeCallBtn");
+    var t = e.target && e.target.closest && e.target.closest(
+      "#backBtn, .backBtn, [data-action=back], #minimizeCallBtn, .call-back, #callBackBtn"
+    );
     if (!t || !isInCall()) return;
     e.preventDefault();
     e.stopPropagation();
     doMinimize();
   }, true);
+  // Block page unload accidentally
+  window.addEventListener("beforeunload", function (e) {
+    if (!isInCall()) return;
+    e.preventDefault();
+    e.returnValue = "Call is in progress";
+    return e.returnValue;
+  });
 })();
 
 /* VIEWORA_CALL_BLANK_FIX */
@@ -4785,4 +4798,26 @@ function setStatus(text) {
     offlineSince = 0;
     clearTimeout(failTimer);
   });
+})();
+
+/* VIEWORA_LOCAL_VIDEO_BOOT */
+(function () {
+  function syncLocalPip() {
+    try {
+      var ls = window.localStream;
+      if (!ls) return;
+      var hasV = ls.getVideoTracks().some(function (t) { return t.readyState === "live"; });
+      var lv = document.getElementById("localVideo");
+      var wrap = document.getElementById("localVideoWrap") || document.querySelector(".local-video-wrap");
+      if (hasV && lv) {
+        if (lv.srcObject !== ls) lv.srcObject = ls;
+        lv.muted = true;
+        lv.playsInline = true;
+        lv.play().catch(function () {});
+        if (wrap) { wrap.classList.remove("hidden"); wrap.style.display = ""; }
+        document.body.classList.add("video-call");
+      }
+    } catch (e) {}
+  }
+  setInterval(syncLocalPip, 2000);
 })();
