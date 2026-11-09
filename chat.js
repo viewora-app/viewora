@@ -2782,60 +2782,18 @@ state.messagesListener = {
     async function forwardMessage(message) {
         if (!message || !state.currentUser) return;
         closeMessageMenu();
+        // Always use user picker sheet — never window.prompt
         try {
-            // Pick peer from prompt (simple) — chats list
-            var peer = window.prompt("Forward to user UID or @username:");
-            if (!peer) return;
-            peer = String(peer).trim().replace(/^@/, "");
-            var target = peer;
-            // resolve username
-            try {
-                if (peer.length < 28) {
-                    var snap = await db.ref("usernames/" + peer.toLowerCase()).once("value");
-                    if (snap.exists()) target = snap.val();
-                }
-            } catch (_) {}
-            if (!target) {
-                showToast("User not found", "error");
+            if (typeof openForwardSheet === "function") {
+                openForwardSheet([message]);
                 return;
             }
-            var chatId = [state.currentUser.uid, target].sort().join("_");
-            try {
-                await db.ref("chatMembers/" + chatId + "/" + state.currentUser.uid).set(true);
-                await db.ref("chatMembers/" + chatId + "/" + target).set(true);
-            } catch (_) {}
-            var payload = {
-                senderId: state.currentUser.uid,
-                receiverId: target,
-                type: message.type || "text",
-                text: message.text || "",
-                mediaUrl: message.mediaUrl || message.url || message.imageUrl || null,
-                duration: message.duration || null,
-                forwarded: true,
-                forwardedFrom: message.senderId || null,
-                createdAt: firebase.database.ServerValue.TIMESTAMP,
-                deliveredAt: null,
-                seenAt: null
-            };
-            if (message.caption) payload.caption = message.caption;
-            await db.ref("vieworaChats/" + chatId + "/messages").push(payload);
-            try {
-                await db.ref("userChats/" + state.currentUser.uid + "/" + chatId).update({
-                    userId: target,
-                    lastMessage: "Forwarded message",
-                    updatedAt: Date.now()
-                });
-                await db.ref("userChats/" + target + "/" + chatId).update({
-                    userId: state.currentUser.uid,
-                    lastMessage: "Forwarded message",
-                    updatedAt: Date.now()
-                });
-            } catch (_) {}
-            showToast("Message forwarded", "success");
-        } catch (e) {
-            console.warn(e);
-            showToast("Could not forward", "error");
-        }
+            if (typeof window.__vieworaOpenForward === "function") {
+                window.__vieworaOpenForward([message]);
+                return;
+            }
+        } catch (_) {}
+        showToast("Forward sheet unavailable", "error");
     }
 
     function closeMessageMenu() {
@@ -7297,6 +7255,7 @@ async function vieworaMaybeMarkRequest(peerUid, chatId) {
   }
 
   function openForwardSheet(msgs) {
+    window.openForwardSheet = openForwardSheet;
     try {
       var old = document.getElementById("forwardSheet");
       if (old) old.remove();
@@ -7455,6 +7414,8 @@ async function vieworaMaybeMarkRequest(peerUid, chatId) {
   document.addEventListener("touchend", function () { clearTimeout(pressTimer); });
   document.addEventListener("touchmove", function () { clearTimeout(pressTimer); });
 
+  window.openForwardSheet = openForwardSheet;
+  window.__vieworaOpenForward = openForwardSheet;
   // Hook single forward button to sheet
   document.addEventListener("click", function (e) {
     var btn = e.target.closest && e.target.closest("#forwardMessageBtn");
@@ -7467,3 +7428,86 @@ async function vieworaMaybeMarkRequest(peerUid, chatId) {
   }, true);
 })();
 /* VIEWORA_MULTI_SELECT */
+
+
+/* VIEWORA_FORWARD_SELECT_V2 — solid sheet + multi-select + forwarded label */
+(function () {
+  // Expose sheet for old forwardMessage
+  window.__vieworaOpenForward = function (msgs) {
+    try {
+      if (typeof openForwardSheet === "function") openForwardSheet(msgs || []);
+    } catch (e) { console.warn(e); }
+  };
+
+  // Stronger long-press (works even if earlier handler missed)
+  var lpTimer = null, lpMoved = false, lpRow = null;
+  function clearLp() { clearTimeout(lpTimer); lpTimer = null; lpRow = null; }
+  document.addEventListener("touchstart", function (e) {
+    var row = e.target.closest && e.target.closest(".messageRow[data-id], .msg-row[data-id], [data-msg-id]");
+    if (!row) return;
+    lpMoved = false;
+    lpRow = row;
+    var id = row.getAttribute("data-id") || row.getAttribute("data-msg-id");
+    lpTimer = setTimeout(function () {
+      if (lpMoved || !id) return;
+      try {
+        if (typeof window.__vieworaEnterSelect === "function") window.__vieworaEnterSelect(id);
+        else if (window.state) {
+          window.state.selectionMode = true;
+          window.state.selectedIds = window.state.selectedIds || {};
+          window.state.selectedIds[id] = true;
+        }
+        row.classList.add("selected");
+        if (navigator.vibrate) navigator.vibrate(15);
+      } catch (_) {}
+    }, 420);
+  }, { passive: true });
+  document.addEventListener("touchmove", function () { lpMoved = true; clearLp(); }, { passive: true });
+  document.addEventListener("touchend", clearLp, { passive: true });
+  document.addEventListener("touchcancel", clearLp, { passive: true });
+
+  // Mouse long-press (desktop)
+  document.addEventListener("mousedown", function (e) {
+    if (e.button !== 0) return;
+    var row = e.target.closest && e.target.closest(".messageRow[data-id]");
+    if (!row) return;
+    var id = row.getAttribute("data-id");
+    lpTimer = setTimeout(function () {
+      if (typeof window.__vieworaEnterSelect === "function") window.__vieworaEnterSelect(id);
+      row.classList.add("selected");
+    }, 500);
+  });
+  document.addEventListener("mouseup", clearLp);
+  document.addEventListener("mousemove", function () { clearLp(); });
+
+  // Inject "Forwarded" label on bubbles that have forwarded:true
+  function markForwarded() {
+    try {
+      var msgs = (window.state && state.messages) || [];
+      var map = {};
+      msgs.forEach(function (m) { if (m && m.id && m.forwarded) map[m.id] = true; });
+      document.querySelectorAll(".messageRow[data-id], .msg-row[data-id]").forEach(function (row) {
+        var id = row.getAttribute("data-id");
+        if (!map[id]) return;
+        if (row.querySelector(".fwd-label")) return;
+        var bubble = row.querySelector(".messageBubble, .bubble, .msg-bubble") || row;
+        var lab = document.createElement("div");
+        lab.className = "fwd-label";
+        lab.innerHTML = '<i class="fa-solid fa-share"></i> Forwarded';
+        bubble.insertBefore(lab, bubble.firstChild);
+      });
+    } catch (_) {}
+  }
+  setInterval(markForwarded, 1200);
+  document.addEventListener("DOMContentLoaded", markForwarded);
+
+  // Kill any remaining prompt-based forward
+  var _p = window.prompt;
+  window.prompt = function (msg) {
+    if (msg && /forward/i.test(String(msg))) {
+      console.warn("[Viewora] blocked prompt forward");
+      return null;
+    }
+    return _p.apply(window, arguments);
+  };
+})();

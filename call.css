@@ -2740,3 +2740,42 @@ body.call-minimized #callMiniBar {
 #vieworaVideoSwitchModal .vvs-ok {
   background: linear-gradient(135deg, #7c5cff, #4f46e5); color: #fff;
 }
+
+
+/* VIEWORA_EQUAL_GRID multi-party */
+body.call-multi-2 #callStage,
+body.call-multi-2 .call-stage {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+}
+body.call-multi-3 #callStage,
+body.call-multi-3 .call-stage {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: 4px;
+}
+body.call-multi-4 #callStage,
+body.call-multi-4 .call-stage {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: 4px;
+}
+body.call-multi-2 #remoteVideo,
+body.call-multi-3 #remoteVideo,
+body.call-multi-4 #remoteVideo,
+body.call-multi-2 .participant video,
+body.call-multi-3 .participant video,
+body.call-multi-4 .participant video {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  border-radius: 12px;
+}
+/* Mini bar always on top when minimized */
+body.call-minimized #callMiniBar {
+  z-index: 99999 !important;
+  display: flex !important;
+}

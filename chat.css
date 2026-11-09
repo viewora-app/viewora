@@ -4083,3 +4083,49 @@ body.msg-selecting .messageRow.selected {
 #forwardSheet .fs-row b { display: block; font-size: 14px; }
 #forwardSheet .fs-row small { color: #8b90a0; }
 #forwardSheet .fs-empty { text-align: center; color: #777; padding: 24px; }
+
+
+/* VIEWORA_FWD_LABEL + multi-select polish */
+.fwd-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: rgba(255,255,255,.55);
+  margin-bottom: 4px;
+  font-weight: 500;
+}
+.fwd-label i { font-size: 10px; opacity: .8; }
+body.msg-selecting .messageRow {
+  position: relative;
+}
+body.msg-selecting .messageRow.selected::before {
+  content: "";
+  position: absolute;
+  left: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #7c5cff;
+  box-shadow: 0 0 0 2px rgba(124,92,255,.35);
+  z-index: 2;
+}
+body.msg-selecting .messageRow.selected {
+  background: rgba(124,92,255,.08);
+}
+#msgSelectBar {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 12000;
+  height: 56px;
+  padding: 0 12px;
+  display: none;
+  align-items: center;
+  gap: 10px;
+  background: rgba(12,12,18,.96);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(255,255,255,.08);
+}
+#msgSelectBar.show { display: flex; }

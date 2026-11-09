@@ -970,9 +970,19 @@ function setStatus(text) {
 
         if (localStream && wantVideo && !localStream.getVideoTracks().length) {
             callType = "audio";
-            try { toast("Camera unavailable — voice only."); } catch (_) {}
+            try { toast("Camera unavailable — continuing as voice call."); } catch (_) {}
         }
-        if (!localStream) /* VIEWORA_VIDEO_FALLBACK_AUDIO */ {
+        if (!localStream) /* VIEWORA_VIDEO_FALLBACK_AUDIO_V2 */ {
+            // Last chance: pure audio only
+            try {
+                localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+                callType = "audio";
+                try { toast("Camera unavailable — voice only."); } catch (_) {}
+            } catch (audioOnlyErr) {
+                lastErr = audioOnlyErr || lastErr;
+            }
+        }
+        if (!localStream) {
             const name = lastErr && lastErr.name ? lastErr.name : "";
             const denied =
                 name === "NotAllowedError" ||
@@ -982,10 +992,18 @@ function setStatus(text) {
                 );
 
             if (denied) {
-                // Don't hard-end — throw typed error for UI retry
                 const e = new Error(
                     "Permission denied. Allow microphone (and camera) for this site, then tap Join again."
                 );
+                e.name = "NotAllowedError";
+                e.code = "PERMISSION_DENIED";
+                throw e;
+            }
+
+            // Never show "No video track" as fatal
+            const msg = String((lastErr && lastErr.message) || "");
+            if (/no video track/i.test(msg)) {
+                const e = new Error("Camera not ready. Allow camera or continue with voice.");
                 e.name = "NotAllowedError";
                 e.code = "PERMISSION_DENIED";
                 throw e;
@@ -2222,13 +2240,19 @@ function setStatus(text) {
             data.status === "connected";
 
         if (alreadyAccepted) {
-            log("📲 Auto-accept (no Join screen).");
-            // Accept is itself a user gesture when navigated from banner Accept
+            log("📲 Auto-accept requested — on mobile show Join for gesture.");
+            // Mobile browsers lose user-gesture after navigation → getUserMedia fails.
+            // Always show a one-tap Join screen so permission + media works reliably.
             try {
+                var isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent || "");
+                if (isMobile || !navigator.mediaDevices) {
+                    try { showJoinCallScreen(); } catch (_) { showIncoming(); }
+                    return;
+                }
                 await acceptCall();
             } catch (e) {
                 logError("auto accept:", e);
-                showIncoming();
+                try { showJoinCallScreen(); } catch (_) { showIncoming(); }
             }
             return;
         }
@@ -2413,6 +2437,11 @@ function setStatus(text) {
                 return;
             }
 
+            if (/no video track/i.test(msg)) {
+                toast("Camera not ready — try Join as voice or allow camera");
+                try { showPermissionRetry(); } catch (_) { showJoinCallScreen && showJoinCallScreen(); }
+                return;
+            }
             toast("Could not accept call.");
             showEnded(msg || "Could not accept call.");
         }
@@ -4889,4 +4918,86 @@ function setStatus(text) {
       var s = document.getElementById("callStage"); if (s) s.style.opacity = "";
     } catch (_) {}
   };
+})();
+
+
+/* VIEWORA_CALL_HARDEN_V3 — video fallback, minimize, no blank, equal grid */
+(function () {
+  // Force busy flag whenever media is live
+  setInterval(function () {
+    try {
+      if (window.localStream && window.localStream.getTracks().some(function (t) { return t.readyState === "live"; })) {
+        sessionStorage.setItem("viewora_call_busy", "1");
+        document.body.classList.add("in-call");
+      }
+    } catch (_) {}
+  }, 800);
+
+  // Never show "No video track" on ended screen — rewrite to useful message
+  var _origShowEnded = window.showEnded;
+  // Intercept text content on ended screen
+  var observer = new MutationObserver(function () {
+    try {
+      var el = document.getElementById("callEndedScreen") || document.querySelector(".call-ended-screen");
+      if (!el) return;
+      var txt = el.textContent || "";
+      if (/no video track/i.test(txt)) {
+        var p = el.querySelector("p, .ended-sub, .call-ended-msg, span");
+        if (p) p.textContent = "Camera not available. Try voice call or allow camera permission.";
+        // Auto-offer join again instead of dead end
+        var back = el.querySelector("button, #endedBackBtn, .ended-back");
+        if (back && !back.dataset.patched) {
+          back.dataset.patched = "1";
+          back.textContent = "Try again";
+          back.onclick = function (e) {
+            e.preventDefault();
+            try {
+              el.classList.add("hidden");
+              if (typeof showJoinCallScreen === "function") showJoinCallScreen();
+              else if (typeof showPermissionRetry === "function") showPermissionRetry();
+              else location.reload();
+            } catch (_) { location.reload(); }
+          };
+        }
+      }
+    } catch (_) {}
+  });
+  try { observer.observe(document.documentElement, { childList: true, subtree: true, characterData: true }); } catch (_) {}
+
+  // Equal-size tiles when multiple participants
+  function equalGrid() {
+    try {
+      var stage = document.getElementById("callStage") || document.querySelector(".call-stage, .remote-wrap");
+      if (!stage) return;
+      var tiles = stage.querySelectorAll(".participant, .peer-tile, .call-tile, video");
+      var n = 0;
+      tiles.forEach(function (t) {
+        if (t.offsetParent !== null || t.style.display !== "none") n++;
+      });
+      // Fallback: remote + local
+      var remote = document.getElementById("remoteVideo");
+      var local = document.getElementById("localVideoWrap") || document.getElementById("localVideo");
+      document.body.classList.toggle("call-multi-2", n >= 2);
+      document.body.classList.toggle("call-multi-3", n >= 3);
+      document.body.classList.toggle("call-multi-4", n >= 4);
+    } catch (_) {}
+  }
+  setInterval(equalGrid, 1500);
+
+  // Hard minimize: if somehow navigated but call busy, restore mini bar
+  window.addEventListener("pageshow", function () {
+    try {
+      if (sessionStorage.getItem("viewora_call_busy") === "1" && window.localStream) {
+        if (typeof window.__vieworaShowCallMini === "function") window.__vieworaShowCallMini();
+      }
+    } catch (_) {}
+  });
+
+  // Clear busy only on real end
+  window.addEventListener("viewora-call-ended", function () {
+    try {
+      sessionStorage.removeItem("viewora_call_busy");
+      document.body.classList.remove("in-call", "call-minimized");
+    } catch (_) {}
+  });
 })();
