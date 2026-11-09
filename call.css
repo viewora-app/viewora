@@ -2779,3 +2779,73 @@ body.call-minimized #callMiniBar {
   z-index: 99999 !important;
   display: flex !important;
 }
+
+
+/* VIEWORA_MINI_BAR_V4 */
+#callMiniBar {
+  position: fixed !important;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2147483646 !important;
+  display: none;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #0f766e, #059669);
+  color: #fff;
+  font-weight: 700;
+  font-size: 13px;
+  box-shadow: 0 8px 28px rgba(0,0,0,.45);
+  max-width: calc(100vw - 24px);
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+#callMiniBar.show,
+body.call-minimized #callMiniBar {
+  display: flex !important;
+}
+#callMiniBar .miniDot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: #86efac;
+  box-shadow: 0 0 0 3px rgba(134,239,172,.25);
+  animation: vieworaPulse 1.4s ease-in-out infinite;
+}
+@keyframes vieworaPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .45; }
+}
+#callMiniBar .miniNav {
+  display: flex; gap: 6px; margin-left: 6px;
+}
+#callMiniBar .miniNav a {
+  color: #fff;
+  text-decoration: none;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: rgba(255,255,255,.15);
+}
+#callMiniBar .miniNav a:active {
+  background: rgba(255,255,255,.28);
+}
+body.call-minimized .call-controls,
+body.call-minimized .call-topbar,
+body.call-minimized #incomingScreen,
+body.call-minimized .incoming-call-screen {
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+body.call-minimized #callStage {
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+/* Keep local PiP tiny when minimized so user knows call is live */
+body.call-minimized #localVideoWrap,
+body.call-minimized .local-video-wrap {
+  opacity: 0.01 !important;
+  pointer-events: none !important;
+}

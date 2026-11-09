@@ -4443,15 +4443,12 @@ function setStatus(text) {
        BEFORE UNLOAD
     ====================================================== */
 
+    // VIEWORA: do NOT end call on beforeunload — minimize instead (WhatsApp-style)
     window.addEventListener(
         "beforeunload",
         () => {
-
-            if (
-                callRef &&
-                currentUser &&
-                !callEnded
-            ) {
+            // Intentionally empty — ending call here caused "Leave site?" + cut
+            if (false && callRef && currentUser && !callEnded) {
 
                 callRef
                     .update({
@@ -4794,13 +4791,8 @@ function setStatus(text) {
     e.stopPropagation();
     doMinimize();
   }, true);
-  // Block page unload accidentally
-  window.addEventListener("beforeunload", function (e) {
-    if (!isInCall()) return;
-    e.preventDefault();
-    e.returnValue = "Call is in progress";
-    return e.returnValue;
-  });
+  // NO beforeunload dialog — it confuses users ("Leave site?") and feels like call end.
+  // Back is trapped via popstate; mini-bar links open new tabs so this page stays alive.
 })();
 
 /* VIEWORA_CALL_BLANK_FIX */
@@ -5000,4 +4992,173 @@ function setStatus(text) {
       document.body.classList.remove("in-call", "call-minimized");
     } catch (_) {}
   });
+})();
+
+
+/* VIEWORA_MINIMIZE_WHATSAPP_V4 — true minimize, no leave dialog, new-tab browse */
+(function () {
+  var minimizing = false;
+
+  function ensureMiniBar() {
+    var bar = document.getElementById("callMiniBar");
+    if (bar) return bar;
+    bar = document.createElement("div");
+    bar.id = "callMiniBar";
+    bar.innerHTML =
+      '<span class="miniDot"></span>' +
+      '<span id="callMiniLabel">Viewora Call</span>' +
+      '<span id="callMiniTimer">00:00</span>' +
+      '<span class="miniNav">' +
+      '<a href="index.html" target="_blank" rel="noopener">Home</a>' +
+      '<a href="messages.html" target="_blank" rel="noopener">Chat</a>' +
+      '<a href="profile.html" target="_blank" rel="noopener">Profile</a>' +
+      '<a href="shorts.html" target="_blank" rel="noopener">Shorts</a>' +
+      '</span>';
+    document.body.appendChild(bar);
+    // Tap bar (not links) → expand
+    bar.addEventListener("click", function (e) {
+      if (e.target.closest("a")) return; // let new-tab links work
+      if (bar.dataset.dragging === "1") return;
+      expand();
+    });
+    // Drag
+    (function (el) {
+      if (el.dataset.dragReady) return;
+      el.dataset.dragReady = "1";
+      var ox=0,oy=0,sx=0,sy=0,moved=false;
+      function pos(ev){ if(ev.touches&&ev.touches[0]) return {x:ev.touches[0].clientX,y:ev.touches[0].clientY}; return {x:ev.clientX,y:ev.clientY}; }
+      function start(ev){ var p=pos(ev), r=el.getBoundingClientRect(); ox=p.x-r.left; oy=p.y-r.top; sx=p.x; sy=p.y; moved=false; el.dataset.dragging="0"; el.style.transition="none"; el.style.left=r.left+"px"; el.style.top=r.top+"px"; el.style.right="auto"; el.style.bottom="auto"; el.style.transform="none"; }
+      function move(ev){ var p=pos(ev); if(Math.abs(p.x-sx)+Math.abs(p.y-sy)>8){moved=true;el.dataset.dragging="1";} if(!moved)return; ev.preventDefault(); var nx=Math.max(4,Math.min(innerWidth-el.offsetWidth-4,p.x-ox)); var ny=Math.max(4,Math.min(innerHeight-el.offsetHeight-4,p.y-oy)); el.style.left=nx+"px"; el.style.top=ny+"px"; }
+      function end(){ setTimeout(function(){el.dataset.dragging="0";},50); el.style.transition=""; }
+      el.addEventListener("mousedown", start); el.addEventListener("touchstart", start, {passive:true});
+      window.addEventListener("mousemove", move, {passive:false}); window.addEventListener("touchmove", move, {passive:false});
+      window.addEventListener("mouseup", end); window.addEventListener("touchend", end);
+    })(bar);
+    return bar;
+  }
+
+  function minimize() {
+    if (minimizing) return;
+    minimizing = true;
+    try {
+      sessionStorage.setItem("viewora_call_busy", "1");
+      document.body.classList.add("in-call", "call-minimized");
+      var bar = ensureMiniBar();
+      bar.classList.add("show");
+      bar.style.display = "flex";
+      // Hide full UI chrome but KEEP media streams
+      ["call-controls", ".call-controls", ".call-topbar", "#callStage"].forEach(function (sel) {
+        try {
+          var el = document.querySelector(sel);
+          if (!el) return;
+          if (sel === "#callStage") el.style.opacity = "0";
+          else el.style.visibility = "hidden";
+        } catch (_) {}
+      });
+      // Hide old bubble if any
+      var old = document.getElementById("callMiniBubble");
+      if (old) old.style.display = "none";
+      // Keep pushing history so back never leaves
+      try {
+        history.pushState({ vieworaCall: Date.now() }, "", location.href);
+      } catch (_) {}
+    } catch (e) { console.warn(e); }
+    setTimeout(function () { minimizing = false; }, 300);
+  }
+
+  function expand() {
+    try {
+      document.body.classList.remove("call-minimized");
+      var bar = document.getElementById("callMiniBar");
+      if (bar) { bar.classList.remove("show"); }
+      document.querySelectorAll(".call-controls, .call-topbar").forEach(function (el) {
+        el.style.visibility = "";
+      });
+      var stage = document.getElementById("callStage");
+      if (stage) stage.style.opacity = "";
+      var old = document.getElementById("callMiniBubble");
+      if (old) old.style.display = "";
+    } catch (_) {}
+  }
+
+  window.__vieworaShowCallMini = minimize;
+  window.__vieworaHideCallMini = expand;
+  window.__vieworaExpandCall = expand;
+
+  // Timer sync
+  setInterval(function () {
+    try {
+      var t = document.getElementById("callTimer") || document.getElementById("callDuration");
+      var mt = document.getElementById("callMiniTimer");
+      if (t && mt) mt.textContent = (t.textContent || "00:00").trim();
+    } catch (_) {}
+  }, 1000);
+
+  // Back / hardware back → ONLY minimize
+  function trap() {
+    try {
+      history.pushState({ vieworaCall: 1 }, "", location.href);
+      history.pushState({ vieworaCall: 2 }, "", location.href);
+    } catch (_) {}
+  }
+  function onPop() {
+    var busy = false;
+    try {
+      busy = sessionStorage.getItem("viewora_call_busy") === "1" ||
+             document.body.classList.contains("in-call") ||
+             !!(window.localStream && window.localStream.getTracks().some(function (t) { return t.readyState === "live"; }));
+    } catch (_) {}
+    if (!busy) return;
+    trap();
+    minimize();
+  }
+  window.addEventListener("popstate", onPop);
+  // Arm early + re-arm while in call
+  trap();
+  setInterval(function () {
+    try {
+      if (sessionStorage.getItem("viewora_call_busy") === "1") trap();
+    } catch (_) {}
+  }, 2000);
+
+  // UI back buttons
+  document.addEventListener("click", function (e) {
+    var t = e.target && e.target.closest && e.target.closest(
+      "#backBtn, .backBtn, [data-action=back], #minimizeCallBtn, .call-back, #callBackBtn, .call-topbar .back, [aria-label=Back]"
+    );
+    if (!t) return;
+    var busy = false;
+    try {
+      busy = sessionStorage.getItem("viewora_call_busy") === "1" ||
+             document.body.classList.contains("in-call") ||
+             !!(window.localStream);
+    } catch (_) {}
+    if (!busy) return;
+    e.preventDefault();
+    e.stopPropagation();
+    e.stopImmediatePropagation();
+    minimize();
+  }, true);
+
+  // Arm busy when media goes live
+  setInterval(function () {
+    try {
+      if (window.localStream && window.localStream.getTracks().some(function (t) { return t.readyState === "live"; })) {
+        sessionStorage.setItem("viewora_call_busy", "1");
+        document.body.classList.add("in-call");
+      }
+    } catch (_) {}
+  }, 1000);
+
+  // When End is pressed, clear busy so navigation is free
+  document.addEventListener("click", function (e) {
+    var t = e.target && e.target.closest && e.target.closest(
+      "#endCallBtn, #hangupBtn, .end-call, [data-action=end-call], #endBtn"
+    );
+    if (!t) return;
+    try {
+      sessionStorage.removeItem("viewora_call_busy");
+      document.body.classList.remove("in-call", "call-minimized");
+    } catch (_) {}
+  }, true);
 })();
