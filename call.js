@@ -3332,7 +3332,7 @@ function setStatus(text) {
 
     async function switchCamera() {
         if (callType !== "video") {
-            toast("Camera switch only on video calls.");
+            toast("Turn on video first, then flip camera.");
             return;
         }
         if (!localStream) {
@@ -3740,6 +3740,40 @@ function setStatus(text) {
         }
     }
 
+
+    function showVideoSwitchModal() {
+        return new Promise(function (resolve) {
+            try {
+                var old = document.getElementById("vieworaVideoSwitchModal");
+                if (old) old.remove();
+            } catch (_) {}
+            var wrap = document.createElement("div");
+            wrap.id = "vieworaVideoSwitchModal";
+            wrap.innerHTML = [
+                '<div class="vvs-backdrop"></div>',
+                '<div class="vvs-card">',
+                '  <div class="vvs-icon"><i class="fa-solid fa-video"></i></div>',
+                '  <h3>Turn on camera?</h3>',
+                '  <p>This will share your camera with the other person. You can turn it off anytime.</p>',
+                '  <div class="vvs-actions">',
+                '    <button type="button" class="vvs-cancel">Not now</button>',
+                '    <button type="button" class="vvs-ok">Turn on</button>',
+                '  </div>',
+                '</div>'
+            ].join("");
+            document.body.appendChild(wrap);
+            requestAnimationFrame(function () { wrap.classList.add("show"); });
+            function close(val) {
+                wrap.classList.remove("show");
+                setTimeout(function () { try { wrap.remove(); } catch (_) {} }, 200);
+                resolve(val);
+            }
+            wrap.querySelector(".vvs-cancel").onclick = function () { close(false); };
+            wrap.querySelector(".vvs-backdrop").onclick = function () { close(false); };
+            wrap.querySelector(".vvs-ok").onclick = function () { close(true); };
+        });
+    }
+
     async function toggleCamera() {
 
         if (!localStream) {
@@ -3754,8 +3788,8 @@ function setStatus(text) {
             var ok = true;
             if (callType !== "video") {
                 try {
-                    ok = window.confirm("Switch to video call? Your camera will turn on.");
-                } catch (_) {}
+                    ok = await showVideoSwitchModal();
+                } catch (_) { ok = true; }
                 if (!ok) return;
             }
             try {
@@ -4820,4 +4854,39 @@ function setStatus(text) {
     } catch (e) {}
   }
   setInterval(syncLocalPip, 2000);
+})();
+
+/* VIEWORA_MINI_V2 */
+(function () {
+  function ensureBar() {
+    var bar = document.getElementById("callMiniBar");
+    if (!bar) {
+      bar = document.createElement("div");
+      bar.id = "callMiniBar";
+      bar.innerHTML = '<span class="miniDot"></span><span id="callMiniLabel">Viewora Call</span> <span id="callMiniTimer">00:00</span>';
+      document.body.appendChild(bar);
+    }
+    return bar;
+  }
+  window.__vieworaShowCallMini = function () {
+    var bar = ensureBar();
+    bar.classList.add("show");
+    bar.style.display = "flex";
+    document.body.classList.add("call-minimized");
+    try {
+      var c = document.querySelector(".call-controls"); if (c) c.style.visibility = "hidden";
+      var t = document.querySelector(".call-topbar"); if (t) t.style.visibility = "hidden";
+      var s = document.getElementById("callStage"); if (s) s.style.opacity = "0";
+    } catch (_) {}
+  };
+  window.__vieworaHideCallMini = function () {
+    var bar = document.getElementById("callMiniBar");
+    if (bar) { bar.classList.remove("show"); }
+    document.body.classList.remove("call-minimized");
+    try {
+      var c = document.querySelector(".call-controls"); if (c) c.style.visibility = "";
+      var t = document.querySelector(".call-topbar"); if (t) t.style.visibility = "";
+      var s = document.getElementById("callStage"); if (s) s.style.opacity = "";
+    } catch (_) {}
+  };
 })();

@@ -1552,6 +1552,17 @@ state.messagesListener = {
             return "image";
         }
 
+        // Text that is only a media URL → treat as image (hide raw cloudinary links)
+        try {
+            var rawTxt = String(message.text || message.body || "").trim();
+            if ((!message.type || message.type === "text") && rawTxt && /^https?:\/\/\S+$/i.test(rawTxt)) {
+                if (/\.(jpg|jpeg|png|gif|webp|bmp)(\?|$)/i.test(rawTxt) ||
+                    /cloudinary\.com|res\.cloudinary|imgur\.com|i\.ibb|firebasestorage/i.test(rawTxt)) {
+                    return "image";
+                }
+            }
+        } catch (_) {}
+
         if (
             message.type === "video"
         ) {
@@ -1810,7 +1821,13 @@ state.messagesListener = {
                 >
                     <img
                         src="${escapeHTML(
-                            safeURL(message.url)
+                            safeURL(
+                                message.url ||
+                                message.mediaUrl ||
+                                message.imageUrl ||
+                                message.photo ||
+                                ((/^https?:\/\//i.test(String(message.text||"").trim())) ? String(message.text).trim() : "")
+                            )
                         )}"
                         alt="${escapeHTML(
                             message.caption ||
@@ -1917,6 +1934,7 @@ state.messagesListener = {
                 message.thumbnail ||
                 message.imageUrl ||
                 message.mediaUrl ||
+                ((/^https?:\/\//i.test(String(message.text||""))) ? message.text : null) ||
                 message.cover ||
                 "";
             const title =
@@ -7178,3 +7196,274 @@ async function vieworaMaybeMarkRequest(peerUid, chatId) {
   setTimeout(run, 500);
   setTimeout(run, 1500);
 })();
+
+
+/* VIEWORA_MULTI_SELECT + better forward */
+(function () {
+  if (!window.state) return;
+  state.selectionMode = false;
+  state.selectedIds = {};
+
+  function ensureSelectBar() {
+    var bar = document.getElementById("msgSelectBar");
+    if (bar) return bar;
+    bar = document.createElement("div");
+    bar.id = "msgSelectBar";
+    bar.innerHTML = [
+      '<button type="button" id="msgSelectCancel">Cancel</button>',
+      '<span id="msgSelectCount">0 selected</span>',
+      '<button type="button" id="msgSelectForward"><i class="fa-solid fa-share"></i> Forward</button>',
+      '<button type="button" id="msgSelectDelete" class="danger"><i class="fa-solid fa-trash"></i></button>'
+    ].join("");
+    document.body.appendChild(bar);
+    bar.querySelector("#msgSelectCancel").onclick = function () { exitSelectMode(); };
+    bar.querySelector("#msgSelectForward").onclick = function () { forwardSelected(); };
+    bar.querySelector("#msgSelectDelete").onclick = function () { deleteSelected(); };
+    return bar;
+  }
+
+  function updateSelectBar() {
+    var n = Object.keys(state.selectedIds || {}).length;
+    var bar = ensureSelectBar();
+    bar.classList.toggle("show", !!state.selectionMode);
+    var c = document.getElementById("msgSelectCount");
+    if (c) c.textContent = n + " selected";
+    document.body.classList.toggle("msg-selecting", !!state.selectionMode);
+  }
+
+  function enterSelectMode(id) {
+    state.selectionMode = true;
+    state.selectedIds = state.selectedIds || {};
+    if (id) state.selectedIds[id] = true;
+    updateSelectBar();
+    markDomSelected();
+  }
+
+  function exitSelectMode() {
+    state.selectionMode = false;
+    state.selectedIds = {};
+    updateSelectBar();
+    document.querySelectorAll(".messageRow.selected").forEach(function (el) {
+      el.classList.remove("selected");
+    });
+  }
+
+  function markDomSelected() {
+    document.querySelectorAll(".messageRow[data-id]").forEach(function (el) {
+      var id = el.getAttribute("data-id");
+      el.classList.toggle("selected", !!(state.selectedIds && state.selectedIds[id]));
+    });
+  }
+
+  function toggleSelect(id) {
+    if (!state.selectedIds) state.selectedIds = {};
+    if (state.selectedIds[id]) delete state.selectedIds[id];
+    else state.selectedIds[id] = true;
+    if (!Object.keys(state.selectedIds).length) exitSelectMode();
+    else updateSelectBar();
+    markDomSelected();
+  }
+
+  window.__vieworaEnterSelect = enterSelectMode;
+  window.__vieworaToggleSelect = toggleSelect;
+  window.__vieworaExitSelect = exitSelectMode;
+
+  async function forwardSelected() {
+    var ids = Object.keys(state.selectedIds || {});
+    if (!ids.length) return;
+    var msgs = (state.messages || []).filter(function (m) { return m && ids.indexOf(m.id) !== -1; });
+    if (!msgs.length) return;
+    openForwardSheet(msgs);
+  }
+
+  async function deleteSelected() {
+    var ids = Object.keys(state.selectedIds || {});
+    if (!ids.length) return;
+    if (!confirm("Delete " + ids.length + " message(s) for you?")) return;
+    try {
+      for (var i = 0; i < ids.length; i++) {
+        var id = ids[i];
+        if (state.chatId && state.currentUser) {
+          await db.ref("vieworaChats/" + state.chatId + "/userDeleted/" + state.currentUser.uid + "/" + id).set(true);
+        }
+      }
+      exitSelectMode();
+      if (typeof loadUserDeleted === "function") await loadUserDeleted();
+      if (typeof renderMessages === "function") renderMessages();
+      if (typeof showToast === "function") showToast("Deleted", "success");
+    } catch (e) {
+      console.warn(e);
+    }
+  }
+
+  function openForwardSheet(msgs) {
+    try {
+      var old = document.getElementById("forwardSheet");
+      if (old) old.remove();
+    } catch (_) {}
+    var sheet = document.createElement("div");
+    sheet.id = "forwardSheet";
+    sheet.innerHTML = [
+      '<div class="fs-backdrop"></div>',
+      '<div class="fs-card">',
+      '  <div class="fs-head"><strong>Forward to</strong><button type="button" id="fsClose">✕</button></div>',
+      '  <input id="fsSearch" type="search" placeholder="Search name or @username" />',
+      '  <div id="fsList" class="fs-list"><div class="fs-empty">Loading…</div></div>',
+      '</div>'
+    ].join("");
+    document.body.appendChild(sheet);
+    requestAnimationFrame(function () { sheet.classList.add("show"); });
+    sheet.querySelector("#fsClose").onclick = function () { sheet.remove(); };
+    sheet.querySelector(".fs-backdrop").onclick = function () { sheet.remove(); };
+
+    var listEl = sheet.querySelector("#fsList");
+    var peers = [];
+
+    function renderList(filter) {
+      var q = (filter || "").toLowerCase().replace(/^@/, "");
+      var html = "";
+      peers.filter(function (p) {
+        if (!q) return true;
+        return (p.name || "").toLowerCase().indexOf(q) >= 0 ||
+               (p.username || "").toLowerCase().indexOf(q) >= 0;
+      }).forEach(function (p) {
+        html += '<button type="button" class="fs-row" data-uid="' + p.uid + '">' +
+          '<img src="' + (p.photo || "") + '" alt="" onerror="this.style.opacity=.3" />' +
+          '<span><b>' + (p.name || "User") + '</b><small>@' + (p.username || "user") + '</small></span>' +
+          '</button>';
+      });
+      listEl.innerHTML = html || '<div class="fs-empty">No chats found</div>';
+      listEl.querySelectorAll(".fs-row").forEach(function (btn) {
+        btn.onclick = function () {
+          var uid = btn.getAttribute("data-uid");
+          doForward(msgs, uid).then(function () {
+            sheet.remove();
+            exitSelectMode();
+            if (typeof showToast === "function") showToast("Forwarded", "success");
+          });
+        };
+      });
+    }
+
+    // Load from userChats
+    try {
+      var uid = state.currentUser && state.currentUser.uid;
+      if (!uid || !db) { listEl.innerHTML = '<div class="fs-empty">Sign in required</div>'; return; }
+      db.ref("userChats/" + uid).limitToLast(40).once("value").then(function (snap) {
+        var val = snap.val() || {};
+        var jobs = [];
+        Object.keys(val).forEach(function (chatId) {
+          var meta = val[chatId] || {};
+          var peer = meta.userId || meta.peerId || meta.uid;
+          if (!peer || peer === uid) return;
+          jobs.push(
+            db.ref("users/" + peer).once("value").then(function (us) {
+              var u = us.val() || {};
+              peers.push({
+                uid: peer,
+                name: u.displayName || u.name || meta.name || "User",
+                username: (u.username || meta.username || "").replace(/^@/, ""),
+                photo: u.profilePhoto || u.photoURL || u.avatar || meta.photo || ""
+              });
+            }).catch(function () {
+              peers.push({ uid: peer, name: meta.name || "User", username: "", photo: "" });
+            })
+          );
+        });
+        Promise.all(jobs).then(function () {
+          peers.sort(function (a, b) { return (a.name || "").localeCompare(b.name || ""); });
+          renderList("");
+        });
+      }).catch(function () {
+        listEl.innerHTML = '<div class="fs-empty">Could not load chats</div>';
+      });
+    } catch (e) {
+      listEl.innerHTML = '<div class="fs-empty">Error</div>';
+    }
+
+    sheet.querySelector("#fsSearch").oninput = function (e) {
+      renderList(e.target.value);
+    };
+  }
+
+  async function doForward(msgs, targetUid) {
+    if (!state.currentUser || !targetUid || !db) return;
+    var chatId = [state.currentUser.uid, targetUid].sort().join("_");
+    try {
+      await db.ref("chatMembers/" + chatId + "/" + state.currentUser.uid).set(true);
+      await db.ref("chatMembers/" + chatId + "/" + targetUid).set(true);
+    } catch (_) {}
+    for (var i = 0; i < msgs.length; i++) {
+      var message = msgs[i];
+      var payload = {
+        senderId: state.currentUser.uid,
+        receiverId: targetUid,
+        type: message.type || "text",
+        text: message.text || "",
+        mediaUrl: message.mediaUrl || message.url || message.imageUrl || null,
+        imageUrl: message.imageUrl || message.mediaUrl || null,
+        duration: message.duration || null,
+        forwarded: true,
+        forwardedFrom: message.senderId || null,
+        createdAt: firebase.database.ServerValue.TIMESTAMP
+      };
+      // If text is only a media url, store as image
+      var t = String(payload.text || "").trim();
+      if ((!payload.type || payload.type === "text") && /^https?:\/\//i.test(t) &&
+          (/\.(jpg|jpeg|png|gif|webp)/i.test(t) || /cloudinary|firebasestorage/i.test(t))) {
+        payload.type = "image";
+        payload.mediaUrl = payload.mediaUrl || t;
+        payload.imageUrl = payload.imageUrl || t;
+        payload.text = "";
+      }
+      await db.ref("vieworaChats/" + chatId + "/messages").push(payload);
+    }
+    try {
+      await db.ref("userChats/" + state.currentUser.uid + "/" + chatId).update({
+        userId: targetUid,
+        lastMessage: "Forwarded message",
+        updatedAt: Date.now()
+      });
+      await db.ref("userChats/" + targetUid + "/" + chatId).update({
+        userId: state.currentUser.uid,
+        lastMessage: "Forwarded message",
+        updatedAt: Date.now()
+      });
+    } catch (_) {}
+  }
+
+  // Long-press message → select mode
+  document.addEventListener("click", function (e) {
+    if (!state.selectionMode) return;
+    var row = e.target.closest && e.target.closest(".messageRow[data-id]");
+    if (!row) return;
+    e.preventDefault();
+    e.stopPropagation();
+    toggleSelect(row.getAttribute("data-id"));
+  }, true);
+
+  var pressTimer = null;
+  document.addEventListener("touchstart", function (e) {
+    var row = e.target.closest && e.target.closest(".messageRow[data-id]");
+    if (!row) return;
+    var id = row.getAttribute("data-id");
+    pressTimer = setTimeout(function () {
+      enterSelectMode(id);
+      try { if (navigator.vibrate) navigator.vibrate(12); } catch (_) {}
+    }, 450);
+  }, { passive: true });
+  document.addEventListener("touchend", function () { clearTimeout(pressTimer); });
+  document.addEventListener("touchmove", function () { clearTimeout(pressTimer); });
+
+  // Hook single forward button to sheet
+  document.addEventListener("click", function (e) {
+    var btn = e.target.closest && e.target.closest("#forwardMessageBtn");
+    if (!btn) return;
+    e.preventDefault();
+    if (state.selectedMessage) {
+      openForwardSheet([state.selectedMessage]);
+      try { if (typeof closeMessageMenu === "function") closeMessageMenu(); } catch (_) {}
+    }
+  }, true);
+})();
+/* VIEWORA_MULTI_SELECT */
