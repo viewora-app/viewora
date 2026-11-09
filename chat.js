@@ -1799,6 +1799,7 @@ state.messagesListener = {
             content = `
                 <button type="button" class="callHistoryBubble ${isMissed ? "missed" : ""}"
                     data-action="call-back" data-peer="${escapeHTML(peer)}"
+                    data-call-type="${isVideo ? "video" : "audio"}"
                     style="display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:14px;border:none;background:rgba(255,255,255,0.08);color:#fff;width:100%;text-align:left;cursor:pointer">
                     <span style="width:40px;height:40px;border-radius:50%;display:grid;place-items:center;background:${isMissed ? "rgba(255,59,95,.2)" : "rgba(167,139,250,.25)"}">
                         <i class="fa-solid ${icon}" style="color:${isMissed ? "#ff3b5c" : "#c4b5fd"}"></i>
@@ -2647,6 +2648,31 @@ state.messagesListener = {
                     );
                 }
             );
+
+        messagesList
+            .querySelectorAll("[data-action='call-back']")
+            .forEach(function (element) {
+                if (element.__callBackBound) return;
+                element.__callBackBound = true;
+                element.addEventListener("click", function (event) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    var peer = element.getAttribute("data-peer") || "";
+                    var type = element.getAttribute("data-call-type") === "video" ? "video" : "audio";
+                    if (!peer || peer === (state.currentUser && state.currentUser.uid)) {
+                        showToast("This call cannot be placed.", "error");
+                        return;
+                    }
+                    if (window.VieworaCall && typeof window.VieworaCall.startCall === "function") {
+                        window.VieworaCall.startCall(peer, type);
+                    } else {
+                        window.location.href = "call.html?role=caller&type=" + type +
+                            "&receiverId=" + encodeURIComponent(peer) +
+                            "&uid=" + encodeURIComponent(peer);
+                    }
+                });
+            });
+
     }
 
 
