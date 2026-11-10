@@ -289,6 +289,33 @@
         </button>
 
         <button
+            id="menuClearChatBtn"
+            class="menuItem"
+            type="button"
+        >
+            <i class="fa-solid fa-broom"></i>
+            <span>Clear chat</span>
+        </button>
+
+        <button
+            id="menuExportChatBtn"
+            class="menuItem"
+            type="button"
+        >
+            <i class="fa-solid fa-file-export"></i>
+            <span>Export chat</span>
+        </button>
+
+        <button
+            id="menuThemeBtn"
+            class="menuItem"
+            type="button"
+        >
+            <i class="fa-solid fa-palette"></i>
+            <span>Chat theme</span>
+        </button>
+
+        <button
             id="menuDeleteChatBtn"
             class="menuItem danger"
             type="button"
@@ -297,6 +324,22 @@
             <span>Delete chat</span>
         </button>
 
+    </div>
+
+    <!-- Chat theme picker -->
+    <div id="chatThemeSheet" class="chatThemeSheet hidden">
+      <div class="cts-head">Chat theme</div>
+      <div class="cts-colors">
+        <button type="button" data-theme="violet" class="cts-swatch" style="background:#7c3aed"></button>
+        <button type="button" data-theme="blue" class="cts-swatch" style="background:#2563eb"></button>
+        <button type="button" data-theme="green" class="cts-swatch" style="background:#059669"></button>
+        <button type="button" data-theme="pink" class="cts-swatch" style="background:#db2777"></button>
+        <button type="button" data-theme="orange" class="cts-swatch" style="background:#ea580c"></button>
+        <button type="button" data-theme="red" class="cts-swatch" style="background:#dc2626"></button>
+        <button type="button" data-theme="cyan" class="cts-swatch" style="background:#0891b2"></button>
+        <button type="button" data-theme="indigo" class="cts-swatch" style="background:#4f46e5"></button>
+      </div>
+      <button type="button" id="ctsClose" class="cts-close">Done</button>
     </div>
 
 

@@ -1124,15 +1124,19 @@ function setStatus(text) {
                 }
 
 
+                attachRemoteMedia();
+                // User already gestured (accept/call) — force play
                 try {
-                    if (event.track && event.track.addEventListener) {
-                        event.track.addEventListener("ended", attachRemoteMedia, { once: true });
+                    if (remoteAudio) {
+                        remoteAudio.muted = false;
+                        remoteAudio.play().catch(() => {});
+                    }
+                    if (remoteVideo && callType === "video") {
+                        remoteVideo.muted = false;
+                        remoteVideo.play().catch(() => {});
+            try { setConnecting(false); } catch (_) {}
                     }
                 } catch (_) {}
-                attachRemoteMedia();
-                if (event.track && event.track.kind === "video") {
-                    try { setConnecting(false); } catch (_) {}
-                }
 
             };
 
@@ -1336,59 +1340,49 @@ function setStatus(text) {
 
     function attachRemoteMedia() {
 
-        if (!remoteStream) return;
+        if (!remoteStream) {
+            return;
+        }
 
-        var videoTracks = [];
+        var hasVideo = false;
         try {
-            videoTracks = remoteStream.getVideoTracks().filter(function (track) {
-                return track && track.readyState === "live";
+            hasVideo = remoteStream.getVideoTracks().some(function (t) {
+                return t && t.readyState !== "ended";
             });
         } catch (_) {}
 
-        var hasVideo = videoTracks.length > 0;
-        var isVideoCall = callType === "video";
-
+        // Always attach video element if stream has video (fixes purple blank screen)
         if (remoteVideo) {
             try {
+                remoteVideo.srcObject = remoteStream;
                 remoteVideo.playsInline = true;
+                remoteVideo.muted = false;
                 remoteVideo.setAttribute("playsinline", "");
                 remoteVideo.setAttribute("webkit-playsinline", "");
-                if (isVideoCall && hasVideo) {
-                    remoteVideo.srcObject = remoteStream;
-                    remoteVideo.muted = false;
-                    remoteVideo.style.display = "block";
-                    remoteVideo.style.opacity = "1";
-                    var videoPlay = remoteVideo.play();
-                    if (videoPlay && videoPlay.catch) videoPlay.catch(function () {});
-                } else {
-                    remoteVideo.style.opacity = "0";
-                    remoteVideo.srcObject = null;
-                }
+                var p = remoteVideo.play();
+                if (p && p.catch) p.catch(function () {});
             } catch (e) {
                 console.warn("remoteVideo attach", e);
             }
+            if (hasVideo || callType === "video") {
+                if (remotePlaceholder) remotePlaceholder.classList.add("hidden");
+                try {
+                    remoteVideo.style.display = "block";
+                    remoteVideo.style.opacity = "1";
+                } catch (_) {}
+            }
         }
 
-        // Video element already carries audio in video calls. Use the audio
-        // element only for voice calls to prevent duplicate playback/echo.
         if (remoteAudio) {
             try {
-                if (!isVideoCall) {
-                    remoteAudio.srcObject = remoteStream;
-                    remoteAudio.muted = false;
-                    var audioPlay = remoteAudio.play();
-                    if (audioPlay && audioPlay.catch) audioPlay.catch(function () {});
-                } else {
-                    remoteAudio.pause();
-                    remoteAudio.srcObject = null;
-                }
+                remoteAudio.srcObject = remoteStream;
+                remoteAudio.muted = false;
+                var pa = remoteAudio.play();
+                if (pa && pa.catch) pa.catch(function () {});
             } catch (_) {}
         }
 
-        if (remotePlaceholder) {
-            remotePlaceholder.classList.toggle("hidden", isVideoCall && hasVideo);
-        }
-
+        // Camera-off remote: show peer DP if no video track
         try {
             var off = document.getElementById("remoteCameraOff");
             if (!off && remoteVideo && remoteVideo.parentElement) {
@@ -1399,13 +1393,21 @@ function setStatus(text) {
                 remoteVideo.parentElement.appendChild(off);
             }
             if (off) {
-                off.classList.toggle("show", isVideoCall && !hasVideo);
+                off.classList.toggle("show", !hasVideo && callType === "video");
                 var img = document.getElementById("remoteCameraOffImg");
-                if (img && !hasVideo) img.src = window.__vieworaRemotePhoto || "assets/default-avatar.png";
+                if (img && !hasVideo) {
+                    img.src =
+                        (window.__vieworaRemotePhoto) ||
+                        "data:image/svg+xml," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#7c3aed"/><stop offset="100%" stop-color="#2563eb"/></linearGradient></defs><circle cx="64" cy="64" r="64" fill="url(#g)"/><circle cx="64" cy="48" r="24" fill="rgba(255,255,255,.92)"/><ellipse cx="64" cy="106" rx="40" ry="28" fill="rgba(255,255,255,.92)"/></svg>');
+                }
             }
         } catch (_) {}
     }
 
+
+    /* ======================================================
+       UPDATE CALL
+    ====================================================== */
 
     async function updateCall(data) {
 
@@ -2055,17 +2057,13 @@ function setStatus(text) {
 
         ensureCallReference();
 
-        // Arm the Back guard before the first Firebase write finishes.
-        try {
-            sessionStorage.setItem("viewora_call_busy", "1");
-            document.body.classList.add("in-call");
-        } catch (_) {}
 
         /*
          * Create Firebase signaling
          */
 
         await createCall();
+
 
         try {
             await setOutboundStatus(receiverId);
@@ -2163,24 +2161,6 @@ function setStatus(text) {
         }
 
 
-        // A ringing record older than the ring window is stale; never display it.
-        try {
-            var createdMs = Number(data.createdAtMs || data.createdAt || 0);
-            if (data.status === "ringing" && createdMs > 0 &&
-                Date.now() - createdMs > (RING_TIMEOUT_MS + 15000)) {
-                await callRef.update({
-                    status: "ended",
-                    endedReason: "expired",
-                    endedAt: firebase.database.ServerValue.TIMESTAMP
-                });
-                await db.ref("incomingCalls/" + currentUser.uid + "/" + callId).remove();
-                showEnded("This missed call has expired.");
-                return;
-            }
-        } catch (expiryError) {
-            logError("Stale call cleanup:", expiryError);
-        }
-
         // Allow if receiver, caller, participant, or invited
         try {
             var uid = currentUser.uid;
@@ -2201,9 +2181,6 @@ function setStatus(text) {
             }
         }
 
-        // Normalize the receiver UID so accept/reject/end always clear the
-        // exact incomingCalls/{receiverUid}/{callId} queue entry.
-        receiverId = data.receiverId || currentUser.uid;
 
         if (
             data.status ===
@@ -2349,11 +2326,8 @@ function setStatus(text) {
 
         try {
 
-            accepted = true;
-            try {
-                sessionStorage.setItem("viewora_call_busy", "1");
-                document.body.classList.add("in-call");
-            } catch (_) {}
+            accepted =
+                true;
 
             clearRingTimeout();
             requestWakeLock();
@@ -2672,14 +2646,8 @@ function setStatus(text) {
         }
 
 
-        try {
-            if (callRef && callRef.onDisconnect) await callRef.onDisconnect().cancel();
-            if (receiverId && callId) {
-                await db.ref("incomingCalls/" + receiverId + "/" + callId).onDisconnect().cancel();
-            }
-        } catch (_) {}
         cleanup();
-        try { await logCallToChat({ missed: true, status: "declined" }); } catch (_) {}
+
 
         showEnded(
             "Call declined."
@@ -2699,62 +2667,43 @@ function setStatus(text) {
             if (!db || !currentUser) return;
             var peer = remoteUserId || receiverId || callerId;
             if (!peer || peer === currentUser.uid) return;
-
-            var chatId = [String(currentUser.uid), String(peer)].sort().join("_");
-            var durationSec = Math.max(0, Math.floor(Number(callSeconds) || 0));
+            var uids = [currentUser.uid, peer].sort();
+            var chatId = uids.join("_");
+            var durationSec = 0;
+            try {
+                if (typeof callSeconds === "number") durationSec = callSeconds;
+                else if (window.__vieworaCallSeconds) durationSec = window.__vieworaCallSeconds;
+            } catch (_) {}
+            var typeLabel = (callType === "video") ? "Video call" : "Voice call";
             var missed = !!opts.missed;
-            var status = opts.status || (missed ? "missed" : (accepted ? "completed" : "cancelled"));
-            var typeLabel = callType === "video" ? "video" : "voice";
+            if (!missed && durationSec < 1) durationSec = 1;
             var text = missed
-                ? ("Missed " + typeLabel + " call")
-                : (!accepted
-                    ? ("Cancelled " + typeLabel + " call")
-                    : ((callType === "video" ? "Video" : "Voice") +
-                        " call" + (durationSec > 0 ? " · " + formatCallDuration(durationSec) : "")));
-
+                ? ("Missed " + (callType === "video" ? "video" : "voice") + " call")
+                : (typeLabel + " · " + formatCallDuration(durationSec));
             var payload = {
-                id: callId || undefined,
-                callId: callId || null,
                 type: "call",
-                callType: callType || "audio",
+                callType: callType || "voice",
                 missed: missed,
-                status: status,
                 duration: durationSec,
                 text: text,
                 senderId: currentUser.uid,
                 receiverId: peer,
                 createdAt: firebase.database.ServerValue.TIMESTAMP
             };
-
-            // Chat reads from vieworaChats/{sortedUidA_uidB}/messages.
-            // A stable callId prevents duplicate entries if both sides finish together.
-            var messageRef = db.ref("vieworaChats/" + chatId + "/messages");
-            if (callId) {
-                await messageRef.child(callId).transaction(function (existing) {
-                    return existing || payload;
-                });
-            } else {
-                await messageRef.push(payload);
-            }
-
-            // Update only the signed-in user's inbox; peer-side writes may be denied by rules.
-            try {
-                await db.ref("userChats/" + currentUser.uid + "/" + chatId).update({
-                    chatId: chatId,
-                    userId: peer,
-                    peerId: peer,
-                    lastMessage: text,
-                    lastMessageType: "call",
-                    updatedAt: firebase.database.ServerValue.TIMESTAMP
-                });
-            } catch (inboxError) {
-                console.warn("Call history inbox update:", inboxError);
-            }
+            await db.ref("chats/" + chatId + "/messages").push(payload);
+            var preview = text;
+            var inbox = {
+                lastMessage: preview,
+                lastMessageType: "call",
+                updatedAt: firebase.database.ServerValue.TIMESTAMP,
+                chatId: chatId
+            };
+            await db.ref("userChats/" + currentUser.uid + "/" + chatId).update(inbox);
+            await db.ref("userChats/" + peer + "/" + chatId).update(inbox);
         } catch (e) {
             console.warn("logCallToChat", e);
         }
     }
-
     function formatCallDuration(sec) {
         sec = Math.max(0, Math.floor(Number(sec) || 0));
         if (sec < 60) return sec + " secs";
@@ -2764,9 +2713,7 @@ function setStatus(text) {
         return h + " hr " + (m % 60) + " min";
     }
 
-    async function endCall(opts) {
-
-        opts = opts || {};
+    async function endCall() {
 
         if (callEnded) {
             return;
@@ -2842,20 +2789,9 @@ function setStatus(text) {
         }
 
 
-        try {
-            if (callRef && callRef.onDisconnect) await callRef.onDisconnect().cancel();
-            if (receiverId && callId) {
-                await db.ref("incomingCalls/" + receiverId + "/" + callId).onDisconnect().cancel();
-            }
-        } catch (_) {}
         cleanup();
         scheduleCallPurge();
-        try {
-            await logCallToChat({
-                missed: !!opts.missed,
-                status: opts.status || (opts.missed ? "missed" : (accepted ? "completed" : "cancelled"))
-            });
-        } catch (_) {}
+        try { await logCallToChat({ missed: false }); } catch (_) {}
         showEnded("Call ended.");
 
     }
@@ -2863,14 +2799,6 @@ function setStatus(text) {
     function clearBusyFlag() {
         try {
             sessionStorage.removeItem("viewora_call_busy");
-            document.body.classList.remove("in-call", "call-minimized");
-            var miniBar = document.getElementById("callMiniBar");
-            if (miniBar) {
-                miniBar.classList.remove("show");
-                miniBar.style.display = "none";
-            }
-            var miniBubble = document.getElementById("callMiniBubble");
-            if (miniBubble) miniBubble.remove();
             if (db && currentUser) {
                 db.ref("users/" + currentUser.uid + "/callStatus").remove();
             }
@@ -2917,19 +2845,12 @@ function setStatus(text) {
                 online: false,
                 at: firebase.database.ServerValue.TIMESTAMP
             });
-
-            // Only the caller owns the outgoing ring. If their connection dies,
-            // end the room and remove the receiver's queued incoming call.
-            if (role === "caller" && receiverId) {
-                callRef.onDisconnect().update({
-                    status: "ended",
-                    endedBy: currentUser.uid,
-                    endedReason: "caller_disconnected",
-                    endedAt: firebase.database.ServerValue.TIMESTAMP
-                });
-                db.ref("incomingCalls/" + receiverId + "/" + callId)
-                    .onDisconnect().remove();
-            }
+            callRef.onDisconnect().update({
+                status: "ended",
+                endedBy: currentUser.uid,
+                endedReason: "disconnect",
+                endedAt: firebase.database.ServerValue.TIMESTAMP
+            });
         } catch (e) {
             logError("onDisconnect:", e);
         }
@@ -3075,7 +2996,7 @@ function setStatus(text) {
         ringTimeoutId = setTimeout(() => {
             if (callEnded || accepted) return;
             toast("No answer");
-            endCall({ missed: true, status: "missed" });
+            endCall();
         }, RING_TIMEOUT_MS);
     }
 
@@ -4498,6 +4419,19 @@ function setStatus(text) {
     $("minimizeCallBtn")
         ?.addEventListener("click", minimizeCallUI);
 
+    // Hardware / browser back → minimize, do not kill call
+    try {
+        history.pushState({ vieworaCall: 1 }, "", location.href);
+        window.addEventListener("popstate", function (e) {
+            if (callEnded) return;
+            if (!document.body.classList.contains("call-minimized")) {
+                history.pushState({ vieworaCall: 1 }, "", location.href);
+                minimizeCallUI();
+            }
+        });
+    } catch (_) {}
+
+
     // Re-acquire wake lock if tab becomes visible again mid-call
     document.addEventListener("visibilitychange", () => {
         if (document.visibilityState === "visible" && !callEnded && accepted) {
@@ -4506,9 +4440,42 @@ function setStatus(text) {
     });
 
 
-    // Do not stop media from beforeunload: a history transition can fire this
-    // event while the call is active. Back is trapped by the single minimize
-    // controller below. A real tab close is handled by Firebase onDisconnect.
+    /* ======================================================
+       BEFORE UNLOAD
+    ====================================================== */
+
+    // VIEWORA: do NOT end call on beforeunload — minimize instead (WhatsApp-style)
+    window.addEventListener(
+        "beforeunload",
+        () => {
+            // Intentionally empty — ending call here caused "Leave site?" + cut
+            if (false && callRef && currentUser && !callEnded) {
+
+                callRef
+                    .update({
+
+                        status:
+                            "ended",
+
+                        endedBy:
+                            currentUser.uid,
+
+                        endedAt:
+                            firebase.database.ServerValue.TIMESTAMP
+
+                    })
+                    .catch(
+                        () => {}
+                    );
+
+            }
+
+
+            cleanupMedia();
+
+        }
+    );
+
 
     /* ======================================================
        PUBLIC API
@@ -4773,6 +4740,94 @@ function setStatus(text) {
 
 
 
+/* VIEWORA_CALL_BACK_GUARD — back always minimizes; never ends; traps history */
+(function () {
+  var armed = false;
+  function isInCall() {
+    try {
+      if (sessionStorage.getItem("viewora_call_busy") === "1") return true;
+      if (document.body.classList.contains("in-call")) return true;
+      if (window.localStream) return true;
+    } catch (_) {}
+    return false;
+  }
+  function doMinimize() {
+    try {
+      if (typeof window.__vieworaShowCallMini === "function") {
+        window.__vieworaShowCallMini();
+        return;
+      }
+      var bar = document.getElementById("callMiniBar");
+      if (bar) { bar.classList.add("show"); bar.style.display = "flex"; }
+      document.body.classList.add("call-minimized");
+      var controls = document.querySelector(".call-controls");
+      if (controls) controls.style.visibility = "hidden";
+      var top = document.querySelector(".call-topbar");
+      if (top) top.style.visibility = "hidden";
+      var stage = document.getElementById("callStage");
+      if (stage) stage.style.opacity = "0";
+    } catch (e) { console.warn(e); }
+  }
+  function trapHistory() {
+    try {
+      history.pushState({ vieworaCall: 1 }, "", location.href);
+      history.pushState({ vieworaCall: 2 }, "", location.href);
+    } catch (_) {}
+  }
+  window.addEventListener("popstate", function (e) {
+    if (!isInCall()) return;
+    trapHistory();
+    doMinimize();
+  });
+  window.__vieworaArmCallBackGuard = function () {
+    armed = true;
+    trapHistory();
+  };
+  document.addEventListener("click", function (e) {
+    var t = e.target && e.target.closest && e.target.closest(
+      "#backBtn, .backBtn, [data-action=back], #minimizeCallBtn, .call-back, #callBackBtn"
+    );
+    if (!t || !isInCall()) return;
+    e.preventDefault();
+    e.stopPropagation();
+    doMinimize();
+  }, true);
+  // NO beforeunload dialog — it confuses users ("Leave site?") and feels like call end.
+  // Back is trapped via popstate; mini-bar links open new tabs so this page stays alive.
+})();
+
+/* VIEWORA_CALL_BLANK_FIX */
+(function () {
+  function unblank() {
+    try {
+      var ov = document.getElementById("connectingOverlay");
+      if (ov) { ov.classList.add("hidden"); ov.style.display = "none"; }
+      var app = document.getElementById("callApp");
+      if (app) {
+        app.classList.remove("hidden");
+        app.style.display = "";
+        app.style.opacity = "1";
+        app.style.visibility = "visible";
+      }
+      var rv = document.getElementById("remoteVideo");
+      if (rv && rv.srcObject) {
+        rv.style.display = "block";
+        rv.style.opacity = "1";
+        rv.play().catch(function () {});
+      }
+      var lv = document.getElementById("localVideo");
+      if (lv && lv.srcObject) {
+        var w = document.getElementById("localVideoWrap");
+        if (w) w.classList.remove("hidden");
+        lv.play().catch(function () {});
+      }
+    } catch (e) {}
+  }
+  setInterval(unblank, 1500);
+  document.addEventListener("DOMContentLoaded", unblank);
+  window.addEventListener("load", unblank);
+})();
+
 /* VIEWORA_NET_CUT — phone off / long network loss ends call */
 (function () {
   var offlineSince = 0;
@@ -4822,6 +4877,42 @@ function setStatus(text) {
   }
   setInterval(syncLocalPip, 2000);
 })();
+
+/* VIEWORA_MINI_V2 */
+(function () {
+  function ensureBar() {
+    var bar = document.getElementById("callMiniBar");
+    if (!bar) {
+      bar = document.createElement("div");
+      bar.id = "callMiniBar";
+      bar.innerHTML = '<span class="miniDot"></span><span id="callMiniLabel">Viewora Call</span> <span id="callMiniTimer">00:00</span>';
+      document.body.appendChild(bar);
+    }
+    return bar;
+  }
+  window.__vieworaShowCallMini = function () {
+    var bar = ensureBar();
+    bar.classList.add("show");
+    bar.style.display = "flex";
+    document.body.classList.add("call-minimized");
+    try {
+      var c = document.querySelector(".call-controls"); if (c) c.style.visibility = "hidden";
+      var t = document.querySelector(".call-topbar"); if (t) t.style.visibility = "hidden";
+      var s = document.getElementById("callStage"); if (s) s.style.opacity = "0";
+    } catch (_) {}
+  };
+  window.__vieworaHideCallMini = function () {
+    var bar = document.getElementById("callMiniBar");
+    if (bar) { bar.classList.remove("show"); }
+    document.body.classList.remove("call-minimized");
+    try {
+      var c = document.querySelector(".call-controls"); if (c) c.style.visibility = "";
+      var t = document.querySelector(".call-topbar"); if (t) t.style.visibility = "";
+      var s = document.getElementById("callStage"); if (s) s.style.opacity = "";
+    } catch (_) {}
+  };
+})();
+
 
 /* VIEWORA_CALL_HARDEN_V3 — video fallback, minimize, no blank, equal grid */
 (function () {
@@ -4905,88 +4996,50 @@ function setStatus(text) {
 })();
 
 
-/* VIEWORA_CALL_MINIMIZE_SINGLE_GUARD */
+/* VIEWORA_MINIMIZE_WHATSAPP_V4 — true minimize, no leave dialog, new-tab browse */
 (function () {
   var minimizing = false;
-  var historyArmed = false;
 
   function ensureMiniBar() {
     var bar = document.getElementById("callMiniBar");
-    if (!bar) {
-      bar = document.createElement("div");
-      bar.id = "callMiniBar";
-      bar.innerHTML =
-        '<span class="miniDot"></span>' +
-        '<span id="callMiniLabel">Viewora Call</span>' +
-        '<span id="callMiniTimer">00:00</span>';
-      document.body.appendChild(bar);
-    }
-
-    if (!bar.querySelector(".miniNav")) {
-      var nav = document.createElement("span");
-      nav.className = "miniNav";
-      nav.innerHTML =
-        '<a href="index.html" target="_blank" rel="noopener">Home</a>' +
-        '<a href="messages.html" target="_blank" rel="noopener">Messages</a>';
-      bar.appendChild(nav);
-    }
-
-    if (bar.dataset.vieworaMiniBound === "1") return bar;
-    bar.dataset.vieworaMiniBound = "1";
-
-    bar.addEventListener("click", function (event) {
-      if (event.target.closest("a")) return;
+    if (bar) return bar;
+    bar = document.createElement("div");
+    bar.id = "callMiniBar";
+    bar.innerHTML =
+      '<span class="miniDot"></span>' +
+      '<span id="callMiniLabel">Viewora Call</span>' +
+      '<span id="callMiniTimer">00:00</span>' +
+      '<span class="miniNav">' +
+      '<a href="index.html" target="_blank" rel="noopener">Home</a>' +
+      '<a href="messages.html" target="_blank" rel="noopener">Chat</a>' +
+      '<a href="profile.html" target="_blank" rel="noopener">Profile</a>' +
+      '<a href="shorts.html" target="_blank" rel="noopener">Shorts</a>' +
+      '</span>';
+    document.body.appendChild(bar);
+    // Tap bar (not links) → expand
+    bar.addEventListener("click", function (e) {
+      if (e.target.closest("a")) return; // let new-tab links work
       if (bar.dataset.dragging === "1") return;
       expand();
     });
-
-    var startX = 0, startY = 0, offsetX = 0, offsetY = 0, moved = false;
-    function point(event) {
-      var p = event.touches && event.touches[0] ? event.touches[0] : event;
-      return { x: p.clientX, y: p.clientY };
-    }
-    function start(event) {
-      var p = point(event), rect = bar.getBoundingClientRect();
-      startX = p.x; startY = p.y;
-      offsetX = p.x - rect.left; offsetY = p.y - rect.top;
-      moved = false;
-      bar.dataset.dragging = "0";
-    }
-    function move(event) {
-      var p = point(event);
-      if (Math.abs(p.x - startX) + Math.abs(p.y - startY) > 8) moved = true;
-      if (!moved) return;
-      event.preventDefault();
-      bar.dataset.dragging = "1";
-      bar.style.left = Math.max(4, Math.min(window.innerWidth - bar.offsetWidth - 4, p.x - offsetX)) + "px";
-      bar.style.top = Math.max(4, Math.min(window.innerHeight - bar.offsetHeight - 4, p.y - offsetY)) + "px";
-      bar.style.right = "auto";
-      bar.style.transform = "none";
-    }
-    function stop() {
-      setTimeout(function () { bar.dataset.dragging = "0"; }, 80);
-    }
-    bar.addEventListener("mousedown", start);
-    bar.addEventListener("touchstart", start, { passive: true });
-    window.addEventListener("mousemove", move, { passive: false });
-    window.addEventListener("touchmove", move, { passive: false });
-    window.addEventListener("mouseup", stop);
-    window.addEventListener("touchend", stop);
+    // Drag
+    (function (el) {
+      if (el.dataset.dragReady) return;
+      el.dataset.dragReady = "1";
+      var ox=0,oy=0,sx=0,sy=0,moved=false;
+      function pos(ev){ if(ev.touches&&ev.touches[0]) return {x:ev.touches[0].clientX,y:ev.touches[0].clientY}; return {x:ev.clientX,y:ev.clientY}; }
+      function start(ev){ var p=pos(ev), r=el.getBoundingClientRect(); ox=p.x-r.left; oy=p.y-r.top; sx=p.x; sy=p.y; moved=false; el.dataset.dragging="0"; el.style.transition="none"; el.style.left=r.left+"px"; el.style.top=r.top+"px"; el.style.right="auto"; el.style.bottom="auto"; el.style.transform="none"; }
+      function move(ev){ var p=pos(ev); if(Math.abs(p.x-sx)+Math.abs(p.y-sy)>8){moved=true;el.dataset.dragging="1";} if(!moved)return; ev.preventDefault(); var nx=Math.max(4,Math.min(innerWidth-el.offsetWidth-4,p.x-ox)); var ny=Math.max(4,Math.min(innerHeight-el.offsetHeight-4,p.y-oy)); el.style.left=nx+"px"; el.style.top=ny+"px"; }
+      function end(){ setTimeout(function(){el.dataset.dragging="0";},50); el.style.transition=""; }
+      el.addEventListener("mousedown", start); el.addEventListener("touchstart", start, {passive:true});
+      window.addEventListener("mousemove", move, {passive:false}); window.addEventListener("touchmove", move, {passive:false});
+      window.addEventListener("mouseup", end); window.addEventListener("touchend", end);
+    })(bar);
     return bar;
   }
 
-  function isBusy() {
-    try {
-      return sessionStorage.getItem("viewora_call_busy") === "1" ||
-        document.body.classList.contains("in-call") ||
-        !!(window.localStream && window.localStream.getTracks().some(function (t) {
-          return t.readyState === "live";
-        }));
-    } catch (_) { return !!window.localStream; }
-  }
-
   function minimize() {
-    if (minimizing || !isBusy()) return;
+    if (minimizing) return;
     minimizing = true;
     try {
       sessionStorage.setItem("viewora_call_busy", "1");
@@ -4994,79 +5047,211 @@ function setStatus(text) {
       var bar = ensureMiniBar();
       bar.classList.add("show");
       bar.style.display = "flex";
-      document.querySelectorAll(".call-controls, .call-topbar").forEach(function (el) {
-        el.style.visibility = "hidden";
-        el.style.pointerEvents = "none";
+      // Hide full UI chrome but KEEP media streams
+      ["call-controls", ".call-controls", ".call-topbar", "#callStage"].forEach(function (sel) {
+        try {
+          var el = document.querySelector(sel);
+          if (!el) return;
+          if (sel === "#callStage") el.style.opacity = "0";
+          else el.style.visibility = "hidden";
+        } catch (_) {}
       });
-      var stage = document.getElementById("callStage") || document.getElementById("callApp");
-      if (stage) stage.style.opacity = "0";
-      var oldBubble = document.getElementById("callMiniBubble");
-      if (oldBubble) oldBubble.style.display = "none";
-    } catch (error) {
-      console.warn("Viewora minimize:", error);
-    }
-    setTimeout(function () { minimizing = false; }, 250);
+      // Hide old bubble if any
+      var old = document.getElementById("callMiniBubble");
+      if (old) old.style.display = "none";
+      // Keep pushing history so back never leaves
+      try {
+        history.pushState({ vieworaCall: Date.now() }, "", location.href);
+      } catch (_) {}
+    } catch (e) { console.warn(e); }
+    setTimeout(function () { minimizing = false; }, 300);
   }
 
   function expand() {
     try {
       document.body.classList.remove("call-minimized");
       var bar = document.getElementById("callMiniBar");
-      if (bar) bar.classList.remove("show");
+      if (bar) { bar.classList.remove("show"); }
       document.querySelectorAll(".call-controls, .call-topbar").forEach(function (el) {
         el.style.visibility = "";
-        el.style.pointerEvents = "";
       });
-      var stage = document.getElementById("callStage") || document.getElementById("callApp");
+      var stage = document.getElementById("callStage");
       if (stage) stage.style.opacity = "";
-      var oldBubble = document.getElementById("callMiniBubble");
-      if (oldBubble) oldBubble.style.display = "";
+      var old = document.getElementById("callMiniBubble");
+      if (old) old.style.display = "";
     } catch (_) {}
-  }
-
-  function armHistory() {
-    if (historyArmed) return;
-    historyArmed = true;
-    try { history.pushState({ vieworaCallGuard: true }, "", location.href); } catch (_) {}
   }
 
   window.__vieworaShowCallMini = minimize;
   window.__vieworaHideCallMini = expand;
   window.__vieworaExpandCall = expand;
-  window.__vieworaArmCallBackGuard = armHistory;
 
-  window.addEventListener("popstate", function () {
-    if (!isBusy()) return;
-    historyArmed = false;
-    armHistory();
+  // Timer sync
+  setInterval(function () {
+    try {
+      var t = document.getElementById("callTimer") || document.getElementById("callDuration");
+      var mt = document.getElementById("callMiniTimer");
+      if (t && mt) mt.textContent = (t.textContent || "00:00").trim();
+    } catch (_) {}
+  }, 1000);
+
+  // Back / hardware back → ONLY minimize
+  function trap() {
+    try {
+      history.pushState({ vieworaCall: 1 }, "", location.href);
+      history.pushState({ vieworaCall: 2 }, "", location.href);
+    } catch (_) {}
+  }
+  function onPop() {
+    var busy = false;
+    try {
+      busy = sessionStorage.getItem("viewora_call_busy") === "1" ||
+             document.body.classList.contains("in-call") ||
+             !!(window.localStream && window.localStream.getTracks().some(function (t) { return t.readyState === "live"; }));
+    } catch (_) {}
+    if (!busy) return;
+    trap();
     minimize();
-  });
+  }
+  window.addEventListener("popstate", onPop);
+  // Arm early + re-arm while in call
+  trap();
+  setInterval(function () {
+    try {
+      if (sessionStorage.getItem("viewora_call_busy") === "1") trap();
+    } catch (_) {}
+  }, 2000);
 
-  document.addEventListener("click", function (event) {
-    var button = event.target && event.target.closest && event.target.closest(
-      "#minimizeCallBtn, #backBtn, .backBtn, [data-action=back], .call-back, #callBackBtn"
+  // UI back buttons
+  document.addEventListener("click", function (e) {
+    var t = e.target && e.target.closest && e.target.closest(
+      "#backBtn, .backBtn, [data-action=back], #minimizeCallBtn, .call-back, #callBackBtn, .call-topbar .back, [aria-label=Back]"
     );
-    if (!button || !isBusy()) return;
-    event.preventDefault();
-    event.stopPropagation();
-    if (event.stopImmediatePropagation) event.stopImmediatePropagation();
+    if (!t) return;
+    var busy = false;
+    try {
+      busy = sessionStorage.getItem("viewora_call_busy") === "1" ||
+             document.body.classList.contains("in-call") ||
+             !!(window.localStream);
+    } catch (_) {}
+    if (!busy) return;
+    e.preventDefault();
+    e.stopPropagation();
+    e.stopImmediatePropagation();
     minimize();
   }, true);
 
-  document.addEventListener("viewora-call-ended", function () {
+  // Arm busy when media goes live
+  setInterval(function () {
+    try {
+      if (window.localStream && window.localStream.getTracks().some(function (t) { return t.readyState === "live"; })) {
+        sessionStorage.setItem("viewora_call_busy", "1");
+        document.body.classList.add("in-call");
+      }
+    } catch (_) {}
+  }, 1000);
+
+  // When End is pressed, clear busy so navigation is free
+  document.addEventListener("click", function (e) {
+    var t = e.target && e.target.closest && e.target.closest(
+      "#endCallBtn, #hangupBtn, .end-call, [data-action=end-call], #endBtn"
+    );
+    if (!t) return;
     try {
       sessionStorage.removeItem("viewora_call_busy");
       document.body.classList.remove("in-call", "call-minimized");
     } catch (_) {}
-  });
+  }, true);
+})();
 
-  setInterval(function () {
-    if (!isBusy()) return;
-    armHistory();
-    var source = document.getElementById("callDuration");
-    var target = document.getElementById("callMiniTimer");
-    if (source && target) target.textContent = (source.textContent || "00:00").trim();
-  }, 1200);
 
-  armHistory();
+/* VIEWORA_CALL_IFRAME_BROWSE — stay on call.html; Home/Chat open as overlay iframe */
+(function () {
+  function ensureBrowseLayer() {
+    var layer = document.getElementById("callBrowseLayer");
+    if (layer) return layer;
+    layer = document.createElement("div");
+    layer.id = "callBrowseLayer";
+    layer.innerHTML =
+      '<div class="cbl-top">' +
+      '<button type="button" id="cblBackToCall">← Back to call</button>' +
+      '<span id="cblTitle">Browsing</span>' +
+      '</div>' +
+      '<iframe id="cblFrame" title="Browse" allow="autoplay; microphone; camera"></iframe>';
+    document.body.appendChild(layer);
+    document.getElementById("cblBackToCall").onclick = function () {
+      layer.classList.remove("show");
+      try {
+        var f = document.getElementById("cblFrame");
+        if (f) f.src = "about:blank";
+      } catch (_) {}
+    };
+    return layer;
+  }
+  function openBrowse(url, title) {
+    // NEVER leave call.html — open in overlay iframe
+    try {
+      sessionStorage.setItem("viewora_call_busy", "1");
+      document.body.classList.add("in-call", "call-minimized");
+    } catch (_) {}
+    var layer = ensureBrowseLayer();
+    var frame = document.getElementById("cblFrame");
+    var t = document.getElementById("cblTitle");
+    if (t) t.textContent = title || "Browsing";
+    if (frame) frame.src = url;
+    layer.classList.add("show");
+    // ensure mini bar visible
+    if (typeof window.__vieworaShowCallMini === "function") {
+      window.__vieworaShowCallMini();
+    }
+  }
+  window.__vieworaCallBrowse = openBrowse;
+
+  // Intercept mini bar / any Home Messages Profile Shorts clicks while in call
+  document.addEventListener("click", function (e) {
+    var a = e.target && e.target.closest && e.target.closest("a, button");
+    if (!a) return;
+    var busy = false;
+    try {
+      busy = sessionStorage.getItem("viewora_call_busy") === "1" ||
+             !!(window.localStream && window.localStream.getTracks().some(function (tr) { return tr.readyState === "live"; }));
+    } catch (_) {}
+    if (!busy) return;
+
+    var href = (a.getAttribute("href") || "").trim();
+    var text = (a.textContent || "").trim().toLowerCase();
+    var id = a.id || "";
+    var map = {
+      "index.html": "Home",
+      "messages.html": "Messages",
+      "chat.html": "Chat",
+      "profile.html": "Profile",
+      "shorts.html": "Shorts",
+      "activity.html": "Activity"
+    };
+    var page = null;
+    Object.keys(map).forEach(function (k) {
+      if (href.indexOf(k) !== -1) page = k;
+    });
+    if (!page) {
+      if (text === "home") page = "index.html";
+      else if (text === "messages" || text === "chat") page = "messages.html";
+      else if (text === "profile") page = "profile.html";
+      else if (text === "shorts") page = "shorts.html";
+    }
+    // Mini bar nav links
+    if (a.closest && a.closest("#callMiniBar .miniNav")) {
+      e.preventDefault();
+      e.stopPropagation();
+      openBrowse(href || page || "index.html", text || "Viewora");
+      return;
+    }
+    if (page && !a.closest("#callBrowseLayer")) {
+      // Only intercept if this would navigate away from call.html
+      if (/call\.html/i.test(location.pathname) === false) return;
+      e.preventDefault();
+      e.stopPropagation();
+      openBrowse(page, map[page] || "Viewora");
+    }
+  }, true);
 })();

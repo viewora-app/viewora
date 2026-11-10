@@ -4129,3 +4129,87 @@ body.msg-selecting .messageRow.selected {
   border-bottom: 1px solid rgba(255,255,255,.08);
 }
 #msgSelectBar.show { display: flex; }
+
+
+/* VIEWORA_CHAT_THEME + MULTI + CONFIRM */
+:root {
+  --chat-bubble-mine: #7c3aed;
+  --chat-bubble-mine-soft: #7c3aedcc;
+}
+.message.mine .bubble,
+.msg.mine .bubble,
+.chat-bubble.out,
+.bubble.out,
+.msg-out .bubble,
+[data-mine="1"] .bubble {
+  background: var(--chat-bubble-mine) !important;
+}
+.chatThemeSheet {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 99990;
+  background: #16161e; border-radius: 18px 18px 0 0;
+  padding: 16px 16px calc(16px + env(safe-area-inset-bottom));
+  transform: translateY(110%); transition: transform .25s ease;
+  border-top: 1px solid rgba(255,255,255,.08);
+}
+.chatThemeSheet.show { transform: translateY(0); }
+.chatThemeSheet.hidden { display: none; }
+.chatThemeSheet.show.hidden { display: block; }
+.cts-head { font-weight: 700; color: #fff; margin-bottom: 12px; text-align: center; }
+.cts-colors { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin-bottom: 14px; }
+.cts-swatch {
+  width: 40px; height: 40px; border-radius: 50%; border: 3px solid transparent;
+  cursor: pointer;
+}
+.cts-swatch.active { border-color: #fff; box-shadow: 0 0 0 3px rgba(255,255,255,.25); }
+.cts-close {
+  width: 100%; border: 0; border-radius: 12px; padding: 12px;
+  background: rgba(255,255,255,.08); color: #fff; font-weight: 600;
+}
+#multiSelectBar {
+  position: fixed; left: 0; right: 0; top: 0; z-index: 99980;
+  display: none; align-items: center; gap: 10px;
+  padding: 10px 12px calc(10px + env(safe-area-inset-top));
+  background: #1a1a24; border-bottom: 1px solid rgba(255,255,255,.08);
+  color: #fff;
+}
+#multiSelectBar.show { display: flex; }
+#multiSelectBar button {
+  border: 0; border-radius: 10px; padding: 8px 12px;
+  background: rgba(255,255,255,.1); color: #fff; font-weight: 600;
+}
+#multiSelectBar .danger { background: #ef4444; }
+#multiSelectBar #msCount { flex: 1; font-weight: 600; }
+.msg-selected, .message.msg-selected, .msg.msg-selected {
+  outline: 2px solid #7c3aed !important;
+  background: rgba(124,58,237,.12) !important;
+}
+.viewora-confirm-sheet {
+  position: fixed; inset: 0; z-index: 99999;
+  display: flex; align-items: flex-end; justify-content: center;
+  opacity: 0; pointer-events: none; transition: opacity .2s ease;
+}
+.viewora-confirm-sheet.show { opacity: 1; pointer-events: auto; }
+.viewora-confirm-sheet .vcs-backdrop {
+  position: absolute; inset: 0; background: rgba(0,0,0,.55);
+}
+.viewora-confirm-sheet .vcs-card {
+  position: relative; width: 100%; max-width: 420px;
+  margin: 0 12px 24px; padding: 22px 20px 18px;
+  border-radius: 20px; background: #1a1a22; color: #fff;
+  text-align: center;
+  transform: translateY(24px); transition: transform .22s ease;
+}
+.viewora-confirm-sheet.show .vcs-card { transform: translateY(0); }
+.viewora-confirm-sheet .vcs-icon {
+  width: 48px; height: 48px; margin: 0 auto 12px; border-radius: 50%;
+  display: grid; place-items: center; background: rgba(239,68,68,.15); color: #f87171;
+}
+.viewora-confirm-sheet .vcs-title { margin: 0 0 8px; font-size: 17px; font-weight: 700; }
+.viewora-confirm-sheet .vcs-text { margin: 0 0 18px; font-size: 14px; color: rgba(255,255,255,.65); }
+.viewora-confirm-sheet .vcs-actions { display: flex; gap: 10px; }
+.viewora-confirm-sheet .vcs-btn {
+  flex: 1; border: 0; border-radius: 12px; padding: 12px; font-weight: 600; cursor: pointer;
+}
+.viewora-confirm-sheet .vcs-cancel { background: rgba(255,255,255,.08); color: #fff; }
+.viewora-confirm-sheet .vcs-ok { background: #7c3aed; color: #fff; }
+.viewora-confirm-sheet .vcs-ok.danger { background: #ef4444; }

@@ -2849,3 +2849,29 @@ body.call-minimized .local-video-wrap {
   opacity: 0.01 !important;
   pointer-events: none !important;
 }
+
+
+/* VIEWORA browse overlay while on call */
+#callBrowseLayer {
+  position: fixed; inset: 0; z-index: 2147483000;
+  display: none; flex-direction: column;
+  background: #0a0a10;
+}
+#callBrowseLayer.show { display: flex !important; }
+#callBrowseLayer .cbl-top {
+  flex: 0 0 auto;
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px;
+  padding-top: calc(10px + env(safe-area-inset-top));
+  background: #111118;
+  border-bottom: 1px solid rgba(255,255,255,.08);
+  color: #fff;
+}
+#callBrowseLayer #cblBackToCall {
+  border: 0; border-radius: 999px; padding: 8px 12px;
+  background: #059669; color: #fff; font-weight: 700;
+}
+#callBrowseLayer #cblTitle { font-weight: 600; opacity: .85; }
+#callBrowseLayer iframe {
+  flex: 1; width: 100%; border: 0; background: #0a0a10;
+}

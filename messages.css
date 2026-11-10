@@ -2280,3 +2280,54 @@ a.newMessageFab {
 .reqAcceptBtn { background:linear-gradient(135deg,#7c5cff,#a24fff); color:#fff; }
 .reqDeclineBtn { background:rgba(255,255,255,.08); color:#ddd; }
 .chatCard.selfChat .chatName::after { content:""; }
+
+
+/* VIEWORA_CUSTOM_CONFIRM_SHEET */
+.viewora-confirm-sheet {
+  position: fixed; inset: 0; z-index: 99999;
+  display: flex; align-items: flex-end; justify-content: center;
+  opacity: 0; pointer-events: none; transition: opacity .2s ease;
+}
+.viewora-confirm-sheet.show { opacity: 1; pointer-events: auto; }
+.viewora-confirm-sheet .vcs-backdrop {
+  position: absolute; inset: 0; background: rgba(0,0,0,.55);
+  backdrop-filter: blur(4px);
+}
+.viewora-confirm-sheet .vcs-card {
+  position: relative; width: 100%; max-width: 420px;
+  margin: 0 12px 24px; padding: 22px 20px 18px;
+  border-radius: 20px;
+  background: #1a1a22;
+  border: 1px solid rgba(255,255,255,.08);
+  box-shadow: 0 20px 50px rgba(0,0,0,.5);
+  transform: translateY(24px); transition: transform .22s ease;
+  text-align: center; color: #fff;
+}
+.viewora-confirm-sheet.show .vcs-card { transform: translateY(0); }
+.viewora-confirm-sheet .vcs-icon {
+  width: 48px; height: 48px; margin: 0 auto 12px;
+  border-radius: 50%; display: grid; place-items: center;
+  background: rgba(239,68,68,.15); color: #f87171; font-size: 20px;
+}
+.viewora-confirm-sheet .vcs-title {
+  margin: 0 0 8px; font-size: 17px; font-weight: 700;
+}
+.viewora-confirm-sheet .vcs-text {
+  margin: 0 0 18px; font-size: 14px; color: rgba(255,255,255,.65); line-height: 1.4;
+}
+.viewora-confirm-sheet .vcs-actions {
+  display: flex; gap: 10px;
+}
+.viewora-confirm-sheet .vcs-btn {
+  flex: 1; border: 0; border-radius: 12px; padding: 12px 14px;
+  font-size: 15px; font-weight: 600; cursor: pointer;
+}
+.viewora-confirm-sheet .vcs-cancel {
+  background: rgba(255,255,255,.08); color: #fff;
+}
+.viewora-confirm-sheet .vcs-ok {
+  background: #7c3aed; color: #fff;
+}
+.viewora-confirm-sheet .vcs-ok.danger {
+  background: #ef4444;
+}

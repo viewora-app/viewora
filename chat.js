@@ -1,4 +1,38 @@
 
+/* VIEWORA_CUSTOM_CONFIRM */
+function vieworaConfirm(opts) {
+  return new Promise(function (resolve) {
+    opts = opts || {};
+    var existing = document.getElementById("vieworaConfirmSheet");
+    if (existing) existing.remove();
+    var sheet = document.createElement("div");
+    sheet.id = "vieworaConfirmSheet";
+    sheet.className = "viewora-confirm-sheet";
+    sheet.innerHTML =
+      '<div class="vcs-backdrop"></div>' +
+      '<div class="vcs-card">' +
+      '<div class="vcs-icon">' + (opts.danger ? '<i class="fa-solid fa-trash"></i>' : '<i class="fa-solid fa-circle-question"></i>') + '</div>' +
+      '<h3 class="vcs-title">' + (opts.title || "Confirm") + '</h3>' +
+      '<p class="vcs-text">' + (opts.text || "Are you sure?") + '</p>' +
+      '<div class="vcs-actions">' +
+      '<button type="button" class="vcs-btn vcs-cancel">' + (opts.cancelText || "Cancel") + '</button>' +
+      '<button type="button" class="vcs-btn vcs-ok ' + (opts.danger ? "danger" : "") + '">' + (opts.okText || "OK") + '</button>' +
+      '</div></div>';
+    document.body.appendChild(sheet);
+    requestAnimationFrame(function () { sheet.classList.add("show"); });
+    function close(val) {
+      sheet.classList.remove("show");
+      setTimeout(function () { try { sheet.remove(); } catch (_) {} }, 220);
+      resolve(val);
+    }
+    sheet.querySelector(".vcs-cancel").onclick = function () { close(false); };
+    sheet.querySelector(".vcs-backdrop").onclick = function () { close(false); };
+    sheet.querySelector(".vcs-ok").onclick = function () { close(true); };
+  });
+}
+window.vieworaConfirm = vieworaConfirm;
+
+
 /* VIEWORA_IS_SELF_CHAT */
 (function () {
   try {
@@ -1799,7 +1833,6 @@ state.messagesListener = {
             content = `
                 <button type="button" class="callHistoryBubble ${isMissed ? "missed" : ""}"
                     data-action="call-back" data-peer="${escapeHTML(peer)}"
-                    data-call-type="${isVideo ? "video" : "audio"}"
                     style="display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:14px;border:none;background:rgba(255,255,255,0.08);color:#fff;width:100%;text-align:left;cursor:pointer">
                     <span style="width:40px;height:40px;border-radius:50%;display:grid;place-items:center;background:${isMissed ? "rgba(255,59,95,.2)" : "rgba(167,139,250,.25)"}">
                         <i class="fa-solid ${icon}" style="color:${isMissed ? "#ff3b5c" : "#c4b5fd"}"></i>
@@ -2648,31 +2681,6 @@ state.messagesListener = {
                     );
                 }
             );
-
-        messagesList
-            .querySelectorAll("[data-action='call-back']")
-            .forEach(function (element) {
-                if (element.__callBackBound) return;
-                element.__callBackBound = true;
-                element.addEventListener("click", function (event) {
-                    event.preventDefault();
-                    event.stopPropagation();
-                    var peer = element.getAttribute("data-peer") || "";
-                    var type = element.getAttribute("data-call-type") === "video" ? "video" : "audio";
-                    if (!peer || peer === (state.currentUser && state.currentUser.uid)) {
-                        showToast("This call cannot be placed.", "error");
-                        return;
-                    }
-                    if (window.VieworaCall && typeof window.VieworaCall.startCall === "function") {
-                        window.VieworaCall.startCall(peer, type);
-                    } else {
-                        window.location.href = "call.html?role=caller&type=" + type +
-                            "&receiverId=" + encodeURIComponent(peer) +
-                            "&uid=" + encodeURIComponent(peer);
-                    }
-                });
-            });
-
     }
 
 
@@ -5419,10 +5427,15 @@ async function vieworaMaybeMarkRequest(peerUid, chatId) {
 
     async function deleteChat() {
 
-        const confirmed =
-            window.confirm(
-                "Delete this chat for you?"
-            );
+        const confirmed = await (window.vieworaConfirm
+            ? window.vieworaConfirm({
+                title: "Delete chat?",
+                text: "This removes the chat from your inbox only.",
+                okText: "Delete",
+                cancelText: "Cancel",
+                danger: true
+              })
+            : Promise.resolve(window.confirm("Delete this chat for you?")));
 
         if (!confirmed) {
             return;
@@ -7263,7 +7276,7 @@ async function vieworaMaybeMarkRequest(peerUid, chatId) {
   async function deleteSelected() {
     var ids = Object.keys(state.selectedIds || {});
     if (!ids.length) return;
-    if (!confirm("Delete " + ids.length + " message(s) for you?")) return;
+    var _okDel = await (window.vieworaConfirm ? window.vieworaConfirm({title:"Delete messages?", text:"Delete " + ids.length + " message(s) for you?", okText:"Delete", danger:true}) : Promise.resolve(confirm("Delete " + ids.length + " message(s) for you?"))); if (!_okDel) return;
     try {
       for (var i = 0; i < ids.length; i++) {
         var id = ids[i];
@@ -7536,4 +7549,222 @@ async function vieworaMaybeMarkRequest(peerUid, chatId) {
     }
     return _p.apply(window, arguments);
   };
+})();
+
+
+/* VIEWORA_CHAT_MENU_EXTRAS — clear, export, theme, multi-select */
+(function () {
+  function $(id) { return document.getElementById(id); }
+
+  // ---- Theme ----
+  var THEMES = {
+    violet: "#7c3aed",
+    blue: "#2563eb",
+    green: "#059669",
+    pink: "#db2777",
+    orange: "#ea580c",
+    red: "#dc2626",
+    cyan: "#0891b2",
+    indigo: "#4f46e5"
+  };
+  function applyTheme(name) {
+    var c = THEMES[name] || THEMES.violet;
+    try { localStorage.setItem("viewora_chat_theme", name); } catch (_) {}
+    document.documentElement.style.setProperty("--chat-bubble-mine", c);
+    document.documentElement.style.setProperty("--chat-bubble-mine-soft", c + "cc");
+    document.body.setAttribute("data-chat-theme", name);
+  }
+  try {
+    applyTheme(localStorage.getItem("viewora_chat_theme") || "violet");
+  } catch (_) { applyTheme("violet"); }
+
+  function openThemeSheet() {
+    var s = $("chatThemeSheet");
+    if (!s) return;
+    s.classList.remove("hidden");
+    s.classList.add("show");
+    try { $("chatMenu") && $("chatMenu").classList.add("hidden"); } catch (_) {}
+  }
+  function closeThemeSheet() {
+    var s = $("chatThemeSheet");
+    if (!s) return;
+    s.classList.remove("show");
+    s.classList.add("hidden");
+  }
+  document.addEventListener("click", function (e) {
+    var btn = e.target && e.target.closest && e.target.closest("#menuThemeBtn");
+    if (btn) { e.preventDefault(); openThemeSheet(); return; }
+    if (e.target && e.target.id === "ctsClose") { closeThemeSheet(); return; }
+    var sw = e.target && e.target.closest && e.target.closest(".cts-swatch");
+    if (sw) {
+      var t = sw.getAttribute("data-theme");
+      applyTheme(t);
+      document.querySelectorAll(".cts-swatch").forEach(function (el) { el.classList.remove("active"); });
+      sw.classList.add("active");
+    }
+  });
+
+  // ---- Clear chat (local hide via userDeleted flags) ----
+  document.addEventListener("click", async function (e) {
+    var btn = e.target && e.target.closest && e.target.closest("#menuClearChatBtn");
+    if (!btn) return;
+    e.preventDefault();
+    var ok = await (window.vieworaConfirm
+      ? window.vieworaConfirm({ title: "Clear chat?", text: "Messages will be cleared for you only.", okText: "Clear", danger: true })
+      : Promise.resolve(confirm("Clear chat?")));
+    if (!ok) return;
+    try {
+      var chatId = (window.state && state.chatId) || new URLSearchParams(location.search).get("chatId") || "";
+      var uid = (window.state && state.currentUser && state.currentUser.uid) || (firebase.auth().currentUser && firebase.auth().currentUser.uid);
+      if (!chatId || !uid) { alert("Chat not ready"); return; }
+      // Mark all current messages deleted for me
+      var snap = await firebase.database().ref("chats/" + chatId + "/messages").once("value");
+      var updates = {};
+      snap.forEach(function (c) {
+        updates["chats/" + chatId + "/messages/" + c.key + "/deletedFor/" + uid] = true;
+      });
+      updates["userChats/" + uid + "/" + chatId + "/lastMessage"] = "";
+      await firebase.database().ref().update(updates);
+      // Clear DOM
+      var list = document.getElementById("messagesList") || document.getElementById("chatMessages") || document.querySelector(".messagesList");
+      if (list) list.innerHTML = "";
+      if (typeof showToast === "function") showToast("✓ Chat cleared");
+      try { $("chatMenu").classList.add("hidden"); } catch (_) {}
+    } catch (err) {
+      console.error(err);
+      alert("Could not clear chat");
+    }
+  });
+
+  // ---- Export chat ----
+  document.addEventListener("click", async function (e) {
+    var btn = e.target && e.target.closest && e.target.closest("#menuExportChatBtn");
+    if (!btn) return;
+    e.preventDefault();
+    try {
+      var chatId = (window.state && state.chatId) || new URLSearchParams(location.search).get("chatId") || "";
+      if (!chatId) { alert("Chat not ready"); return; }
+      var snap = await firebase.database().ref("chats/" + chatId + "/messages").once("value");
+      var lines = [];
+      snap.forEach(function (c) {
+        var m = c.val() || {};
+        if (m.deleted) return;
+        var t = m.text || m.caption || (m.type === "image" ? "[Image]" : m.type === "call" ? (m.text || "[Call]") : "[" + (m.type || "msg") + "]");
+        var when = m.createdAt ? new Date(m.createdAt).toLocaleString() : "";
+        lines.push((when ? when + " — " : "") + (m.senderId || "") + ": " + t);
+      });
+      var blob = new Blob([lines.join("\n")], { type: "text/plain;charset=utf-8" });
+      var a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "viewora-chat-" + chatId.slice(0, 12) + ".txt";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      if (typeof showToast === "function") showToast("✓ Chat exported");
+      try { $("chatMenu").classList.add("hidden"); } catch (_) {}
+    } catch (err) {
+      console.error(err);
+      alert("Export failed");
+    }
+  });
+
+  // ---- Multi-select long press polish ----
+  var pressTimer = null;
+  var selecting = false;
+  var selected = new Set();
+
+  function updateSelectBar() {
+    var bar = document.getElementById("multiSelectBar");
+    if (!bar) {
+      bar = document.createElement("div");
+      bar.id = "multiSelectBar";
+      bar.innerHTML =
+        '<button type="button" id="msClose">✕</button>' +
+        '<span id="msCount">0 selected</span>' +
+        '<button type="button" id="msForward">Forward</button>' +
+        '<button type="button" id="msDelete" class="danger">Delete</button>';
+      document.body.appendChild(bar);
+      $("msClose").onclick = function () { exitSelect(); };
+      $("msForward").onclick = function () {
+        var ids = Array.from(selected);
+        var msgs = ids.map(function (id) {
+          var el = document.querySelector('[data-id="' + id + '"],[data-msg-id="' + id + '"]');
+          return el && el.__msg ? el.__msg : { id: id };
+        });
+        if (window.__vieworaOpenForward) window.__vieworaOpenForward(msgs);
+        else if (typeof openForwardSheet === "function") openForwardSheet(msgs);
+        exitSelect();
+      };
+      $("msDelete").onclick = async function () {
+        var ids = Array.from(selected);
+        if (!ids.length) return;
+        var ok = await (window.vieworaConfirm
+          ? window.vieworaConfirm({ title: "Delete messages?", text: "Delete " + ids.length + " message(s) for you?", okText: "Delete", danger: true })
+          : Promise.resolve(confirm("Delete?")));
+        if (!ok) return;
+        try {
+          var chatId = (window.state && state.chatId) || new URLSearchParams(location.search).get("chatId") || "";
+          var uid = firebase.auth().currentUser && firebase.auth().currentUser.uid;
+          var updates = {};
+          ids.forEach(function (id) {
+            updates["chats/" + chatId + "/messages/" + id + "/deletedFor/" + uid] = true;
+          });
+          await firebase.database().ref().update(updates);
+          ids.forEach(function (id) {
+            var el = document.querySelector('[data-id="' + id + '"],[data-msg-id="' + id + '"]');
+            if (el) el.remove();
+          });
+          if (typeof showToast === "function") showToast("✓ Deleted");
+        } catch (err) { console.error(err); }
+        exitSelect();
+      };
+    }
+    bar.classList.toggle("show", selecting);
+    var c = $("msCount");
+    if (c) c.textContent = selected.size + " selected";
+  }
+  function exitSelect() {
+    selecting = false;
+    selected.clear();
+    document.querySelectorAll(".msg-selected").forEach(function (el) { el.classList.remove("msg-selected"); });
+    updateSelectBar();
+  }
+  function toggleMsg(el) {
+    var id = el.getAttribute("data-id") || el.getAttribute("data-msg-id");
+    if (!id) return;
+    if (selected.has(id)) { selected.delete(id); el.classList.remove("msg-selected"); }
+    else { selected.add(id); el.classList.add("msg-selected"); }
+    if (!selected.size) exitSelect();
+    else updateSelectBar();
+  }
+  document.addEventListener("touchstart", function (e) {
+    var bubble = e.target && e.target.closest && e.target.closest(".message, .msg, [data-msg-id], [data-id]");
+    if (!bubble) return;
+    pressTimer = setTimeout(function () {
+      selecting = true;
+      toggleMsg(bubble);
+      try { navigator.vibrate && navigator.vibrate(15); } catch (_) {}
+    }, 450);
+  }, { passive: true });
+  document.addEventListener("touchend", function () { clearTimeout(pressTimer); });
+  document.addEventListener("touchmove", function () { clearTimeout(pressTimer); });
+  document.addEventListener("click", function (e) {
+    if (!selecting) return;
+    var bubble = e.target && e.target.closest && e.target.closest(".message, .msg, [data-msg-id], [data-id]");
+    if (!bubble) return;
+    e.preventDefault();
+    e.stopPropagation();
+    toggleMsg(bubble);
+  }, true);
+
+  // Smooth: hide heavy loading skeletons faster
+  function hideLoaders() {
+    document.querySelectorAll(".chat-loading, .messages-loading, #chatLoading, .skeleton").forEach(function (el) {
+      el.style.display = "none";
+      el.classList.add("hidden");
+    });
+  }
+  setTimeout(hideLoaders, 800);
+  setTimeout(hideLoaders, 2000);
+  document.addEventListener("DOMContentLoaded", hideLoaders);
 })();

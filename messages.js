@@ -1,3 +1,37 @@
+
+/* VIEWORA_CUSTOM_CONFIRM */
+function vieworaConfirm(opts) {
+  return new Promise(function (resolve) {
+    opts = opts || {};
+    var existing = document.getElementById("vieworaConfirmSheet");
+    if (existing) existing.remove();
+    var sheet = document.createElement("div");
+    sheet.id = "vieworaConfirmSheet";
+    sheet.className = "viewora-confirm-sheet";
+    sheet.innerHTML =
+      '<div class="vcs-backdrop"></div>' +
+      '<div class="vcs-card">' +
+      '<div class="vcs-icon">' + (opts.danger ? '<i class="fa-solid fa-trash"></i>' : '<i class="fa-solid fa-circle-question"></i>') + '</div>' +
+      '<h3 class="vcs-title">' + (opts.title || "Confirm") + '</h3>' +
+      '<p class="vcs-text">' + (opts.text || "Are you sure?") + '</p>' +
+      '<div class="vcs-actions">' +
+      '<button type="button" class="vcs-btn vcs-cancel">' + (opts.cancelText || "Cancel") + '</button>' +
+      '<button type="button" class="vcs-btn vcs-ok ' + (opts.danger ? "danger" : "") + '">' + (opts.okText || "OK") + '</button>' +
+      '</div></div>';
+    document.body.appendChild(sheet);
+    requestAnimationFrame(function () { sheet.classList.add("show"); });
+    function close(val) {
+      sheet.classList.remove("show");
+      setTimeout(function () { try { sheet.remove(); } catch (_) {} }, 220);
+      resolve(val);
+    }
+    sheet.querySelector(".vcs-cancel").onclick = function () { close(false); };
+    sheet.querySelector(".vcs-backdrop").onclick = function () { close(false); };
+    sheet.querySelector(".vcs-ok").onclick = function () { close(true); };
+  });
+}
+window.vieworaConfirm = vieworaConfirm;
+
 "use strict";
 
 /* =========================================================
@@ -2415,10 +2449,13 @@ async function messagesToggleRead(chat) {
 
 async function messagesDeleteChat(chat) {
 
-    const confirmed =
-        window.confirm(
-            "Delete this conversation from your messages?"
-        );
+    const confirmed = await vieworaConfirm({
+        title: "Delete conversation?",
+        text: "This removes the chat from your inbox. The other person will still have it.",
+        okText: "Delete",
+        cancelText: "Cancel",
+        danger: true
+    });
 
     if (!confirmed) {
         return;
@@ -2441,9 +2478,8 @@ async function messagesDeleteChat(chat) {
             chat.chatId
         ).remove();
 
-        messagesToast(
-            "Chat deleted"
-        );
+        // Soft tick feedback
+        messagesToast("✓ Conversation deleted");
 
     } catch (error) {
 
@@ -2486,10 +2522,7 @@ async function messagesToggleBlock(chat) {
 
     if (!currentlyBlocked) {
 
-        const confirmed =
-            window.confirm(
-                "Block this user? You can unblock them later."
-            );
+        const confirmed = await vieworaConfirm({ title:"Block user?", text:"You can unblock them later from settings.", okText:"Block", cancelText:"Cancel", danger:true });
 
         if (!confirmed) {
             return;
