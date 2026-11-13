@@ -1811,10 +1811,25 @@ state.messagesListener = {
                 </div>
             `;
 
-        } else if (kind === "mention") {
-            var mtxt = message.text || "Mentioned you";
-            content = `<div class="systemMentionBubble" style="padding:10px 14px;border-radius:14px;background:rgba(124,92,255,.15);border:1px solid rgba(124,92,255,.25);color:#ddd">
-                <i class="fa-solid fa-at" style="color:#a78bfa;margin-right:6px"></i>${escapeHTML(mtxt)}
+        } else if (kind === "mention" || kind === "story_mention") {
+            var mtxt = message.text || "Mentioned you in their story";
+            var sid = message.storyId || "";
+            var murl = message.mediaURL || message.mediaUrl || message.thumb || "";
+            var thumbHtml = murl
+                ? `<img src="${escapeHTML(murl)}" alt="" style="width:48px;height:48px;border-radius:10px;object-fit:cover;margin-right:10px;background:#222">`
+                : `<span style="width:48px;height:48px;border-radius:10px;display:grid;place-items:center;background:rgba(124,92,255,.25);margin-right:10px"><i class="fa-solid fa-circle-notch" style="color:#a78bfa"></i></span>`;
+            content = `<div class="systemMentionBubble" data-story-id="${escapeHTML(sid)}" data-media="${escapeHTML(murl)}" style="padding:12px 14px;border-radius:16px;background:rgba(124,92,255,.15);border:1px solid rgba(124,92,255,.28);color:#eee">
+                <div style="display:flex;align-items:center">
+                  ${thumbHtml}
+                  <div style="flex:1;min-width:0">
+                    <div style="font-size:13px;font-weight:600;line-height:1.35">${escapeHTML(mtxt)}</div>
+                    <div style="font-size:11px;opacity:.65;margin-top:2px">Story mention</div>
+                  </div>
+                </div>
+                <button type="button" class="addStoryFromMention" data-story-id="${escapeHTML(sid)}" data-media="${escapeHTML(murl)}"
+                  style="margin-top:10px;width:100%;display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:9px 12px;border-radius:999px;border:0;background:linear-gradient(135deg,#7c3aed,#2563eb);color:#fff;font-weight:700;font-size:12px;cursor:pointer">
+                  <i class="fa-regular fa-circle"></i> Add to story
+                </button>
             </div>`;
         } else if (kind === "call") {
             var isMissed = !!message.missed;
@@ -4014,6 +4029,46 @@ async function vieworaMaybeMarkRequest(peerUid, chatId) {
                 await ref.set(
                     emoji
                 );
+
+                // Instagram-style: notify message owner (not self)
+                try {
+                    var msgSnap = await messagesRef().child(messageId).once("value");
+                    var msg = msgSnap.val() || {};
+                    var ownerId = msg.senderId || msg.from || msg.uid;
+                    var me = state.currentUser.uid;
+                    if (ownerId && ownerId !== me) {
+                        var myName = "Someone";
+                        try {
+                            var us = await db.ref("users/" + me).once("value");
+                            var u = us.val() || {};
+                            myName = u.username || u.displayName || u.name || myName;
+                        } catch (_) {}
+                        var kind = msg.type || "text";
+                        var targetLabel = "message";
+                        if (kind === "image" || kind === "photo") targetLabel = "photo";
+                        else if (kind === "video") targetLabel = "video";
+                        else if (kind === "post") targetLabel = "post";
+                        else if (kind === "short" || kind === "shorts") targetLabel = "short";
+                        else if (kind === "story" || kind === "story_mention") targetLabel = "story";
+                        else targetLabel = "message";
+                        await db.ref("activity/" + ownerId).push({
+                            type: "reaction",
+                            reactionType: "message_reaction",
+                            fromUid: me,
+                            fromUsername: myName,
+                            emoji: emoji,
+                            messageId: messageId,
+                            chatId: state.chatId || null,
+                            targetType: targetLabel,
+                            text: myName + " reacted " + emoji + " to your " + targetLabel,
+                            preview: (msg.text || "").slice(0, 80),
+                            read: false,
+                            createdAt: firebase.database.ServerValue.TIMESTAMP
+                        });
+                    }
+                } catch (ne) {
+                    console.warn("reaction notify", ne);
+                }
             }
 
         } catch (error) {
@@ -7768,3 +7823,59 @@ async function vieworaMaybeMarkRequest(peerUid, chatId) {
   setTimeout(hideLoaders, 2000);
   document.addEventListener("DOMContentLoaded", hideLoaders);
 })();
+
+
+
+/* VIEWORA_STORY_MENTION_UI + ADD_FROM_CHAT */
+(function () {
+  function enhanceMentionBubbles() {
+    document.querySelectorAll(".systemMentionBubble, [data-kind=mention], [data-type=story_mention]").forEach(function (el) {
+      if (el.dataset.enhanced === "1") return;
+      el.dataset.enhanced = "1";
+      var storyId = el.getAttribute("data-story-id") || (el.closest("[data-story-id]") && el.closest("[data-story-id]").getAttribute("data-story-id"));
+      var media = el.getAttribute("data-media") || "";
+      if (!el.querySelector(".addStoryFromMention")) {
+        var btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "addStoryFromMention";
+        btn.textContent = "Add to story";
+        btn.style.cssText = "margin-top:8px;display:inline-flex;align-items:center;gap:6px;padding:8px 12px;border-radius:999px;border:0;background:linear-gradient(135deg,#7c3aed,#2563eb);color:#fff;font-weight:700;font-size:12px;cursor:pointer;";
+        btn.addEventListener("click", function (e) {
+          e.preventDefault();
+          e.stopPropagation();
+          var sid = storyId || "";
+          var url = media || "";
+          if (sid) {
+            location.href = "story-upload.html?shareStory=" + encodeURIComponent(sid) + (url ? "&media=" + encodeURIComponent(url) : "");
+          } else if (url) {
+            try { sessionStorage.setItem("viewora_story_share_media", JSON.stringify({ url: url, type: "image", from: "mention" })); } catch (_) {}
+            location.href = "story-upload.html";
+          } else {
+            location.href = "story-upload.html";
+          }
+        });
+        el.appendChild(btn);
+      }
+    });
+  }
+  setInterval(enhanceMentionBubbles, 1200);
+  document.addEventListener("DOMContentLoaded", enhanceMentionBubbles);
+
+  // When rendering messages, mark story_mention
+  var _orig = window.renderMessageBubble || window.buildMessageHTML;
+})();
+
+
+/* addStoryFromMention-click */
+document.addEventListener("click", function (e) {
+  var btn = e.target && e.target.closest && e.target.closest(".addStoryFromMention");
+  if (!btn) return;
+  e.preventDefault();
+  e.stopPropagation();
+  var sid = btn.getAttribute("data-story-id") || "";
+  var url = btn.getAttribute("data-media") || "";
+  if (url) {
+    try { sessionStorage.setItem("viewora_story_share_media", JSON.stringify({ url: url, type: /mp4|webm/i.test(url) ? "video" : "image", from: "mention", id: sid })); } catch (_) {}
+  }
+  location.href = "story-upload.html" + (sid ? ("?shareStory=" + encodeURIComponent(sid)) : "");
+}, true);

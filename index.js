@@ -3107,7 +3107,115 @@
         }
     }
 
-        /* Instagram-style share sheet */
+    
+    /* VIEWORA_ADD_TO_STORY — Instagram-style reshare post → your story */
+    async function vieworaAddPostToStory(postId) {
+        const auth = firebase.auth();
+        const user = auth.currentUser;
+        if (!user) {
+            showToast("Login required");
+            try { location.href = "login.html"; } catch (_) {}
+            return;
+        }
+        if (!postId) {
+            showToast("Nothing to share");
+            return;
+        }
+        showToast("Adding to your story…");
+        let post = null;
+        try {
+            const snap = await db.ref("posts/" + postId).once("value");
+            post = snap.val();
+        } catch (_) {}
+        if (!post) {
+            try {
+                const s2 = await db.ref("feed/" + postId).once("value");
+                post = s2.val();
+            } catch (_) {}
+        }
+        // Fallback: read from DOM card
+        let mediaURL = (post && (post.mediaURL || post.mediaUrl || post.imageUrl || post.image || post.photo || post.videoURL || post.videoUrl || post.url)) || "";
+        let mediaType = (post && (post.mediaType || post.type)) || "image";
+        if (!mediaURL) {
+            try {
+                const card = document.querySelector('.vieworaPostCard[data-post-id="' + postId + '"], [data-post-id="' + postId + '"]');
+                const img = card && card.querySelector("img.postImage, img.media, video, img");
+                if (img) {
+                    mediaURL = img.currentSrc || img.src || "";
+                    if (img.tagName === "VIDEO") mediaType = "video";
+                }
+            } catch (_) {}
+        }
+        if (!mediaURL) {
+            // Open editor with share param as last resort
+            location.href = "story-upload.html?sharePost=" + encodeURIComponent(postId);
+            return;
+        }
+        if (/video/i.test(String(mediaType)) || /\.(mp4|webm|mov)(\?|$)/i.test(mediaURL)) mediaType = "video";
+        else mediaType = "image";
+
+        let username = "User";
+        let avatar = "";
+        try {
+            const us = await db.ref("users/" + user.uid).once("value");
+            const u = us.val() || {};
+            username = u.username || u.displayName || u.name || user.displayName || "User";
+            avatar = u.profilePhoto || u.photoURL || u.avatar || user.photoURL || "";
+        } catch (_) {}
+
+        const now = Date.now();
+        const expiresAt = now + 24 * 60 * 60 * 1000;
+        const storyId = db.ref("stories").push().key;
+        const storyData = {
+            id: storyId,
+            uid: user.uid,
+            userId: user.uid,
+            ownerId: user.uid,
+            mediaURL: mediaURL,
+            mediaUrl: mediaURL,
+            url: mediaURL,
+            type: mediaType,
+            mediaType: mediaType,
+            caption: "",
+            username: username,
+            userName: username,
+            displayName: username,
+            avatar: avatar,
+            photoURL: avatar,
+            profilePhoto: avatar,
+            visibility: "followers",
+            createdAt: now,
+            timestamp: now,
+            expiresAt: expiresAt,
+            views: 0,
+            viewCount: 0,
+            viewers: {},
+            sharedFrom: { type: "post", id: postId },
+            isReshare: true,
+            uploadStatus: "ready"
+        };
+        await db.ref("stories/" + storyId).set(storyData);
+        try {
+            await db.ref("users/" + user.uid + "/stories/" + storyId).set({
+                id: storyId, mediaURL: mediaURL, mediaType: mediaType, type: mediaType,
+                createdAt: now, expiresAt: expiresAt, username: username, avatar: avatar
+            });
+        } catch (_) {}
+        try {
+            await db.ref("userStories/" + user.uid + "/" + storyId).set(storyData);
+        } catch (_) {}
+        closeShareSheet();
+        showToast("✓ Added to your story");
+        try {
+            // soft refresh story rail
+            if (typeof loadStories === "function") loadStories();
+            else if (typeof window.loadStories === "function") window.loadStories();
+        } catch (_) {}
+    }
+    window.vieworaAddPostToStory = vieworaAddPostToStory;
+
+
+    /* Instagram-style share sheet */
     function closeShareSheet() {
         const el = document.getElementById("vieworaShareSheet");
         if (el) {
@@ -3332,7 +3440,14 @@
                         else { await navigator.clipboard.writeText(shareURL); showToast("Link copied"); }
                     } catch (_) {}
                 } else if (act === "story") {
-                    location.href = "story-upload.html?sharePost=" + encodeURIComponent(postId || "");
+                    btn.disabled = true;
+                    try {
+                        await vieworaAddPostToStory(postId);
+                    } catch (err) {
+                        console.error(err);
+                        showToast("Could not add to story");
+                    }
+                    btn.disabled = false;
                 }
             });
         });

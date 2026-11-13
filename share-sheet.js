@@ -587,23 +587,205 @@
             }
           } catch (_) {}
         } else if (act === "story") {
-          // Instagram-style: post / short / long video → story editor
-          var st = type || "post";
-          if (st === "long" || st === "longvideo") st = "video";
-          var thumbQ = "";
+          // Instagram-style: add post/short/video to YOUR story (no blank redirect)
+          btn.disabled = true;
           try {
-            if (thumb) thumbQ = "&thumb=" + encodeURIComponent(thumb);
-          } catch (_) {}
-          location.href =
-            "story-upload.html?share=" +
-            encodeURIComponent(st) +
-            "&id=" +
-            encodeURIComponent(id || "") +
-            thumbQ;
+            await addContentToStory({
+              type: type,
+              id: id,
+              thumb: presetThumb || thumb || "",
+              title: title,
+              url: shareURL
+            });
+          } catch (err) {
+            console.error("Add to story failed:", err);
+            toast("Could not add to story");
+          }
+          btn.disabled = false;
         }
       });
     });
   }
 
-  window.VieworaShare = { open: open, close: close };
+
+  async function resolveMedia(opts) {
+    opts = opts || {};
+    var type = (opts.type || "post").toLowerCase();
+    var id = opts.id || "";
+    var mediaURL = opts.thumb || opts.thumbnail || opts.imageUrl || opts.mediaURL || opts.mediaUrl || "";
+    var mediaType = "image";
+    var db = getDB();
+
+    function pickFromObj(o) {
+      if (!o || typeof o !== "object") return "";
+      return (
+        o.mediaURL || o.mediaUrl || o.imageUrl || o.imageURL || o.image ||
+        o.photo || o.photoURL || o.thumbnail || o.thumbnailUrl || o.thumb ||
+        o.cover || o.poster || o.videoUrl || o.videoURL || o.url || o.src || ""
+      );
+    }
+
+    if (db && id) {
+      var paths = [];
+      if (type === "post" || type === "posts") paths = ["posts/" + id, "feed/" + id];
+      else if (type === "short" || type === "shorts") paths = ["shorts/" + id, "short/" + id];
+      else if (type === "video" || type === "long" || type === "longvideo") paths = ["videos/" + id, "longVideos/" + id, "posts/" + id];
+      else paths = ["posts/" + id, "shorts/" + id, "videos/" + id];
+
+      for (var i = 0; i < paths.length; i++) {
+        try {
+          var snap = await db.ref(paths[i]).once("value");
+          if (snap.exists()) {
+            var val = snap.val() || {};
+            var found = pickFromObj(val);
+            if (found) {
+              mediaURL = found;
+              var t = val.mediaType || val.type || "";
+              if (/video/i.test(String(t)) || /\.(mp4|webm|mov)(\?|$)/i.test(found)) mediaType = "video";
+              else mediaType = "image";
+              break;
+            }
+          }
+        } catch (_) {}
+      }
+    }
+
+    // DOM fallback for visible post card
+    if (!mediaURL && id) {
+      try {
+        var card = document.querySelector(
+          '[data-post-id="' + id + '"], [data-id="' + id + '"], [data-short-id="' + id + '"], [data-video-id="' + id + '"]'
+        );
+        if (card) {
+          var vid = card.querySelector("video");
+          var img = card.querySelector("img.postImage, img.media, img.videoThumb, img");
+          if (vid && (vid.currentSrc || vid.src)) {
+            mediaURL = vid.currentSrc || vid.src;
+            mediaType = "video";
+          } else if (img && (img.currentSrc || img.src)) {
+            mediaURL = img.currentSrc || img.src;
+            mediaType = "image";
+          }
+        }
+      } catch (_) {}
+    }
+
+    if (mediaURL && (/\.(mp4|webm|mov)(\?|$)/i.test(mediaURL) || /\/video\//i.test(mediaURL))) {
+      mediaType = "video";
+    }
+    return { mediaURL: mediaURL, mediaType: mediaType };
+  }
+
+  async function addContentToStory(opts) {
+    var user = null;
+    try {
+      user = firebase.auth().currentUser;
+    } catch (_) {}
+    if (!user) {
+      toast("Login required");
+      try { location.href = "login.html"; } catch (_) {}
+      return;
+    }
+    var db = getDB();
+    if (!db) {
+      toast("Database not ready");
+      return;
+    }
+
+    toast("Adding to your story…");
+    var resolved = await resolveMedia(opts);
+    var mediaURL = resolved.mediaURL;
+    var mediaType = resolved.mediaType || "image";
+
+    if (!mediaURL) {
+      // last resort: editor with params
+      var st = (opts.type || "post").toLowerCase();
+      if (st === "long" || st === "longvideo") st = "video";
+      location.href =
+        "story-upload.html?share=" +
+        encodeURIComponent(st) +
+        "&id=" +
+        encodeURIComponent(opts.id || "") +
+        (opts.thumb ? "&thumb=" + encodeURIComponent(opts.thumb) : "");
+      return;
+    }
+
+    var username = "User";
+    var avatar = "";
+    try {
+      var us = await db.ref("users/" + user.uid).once("value");
+      var u = us.val() || {};
+      username = u.username || u.displayName || u.name || user.displayName || "User";
+      avatar = u.profilePhoto || u.photoURL || u.avatar || user.photoURL || "";
+    } catch (_) {}
+
+    var now = Date.now();
+    var expiresAt = now + 24 * 60 * 60 * 1000;
+    var storyId = db.ref("stories").push().key;
+    var storyData = {
+      id: storyId,
+      uid: user.uid,
+      userId: user.uid,
+      ownerId: user.uid,
+      mediaURL: mediaURL,
+      mediaUrl: mediaURL,
+      url: mediaURL,
+      type: mediaType,
+      mediaType: mediaType,
+      caption: "",
+      username: username,
+      userName: username,
+      displayName: username,
+      avatar: avatar,
+      photoURL: avatar,
+      profilePhoto: avatar,
+      userPhoto: avatar,
+      visibility: "followers",
+      createdAt: now,
+      timestamp: now,
+      expiresAt: expiresAt,
+      views: 0,
+      viewCount: 0,
+      viewers: {},
+      sharedFrom: {
+        type: opts.type || "post",
+        id: opts.id || null
+      },
+      isReshare: true,
+      uploadStatus: "ready"
+    };
+
+    await db.ref("stories/" + storyId).set(storyData);
+    try {
+      await db.ref("users/" + user.uid + "/stories/" + storyId).set({
+        id: storyId,
+        mediaURL: mediaURL,
+        mediaUrl: mediaURL,
+        mediaType: mediaType,
+        type: mediaType,
+        createdAt: now,
+        expiresAt: expiresAt,
+        username: username,
+        avatar: avatar
+      });
+    } catch (_) {}
+    try {
+      await db.ref("userStories/" + user.uid + "/" + storyId).set(storyData);
+    } catch (_) {}
+
+    close();
+    toast("✓ Added to your story");
+    try {
+      if (typeof window.loadStories === "function") window.loadStories();
+    } catch (_) {}
+    // Soft refresh story ring without full reload
+    try {
+      var addBtn = document.querySelector(".storyCard.yourStory, #addStoryBtn");
+      if (addBtn) addBtn.classList.add("storyUnseen");
+    } catch (_) {}
+  }
+  window.vieworaAddContentToStory = addContentToStory;
+
+
+  window.VieworaShare = { open: open, close: close, addToStory: addContentToStory };
 })();

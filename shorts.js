@@ -3749,3 +3749,44 @@ window.VieworaRefreshFeed = function () {
 })();
 
 try { document.addEventListener("DOMContentLoaded", function(){ setTimeout(vieworaBindShortsSnap, 300); }); } catch(_){}
+
+
+/* VIEWORA_SHORT_TO_STORY */
+window.vieworaAddShortToStory = async function (short) {
+  try {
+    var user = firebase.auth().currentUser;
+    if (!user) { location.href = "login.html"; return; }
+    var id = (short && (short.id || short.shortId)) || "";
+    var mediaURL = (short && (short.videoUrl || short.videoURL || short.mediaURL || short.url || short.thumbnail)) || "";
+    if (!mediaURL && id) {
+      var snap = await firebase.database().ref("shorts/" + id).once("value");
+      var s = snap.val() || {};
+      mediaURL = s.videoUrl || s.videoURL || s.mediaURL || s.url || s.thumbnail || "";
+    }
+    if (!mediaURL) {
+      location.href = "story-upload.html?shareShort=" + encodeURIComponent(id || "");
+      return;
+    }
+    var us = await firebase.database().ref("users/" + user.uid).once("value");
+    var u = us.val() || {};
+    var username = u.username || u.displayName || "User";
+    var avatar = u.profilePhoto || u.photoURL || u.avatar || "";
+    var now = Date.now();
+    var expiresAt = now + 24 * 60 * 60 * 1000;
+    var storyId = firebase.database().ref("stories").push().key;
+    var storyData = {
+      id: storyId, uid: user.uid, userId: user.uid, ownerId: user.uid,
+      mediaURL: mediaURL, mediaUrl: mediaURL, url: mediaURL,
+      type: "video", mediaType: "video", caption: "",
+      username: username, displayName: username, avatar: avatar, profilePhoto: avatar,
+      visibility: "followers", createdAt: now, timestamp: now, expiresAt: expiresAt,
+      views: 0, viewers: {}, sharedFrom: { type: "short", id: id }, isReshare: true, uploadStatus: "ready"
+    };
+    await firebase.database().ref("stories/" + storyId).set(storyData);
+    try { await firebase.database().ref("users/" + user.uid + "/stories/" + storyId).set({ id: storyId, mediaURL: mediaURL, mediaType: "video", createdAt: now, expiresAt: expiresAt }); } catch (_) {}
+    if (typeof showToast === "function") showToast("✓ Added to your story");
+  } catch (e) {
+    console.error(e);
+    if (typeof showToast === "function") showToast("Could not add to story");
+  }
+};

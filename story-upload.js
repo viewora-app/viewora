@@ -290,8 +290,8 @@
         stickerLayer.innerHTML = "";
         state.filterId = "none";
         applyFilter("none");
-        state.music = MUSIC_TRACKS[0];
-        updateMusicBadge();
+        state.music = null; // never auto-pick a track
+        try { updateMusicBadge(); } catch (_) {}
 
         pickScreen.classList.add("hidden");
         editorScreen.classList.remove("hidden");
@@ -625,10 +625,15 @@
 
             btn.addEventListener("click", () => {
                 stopMusicPreview();
-                state.music = track;
+                var url = String(track.audioUrl || track.url || track.src || "").trim();
+                if (track.id !== "original" && track.id !== "original-audio" && (!url || url.length < 8)) {
+                    try { showToast("No audio file on this track", "error"); } catch (_) {}
+                    return;
+                }
+                // Only set music after trim Done inside openMusicTrim / apply — preview selection only
+                state.music = null;
                 state.musicStartAt = 0;
                 try { updateMusicBadge(); } catch (_) {}
-                updateMusicBadge();
                 renderMusic();
                 openMusicTrim(track);
             });
@@ -664,7 +669,10 @@
         return m + ":" + (s < 10 ? "0" : "") + s;
     }
 
+    let pendingStoryMusic = null;
+
     function openMusicTrim(track) {
+        pendingStoryMusic = track || null;
         const box = $("musicTrimBox");
         const slider = $("musicTrimSlider");
         const timeEl = $("musicTrimTime");
@@ -722,10 +730,13 @@
         $("musicTrimDone")?.addEventListener("click", () => {
             const sec = Number(slider && slider.value) || 0;
             state.musicStartAt = sec;
+            if (pendingStoryMusic) {
+                state.music = pendingStoryMusic;
+                pendingStoryMusic = null;
+            }
             if (box) box.classList.add("hidden");
             updateMusicBadge();
             closeSheet("musicPanel");
-            // Keep playing on stage so user can hear before Share
             playStageMusicPreview();
         });
         slider?.addEventListener("input", () => {
@@ -1145,6 +1156,7 @@
                 sessionStorage.setItem("viewora_story_just_posted", "1");
             } catch (_) {}
 
+            try { if (window.vieworaNotifyStoryMentions) await window.vieworaNotifyStoryMentions(storyData); } catch (_) {}
             showToast("Story shared");
             setTimeout(function () {
                 window.location.href = "index.html?story=1&t=" + Date.now();
@@ -1355,4 +1367,195 @@
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", bind, { once: true });
   } else bind();
+})();
+
+
+
+/* VIEWORA_STORY_MENTION + SHARE_POST */
+(function () {
+  function db() {
+    try { return firebase.database(); } catch (_) { return null; }
+  }
+  function authUser() {
+    try { return firebase.auth().currentUser; } catch (_) { return null; }
+  }
+
+  // Parse @username mentions from caption/text overlays
+  function extractMentions(text) {
+    var out = [];
+    String(text || "").replace(/@([a-zA-Z0-9._]{2,30})/g, function (_, u) {
+      out.push(u.toLowerCase());
+      return _;
+    });
+    return Array.from(new Set(out));
+  }
+
+  async function resolveUsernameToUid(username) {
+    var d = db();
+    if (!d || !username) return null;
+    try {
+      var q = await d.ref("users").orderByChild("username").equalTo(username).limitToFirst(1).once("value");
+      var uid = null;
+      q.forEach(function (c) { uid = c.key; });
+      if (uid) return uid;
+    } catch (_) {}
+    try {
+      var q2 = await d.ref("usernames/" + username).once("value");
+      if (q2.exists()) {
+        var v = q2.val();
+        return (typeof v === "string") ? v : (v && (v.uid || v.userId)) || null;
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  // After story is published, notify mentioned users (Instagram-style)
+  window.vieworaNotifyStoryMentions = async function (storyData) {
+    try {
+      var me = authUser();
+      var d = db();
+      if (!me || !d || !storyData) return;
+      var texts = [];
+      texts.push(storyData.caption || "");
+      (storyData.texts || []).forEach(function (t) {
+        texts.push((t && (t.text || t.value || t.content)) || "");
+      });
+      var names = extractMentions(texts.join(" "));
+      if (!names.length) return;
+      var myName = storyData.username || storyData.displayName || "Someone";
+      for (var i = 0; i < names.length; i++) {
+        var uname = names[i];
+        var targetUid = await resolveUsernameToUid(uname);
+        if (!targetUid || targetUid === me.uid) continue;
+        // Activity / notification
+        try {
+          await d.ref("activity/" + targetUid).push({
+            type: "story_mention",
+            fromUid: me.uid,
+            fromUsername: myName,
+            fromAvatar: storyData.avatar || storyData.profilePhoto || "",
+            storyId: storyData.id,
+            mediaURL: storyData.mediaURL || storyData.mediaUrl || "",
+            text: myName + " mentioned you in their story",
+            preview: "@" + uname,
+            read: false,
+            createdAt: firebase.database.ServerValue.TIMESTAMP
+          });
+        } catch (e) { console.warn("mention activity", e); }
+        // Chat system message + Add to story CTA
+        try {
+          var chatId = [me.uid, targetUid].sort().join("_");
+          var msgRef = d.ref("chats/" + chatId + "/messages").push();
+          await msgRef.set({
+            type: "story_mention",
+            kind: "mention",
+            storyId: storyData.id,
+            mediaURL: storyData.mediaURL || storyData.mediaUrl || "",
+            mediaType: storyData.mediaType || storyData.type || "image",
+            text: myName + " mentioned you in their story",
+            senderId: me.uid,
+            receiverId: targetUid,
+            fromUsername: myName,
+            fromAvatar: storyData.avatar || "",
+            canAddToStory: true,
+            createdAt: firebase.database.ServerValue.TIMESTAMP
+          });
+          var inbox = {
+            lastMessage: myName + " mentioned you in their story",
+            lastMessageType: "story_mention",
+            updatedAt: firebase.database.ServerValue.TIMESTAMP,
+            chatId: chatId,
+            unread: true
+          };
+          await d.ref("userChats/" + targetUid + "/" + chatId).update(inbox);
+          await d.ref("userChats/" + me.uid + "/" + chatId).update({
+            lastMessage: "You mentioned @" + uname + " in your story",
+            lastMessageType: "story_mention",
+            updatedAt: firebase.database.ServerValue.TIMESTAMP,
+            chatId: chatId
+          });
+        } catch (e2) { console.warn("mention chat", e2); }
+      }
+    } catch (err) {
+      console.warn("vieworaNotifyStoryMentions", err);
+    }
+  };
+
+  // Load sharePost / shareShort into editor if URL has param
+  async function tryLoadShareMedia() {
+    try {
+      var params = new URLSearchParams(location.search || "");
+      var shareKind = (params.get("share") || "").toLowerCase();
+      var postId = params.get("sharePost") || params.get("post") || "";
+      var shortId = params.get("shareShort") || params.get("short") || "";
+      var videoId = params.get("shareVideo") || params.get("video") || "";
+      var genericId = params.get("id") || params.get("shareId") || "";
+      var thumbParam = params.get("thumb") || params.get("media") || "";
+      if (shareKind === "post" || shareKind === "posts") postId = postId || genericId;
+      else if (shareKind === "short" || shareKind === "shorts") shortId = shortId || genericId;
+      else if (shareKind === "video" || shareKind === "long" || shareKind === "longvideo") videoId = videoId || genericId;
+      else if (genericId && !postId && !shortId && !videoId) postId = genericId;
+      if (!postId && !shortId && !videoId && !thumbParam) return;
+      var d = db();
+      if (!d) return;
+      var mediaURL = "";
+      var mediaType = "image";
+      if (postId) {
+        var snap = await d.ref("posts/" + postId).once("value");
+        var p = snap.val() || {};
+        mediaURL = p.mediaURL || p.mediaUrl || p.imageUrl || p.image || p.photo || p.videoURL || p.videoUrl || p.url || "";
+        mediaType = p.mediaType || p.type || "image";
+      } else if (shortId) {
+        var s = await d.ref("shorts/" + shortId).once("value");
+        var sh = s.val() || {};
+        mediaURL = sh.videoUrl || sh.videoURL || sh.mediaURL || sh.url || sh.thumbnail || "";
+        mediaType = "video";
+      } else if (videoId) {
+        var v = await d.ref("videos/" + videoId).once("value");
+        var vd = v.val() || {};
+        mediaURL = vd.videoUrl || vd.videoURL || vd.mediaURL || vd.url || "";
+        mediaType = "video";
+      }
+      if (!mediaURL && thumbParam) { mediaURL = thumbParam; mediaType = /mp4|webm|video/i.test(thumbParam) ? "video" : "image"; }
+      if (!mediaURL) return;
+      // Store for editor if available
+      try {
+        sessionStorage.setItem("viewora_story_share_media", JSON.stringify({
+          url: mediaURL,
+          type: /video/i.test(String(mediaType)) || /\.mp4|\.webm/i.test(mediaURL) ? "video" : "image",
+          from: postId ? "post" : shortId ? "short" : "video",
+          id: postId || shortId || videoId
+        }));
+      } catch (_) {}
+      // If page has preview elements, set them
+      var img = document.getElementById("previewImage") || document.querySelector(".previewImage, #storyPreviewImg");
+      var vid = document.getElementById("previewVideo") || document.querySelector(".previewVideo, #storyPreviewVideo");
+      if (/video/i.test(mediaType) || /\.mp4|\.webm/i.test(mediaURL)) {
+        if (vid) {
+          vid.src = mediaURL;
+          vid.classList.remove("hidden");
+          if (img) img.classList.add("hidden");
+        }
+      } else if (img) {
+        img.src = mediaURL;
+        img.classList.remove("hidden");
+        if (vid) vid.classList.add("hidden");
+      }
+      var pick = document.getElementById("pickScreen") || document.querySelector(".pickScreen");
+      var editor = document.getElementById("editorScreen") || document.querySelector(".editorScreen");
+      if (pick) pick.classList.add("hidden");
+      if (editor) editor.classList.remove("hidden");
+      if (window.VieworaStoryUpload && typeof window.VieworaStoryUpload.share === "function") {
+        // optional
+      }
+    } catch (e) {
+      console.warn("tryLoadShareMedia", e);
+    }
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", function () { setTimeout(tryLoadShareMedia, 400); });
+  } else {
+    setTimeout(tryLoadShareMedia, 400);
+  }
 })();
