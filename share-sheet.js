@@ -678,113 +678,80 @@
 
   async function addContentToStory(opts) {
     var user = null;
-    try {
-      user = firebase.auth().currentUser;
-    } catch (_) {}
+    try { user = firebase.auth().currentUser; } catch (_) {}
     if (!user) {
       toast("Login required");
       try { location.href = "login.html"; } catch (_) {}
       return;
     }
-    var db = getDB();
-    if (!db) {
-      toast("Database not ready");
-      return;
-    }
-
-    toast("Adding to your story…");
+    toast("Opening story editor…");
     var resolved = await resolveMedia(opts);
     var mediaURL = resolved.mediaURL;
     var mediaType = resolved.mediaType || "image";
+    var db = getDB();
+
+    // Original owner of the post/short (for @credit on story)
+    var owner = { uid: "", username: "", avatar: "" };
+    try {
+      if (db && opts.id) {
+        var paths = [];
+        var t = (opts.type || "post").toLowerCase();
+        if (t === "short" || t === "shorts") paths = ["shorts/" + opts.id];
+        else if (t === "video" || t === "long") paths = ["videos/" + opts.id, "posts/" + opts.id];
+        else paths = ["posts/" + opts.id, "feed/" + opts.id];
+        for (var i = 0; i < paths.length; i++) {
+          try {
+            var snap = await db.ref(paths[i]).once("value");
+            if (!snap.exists()) continue;
+            var v = snap.val() || {};
+            owner.uid = v.uid || v.userId || v.ownerId || v.creatorId || "";
+            owner.username = v.username || v.userName || v.displayName || v.name || "";
+            owner.avatar = v.profilePhoto || v.photoURL || v.avatar || v.userPhoto || "";
+            if (!owner.username && owner.uid) {
+              var us = await db.ref("users/" + owner.uid).once("value");
+              var u = us.val() || {};
+              owner.username = u.username || u.displayName || u.name || "";
+              owner.avatar = owner.avatar || u.profilePhoto || u.photoURL || u.avatar || "";
+            }
+            if (!mediaURL) {
+              mediaURL = v.mediaURL || v.mediaUrl || v.imageUrl || v.videoUrl || v.videoURL || v.url || "";
+            }
+            break;
+          } catch (_) {}
+        }
+      }
+    } catch (_) {}
 
     if (!mediaURL) {
-      // last resort: editor with params
-      var st = (opts.type || "post").toLowerCase();
-      if (st === "long" || st === "longvideo") st = "video";
-      location.href =
-        "story-upload.html?share=" +
-        encodeURIComponent(st) +
-        "&id=" +
-        encodeURIComponent(opts.id || "") +
-        (opts.thumb ? "&thumb=" + encodeURIComponent(opts.thumb) : "");
+      toast("Media not found");
       return;
     }
 
-    var username = "User";
-    var avatar = "";
-    try {
-      var us = await db.ref("users/" + user.uid).once("value");
-      var u = us.val() || {};
-      username = u.username || u.displayName || u.name || user.displayName || "User";
-      avatar = u.profilePhoto || u.photoURL || u.avatar || user.photoURL || "";
-    } catch (_) {}
-
-    var now = Date.now();
-    var expiresAt = now + 24 * 60 * 60 * 1000;
-    var storyId = db.ref("stories").push().key;
-    var storyData = {
-      id: storyId,
-      uid: user.uid,
-      userId: user.uid,
-      ownerId: user.uid,
-      mediaURL: mediaURL,
-      mediaUrl: mediaURL,
+    var payload = {
       url: mediaURL,
       type: mediaType,
-      mediaType: mediaType,
-      caption: "",
-      username: username,
-      userName: username,
-      displayName: username,
-      avatar: avatar,
-      photoURL: avatar,
-      profilePhoto: avatar,
-      userPhoto: avatar,
-      visibility: "followers",
-      createdAt: now,
-      timestamp: now,
-      expiresAt: expiresAt,
-      views: 0,
-      viewCount: 0,
-      viewers: {},
-      sharedFrom: {
-        type: opts.type || "post",
-        id: opts.id || null
-      },
-      isReshare: true,
-      uploadStatus: "ready"
+      from: opts.type || "post",
+      id: opts.id || "",
+      ownerUid: owner.uid || "",
+      ownerUsername: owner.username || "",
+      ownerAvatar: owner.avatar || ""
     };
-
-    await db.ref("stories/" + storyId).set(storyData);
     try {
-      await db.ref("users/" + user.uid + "/stories/" + storyId).set({
-        id: storyId,
-        mediaURL: mediaURL,
-        mediaUrl: mediaURL,
-        mediaType: mediaType,
-        type: mediaType,
-        createdAt: now,
-        expiresAt: expiresAt,
-        username: username,
-        avatar: avatar
-      });
-    } catch (_) {}
-    try {
-      await db.ref("userStories/" + user.uid + "/" + storyId).set(storyData);
+      sessionStorage.setItem("viewora_story_share_media", JSON.stringify(payload));
     } catch (_) {}
 
     close();
-    toast("✓ Added to your story");
-    try {
-      if (typeof window.loadStories === "function") window.loadStories();
-    } catch (_) {}
-    // Soft refresh story ring without full reload
-    try {
-      var addBtn = document.querySelector(".storyCard.yourStory, #addStoryBtn");
-      if (addBtn) addBtn.classList.add("storyUnseen");
-    } catch (_) {}
+    location.href =
+      "story-upload.html?fromShare=1" +
+      "&share=" + encodeURIComponent(opts.type || "post") +
+      "&id=" + encodeURIComponent(opts.id || "") +
+      "&media=" + encodeURIComponent(mediaURL) +
+      "&mediaType=" + encodeURIComponent(mediaType) +
+      (owner.username ? "&owner=" + encodeURIComponent(owner.username) : "") +
+      (owner.uid ? "&ownerUid=" + encodeURIComponent(owner.uid) : "");
   }
   window.vieworaAddContentToStory = addContentToStory;
+
 
 
   window.VieworaShare = { open: open, close: close, addToStory: addContentToStory };

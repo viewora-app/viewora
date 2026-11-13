@@ -3121,7 +3121,7 @@
             showToast("Nothing to share");
             return;
         }
-        showToast("Adding to your story…");
+        showToast("Opening story editor…");
         let post = null;
         try {
             const snap = await db.ref("posts/" + postId).once("value");
@@ -3133,7 +3133,6 @@
                 post = s2.val();
             } catch (_) {}
         }
-        // Fallback: read from DOM card
         let mediaURL = (post && (post.mediaURL || post.mediaUrl || post.imageUrl || post.image || post.photo || post.videoURL || post.videoUrl || post.url)) || "";
         let mediaType = (post && (post.mediaType || post.type)) || "image";
         if (!mediaURL) {
@@ -3147,70 +3146,41 @@
             } catch (_) {}
         }
         if (!mediaURL) {
-            // Open editor with share param as last resort
             location.href = "story-upload.html?sharePost=" + encodeURIComponent(postId);
             return;
         }
         if (/video/i.test(String(mediaType)) || /\.(mp4|webm|mov)(\?|$)/i.test(mediaURL)) mediaType = "video";
         else mediaType = "image";
 
-        let username = "User";
-        let avatar = "";
-        try {
-            const us = await db.ref("users/" + user.uid).once("value");
-            const u = us.val() || {};
-            username = u.username || u.displayName || u.name || user.displayName || "User";
-            avatar = u.profilePhoto || u.photoURL || u.avatar || user.photoURL || "";
-        } catch (_) {}
+        let ownerUsername = (post && (post.username || post.userName || post.displayName || post.name)) || "";
+        let ownerUid = (post && (post.uid || post.userId || post.ownerId)) || "";
+        let ownerAvatar = (post && (post.profilePhoto || post.photoURL || post.avatar)) || "";
+        if (!ownerUsername && ownerUid) {
+            try {
+                const us = await db.ref("users/" + ownerUid).once("value");
+                const u = us.val() || {};
+                ownerUsername = u.username || u.displayName || u.name || "";
+                ownerAvatar = ownerAvatar || u.profilePhoto || u.photoURL || "";
+            } catch (_) {}
+        }
 
-        const now = Date.now();
-        const expiresAt = now + 24 * 60 * 60 * 1000;
-        const storyId = db.ref("stories").push().key;
-        const storyData = {
-            id: storyId,
-            uid: user.uid,
-            userId: user.uid,
-            ownerId: user.uid,
-            mediaURL: mediaURL,
-            mediaUrl: mediaURL,
+        const payload = {
             url: mediaURL,
             type: mediaType,
-            mediaType: mediaType,
-            caption: "",
-            username: username,
-            userName: username,
-            displayName: username,
-            avatar: avatar,
-            photoURL: avatar,
-            profilePhoto: avatar,
-            visibility: "followers",
-            createdAt: now,
-            timestamp: now,
-            expiresAt: expiresAt,
-            views: 0,
-            viewCount: 0,
-            viewers: {},
-            sharedFrom: { type: "post", id: postId },
-            isReshare: true,
-            uploadStatus: "ready"
+            from: "post",
+            id: postId,
+            ownerUid: ownerUid,
+            ownerUsername: ownerUsername,
+            ownerAvatar: ownerAvatar
         };
-        await db.ref("stories/" + storyId).set(storyData);
-        try {
-            await db.ref("users/" + user.uid + "/stories/" + storyId).set({
-                id: storyId, mediaURL: mediaURL, mediaType: mediaType, type: mediaType,
-                createdAt: now, expiresAt: expiresAt, username: username, avatar: avatar
-            });
-        } catch (_) {}
-        try {
-            await db.ref("userStories/" + user.uid + "/" + storyId).set(storyData);
-        } catch (_) {}
-        closeShareSheet();
-        showToast("✓ Added to your story");
-        try {
-            // soft refresh story rail
-            if (typeof loadStories === "function") loadStories();
-            else if (typeof window.loadStories === "function") window.loadStories();
-        } catch (_) {}
+        try { sessionStorage.setItem("viewora_story_share_media", JSON.stringify(payload)); } catch (_) {}
+        try { if (typeof closeShareSheet === "function") closeShareSheet(); } catch (_) {}
+        location.href =
+            "story-upload.html?fromShare=1&share=post&id=" + encodeURIComponent(postId) +
+            "&media=" + encodeURIComponent(mediaURL) +
+            "&mediaType=" + encodeURIComponent(mediaType) +
+            (ownerUsername ? "&owner=" + encodeURIComponent(ownerUsername) : "") +
+            (ownerUid ? "&ownerUid=" + encodeURIComponent(ownerUid) : "");
     }
     window.vieworaAddPostToStory = vieworaAddPostToStory;
 

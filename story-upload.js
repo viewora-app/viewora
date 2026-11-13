@@ -103,7 +103,11 @@
         musicStartAt: 0,
         textColor: "#ffffff",
         textStyle: "classic",
-        uploading: false
+        uploading: false,
+        remoteMediaURL: null,
+        remoteMediaType: null,
+        sharedFrom: null,
+        ownerCredit: null // { uid, username, avatar }
     };
 
 
@@ -1000,7 +1004,7 @@
 
         if (state.uploading) return;
         if (!requireLogin()) return;
-        if (!state.file) {
+        if (!state.file && !state.remoteMediaURL) {
             showToast("Select a photo or video first", "error");
             return;
         }
@@ -1058,6 +1062,10 @@
                     document.body.style.opacity = "0.01";
                     document.body.style.pointerEvents = "none";
                 } catch (_) {}
+                if (state.remoteMediaURL && !state.file) {
+                    // Reshare — no file upload queue; fall through to sync path
+                    throw new Error("reshare-sync");
+                }
                 await window.VieworaUploadQueue.enqueueAndLeave({
                     type: "story",
                     file: state.file,
@@ -1069,7 +1077,9 @@
                         music: musicMeta,
                         musicStartAt: musicMeta ? musicMeta.startAt : 0,
                         texts: overlays.texts || [],
-                        stickers: overlays.stickers || []
+                        stickers: overlays.stickers || [],
+                        sharedFrom: state.sharedFrom || null,
+                        originalOwner: state.ownerCredit || null
                     }
                 });
                 return;
@@ -1081,16 +1091,23 @@
         // Sync fallback (stay on page until done)
         showThinShareBar(0);
         try {
-            const uploadResult = await uploadToCloudinary(state.file, function (pct) {
-                setUploadProgress(pct);
-                showThinShareBar(pct);
-                try { sessionStorage.setItem("viewora_story_upload_pct", String(Math.round(pct))); } catch (_) {}
-            });
+            let mediaURL = state.remoteMediaURL || null;
+            let resourceType = state.remoteMediaType || state.mediaType || "image";
+            if (!mediaURL && state.file) {
+              const uploadResult = await uploadToCloudinary(state.file, function (pct) {
+                  setUploadProgress(pct);
+                  showThinShareBar(pct);
+                  try { sessionStorage.setItem("viewora_story_upload_pct", String(Math.round(pct))); } catch (_) {}
+              });
+              mediaURL = uploadResult.secure_url;
+              resourceType = uploadResult.resource_type || state.mediaType;
+            } else {
+              setUploadProgress(70);
+              showThinShareBar(70);
+            }
             setUploadProgress(92);
             try { sessionStorage.setItem("viewora_story_upload_pct", "92"); } catch (_) {}
 
-            const mediaURL = uploadResult.secure_url;
-            const resourceType = uploadResult.resource_type || state.mediaType;
             const now = Date.now();
             const expiresAt = now + CONFIG.MAX_DURATION_MS;
             const mediaType = resourceType === "video" || state.mediaType === "video" ? "video" : "image";
@@ -1127,7 +1144,11 @@
                 views: 0,
                 viewCount: 0,
                 viewers: {},
-                uploadStatus: "ready"
+                uploadStatus: "ready",
+                sharedFrom: state.sharedFrom || null,
+                originalOwner: state.ownerCredit || null,
+                originalUsername: (state.ownerCredit && state.ownerCredit.username) || null,
+                originalUid: (state.ownerCredit && state.ownerCredit.uid) || null
             };
 
             await ref.set(storyData);
@@ -1347,6 +1368,28 @@
     }
 
 
+    
+    window.__vieworaStorySetRemote = function (payload) {
+        try {
+            payload = payload || {};
+            state.remoteMediaURL = payload.url || payload.mediaURL || null;
+            state.remoteMediaType = payload.type || payload.mediaType || "image";
+            state.mediaType = state.remoteMediaType;
+            state.file = null;
+            state.sharedFrom = {
+                type: payload.from || "post",
+                id: payload.id || null
+            };
+            state.ownerCredit = {
+                uid: payload.ownerUid || "",
+                username: (payload.ownerUsername || payload.owner || "").replace(/^@/, ""),
+                avatar: payload.ownerAvatar || ""
+            };
+            state.music = null;
+            state.musicStartAt = 0;
+        } catch (e) { console.warn(e); }
+    };
+
     window.VieworaStoryUpload = {
         share: shareStory
     };
@@ -1557,5 +1600,207 @@
     document.addEventListener("DOMContentLoaded", function () { setTimeout(tryLoadShareMedia, 400); });
   } else {
     setTimeout(tryLoadShareMedia, 400);
+  }
+})();
+
+
+
+/* VIEWORA_STORY_EDITOR_FROM_SHARE — open editor, no auto-upload */
+(function () {
+  function $(id) { return document.getElementById(id); }
+
+  function showOwnerCredit(owner) {
+    if (!owner || !owner.username) return;
+    var existing = document.getElementById("storyOwnerCredit");
+    if (existing) existing.remove();
+    var el = document.createElement("div");
+    el.id = "storyOwnerCredit";
+    el.innerHTML =
+      '<span class="socLabel">From</span> ' +
+      '<strong>@' + String(owner.username).replace(/^@/, "") + '</strong>';
+    el.style.cssText =
+      "position:absolute;left:12px;top:calc(56px + env(safe-area-inset-top));z-index:40;" +
+      "padding:6px 10px;border-radius:999px;background:rgba(0,0,0,.45);color:#fff;" +
+      "font-size:12px;font-weight:600;backdrop-filter:blur(8px);pointer-events:none;";
+    var stage = $("editorScreen") || document.querySelector(".editorScreen") || document.body;
+    stage.style.position = stage.style.position || "relative";
+    stage.appendChild(el);
+  }
+
+  // Pinch + pan on preview media (2 fingers)
+  function enableMediaGestures(target) {
+    if (!target || target.__gestures) return;
+    target.__gestures = true;
+    var scale = 1, panX = 0, panY = 0;
+    var startDist = 0, startScale = 1, lastX = 0, lastY = 0, mode = null;
+    function apply() {
+      target.style.transform =
+        "translate(" + panX + "px," + panY + "px) scale(" + scale + ")";
+      target.style.transformOrigin = "center center";
+    }
+    function dist(t) {
+      var dx = t[0].clientX - t[1].clientX;
+      var dy = t[0].clientY - t[1].clientY;
+      return Math.hypot(dx, dy);
+    }
+    target.style.touchAction = "none";
+    target.addEventListener("touchstart", function (e) {
+      if (e.touches.length === 2) {
+        mode = "pinch";
+        startDist = dist(e.touches);
+        startScale = scale;
+      } else if (e.touches.length === 1) {
+        mode = "pan";
+        lastX = e.touches[0].clientX;
+        lastY = e.touches[0].clientY;
+      }
+    }, { passive: true });
+    target.addEventListener("touchmove", function (e) {
+      if (mode === "pinch" && e.touches.length === 2) {
+        e.preventDefault();
+        var d = dist(e.touches);
+        scale = Math.max(1, Math.min(4, startScale * (d / (startDist || 1))));
+        apply();
+      } else if (mode === "pan" && e.touches.length === 1 && scale > 1) {
+        e.preventDefault();
+        var x = e.touches[0].clientX, y = e.touches[0].clientY;
+        panX += x - lastX;
+        panY += y - lastY;
+        lastX = x; lastY = y;
+        apply();
+      }
+    }, { passive: false });
+    target.addEventListener("touchend", function () {
+      if (scale <= 1.05) { scale = 1; panX = 0; panY = 0; apply(); }
+      mode = null;
+    });
+  }
+
+  async function openEditorWithRemote(payload) {
+    payload = payload || {};
+    var url = payload.url || payload.mediaURL || "";
+    var mediaType = payload.type || payload.mediaType || "image";
+    if (!url) return false;
+
+    // Prefer main IIFE state if accessible via window
+    try {
+      if (window.__vieworaStorySetRemote) {
+        window.__vieworaStorySetRemote(payload);
+      }
+    } catch (_) {}
+
+    var pick = $("pickScreen");
+    var editor = $("editorScreen");
+    var img = $("previewImage");
+    var vid = $("previewVideo");
+
+    if (/video/i.test(String(mediaType)) || /\.(mp4|webm|mov)(\?|$)/i.test(url)) {
+      mediaType = "video";
+      if (vid) {
+        vid.src = url;
+        vid.classList.remove("hidden");
+        vid.setAttribute("playsinline", "");
+        vid.muted = true;
+        vid.loop = true;
+        vid.play().catch(function () {});
+        enableMediaGestures(vid);
+      }
+      if (img) img.classList.add("hidden");
+    } else {
+      mediaType = "image";
+      if (img) {
+        img.src = url;
+        img.classList.remove("hidden");
+        enableMediaGestures(img);
+      }
+      if (vid) {
+        try { vid.pause(); } catch (_) {}
+        vid.classList.add("hidden");
+      }
+    }
+
+    if (pick) pick.classList.add("hidden");
+    if (editor) editor.classList.remove("hidden");
+
+    var owner = {
+      uid: payload.ownerUid || "",
+      username: (payload.ownerUsername || payload.owner || "").replace(/^@/, ""),
+      avatar: payload.ownerAvatar || ""
+    };
+    showOwnerCredit(owner);
+    return true;
+  }
+
+  window.vieworaOpenStoryEditorWithMedia = openEditorWithRemote;
+
+  async function tryLoadShareMedia() {
+    try {
+      var params = new URLSearchParams(location.search || "");
+      var payload = null;
+      try {
+        var raw = sessionStorage.getItem("viewora_story_share_media");
+        if (raw) payload = JSON.parse(raw);
+      } catch (_) {}
+
+      var mediaParam = params.get("media") || params.get("thumb") || "";
+      var mediaType = params.get("mediaType") || "";
+      var owner = params.get("owner") || "";
+      var ownerUid = params.get("ownerUid") || "";
+      var shareKind = (params.get("share") || "").toLowerCase();
+      var genericId = params.get("id") || params.get("shareId") || "";
+      var fromShare = params.get("fromShare") === "1" || !!payload || !!mediaParam;
+
+      if (!payload) payload = {};
+      if (mediaParam) payload.url = payload.url || mediaParam;
+      if (mediaType) payload.type = payload.type || mediaType;
+      if (owner) payload.ownerUsername = payload.ownerUsername || owner;
+      if (ownerUid) payload.ownerUid = payload.ownerUid || ownerUid;
+      if (shareKind) payload.from = payload.from || shareKind;
+      if (genericId) payload.id = payload.id || genericId;
+
+      // Resolve from Firebase if only id
+      if (!payload.url && payload.id && typeof firebase !== "undefined") {
+        var db = firebase.database();
+        var paths = [];
+        var t = (payload.from || shareKind || "post").toLowerCase();
+        if (t === "short" || t === "shorts") paths = ["shorts/" + payload.id];
+        else if (t === "video" || t === "long") paths = ["videos/" + payload.id, "posts/" + payload.id];
+        else paths = ["posts/" + payload.id, "feed/" + payload.id, "shorts/" + payload.id];
+        for (var i = 0; i < paths.length; i++) {
+          try {
+            var snap = await db.ref(paths[i]).once("value");
+            if (!snap.exists()) continue;
+            var v = snap.val() || {};
+            payload.url = v.mediaURL || v.mediaUrl || v.imageUrl || v.videoUrl || v.videoURL || v.url || v.thumbnail || "";
+            payload.type = v.mediaType || v.type || payload.type || "image";
+            payload.ownerUid = payload.ownerUid || v.uid || v.userId || "";
+            payload.ownerUsername = payload.ownerUsername || v.username || v.userName || v.displayName || "";
+            if (!payload.ownerUsername && payload.ownerUid) {
+              var us = await db.ref("users/" + payload.ownerUid).once("value");
+              var u = us.val() || {};
+              payload.ownerUsername = u.username || u.displayName || "";
+            }
+            break;
+          } catch (_) {}
+        }
+      }
+
+      if (!payload.url) return;
+      // Clear so refresh doesn't re-open stale
+      try { sessionStorage.removeItem("viewora_story_share_media"); } catch (_) {}
+      await openEditorWithRemote(payload);
+      // Push into internal state via hook
+      try {
+        if (window.__vieworaStorySetRemote) window.__vieworaStorySetRemote(payload);
+      } catch (_) {}
+    } catch (e) {
+      console.warn("tryLoadShareMedia", e);
+    }
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", function () { setTimeout(tryLoadShareMedia, 350); });
+  } else {
+    setTimeout(tryLoadShareMedia, 350);
   }
 })();
