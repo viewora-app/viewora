@@ -741,11 +741,11 @@
     } catch (_) {}
 
     close();
+    // Keep media only in sessionStorage (URL too long breaks page / black screen)
     location.href =
       "story-upload.html?fromShare=1" +
       "&share=" + encodeURIComponent(opts.type || "post") +
       "&id=" + encodeURIComponent(opts.id || "") +
-      "&media=" + encodeURIComponent(mediaURL) +
       "&mediaType=" + encodeURIComponent(mediaType) +
       (owner.username ? "&owner=" + encodeURIComponent(owner.username) : "") +
       (owner.uid ? "&ownerUid=" + encodeURIComponent(owner.uid) : "");

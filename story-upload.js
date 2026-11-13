@@ -1605,7 +1605,9 @@
 
 
 
-/* VIEWORA_STORY_EDITOR_FROM_SHARE — open editor, no auto-upload */
+
+
+/* VIEWORA_STORY_EDITOR_FROM_SHARE_V2 — force media visible, no black screen */
 (function () {
   function $(id) { return document.getElementById(id); }
 
@@ -1616,26 +1618,24 @@
     var el = document.createElement("div");
     el.id = "storyOwnerCredit";
     el.innerHTML =
-      '<span class="socLabel">From</span> ' +
+      '<span style="opacity:.75">From</span> ' +
       '<strong>@' + String(owner.username).replace(/^@/, "") + '</strong>';
     el.style.cssText =
       "position:absolute;left:12px;top:calc(56px + env(safe-area-inset-top));z-index:40;" +
-      "padding:6px 10px;border-radius:999px;background:rgba(0,0,0,.45);color:#fff;" +
-      "font-size:12px;font-weight:600;backdrop-filter:blur(8px);pointer-events:none;";
-    var stage = $("editorScreen") || document.querySelector(".editorScreen") || document.body;
-    stage.style.position = stage.style.position || "relative";
+      "padding:6px 10px;border-radius:999px;background:rgba(0,0,0,.5);color:#fff;" +
+      "font-size:12px;font-weight:600;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;";
+    var stage = $("stage") || $("editorScreen") || document.body;
+    if (getComputedStyle(stage).position === "static") stage.style.position = "relative";
     stage.appendChild(el);
   }
 
-  // Pinch + pan on preview media (2 fingers)
   function enableMediaGestures(target) {
     if (!target || target.__gestures) return;
     target.__gestures = true;
     var scale = 1, panX = 0, panY = 0;
     var startDist = 0, startScale = 1, lastX = 0, lastY = 0, mode = null;
     function apply() {
-      target.style.transform =
-        "translate(" + panX + "px," + panY + "px) scale(" + scale + ")";
+      target.style.transform = "translate(" + panX + "px," + panY + "px) scale(" + scale + ")";
       target.style.transformOrigin = "center center";
     }
     function dist(t) {
@@ -1643,6 +1643,7 @@
       var dy = t[0].clientY - t[1].clientY;
       return Math.hypot(dx, dy);
     }
+    target.style.pointerEvents = "auto";
     target.style.touchAction = "none";
     target.addEventListener("touchstart", function (e) {
       if (e.touches.length === 2) {
@@ -1676,131 +1677,241 @@
     });
   }
 
+  function forceShow(el) {
+    if (!el) return;
+    el.classList.remove("hidden");
+    el.style.display = "block";
+    el.style.visibility = "visible";
+    el.style.opacity = "1";
+    el.style.zIndex = "2";
+  }
+
+  function forceHide(el) {
+    if (!el) return;
+    el.classList.add("hidden");
+    el.style.display = "none";
+  }
+
+  function loadImage(url) {
+    return new Promise(function (resolve, reject) {
+      var img = new Image();
+      img.onload = function () { resolve(url); };
+      img.onerror = function () { reject(new Error("image load fail")); };
+      img.referrerPolicy = "no-referrer";
+      img.crossOrigin = "anonymous";
+      img.src = url;
+      // also try without crossOrigin if fails later
+      setTimeout(function () {
+        if (!img.complete) {
+          var img2 = new Image();
+          img2.onload = function () { resolve(url); };
+          img2.onerror = function () { reject(new Error("image load fail")); };
+          img2.src = url;
+        }
+      }, 2500);
+    });
+  }
+
   async function openEditorWithRemote(payload) {
     payload = payload || {};
-    var url = payload.url || payload.mediaURL || "";
+    var url = String(payload.url || payload.mediaURL || payload.mediaUrl || "").trim();
     var mediaType = payload.type || payload.mediaType || "image";
-    if (!url) return false;
+    if (!url) {
+      console.warn("[story] no media url in payload", payload);
+      return false;
+    }
 
-    // Prefer main IIFE state if accessible via window
     try {
-      if (window.__vieworaStorySetRemote) {
-        window.__vieworaStorySetRemote(payload);
-      }
+      if (window.__vieworaStorySetRemote) window.__vieworaStorySetRemote(payload);
     } catch (_) {}
 
     var pick = $("pickScreen");
     var editor = $("editorScreen");
     var img = $("previewImage");
     var vid = $("previewVideo");
+    var mediaWrap = $("mediaWrap");
 
-    if (/video/i.test(String(mediaType)) || /\.(mp4|webm|mov)(\?|$)/i.test(url)) {
-      mediaType = "video";
+    if (pick) {
+      pick.classList.add("hidden");
+      pick.style.display = "none";
+    }
+    if (editor) {
+      editor.classList.remove("hidden");
+      editor.style.display = "flex";
+      editor.style.visibility = "visible";
+      editor.style.opacity = "1";
+    }
+    if (mediaWrap) {
+      mediaWrap.style.background = "#111";
+    }
+
+    var isVideo = /video/i.test(String(mediaType)) || /\.(mp4|webm|mov)(\?|$)/i.test(url) || /\/video\/upload\//i.test(url);
+
+    if (isVideo) {
+      forceHide(img);
       if (vid) {
-        vid.src = url;
-        vid.classList.remove("hidden");
-        vid.setAttribute("playsinline", "");
+        forceShow(vid);
+        try { vid.pause(); } catch (_) {}
+        vid.removeAttribute("hidden");
         vid.muted = true;
         vid.loop = true;
-        vid.play().catch(function () {});
+        vid.setAttribute("playsinline", "");
+        vid.setAttribute("webkit-playsinline", "");
+        vid.src = url;
+        vid.load();
+        var playTry = function () {
+          vid.play().catch(function () {});
+        };
+        vid.onloadeddata = playTry;
+        setTimeout(playTry, 400);
         enableMediaGestures(vid);
       }
-      if (img) img.classList.add("hidden");
     } else {
-      mediaType = "image";
+      forceHide(vid);
       if (img) {
+        forceShow(img);
+        img.removeAttribute("hidden");
+        img.alt = "Story";
+        img.referrerPolicy = "no-referrer";
+        // Prefer direct src — works for Cloudinary / most CDNs
+        img.onload = function () {
+          forceShow(img);
+          if (mediaWrap) mediaWrap.style.background = "#000";
+        };
+        img.onerror = function () {
+          console.warn("[story] img error, retry without crossOrigin");
+          img.removeAttribute("crossorigin");
+          img.src = url + (url.indexOf("?") >= 0 ? "&" : "?") + "v=" + Date.now();
+        };
         img.src = url;
-        img.classList.remove("hidden");
         enableMediaGestures(img);
-      }
-      if (vid) {
-        try { vid.pause(); } catch (_) {}
-        vid.classList.add("hidden");
+        // Fallback: background-image on mediaWrap if img still fails
+        setTimeout(function () {
+          if (img.naturalWidth === 0 && mediaWrap) {
+            mediaWrap.style.backgroundImage = "url('" + url.replace(/'/g, "%27") + "')";
+            mediaWrap.style.backgroundSize = "cover";
+            mediaWrap.style.backgroundPosition = "center";
+            forceShow(img);
+            img.style.opacity = "0";
+          }
+        }, 1800);
       }
     }
 
-    if (pick) pick.classList.add("hidden");
-    if (editor) editor.classList.remove("hidden");
-
     var owner = {
       uid: payload.ownerUid || "",
-      username: (payload.ownerUsername || payload.owner || "").replace(/^@/, ""),
+      username: String(payload.ownerUsername || payload.owner || "").replace(/^@/, ""),
       avatar: payload.ownerAvatar || ""
     };
     showOwnerCredit(owner);
+    console.log("[story] editor opened with", isVideo ? "video" : "image", url.slice(0, 80));
     return true;
   }
 
   window.vieworaOpenStoryEditorWithMedia = openEditorWithRemote;
 
-  async function tryLoadShareMedia() {
+  async function resolvePayload() {
+    var params = new URLSearchParams(location.search || "");
+    var payload = null;
     try {
-      var params = new URLSearchParams(location.search || "");
-      var payload = null;
-      try {
-        var raw = sessionStorage.getItem("viewora_story_share_media");
-        if (raw) payload = JSON.parse(raw);
-      } catch (_) {}
+      var raw = sessionStorage.getItem("viewora_story_share_media");
+      if (raw) payload = JSON.parse(raw);
+    } catch (_) {}
+    if (!payload) payload = {};
 
-      var mediaParam = params.get("media") || params.get("thumb") || "";
-      var mediaType = params.get("mediaType") || "";
-      var owner = params.get("owner") || "";
-      var ownerUid = params.get("ownerUid") || "";
-      var shareKind = (params.get("share") || "").toLowerCase();
-      var genericId = params.get("id") || params.get("shareId") || "";
-      var fromShare = params.get("fromShare") === "1" || !!payload || !!mediaParam;
+    var mediaParam = params.get("media") || params.get("thumb") || "";
+    if (mediaParam) payload.url = payload.url || mediaParam;
+    payload.type = payload.type || params.get("mediaType") || payload.mediaType || "";
+    payload.ownerUsername = payload.ownerUsername || params.get("owner") || "";
+    payload.ownerUid = payload.ownerUid || params.get("ownerUid") || "";
+    payload.from = payload.from || (params.get("share") || "").toLowerCase() || "post";
+    payload.id = payload.id || params.get("id") || params.get("shareId") || params.get("sharePost") || "";
 
-      if (!payload) payload = {};
-      if (mediaParam) payload.url = payload.url || mediaParam;
-      if (mediaType) payload.type = payload.type || mediaType;
-      if (owner) payload.ownerUsername = payload.ownerUsername || owner;
-      if (ownerUid) payload.ownerUid = payload.ownerUid || ownerUid;
-      if (shareKind) payload.from = payload.from || shareKind;
-      if (genericId) payload.id = payload.id || genericId;
-
-      // Resolve from Firebase if only id
-      if (!payload.url && payload.id && typeof firebase !== "undefined") {
-        var db = firebase.database();
-        var paths = [];
-        var t = (payload.from || shareKind || "post").toLowerCase();
-        if (t === "short" || t === "shorts") paths = ["shorts/" + payload.id];
-        else if (t === "video" || t === "long") paths = ["videos/" + payload.id, "posts/" + payload.id];
-        else paths = ["posts/" + payload.id, "feed/" + payload.id, "shorts/" + payload.id];
-        for (var i = 0; i < paths.length; i++) {
-          try {
-            var snap = await db.ref(paths[i]).once("value");
-            if (!snap.exists()) continue;
-            var v = snap.val() || {};
-            payload.url = v.mediaURL || v.mediaUrl || v.imageUrl || v.videoUrl || v.videoURL || v.url || v.thumbnail || "";
-            payload.type = v.mediaType || v.type || payload.type || "image";
-            payload.ownerUid = payload.ownerUid || v.uid || v.userId || "";
-            payload.ownerUsername = payload.ownerUsername || v.username || v.userName || v.displayName || "";
-            if (!payload.ownerUsername && payload.ownerUid) {
+    if (!payload.url && payload.id && typeof firebase !== "undefined" && firebase.database) {
+      var db = firebase.database();
+      var t = (payload.from || "post").toLowerCase();
+      var paths = [];
+      if (t === "short" || t === "shorts") paths = ["shorts/" + payload.id, "short/" + payload.id];
+      else if (t === "video" || t === "long") paths = ["videos/" + payload.id, "longVideos/" + payload.id, "posts/" + payload.id];
+      else paths = ["posts/" + payload.id, "feed/" + payload.id, "shorts/" + payload.id];
+      for (var i = 0; i < paths.length; i++) {
+        try {
+          var snap = await db.ref(paths[i]).once("value");
+          if (!snap.exists()) continue;
+          var v = snap.val() || {};
+          payload.url =
+            v.mediaURL || v.mediaUrl || v.imageUrl || v.imageURL || v.image ||
+            v.photo || v.thumbnail || v.thumb || v.videoUrl || v.videoURL || v.url || "";
+          // multi-image posts
+          if (!payload.url && Array.isArray(v.images) && v.images[0]) {
+            payload.url = typeof v.images[0] === "string" ? v.images[0] : (v.images[0].url || v.images[0].src || "");
+          }
+          if (!payload.url && v.media && (v.media.url || v.media.src)) payload.url = v.media.url || v.media.src;
+          payload.type = payload.type || v.mediaType || v.type || "image";
+          payload.ownerUid = payload.ownerUid || v.uid || v.userId || v.ownerId || "";
+          payload.ownerUsername = payload.ownerUsername || v.username || v.userName || v.displayName || "";
+          if (!payload.ownerUsername && payload.ownerUid) {
+            try {
               var us = await db.ref("users/" + payload.ownerUid).once("value");
               var u = us.val() || {};
-              payload.ownerUsername = u.username || u.displayName || "";
-            }
-            break;
-          } catch (_) {}
+              payload.ownerUsername = u.username || u.displayName || u.name || "";
+              payload.ownerAvatar = u.profilePhoto || u.photoURL || "";
+            } catch (_) {}
+          }
+          break;
+        } catch (e) {
+          console.warn("[story] path fail", paths[i], e);
         }
       }
+    }
+    return payload;
+  }
 
-      if (!payload.url) return;
-      // Clear so refresh doesn't re-open stale
+  async function tryLoadShareMedia(attempt) {
+    attempt = attempt || 0;
+    try {
+      if (!location.search && !sessionStorage.getItem("viewora_story_share_media")) return;
+      var fromShare = /fromShare=1|share=|sharePost=|id=/.test(location.search || "") ||
+        !!sessionStorage.getItem("viewora_story_share_media");
+      if (!fromShare && attempt === 0) return;
+
+      var payload = await resolvePayload();
+      if (!payload.url) {
+        if (attempt < 8) {
+          // wait for firebase auth / db
+          setTimeout(function () { tryLoadShareMedia(attempt + 1); }, 400);
+          return;
+        }
+        console.warn("[story] still no media url", payload);
+        return;
+      }
       try { sessionStorage.removeItem("viewora_story_share_media"); } catch (_) {}
       await openEditorWithRemote(payload);
-      // Push into internal state via hook
       try {
         if (window.__vieworaStorySetRemote) window.__vieworaStorySetRemote(payload);
       } catch (_) {}
     } catch (e) {
       console.warn("tryLoadShareMedia", e);
+      if (attempt < 5) setTimeout(function () { tryLoadShareMedia(attempt + 1); }, 500);
     }
   }
 
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", function () { setTimeout(tryLoadShareMedia, 350); });
-  } else {
-    setTimeout(tryLoadShareMedia, 350);
+  function boot() {
+    setTimeout(function () { tryLoadShareMedia(0); }, 200);
+    setTimeout(function () { tryLoadShareMedia(1); }, 900);
+    setTimeout(function () { tryLoadShareMedia(2); }, 1800);
   }
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", boot, { once: true });
+  } else {
+    boot();
+  }
+  // Firebase ready
+  try {
+    if (firebase && firebase.auth) {
+      firebase.auth().onAuthStateChanged(function () {
+        setTimeout(function () { tryLoadShareMedia(3); }, 300);
+      });
+    }
+  } catch (_) {}
 })();

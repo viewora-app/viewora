@@ -3177,7 +3177,6 @@
         try { if (typeof closeShareSheet === "function") closeShareSheet(); } catch (_) {}
         location.href =
             "story-upload.html?fromShare=1&share=post&id=" + encodeURIComponent(postId) +
-            "&media=" + encodeURIComponent(mediaURL) +
             "&mediaType=" + encodeURIComponent(mediaType) +
             (ownerUsername ? "&owner=" + encodeURIComponent(ownerUsername) : "") +
             (ownerUid ? "&ownerUid=" + encodeURIComponent(ownerUid) : "");
