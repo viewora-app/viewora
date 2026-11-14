@@ -106,6 +106,10 @@
         uploading: false,
         remoteMediaURL: null,
         remoteMediaType: null,
+        mediaTransform: { scale: 1, x: 0, y: 0 },
+        privacy: "followers",
+        drawEnabled: false,
+        cropRotation: 0,
         sharedFrom: null,
         ownerCredit: null // { uid, username, avatar }
     };
@@ -1148,7 +1152,11 @@
                 sharedFrom: state.sharedFrom || null,
                 originalOwner: state.ownerCredit || null,
                 originalUsername: (state.ownerCredit && state.ownerCredit.username) || null,
-                originalUid: (state.ownerCredit && state.ownerCredit.uid) || null
+                originalUid: (state.ownerCredit && state.ownerCredit.uid) || null,
+                mediaTransform: state.mediaTransform || { scale: 1, x: 0, y: 0 },
+                privacy: state.privacy || "followers",
+                drawDataUrl: state.drawDataUrl || null,
+                cropRotation: state.cropRotation || 0
             };
 
             await ref.set(storyData);
@@ -1369,6 +1377,24 @@
 
 
     
+    window.__vieworaStorySetTransform = function (scale, x, y) {
+        try {
+            state.mediaTransform = {
+                scale: Number(scale) || 1,
+                x: Number(x) || 0,
+                y: Number(y) || 0
+            };
+        } catch (_) {}
+    };
+    window.__vieworaSetPrivacy = function (mode) {
+        try { state.privacy = mode || "followers"; } catch (_) {}
+    };
+    window.__vieworaSetDrawData = function (dataUrl) {
+        try { state.drawDataUrl = dataUrl || null; } catch (_) {}
+    };
+    window.__vieworaSetCropRotation = function (deg) {
+        try { state.cropRotation = Number(deg) || 0; } catch (_) {}
+    };
     window.__vieworaStorySetRemote = function (payload) {
         try {
             payload = payload || {};
@@ -1387,6 +1413,7 @@
             };
             state.music = null;
             state.musicStartAt = 0;
+            state.mediaTransform = { scale: 1, x: 0, y: 0 };
         } catch (e) { console.warn(e); }
     };
 
@@ -1607,7 +1634,9 @@
 
 
 
-/* VIEWORA_STORY_EDITOR_FROM_SHARE_V2 — force media visible, no black screen */
+
+
+/* VIEWORA_STORY_EDITOR_FROM_SHARE_V2 — Instagram-like: contain size, pinch zoom, music OK */
 (function () {
   function $(id) { return document.getElementById(id); }
 
@@ -1629,26 +1658,45 @@
     stage.appendChild(el);
   }
 
+  function syncTransformToState(scale, panX, panY) {
+    try {
+      if (window.__vieworaStorySetTransform) {
+        window.__vieworaStorySetTransform(scale, panX, panY);
+      }
+    } catch (_) {}
+  }
+
   function enableMediaGestures(target) {
     if (!target || target.__gestures) return;
     target.__gestures = true;
     var scale = 1, panX = 0, panY = 0;
     var startDist = 0, startScale = 1, lastX = 0, lastY = 0, mode = null;
+
     function apply() {
-      target.style.transform = "translate(" + panX + "px," + panY + "px) scale(" + scale + ")";
+      target.style.transform =
+        "translate(" + panX + "px," + panY + "px) scale(" + scale + ")";
       target.style.transformOrigin = "center center";
+      syncTransformToState(scale, panX, panY);
     }
+
     function dist(t) {
       var dx = t[0].clientX - t[1].clientX;
       var dy = t[0].clientY - t[1].clientY;
       return Math.hypot(dx, dy);
     }
+
+    // Instagram-like: keep natural size inside frame (contain), allow zoom
+    target.style.objectFit = "contain";
+    target.style.width = "100%";
+    target.style.height = "100%";
     target.style.pointerEvents = "auto";
     target.style.touchAction = "none";
+    target.style.userSelect = "none";
+
     target.addEventListener("touchstart", function (e) {
       if (e.touches.length === 2) {
         mode = "pinch";
-        startDist = dist(e.touches);
+        startDist = dist(e.touches) || 1;
         startScale = scale;
       } else if (e.touches.length === 1) {
         mode = "pan";
@@ -1656,24 +1704,45 @@
         lastY = e.touches[0].clientY;
       }
     }, { passive: true });
+
     target.addEventListener("touchmove", function (e) {
       if (mode === "pinch" && e.touches.length === 2) {
         e.preventDefault();
-        var d = dist(e.touches);
-        scale = Math.max(1, Math.min(4, startScale * (d / (startDist || 1))));
+        var d = dist(e.touches) || 1;
+        scale = Math.max(1, Math.min(5, startScale * (d / startDist)));
         apply();
-      } else if (mode === "pan" && e.touches.length === 1 && scale > 1) {
+      } else if (mode === "pan" && e.touches.length === 1 && scale > 1.01) {
         e.preventDefault();
         var x = e.touches[0].clientX, y = e.touches[0].clientY;
         panX += x - lastX;
         panY += y - lastY;
-        lastX = x; lastY = y;
+        lastX = x;
+        lastY = y;
         apply();
       }
     }, { passive: false });
-    target.addEventListener("touchend", function () {
-      if (scale <= 1.05) { scale = 1; panX = 0; panY = 0; apply(); }
-      mode = null;
+
+    target.addEventListener("touchend", function (e) {
+      if (e.touches.length === 0) {
+        // keep zoomed crop for upload — do not force reset
+        if (scale < 1.02) {
+          scale = 1;
+          panX = 0;
+          panY = 0;
+          apply();
+        }
+        mode = null;
+      }
+    });
+
+    // double-tap reset
+    var lastTap = 0;
+    target.addEventListener("click", function () {
+      var now = Date.now();
+      if (now - lastTap < 280) {
+        scale = 1; panX = 0; panY = 0; apply();
+      }
+      lastTap = now;
     });
   }
 
@@ -1692,32 +1761,12 @@
     el.style.display = "none";
   }
 
-  function loadImage(url) {
-    return new Promise(function (resolve, reject) {
-      var img = new Image();
-      img.onload = function () { resolve(url); };
-      img.onerror = function () { reject(new Error("image load fail")); };
-      img.referrerPolicy = "no-referrer";
-      img.crossOrigin = "anonymous";
-      img.src = url;
-      // also try without crossOrigin if fails later
-      setTimeout(function () {
-        if (!img.complete) {
-          var img2 = new Image();
-          img2.onload = function () { resolve(url); };
-          img2.onerror = function () { reject(new Error("image load fail")); };
-          img2.src = url;
-        }
-      }, 2500);
-    });
-  }
-
   async function openEditorWithRemote(payload) {
     payload = payload || {};
     var url = String(payload.url || payload.mediaURL || payload.mediaUrl || "").trim();
     var mediaType = payload.type || payload.mediaType || "image";
     if (!url) {
-      console.warn("[story] no media url in payload", payload);
+      console.warn("[story] no media url", payload);
       return false;
     }
 
@@ -1742,10 +1791,14 @@
       editor.style.opacity = "1";
     }
     if (mediaWrap) {
-      mediaWrap.style.background = "#111";
+      mediaWrap.style.background = "#000";
+      mediaWrap.style.overflow = "hidden";
     }
 
-    var isVideo = /video/i.test(String(mediaType)) || /\.(mp4|webm|mov)(\?|$)/i.test(url) || /\/video\/upload\//i.test(url);
+    var isVideo =
+      /video/i.test(String(mediaType)) ||
+      /\.(mp4|webm|mov)(\?|$)/i.test(url) ||
+      /\/video\/upload\//i.test(url);
 
     if (isVideo) {
       forceHide(img);
@@ -1755,15 +1808,15 @@
         vid.removeAttribute("hidden");
         vid.muted = true;
         vid.loop = true;
+        vid.playsInline = true;
         vid.setAttribute("playsinline", "");
         vid.setAttribute("webkit-playsinline", "");
+        vid.style.objectFit = "contain";
         vid.src = url;
         vid.load();
-        var playTry = function () {
-          vid.play().catch(function () {});
-        };
+        var playTry = function () { vid.play().catch(function () {}); };
         vid.onloadeddata = playTry;
-        setTimeout(playTry, 400);
+        setTimeout(playTry, 300);
         enableMediaGestures(vid);
       }
     } else {
@@ -1773,30 +1826,40 @@
         img.removeAttribute("hidden");
         img.alt = "Story";
         img.referrerPolicy = "no-referrer";
-        // Prefer direct src — works for Cloudinary / most CDNs
+        img.style.objectFit = "contain";
         img.onload = function () {
           forceShow(img);
           if (mediaWrap) mediaWrap.style.background = "#000";
         };
         img.onerror = function () {
-          console.warn("[story] img error, retry without crossOrigin");
           img.removeAttribute("crossorigin");
-          img.src = url + (url.indexOf("?") >= 0 ? "&" : "?") + "v=" + Date.now();
+          var u2 = url + (url.indexOf("?") >= 0 ? "&" : "?") + "v=" + Date.now();
+          img.src = u2;
+          if (mediaWrap) {
+            mediaWrap.style.backgroundImage = "url('" + url.replace(/'/g, "%27") + "')";
+            mediaWrap.style.backgroundSize = "contain";
+            mediaWrap.style.backgroundRepeat = "no-repeat";
+            mediaWrap.style.backgroundPosition = "center";
+          }
         };
         img.src = url;
         enableMediaGestures(img);
-        // Fallback: background-image on mediaWrap if img still fails
         setTimeout(function () {
           if (img.naturalWidth === 0 && mediaWrap) {
             mediaWrap.style.backgroundImage = "url('" + url.replace(/'/g, "%27") + "')";
-            mediaWrap.style.backgroundSize = "cover";
+            mediaWrap.style.backgroundSize = "contain";
+            mediaWrap.style.backgroundRepeat = "no-repeat";
             mediaWrap.style.backgroundPosition = "center";
-            forceShow(img);
-            img.style.opacity = "0";
           }
-        }, 1800);
+        }, 1600);
       }
     }
+
+    // Ensure tool buttons work for reshare (music/text/sticker already bound in main)
+    try {
+      var musicBtn = document.querySelector('.toolBtn[data-tool="music"], #toolMusic, [data-tool="music"]');
+      if (musicBtn) musicBtn.style.pointerEvents = "auto";
+    } catch (_) {}
 
     var owner = {
       uid: payload.ownerUid || "",
@@ -1804,7 +1867,7 @@
       avatar: payload.ownerAvatar || ""
     };
     showOwnerCredit(owner);
-    console.log("[story] editor opened with", isVideo ? "video" : "image", url.slice(0, 80));
+    console.log("[story] editor OK", isVideo ? "video" : "image", url.slice(0, 90));
     return true;
   }
 
@@ -1842,11 +1905,12 @@
           payload.url =
             v.mediaURL || v.mediaUrl || v.imageUrl || v.imageURL || v.image ||
             v.photo || v.thumbnail || v.thumb || v.videoUrl || v.videoURL || v.url || "";
-          // multi-image posts
           if (!payload.url && Array.isArray(v.images) && v.images[0]) {
             payload.url = typeof v.images[0] === "string" ? v.images[0] : (v.images[0].url || v.images[0].src || "");
           }
           if (!payload.url && v.media && (v.media.url || v.media.src)) payload.url = v.media.url || v.media.src;
+          // prefer image for post when both exist
+          if (v.imageUrl && !/video/i.test(String(v.mediaType || ""))) payload.url = payload.url || v.imageUrl;
           payload.type = payload.type || v.mediaType || v.type || "image";
           payload.ownerUid = payload.ownerUid || v.uid || v.userId || v.ownerId || "";
           payload.ownerUsername = payload.ownerUsername || v.username || v.userName || v.displayName || "";
@@ -1870,48 +1934,212 @@
   async function tryLoadShareMedia(attempt) {
     attempt = attempt || 0;
     try {
-      if (!location.search && !sessionStorage.getItem("viewora_story_share_media")) return;
-      var fromShare = /fromShare=1|share=|sharePost=|id=/.test(location.search || "") ||
+      var hasShare =
+        /fromShare=1|share=|sharePost=|id=/.test(location.search || "") ||
         !!sessionStorage.getItem("viewora_story_share_media");
-      if (!fromShare && attempt === 0) return;
+      if (!hasShare && attempt === 0) return;
 
       var payload = await resolvePayload();
       if (!payload.url) {
-        if (attempt < 8) {
-          // wait for firebase auth / db
-          setTimeout(function () { tryLoadShareMedia(attempt + 1); }, 400);
+        if (attempt < 10) {
+          setTimeout(function () { tryLoadShareMedia(attempt + 1); }, 350);
           return;
         }
-        console.warn("[story] still no media url", payload);
+        console.warn("[story] no media after retries", payload);
         return;
       }
-      try { sessionStorage.removeItem("viewora_story_share_media"); } catch (_) {}
+      // Keep session until editor shows, then clear
       await openEditorWithRemote(payload);
+      try { sessionStorage.removeItem("viewora_story_share_media"); } catch (_) {}
       try {
         if (window.__vieworaStorySetRemote) window.__vieworaStorySetRemote(payload);
       } catch (_) {}
     } catch (e) {
       console.warn("tryLoadShareMedia", e);
-      if (attempt < 5) setTimeout(function () { tryLoadShareMedia(attempt + 1); }, 500);
+      if (attempt < 6) setTimeout(function () { tryLoadShareMedia(attempt + 1); }, 500);
     }
   }
 
   function boot() {
-    setTimeout(function () { tryLoadShareMedia(0); }, 200);
-    setTimeout(function () { tryLoadShareMedia(1); }, 900);
-    setTimeout(function () { tryLoadShareMedia(2); }, 1800);
+    setTimeout(function () { tryLoadShareMedia(0); }, 150);
+    setTimeout(function () { tryLoadShareMedia(1); }, 700);
+    setTimeout(function () { tryLoadShareMedia(2); }, 1500);
   }
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", boot, { once: true });
   } else {
     boot();
   }
-  // Firebase ready
   try {
-    if (firebase && firebase.auth) {
+    if (typeof firebase !== "undefined" && firebase.auth) {
       firebase.auth().onAuthStateChanged(function () {
-        setTimeout(function () { tryLoadShareMedia(3); }, 300);
+        setTimeout(function () { tryLoadShareMedia(3); }, 250);
       });
     }
   } catch (_) {}
+})();
+
+
+/* VIEWORA_WA_STORY_UI — draw, crop, privacy */
+(function () {
+  function $(id) { return document.getElementById(id); }
+
+  // Privacy chips
+  function setPrivacy(mode) {
+    try {
+      if (window.__vieworaSetPrivacy) window.__vieworaSetPrivacy(mode);
+    } catch (_) {}
+    document.querySelectorAll(".privacyChip").forEach(function (b) {
+      b.classList.toggle("active", b.getAttribute("data-privacy") === mode);
+    });
+    var label = $("privacyLabel");
+    if (label) {
+      label.textContent = mode === "close_friends"
+        ? "Close friends only · 24h"
+        : "Visible to followers · 24h";
+    }
+  }
+  document.querySelectorAll(".privacyChip").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      setPrivacy(btn.getAttribute("data-privacy") || "followers");
+    });
+  });
+
+  // Draw
+  var canvas = $("drawCanvas");
+  var ctx = canvas ? canvas.getContext("2d") : null;
+  var drawing = false;
+  var strokes = [];
+  var current = null;
+  var color = "#25d366";
+  var size = 6;
+
+  function resizeCanvas() {
+    if (!canvas) return;
+    var r = canvas.getBoundingClientRect();
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    canvas.width = Math.max(1, Math.floor(r.width * dpr));
+    canvas.height = Math.max(1, Math.floor(r.height * dpr));
+    if (ctx) {
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      redraw();
+    }
+  }
+
+  function redraw() {
+    if (!ctx || !canvas) return;
+    var r = canvas.getBoundingClientRect();
+    ctx.clearRect(0, 0, r.width, r.height);
+    strokes.forEach(function (s) {
+      if (!s.points || s.points.length < 2) return;
+      ctx.strokeStyle = s.color;
+      ctx.lineWidth = s.size;
+      ctx.beginPath();
+      ctx.moveTo(s.points[0].x, s.points[0].y);
+      for (var i = 1; i < s.points.length; i++) ctx.lineTo(s.points[i].x, s.points[i].y);
+      ctx.stroke();
+    });
+  }
+
+  function pos(e) {
+    var r = canvas.getBoundingClientRect();
+    var t = e.touches ? e.touches[0] : e;
+    return { x: t.clientX - r.left, y: t.clientY - r.top };
+  }
+
+  function enableDraw(on) {
+    if (!canvas) return;
+    canvas.classList.toggle("active", !!on);
+    var bar = $("drawBar");
+    if (bar) bar.classList.toggle("hidden", !on);
+    if (on) resizeCanvas();
+  }
+
+  if (canvas && ctx) {
+    canvas.addEventListener("pointerdown", function (e) {
+      if (!canvas.classList.contains("active")) return;
+      drawing = true;
+      current = { color: color, size: size, points: [pos(e)] };
+      try { canvas.setPointerCapture(e.pointerId); } catch (_) {}
+    });
+    canvas.addEventListener("pointermove", function (e) {
+      if (!drawing || !current) return;
+      current.points.push(pos(e));
+      redraw();
+      // live segment
+      var pts = current.points;
+      if (pts.length >= 2) {
+        ctx.strokeStyle = current.color;
+        ctx.lineWidth = current.size;
+        ctx.beginPath();
+        ctx.moveTo(pts[pts.length - 2].x, pts[pts.length - 2].y);
+        ctx.lineTo(pts[pts.length - 1].x, pts[pts.length - 1].y);
+        ctx.stroke();
+      }
+    });
+    function endDraw() {
+      if (drawing && current && current.points.length > 1) strokes.push(current);
+      drawing = false;
+      current = null;
+      try {
+        if (window.__vieworaSetDrawData) window.__vieworaSetDrawData(canvas.toDataURL("image/png"));
+      } catch (_) {}
+    }
+    canvas.addEventListener("pointerup", endDraw);
+    canvas.addEventListener("pointercancel", endDraw);
+  }
+
+  document.querySelectorAll(".dColor").forEach(function (b) {
+    b.addEventListener("click", function () {
+      document.querySelectorAll(".dColor").forEach(function (x) { x.classList.remove("active"); });
+      b.classList.add("active");
+      color = b.getAttribute("data-color") || "#25d366";
+    });
+  });
+  var sizeEl = $("drawSize");
+  if (sizeEl) sizeEl.addEventListener("input", function () { size = Number(sizeEl.value) || 6; });
+  if ($("drawUndo")) $("drawUndo").addEventListener("click", function () { strokes.pop(); redraw(); });
+  if ($("drawClear")) $("drawClear").addEventListener("click", function () { strokes = []; redraw(); });
+  if ($("drawDone")) $("drawDone").addEventListener("click", function () { enableDraw(false); });
+  if ($("drawToolBtn")) $("drawToolBtn").addEventListener("click", function () {
+    enableDraw(true);
+  });
+
+  // Crop / rotate
+  var rot = 0;
+  function applyRotate() {
+    var img = $("previewImage");
+    var vid = $("previewVideo");
+    var el = (img && !img.classList.contains("hidden")) ? img : vid;
+    if (!el) return;
+    el.style.transition = "transform .2s ease";
+    el.style.transform = "rotate(" + rot + "deg) scale(1)";
+    try {
+      if (window.__vieworaSetCropRotation) window.__vieworaSetCropRotation(rot);
+    } catch (_) {}
+  }
+  function showCrop(on) {
+    var bar = $("cropBar");
+    if (bar) bar.classList.toggle("hidden", !on);
+  }
+  if ($("cropToolBtn")) $("cropToolBtn").addEventListener("click", function () {
+    showCrop(true);
+  });
+  if ($("cropRotate")) $("cropRotate").addEventListener("click", function () {
+    rot = (rot + 90) % 360;
+    applyRotate();
+  });
+  if ($("cropReset")) $("cropReset").addEventListener("click", function () {
+    rot = 0;
+    applyRotate();
+  });
+  if ($("cropDone")) $("cropDone").addEventListener("click", function () {
+    showCrop(false);
+  });
+
+  window.addEventListener("resize", function () {
+    if (canvas && canvas.classList.contains("active")) resizeCanvas();
+  });
 })();
