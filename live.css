@@ -888,3 +888,35 @@ body.live-streaming .viewer-live-placeholder {
 .live-badge-top.t1 { background: #f5c542; color: #222; }
 .live-badge-top.t2 { background: #c0c0c0; color: #222; }
 .live-badge-top.t3 { background: #cd7f32; color: #fff; }
+
+
+/* ===== Live camera: no zoom / no mirror ===== */
+#setupPreview,
+#liveVideo,
+#livePreview {
+  object-fit: contain !important;
+  transform: none !important;
+  background: #000 !important;
+  width: 100% !important;
+  height: 100% !important;
+}
+body.live-format-story #setupPreview,
+body.live-format-story #liveVideo,
+body.live-format-shorts #setupPreview,
+body.live-format-shorts #liveVideo,
+body.live-format-video #setupPreview,
+body.live-format-video #liveVideo {
+  object-fit: contain !important;
+  transform: none !important;
+}
+body.live-streaming #liveVideo {
+  z-index: 2 !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+.viewer-live-placeholder {
+  z-index: 1;
+}
+body.live-streaming .viewer-live-placeholder {
+  display: none !important;
+}

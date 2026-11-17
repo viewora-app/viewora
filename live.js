@@ -185,36 +185,37 @@
   }
 
   /* ---------- Media ---------- */
-  async function getCam() {
-    const fmt = window.__VIEWORA_LIVE_FORMAT || "story";
-    const isVideo = fmt === "video";
-    const videoConstraints = isVideo
-      ? {
-          facingMode: { ideal: "user" },
-          width: { ideal: 1280, max: 1920 },
-          height: { ideal: 720, max: 1080 },
-          aspectRatio: { ideal: 16 / 9 }
+  async function getCam(facing) {
+    // Soft constraints — avoid extreme aspectRatio (causes face zoom / crop)
+    var face = facing || (typeof usingFront !== "undefined" && usingFront === false ? "environment" : "user");
+    var tries = [
+      {
+        audio: { echoCancellation: true, noiseSuppression: true },
+        video: {
+          facingMode: { ideal: face },
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+          frameRate: { ideal: 30, max: 30 }
         }
-      : {
-          // story + shorts = vertical 9:16
-          facingMode: { ideal: "user" },
-          width: { ideal: 720, max: 1080 },
-          height: { ideal: 1280, max: 1920 },
-          aspectRatio: { ideal: 9 / 16 }
-        };
-    let stream;
-    try {
-      stream = await navigator.mediaDevices.getUserMedia({
+      },
+      {
         audio: true,
-        video: videoConstraints
-      });
-    } catch (e1) {
-      // fallback soft constraints
-      stream = await navigator.mediaDevices.getUserMedia({
-        audio: true,
-        video: { facingMode: "user" }
-      });
+        video: { facingMode: face, width: { ideal: 960 }, height: { ideal: 540 } }
+      },
+      { audio: true, video: { facingMode: face } },
+      { audio: true, video: true }
+    ];
+    var stream = null;
+    var lastErr = null;
+    for (var i = 0; i < tries.length; i++) {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia(tries[i]);
+        break;
+      } catch (e) {
+        lastErr = e;
+      }
     }
+    if (!stream) throw lastErr || new Error("Camera unavailable");
     localStream = stream;
     return stream;
   }
@@ -225,12 +226,14 @@
     videoEl.srcObject = stream;
     videoEl.muted = true;
     videoEl.setAttribute("playsinline", "true");
+    videoEl.setAttribute("webkit-playsinline", "true");
     videoEl.playsInline = true;
-    // Front camera: slight mirror for natural selfie feel on HOST only.
-    // Back camera: never mirror. Viewers always see real orientation.
-    var mirror = !!opts.mirror;
-    videoEl.style.transform = mirror ? "scaleX(-1)" : "none";
-    videoEl.style.objectFit = "cover";
+    // NEVER mirror — real orientation (left = left)
+    videoEl.style.transform = "none";
+    // contain = full scene, no aggressive face crop
+    videoEl.style.objectFit = "contain";
+    videoEl.style.width = "100%";
+    videoEl.style.height = "100%";
     videoEl.style.background = "#000";
     videoEl.play().catch(function () {});
   }
@@ -758,7 +761,10 @@
           document.body.setAttribute("data-live-format", f);
           window.__VIEWORA_LIVE_FORMAT = f;
         } catch (_) {}
-        showViewerPlaceholder(d);
+        // Don't re-cover the video once WebRTC stream is playing
+        if (!document.body.classList.contains("live-streaming")) {
+          showViewerPlaceholder(d);
+        }
         if ($("hostName")) $("hostName").textContent = d.hostName || "Host";
         if ($("liveTitleLabel")) $("liveTitleLabel").textContent = d.title || "Live";
         if ($("hostAvatar") && d.hostPhoto) {
@@ -795,38 +801,105 @@
     const text = (input?.value || "").trim();
     if (!text || !hostUid || !me || sendingComment) return;
     sendingComment = true;
+    // Clear immediately so text doesn't stick
+    if (input) {
+      input.value = "";
+      try { input.blur(); input.focus(); } catch (_) {}
+    }
     try {
-      if (input) input.value = "";
-      const u = await loadUser(me.uid);
-      const name = u.displayName || u.name || u.username || "User";
+      var name = "User";
+      try {
+        const u = await loadUser(me.uid);
+        name = u.displayName || u.name || u.username || me.displayName || "User";
+      } catch (_) {
+        name = me.displayName || me.email || "User";
+      }
       await db.ref("live/" + hostUid + "/comments").push({
         uid: me.uid,
         name: name,
         text: text,
-        at: Date.now()
+        at: Date.now(),
+        photo: me.photoURL || ""
       });
+      if (input) input.value = "";
     } catch (e) {
       console.error(e);
-      if (input) input.value = text;
+      toast("Comment failed — try again");
+      // only restore if send failed
+      if (input && !input.value) input.value = text;
     } finally {
       sendingComment = false;
     }
   }
 
   async function leave() {
+    if (isHost && !ended) {
+      // Confirm before ending — ask to save / upload replay
+      showEndLiveSheet(function (saveReplay) {
+        window.__vieworaSaveLiveReplay = !!saveReplay;
+        doLeave();
+      });
+      return;
+    }
+    doLeave();
+  }
+
+  function showEndLiveSheet(cb) {
+    try {
+      var old = document.getElementById("liveEndSheet");
+      if (old) old.remove();
+      var wrap = document.createElement("div");
+      wrap.id = "liveEndSheet";
+      wrap.style.cssText = "position:fixed;inset:0;z-index:10050;background:rgba(0,0,0,.6);display:flex;align-items:flex-end;justify-content:center;";
+      wrap.innerHTML =
+        '<div style="width:100%;max-width:480px;background:#1c1c1e;border-radius:18px 18px 0 0;padding:18px 16px calc(18px + env(safe-area-inset-bottom));color:#fff;font-family:Inter,system-ui,sans-serif">' +
+        '<div style="width:36px;height:4px;border-radius:4px;background:#555;margin:0 auto 14px"></div>' +
+        '<strong style="display:block;font-size:17px;margin-bottom:6px">End live?</strong>' +
+        '<p style="margin:0 0 14px;color:#aaa;font-size:13px">Viewers will be disconnected.</p>' +
+        '<label style="display:flex;align-items:center;gap:10px;padding:12px;border-radius:12px;background:rgba(255,255,255,.06);margin-bottom:14px;cursor:pointer">' +
+        '<input type="checkbox" id="liveSaveReplayTick" checked style="width:18px;height:18px;accent-color:#25d366">' +
+        '<span style="font-size:14px;font-weight:600">Save live video to my profile</span>' +
+        '</label>' +
+        '<div style="display:flex;gap:8px">' +
+        '<button type="button" data-act="cancel" style="flex:1;border:0;border-radius:12px;padding:13px;background:rgba(255,255,255,.08);color:#fff;font-weight:700">Keep live</button>' +
+        '<button type="button" data-act="end" style="flex:1;border:0;border-radius:12px;padding:13px;background:#ff3b30;color:#fff;font-weight:800">End live</button>' +
+        '</div></div>';
+      document.body.appendChild(wrap);
+      wrap.addEventListener("click", function (e) {
+        var t = e.target;
+        if (!t) return;
+        var act = t.getAttribute && t.getAttribute("data-act");
+        if (t === wrap || act === "cancel") {
+          wrap.remove();
+          return;
+        }
+        if (act === "end") {
+          var tick = document.getElementById("liveSaveReplayTick");
+          var save = !!(tick && tick.checked);
+          wrap.remove();
+          try { cb && cb(save); } catch (_) {}
+        }
+      });
+    } catch (e) {
+      if (confirm("End live?")) try { cb && cb(true); } catch (_) {}
+    }
+  }
+
+  async function doLeave() {
     ended = true;
     if (isHost) {
-      await endLiveSession();
+      try { await endLiveSession(); } catch (e) { console.warn(e); }
     } else if (hostUid && me) {
       try {
         await db.ref("live/" + hostUid + "/viewers/" + me.uid).remove();
       } catch (_) {}
     }
-    closeAllWebrtc(); stopCam();
-    if (liveRef) liveRef.off();
-    if (commentsRef) commentsRef.off();
+    try { closeAllWebrtc(); } catch (_) {}
+    try { stopCam(); } catch (_) {}
+    if (liveRef) try { liveRef.off(); } catch (_) {}
+    if (commentsRef) try { commentsRef.off(); } catch (_) {}
     if (reactionsRef) try { reactionsRef.off(); } catch (_) {}
-    if (viewersRef) viewersRef.off();
+    if (viewersRef) try { viewersRef.off(); } catch (_) {}
     location.href = "index.html";
   }
 
@@ -934,12 +1007,13 @@
       console.warn("[Live] max viewer peers reached");
       return;
     }
+    var sref = signalRef(hostUid || me.uid, viewerUid);
+    try { await sref.remove(); } catch (_) {}
     var pc = new RTCPeerConnection(liveIceServers());
     hostPeers[viewerUid] = { pc: pc };
     localStream.getTracks().forEach(function (track) {
       try { pc.addTrack(track, localStream); } catch (e) { console.warn(e); }
     });
-    var sref = signalRef(hostUid || me.uid, viewerUid);
     pc.onicecandidate = function (ev) {
       if (ev.candidate) {
         sref.child("hostCandidates").push(ev.candidate.toJSON()).catch(function () {});
@@ -983,6 +1057,14 @@
   }
 
   function hostWatchViewersForWebrtc(uid) {
+    // Existing viewers already in room
+    db.ref("live/" + uid + "/viewers").once("value", function (snap) {
+      if (!snap.exists()) return;
+      snap.forEach(function (ch) {
+        var vid = ch.key;
+        if (vid && vid !== me.uid) hostCreatePeerForViewer(vid);
+      });
+    });
     db.ref("live/" + uid + "/viewers").on("child_added", function (snap) {
       var vid = snap.key;
       if (vid && vid !== me.uid) hostCreatePeerForViewer(vid);
@@ -1001,39 +1083,83 @@
   async function viewerJoinWebrtc(hostId) {
     if (!me || !hostId) return;
     try {
+      // Clear old signal so host creates fresh offer
+      try { await signalRef(hostId, me.uid).remove(); } catch (_) {}
+      if (viewerPc) { try { viewerPc.close(); } catch (_) {} viewerPc = null; }
       viewerPc = new RTCPeerConnection(liveIceServers());
       var sref = signalRef(hostId, me.uid);
-      viewerPc.ontrack = function (ev) {
-        var stream = ev.streams && ev.streams[0];
-        if (!stream) {
-          stream = new MediaStream([ev.track]);
-        }
+      var pendingHostIce = [];
+      var remoteSet = false;
+
+      function attachViewerStream(stream) {
         var v = $("liveVideo");
-        if (v) {
-          v.srcObject = stream;
-          v.muted = false;
-          v.playsInline = true;
-          v.setAttribute("playsinline", "true");
-          v.play().catch(function () {});
-        }
+        if (!v || !stream) return;
+        v.srcObject = stream;
+        v.muted = false;
+        v.volume = 1;
+        v.playsInline = true;
+        v.setAttribute("playsinline", "true");
+        v.setAttribute("webkit-playsinline", "true");
+        v.style.objectFit = "contain";
+        v.style.transform = "none";
+        v.style.display = "block";
+        v.style.zIndex = "2";
+        var tryPlay = function () {
+          var p = v.play();
+          if (p && p.catch) p.catch(function () {
+            // autoplay blocked — mute then play, then unmute
+            v.muted = true;
+            v.play().then(function () {
+              setTimeout(function () { try { v.muted = false; } catch (_) {} }, 400);
+            }).catch(function () {});
+          });
+        };
+        tryPlay();
         document.body.classList.add("live-streaming");
         var ph = document.querySelector(".viewer-live-placeholder");
-        if (ph) ph.style.display = "none";
+        if (ph) { ph.style.display = "none"; ph.remove(); }
         var wait = $("liveWaiting");
         if (wait) wait.classList.add("hidden");
+      }
+
+      viewerPc.ontrack = function (ev) {
+        var stream = (ev.streams && ev.streams[0]) || new MediaStream([ev.track]);
+        if (ev.track) {
+          ev.track.onunmute = function () { attachViewerStream(stream); };
+        }
+        attachViewerStream(stream);
       };
+
+      viewerPc.onconnectionstatechange = function () {
+        var st = viewerPc && viewerPc.connectionState;
+        if (st === "connected") {
+          toast("Connected to live");
+        } else if (st === "failed") {
+          toast("Reconnecting…");
+          setTimeout(function () {
+            try { viewerJoinWebrtc(hostId); } catch (_) {}
+          }, 1500);
+        }
+      };
+
       viewerPc.onicecandidate = function (ev) {
         if (ev.candidate) {
           sref.child("viewerCandidates").push(ev.candidate.toJSON()).catch(function () {});
         }
       };
+
       // wait for host offer
       sref.child("offer").on("value", async function (snap) {
         var off = snap.val();
         if (!off || !off.sdp || !viewerPc) return;
         try {
-          if (viewerPc.currentRemoteDescription) return;
+          if (viewerPc.currentRemoteDescription && viewerPc.currentRemoteDescription.sdp === off.sdp) return;
+          if (viewerPc.signalingState === "closed") return;
           await viewerPc.setRemoteDescription(new RTCSessionDescription(off));
+          remoteSet = true;
+          while (pendingHostIce.length) {
+            try { await viewerPc.addIceCandidate(new RTCIceCandidate(pendingHostIce.shift())); } catch (_) {}
+          }
           var answer = await viewerPc.createAnswer();
           await viewerPc.setLocalDescription(answer);
           await sref.update({
@@ -1047,6 +1173,7 @@
       sref.child("hostCandidates").on("child_added", async function (snap) {
         var c = snap.val();
         if (!c || !viewerPc) return;
+        if (!remoteSet) { pendingHostIce.push(c); return; }
         try { await viewerPc.addIceCandidate(new RTCIceCandidate(c)); } catch (_) {}
       });
       // ensure viewer entry exists (triggers host peer)
