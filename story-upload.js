@@ -367,17 +367,95 @@
             return;
         }
 
-        const el = document.createElement("div");
-        el.className = `storyText style-${state.textStyle}`;
-        el.textContent = value;
-        el.style.color = state.textColor;
-        if (state.textStyle === "type") el.style.color = "#000";
+        // If editing existing text node
+        if (state._editingTextEl && state._editingTextEl.isConnected) {
+            const el = state._editingTextEl;
+            el.textContent = value;
+            el.className = "storyText style-" + (state.textStyle || "classic");
+            el.style.color = state.textStyle === "type" ? "#000" : (state.textColor || "#fff");
+            state._editingTextEl = null;
+            if ($("textInput")) $("textInput").value = "";
+            closeSheet("textPanel");
+            return;
+        }
 
-        makeDraggable(el);
+        const el = document.createElement("div");
+        el.className = "storyText style-" + (state.textStyle || "classic");
+        el.textContent = value;
+        el.style.color = state.textStyle === "type" ? "#000" : (state.textColor || "#fff");
+        el.style.fontSize = "28px";
+        el.dataset.scale = "1";
+        bindStoryTextGestures(el);
         textLayer.appendChild(el);
 
         if ($("textInput")) $("textInput").value = "";
         closeSheet("textPanel");
+    }
+
+    function bindStoryTextGestures(el) {
+        if (!el || el.dataset.bound === "1") return;
+        el.dataset.bound = "1";
+        makeDraggable(el);
+
+        // Tap to re-edit (color / font / content)
+        let tapX = 0, tapY = 0, tapT = 0, moved = false;
+        el.addEventListener("pointerdown", function (e) {
+            tapX = e.clientX; tapY = e.clientY; tapT = Date.now(); moved = false;
+            textLayer.querySelectorAll(".storyText").forEach(function (n) { n.classList.remove("selected"); });
+            el.classList.add("selected");
+        });
+        el.addEventListener("pointermove", function (e) {
+            if (Math.abs(e.clientX - tapX) > 8 || Math.abs(e.clientY - tapY) > 8) moved = true;
+        });
+        el.addEventListener("pointerup", function (e) {
+            if (moved) return;
+            if (Date.now() - tapT > 450) return;
+            // Open text panel with current value for edit
+            state._editingTextEl = el;
+            if ($("textInput")) $("textInput").value = el.textContent || "";
+            // sync color / style chips
+            try {
+                state.textColor = el.style.color || state.textColor || "#ffffff";
+                var m = (el.className || "").match(/style-(\w+)/);
+                if (m) state.textStyle = m[1];
+                document.querySelectorAll(".colorDot").forEach(function (d) {
+                    d.classList.toggle("active", d.getAttribute("data-color") === state.textColor);
+                });
+                document.querySelectorAll(".styleChip").forEach(function (c) {
+                    c.classList.toggle("active", c.getAttribute("data-style") === state.textStyle);
+                });
+            } catch (_) {}
+            openSheet("textPanel");
+        });
+
+        // Vertical drag on RIGHT edge zone = scale (hold + move up bigger, down smaller)
+        // Use two-finger pinch OR single finger with Alt via long-press scale mode
+        var scaleMode = false;
+        var startScale = 1, startY = 0;
+        el.addEventListener("pointerdown", function (e) {
+            // long press starts scale mode
+            el._scaleTimer = setTimeout(function () {
+                scaleMode = true;
+                startScale = Number(el.dataset.scale || 1) || 1;
+                startY = e.clientY;
+                try { showToast("↑ bigger · ↓ smaller", "ok"); } catch (_) {}
+            }, 420);
+        }, true);
+        el.addEventListener("pointermove", function (e) {
+            if (!scaleMode) return;
+            e.stopPropagation();
+            var dy = startY - e.clientY; // up = positive = bigger
+            var next = Math.max(0.5, Math.min(3.5, startScale + dy / 120));
+            el.dataset.scale = String(next);
+            var base = 28;
+            el.style.fontSize = (base * next) + "px";
+        }, true);
+        function endScale() {
+            if (el._scaleTimer) clearTimeout(el._scaleTimer);
+            scaleMode = false;
+        }
+        el.addEventListener("pointerup", endScale, true);
+        el.addEventListener("pointercancel", endScale, true);
     }
 
 
@@ -787,6 +865,15 @@
                 musicBadge.style.bottom = "120px";
             }
             makeDraggable(musicBadge);
+
+        // Tap badge to change music (WhatsApp style)
+        if (musicBadge && !musicBadge.dataset.clickBound) {
+            musicBadge.dataset.clickBound = "1";
+            musicBadge.addEventListener("click", function (e) {
+                e.stopPropagation();
+                try { renderMusic(); openSheet("musicPanel"); } catch (_) {}
+            });
+        }
         }
     }
 

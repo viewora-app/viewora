@@ -77,10 +77,53 @@
   var db = window.db || null;
 
   function toast(msg) {
+    try { console.log("[LIVE]", msg); } catch (_) {}
     try {
-      console.log("[LIVE]", msg);
-    } catch (_) {}
-    alert(msg);
+      var el = document.getElementById("liveToast");
+      if (!el) {
+        el = document.createElement("div");
+        el.id = "liveToast";
+        el.setAttribute("role", "status");
+        el.style.cssText = "position:fixed;left:50%;bottom:calc(88px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:9999;max-width:86vw;padding:12px 16px;border-radius:14px;background:rgba(28,28,30,.94);color:#fff;font:600 13px/1.35 Inter,system-ui,sans-serif;box-shadow:0 10px 30px rgba(0,0,0,.45);backdrop-filter:blur(10px);pointer-events:none;opacity:0;transition:opacity .2s ease;";
+        document.body.appendChild(el);
+      }
+      el.textContent = String(msg || "");
+      el.style.opacity = "1";
+      clearTimeout(el._t);
+      el._t = setTimeout(function () { el.style.opacity = "0"; }, 2600);
+    } catch (_) {
+      try { alert(msg); } catch (__) {}
+    }
+  }
+
+  function confirmSheet(title, message, onOk) {
+    try {
+      var old = document.getElementById("liveConfirmSheet");
+      if (old) old.remove();
+      var wrap = document.createElement("div");
+      wrap.id = "liveConfirmSheet";
+      wrap.style.cssText = "position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.55);display:flex;align-items:flex-end;justify-content:center;";
+      wrap.innerHTML = '<div style="width:100%;max-width:480px;background:#1c1c1e;border-radius:18px 18px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom));color:#fff;font-family:Inter,system-ui,sans-serif">'
+        + '<div style="width:36px;height:4px;border-radius:4px;background:#555;margin:0 auto 12px"></div>'
+        + '<strong style="display:block;font-size:16px;margin-bottom:6px">' + String(title || "Confirm") + '</strong>'
+        + '<p style="margin:0 0 14px;color:#aaa;font-size:13px;word-break:break-all">' + String(message || "") + '</p>'
+        + '<div style="display:flex;gap:8px">'
+        + '<button type="button" data-act="cancel" style="flex:1;border:0;border-radius:12px;padding:12px;background:rgba(255,255,255,.08);color:#fff;font-weight:600">Cancel</button>'
+        + '<button type="button" data-act="ok" style="flex:1;border:0;border-radius:12px;padding:12px;background:#25d366;color:#053b1a;font-weight:800">OK</button>'
+        + '</div></div>';
+      document.body.appendChild(wrap);
+      wrap.addEventListener("click", function (e) {
+        var t = e.target;
+        if (t === wrap || (t && t.getAttribute("data-act") === "cancel")) {
+          wrap.remove();
+        } else if (t && t.getAttribute("data-act") === "ok") {
+          wrap.remove();
+          try { onOk && onOk(); } catch (_) {}
+        }
+      });
+    } catch (_) {
+      if (confirm(String(title || "") + "\n" + String(message || ""))) try { onOk && onOk(); } catch (__) {}
+    }
   }
 
   function escapeHtml(v) {
@@ -176,15 +219,18 @@
     return stream;
   }
 
-  function bindPreviewVideo(videoEl, stream) {
+  function bindPreviewVideo(videoEl, stream, opts) {
     if (!videoEl || !stream) return;
+    opts = opts || {};
     videoEl.srcObject = stream;
     videoEl.muted = true;
     videoEl.setAttribute("playsinline", "true");
     videoEl.playsInline = true;
-    // Natural orientation — NOT mirrored (user asked to remove mirror)
-    videoEl.style.transform = "none";
-    videoEl.style.objectFit = "contain";
+    // Front camera: slight mirror for natural selfie feel on HOST only.
+    // Back camera: never mirror. Viewers always see real orientation.
+    var mirror = !!opts.mirror;
+    videoEl.style.transform = mirror ? "scaleX(-1)" : "none";
+    videoEl.style.objectFit = "cover";
     videoEl.style.background = "#000";
     videoEl.play().catch(function () {});
   }
@@ -471,11 +517,32 @@
     addComment._lastSig = sig;
     addComment._lastAt = now;
 
+    // Track comment counts for top-fan badges
+    if (!window.__liveCommentCounts) window.__liveCommentCounts = {};
+    var counts = window.__liveCommentCounts;
+    var nkey = String(name || "User");
+    counts[nkey] = (counts[nkey] || 0) + 1;
+
+    // Rank top 3 (excluding host display name if needed)
+    var ranked = Object.keys(counts).sort(function (a, b) { return counts[b] - counts[a]; }).slice(0, 3);
+    var rank = ranked.indexOf(nkey); // 0,1,2 or -1
+
+    var isHostComment = false;
+    try {
+      if (isHost && me && (name === (me.displayName || me.name))) isHostComment = true;
+      if (window.__liveHostName && name === window.__liveHostName) isHostComment = true;
+    } catch (_) {}
+
     const el = document.createElement("div");
-    el.className = "live-comment";
+    el.className = "live-comment" + (isHostComment ? " is-host" : "") + (rank === 0 ? " top1" : rank === 1 ? " top2" : rank === 2 ? " top3" : "");
     if (key) el.dataset.key = key;
+    var badge = "";
+    if (isHostComment) badge = '<i class="live-badge-host">Creator</i>';
+    else if (rank === 0) badge = '<i class="live-badge-top t1">Top 1</i>';
+    else if (rank === 1) badge = '<i class="live-badge-top t2">Top 2</i>';
+    else if (rank === 2) badge = '<i class="live-badge-top t3">Top 3</i>';
     el.innerHTML =
-      "<b>" + escapeHtml(name) + "</b> <span>" + escapeHtml(text) + "</span>";
+      badge + "<b>" + escapeHtml(name) + "</b> <span>" + escapeHtml(text) + "</span>";
     box.appendChild(el);
     while (box.children.length > 50) {
       box.removeChild(box.firstChild);
@@ -1084,7 +1151,9 @@
           await navigator.clipboard.writeText(url);
           toast("Live link copied");
         } catch (__) {
-          toast(url);
+          confirmSheet("Live link", url, function () {
+            try { navigator.clipboard.writeText(url); toast("Copied"); } catch (____) {}
+          });
         }
       }
     });
