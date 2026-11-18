@@ -4974,3 +4974,93 @@ body.feed-ready .loadingOverlay,
   pointer-events: none !important;
   z-index: -1 !important;
 }
+
+
+/* ===== Live story ring (Instagram style) ===== */
+.storyImageWrap.live-ring,
+.live-ring {
+  position: relative;
+  border-radius: 50%;
+  padding: 3px;
+  background: conic-gradient(from 0deg, #ff2d55, #ff6b6b, #ff0040, #ff2d55);
+  animation: liveRingSpin 2.4s linear infinite;
+}
+.storyImageWrap.live-ring::before,
+.live-ring::before {
+  content: "";
+  position: absolute;
+  inset: 2px;
+  border-radius: 50%;
+  background: #0a0a0c;
+  z-index: 0;
+}
+.storyImageWrap.live-ring .storyImage,
+.live-ring .storyImage,
+.live-ring img {
+  position: relative;
+  z-index: 1;
+  border-radius: 50%;
+  border: 2px solid #0a0a0c !important;
+}
+@keyframes liveRingSpin {
+  to { transform: rotate(360deg); }
+}
+
+/* LIVE pill under avatar — not on the name */
+.liveBadge,
+.liveBadge-story,
+.liveBadge-shorts,
+.liveBadge-video {
+  position: absolute;
+  left: 50%;
+  bottom: -2px;
+  transform: translateX(-50%);
+  z-index: 3;
+  background: #ff2d55;
+  color: #fff !important;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: 1.5px solid #0a0a0c;
+  line-height: 1.2;
+  white-space: nowrap;
+  box-shadow: 0 2px 6px rgba(0,0,0,.4);
+}
+.storyName {
+  color: inherit !important;
+  /* do NOT turn name red when live */
+}
+.storyCard.live .storyName,
+.storyCard.storyLive .storyName {
+  color: inherit !important;
+}
+
+/* Search / people row LIVE — badge only, no full-row red */
+.user-card.is-live,
+.person-row.is-live,
+.search-user-row.is-live {
+  background: transparent !important;
+}
+.user-card .live-inline,
+.person-row .live-inline,
+.search-user-row .live-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 8px;
+  background: #ff2d55;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 4px;
+  vertical-align: middle;
+}
+.user-card.is-live h3,
+.user-card.is-live p,
+.person-row.is-live,
+.search-user-row.is-live {
+  color: inherit !important;
+}

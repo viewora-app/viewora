@@ -228,9 +228,13 @@
     videoEl.setAttribute("playsinline", "true");
     videoEl.setAttribute("webkit-playsinline", "true");
     videoEl.playsInline = true;
-    // NEVER mirror — real orientation (left = left)
-    videoEl.style.transform = "none";
-    // contain = full scene, no aggressive face crop
+    // Front camera HOST preview: mirror so left hand = left side (WhatsApp/IG style)
+    // Back camera / viewer remote: never mirror
+    var mirror = opts.mirror === true;
+    if (opts.mirror == null && typeof usingFront !== "undefined") {
+      mirror = !!usingFront; // default: mirror front only
+    }
+    videoEl.style.transform = mirror ? "scaleX(-1)" : "none";
     videoEl.style.objectFit = "contain";
     videoEl.style.width = "100%";
     videoEl.style.height = "100%";
@@ -255,6 +259,8 @@
     const user = await loadUser(uid);
     const payload = {
       active: true,
+      uid: uid,
+      hostId: uid,
       hostUid: uid,
       title: title || "Live",
       hostName:
@@ -449,12 +455,16 @@
         duration: durationSec
       });
       try {
+        await db.ref("feedLive/stories/" + uid).remove();
         await db.ref("feedLive/shorts/" + uid).remove();
         await db.ref("feedLive/videos/" + uid).remove();
         await db.ref("shortsLive/" + uid).remove();
         await db.ref("videosLive/" + uid).remove();
+        await db.ref("storiesLive/" + uid).remove();
         await db.ref("live/" + uid + "/viewers").remove();
         await db.ref("live/" + uid + "/signal").remove();
+        await db.ref("live/" + uid + "/comments").remove();
+        await db.ref("live/" + uid + "/reactions").remove();
       } catch (_) {}
 
       console.log("[LIVE] Replay saved", replayId, format);
@@ -561,7 +571,7 @@
     try {
       const stream = await getCam();
       const v = $("setupPreview");
-      if (v) bindPreviewVideo(v, stream);
+      if (v) bindPreviewVideo(v, stream, { mirror: true });
     } catch (e) {
       toast("Camera/mic permission needed to go live.");
       console.error(e);
@@ -669,7 +679,9 @@
     if (!hostUid || !me || !emoji) return;
     spawnFloatEmoji(emoji);
     try {
-      await db.ref("live/" + hostUid + "/reactions").push({
+      var hid = hostUid || hostUidParam || (isHost && me ? me.uid : "");
+      if (!hid) return;
+      await db.ref("live/" + hid + "/reactions").push({
         uid: me.uid,
         emoji: emoji,
         kind: kind || "reaction",
@@ -680,6 +692,8 @@
 
   function bindReactionsUI() {
     document.querySelectorAll(".live-rx[data-rx]").forEach(function (btn) {
+      if (btn.dataset.rxBound) return;
+      btn.dataset.rxBound = "1";
       btn.addEventListener("click", function () {
         sendLiveReaction(btn.getAttribute("data-rx"), "reaction");
       });
@@ -797,36 +811,44 @@
 
   let sendingComment = false;
   async function sendComment() {
-    const input = $("liveCommentInput");
-    const text = (input?.value || "").trim();
-    if (!text || !hostUid || !me || sendingComment) return;
+    const input = $("liveCommentInput") || document.querySelector("#liveCommentInput");
+    const text = (input && input.value ? String(input.value) : "").trim();
+    if (!text || !me) return;
+    var hid = hostUid || hostUidParam || (isHost && me ? me.uid : "");
+    if (!hid) {
+      toast("Live not ready");
+      return;
+    }
+    if (sendingComment) return;
     sendingComment = true;
-    // Clear immediately so text doesn't stick
+    // Clear FIRST so mobile keyboards don't keep the word
     if (input) {
       input.value = "";
-      try { input.blur(); input.focus(); } catch (_) {}
+      try { input.setAttribute("value", ""); } catch (_) {}
     }
     try {
-      var name = "User";
+      var name = me.displayName || me.email || "User";
       try {
         const u = await loadUser(me.uid);
-        name = u.displayName || u.name || u.username || me.displayName || "User";
-      } catch (_) {
-        name = me.displayName || me.email || "User";
-      }
-      await db.ref("live/" + hostUid + "/comments").push({
+        if (u) name = u.displayName || u.name || u.username || name;
+      } catch (_) {}
+      await db.ref("live/" + hid + "/comments").push({
         uid: me.uid,
         name: name,
         text: text,
         at: Date.now(),
         photo: me.photoURL || ""
       });
-      if (input) input.value = "";
+      // local echo if listener slow
+      try { addComment(name, text, "local-" + Date.now()); } catch (_) {}
+      if (input) {
+        input.value = "";
+        setTimeout(function () { try { input.value = ""; } catch (_) {} }, 50);
+      }
     } catch (e) {
-      console.error(e);
-      toast("Comment failed — try again");
-      // only restore if send failed
-      if (input && !input.value) input.value = text;
+      console.error("[LIVE] comment", e);
+      toast("Comment failed — check connection");
+      if (input) input.value = text;
     } finally {
       sendingComment = false;
     }
@@ -920,11 +942,27 @@
     try { /* host controls wired after go-live */ } catch (_) {}
     $("endLiveBtn")?.addEventListener("click", leave);
     $("closeLiveBtn")?.addEventListener("click", leave);
-    $("sendCommentBtn")?.addEventListener("click", sendComment);
+    (function wireCommentUI() {
+      var btn = $("sendCommentBtn");
+      var inp = $("liveCommentInput");
+      if (btn && !btn.dataset.bound) {
+        btn.dataset.bound = "1";
+        btn.addEventListener("click", function (e) {
+          e.preventDefault();
+          sendComment();
+        });
+      }
+      if (inp && !inp.dataset.bound) {
+        inp.dataset.bound = "1";
+        inp.addEventListener("keydown", function (e) {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            sendComment();
+          }
+        });
+      }
+    })();
     try { bindReactionsUI(); } catch (_) {}
-    $("liveCommentInput")?.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") sendComment();
-    });
 
     window.addEventListener("beforeunload", () => {
       if (isHost) endLiveSession();

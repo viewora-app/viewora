@@ -4556,7 +4556,7 @@
                                     ).toLowerCase();
                                     if (
                                         byUser[liveUid] &&
-                                        (v.active === true || v.isLive === true || v.status === "live")
+                                        v.active === true
                                     ) {
                                         // All live types show on ring for followed users; badge differs
                                         var fmt = v.liveFormat || (v.isStoryLive ? "story" : (v.isShortsLive ? "shorts" : (v.isVideoLive ? "video" : "story")));
@@ -4577,7 +4577,7 @@
                                 if (!flSnap.exists()) return;
                                 flSnap.forEach((c) => {
                                     const v = c.val() || {};
-                                    if (v.active === false) return;
+                                    if (v.active !== true) return; // ghost live guard
                                     const raw = String(v.hostUid || v.uid || c.key || "");
                                     const liveUid = raw.toLowerCase();
                                     if (!liveUid) return;
@@ -4616,20 +4616,25 @@
                         await mergeLiveFeed("feedLive/shorts", "shorts");
                         await mergeLiveFeed("feedLive/videos", "video");
 
+                        // Only trust live/{uid}.active === true (ignore stale users/isLive)
                         try {
                             for (const key of Object.keys(byUser)) {
-                                const us = await db.ref("users/" + byUser[key].uid + "/isLive").once("value");
-                                if (us.val() === true) {
-                                    try {
-                                        const fmtSnap = await db.ref("users/" + byUser[key].uid + "/liveFormat").once("value");
-                                        const fmt = fmtSnap.val() || "story";
+                                const uid = byUser[key].uid;
+                                if (!uid) continue;
+                                try {
+                                    const liveSnap = await db.ref("live/" + uid + "/active").once("value");
+                                    if (liveSnap.val() === true) {
                                         byUser[key].isLive = true;
-                                        byUser[key].liveFormat = fmt;
-                                    } catch (_) {
-                                        byUser[key].isLive = true;
-                                        byUser[key].liveFormat = byUser[key].liveFormat || "story";
+                                        try {
+                                            const fmtSnap = await db.ref("live/" + uid + "/liveFormat").once("value");
+                                            byUser[key].liveFormat = fmtSnap.val() || byUser[key].liveFormat || "story";
+                                        } catch (_) {
+                                            byUser[key].liveFormat = byUser[key].liveFormat || "story";
+                                        }
+                                    } else {
+                                        byUser[key].isLive = false;
                                     }
-                                }
+                                } catch (_) {}
                             }
                         } catch (_) {}
 
@@ -4793,7 +4798,7 @@
                                     ${isLive ? '<span class="liveBadge liveBadge-' + liveFmt + '">' + liveBadgeText + '</span>' : ""}
                                 </div>
                                 <span class="storyName">
-                                    ${isLive ? "🔴 " : ""}${label}
+                                    ${label}
                                 </span>
                             `;
 
