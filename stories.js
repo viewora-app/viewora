@@ -596,6 +596,7 @@
   }
 
   function stop() {
+    try { clearOverlays(); } catch (_) {}
     clearTimeout(state.timer);
     state.timer = null;
     if (state.raf) cancelAnimationFrame(state.raf);
@@ -979,6 +980,111 @@
     if (mentioned) bar.classList.remove("hidden");
   }
 
+
+  function ensureOverlayLayer() {
+    var stage = $("stage") || $("storyStage");
+    if (!stage) return null;
+    var layer = $("storyOverlayLayer");
+    if (!layer) {
+      layer = document.createElement("div");
+      layer.id = "storyOverlayLayer";
+      layer.className = "storyOverlayLayer";
+      layer.style.cssText = "position:absolute;inset:0;z-index:5;pointer-events:none;overflow:hidden;";
+      stage.appendChild(layer);
+    }
+    return layer;
+  }
+
+  function clearOverlays() {
+    var layer = $("storyOverlayLayer");
+    if (layer) layer.innerHTML = "";
+  }
+
+  function renderStoryOverlays(data) {
+    clearOverlays();
+    if (!data) return;
+    var layer = ensureOverlayLayer();
+    if (!layer) return;
+
+    // Draw strokes (PNG data URL)
+    try {
+      var drawUrl = data.drawDataUrl || data.drawUrl || data.drawing || "";
+      if (drawUrl && String(drawUrl).indexOf("data:image") === 0) {
+        var dimg = document.createElement("img");
+        dimg.className = "storyDrawOverlay";
+        dimg.src = drawUrl;
+        dimg.alt = "";
+        dimg.style.cssText = "position:absolute;inset:0;width:100%;height:100%;object-fit:contain;pointer-events:none;z-index:6;";
+        layer.appendChild(dimg);
+      }
+    } catch (_) {}
+
+    // Text overlays
+    var texts = data.texts || data.textOverlays || [];
+    if (!Array.isArray(texts)) texts = [];
+    texts.forEach(function (t) {
+      if (!t) return;
+      var text = (t.text || t.value || t.content || "").trim();
+      if (!text) return;
+      var el = document.createElement("div");
+      el.className = "storyTextOverlay style-" + (t.style || "classic");
+      el.textContent = text;
+      var left = t.left || "50%";
+      var top = t.top || "40%";
+      var fs = t.fontSize || "28px";
+      var scale = Number(t.scale || 1) || 1;
+      var color = t.color || "#ffffff";
+      el.style.cssText =
+        "position:absolute;left:" + left + ";top:" + top + ";" +
+        "transform:" + (t.transform || "translate(-50%,-50%)") + ";" +
+        "font-size:" + fs + ";color:" + color + ";" +
+        "font-weight:" + (t.fontWeight || "800") + ";" +
+        "text-align:" + (t.textAlign || "center") + ";" +
+        "white-space:pre-wrap;word-break:break-word;max-width:86%;" +
+        "text-shadow:0 2px 8px rgba(0,0,0,.55);pointer-events:none;z-index:7;line-height:1.25;";
+      if (scale !== 1 && !t.transform) {
+        el.style.transform = "translate(-50%,-50%) scale(" + scale + ")";
+      }
+      // @mention style pill
+      if (text.charAt(0) === "@") {
+        el.style.background = "rgba(0,0,0,.45)";
+        el.style.border = "2px solid #25d366";
+        el.style.borderRadius = "12px";
+        el.style.padding = "6px 14px";
+        el.style.color = "#fff";
+      }
+      layer.appendChild(el);
+    });
+
+    // Stickers
+    var stickers = data.stickers || data.stickerOverlays || [];
+    if (!Array.isArray(stickers)) stickers = [];
+    stickers.forEach(function (s) {
+      if (!s) return;
+      var el = document.createElement("div");
+      el.className = "storyStickerOverlay";
+      el.style.cssText =
+        "position:absolute;left:" + (s.left || "50%") + ";top:" + (s.top || "50%") + ";" +
+        "transform:" + (s.transform || "translate(-50%,-50%)") + ";" +
+        "pointer-events:none;z-index:7;";
+      if (s.url) {
+        var img = document.createElement("img");
+        img.src = s.url;
+        img.alt = s.name || "";
+        img.style.cssText = "width:" + (s.width || "88px") + ";height:auto;display:block;";
+        el.appendChild(img);
+      } else {
+        el.textContent = s.emoji || "";
+        el.style.fontSize = s.fontSize || "48px";
+      }
+      var sc = Number(s.scale || 1) || 1;
+      if (sc !== 1 && !s.transform) {
+        el.style.transform = "translate(-50%,-50%) scale(" + sc + ")";
+      }
+      layer.appendChild(el);
+    });
+  }
+
   function showItem() {
     state._advancing = false;
     const g = currentGroup();
@@ -1061,6 +1167,7 @@
 
     updateChrome();
     renderReactions(data);
+    try { renderStoryOverlays(data); } catch (_) {}
 
     // If I was mentioned in this story → show Add to story (above reply)
     try {
@@ -1810,6 +1917,30 @@
       });
     });
     $("replySendBtn")?.addEventListener("click", sendReply);
+
+    // Reply focus → pause story
+    try {
+      var ri = $("replyInput");
+      if (ri && !ri._vieworaPauseBound) {
+        ri._vieworaPauseBound = true;
+        ri.addEventListener("focus", function () {
+          try { if (typeof pauseStory === "function") pauseStory(); } catch (_) {}
+          state.paused = true;
+          try { $("storyVid")?.pause(); } catch (_) {}
+          try { state.musicAudio?.pause(); } catch (_) {}
+        });
+        ri.addEventListener("blur", function () {
+          // keep paused while menu open; else resume after short delay
+          setTimeout(function () {
+            if ($("moreSheet") && !$("moreSheet").classList.contains("hidden")) return;
+            try { if (typeof resumeStory === "function") resumeStory(); } catch (_) {
+              state.paused = false;
+            }
+          }, 200);
+        });
+      }
+    } catch (_) {}
+
     $("replyInput")?.addEventListener("keydown", (e) => {
       if (e.key === "Enter") { e.preventDefault(); sendReply(); }
     });

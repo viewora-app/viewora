@@ -610,6 +610,8 @@
         audioName: musicPayload ? (musicPayload.name || "Music") : "Original audio",
         texts: meta.texts || [],
         stickers: meta.stickers || [],
+        drawDataUrl: meta.drawDataUrl || null,
+        mediaTransform: meta.mediaTransform || null,
         visibility: "followers",
         createdAt: now,
         expiresAt: now + 24 * 60 * 60 * 1000,
@@ -618,6 +620,77 @@
         views: 0,
         viewers: {}
       });
+
+      // Reliable @mention notify (works even if stories.js not loaded on index)
+      try {
+        var _texts = [];
+        _texts.push(meta.caption || "");
+        (meta.texts || []).forEach(function (t) {
+          _texts.push((t && (t.text || t.value || t.content)) || "");
+        });
+        var _joined = _texts.join(" ");
+        var _names = [];
+        String(_joined).replace(/@([a-zA-Z0-9._]{2,30})/g, function (_, u) {
+          _names.push(String(u).toLowerCase());
+          return _;
+        });
+        _names = Array.from(new Set(_names));
+        if (_names.length) {
+          var _myName = meta.username || user.displayName || "Someone";
+          var _myAv = meta.avatar || user.photoURL || "";
+          for (var _i = 0; _i < _names.length; _i++) {
+            (function (uname) {
+              var targetUid = null;
+              db.ref("users").orderByChild("username").equalTo(uname).limitToFirst(1).once("value")
+                .then(function (q) {
+                  q.forEach(function (c) { targetUid = c.key; });
+                  if (!targetUid) {
+                    return db.ref("usernames/" + uname).once("value").then(function (q2) {
+                      if (q2.exists()) {
+                        var v = q2.val();
+                        targetUid = (typeof v === "string") ? v : (v && (v.uid || v.userId)) || null;
+                      }
+                    });
+                  }
+                })
+                .then(function () {
+                  if (!targetUid || targetUid === user.uid) return;
+                  var storyKey = ref.key;
+                  return Promise.all([
+                    db.ref("activity/" + targetUid).push({
+                      type: "story_mention",
+                      fromUid: user.uid,
+                      fromUsername: _myName,
+                      fromAvatar: _myAv,
+                      storyId: storyKey,
+                      mediaURL: mediaURL,
+                      text: _myName + " mentioned you in their story",
+                      preview: "@" + uname,
+                      read: false,
+                      createdAt: firebase.database.ServerValue.TIMESTAMP
+                    }),
+                    db.ref("stories/" + storyKey + "/mentions/" + targetUid).set({
+                      uid: targetUid,
+                      username: uname,
+                      at: firebase.database.ServerValue.TIMESTAMP
+                    }),
+                    db.ref("notifications/" + targetUid).push({
+                      type: "story_mention",
+                      fromUid: user.uid,
+                      fromUsername: _myName,
+                      storyId: storyKey,
+                      text: "Mentioned you in their story",
+                      read: false,
+                      createdAt: firebase.database.ServerValue.TIMESTAMP
+                    }).catch(function () {})
+                  ]);
+                })
+                .catch(function () {});
+            })(_names[_i]);
+          }
+        }
+      } catch (_mentErr) {}
+
       try {
         sessionStorage.setItem("viewora_story_upload_pct", "100");
         sessionStorage.removeItem("viewora_story_uploading");

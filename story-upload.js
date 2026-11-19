@@ -1024,11 +1024,18 @@
         const texts = [];
         textLayer.querySelectorAll(".storyText").forEach((el) => {
             texts.push({
-                text: el.textContent,
+                text: (el.textContent || "").trim(),
                 color: el.style.color || "#ffffff",
-                style: Array.from(el.classList).find((c) => c.startsWith("style-"))?.replace("style-", "") || "classic",
+                style: (Array.from(el.classList).find((c) => c.startsWith("style-")) || "style-classic").replace("style-", "") || "classic",
                 left: el.style.left || "50%",
-                top: el.style.top || "40%"
+                top: el.style.top || "40%",
+                fontSize: el.style.fontSize || "28px",
+                scale: Number(el.dataset.scale || 1) || 1,
+                transform: el.style.transform || "translate(-50%, -50%)",
+                width: el.style.width || "",
+                textAlign: el.style.textAlign || "center",
+                fontWeight: el.style.fontWeight || "",
+                fontFamily: el.style.fontFamily || ""
             });
         });
 
@@ -1036,7 +1043,11 @@
         stickerLayer.querySelectorAll(".storySticker").forEach((el) => {
             const item = {
                 left: el.style.left || "50%",
-                top: el.style.top || "50%"
+                top: el.style.top || "50%",
+                transform: el.style.transform || "translate(-50%, -50%)",
+                scale: Number(el.dataset.scale || 1) || 1,
+                width: el.style.width || "",
+                fontSize: el.style.fontSize || ""
             };
             if (el.dataset.stickerUrl) {
                 item.url = el.dataset.stickerUrl;
@@ -1169,6 +1180,8 @@
                         musicStartAt: musicMeta ? musicMeta.startAt : 0,
                         texts: overlays.texts || [],
                         stickers: overlays.stickers || [],
+                        drawDataUrl: state.drawDataUrl || null,
+                        mediaTransform: state.mediaTransform || { scale: 1, x: 0, y: 0 },
                         sharedFrom: state.sharedFrom || null,
                         originalOwner: state.ownerCredit || null
                     }
