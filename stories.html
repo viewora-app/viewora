@@ -21,6 +21,51 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
     <link rel="stylesheet" href="stories.css">
     <!-- theme disabled on stories to avoid white flash -->
+
+<style id="storyMentionBarStyle">
+.storyMentionBar {
+  display: flex;
+  justify-content: center;
+  padding: 0 12px 8px;
+  position: relative;
+  z-index: 20;
+}
+.storyMentionBar.hidden { display: none !important; }
+.storyAddToStoryBtn {
+  border: 0;
+  background: #fff;
+  color: #111;
+  font-weight: 700;
+  font-size: 13px;
+  padding: 8px 18px;
+  border-radius: 999px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.35);
+  cursor: pointer;
+}
+.storyAddToStoryBtn:active { transform: scale(.97); }
+#storyImg, #storyVid {
+  opacity: 1 !important;
+  visibility: visible;
+  z-index: 2;
+}
+.stage.storyLoading #storyImg,
+.stage.storyLoading #storyVid {
+  opacity: 0.85 !important;
+}
+.storiesTickWrap {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 4px;
+  vertical-align: middle;
+}
+.storiesTickWrap svg,
+.storiesTickWrap .vieworaBadge {
+  width: 14px;
+  height: 14px;
+  vertical-align: middle;
+}
+</style>
+
 </head>
 <body style="margin:0;background:#000;min-height:100vh;color:#fff">
 <div id="app" class="storiesApp">
@@ -103,10 +148,6 @@
                     <i class="fa-solid fa-at"></i>
                     <span><strong>Mention</strong><small>Tag someone in this story</small></span>
                 </button>
-                <button type="button" id="collabBtn" class="menuItem" style="display:none !important" hidden>
-                    <i class="fa-solid fa-user-plus"></i>
-                    <span><strong>Collab</strong><small>Invite collaborator</small></span>
-                </button>
                 <button type="button" id="deleteFromMenuBtn" class="menuItem danger">
                     <i class="fa-regular fa-trash-can"></i>
                     <span><strong>Delete story</strong><small>Remove permanently</small></span>
@@ -125,7 +166,7 @@
         </div>
     </div>
 
-    <!-- Mention / Collab sheet -->
+    <!-- Mention sheet -->
     <div id="peopleSheet" class="sheet hidden">
         <div class="sheetBackdrop" data-close="peopleSheet"></div>
         <div class="sheetCard">
@@ -177,6 +218,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging-compat.js"></script>
 <script src="fcm.js"></script>
 <script src="theme.js"></script>
+<script src="badges.js"></script>
 <script src="stories.js"></script>
 
 <script>

@@ -1172,7 +1172,33 @@ function isFollow(notification) {
        TARGET URL
        ============================================================ */
 
-    function getTargetURL(notification) {
+    function getTargetURL_STORY_PATCH(notification) {
+        try {
+          var t = String(notification && notification.type || "").toLowerCase();
+          if (t.indexOf("story") !== -1 || t.indexOf("mention") !== -1) {
+            var sid = notification.storyId || notification.targetId || "";
+            var oid = notification.ownerUid || notification.senderUID || notification.fromUid || "";
+            if (sid) {
+              return "stories.html?id=" + encodeURIComponent(sid) +
+                (oid ? "&uid=" + encodeURIComponent(oid) : "") +
+                (t.indexOf("mention") !== -1 ? "&mentioned=1" : "");
+            }
+          }
+        } catch (_) {}
+        return null;
+      }
+      function getTargetURL(notification) {
+        try {
+          var __t = String(notification && (notification.type || "") || "").toLowerCase();
+          var __sid = notification && (notification.storyId || notification.targetId || "");
+          if (__sid && (__t.indexOf("story") !== -1 || __t.indexOf("mention") !== -1 || __t.indexOf("react") !== -1)) {
+            var __oid = notification.ownerUid || notification.senderUID || notification.fromUid || "";
+            return "stories.html?id=" + encodeURIComponent(__sid) +
+              (__oid ? "&uid=" + encodeURIComponent(__oid) : "") +
+              (__t.indexOf("mention") !== -1 ? "&mentioned=1" : "");
+          }
+        } catch (__e) {}
+
 
         const senderUID =
             safeString(

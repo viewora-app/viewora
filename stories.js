@@ -184,7 +184,27 @@
   function closeSheet(id) { $(id)?.classList.add("hidden"); }
 
   function mediaURL(d) {
-    return d?.mediaURL || d?.mediaUrl || d?.url || d?.imageUrl || d?.videoUrl || d?.videoURL || "";
+    if (!d || typeof d !== "object") return "";
+    var keys = [
+      "mediaURL", "mediaUrl", "media_url", "url", "src",
+      "imageUrl", "imageURL", "image", "photo", "photoUrl", "photoURL",
+      "videoUrl", "videoURL", "video", "downloadURL", "secure_url",
+      "cloudinaryUrl", "fileUrl", "contentUrl"
+    ];
+    for (var i = 0; i < keys.length; i++) {
+      var v = d[keys[i]];
+      if (typeof v === "string" && v.trim().length > 8 && /^https?:\/\//i.test(v.trim())) {
+        return v.trim();
+      }
+    }
+    // nested media object
+    try {
+      if (d.media && typeof d.media === "object") {
+        var nested = mediaURL(d.media);
+        if (nested) return nested;
+      }
+    } catch (_) {}
+    return "";
   }
   function ownerId(d) {
     return d?.uid || d?.userId || d?.ownerId || "";
@@ -732,19 +752,14 @@
         if (window.VieworaBadges && typeof VieworaBadges.resolve === "function") {
           const b = VieworaBadges.resolve(badgeSource);
           if (b && b.html) tickHtml = b.html;
+        } else if (window.VieworaBadges && typeof VieworaBadges.badgeHTML === "function") {
+          tickHtml = VieworaBadges.badgeHTML(badgeSource) || "";
         }
       } catch (_) {}
-      if (!tickHtml) {
-        if (badgeSource.redTick || badgeSource.redTickForce || badgeSource.tickType === "red" || badgeSource.vip) {
-          tickHtml = '<i class="fa-solid fa-certificate vieworaTick redTick storiesBlueTick" title="VIP Elite" style="color:#ff3b5c;margin-left:5px;font-size:12px;vertical-align:middle"></i>';
-        } else if (badgeSource.whiteTick || badgeSource.whiteTickForce || badgeSource.tickType === "white") {
-          tickHtml = '<i class="fa-solid fa-circle-check vieworaTick whiteTick storiesBlueTick" title="Monetized" style="color:#f0f4fa;margin-left:5px;font-size:12px;vertical-align:middle"></i>';
-        } else if (badgeSource.blueTick || badgeSource.verified || badgeSource.isVerified || badgeSource.tickType === "blue") {
-          tickHtml = '<i class="fa-solid fa-circle-check vieworaTick blueTick storiesBlueTick" title="Verified" style="color:#1d9bf0;margin-left:5px;font-size:12px;vertical-align:middle"></i>';
-        }
-      }
+      // Same tick as Activity / profile — no custom fa-circle icons
       if (tickHtml) {
         const wrap = document.createElement("span");
+        wrap.className = "storiesTickWrap";
         wrap.innerHTML = tickHtml;
         while (wrap.firstChild) nameEl.appendChild(wrap.firstChild);
       }
@@ -908,6 +923,62 @@
     } catch (_) {}
   }
 
+
+  async function renderMentionAddBar(item, data, g) {
+    var bar = $("storyMentionBar");
+    if (!bar) {
+      bar = document.createElement("div");
+      bar.id = "storyMentionBar";
+      bar.className = "storyMentionBar hidden";
+      bar.innerHTML =
+        '<button type="button" id="storyAddToStoryBtn" class="storyAddToStoryBtn">Add to story</button>';
+      var footer = $("viewerFooter") || document.querySelector(".storiesFooter");
+      if (footer) {
+        footer.insertBefore(bar, footer.firstChild);
+      } else {
+        document.body.appendChild(bar);
+      }
+      bar.querySelector("#storyAddToStoryBtn")?.addEventListener("click", function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        try {
+          var it = currentItem();
+          var d = (it && it.data) || {};
+          var url = mediaURL(d);
+          sessionStorage.setItem("viewora_add_story_mention", JSON.stringify({
+            storyId: it && it.id,
+            ownerUid: ownerId(d) || (currentGroup() && currentGroup().uid),
+            mediaUrl: url,
+            isVideo: !!(d.videoUrl || d.mediaType === "video"),
+            ownerName: nameOf(d),
+            at: Date.now()
+          }));
+          if (url) sessionStorage.setItem("shareRemoteMedia", url);
+        } catch (_) {}
+        location.href = "story-upload.html?from=mention";
+      });
+    }
+    bar.classList.add("hidden");
+    if (!state.user || !item || !item.id) return;
+    var me = state.user.uid;
+    var mentioned = false;
+    try {
+      if (data.mentions && data.mentions[me]) mentioned = true;
+    } catch (_) {}
+    if (!mentioned) {
+      try {
+        var snap = await firebase.database().ref("stories/" + item.id + "/mentions/" + me).once("value");
+        if (snap.exists()) mentioned = true;
+      } catch (_) {}
+    }
+    // also if opened via notification deep link
+    try {
+      var p = new URLSearchParams(location.search);
+      if (p.get("mentioned") === "1" && p.get("id") === item.id) mentioned = true;
+    } catch (_) {}
+    if (mentioned) bar.classList.remove("hidden");
+  }
+
   function showItem() {
     state._advancing = false;
     const g = currentGroup();
@@ -990,6 +1061,11 @@
 
     updateChrome();
     renderReactions(data);
+
+    // If I was mentioned in this story → show Add to story (above reply)
+    try {
+      renderMentionAddBar(item, data, g);
+    } catch (_) {}
     // Live-refresh reactions from Firebase
     (async () => {
       try {
@@ -1009,10 +1085,24 @@
     playStoryMusic(data);
     preloadNextStoryMedia();
 
-    const type = String(data.mediaType || data.type || "").toLowerCase();
-    const isVideo = type === "video" || /\.(mp4|webm|mov)(\?|$)/i.test(url);
+    const type = String(data.mediaType || data.type || data.contentType || "").toLowerCase();
+    // Prefer explicit type; only sniff extension if type empty
+    var isVideo = type === "video" || type === "reel" || type === "short" || type.indexOf("video") !== -1;
+    if (!type || type === "story" || type === "image" || type === "photo") {
+      isVideo = /\.(mp4|webm|mov|m4v)(\?|$)/i.test(url) || /\/video\/upload\//i.test(url);
+    }
+    if (type === "image" || type === "photo" || type === "picture") isVideo = false;
     const img = $("storyImg");
     const vid = $("storyVid");
+    // Always reset both first
+    try {
+      if (img) { img.classList.add("hidden"); img.removeAttribute("src"); }
+      if (vid) {
+        vid.classList.add("hidden");
+        try { vid.pause(); } catch (_) {}
+        try { vid.removeAttribute("src"); vid.load(); } catch (_) {}
+      }
+    } catch (_) {}
     const goNext = () => {
       clearTimeout(state.timer);
       state.timer = null;
@@ -1024,14 +1114,18 @@
     const imageDuration = hasMusic ? IMAGE_MUSIC_MS : IMAGE_MS;
 
     // Soft loading — never stay black
-    const stage = $("stage") || $("storyStage") || $("storiesStage") || img?.parentElement;
+    const stage = $("stage") || $("storyStage") || $("storiesStage") || (img && img.parentElement);
+    function clearLoading() {
+      try { clearLoading(); } catch (_) {}
+      try { if (img) { img.style.opacity = "1"; img.style.visibility = "visible"; } } catch (_) {}
+      try { if (vid) { vid.style.opacity = "1"; vid.style.visibility = "visible"; } } catch (_) {}
+    }
     if (stage) {
       stage.classList.add("storyLoading");
-      setTimeout(function () { try { stage.classList.remove("storyLoading"); } catch (_) {} }, 350);
+      setTimeout(clearLoading, 280);
     }
-    // Ensure at least one media element is visible even if URL resolves late
-    if (img) img.style.background = "#111";
-    if (vid) vid.style.background = "#111";
+    if (img) { img.style.background = "#111"; img.style.opacity = "1"; }
+    if (vid) { vid.style.background = "#111"; vid.style.opacity = "1"; }
 
     if (isVideo && vid) {
       img?.classList.add("hidden");
@@ -1046,7 +1140,7 @@
         if (!hasMusic) ms = Math.min(d, 30000);
         state.duration = ms;
         state.startedAt = Date.now();
-        if (stage) stage.classList.remove("storyLoading");
+        clearLoading();
         tick();
       };
       vid.onerror = function () {
@@ -1082,11 +1176,11 @@
       try { vid.pause(); vid.removeAttribute("src"); vid.load(); } catch (_) {}
       img.classList.remove("hidden");
       img.onerror = () => {
-        if (stage) stage.classList.remove("storyLoading");
+        clearLoading();
         goNext();
       };
       img.onload = () => {
-        if (stage) stage.classList.remove("storyLoading");
+        clearLoading();
         state.duration = imageDuration;
         state.startedAt = Date.now();
         tick();
@@ -1094,7 +1188,7 @@
       // If already cached, onload may not fire — force
       img.src = url;
       if (img.complete && img.naturalWidth) {
-        if (stage) stage.classList.remove("storyLoading");
+        clearLoading();
         state.duration = imageDuration;
         state.startedAt = Date.now();
         tick();

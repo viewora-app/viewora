@@ -545,3 +545,13 @@ button { cursor: pointer; }
   position: relative;
   z-index: 1;
 }
+
+/* Mention Add to story + no black media */
+.storyMentionBar { display:flex; justify-content:center; padding:0 12px 8px; z-index:20; position:relative; }
+.storyMentionBar.hidden { display:none !important; }
+.storyAddToStoryBtn {
+  border:0; background:#fff; color:#111; font-weight:700; font-size:13px;
+  padding:8px 18px; border-radius:999px; box-shadow:0 4px 16px rgba(0,0,0,.35);
+}
+#storyImg, #storyVid { opacity:1 !important; visibility:visible; z-index:2; }
+.stage.storyLoading #storyImg, .stage.storyLoading #storyVid { opacity:.85 !important; }
