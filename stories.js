@@ -5,6 +5,141 @@
 
   const STORY_TTL = 24 * 60 * 60 * 1000;
   const IMAGE_MS = 5000;
+
+  /* ---------- Notifications (story mention / react / reply) ---------- */
+  async function pushNotif(toUid, payload) {
+    if (!toUid || !payload) return;
+    try {
+      if (state.user && toUid === state.user.uid) return; // no self-notify
+      const ref = firebase.database().ref("notifications/" + toUid).push();
+      await ref.set(Object.assign({
+        createdAt: firebase.database.ServerValue.TIMESTAMP,
+        timestamp: Date.now(),
+        read: false,
+        isRead: false
+      }, payload));
+      return ref.key;
+    } catch (e) {
+      console.warn("[story notif]", e);
+    }
+  }
+
+  async function actorName() {
+    try {
+      if (!state.user) return "Someone";
+      const us = await fetchUser(state.user.uid);
+      if (us) return us.displayName || us.name || us.username || "Someone";
+      return state.user.displayName || "Someone";
+    } catch (_) {
+      return (state.user && state.user.displayName) || "Someone";
+    }
+  }
+
+  async function notifyStoryMention(storyId, ownerUid, targetUid) {
+    const name = await actorName();
+    await pushNotif(targetUid, {
+      type: "story_mention",
+      kind: "mention",
+      message: "mentioned you in their story",
+      text: name + " mentioned you in their story",
+      senderUID: state.user.uid,
+      senderId: state.user.uid,
+      fromUid: state.user.uid,
+      storyId: storyId,
+      ownerUid: ownerUid || state.user.uid,
+      mediaType: "story"
+    });
+    // Instagram-style invite for Add to story
+    try {
+      const inv = firebase.database().ref("storyInvites/" + targetUid).push();
+      const item = currentItem();
+      const data = (item && item.data) || {};
+      await inv.set({
+        storyId: storyId,
+        fromUid: state.user.uid,
+        ownerUid: ownerUid || state.user.uid,
+        mediaUrl: data.mediaUrl || data.imageUrl || data.videoUrl || data.url || "",
+        thumb: data.thumbnail || data.mediaUrl || data.imageUrl || "",
+        isVideo: !!(data.videoUrl || data.isVideo || (data.type === "video")),
+        ownerName: name,
+        ownerUsername: (data.username || data.ownerUsername || ""),
+        status: "pending",
+        createdAt: firebase.database.ServerValue.TIMESTAMP
+      });
+      // Lightweight chat-style system message under a virtual thread
+      try {
+        const chatId = [state.user.uid, targetUid].sort().join("_");
+        await firebase.database().ref("chats/" + chatId + "/messages").push({
+          type: "story_mention",
+          text: name + " mentioned you in their story",
+          storyId: storyId,
+          inviteId: inv.key,
+          mediaUrl: data.mediaUrl || data.imageUrl || data.videoUrl || "",
+          from: state.user.uid,
+          to: targetUid,
+          addToStory: true,
+          createdAt: Date.now(),
+          timestamp: firebase.database.ServerValue.TIMESTAMP
+        });
+        await firebase.database().ref("userChats/" + targetUid + "/" + chatId).update({
+          lastMessage: "Mentioned you in their story",
+          updatedAt: Date.now(),
+          unread: true
+        });
+        await firebase.database().ref("userChats/" + state.user.uid + "/" + chatId).update({
+          lastMessage: "You mentioned them in your story",
+          updatedAt: Date.now()
+        });
+      } catch (chatErr) {
+        console.warn("story mention chat", chatErr);
+      }
+    } catch (e) {
+      console.warn("story invite", e);
+    }
+  }
+
+  async function notifyStoryReaction(storyId, ownerUid, fromUid, emoji) {
+    if (!ownerUid || fromUid === ownerUid) return;
+    const name = await actorName();
+    const em = emoji || "❤️";
+    await pushNotif(ownerUid, {
+      type: "story_reaction",
+      kind: "reaction",
+      message: "reacted " + em + " to your story",
+      text: name + " reacted " + em + " to your story",
+      senderUID: fromUid,
+      senderId: fromUid,
+      fromUid: fromUid,
+      storyId: storyId,
+      emoji: em,
+      reaction: em,
+      mediaType: "story"
+    });
+  }
+
+  async function notifyStoryReply(storyId, ownerUid, fromUid, replyId) {
+    if (!ownerUid || fromUid === ownerUid) return;
+    const name = await actorName();
+    await pushNotif(ownerUid, {
+      type: "story_reply",
+      kind: "reply",
+      message: "replied to your story",
+      text: name + " replied to your story",
+      senderUID: fromUid,
+      senderId: fromUid,
+      fromUid: fromUid,
+      storyId: storyId,
+      replyId: replyId || "",
+      mediaType: "story"
+    });
+  }
+
+  // Expose globally for other pages if needed
+  window.notifyStoryMention = notifyStoryMention;
+  window.notifyStoryReaction = notifyStoryReaction;
+  window.notifyStoryReply = notifyStoryReply;
+
+
   const IMAGE_MUSIC_MS = 15000; // photo + music = 15s minimum
   const $ = (id) => document.getElementById(id);
 
@@ -888,12 +1023,15 @@
     // Photo + music = 15s minimum; photo alone = 5s
     const imageDuration = hasMusic ? IMAGE_MUSIC_MS : IMAGE_MS;
 
-    // Soft loading — brief only; show media ASAP (no long black "User" screen)
-    const stage = $("storyStage") || $("storiesStage") || img?.parentElement;
+    // Soft loading — never stay black
+    const stage = $("stage") || $("storyStage") || $("storiesStage") || img?.parentElement;
     if (stage) {
       stage.classList.add("storyLoading");
-      setTimeout(() => { try { stage.classList.remove("storyLoading"); } catch (_) {} }, 400);
+      setTimeout(function () { try { stage.classList.remove("storyLoading"); } catch (_) {} }, 350);
     }
+    // Ensure at least one media element is visible even if URL resolves late
+    if (img) img.style.background = "#111";
+    if (vid) vid.style.background = "#111";
 
     if (isVideo && vid) {
       img?.classList.add("hidden");
@@ -911,9 +1049,30 @@
         if (stage) stage.classList.remove("storyLoading");
         tick();
       };
-      vid.play().catch(() => {
+      vid.onerror = function () {
+        // black screen fix: fall back to image if video fails
+        try {
+          vid.classList.add("hidden");
+          if (img && url) {
+            img.classList.remove("hidden");
+            img.src = url;
+          } else {
+            goNext();
+          }
+        } catch (_) { goNext(); }
+      };
+      vid.play().catch(function () {
         vid.muted = true;
-        vid.play().catch(goNext);
+        vid.play().catch(function () {
+          // still fail → try show as image
+          try {
+            if (img) {
+              vid.classList.add("hidden");
+              img.classList.remove("hidden");
+              img.src = url;
+            }
+          } catch (_) {}
+        });
       });
       state.duration = hasMusic ? IMAGE_MUSIC_MS : 15000;
       state.startedAt = Date.now();
@@ -1435,27 +1594,23 @@
     const item = currentItem();
     const g = currentGroup();
     if (!item || !g || !uid) return;
+    if (!state.user) {
+      showToast("Login required");
+      return;
+    }
     try {
-      if (state.peopleMode === "mention") {
-        await firebase.database().ref(`stories/${item.id}/mentions/${uid}`).set({
-          uid,
-          createdAt: firebase.database.ServerValue.TIMESTAMP
-        });
-        if (typeof notifyStoryMention === "function") {
-          notifyStoryMention(item.id, g.uid, uid);
-        }
-        showToast("Mentioned");
-      } else {
-        await firebase.database().ref(`stories/${item.id}/collab/${uid}`).set({
-          uid,
-          invitedBy: state.user.uid,
-          createdAt: firebase.database.ServerValue.TIMESTAMP
-        });
-        showToast("Collab invite sent");
-      }
+      // Mention = Instagram-style (replaces separate Collab)
+      await firebase.database().ref("stories/" + item.id + "/mentions/" + uid).set({
+        uid: uid,
+        by: state.user.uid,
+        createdAt: firebase.database.ServerValue.TIMESTAMP
+      });
+      await notifyStoryMention(item.id, g.uid, uid);
+      showToast("Mentioned — they can Add to story");
       closeSheet("peopleSheet");
     } catch (e) {
-      showToast("Failed");
+      console.error(e);
+      showToast("Failed to mention");
     }
   }
 
@@ -1508,31 +1663,58 @@
       try { ($("storyAudio") || state.musicAudio)?.play()?.catch(() => {}); } catch (_) {}
     });
 
-    // long press pause
+    // Long-press / hold → pause story (Instagram style)
     const stage = $("stage");
-    let pressT;
-    stage?.addEventListener("touchstart", () => {
-      pressT = setTimeout(() => {
-        state.paused = true;
-        $("storyVid")?.pause();
-        try { state.musicAudio?.pause(); } catch (_) {}
-      }, 180);
-    }, { passive: true });
-    stage?.addEventListener("touchend", () => {
+    let pressT = null;
+    let holdPaused = false;
+    function pauseStory() {
+      state.paused = true;
+      holdPaused = true;
+      try { $("storyVid")?.pause(); } catch (_) {}
+      try { state.musicAudio?.pause(); } catch (_) {}
+      try { $("storyAudio")?.pause(); } catch (_) {}
+      clearTimeout(state.timer);
+      state.timer = null;
+    }
+    function resumeStory() {
+      if (!holdPaused && !state.paused) return;
+      state.paused = false;
+      holdPaused = false;
+      try { $("storyVid")?.play().catch(function () {}); } catch (_) {}
+      try { state.musicAudio?.play().catch(function () {}); } catch (_) {}
+      try { $("storyAudio")?.play().catch(function () {}); } catch (_) {}
+      tick();
+    }
+    function onPressStart(e) {
+      // ignore if tapping UI buttons
+      if (e.target && e.target.closest && e.target.closest("button, a, input, .sheet")) return;
       clearTimeout(pressT);
-      if (state.paused) {
-        state.paused = false;
-        $("storyVid")?.play().catch(() => {});
-        try { state.musicAudio?.play().catch(() => {}); } catch (_) {}
-        tick();
-      }
-    });
+      pressT = setTimeout(function () { pauseStory(); }, 160);
+    }
+    function onPressEnd() {
+      clearTimeout(pressT);
+      if (holdPaused) resumeStory();
+    }
+    if (stage) {
+      stage.addEventListener("touchstart", onPressStart, { passive: true });
+      stage.addEventListener("touchend", onPressEnd);
+      stage.addEventListener("touchcancel", onPressEnd);
+      stage.addEventListener("mousedown", onPressStart);
+      stage.addEventListener("mouseup", onPressEnd);
+      stage.addEventListener("mouseleave", onPressEnd);
+    }
 
-    $("storiesMoreBtn")?.addEventListener("click", () => openSheet("moreSheet"));
-    document.querySelectorAll("[data-close]").forEach((el) => {
-      el.addEventListener("click", () => closeSheet(el.dataset.close));
+    // 3-dot menu also pauses while open
+    $("storiesMoreBtn")?.addEventListener("click", function () {
+      pauseStory();
+      openSheet("moreSheet");
     });
-
+    document.querySelectorAll("[data-close]").forEach(function (el) {
+      el.addEventListener("click", function () {
+        closeSheet(el.dataset.close);
+        resumeStory();
+      });
+    });
     $("replySendBtn")?.addEventListener("click", sendReply);
     $("replyInput")?.addEventListener("keydown", (e) => {
       if (e.key === "Enter") { e.preventDefault(); sendReply(); }
@@ -1555,9 +1737,10 @@
       loadPeople("");
     });
     $("collabBtn")?.addEventListener("click", () => {
+      // Collab removed — same as mention
       closeSheet("moreSheet");
-      state.peopleMode = "collab";
-      if ($("peopleSheetTitle")) $("peopleSheetTitle").textContent = "Collab";
+      state.peopleMode = "mention";
+      if ($("peopleSheetTitle")) $("peopleSheetTitle").textContent = "Mention";
       openSheet("peopleSheet");
       loadPeople("");
     });

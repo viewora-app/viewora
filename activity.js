@@ -745,13 +745,38 @@ function isFollow(notification) {
                 notification.type
             ).includes("mention")
         ) {
-
             return {
                 name,
                 message:
-                    "mentioned you."
+                    custom || "mentioned you in their story"
             };
+        }
 
+        if (
+            safeString(notification.type).includes("reaction") ||
+            safeString(notification.type).includes("react")
+        ) {
+            var em = notification.emoji || notification.reaction || "❤️";
+            var target =
+                safeString(notification.mediaType).includes("story") ? "story" :
+                safeString(notification.mediaType).includes("short") || safeString(notification.type).includes("short") || safeString(notification.type).includes("reel") ? "reel" :
+                safeString(notification.mediaType).includes("message") || safeString(notification.type).includes("message") ? "message" :
+                safeString(notification.mediaType).includes("video") ? "video" :
+                "post";
+            return {
+                name,
+                message: custom || ("reacted " + em + " to your " + target)
+            };
+        }
+
+        if (
+            safeString(notification.type).includes("story_reply") ||
+            (safeString(notification.type).includes("reply") && safeString(notification.mediaType).includes("story"))
+        ) {
+            return {
+                name,
+                message: custom || "replied to your story"
+            };
         }
 
         if (
@@ -1648,6 +1673,18 @@ function isFollow(notification) {
 
 
         let actionHTML = "";
+        try {
+          var ntype = safeString(notification.type).toLowerCase();
+          if (ntype.indexOf("story_mention") !== -1 || ntype.indexOf("mention") !== -1 && notification.storyId) {
+            var sid = encodeURIComponent(notification.storyId || "");
+            var oid = encodeURIComponent(notification.ownerUid || notification.senderUID || "");
+            actionHTML =
+              '<div class="notifActions" style="display:flex;gap:8px;margin-top:8px">' +
+              '<button type="button" class="notifAddStoryBtn" data-story="' + sid + '" data-owner="' + oid + '" style="flex:1;border:0;border-radius:10px;padding:8px 10px;background:#fff;color:#111;font-weight:700;font-size:12px">Add to story</button>' +
+              '<button type="button" class="notifDismissBtn" data-id="' + escapeHTML(notification.id || "") + '" style="flex:1;border:0;border-radius:10px;padding:8px 10px;background:rgba(255,255,255,.12);color:#fff;font-weight:600;font-size:12px">No thanks</button>' +
+              '</div>';
+          }
+        } catch (_) {}
 
         /*
          * Instagram-style:
@@ -3078,4 +3115,41 @@ function isFollow(notification) {
     });
     return out;
   };
+
+
+    // Mention → Add to story / No thanks
+    document.addEventListener("click", function (e) {
+      var t = e.target;
+      if (!t || !t.closest) return;
+      var addBtn = t.closest(".notifAddStoryBtn");
+      if (addBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+        var sid = addBtn.getAttribute("data-story") || "";
+        var oid = addBtn.getAttribute("data-owner") || "";
+        try {
+          sessionStorage.setItem("viewora_add_story_mention", JSON.stringify({
+            storyId: decodeURIComponent(sid),
+            ownerUid: decodeURIComponent(oid),
+            at: Date.now()
+          }));
+        } catch (_) {}
+        location.href = "story-upload.html?from=mention&storyId=" + sid + "&owner=" + oid;
+        return;
+      }
+      var noBtn = t.closest(".notifDismissBtn");
+      if (noBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+        var id = noBtn.getAttribute("data-id") || "";
+        try {
+          var uid = (window.auth && auth.currentUser && auth.currentUser.uid) || (firebase.auth().currentUser && firebase.auth().currentUser.uid);
+          if (uid && id) {
+            firebase.database().ref("notifications/" + uid + "/" + id).update({ read: true, isRead: true, dismissed: true });
+          }
+        } catch (_) {}
+        try { noBtn.closest(".notificationItem")?.remove(); } catch (_) {}
+      }
+    }, true);
+
 })();
