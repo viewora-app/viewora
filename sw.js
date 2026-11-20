@@ -1,5 +1,5 @@
 /* Viewora SW — PWA shell + FCM background (ONE worker, ONE scope) */
-const CACHE = "viewora-shell-v4";
+const CACHE = "viewora-shell-v5";
 const SHELL = [
   "./",
   "./index.html",

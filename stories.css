@@ -588,3 +588,27 @@ button { cursor: pointer; }
 #stage.storyLoading #storyVid:not(.hidden) {
   opacity: 1 !important;
 }
+
+
+/* Force media visible on all phones */
+#stage.stage {
+  background-color: #000 !important;
+  background-repeat: no-repeat !important;
+  background-position: center !important;
+  background-size: contain !important;
+}
+#storyImg, #storyVid {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  z-index: 8 !important;
+  background: transparent !important;
+}
+#storyImg.hidden, #storyVid.hidden { display: none !important; }
+.storyOverlayLayer { z-index: 9 !important; }
+.storyViewMentionChip { pointer-events: auto !important; }
+.tapZone { z-index: 11 !important; background: transparent !important; }

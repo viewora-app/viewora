@@ -116,6 +116,34 @@
   opacity: 1 !important;
 }
 </style>
+
+<style id="storyMediaForce">
+#stage.stage{background:#000;background-size:contain;background-position:center;background-repeat:no-repeat}
+#storyImg,#storyVid{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;object-fit:contain!important;opacity:1!important;z-index:8!important}
+#storyImg.hidden,#storyVid.hidden{display:none!important}
+</style>
+<script>
+/* bust SW old shell once */
+(function(){
+  try {
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.getRegistrations().then(function(regs){
+        regs.forEach(function(r){ try { r.update(); } catch(e){} });
+      });
+    }
+    if (typeof caches !== "undefined") {
+      caches.keys().then(function(keys){
+        keys.forEach(function(k){
+          if (k.indexOf("viewora-shell") === 0 && k !== "viewora-shell-v5") {
+            caches.delete(k);
+          }
+        });
+      });
+    }
+  } catch (e) {}
+})();
+</script>
+
 </head>
 <body style="margin:0;background:#000;min-height:100vh;color:#fff">
 <div id="app" class="storiesApp">
