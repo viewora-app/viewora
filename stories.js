@@ -1193,23 +1193,66 @@
     preloadNextStoryMedia();
 
     const type = String(data.mediaType || data.type || data.contentType || "").toLowerCase();
-    // Prefer explicit type; only sniff extension if type empty
-    var isVideo = type === "video" || type === "reel" || type === "short" || type.indexOf("video") !== -1;
-    if (!type || type === "story" || type === "image" || type === "photo") {
-      isVideo = /\.(mp4|webm|mov|m4v)(\?|$)/i.test(url) || /\/video\/upload\//i.test(url);
+    const urlLower = String(url).toLowerCase();
+    // Detect video carefully — Cloudinary /image/upload is IMAGE even if path has "video" elsewhere
+    var isVideo = false;
+    if (type === "video" || type === "reel" || type === "short" || type.indexOf("video/") === 0) {
+      isVideo = true;
+    } else if (type === "image" || type === "photo" || type === "picture" || type === "img") {
+      isVideo = false;
+    } else {
+      isVideo =
+        /\.(mp4|webm|mov|m4v)(\?|$)/i.test(url) ||
+        /\/video\/upload\//i.test(url) ||
+        /resource_type[=_]video/i.test(url);
+      // Cloudinary image path wins over false positives
+      if (/\/image\/upload\//i.test(url)) isVideo = false;
     }
-    if (type === "image" || type === "photo" || type === "picture") isVideo = false;
+
     const img = $("storyImg");
     const vid = $("storyVid");
-    // Always reset both first
+    const stage = $("stage") || $("storyStage") || $("storiesStage") || (img && img.parentElement);
+
+    function clearLoadingSafe() {
+      try { if (stage) stage.classList.remove("storyLoading"); } catch (_) {}
+      try {
+        if (img) {
+          img.style.opacity = "1";
+          img.style.visibility = "visible";
+          img.style.display = "";
+        }
+      } catch (_) {}
+      try {
+        if (vid) {
+          vid.style.opacity = "1";
+          vid.style.visibility = "visible";
+          vid.style.display = "";
+        }
+      } catch (_) {}
+    }
+
+    // Hard reset both media elements
     try {
-      if (img) { img.classList.add("hidden"); img.removeAttribute("src"); }
+      if (img) {
+        img.onload = null;
+        img.onerror = null;
+        img.classList.add("hidden");
+        img.removeAttribute("src");
+        img.style.opacity = "1";
+      }
       if (vid) {
-        vid.classList.add("hidden");
+        vid.onloadedmetadata = null;
+        vid.onloadeddata = null;
+        vid.oncanplay = null;
+        vid.onerror = null;
+        vid.onended = null;
         try { vid.pause(); } catch (_) {}
+        vid.classList.add("hidden");
         try { vid.removeAttribute("src"); vid.load(); } catch (_) {}
+        vid.style.opacity = "1";
       }
     } catch (_) {}
+
     const goNext = () => {
       clearTimeout(state.timer);
       state.timer = null;
@@ -1217,96 +1260,215 @@
       showItem();
     };
     const hasMusic = !!(musicInfo(data)?.audioUrl);
-    // Photo + music = 15s minimum; photo alone = 5s
     const imageDuration = hasMusic ? IMAGE_MUSIC_MS : IMAGE_MS;
 
-    // Soft loading — never stay black
-    const stage = $("stage") || $("storyStage") || $("storiesStage") || (img && img.parentElement);
-    function clearLoading() {
-      try { clearLoading(); } catch (_) {}
-      try { if (img) { img.style.opacity = "1"; img.style.visibility = "visible"; } } catch (_) {}
-      try { if (vid) { vid.style.opacity = "1"; vid.style.visibility = "visible"; } } catch (_) {}
-    }
     if (stage) {
       stage.classList.add("storyLoading");
-      setTimeout(clearLoading, 280);
+      setTimeout(clearLoadingSafe, 400);
     }
-    if (img) { img.style.background = "#111"; img.style.opacity = "1"; }
-    if (vid) { vid.style.background = "#111"; vid.style.opacity = "1"; }
 
-    if (isVideo && vid) {
-      img?.classList.add("hidden");
-      vid.classList.remove("hidden");
-      vid.src = url;
-      vid.muted = hasMusic;
-      vid.onended = goNext;
-      vid.onloadedmetadata = () => {
-        const d = vid.duration && isFinite(vid.duration) ? vid.duration * 1000 : 15000;
-        // With music, at least 15s if video shorter; cap 30s without forcing short clips long
-        let ms = Math.min(Math.max(d, hasMusic ? IMAGE_MUSIC_MS : 1000), 30000);
-        if (!hasMusic) ms = Math.min(d, 30000);
-        state.duration = ms;
-        state.startedAt = Date.now();
-        clearLoading();
-        tick();
-      };
-      vid.onerror = function () {
-        // black screen fix: fall back to image if video fails
-        try {
-          vid.classList.add("hidden");
-          if (img && url) {
-            img.classList.remove("hidden");
-            img.src = url;
-          } else {
-            goNext();
-          }
-        } catch (_) { goNext(); }
-      };
-      vid.play().catch(function () {
-        vid.muted = true;
-        vid.play().catch(function () {
-          // still fail → try show as image
-          try {
-            if (img) {
-              vid.classList.add("hidden");
-              img.classList.remove("hidden");
-              img.src = url;
-            }
-          } catch (_) {}
-        });
-      });
-      state.duration = hasMusic ? IMAGE_MUSIC_MS : 15000;
-      state.startedAt = Date.now();
-      tick();
-    } else if (img) {
-      vid?.classList.add("hidden");
-      try { vid.pause(); vid.removeAttribute("src"); vid.load(); } catch (_) {}
-      img.classList.remove("hidden");
-      img.onerror = () => {
-        clearLoading();
+    // Poster / thumb fallback URL
+    function thumbOf(d, mediaUrl) {
+      try {
+        var t =
+          d.thumbnail ||
+          d.thumb ||
+          d.poster ||
+          d.coverUrl ||
+          d.previewUrl ||
+          "";
+        if (t && /^https?:\/\//i.test(t)) return t;
+        // Cloudinary video → frame thumb
+        if (mediaUrl && /\/video\/upload\//i.test(mediaUrl)) {
+          return mediaUrl
+            .replace("/video/upload/", "/video/upload/so_0,w_720,h_1280,c_fill,f_jpg/")
+            .replace(/\.(mp4|webm|mov)(\?|$)/i, ".jpg$2");
+        }
+      } catch (_) {}
+      return "";
+    }
+
+    function showAsImage(src, forceDuration) {
+      if (!img || !src) {
         goNext();
-      };
-      img.onload = () => {
-        clearLoading();
-        state.duration = imageDuration;
-        state.startedAt = Date.now();
-        tick();
-      };
-      // If already cached, onload may not fire — force
-      img.src = url;
-      if (img.complete && img.naturalWidth) {
-        clearLoading();
-        state.duration = imageDuration;
-        state.startedAt = Date.now();
-        tick();
-      } else {
-        state.duration = imageDuration;
+        return;
+      }
+      try {
+        if (vid) {
+          try { vid.pause(); } catch (_) {}
+          vid.classList.add("hidden");
+        }
+        img.classList.remove("hidden");
+        img.style.opacity = "1";
+        img.style.visibility = "visible";
+        img.style.zIndex = "2";
+        img.setAttribute("decoding", "async");
+        img.setAttribute("referrerpolicy", "no-referrer");
+        // Prefer no crossOrigin unless needed — some CDNs break with anonymous
+        img.onload = function () {
+          clearLoadingSafe();
+          state.duration = forceDuration || imageDuration;
+          state.startedAt = Date.now();
+          tick();
+          clearTimeout(state.timer);
+          state.timer = setTimeout(goNext, state.duration + 80);
+        };
+        img.onerror = function () {
+          clearLoadingSafe();
+          // last resort: keep dark stage but still advance after duration
+          state.duration = forceDuration || imageDuration;
+          state.startedAt = Date.now();
+          tick();
+          clearTimeout(state.timer);
+          state.timer = setTimeout(goNext, state.duration + 80);
+        };
+        img.src = src;
+        // If cached, onload may not fire
+        if (img.complete && img.naturalWidth > 0) {
+          try { img.onload(); } catch (_) {}
+        }
+      } catch (_) {
+        goNext();
+      }
+    }
+
+    function showAsVideo(src) {
+      if (!vid || !src) {
+        showAsImage(thumbOf(data, src) || src, imageDuration);
+        return;
+      }
+      img && img.classList.add("hidden");
+      vid.classList.remove("hidden");
+      vid.style.opacity = "1";
+      vid.style.visibility = "visible";
+      vid.style.zIndex = "2";
+      // Critical for iOS / Android WebView
+      vid.setAttribute("playsinline", "true");
+      vid.setAttribute("webkit-playsinline", "true");
+      vid.setAttribute("x5-playsinline", "true");
+      vid.setAttribute("x5-video-player-type", "h5");
+      vid.playsInline = true;
+      vid.preload = "auto";
+      vid.controls = false;
+      vid.setAttribute("referrerpolicy", "no-referrer");
+      // When story has separate music track, mute video audio
+      vid.muted = !!hasMusic;
+      vid.defaultMuted = !!hasMusic;
+
+      var started = false;
+      function startProgress(ms) {
+        if (started) return;
+        started = true;
+        clearLoadingSafe();
+        state.duration = ms;
         state.startedAt = Date.now();
         tick();
       }
-      // Fallback timer (tick also advances — belt & suspenders)
-      clearTimeout(state.timer);
-      state.timer = setTimeout(goNext, imageDuration + 80);
+
+      vid.onended = goNext;
+      vid.onloadedmetadata = function () {
+        var d = vid.duration && isFinite(vid.duration) ? vid.duration * 1000 : 15000;
+        var ms = Math.min(Math.max(d, hasMusic ? IMAGE_MUSIC_MS : 1000), 30000);
+        if (!hasMusic) ms = Math.min(d, 30000);
+        startProgress(ms);
+      };
+      vid.onloadeddata = function () {
+        clearLoadingSafe();
+        // If still no visible frame, some GPUs paint black until play
+        try {
+          if (vid.videoWidth === 0) {
+            /* wait for play */
+          }
+        } catch (_) {}
+      };
+      vid.onerror = function () {
+        // Video decode fail → fall back to thumb or try as image
+        try {
+          vid.classList.add("hidden");
+          var fb = thumbOf(data, src);
+          if (fb) showAsImage(fb, imageDuration);
+          else showAsImage(src, imageDuration);
+        } catch (_) {
+          goNext();
+        }
+      };
+
+      // Black-frame watchdog: if video "plays" but no dimensions after 1.2s → thumb
+      var watch = setTimeout(function () {
+        try {
+          if (vid && !vid.classList.contains("hidden") && (vid.videoWidth || 0) < 2) {
+            var fb = thumbOf(data, src);
+            if (fb) {
+              try { vid.pause(); } catch (_) {}
+              vid.classList.add("hidden");
+              showAsImage(fb, state.duration || imageDuration);
+            }
+          }
+        } catch (_) {}
+      }, 1200);
+
+      try {
+        vid.src = src;
+        vid.load();
+      } catch (_) {}
+
+      var playPromise = null;
+      try {
+        playPromise = vid.play();
+      } catch (_) {}
+      if (playPromise && typeof playPromise.then === "function") {
+        playPromise
+          .then(function () {
+            clearLoadingSafe();
+            // Some devices need unmute kick only when NO external music
+            if (!hasMusic) {
+              try {
+                vid.muted = false;
+              } catch (_) {}
+            }
+          })
+          .catch(function () {
+            // Autoplay blocked → try muted then play
+            try {
+              vid.muted = true;
+              vid.play()
+                .then(function () {
+                  clearLoadingSafe();
+                  if (!hasMusic) {
+                    setTimeout(function () {
+                      try {
+                        vid.muted = false;
+                      } catch (_) {}
+                    }, 80);
+                  }
+                })
+                .catch(function () {
+                  // Still fail → show thumb, keep music if any
+                  clearTimeout(watch);
+                  var fb = thumbOf(data, src);
+                  if (fb) showAsImage(fb, imageDuration);
+                  else {
+                    startProgress(imageDuration);
+                    clearTimeout(state.timer);
+                    state.timer = setTimeout(goNext, imageDuration + 80);
+                  }
+                });
+            } catch (_) {
+              clearTimeout(watch);
+              showAsImage(thumbOf(data, src) || src, imageDuration);
+            }
+          });
+      } else {
+        // Old browsers
+        clearLoadingSafe();
+        startProgress(imageDuration);
+      }
+    }
+
+    if (isVideo) {
+      showAsVideo(url);
+    } else {
+      showAsImage(url, imageDuration);
     }
   }
 

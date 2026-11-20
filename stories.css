@@ -555,3 +555,36 @@ button { cursor: pointer; }
 }
 #storyImg, #storyVid { opacity:1 !important; visibility:visible; z-index:2; }
 .stage.storyLoading #storyImg, .stage.storyLoading #storyVid { opacity:.85 !important; }
+
+
+/* Black-screen hard fix — all devices */
+#stage.stage {
+  background: #050505 !important;
+  position: absolute !important;
+  inset: 0 !important;
+  overflow: hidden !important;
+}
+#storyImg.storyMedia,
+#storyVid.storyMedia {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  max-width: 100% !important;
+  max-height: 100% !important;
+  object-fit: contain !important;
+  background: #000 !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  z-index: 2 !important;
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+}
+#storyImg.hidden,
+#storyVid.hidden {
+  display: none !important;
+}
+#stage.storyLoading #storyImg:not(.hidden),
+#stage.storyLoading #storyVid:not(.hidden) {
+  opacity: 1 !important;
+}
