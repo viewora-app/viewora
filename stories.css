@@ -612,3 +612,27 @@ button { cursor: pointer; }
 .storyOverlayLayer { z-index: 9 !important; }
 .storyViewMentionChip { pointer-events: auto !important; }
 .tapZone { z-index: 11 !important; background: transparent !important; }
+
+
+#storyPoster {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background-color: #0a0a0a;
+  background-position: center;
+  background-size: contain;
+  background-repeat: no-repeat;
+  pointer-events: none;
+}
+#storyImg, #storyVid {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain !important;
+  z-index: 3 !important;
+  opacity: 1 !important;
+  background: transparent !important;
+}
+.storyOverlayLayer { z-index: 5 !important; background: transparent !important; }
+.storyTextOverlay { z-index: 6 !important; }

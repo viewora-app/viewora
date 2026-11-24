@@ -189,15 +189,21 @@
       "mediaURL", "mediaUrl", "media_url", "url", "src",
       "imageUrl", "imageURL", "image", "photo", "photoUrl", "photoURL",
       "videoUrl", "videoURL", "video", "downloadURL", "secure_url",
-      "cloudinaryUrl", "fileUrl", "contentUrl"
+      "cloudinaryUrl", "fileUrl", "contentUrl", "thumb", "thumbnail"
     ];
-    for (var i = 0; i < keys.length; i++) {
-      var v = d[keys[i]];
-      if (typeof v === "string" && v.trim().length > 8 && /^https?:\/\//i.test(v.trim())) {
-        return v.trim();
-      }
+    function ok(v) {
+      if (typeof v !== "string") return "";
+      v = v.trim();
+      if (v.length < 8) return "";
+      if (/^https?:\/\//i.test(v)) return v;
+      if (/^\/\//.test(v)) return "https:" + v;
+      if (/^data:image\//i.test(v)) return v;
+      return "";
     }
-    // nested media object
+    for (var i = 0; i < keys.length; i++) {
+      var got = ok(d[keys[i]]);
+      if (got && !/\.(mp3|m4a|aac|wav|ogg)(\?|$)/i.test(got)) return got;
+    }
     try {
       if (d.media && typeof d.media === "object") {
         var nested = mediaURL(d.media);
@@ -206,6 +212,31 @@
     } catch (_) {}
     return "";
   }
+
+  function optimizeMediaUrl(url, asVideo) {
+    if (!url || typeof url !== "string") return url;
+    try {
+      // Cloudinary: force progressive JPEG / limited size for mobile paint reliability
+      if (url.indexOf("res.cloudinary.com") !== -1 && url.indexOf("/upload/") !== -1) {
+        if (asVideo) {
+          if (url.indexOf("/video/upload/") !== -1 && url.indexOf("f_auto") === -1) {
+            url = url.replace("/video/upload/", "/video/upload/q_auto,f_auto/");
+          }
+        } else {
+          if (url.indexOf("/image/upload/") !== -1 && url.indexOf("f_auto") === -1) {
+            url = url.replace("/image/upload/", "/image/upload/f_auto,q_auto,c_limit,w_1080/");
+          }
+          // video URL used as poster frame
+          if (url.indexOf("/video/upload/") !== -1) {
+            url = url.replace("/video/upload/", "/video/upload/so_0,w_720,c_limit,f_jpg,q_auto/");
+            url = url.replace(/\.(mp4|webm|mov)(\?|$)/i, ".jpg$2");
+          }
+        }
+      }
+    } catch (_) {}
+    return url;
+  }
+
   function ownerId(d) {
     return d?.uid || d?.userId || d?.ownerId || "";
   }
@@ -989,7 +1020,7 @@
       layer = document.createElement("div");
       layer.id = "storyOverlayLayer";
       layer.className = "storyOverlayLayer";
-      layer.style.cssText = "position:absolute;inset:0;z-index:5;pointer-events:none;overflow:hidden;";
+      layer.style.cssText = "position:absolute;inset:0;z-index:5;pointer-events:none;overflow:hidden;background:transparent;";
       stage.appendChild(layer);
     }
     return layer;
@@ -1014,7 +1045,7 @@
         dimg.className = "storyDrawOverlay";
         dimg.src = drawUrl;
         dimg.alt = "";
-        dimg.style.cssText = "position:absolute;inset:0;width:100%;height:100%;object-fit:contain;pointer-events:none;z-index:6;";
+        dimg.style.cssText = "position:absolute;inset:0;width:100%;height:100%;object-fit:contain;pointer-events:none;z-index:4;";
         layer.appendChild(dimg);
       }
     } catch (_) {}
@@ -1156,7 +1187,16 @@
       const stage = document.getElementById("stage");
       if (stage && !stage.dataset.emptyShown) {
         stage.dataset.emptyShown = "1";
-        stage.innerHTML = '<div style="color:#fff;text-align:center;padding:40px 20px;font-family:system-ui"><p style="opacity:.7;margin:0 0 16px">No active story</p><button type="button" id="storyEmptyBack" style="padding:12px 20px;border:0;border-radius:12px;background:#6d28d9;color:#fff;font-weight:700">Back</button></div>';
+        var empty = document.getElementById("storyEmptyOverlay");
+        if (!empty) {
+          empty = document.createElement("div");
+          empty.id = "storyEmptyOverlay";
+          empty.style.cssText = "position:absolute;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;background:#000;color:#fff;text-align:center;padding:40px 20px;font-family:system-ui";
+          empty.innerHTML = '<div><p style="opacity:.7;margin:0 0 16px">No active story</p><button type="button" id="storyEmptyBack" style="padding:12px 20px;border:0;border-radius:12px;background:#6d28d9;color:#fff;font-weight:700">Back</button></div>';
+          stage.appendChild(empty);
+        } else {
+          empty.style.display = "flex";
+        }
         const b = document.getElementById("storyEmptyBack");
         if (b) b.onclick = function () {
           window.location.href = uid
@@ -1220,8 +1260,33 @@
 
     stop();
     const item = g.items[state.itemIndex];
-    const data = item.data || {};
-    const url = mediaURL(data);
+    let data = item.data || {};
+
+    // Async hydrate then re-enter (one retry)
+    if (!item._hydrated && item.id && (!mediaURL(data) || !(data.texts || data.stickers || data.drawDataUrl))) {
+      item._hydrated = true;
+      try {
+        firebase.database().ref("stories/" + item.id).once("value").then(function (snap) {
+          if (snap.exists()) {
+            item.data = Object.assign({}, data, snap.val() || {}, { id: item.id });
+          }
+          showItem();
+        }).catch(function () { showItem(); });
+        return;
+      } catch (_) {}
+    }
+    data = item.data || {};
+    let url = mediaURL(data);
+    if (!url) {
+      // last try: any http field
+      try {
+        Object.keys(data).forEach(function (k) {
+          if (url) return;
+          var v = data[k];
+          if (typeof v === "string" && /^https?:\/\//i.test(v) && !/\.(mp3|m4a|aac|wav)(\?|$)/i.test(v)) url = v;
+        });
+      } catch (_) {}
+    }
     if (!url) {
       state.itemIndex += 1;
       showItem();
@@ -1256,128 +1321,101 @@
     preloadNextStoryMedia();
 
     const type = String(data.mediaType || data.type || data.contentType || "").toLowerCase();
-    const urlLower = String(url || "").toLowerCase();
     var isVideo = false;
     if (type === "video" || type === "reel" || type === "short") isVideo = true;
     else if (type === "image" || type === "photo" || type === "picture" || type === "img") isVideo = false;
     else {
-      isVideo =
-        /\.(mp4|webm|mov|m4v)(\?|$)/i.test(url) ||
-        /\/video\/upload\//i.test(url) ||
-        /resource_type[=_]video/i.test(url);
+      isVideo = /\.(mp4|webm|mov|m4v)(\?|$)/i.test(url) || /\/video\/upload\//i.test(url);
       if (/\/image\/upload\//i.test(url)) isVideo = false;
     }
 
-    var stage = $("stage") || $("storyStage") || document.querySelector(".stage");
+    var stage = $("stage") || document.querySelector(".stage");
+    // Permanent poster layer (never black empty)
+    var posterEl = $("storyPoster");
+    if (stage && !posterEl) {
+      posterEl = document.createElement("div");
+      posterEl.id = "storyPoster";
+      posterEl.setAttribute("aria-hidden", "true");
+      posterEl.style.cssText = "position:absolute;inset:0;z-index:1;background:#0a0a0a center/contain no-repeat;pointer-events:none;";
+      stage.insertBefore(posterEl, stage.firstChild);
+    }
     var img = $("storyImg");
     var vid = $("storyVid");
-
-    // Ensure media elements exist inside stage
     if (stage) {
       if (!img) {
         img = document.createElement("img");
         img.id = "storyImg";
         img.className = "storyMedia";
         img.alt = "";
-        stage.insertBefore(img, stage.firstChild);
+        stage.appendChild(img);
       }
       if (!vid) {
         vid = document.createElement("video");
         vid.id = "storyVid";
         vid.className = "storyMedia";
-        vid.setAttribute("playsinline", "");
-        vid.setAttribute("webkit-playsinline", "");
-        vid.setAttribute("x5-playsinline", "");
-        vid.playsInline = true;
-        vid.preload = "auto";
-        stage.insertBefore(vid, stage.firstChild);
+        stage.appendChild(vid);
+      }
+      // Remove empty overlay if present
+      var empty = $("storyEmptyOverlay");
+      if (empty) empty.style.display = "none";
+    }
+
+    function styleVisible(el, on) {
+      if (!el) return;
+      if (on) {
+        el.classList.remove("hidden");
+        el.style.position = "absolute";
+        el.style.inset = "0";
+        el.style.width = "100%";
+        el.style.height = "100%";
+        el.style.objectFit = "contain";
+        el.style.opacity = "1";
+        el.style.visibility = "visible";
+        el.style.display = "block";
+        el.style.zIndex = "3";
+        el.style.background = "transparent";
+      } else {
+        el.classList.add("hidden");
+        el.style.display = "none";
       }
     }
 
-    function paintMediaBox(el) {
-      if (!el) return;
-      el.classList.remove("hidden");
-      el.style.cssText = [
-        "position:absolute",
-        "inset:0",
-        "width:100%",
-        "height:100%",
-        "max-width:100%",
-        "max-height:100%",
-        "object-fit:contain",
-        "background:#000",
-        "opacity:1",
-        "visibility:visible",
-        "display:block",
-        "z-index:8",
-        "-webkit-transform:translateZ(0)",
-        "transform:translateZ(0)"
-      ].join(";");
-    }
-    function hideMediaBox(el) {
-      if (!el) return;
-      el.classList.add("hidden");
-      el.style.display = "none";
-    }
-
-    // Reset
     try {
-      if (img) {
-        img.onload = null; img.onerror = null;
-        hideMediaBox(img);
-        img.removeAttribute("src");
-      }
+      if (img) { img.onload = null; img.onerror = null; styleVisible(img, false); img.removeAttribute("src"); }
       if (vid) {
-        vid.onloadedmetadata = null; vid.onloadeddata = null;
-        vid.oncanplay = null; vid.onerror = null; vid.onended = null;
         try { vid.pause(); } catch (_) {}
-        hideMediaBox(vid);
+        vid.onloadedmetadata = null; vid.onerror = null; vid.onended = null;
+        styleVisible(vid, false);
         try { vid.removeAttribute("src"); vid.load(); } catch (_) {}
-      }
-      if (stage) {
-        stage.style.backgroundImage = "";
-        stage.style.backgroundSize = "";
-        stage.style.backgroundPosition = "";
-        stage.classList.remove("storyLoading");
       }
     } catch (_) {}
 
-    const goNext = function () {
+    var goNext = function () {
       clearTimeout(state.timer);
       state.timer = null;
       state.itemIndex += 1;
       showItem();
     };
-    const hasMusic = !!(musicInfo(data) && musicInfo(data).audioUrl);
-    const imageDuration = hasMusic ? IMAGE_MUSIC_MS : IMAGE_MS;
+    var hasMusic = !!(musicInfo(data) && musicInfo(data).audioUrl);
+    var imageDuration = hasMusic ? IMAGE_MUSIC_MS : IMAGE_MS;
+
+    function setPoster(src) {
+      if (!posterEl || !src) return;
+      try {
+        posterEl.style.backgroundImage = 'url("' + String(src).replace(/\\/g, "\\\\").replace(/"/g, '\\"') + '")';
+        posterEl.style.opacity = "1";
+      } catch (_) {}
+    }
 
     function thumbOf(d, mediaUrl) {
       try {
-        var t = (d && (d.thumbnail || d.thumb || d.poster || d.coverUrl || d.previewUrl)) || "";
-        if (t && /^https?:\/\//i.test(String(t))) return String(t).trim();
+        var t = (d && (d.thumbnail || d.thumb || d.poster || d.coverUrl)) || "";
+        if (t && /^https?:\/\//i.test(t)) return t;
         if (mediaUrl && /\/video\/upload\//i.test(mediaUrl)) {
-          return String(mediaUrl)
-            .replace("/video/upload/", "/video/upload/so_0,w_720,h_1280,c_fill,q_auto,f_jpg/")
-            .replace(/\.(mp4|webm|mov)(\?|$)/i, ".jpg$2");
-        }
-        if (mediaUrl && /\/image\/upload\//i.test(mediaUrl)) {
-          // ensure deliverable format
-          return String(mediaUrl);
+          return optimizeMediaUrl(mediaUrl, false);
         }
       } catch (_) {}
       return "";
-    }
-
-    // Stage background always shows something (fixes pure-black phones)
-    function setStagePoster(src) {
-      if (!stage || !src) return;
-      try {
-        stage.style.backgroundImage = 'url("' + String(src).replace(/"/g, "%22") + '")';
-        stage.style.backgroundSize = "contain";
-        stage.style.backgroundRepeat = "no-repeat";
-        stage.style.backgroundPosition = "center";
-        stage.style.backgroundColor = "#000";
-      } catch (_) {}
     }
 
     function beginTimer(ms) {
@@ -1385,139 +1423,108 @@
       state.startedAt = Date.now();
       tick();
       clearTimeout(state.timer);
-      state.timer = setTimeout(goNext, state.duration + 80);
+      state.timer = setTimeout(goNext, state.duration + 60);
     }
 
-    function showAsImage(src, ms) {
+    function showAsImage(rawUrl, ms) {
+      var src = optimizeMediaUrl(rawUrl, false) || rawUrl;
       if (!src) { goNext(); return; }
-      setStagePoster(src);
-      if (!img) { beginTimer(ms || imageDuration); return; }
-      hideMediaBox(vid);
-      paintMediaBox(img);
-      img.setAttribute("decoding", "async");
-      img.setAttribute("referrerpolicy", "no-referrer");
+      setPoster(src);
+      styleVisible(vid, false);
+      styleVisible(img, true);
       var done = false;
       function finish() {
         if (done) return;
         done = true;
-        try { if (stage) stage.classList.remove("storyLoading"); } catch (_) {}
         beginTimer(ms || imageDuration);
       }
+      if (!img) { finish(); return; }
       img.onload = finish;
       img.onerror = function () {
-        // keep stage poster, still progress
+        // keep poster background — still not pure black
         finish();
       };
       try {
         img.src = src;
         if (img.complete && img.naturalWidth > 0) finish();
-      } catch (_) {
-        finish();
-      }
-      // Absolute safety — never stuck black forever
-      setTimeout(finish, 2500);
+      } catch (_) { finish(); }
+      setTimeout(finish, 2800);
     }
 
-    function showAsVideo(src) {
-      if (!src) { showAsImage(thumbOf(data, src), imageDuration); return; }
-      var poster = thumbOf(data, src);
-      if (poster) setStagePoster(poster);
+    function showAsVideo(rawUrl) {
+      var src = optimizeMediaUrl(rawUrl, true) || rawUrl;
+      var poster = thumbOf(data, rawUrl) || optimizeMediaUrl(rawUrl, false);
+      if (poster) setPoster(poster);
 
-      // Recreate video node — some Android WebViews black-screen on reused <video>
+      // Fresh video element (fixes black frame reuse bugs on Android)
       try {
         if (vid && vid.parentNode) {
-          var fresh = document.createElement("video");
-          fresh.id = "storyVid";
-          fresh.className = "storyMedia";
-          fresh.setAttribute("playsinline", "true");
-          fresh.setAttribute("webkit-playsinline", "true");
-          fresh.setAttribute("x5-playsinline", "true");
-          fresh.setAttribute("x5-video-player-type", "h5");
-          fresh.setAttribute("preload", "auto");
-          fresh.playsInline = true;
-          fresh.controls = false;
-          fresh.disablePictureInPicture = true;
-          vid.parentNode.replaceChild(fresh, vid);
-          vid = fresh;
-          // keep global ref if any
+          var nv = document.createElement("video");
+          nv.id = "storyVid";
+          nv.className = "storyMedia";
+          nv.setAttribute("playsinline", "true");
+          nv.setAttribute("webkit-playsinline", "true");
+          nv.setAttribute("x5-playsinline", "true");
+          nv.setAttribute("preload", "auto");
+          nv.playsInline = true;
+          nv.controls = false;
+          vid.parentNode.replaceChild(nv, vid);
+          vid = nv;
         }
       } catch (_) {}
 
-      hideMediaBox(img);
-      paintMediaBox(vid);
+      styleVisible(img, false);
+      styleVisible(vid, true);
+      if (poster) try { vid.poster = poster; } catch (_) {}
       vid.muted = !!hasMusic;
       vid.defaultMuted = !!hasMusic;
-      if (poster) {
-        try { vid.setAttribute("poster", poster); } catch (_) {}
-      }
 
       var started = false;
       function startProg(ms) {
         if (started) return;
         started = true;
-        try { if (stage) stage.classList.remove("storyLoading"); } catch (_) {}
         beginTimer(ms);
       }
 
       vid.onended = goNext;
       vid.onloadedmetadata = function () {
         var d = vid.duration && isFinite(vid.duration) ? vid.duration * 1000 : 15000;
-        var ms = Math.min(Math.max(d, hasMusic ? IMAGE_MUSIC_MS : 1000), 30000);
+        var ms = Math.min(Math.max(d, hasMusic ? IMAGE_MUSIC_MS : 800), 30000);
         if (!hasMusic) ms = Math.min(d, 30000);
         startProg(ms);
       };
       vid.onerror = function () {
-        hideMediaBox(vid);
+        styleVisible(vid, false);
         showAsImage(poster || src, imageDuration);
       };
 
-      // Black-frame watchdog
       setTimeout(function () {
         try {
-          if (!vid || vid.classList.contains("hidden")) return;
-          if ((vid.videoWidth || 0) < 2) {
-            // keep poster on stage, try force play once more
-            try {
-              vid.muted = true;
-              vid.play().catch(function () {});
-            } catch (_) {}
+          if (vid && (vid.videoWidth || 0) < 2) {
+            // still black — show poster image on top as <img>
+            if (poster) {
+              styleVisible(vid, false);
+              showAsImage(poster, state.duration || imageDuration);
+            }
           }
-          // if still no frames after another beat → pure image mode
-          setTimeout(function () {
-            try {
-              if (vid && (vid.videoWidth || 0) < 2) {
-                hideMediaBox(vid);
-                if (poster) showAsImage(poster, state.duration || imageDuration);
-              }
-            } catch (_) {}
-          }, 900);
         } catch (_) {}
-      }, 1000);
+      }, 1500);
 
-      try {
-        vid.src = src;
-        vid.load();
-      } catch (_) {}
-
+      try { vid.src = src; vid.load(); } catch (_) {}
       var p;
       try { p = vid.play(); } catch (_) { p = null; }
       if (p && p.then) {
         p.then(function () {
-          try { if (stage) stage.classList.remove("storyLoading"); } catch (_) {}
-          if (!hasMusic) {
-            try { vid.muted = false; } catch (_) {}
-          }
+          if (!hasMusic) { try { vid.muted = false; } catch (_) {} }
         }).catch(function () {
           try {
             vid.muted = true;
             return vid.play();
-          } catch (_) {
-            return Promise.reject();
+          } catch (e2) {
+            return Promise.reject(e2);
           }
-        }).then(function () {
-          try { if (stage) stage.classList.remove("storyLoading"); } catch (_) {}
-        }).catch(function () {
-          hideMediaBox(vid);
+        }).then(function () {}).catch(function () {
+          styleVisible(vid, false);
           showAsImage(poster || src, imageDuration);
         });
       } else {
@@ -1525,7 +1532,6 @@
       }
     }
 
-    if (stage) stage.classList.add("storyLoading");
     if (isVideo) showAsVideo(url);
     else showAsImage(url, imageDuration);
   }
